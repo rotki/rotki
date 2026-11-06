@@ -64,6 +64,7 @@ vi.mock('@/modules/accounts/use-account-additions', () => {
         [address]: ['eth', 'optimism', 'gnosis'],
       },
     })),
+    reportFailedTag: vi.fn().mockResolvedValue(undefined),
     reportTracked: vi.fn().mockResolvedValue(undefined),
   };
   return {
@@ -87,7 +88,8 @@ vi.mock('@/modules/accounts/blockchain/use-account-manage', () => {
 
 const mockNotifyError = vi.fn();
 
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
+vi.mock('@/modules/core/notifications/use-notifications', async importOriginal => ({
+  ...await importOriginal<typeof import('@/modules/core/notifications/use-notifications')>(),
   useNotifications: vi.fn((): { notifyError: typeof mockNotifyError } => ({
     notifyError: mockNotifyError,
   })),
@@ -183,6 +185,24 @@ describe('useAccountImport', () => {
     expect(queryAddTag).toHaveBeenCalledTimes(2);
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag1' }));
     expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag2' }));
+  });
+
+  it('should report a tag that could not be created as a row of the import, and still import the account', async () => {
+    const { addAccount, reportFailedTag } = useAccountAdditions();
+    const { queryAddTag } = useTagsApi();
+    vi.mocked(queryAddTag).mockRejectedValueOnce(new Error('tag name is taken'));
+
+    const mockFile = createMockCSV([
+      'address,address extras,chain,label,tags',
+      '0x124,,eth,Name2,tag1',
+    ]);
+
+    const { importAccounts } = scope.run(() => useAccountImport())!;
+    await importAccounts(mockFile);
+
+    expect(reportFailedTag).toHaveBeenCalledExactlyOnceWith('tag1', 'tag name is taken', { parent: expect.any(String), userStarted: true });
+    expect(mockNotifyError).not.toHaveBeenCalled();
+    expect(addAccount).toHaveBeenCalledOnce();
   });
 
   it('should report a row that is already tracked instead of adding it again', async () => {

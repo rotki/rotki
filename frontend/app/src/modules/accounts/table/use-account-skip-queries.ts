@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { ActionStatus } from '@/modules/core/common/action';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
 import { useSkipAddressQueries } from '@/modules/settings/general/disabled-chain-queries/use-skip-address-queries';
 
@@ -55,7 +55,7 @@ export function useAccountSkipQueries(
 
   const pending = shallowRef<boolean>(false);
 
-  const { setMessage } = useMessageStore();
+  const { notifyError } = useNotifications();
   const { getChainName } = useSupportedChains();
   const { isChainExcluded } = useDisabledChains();
   const { isSkipped, toggle } = useSkipAddressQueries();
@@ -83,13 +83,8 @@ export function useAccountSkipQueries(
     set(pending, true);
     const result = await write();
     set(pending, false);
-    if (!result.success) {
-      setMessage({
-        description: result.message,
-        success: false,
-        title: t('account_balances.skip_queries.error'),
-      });
-    }
+    if (!result.success)
+      notifyError(t('account_balances.skip_queries.error'), result.message);
   };
 
   const toggleAll = async (): Promise<void> => run(async () => toggle(toValue(address), toValue(chains)));

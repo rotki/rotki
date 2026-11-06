@@ -1,9 +1,11 @@
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
+import { err } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref, shallowRef } from 'vue';
 import { RequestFailed, type RequestFailure } from '@/modules/core/api/request-result';
+import DataIssueDetailDrawer from '@/modules/history/data-issues/components/DataIssueDetailDrawer.vue';
 import DataIssuesTable from '@/modules/history/data-issues/components/DataIssuesTable.vue';
 import DataIssuesView from '@/modules/history/data-issues/DataIssuesView.vue';
 import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
@@ -17,6 +19,7 @@ import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
  */
 interface MockState {
   baselineTotal: number;
+  detectFailure?: unknown;
   error?: RequestFailure;
   filters: Record<string, unknown>;
   isLoading: boolean;
@@ -54,12 +57,25 @@ vi.mock('@/modules/history/use-history-data-fetching', () => ({
   }),
 }));
 
+const spies = vi.hoisted(() => ({
+  detect: vi.fn<() => Promise<void>>(),
+  dismiss: vi.fn<(id: number) => Promise<unknown>>(),
+}));
+
 vi.mock('@/modules/history/data-issues/use-data-issues', () => ({
   useDataIssues: (): Record<string, unknown> => ({
-    dismiss: vi.fn(),
+    dismiss: spies.dismiss,
     fetchData: vi.fn(),
     resolveManually: vi.fn(),
     retry: vi.fn(),
+  }),
+}));
+
+vi.mock('@/modules/history/data-issues/use-data-issues-detection', () => ({
+  useDataIssuesDetection: (): Record<string, unknown> => ({
+    detect: spies.detect,
+    detectFailure: shallowRef(state.detectFailure),
+    detecting: ref(false),
   }),
 }));
 
@@ -99,7 +115,9 @@ async function createWrapper(): Promise<VueWrapper<InstanceType<typeof DataIssue
 describe('data-issues view empty states', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    vi.clearAllMocks();
     state.baselineTotal = 0;
+    state.detectFailure = undefined;
     state.error = undefined;
     state.filters = {};
     state.isLoading = false;
@@ -170,5 +188,51 @@ describe('data-issues view empty states', () => {
     const table = wrapper.findComponent(DataIssuesTable);
     expect(table.props('emptyDescription')).toBe('data_issues.empty.none');
     expect(table.props('showClearFilters')).toBe(false);
+  });
+});
+
+describe('data-issues view failures', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setActivePinia(createPinia());
+    state.baselineTotal = 4;
+    state.detectFailure = undefined;
+    state.error = undefined;
+    state.filters = {};
+    state.isLoading = false;
+    state.rows = [];
+    state.summaryFailed = false;
+  });
+
+  it('should name a failed balance check on the page, with a retry that checks again', async () => {
+    state.detectFailure = new Error('still processing');
+    const wrapper = await createWrapper();
+
+    const strip = wrapper.find('[data-testid="data-issues-detect-failure"]');
+    expect(strip.text()).toContain('data_issues.detect.error');
+    expect(strip.text()).toContain('still processing');
+
+    await strip.find('[data-testid="failure-strip-retry"]').trigger('click');
+    expect(spies.detect).toHaveBeenCalledOnce();
+  });
+
+  it('should name no balance check failure while there is none', async () => {
+    const wrapper = await createWrapper();
+
+    expect(wrapper.find('[data-testid="data-issues-detect-failure"]').exists()).toBe(false);
+  });
+
+  it('should name a failed row dismiss above the table without a retry, and hand it to the drawer', async () => {
+    spies.dismiss.mockResolvedValue(err({ cause: new Error('nope'), message: 'nope', type: 'conflict' }));
+    const wrapper = await createWrapper();
+
+    wrapper.findComponent(DataIssuesTable).vm.$emit('dismiss', { id: 5 });
+    await flushPromises();
+
+    const strip = wrapper.find('[data-testid="data-issues-action-failure"]');
+    expect(strip.text()).toContain('data_issues.action.dismiss.error');
+    expect(strip.text()).toContain('nope');
+    expect(strip.find('[data-testid="failure-strip-retry"]').exists()).toBe(false);
+    expect(wrapper.findComponent(DataIssueDetailDrawer).props('failure')).toMatchObject({ id: 5 });
   });
 });

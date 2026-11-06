@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import HistoryRefreshSelection from '@/modules/history/refresh/HistoryRefreshSelection.vue';
 
 defineProps<{
@@ -13,17 +12,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { show } = useConfirmStore();
-
-function confirmRefresh() {
-  show({
-    message: t('history_refresh_button.confirm_refresh.message'),
-    title: t('history_refresh_button.confirm_refresh.title'),
-  }, () => {
-    emit('refresh');
-  });
-}
 </script>
 
 <template>
@@ -40,7 +28,8 @@ function confirmRefresh() {
           color="primary"
           class="[&>span]:hidden! lg:[&>span]:inline!"
           :aria-label="t('common.refresh')"
-          @click="confirmRefresh()"
+          data-testid="history-refresh-all"
+          @click="emit('refresh')"
         >
           <template #prepend>
             <RuiIcon name="lu-refresh-ccw" />

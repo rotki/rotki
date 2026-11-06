@@ -3,7 +3,6 @@ import { type Nullable, transformCase } from '@rotki/common';
 import QueriedAddressDialog from '@/modules/accounts/QueriedAddressDialog.vue';
 import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-address-operations';
 import { type Module, SUPPORTED_MODULES } from '@/modules/core/common/modules';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
@@ -38,12 +37,13 @@ const { t } = useI18n({ useScope: 'global' });
 
 const open = ref<boolean>(false);
 const manageModule = ref<Nullable<Module>>(null);
+/** The module being enabled, so its button shows the save in progress. */
+const enabling = ref<Module>();
 
 const activeModules = useSetting('activeModules');
 const { update } = useSettingsOperations();
 const { fetchQueriedAddresses } = useQueriedAddressOperations();
 const { queriedAddresses } = storeToRefs(useSessionMetadataStore());
-const { show } = useConfirmStore();
 
 const rows = computed<ModuleRow[]>(() => {
   const active = get(activeModules);
@@ -68,16 +68,20 @@ function manageAddresses(module: Module): void {
   set(manageModule, module);
 }
 
-function enable(row: ModuleRow): void {
-  set(open, false);
-  show(
-    {
-      message: t('active_modules.enable.description', { name: row.name }),
-      title: t('active_modules.enable.title'),
-      type: 'info',
-    },
-    async () => update({ activeModules: [...get(activeModules), row.identifier] }),
-  );
+/**
+ * Enables the module without asking: disabling it again is the undo.
+ *
+ * @remarks
+ * The menu stays open, so the row turns into its address management in front of the user.
+ */
+async function enable(row: ModuleRow): Promise<void> {
+  set(enabling, row.identifier);
+  try {
+    await update({ activeModules: [...get(activeModules), row.identifier] });
+  }
+  finally {
+    set(enabling, undefined);
+  }
 }
 
 onMounted(async () => {
@@ -176,6 +180,8 @@ onMounted(async () => {
           size="sm"
           color="primary"
           class="shrink-0"
+          :loading="enabling === row.identifier"
+          :disabled="!!enabling"
           data-testid="module-settings-enable"
           @click="enable(row)"
         >

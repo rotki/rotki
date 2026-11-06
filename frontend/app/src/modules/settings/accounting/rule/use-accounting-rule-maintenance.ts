@@ -1,6 +1,5 @@
 import type { Ref } from 'vue';
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import {
   accountingRulesExportActivity,
@@ -24,15 +23,22 @@ interface UseAccountingRuleMaintenanceReturn {
   resetLoading: Readonly<Ref<boolean>>;
   modelImportDialogOpen: Ref<boolean>;
   exportJSON: () => Promise<void>;
-  confirmDelete: (item: AccountingRuleEntry) => void;
-  confirmReset: () => void;
+  /** What a row's delete button asks before deleting its rule. */
+  deleteConfirm: (item: AccountingRuleEntry) => { title: string; message: string };
+  /** Deletes a rule the user already confirmed. */
+  deleteRule: (item: AccountingRuleEntry) => Promise<void>;
+  /** Why the last delete failed, named above the table. */
+  deleteFailure: Readonly<Ref<{ title: string; error: unknown } | undefined>>;
+  /** Resets every rule to the defaults, which the header menu has already confirmed. */
+  resetRules: () => Promise<void>;
 }
 
 /**
  * The destructive and bulk operations on the rules: delete one, reset them all, export, import.
  *
- * Both destructive ones are confirmed first, and each reloads what its change can have touched —
- * deleting a rule cannot create a conflict, resetting every rule can.
+ * @remarks
+ * Both destructive ones are confirmed by their trigger first. Each reloads what its change can
+ * have touched: deleting a rule cannot create a conflict, resetting every rule can.
  */
 export function useAccountingRuleMaintenance(
   options: UseAccountingRuleMaintenanceOptions,
@@ -40,43 +46,37 @@ export function useAccountingRuleMaintenance(
   const { refetch, refresh } = options;
 
   const { t } = useI18n({ useScope: 'global' });
-  const { show } = useConfirmStore();
   const { useIsActive } = useTaskCenter();
   const { exportJSON, resetToDefaults } = useAccountingSettings();
   const { deleteAccountingRule } = useAccountingApi();
 
   const modelImportDialogOpen = shallowRef<boolean>(false);
 
-  const { showDeleteConfirmation: confirmDelete } = useTableRowDeletion<AccountingRuleEntry>({
+  const { deleteConfirm, deleteRow: deleteRule, failure: deleteFailure } = useTableRowDeletion<AccountingRuleEntry>({
     confirm: () => ({
       message: t('accounting_settings.rule.confirm_delete'),
       title: t('accounting_settings.rule.delete'),
     }),
     deleteItem: async item => deleteAccountingRule(item.identifier),
-    errorMessage: () => ({ description: t('accounting_settings.rule.delete_error') }),
+    failureTitle: () => t('accounting_settings.rule.delete_error'),
     onDeleted: refetch,
   });
 
-  async function resetRulesToDefaults(): Promise<void> {
+  async function resetRules(): Promise<void> {
     const result = await resetToDefaults();
     if (result?.success)
       await refresh();
   }
 
-  function confirmReset(): void {
-    show({
-      message: t('accounting_settings.rule.confirm_reset'),
-      title: t('accounting_settings.rule.reset'),
-    }, resetRulesToDefaults);
-  }
-
   return {
-    confirmDelete,
-    confirmReset,
+    deleteConfirm,
+    deleteFailure,
+    deleteRule,
     exportFileLoading: useIsActive(accountingRulesExportActivity.kind, ...accountingRulesExportActivity.partsOf()),
     exportJSON,
     importFileLoading: useIsActive(accountingRulesImportActivity.kind, ...accountingRulesImportActivity.partsOf()),
     modelImportDialogOpen,
     resetLoading: useIsActive(accountingRulesResetActivity.kind, ...accountingRulesResetActivity.partsOf()),
+    resetRules,
   };
 }

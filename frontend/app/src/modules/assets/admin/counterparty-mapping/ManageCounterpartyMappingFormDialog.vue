@@ -24,7 +24,7 @@ const stateUpdated = ref<boolean>(false);
 
 const { addCounterpartyMapping, editCounterpartyMapping } = useCounterpartyMappingApi();
 
-const { dialogTitle, loading, modelErrorMessages, save } = useMappingFormDialog({
+const { dialogTitle, failure, failureTitle, loading, modelErrorMessages, save } = useMappingFormDialog({
   add: addCounterpartyMapping,
   edit: editCounterpartyMapping,
   editMode: () => editMode ?? false,
@@ -42,6 +42,8 @@ const { dialogTitle, loading, modelErrorMessages, save } = useMappingFormDialog(
     :action="{ primary: t('common.actions.save') }"
     :layout="{ autoHeight: true, divide: true, maxWidth: '640px' }"
     :loading="loading"
+    :failure="failure"
+    :failure-title="failureTitle"
     :prompt-on-close="stateUpdated"
     @confirm="save()"
     @cancel="modelValue = undefined"

@@ -4,11 +4,6 @@ import { useAccountingRuleMaintenance } from '@/modules/settings/accounting/rule
 
 const deleteAccountingRule = vi.fn(async (): Promise<boolean> => true);
 const resetToDefaults = vi.fn(async (): Promise<{ success: boolean } | undefined> => ({ success: true }));
-const setMessage = vi.fn();
-/** The confirm store hands the caller's callback to the dialog; the tests run it directly. */
-const show = vi.fn(async (_message: unknown, onConfirm: () => Promise<void> | void): Promise<void> => {
-  await onConfirm();
-});
 
 vi.mock('@/modules/settings/api/use-accounting-api', () => ({
   useAccountingApi: (): Record<string, unknown> => ({ deleteAccountingRule }),
@@ -19,14 +14,6 @@ vi.mock('@/modules/settings/accounting/use-accounting-settings', () => ({
     exportJSON: vi.fn(),
     resetToDefaults,
   }),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): Record<string, unknown> => ({ show }),
-}));
-
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): Record<string, unknown> => ({ setMessage }),
 }));
 
 vi.mock('@/modules/task-center/use-task-center', () => ({
@@ -57,51 +44,48 @@ describe('useAccountingRuleMaintenance', () => {
   beforeEach(() => {
     deleteAccountingRule.mockClear().mockResolvedValue(true);
     resetToDefaults.mockClear().mockResolvedValue({ success: true });
-    setMessage.mockClear();
-    show.mockClear();
   });
 
-  it('should confirm before deleting, then reload the table', async () => {
-    const { confirmDelete, refetch } = createMaintenance();
-    confirmDelete(rule);
-    await vi.waitFor(() => expect(refetch).toHaveBeenCalledOnce());
+  it('should delete a confirmed rule, then reload the table', async () => {
+    const { deleteRule, refetch } = createMaintenance();
+    await deleteRule(rule);
 
-    expect(show).toHaveBeenCalledOnce();
     expect(deleteAccountingRule).toHaveBeenCalledWith(7);
+    expect(refetch).toHaveBeenCalledOnce();
   });
 
   it('should not reload when the backend reports the rule was not deleted', async () => {
     deleteAccountingRule.mockResolvedValue(false);
-    const { confirmDelete, refetch } = createMaintenance();
-    confirmDelete(rule);
-    await vi.waitFor(() => expect(deleteAccountingRule).toHaveBeenCalled());
+    const { deleteRule, refetch } = createMaintenance();
+    await deleteRule(rule);
 
     expect(refetch).not.toHaveBeenCalled();
   });
 
-  it('should report a failed delete instead of throwing', async () => {
-    deleteAccountingRule.mockRejectedValue(new Error('nope'));
-    const { confirmDelete, refetch } = createMaintenance();
-    confirmDelete(rule);
-    await vi.waitFor(() => expect(setMessage).toHaveBeenCalledOnce());
+  it('should keep a failed delete for the table to name instead of throwing', async () => {
+    const error = new Error('nope');
+    deleteAccountingRule.mockRejectedValue(error);
+    const { deleteFailure, deleteRule, refetch } = createMaintenance();
+    await deleteRule(rule);
 
+    expect(get(deleteFailure)).toEqual({ error, title: 'accounting_settings.rule.delete_error' });
     expect(refetch).not.toHaveBeenCalled();
   });
 
   it('should re-count conflicts after a reset, which can create them', async () => {
-    const { confirmReset, refetch, refresh } = createMaintenance();
-    confirmReset();
-    await vi.waitFor(() => expect(refresh).toHaveBeenCalledOnce());
+    const { refetch, refresh, resetRules } = createMaintenance();
+    await resetRules();
 
+    expect(refresh).toHaveBeenCalledOnce();
     expect(refetch).not.toHaveBeenCalled();
   });
 
   it('should not reload when the reset did not happen', async () => {
     resetToDefaults.mockResolvedValue(undefined);
-    const { confirmReset, refresh } = createMaintenance();
-    confirmReset();
-    await vi.waitFor(() => expect(resetToDefaults).toHaveBeenCalled());
+    const { refresh, resetRules } = createMaintenance();
+    await resetRules();
 
+    expect(resetToDefaults).toHaveBeenCalled();
     expect(refresh).not.toHaveBeenCalled();
   });
 });

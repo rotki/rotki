@@ -5,7 +5,8 @@ import { bigNumberify, Blockchain } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEthValidatorOperations } from '@/modules/staking/eth/use-eth-validator-operations';
 
-const mockShowConfirmation = vi.fn();
+const mockDeleteConfirmed = vi.fn<(params: unknown) => Promise<void>>(async () => {});
+const mockDescribeDeletion = vi.fn<(params: unknown) => string>(() => 'remove validator 1?');
 const mockFetchEthStakingValidators = vi.fn();
 const mockRefreshBlockchainBalances = vi.fn();
 const mockLoading = ref<boolean>(false);
@@ -13,7 +14,10 @@ const mockAddRunning = ref<boolean>(false);
 const mockRemoveRunning = ref<boolean>(false);
 
 vi.mock('@/modules/accounts/blockchain/use-account-delete', () => ({
-  useAccountDelete: (): { showConfirmation: typeof mockShowConfirmation } => ({ showConfirmation: mockShowConfirmation }),
+  useAccountDelete: (): Record<string, unknown> => ({
+    deleteConfirmed: mockDeleteConfirmed,
+    describeDeletion: mockDescribeDeletion,
+  }),
 }));
 
 vi.mock('@/modules/accounts/use-eth-staking', () => ({
@@ -95,24 +99,44 @@ describe('useEthValidatorOperations', () => {
     });
   });
 
-  describe('confirmDelete', () => {
-    it('should ask for confirmation for a single validator', () => {
+  describe('a single validator', () => {
+    it('should ask about that validator alone before deleting it', () => {
       const item = validator();
-      const { confirmDelete } = useEthValidatorOperations();
-      confirmDelete(item);
-      expect(mockShowConfirmation).toHaveBeenCalledWith({ data: [item], type: 'validator' });
+      const { deleteConfirm } = useEthValidatorOperations();
+      expect(deleteConfirm(item)).toEqual({ message: 'remove validator 1?', title: 'account_balances.confirm_delete.title' });
+      expect(mockDescribeDeletion).toHaveBeenCalledWith({ data: [item], type: 'validator' });
+    });
+
+    it('should delete it at once, the row having already asked', async () => {
+      const item = validator();
+      const { deleteValidator } = useEthValidatorOperations();
+      await deleteValidator(item);
+      expect(mockDeleteConfirmed).toHaveBeenCalledWith({ data: [item], type: 'validator' });
     });
   });
 
   describe('deleteSelected', () => {
-    it('should confirm deletion only for the selected validator indexes', () => {
+    it('should ask about only the selected validators', () => {
+      const rows = [validator({ index: 1 }), validator({ index: 2 }), validator({ index: 3 })];
+      const { deleteSelectedConfirm } = useEthValidatorOperations();
+      expect(deleteSelectedConfirm(rows, [1, 3])).toEqual({ message: 'remove validator 1?', title: 'account_balances.confirm_delete.title' });
+      expect(mockDescribeDeletion).toHaveBeenCalledWith({ data: [rows[0], rows[2]], type: 'validator' });
+      expect(mockDeleteConfirmed).not.toHaveBeenCalled();
+    });
+
+    it('should delete only the selected validator indexes at once, the toolbar having already asked', async () => {
       const rows = [validator({ index: 1 }), validator({ index: 2 }), validator({ index: 3 })];
       const { deleteSelected } = useEthValidatorOperations();
-      deleteSelected(rows, [1, 3]);
-      expect(mockShowConfirmation).toHaveBeenCalledWith({
-        data: [rows[0], rows[2]],
-        type: 'validator',
-      });
+      await deleteSelected(rows, [1, 3]);
+      expect(mockDeleteConfirmed).toHaveBeenCalledWith({ data: [rows[0], rows[2]], type: 'validator' });
+    });
+
+    it('should keep a failed delete for the table to name', async () => {
+      const error = new Error('backend refused');
+      mockDeleteConfirmed.mockRejectedValueOnce(error);
+      const { deleteFailure, deleteValidator } = useEthValidatorOperations();
+      await deleteValidator(validator({ index: 1 }));
+      expect(get(deleteFailure)).toBe(error);
     });
   });
 

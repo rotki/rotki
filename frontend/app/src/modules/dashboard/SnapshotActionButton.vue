@@ -13,7 +13,15 @@ const importSnapshotDialog = ref<boolean>(false);
 const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();
 const { lastBalanceSave } = storeToRefs(useSessionMetadataStore());
-const { forceSave, forceSaving, importing, importSnapshot, modelBalanceFile, modelLocationFile } = useSnapshotActions();
+const {
+  forceSave,
+  forceSaving,
+  importing,
+  importSnapshot,
+  modelBalanceFile,
+  modelImportFailure,
+  modelLocationFile,
+} = useSnapshotActions();
 
 async function forceSaveAndClose(): Promise<void> {
   set(visible, false);
@@ -115,6 +123,7 @@ async function forceSaveAndClose(): Promise<void> {
           v-model="importSnapshotDialog"
           v-model:balance-file="modelBalanceFile"
           v-model:location-file="modelLocationFile"
+          v-model:failure="modelImportFailure"
           :loading="importing"
           @import="importSnapshot()"
         />

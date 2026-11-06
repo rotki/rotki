@@ -26,7 +26,7 @@ const forAllExchanges = ref<boolean>(false);
 
 const { addCexMapping, editCexMapping } = useAssetCexMappingApi();
 
-const { dialogTitle, loading, modelErrorMessages, save } = useMappingFormDialog({
+const { dialogTitle, failure, failureTitle, loading, modelErrorMessages, save } = useMappingFormDialog({
   add: addCexMapping,
   edit: editCexMapping,
   editMode: () => editMode ?? false,
@@ -47,6 +47,8 @@ const { dialogTitle, loading, modelErrorMessages, save } = useMappingFormDialog(
     :action="{ primary: t('common.actions.save') }"
     :layout="{ autoHeight: true, divide: true, maxWidth: '640px' }"
     :loading="loading"
+    :failure="failure"
+    :failure-title="failureTitle"
     :prompt-on-close="stateUpdated"
     @confirm="save()"
     @cancel="modelValue = undefined"

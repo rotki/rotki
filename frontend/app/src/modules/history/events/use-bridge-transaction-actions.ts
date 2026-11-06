@@ -1,7 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
+import type { HistoryEventQuestion } from '@/modules/history/events/types';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useBridgeMatchingApi } from '@/modules/history/api/events/use-bridge-matching-api';
 import { type UnmatchedBridgeTransaction, useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 
@@ -34,9 +33,13 @@ interface UseBridgeTransactionActionsReturn {
    * does not survive the BigNumber fields its events hold.
    */
   resolutionNotice: ComputedRef<BridgeResolutionNotice | undefined>;
-  confirmCreateCounterpart: (transaction: UnmatchedBridgeTransaction) => void;
-  confirmIgnoreSelected: () => void;
-  confirmRestoreSelected: () => void;
+  /** Creates the missing counterpart of a leg, once its row asked (see `useUnmatchedBridgeRows`). */
+  createCounterpart: (transaction: UnmatchedBridgeTransaction) => Promise<void>;
+  /** Ignores the selected legs, once their button asked. */
+  ignoreSelected: () => Promise<void>;
+  /** What ignoring the selection asks beside its button, counting the selected legs. */
+  ignoreSelectedQuestion: ComputedRef<HistoryEventQuestion>;
+  restoreSelected: () => Promise<void>;
   dismissResolution: () => void;
   markExternal: (transaction: UnmatchedBridgeTransaction) => Promise<void>;
   ignoreTransaction: (transaction: UnmatchedBridgeTransaction) => Promise<void>;
@@ -60,8 +63,6 @@ export function useBridgeTransactionActions(
   } = useUnmatchedBridgeTransactions();
 
   const { matchBridgeTransactions, unlinkBridgeTransaction } = useBridgeMatchingApi();
-  const { show } = useConfirmStore();
-  const { getChainName } = useSupportedChains();
 
   const ignoreLoading = shallowRef<boolean>(false);
   const actionFailure = shallowRef<unknown>();
@@ -122,12 +123,6 @@ export function useBridgeTransactionActions(
     await restoreTransaction(current.transaction);
   }
 
-  function formatChain(chain: string | number | undefined): string | undefined {
-    if (chain === undefined)
-      return undefined;
-    return typeof chain === 'number' ? chain.toString() : getChainName(chain);
-  }
-
   async function ignoreTransaction(transaction: UnmatchedBridgeTransaction): Promise<void> {
     await runAction(async () => {
       await matchBridgeTransactions(transaction.identifier);
@@ -184,28 +179,6 @@ export function useBridgeTransactionActions(
     }, 'Failed to refresh after creating a bridge counterpart:');
   }
 
-  function buildCreateCounterpartMessage(isDeposit: boolean, chain?: string): string {
-    if (isDeposit) {
-      return chain
-        ? t('bridge_matching.actions.create_counterpart_confirm_out_chain', { chain })
-        : t('bridge_matching.actions.create_counterpart_confirm_out');
-    }
-    return chain
-      ? t('bridge_matching.actions.create_counterpart_confirm_in_chain', { chain })
-      : t('bridge_matching.actions.create_counterpart_confirm_in');
-  }
-
-  function confirmCreateCounterpart(transaction: UnmatchedBridgeTransaction): void {
-    const isDeposit = transaction.direction === 'deposit';
-    const chain = formatChain(isDeposit ? transaction.bridge?.toChain : transaction.bridge?.fromChain);
-
-    show({
-      message: buildCreateCounterpartMessage(isDeposit, chain),
-      primaryAction: t('common.actions.confirm'),
-      title: t('bridge_matching.actions.create_counterpart'),
-    }, async () => createCounterpart(transaction));
-  }
-
   async function ignoreSelectedTransactions(rowIds: string[]): Promise<void> {
     await runAction(async () => {
       const transactions = get(unmatchedTransactions).filter(tx => rowIds.includes(tx.identifier.toString()));
@@ -228,34 +201,31 @@ export function useBridgeTransactionActions(
     }, 'Failed to restore the selected bridge transactions:');
   }
 
-  function confirmIgnoreSelected(): void {
-    const count = get(modelSelectedUnmatched).length;
-    show({
-      message: t('bridge_matching.actions.ignore_selected_confirm', { count }),
-      primaryAction: t('common.actions.confirm'),
-      title: t('bridge_matching.actions.ignore_selected'),
-    }, async () => ignoreSelectedTransactions(get(modelSelectedUnmatched)));
+  const ignoreSelectedQuestion = computed<HistoryEventQuestion>(() => ({
+    message: t('bridge_matching.actions.ignore_selected_confirm', { count: get(modelSelectedUnmatched).length }),
+    title: t('bridge_matching.actions.ignore_selected'),
+  }));
+
+  async function ignoreSelected(): Promise<void> {
+    await ignoreSelectedTransactions(get(modelSelectedUnmatched));
   }
 
-  function confirmRestoreSelected(): void {
-    const count = get(modelSelectedIgnored).length;
-    show({
-      message: t('bridge_matching.actions.restore_selected_confirm', { count }),
-      primaryAction: t('common.actions.confirm'),
-      title: t('bridge_matching.actions.restore_selected'),
-    }, async () => unignoreSelectedTransactions(get(modelSelectedIgnored)));
+  /** Restores the selection without asking: ignoring them again is the undo. */
+  async function restoreSelected(): Promise<void> {
+    await unignoreSelectedTransactions(get(modelSelectedIgnored));
   }
 
   return {
     actionFailure: shallowReadonly(actionFailure),
-    confirmCreateCounterpart,
-    confirmIgnoreSelected,
-    confirmRestoreSelected,
+    createCounterpart,
     dismissResolution,
     markExternal,
     ignoreLoading: readonly(ignoreLoading),
+    ignoreSelected,
+    ignoreSelectedQuestion,
     ignoreTransaction,
     restoreTransaction,
+    restoreSelected,
     resolutionNotice,
     modelSelectedIgnored,
     modelSelectedUnmatched,

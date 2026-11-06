@@ -91,7 +91,7 @@ vi.mock('@/modules/accounts/management/AccountForm.vue', async () => {
 /** Renders the dialog body and surfaces the action bar the spec drives. */
 const BigDialogStub = defineComponent({
   emits: ['confirm', 'cancel'],
-  props: ['display', 'title', 'subtitle', 'action', 'loading', 'promptOnClose'],
+  props: ['display', 'title', 'subtitle', 'action', 'loading', 'promptOnClose', 'failure', 'failureTitle'],
   template: `<div v-if="display">
     <span class="title">{{ title }}</span>
     <span class="subtitle">{{ subtitle }}</span>
@@ -327,13 +327,18 @@ describe('accountDialog', () => {
   });
 
   describe('reporting a refused save', () => {
-    it('should show what the backend said', async () => {
+    it('should name what the backend said in the dialog, under the account error title', async () => {
       const wrapper = createWrapper();
 
       set(saveError, 'the backend said no');
       await nextTick();
 
-      expect(wrapper.text()).toContain('the backend said no');
+      expect(dialog(wrapper).props('failure')).toBe('the backend said no');
+      expect(dialog(wrapper).props('failureTitle')).toBe('account_form.error.title');
+    });
+
+    it('should name no failure while there is none', () => {
+      expect(dialog(createWrapper()).props('failure')).toBeUndefined();
     });
 
     /** A premium refusal is explained with an upgrade route rather than the raw message. */
@@ -346,7 +351,7 @@ describe('accountDialog', () => {
       await nextTick();
 
       expect(wrapper.text()).toContain('blockchain_balances.eth_staking_limit_error');
-      expect(wrapper.text()).not.toContain('limit reached');
+      expect(dialog(wrapper).props('failure')).toBeUndefined();
     });
 
     it('should explain having no access at all when there is no limit to name', async () => {

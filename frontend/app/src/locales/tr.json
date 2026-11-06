@@ -85,7 +85,6 @@
     "advanced_tooltip": "Gelişmiş xpub seçeneklerini göster | Gelişmiş xpub seçeneklerini gizle",
     "error": {
       "addition_failed": "Hiçbir hesap eklenmedi. | Adres eklenemedi. | {count} adresin hiçbiri eklenemedi.",
-      "description": "Hesap eklenirken hata oluştu: {error}",
       "title": "Hesap ekleme",
       "validator_needs_credentials": "Doğrulayıcı eklenemedi. Ayarlardan bir konsensüs katmanı RPC'si yapılandırın veya bir Beaconcha.in API anahtarı ekleyin, ardından tekrar deneyin."
     },
@@ -242,13 +241,12 @@
         "view_affected_events": "Etkilenen olayları görüntüle"
       },
       "add": "Muhasebe kuralı ekle",
-      "add_error": "Muhasebe kuralı eklenemedi: {message}",
+      "add_error": "Muhasebe kuralı eklenemedi",
       "confirm_delete": "Bu özel muhasebe kuralını silmek istediğinizden emin misiniz?",
       "confirm_reset": "Tüm muhasebe kurallarını rotki varsayılanlarına sıfırlamak istediğinizden emin misiniz? Bu işlem tüm özel ve düzenlenmiş kuralları kaldırır ve geri alınamaz.",
       "conflicts": {
         "banner": "{count} kural son rotki güncellemesiyle çakışıyor. | {count} kural son rotki güncellemesiyle çakışıyor.",
         "error": {
-          "description": "Muhasebe kuralı çakışmaları çözülürken hata oluştu: {error}",
           "title": "Muhasebe kuralı çakışmalarını çözme"
         },
         "labels": {
@@ -275,9 +273,9 @@
       },
       "custom_events_info": "Seçili {count} olay için özel muhasebe kuralı oluşturuluyor",
       "delete": "Muhasebe kuralını sil",
-      "delete_error": "Muhasebe kuralı silinemedi: {message}",
+      "delete_error": "Muhasebe kuralı silinemedi",
       "edit": "Muhasebe kuralını düzenle",
-      "edit_error": "Muhasebe kuralı düzenlenemedi: {message}",
+      "edit_error": "Muhasebe kuralı düzenlenemedi",
       "events_dialog": {
         "title": "Muhasebe kuralından etkilenen olaylar ({count})"
       },
@@ -517,29 +515,14 @@
     "accounting_rules": {
       "export": {
         "message": {
-          "failure": "Muhasebe kuralları dışa aktarılamadı: {description}",
-          "success": "Muhasebe kuralları başarıyla dışa aktarıldı"
+          "failure": "Muhasebe kuralları dışa aktarılamadı: {description}"
         },
         "title": "Muhasebe kurallarını dışa aktarma"
       },
       "import": {
         "message": {
-          "failure": "Muhasebe kuralları içe aktarılamadı: {description}",
-          "success": "Muhasebe kuralları başarıyla içe aktarıldı"
-        },
-        "title": "Muhasebe kurallarını içe aktarma"
-      },
-      "reset": {
-        "message": {
-          "success": "Muhasebe kuralları başarıyla varsayılanlara sıfırlandı"
-        },
-        "title": "Muhasebe kurallarını sıfırlama"
-      }
-    },
-    "asset_movement_matching": {
-      "success": {
-        "description": "Varlık hareketi blokzincir olayıyla başarıyla eşleştirildi.",
-        "title": "Varlık hareketi eşleştirildi"
+          "failure": "Muhasebe kuralları içe aktarılamadı: {description}"
+        }
       }
     },
     "assets": {
@@ -589,11 +572,9 @@
         "task": "{fromAsset}/{toAsset} için {source} fiyat önbelleği oluşturuluyor"
       },
       "exchange_removal": {
-        "description": "{exchange} borsası kaldırılamadı: {error}",
         "title": "Borsa kaldırma"
       },
       "exchange_setup": {
-        "description": "{exchange} borsası ayarlanamadı: {error}",
         "title": "Borsa kurulumu"
       },
       "historic_fetch_price": {
@@ -607,38 +588,20 @@
         }
       }
     },
-    "bridge_matching": {
-      "create_counterpart_success": {
-        "description": "Diğer zincirde sentetik bir karşılık olayı oluşturuldu ve köprü işlemine bağlandı.",
-        "title": "Köprü karşılığı oluşturuldu"
-      },
-      "success": {
-        "description": "Köprü işlemi karşılık olayıyla başarıyla eşleştirildi.",
-        "title": "Köprü işlemi eşleştirildi"
-      }
-    },
     "customized_event_duplicates": {
       "fix_error": {
-        "description": "Yinelenen özelleştirilmiş olaylar düzeltilemedi: {error}",
         "title": "Yinelenen özelleştirilmiş olayları düzeltme"
       },
-      "fix_success": {
-        "description": "Yinelenen {count} olay başarıyla kaldırıldı.",
-        "title": "Yinelenenler düzeltildi"
-      },
       "mark_non_duplicated_error": {
-        "description": "Yinelenen özelleştirilmiş olaylar, yinelenmeyen olarak işaretlenemedi: {error}",
         "title": "Yinelenen özelleştirilmiş olayları yinelenmeyen olarak işaretleme"
       },
       "unignore_error": {
-        "description": "Yok sayılan yinelenen özelleştirilmiş olaylar geri yüklenemedi: {error}",
         "title": "Yinelenen özelleştirilmiş olayları geri yükleme"
       }
     },
     "date_range": " {from} tarihinden itibaren| {to} tarihine kadar| {from} ile {to} arasında",
     "delete_eth2_validator": {
       "error": {
-        "description": "ETH staking doğrulayıcıları silinemedi: {message}",
         "title": "ETH staking doğrulayıcılarını silme"
       }
     },
@@ -717,19 +680,18 @@
     },
     "ignore": {
       "error": {
-        "description": "Seçili eylemler hariç tutulamadı: {error}",
         "title": "Eylemler hariç tutulamadı"
       }
     },
     "manual_balances": {
       "add": {
         "error": {
-          "description": "Manuel bakiye eklenemedi: {message}"
+          "title": "Manuel bakiye eklenemedi"
         }
       },
       "edit": {
         "error": {
-          "description": "Manuel bakiye düzenlenemedi: {message}"
+          "title": "Manuel bakiye düzenlenemedi"
         }
       }
     },
@@ -828,12 +790,12 @@
     "session": {
       "add_queriable_address": {
         "error": {
-          "message": "Sorgulanabilir adres eklenemedi: {message}"
+          "message": "Sorgulanabilir adres eklenemedi"
         }
       },
       "delete_queriable_address": {
         "error": {
-          "message": "Sorgulanabilir adres silinemedi: {message}"
+          "message": "Sorgulanabilir adres silinemedi"
         }
       },
       "fetch_queriable_address": {
@@ -854,7 +816,7 @@
         }
       },
       "password_change": {
-        "error": "Kullanıcı parolası değiştirilirken hata oluştu: {message}",
+        "error": "Kullanıcı parolası değiştirilirken hata oluştu",
         "success": "Kullanıcı parolası başarıyla değiştirildi"
       },
       "periodic_query": {
@@ -892,22 +854,14 @@
     },
     "unignore": {
       "error": {
-        "description": "Seçili eylemler dahil edilemedi: {error}",
         "title": "Eylemler dahil edilemedi"
       }
-    }
-  },
-  "active_modules": {
-    "enable": {
-      "description": "{name} modülünü etkinleştirmek ister misiniz?",
-      "title": "Etkinleştirilen modül"
     }
   },
   "address_book": {
     "actions": {
       "add": {
         "error": {
-          "description": "Adres defterine eklenemedi: {message}",
           "title": "Adres defterine ekleme başarısız oldu"
         }
       },
@@ -924,7 +878,6 @@
       },
       "edit": {
         "error": {
-          "description": "Adres defteri düzenlenemedi: {message}",
           "title": "Adres defteri düzenleme başarısız oldu"
         },
         "tooltip": "Adres defterinde düzenle veya ekle"
@@ -1050,9 +1003,7 @@
     "optional": "İsteğe bağlı alanlar",
     "replaced": "Bu simge, \"Kaydet\" düğmesine tıkladığınızda uygulanacak.",
     "type_non_empty": "Varlığın türü boş bırakılamaz",
-    "types": {
-      "error": "Varlık türleri yüklenemedi: {message}"
-    },
+    "types": {},
     "underlying_tokens": "Dayanak tokenlar",
     "validation": {
       "address_non_empty": "Adres boş bırakılamaz",
@@ -1072,10 +1023,10 @@
     "title": "Varlık konumları"
   },
   "asset_management": {
-    "add_error": "Varlık eklenemedi: {message}",
+    "add_error": "Varlık eklenemedi",
     "add_title": "Yeni varlık ekle",
     "cex_mapping": {
-      "add_error": "Eşleme eklenemedi: {message}",
+      "add_error": "Eşleme eklenemedi",
       "add_mapping": "Eşleme ekle",
       "add_title": "Yeni eşleme ekle",
       "all_exchanges": "Tüm borsalar",
@@ -1084,8 +1035,8 @@
         "message": "{location} konumundaki {asset} sembolü için varlık eşlemesini silmek istediğinizden emin misiniz?",
         "title": "Borsa varlık eşlemesini sil"
       },
-      "delete_error": "Eşleme silinemedi: {message}",
-      "edit_error": "Eşleme düzenlenemedi: {message}",
+      "delete_error": "Eşleme silinemedi",
+      "edit_error": "Eşleme düzenlenemedi",
       "edit_title": "Eşlemeyi düzenle",
       "form": {
         "asset_non_empty": "Tanınan varlık alanı boş bırakılamaz",
@@ -1114,8 +1065,8 @@
       },
       "subtitle": "Bir karşı taraftaki varlık sembollerini rotki tarafından tanınan varlıklarla ilişkilendirebilirsiniz. Bu, rotki'nin belirli karşı taraflardaki varlıkları işleyebilmesi için gereklidir."
     },
-    "delete_error": "{address} silinemedi: {message}",
-    "edit_error": "Varlık düzenlenemedi: {message}",
+    "delete_error": "{address} silinemedi",
+    "edit_error": "Varlık düzenlenemedi",
     "edit_title": "Varlığı düzenle",
     "merge_assets": "Varlıkları birleştir",
     "merge_assets_tooltip": "İki varlığı tek bir varlıkta birleştir (özel varlıkları resmi olarak desteklenen varlıklara taşımak için kullanılabilir)",
@@ -1128,15 +1079,13 @@
       "migrate_button": "Taşı",
       "migrating_asset": "Varlık taşınıyor",
       "migration_error": "Taşıma başarısız oldu",
-      "migration_success": "Token başarıyla taşındı",
       "solana_address": "Solana adresi",
       "validation": {
         "address_invalid": "Bu adres geçerli bir Solana adresi değil",
         "address_non_empty": "Solana adresi boş bırakılamaz",
         "decimals_non_empty": "Ondalık basamak sayısı boş bırakılamaz",
         "token_kind_non_empty": "Token türü boş bırakılamaz"
-      },
-      "validation_error": "Lütfen tüm zorunlu alanları doldurun"
+      }
     }
   },
   "asset_mappings": {
@@ -1154,8 +1103,7 @@
       "ignore_fiat_tooltip": "Tüm fiat para birimi hareketlerini yok say (ör. USD, EUR). Bu hareketlerin genellikle karşılık gelen olayları olmaz.",
       "ignore_selected": "Seçilenleri yok say",
       "ignore_selected_confirm": "Seçilen {count} varlık hareketini yok saymak istediğinizden emin misiniz? Bu eylem, bu hareketleri karşılık gelen bir olayı olmayan hareketler olarak işaretler.",
-      "restore_selected": "Seçilenleri geri yükle",
-      "restore_selected_confirm": "Seçilen {count} varlık hareketini eşleşmeyenler listesine geri yüklemek istediğinizden emin misiniz?"
+      "restore_selected": "Seçilenleri geri yükle"
     },
     "actions_pin": {
       "pin_section": "Bölümü sabitle"
@@ -1864,15 +1812,12 @@
   "bridge_matching": {
     "actions": {
       "auto_match_tooltip": "Köprü işlemlerini miktar, varlık ve zaman damgasına göre diğer zincirdeki karşılık olaylarıyla otomatik olarak eşleştir.",
-      "create_counterpart": "Karşılık olayı oluştur",
       "create_counterpart_confirm_in": "Bu köprü çekme işleminin eksik kaynak olayını oluşturmak istediğinizden emin misiniz? Kaynak zincirde bu işlemi yansıtan (aynı varlık, miktar ve zaman) sentetik bir olay oluşturulup bağlanır; böylece transfer kendi fonlarınızın hareketi olarak muhasebeleştirilir. Kaynak zincir artık sorgulanamıyorsa bu seçeneği kullanın. Sentetik olay açıkça işaretlenir ve çiftin bağlantısını kaldırırsanız silinir.",
       "create_counterpart_confirm_in_chain": "Bu köprü çekme işleminin {chain} zincirindeki eksik kaynak olayını oluşturmak istediğinizden emin misiniz? Orada bu işlemi yansıtan (aynı varlık, miktar ve zaman) sentetik bir olay oluşturulup bağlanır; böylece transfer kendi fonlarınızın hareketi olarak muhasebeleştirilir. {chain} zinciri artık sorgulanamıyorsa bu seçeneği kullanın. Sentetik olay açıkça işaretlenir ve çiftin bağlantısını kaldırırsanız silinir.",
       "create_counterpart_confirm_out": "Bu köprü yatırma işleminin eksik hedef olayını oluşturmak istediğinizden emin misiniz? Hedef zincirde bu işlemi yansıtan (aynı varlık, miktar ve zaman) sentetik bir olay oluşturulup bağlanır; böylece transfer kendi fonlarınızın hareketi olarak muhasebeleştirilir. Hedef zincir artık sorgulanamıyorsa bu seçeneği kullanın. Sentetik olay açıkça işaretlenir ve çiftin bağlantısını kaldırırsanız silinir.",
       "create_counterpart_confirm_out_chain": "Bu köprü yatırma işleminin {chain} zincirindeki eksik hedef olayını oluşturmak istediğinizden emin misiniz? Orada bu işlemi yansıtan (aynı varlık, miktar ve zaman) sentetik bir olay oluşturulup bağlanır; böylece transfer kendi fonlarınızın hareketi olarak muhasebeleştirilir. {chain} zinciri artık sorgulanamıyorsa bu seçeneği kullanın. Sentetik olay açıkça işaretlenir ve çiftin bağlantısını kaldırırsanız silinir.",
       "ignore_selected": "Seçilenleri yok say",
-      "ignore_selected_confirm": "Seçilen {count} köprü işlemini yok saymak istediğinizden emin misiniz? Bu eylem, bu işlemleri karşılık gelen bir olayı olmayan işlemler olarak işaretler.",
-      "restore_selected": "Seçilenleri geri yükle",
-      "restore_selected_confirm": "Seçilen {count} köprü işlemini eşleşmeyenler listesine geri yüklemek istediğinizden emin misiniz?"
+      "ignore_selected_confirm": "Seçilen {count} köprü işlemini yok saymak istediğinizden emin misiniz? Bu eylem, bu işlemleri karşılık gelen bir olayı olmayan işlemler olarak işaretler."
     },
     "dialog": {
       "confirm_ignore": "Bu işlem yok sayılsın mı?",
@@ -1913,10 +1858,10 @@
     }
   },
   "calendar": {
-    "add_error": "Etkinlik eklenemedi: {message}",
+    "add_error": "Etkinlik eklenemedi",
     "add_event": "Etkinlik ekle",
     "delete_error": {
-      "message": "Etkinlik silinemedi: {message}"
+      "title": "Etkinlik silinemedi"
     },
     "delete_event": "Etkinliği sil",
     "dialog": {
@@ -1937,7 +1882,7 @@
         "tooltip": "Takvim ayarlarını aç"
       }
     },
-    "edit_error": "Etkinlik düzenlenemedi: {message}",
+    "edit_error": "Etkinlik düzenlenemedi",
     "form": {
       "name": {
         "validation": {
@@ -2406,7 +2351,6 @@
         },
         "message": {
           "failure": "Anlık görüntü silinemedi",
-          "success": "Anlık görüntü başarıyla silindi",
           "title": "Anlık görüntüyü sil"
         }
       },
@@ -2415,9 +2359,7 @@
           "add": "Bakiye ekle",
           "asset": "Varlıklar",
           "bulk_delete": {
-            "action": "Sıfır değerli bakiyeleri kaldır | {count} sıfır değerli bakiyeyi kaldır | {count} sıfır değerli bakiyeyi kaldır",
-            "message": "Değeri olmayan {count} bakiye kaldırılacak. | Değeri olmayan {count} bakiye kaldırılacak. Bunlar net değere hiçbir katkı sağlamaz ve güvenle temizlenebilir. | Değeri olmayan {count} bakiye kaldırılacak. Bunlar net değere hiçbir katkı sağlamaz ve güvenle temizlenebilir.",
-            "title": "Sıfır değerli bakiyeleri kaldır"
+            "action": "Sıfır değerli bakiyeleri kaldır | {count} sıfır değerli bakiyeyi kaldır | {count} sıfır değerli bakiyeyi kaldır"
           },
           "category": "Kategori",
           "empty": "Bu anlık görüntüde bakiye yok",
@@ -2594,8 +2536,6 @@
           },
           "location_data": {
             "add_title": "Konum anlık görüntüsü verisi ekle",
-            "delete_confirmation": "Bu konum anlık görüntüsü öğesini silmek istediğinizden emin misiniz?",
-            "delete_title": "Konum anlık görüntüsü öğesini sil",
             "edit_title": "Konum anlık görüntüsü verisini güncelle",
             "rules": {
               "location": "Konum alanı boş bırakılamaz",
@@ -2804,10 +2744,6 @@
       }
     },
     "purge_images_cache": {
-      "confirm": {
-        "message": "{source} için önbelleğe alınmış görselleri temizlemek istediğinizden emin misiniz?",
-        "title": "Önbellekteki görselleri temizlemeyi onayla"
-      },
       "error": "{source} için önbelleğe alınmış görseller temizlenemedi: {message}",
       "hint": "Tümünün önbelleğini kaldırmak için bu alanı boş bırakın",
       "label": {
@@ -2822,10 +2758,6 @@
       "title": "Görsel önbelleğini temizle"
     },
     "refresh_cache": {
-      "confirm": {
-        "message": "{source} için protokol verilerini yenilemek istediğinizden emin misiniz?",
-        "title": "Protokol verilerini yenilemeyi onayla"
-      },
       "error": "{source} için protokol verileri temizlenemedi: {message}",
       "select_cache": "Yenilenecek protokol verilerini seçin",
       "subtitle": "rotki'deki protokol verilerini yenilemenizi sağlar",
@@ -3287,7 +3219,7 @@
       "safe_migration": {
         "account_label": "Gnosis Pay Safe",
         "add_action": "rotki'ye ekle",
-        "add_error": "Safe eklenemedi: {error}",
+        "add_error": "Safe eklenemedi",
         "add_success": "{address} adresi Gnosis Chain hesabı olarak eklendi.",
         "missing_new": "Gnosis Pay, Safe hesabınızı değiştirdi. Yalnızca öncekini takip ediyorsunuz; gelecekteki etkinlikleri takip etmek için {address} adresindeki yeni etkin Safe hesabını ekleyin.",
         "missing_old": "Gnosis Pay, Safe hesabınızı değiştirdi. Yalnızca yenisini takip ediyorsunuz; geçmiş etkinliklerini korumak için {address} adresindeki önceki Safe hesabını ekleyin.",
@@ -4157,12 +4089,6 @@
     "search_chain": "Zincir ara",
     "selection": "Olaylarını yeniden çözümlemek için bir veya daha fazla zincir seçin"
   },
-  "history_refresh_button": {
-    "confirm_refresh": {
-      "message": "Tüm hesap işlemlerinizi ve borsa olaylarınızı yenilemek istediğinizden emin misiniz? Bu, oldukça uzun sürebilir.",
-      "title": "Geçmişi yenilemeyi onayla"
-    }
-  },
   "history_refresh_selection": {
     "back_to_chain": "Zincir seçimine dön",
     "no_banks": "Henüz bir banka bağlantısı kurulmadı",
@@ -4193,11 +4119,6 @@
     }
   },
   "ignore": {
-    "confirm": {
-      "message": "{asset} yok sayılacak. Emin misiniz?\n\n{asset} yok sayıldığında rotki tüm konumlardaki bakiyelerini göstermez ve ilgili tüm olayları gizler.",
-      "these_assets": "bu varlıklar",
-      "title": "Varlığı yok say"
-    },
     "failed": {
       "ignore_message": "{length} varlık yok sayılan varlıklara eklenemedi: {message}",
       "ignore_title": "Varlıklar yok sayılamadı",
@@ -5067,7 +4988,6 @@
         "title": "Oracle fiyatını düzenle"
       },
       "error": {
-        "description": "Oracle fiyatı düzenlenemedi: {message}",
         "title": "Oracle fiyatı düzenlenemedi"
       }
     },
@@ -5402,8 +5322,7 @@
         "learn_more": "Daha fazla bilgi"
       },
       "removing_failed": "Anahtarlar silinemedi",
-      "setting_failed": "Anahtarlar ayarlanamadı",
-      "setup_failed_description": "rotki Premium aboneliğiniz ayarlanamadı, neden: {error}"
+      "setting_failed": "Anahtarlar ayarlanamadı"
     },
     "fields": {
       "api_key": "API anahtarı",
@@ -5607,7 +5526,6 @@
     "debug": {
       "export_data": "Hata ayıklama verilerini dışa aktar",
       "export_message": {
-        "success": "Kâr/zarar raporu hata ayıklama verileri başarıyla dışa aktarıldı",
         "title": "Kâr/zarar raporu hata ayıklama verilerini dışa aktar"
       },
       "import_data": "Hata ayıklama verilerini içe aktar",
@@ -5615,7 +5533,6 @@
         "title": "Kâr/zarar raporu hata ayıklama verilerini içe aktar"
       },
       "import_message": {
-        "success": "Kâr/zarar raporu hata ayıklama verileri başarıyla içe aktarıldı",
         "title": "Kâr/zarar raporu hata ayıklama verilerini içe aktar"
       },
       "title": "Hata ayıklama"
@@ -5835,7 +5752,6 @@
     "ignore_errors_tooltip": "Bakiye anlık görüntüsünü harici API'lerdeki hataları yok sayarak kaydeder. Bu, anlık görüntünün eksik olmasına neden olabilir.",
     "menu_tooltip": "Son bakiye anlık görüntüsünün tarihini görüntüle",
     "messages": {
-      "failed_description": "Anlık görüntü içe aktarılamadı: {message}",
       "success_description": "Anlık görüntü başarıyla içe aktarıldı. Şimdi oturumunuz kapatılacak.",
       "title": "Anlık görüntü içe aktarma"
     },
@@ -5902,11 +5818,11 @@
         }
       },
       "messages": {
-        "add_failed": "Düğüm operatörü eklenemedi: {message}",
+        "add_failed": "Düğüm operatörü eklenemedi",
         "confirm_delete_message": "{address} adresine ait #{nodeOperatorId} numaralı düğüm operatörünü kaldırmak istediğinizden emin misiniz?",
         "confirm_delete_title": "Düğüm operatörünü sil",
-        "delete_failed": "Düğüm operatörü kaldırılamadı: {message}",
-        "fetch_failed": "Lido CSM düğüm operatörleri sorgulanamadı: {message}"
+        "delete_failed": "Düğüm operatörü kaldırılamadı",
+        "fetch_failed": "Lido CSM düğüm operatörleri sorgulanamadı"
       },
       "table": {
         "address": "Adres",
@@ -6525,7 +6441,6 @@
       "add_tx": "İşlem hash'i ile işlem ekle",
       "delete": {
         "error": {
-          "message": "Başarısız oldu: {message}",
           "title": "İşlemi sil"
         },
         "message": "Bu işlemi ve olaylarını silmek istediğinizden emin misiniz? Bunları geri yüklemek için tüm işlemleri temizlemeniz ya da işlemi hash'i ile yeniden eklemeniz gerekecek.",
@@ -6543,8 +6458,6 @@
     "events": {
       "accounting_rule": {
         "different_types_error": "Farklı türlere veya alt türlere sahip olaylar için muhasebe kuralı oluşturulamaz. Lütfen olay türü ve alt türü kombinasyonu aynı olan olayları seçin.",
-        "error": "Muhasebe kuralı hatası",
-        "incompatible_selection": "Uyumsuz olay seçimi",
         "no_events_found": "Seçilen ID'ler için olay bulunamadı."
       },
       "actions": {
@@ -6590,10 +6503,7 @@
         "error": {
           "message": "Olaylar silinemedi",
           "title": "Silme başarısız"
-        },
-        "success": "{count} olay başarıyla silindi | {count} olay başarıyla silindi",
-        "success_groups": "{count} gruptaki olaylar başarıyla silindi | {count} gruptaki olaylar başarıyla silindi",
-        "title": "Olayları sil"
+        }
       },
       "dialog": {
         "add": {
@@ -6609,9 +6519,6 @@
         "matched": "Eşleştirilmiş",
         "profit_adjustment": "Kâr düzeltmesi",
         "synthetic": "Sentetik"
-      },
-      "export": {
-        "confirmation_message": "Seçili filtrelerin uygulandığı olay listesini dışa aktarmak istediğinizden emin misiniz?"
       },
       "form": {
         "account_address": {
@@ -6791,9 +6698,7 @@
         "error": {
           "message": "Olaylar muhasebeden hariç tutulamadı",
           "title": "Hariç tutma başarısız"
-        },
-        "success": "{count} işlem başarıyla hariç tutuldu | {count} işlem başarıyla hariç tutuldu",
-        "title": "İşlemleri hariç tut"
+        }
       },
       "note": {
         "merchant_code": "Üye işyeri kodu: {code}"
@@ -6830,9 +6735,7 @@
             "title": "Atlanan olaylar yeniden işlenirken hata oluştu"
           },
           "success": {
-            "all": "Atlanan tüm harici olaylar işlendi",
-            "some": "Atlanan {total} harici olaydan {successful} tanesi işlendi",
-            "title": "Atlanan olaylar işlendi"
+            "some": "Atlanan {total} harici olaydan {successful} tanesi işlendi"
           }
         }
       },
@@ -7005,8 +6908,7 @@
       }
     },
     "confirmation": {
-      "message": "Mevcut rotki oturumunuzdan çıkış yapmak istediğinizden emin misiniz?",
-      "title": "Onay gerekli"
+      "message": "Mevcut rotki oturumunuzdan çıkış yapmak istediğinizden emin misiniz?"
     },
     "logout": "Çıkış yap",
     "settings": "Ayarlar",

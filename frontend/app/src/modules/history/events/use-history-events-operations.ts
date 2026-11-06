@@ -1,4 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
+import type { ActionStatus } from '@/modules/core/common/action';
 import type {
   LinkedMovementMatch,
   LocationAndTxRef,
@@ -11,14 +12,12 @@ import type {
 import type { HistoryEventDeletePayload, HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import { HistoryEventEntryType } from '@rotki/common';
 import { Defaults } from '@/modules/core/common/defaults';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { isAssetMovementEvent, isCustomizedEvent } from '@/modules/history/event-utils';
 import { useCompleteEvents } from '@/modules/history/events/use-complete-events';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
+import { useHistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
 import { useIgnore } from '@/modules/history/use-ignore';
 import { EditKind } from '@/modules/task-center/core/rerun/policy';
 import { taskCenterBus } from '@/modules/task-center/events/task-center-bus';
@@ -37,9 +36,11 @@ interface UseHistoryEventsOperationsReturn {
   showIndexerOptions: Readonly<Ref<boolean>>;
 
   getItemClass: (item: HistoryEventEntry) => '' | 'opacity-50';
-  confirmDelete: (payload: HistoryEventDeletePayload) => void;
+  /** Ignores or deletes what the row's menu already asked about; a failure is named above the table. */
+  deleteEvents: (payload: HistoryEventDeletePayload) => Promise<void>;
   suggestNextSequenceId: (group: HistoryEventEntry) => string;
-  confirmTxAndEventsDelete: (payload: LocationAndTxRef) => void;
+  /** Deletes a transaction and its events, once the row's menu asked; a failure is named above the table. */
+  deleteTransaction: (payload: LocationAndTxRef) => Promise<void>;
   redecode: (payload: PullEventPayload, eventIdentifier: string) => void;
   redecodeWithOptions: (payload: PullEventPayload, groupIdentifier: string) => void;
   confirmRedecode: (event: { payload: PullEventPayload; deleteCustom: boolean; customIndexersOrder?: string[] }) => void;
@@ -62,13 +63,12 @@ export function useHistoryEventsOperations(
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const { notifyError } = useNotifications();
-  const { show } = useConfirmStore();
+  const { clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
   const { getChain } = useSupportedChains();
 
   const { deleteTransactions } = useHistoryEventsApi();
   const { deleteHistoryEvent } = useHistoryEvents();
-  const { ignoreSingle, toggle } = useIgnore<HistoryEventEntry>({
+  const { ignoreSingle, toggle: toggleIgnore } = useIgnore<HistoryEventEntry>({
     toData: (item: HistoryEventEntry) => item.groupIdentifier,
   }, selected, () => {
     emit('refresh');
@@ -108,49 +108,40 @@ export function useHistoryEventsOperations(
     };
   }
 
+  /**
+   * Names a failed exclusion from accounting, or a failed inclusion, above the table.
+   *
+   * @param status - what the exclusion answered
+   * @param excluded - whether it tried to exclude rather than include
+   */
+  function reportIgnoreStatus(status: ActionStatus, excluded: boolean): void {
+    if (!status.success)
+      reportActionFailure(excluded ? t('actions.ignore.error.title') : t('actions.unignore.error.title'), status.message);
+  }
+
+  async function toggle(event: HistoryEventEntry): Promise<void> {
+    clearActionFailure();
+    reportIgnoreStatus(await toggleIgnore(event), !event.ignoredInAccounting);
+  }
+
   function getItemClass(item: HistoryEventEntry): '' | 'opacity-50' {
     return item.ignoredInAccounting ? 'opacity-50' : '';
   }
 
-  function confirmDelete(payload: HistoryEventDeletePayload): void {
-    let text: { primaryAction: string; title: string; message: string };
+  async function deleteEvents(payload: HistoryEventDeletePayload): Promise<void> {
+    clearActionFailure();
     if (payload.type === 'ignore') {
-      text = {
-        message: t('transactions.events.confirmation.ignore.message'),
-        primaryAction: t('transactions.events.confirmation.ignore.action'),
-        title: t('transactions.events.confirmation.ignore.title'),
-      };
+      reportIgnoreStatus(await ignoreSingle(payload.event, true), true);
+      return;
     }
-    else {
-      text = {
-        message: t('transactions.events.confirmation.delete.message'),
-        primaryAction: t('common.actions.confirm'),
-        title: t('transactions.events.confirmation.delete.title'),
-      };
-    }
-    show(text, async () => onConfirmDelete(payload));
-  }
 
-  /**
-   * Runs the confirmed ignore or delete.
-   *
-   * @remarks
-   * The confirmation has already closed by the time this runs, so a failed delete has no dialog left
-   * to show it in and toasts instead.
-   */
-  async function onConfirmDelete(payload: HistoryEventDeletePayload): Promise<void> {
-    if (payload.type === 'ignore') {
-      await ignoreSingle(payload.event, true);
+    const result = await deleteHistoryEvent(payload.ids);
+    if (result.success) {
+      emit('refresh');
+      taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_DELETED });
     }
     else {
-      const result = await deleteHistoryEvent(payload.ids);
-      if (result.success) {
-        emit('refresh');
-        taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_DELETED });
-      }
-      else {
-        notifyError(t('transactions.events.delete.error.title'), result.message || t('transactions.events.delete.error.message'));
-      }
+      reportActionFailure(t('transactions.events.delete.error.title'), result.message || t('transactions.events.delete.error.message'));
     }
   }
 
@@ -169,27 +160,16 @@ export function useHistoryEventsOperations(
     return ((filtered[0] ?? Number(group.sequenceIndex)) + 1).toString();
   }
 
-  async function onConfirmTxAndEventDelete({ location, txRef }: LocationAndTxRef): Promise<void> {
+  async function deleteTransaction({ location, txRef }: LocationAndTxRef): Promise<void> {
+    clearActionFailure();
     try {
-      const chain = getChain(location);
-      await deleteTransactions(chain, txRef);
+      await deleteTransactions(getChain(location), txRef);
       emit('refresh');
       taskCenterBus.emit('event:mutated', { kind: EditKind.TRANSACTION_DELETED });
     }
     catch (error: unknown) {
-      const title = t('transactions.dialog.delete.error.title');
-      const message = t('transactions.dialog.delete.error.message', {
-        message: getErrorMessage(error),
-      });
-      notifyError(title, message);
+      reportActionFailure(t('transactions.dialog.delete.error.title'), error);
     }
-  }
-
-  function confirmTxAndEventsDelete(payload: LocationAndTxRef): void {
-    show({
-      message: t('transactions.dialog.delete.message'),
-      title: t('transactions.dialog.delete.title'),
-    }, async () => onConfirmTxAndEventDelete(payload));
   }
 
   function isEvmPayload(payload: PullEventPayload): boolean {
@@ -277,9 +257,9 @@ export function useHistoryEventsOperations(
   }
 
   return {
-    confirmDelete,
     confirmRedecode,
-    confirmTxAndEventsDelete,
+    deleteEvents,
+    deleteTransaction,
     getItemClass,
     hasCustomEvents: readonly(hasCustomEvents),
     redecode,

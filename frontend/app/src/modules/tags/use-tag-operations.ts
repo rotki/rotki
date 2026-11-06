@@ -4,37 +4,43 @@ import { invertColor, randomColor } from '@rotki/common';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { logger } from '@/modules/core/common/logging/logging';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import { useTagsApi } from '@/modules/tags/use-tags-api';
 
 interface UseTagOperationsReturn {
   addTag: (tag: Tag) => Promise<ActionStatus>;
-  attemptTagCreation: (tag: string, backgroundColor?: string) => Promise<boolean>;
+  attemptTagCreation: (tag: string, backgroundColor?: string) => Promise<ActionStatus>;
   deleteTag: (name: string) => Promise<void>;
   editTag: (tag: Tag, originalName: string) => Promise<ActionStatus>;
   fetchTags: () => Promise<void>;
 }
 
 export function useTagOperations(): UseTagOperationsReturn {
-  const { t } = useI18n({ useScope: 'global' });
   const { queryAddTag, queryDeleteTag, queryEditTag, queryTags } = useTagsApi();
   const { removeTag, renameTag } = useBlockchainAccountsStore();
-  const { showErrorMessage } = useNotifications();
   const { allTags, tags } = storeToRefs(useSessionMetadataStore());
 
+  /**
+   * Adds a tag.
+   *
+   * @returns The outcome, carrying the error message on failure for the caller to show.
+   */
   async function addTag(tag: Tag): Promise<ActionStatus> {
     try {
       set(allTags, await queryAddTag(tag));
       return { success: true };
     }
     catch (error: unknown) {
-      const message = getErrorMessage(error);
-      showErrorMessage(t('actions.session.tag_add.error.title'), message);
-      return { message, success: false };
+      return { message: getErrorMessage(error), success: false };
     }
   }
 
+  /**
+   * Edits a tag, renaming it on the accounts that carry it when its name changed.
+   *
+   * @returns The outcome, carrying the error message on failure for the caller to show.
+   */
   async function editTag(tag: Tag, originalName: string): Promise<ActionStatus> {
     try {
       set(allTags, await queryEditTag(tag, originalName));
@@ -44,20 +50,18 @@ export function useTagOperations(): UseTagOperationsReturn {
       return { success: true };
     }
     catch (error: unknown) {
-      const message = getErrorMessage(error);
-      showErrorMessage(t('actions.session.tag_edit.error.title'), message);
-      return { message, success: false };
+      return { message: getErrorMessage(error), success: false };
     }
   }
 
+  /**
+   * Deletes a tag and drops it from the accounts that carry it.
+   *
+   * @throws The request's error, for the caller to name beside the tag it came from.
+   */
   async function deleteTag(name: string): Promise<void> {
-    try {
-      set(allTags, await queryDeleteTag(name));
-      removeTag(name);
-    }
-    catch (error: unknown) {
-      showErrorMessage(t('actions.session.tag_delete.error.title'), getErrorMessage(error));
-    }
+    set(allTags, await queryDeleteTag(name));
+    removeTag(name);
   }
 
   async function fetchTags(): Promise<void> {
@@ -74,9 +78,14 @@ export function useTagOperations(): UseTagOperationsReturn {
     return get(tags).some(({ name }) => name === tagName);
   }
 
-  async function attemptTagCreation(tag: string, backgroundColor?: string): Promise<boolean> {
+  /**
+   * Creates a tag unless one with that name already exists.
+   *
+   * @returns Success when the tag exists afterwards, or the reason it could not be created.
+   */
+  async function attemptTagCreation(tag: string, backgroundColor?: string): Promise<ActionStatus> {
     if (tagExists(tag))
-      return true;
+      return { success: true };
 
     const bgColor = backgroundColor ?? randomColor();
     const fgColor = invertColor(bgColor);
@@ -88,14 +97,7 @@ export function useTagOperations(): UseTagOperationsReturn {
       name: tag,
     };
 
-    try {
-      const { success } = await addTag(newTag);
-      return success;
-    }
-    catch (error) {
-      logger.error(error);
-      return false;
-    }
+    return addTag(newTag);
   }
 
   return {

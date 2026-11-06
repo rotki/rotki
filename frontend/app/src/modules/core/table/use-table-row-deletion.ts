@@ -1,58 +1,64 @@
-import type { Message, SemiPartial } from '@rotki/common';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
+import type { Ref } from 'vue';
 
-/** The confirm-dialog copy for the row being deleted. */
+/** The question the row's delete button asks, beside it, before deleting. */
 interface RowDeletionConfirmation {
   title: string;
   message: string;
 }
 
+/** A delete that failed, named above the table it was made from. */
+interface RowDeletionFailure {
+  title: string;
+  error: unknown;
+}
+
 interface UseTableRowDeletionOptions<T> {
   /** Performs the delete. Resolves `true` when the row was actually removed. */
   deleteItem: (item: T) => Promise<boolean>;
-  /** The confirmation dialog copy for the row being deleted. */
+  /** What the delete button asks for this row. */
   confirm: (item: T) => RowDeletionConfirmation;
   /** Runs after a successful delete, e.g. refetch the table and purge caches. */
   onDeleted?: (item: T) => void | Promise<void>;
-  /**
-   * The toast shown when the delete throws. Each table phrases this differently, and some
-   * give it their own title, so it is a param; without one the raw error message is used.
-   */
-  errorMessage?: (item: T, error: unknown) => SemiPartial<Message, 'description'>;
+  /** The strip's title when deleting this row fails; the strip words the error itself. */
+  failureTitle: (item: T) => string;
 }
 
 interface UseTableRowDeletionReturn<T> {
-  /** Opens the confirm dialog, deletes on confirm, and toasts on failure. */
-  showDeleteConfirmation: (item: T) => void;
+  /** For `RowActions`' `delete-confirm`, so the button asks before it emits. */
+  deleteConfirm: (item: T) => RowDeletionConfirmation;
+  /** Deletes a row the user already confirmed. */
+  deleteRow: (item: T) => Promise<void>;
+  /** Why the last delete failed, until the next one starts. */
+  failure: Readonly<Ref<RowDeletionFailure | undefined>>;
 }
 
 /**
- * The delete-a-row flow the asset-admin tables share: confirm, delete, then refetch
- * on success or toast on failure. Only the delete call, the dialog copy and the
- * post-delete step vary per table, so those are the params; the control flow - which
- * was copy-pasted across the mapping and asset content components - lives here once.
+ * The delete-a-row flow the admin tables share: the row's button asks beside it, the delete runs,
+ * then the table refetches on success or names the failure above its rows.
+ *
+ * @remarks
+ * The row stays when the delete fails, so its delete button is the retry and the strip offers none.
  */
 export function useTableRowDeletion<T>(
   options: UseTableRowDeletionOptions<T>,
 ): UseTableRowDeletionReturn<T> {
-  const { confirm, deleteItem, errorMessage, onDeleted } = options;
-  const { show } = useConfirmStore();
-  const { setMessage } = useMessageStore();
+  const { confirm, deleteItem, failureTitle, onDeleted } = options;
+  const failure = shallowRef<RowDeletionFailure>();
 
-  function showDeleteConfirmation(item: T): void {
-    show(confirm(item), async (): Promise<void> => {
-      try {
-        const success = await deleteItem(item);
-        if (success)
-          await onDeleted?.(item);
-      }
-      catch (error: unknown) {
-        setMessage(errorMessage?.(item, error) ?? { description: getErrorMessage(error) });
-      }
-    });
+  async function deleteRow(item: T): Promise<void> {
+    set(failure, undefined);
+    try {
+      if (await deleteItem(item))
+        await onDeleted?.(item);
+    }
+    catch (error: unknown) {
+      set(failure, { error, title: failureTitle(item) });
+    }
   }
 
-  return { showDeleteConfirmation };
+  return {
+    deleteConfirm: confirm,
+    deleteRow,
+    failure: readonly(failure),
+  };
 }

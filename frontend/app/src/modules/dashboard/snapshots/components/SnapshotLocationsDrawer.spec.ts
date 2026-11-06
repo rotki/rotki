@@ -86,6 +86,14 @@ describe('modules/dashboard/snapshots/components/SnapshotLocationsDrawer', () =>
     expect(wrapper.emitted('edit')).toEqual([[{ index: 0, location: newLocation }]]);
   });
 
+  it('should emit delete for the row straight away, without asking', async () => {
+    wrapper = createWrapper();
+
+    await wrapper.find('[data-testid=row-delete]').trigger('click');
+
+    expect(wrapper.emitted('delete')).toEqual([[0]]);
+  });
+
   it('should not show the reconcile alert when the sums match', () => {
     wrapper = createWrapper();
 

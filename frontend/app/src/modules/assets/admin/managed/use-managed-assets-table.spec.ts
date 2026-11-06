@@ -19,7 +19,6 @@ const {
   queryAllAssets,
   refetch,
   setPage,
-  show,
 } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   return {
@@ -29,7 +28,6 @@ const {
     queryAllAssets: vi.fn(),
     refetch: vi.fn(),
     setPage: vi.fn(),
-    show: vi.fn(),
   };
 });
 
@@ -49,10 +47,6 @@ vi.mock('@/modules/assets/admin/managed/use-managed-asset-fields', () => ({
     fieldsArgs = { count, types };
     return [];
   },
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): Record<string, unknown> => ({ show }),
 }));
 
 vi.mock('@/modules/core/table/use-server-table', async importOriginal => ({
@@ -113,57 +107,43 @@ describe('modules/assets/admin/managed/useManagedAssetsTable', () => {
   });
 
   describe('deleting an asset', () => {
-    it('should delete nothing until the user accepts', () => {
-      const { showDeleteConfirmation } = mountTable();
+    it('should delete exactly the asset it is given', async () => {
+      const { deleteAsset: deleteRow } = mountTable();
 
-      showDeleteConfirmation(asset('eip155:1/erc20:0xdead', 'DEAD'));
-
-      expect(show).toHaveBeenCalledOnce();
-      expect(deleteAsset).not.toHaveBeenCalled();
-    });
-
-    it('should delete exactly the asset the row named once accepted', async () => {
-      const { showDeleteConfirmation } = mountTable();
-
-      showDeleteConfirmation(asset('eip155:1/erc20:0xdead', 'DEAD'));
-      await show.mock.calls[0][1]();
+      await deleteRow(asset('eip155:1/erc20:0xdead', 'DEAD'));
 
       expect(deleteAsset).toHaveBeenCalledExactlyOnceWith('eip155:1/erc20:0xdead');
     });
 
-    it('should name the asset in the confirmation, so the user sees what goes', () => {
-      const { showDeleteConfirmation } = mountTable();
+    it('should name the asset in the question its row asks', () => {
+      const { deleteConfirm } = mountTable();
 
-      showDeleteConfirmation(asset('eip155:1/erc20:0xdead', 'DEAD'));
-
-      expect(show.mock.calls[0][0].message).toContain('DEAD');
+      expect(deleteConfirm(asset('eip155:1/erc20:0xdead', 'DEAD')).message).toContain('DEAD');
     });
 
-    it('should still confirm for an asset with no symbol, rather than rendering undefined', () => {
-      const { showDeleteConfirmation } = mountTable();
+    it('should still ask for an asset with no symbol, rather than rendering undefined', () => {
+      const { deleteConfirm } = mountTable();
 
-      showDeleteConfirmation({ identifier: 'eip155:1/erc20:0xdead', isRebasing: false });
-
-      expect(show.mock.calls[0][0].message).not.toContain('undefined');
+      expect(deleteConfirm({ identifier: 'eip155:1/erc20:0xdead', isRebasing: false }).message).not.toContain('undefined');
     });
 
     it('should drop the deleted asset from the info cache, which would keep serving its name', async () => {
-      const { showDeleteConfirmation } = mountTable();
+      const { deleteAsset: deleteRow } = mountTable();
 
-      showDeleteConfirmation(asset('eip155:1/erc20:0xdead', 'DEAD'));
-      await show.mock.calls[0][1]();
+      await deleteRow(asset('eip155:1/erc20:0xdead', 'DEAD'));
 
       expect(deleteCacheKey).toHaveBeenCalledExactlyOnceWith('eip155:1/erc20:0xdead');
       expect(refetch).toHaveBeenCalledOnce();
     });
 
-    it('should not touch the cache when the delete failed, the asset still being there', async () => {
-      deleteAsset.mockRejectedValue(new Error('in use'));
-      const { showDeleteConfirmation } = mountTable();
+    it('should keep a failed delete for the table and not touch the cache, the asset still being there', async () => {
+      const error = new Error('in use');
+      deleteAsset.mockRejectedValueOnce(error);
+      const { deleteAsset: deleteRow, deleteFailure } = mountTable();
 
-      showDeleteConfirmation(asset('eip155:1/erc20:0xdead', 'DEAD'));
-      await show.mock.calls[0][1]();
+      await deleteRow(asset('eip155:1/erc20:0xdead', 'DEAD'));
 
+      expect(get(deleteFailure)).toMatchObject({ error });
       expect(deleteCacheKey).not.toHaveBeenCalled();
     });
   });

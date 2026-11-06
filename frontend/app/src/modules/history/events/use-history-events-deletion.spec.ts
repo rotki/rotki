@@ -5,14 +5,13 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useHistoryEventsActionFailure } from './use-history-events-action-failure';
 import { useHistoryEventsDeletion } from './use-history-events-deletion';
 import { useHistoryEventsSelectionMode } from './use-selection-mode';
 
 const { spies } = vi.hoisted(() => ({
   spies: {
     ask: vi.fn<(message: object) => Promise<ConfirmChoice>>(),
-    showErrorMessage: vi.fn(),
-    showSuccessMessage: vi.fn(),
     deleteHistoryEventApi: vi.fn(),
     deleteTransactions: vi.fn(),
     deleteHistoryEvent: vi.fn(),
@@ -27,12 +26,6 @@ vi.mock('@/modules/core/common/use-confirm-store', () => ({
 }));
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: (): object => ({ getChain: spies.getChain }),
-}));
-vi.mock('@/modules/core/notifications/use-notifications', async () => ({
-  getErrorMessage: (await vi.importActual<typeof import('@/modules/core/common/logging/error-handling')>(
-    '@/modules/core/common/logging/error-handling',
-  )).getErrorMessage,
-  useNotifications: (): object => ({ showErrorMessage: spies.showErrorMessage, showSuccessMessage: spies.showSuccessMessage }),
 }));
 vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   useHistoryEventsApi: (): ReturnType<typeof useHistoryEventsApi> => createMock<ReturnType<typeof useHistoryEventsApi>>({ deleteHistoryEvent: spies.deleteHistoryEventApi, deleteTransactions: spies.deleteTransactions }),
@@ -74,9 +67,12 @@ function answer(...choices: ConfirmChoice[]): void {
     spies.ask.mockResolvedValueOnce(choice);
 }
 
+const { actionFailure, clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
+
 describe('useHistoryEventsDeletion', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    clearActionFailure();
     spies.deleteHistoryEvent.mockResolvedValue({ success: true });
     spies.deleteHistoryEventApi.mockResolvedValue(true);
     spies.deleteTransactions.mockResolvedValue(undefined);
@@ -117,9 +113,21 @@ describe('useHistoryEventsDeletion', () => {
 
       expect(spies.ask).toHaveBeenCalledOnce();
       expect(spies.deleteHistoryEventApi).toHaveBeenCalledWith({ notesSubstring: 'needle' }, true);
-      expect(spies.showSuccessMessage).toHaveBeenCalledOnce();
+      expect(get(actionFailure)).toBeUndefined();
       expect(refreshCallback).toHaveBeenCalledOnce();
       expect(get(deletion.isDeleting)).toBe(false);
+    });
+
+    it('should name a refused filter delete above the table and keep the selection', async () => {
+      answer('confirm');
+      spies.deleteHistoryEventApi.mockResolvedValue(false);
+      const { deletion, refreshCallback, selectionMode } = selectAllMatching();
+
+      await deletion.deleteSelected();
+
+      expect(get(actionFailure)).toEqual({ failure: 'transactions.events.delete.error.message', title: 'transactions.events.delete.error.title' });
+      expect(get(selectionMode.isSelectAllMatching)).toBe(true);
+      expect(refreshCallback).not.toHaveBeenCalled();
     });
 
     it('should settle without deleting when cancelled', async () => {
@@ -143,7 +151,7 @@ describe('useHistoryEventsDeletion', () => {
     await deletion.deleteSelected();
 
     expect(spies.deleteHistoryEvent).toHaveBeenCalledWith([1, 2], false);
-    expect(spies.showSuccessMessage).toHaveBeenCalledOnce();
+    expect(get(actionFailure)).toBeUndefined();
     expect(refreshCallback).toHaveBeenCalledOnce();
   });
 
@@ -159,7 +167,7 @@ describe('useHistoryEventsDeletion', () => {
     expect(get(deletion.isDeleting)).toBe(false);
   });
 
-  it('should surface an error when partial event deletion fails', async () => {
+  it('should name a failed partial event delete above the table', async () => {
     answer('confirm');
     spies.deleteHistoryEvent.mockResolvedValue({ message: 'nope', success: false });
     spies.analyzeSelectedEvents.mockReturnValue({ completeTransactions: new Map(), partialEventIds: [1], partialSwapGroups: [] });
@@ -168,8 +176,20 @@ describe('useHistoryEventsDeletion', () => {
 
     await deletion.deleteSelected();
 
-    expect(spies.showErrorMessage).toHaveBeenCalledOnce();
+    expect(get(actionFailure)).toEqual({ failure: 'nope', title: 'transactions.events.delete.error.title' });
     expect(refreshCallback).not.toHaveBeenCalled();
+  });
+
+  it('should drop the last failure when the next delete starts', async () => {
+    reportActionFailure('transactions.events.delete.error.title', 'nope');
+    answer('dismiss');
+    spies.analyzeSelectedEvents.mockReturnValue({ completeTransactions: new Map(), partialEventIds: [1], partialSwapGroups: [] });
+    const { deletion, selectionMode } = setup();
+    selectionMode.actions.toggleEvent(1);
+
+    await deletion.deleteSelected();
+
+    expect(get(actionFailure)).toBeUndefined();
   });
 
   describe('complete transactions', () => {
@@ -188,7 +208,7 @@ describe('useHistoryEventsDeletion', () => {
       await deletion.deleteSelected();
 
       expect(spies.deleteTransactions).toHaveBeenCalledWith('ethereum', '0xabc');
-      expect(spies.showSuccessMessage).toHaveBeenCalledOnce();
+      expect(get(actionFailure)).toBeUndefined();
       expect(refreshCallback).toHaveBeenCalledOnce();
     });
 
@@ -229,8 +249,7 @@ describe('useHistoryEventsDeletion', () => {
       await deletion.deleteSelected();
 
       expect(spies.ignoreSingle).toHaveBeenCalledOnce();
-      expect(spies.showSuccessMessage).not.toHaveBeenCalled();
-      expect(spies.showErrorMessage).toHaveBeenCalledWith('transactions.events.ignore.error.title', 'boom');
+      expect(get(actionFailure)).toEqual({ failure: 'boom', title: 'transactions.events.ignore.error.title' });
       expect(refreshCallback).not.toHaveBeenCalled();
     });
 

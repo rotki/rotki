@@ -249,14 +249,59 @@ describe('dataIssueDetailDrawer', () => {
     expect(wrapper.text()).not.toContain('data_issues.detail.resolution_note');
   });
 
-  it('should emit the action events with the issue id from the footer buttons', async () => {
+  it('should emit resolve with the issue id from the footer', async () => {
+    const wrapper = createWrapper(createIssue({ id: 8 }));
+
+    await wrapper.find('[data-testid="data-issue-detail-resolve"]').trigger('click');
+
+    expect(wrapper.emitted('resolve')?.[0]).toStrictEqual([8]);
+  });
+
+  it('should ask in place of the footer buttons before a dismiss, emitting nothing until confirmed', async () => {
     const wrapper = createWrapper(createIssue({ id: 8 }));
 
     await wrapper.find('[data-testid="data-issue-detail-dismiss"]').trigger('click');
-    await wrapper.find('[data-testid="data-issue-detail-resolve"]').trigger('click');
+
+    expect(wrapper.find('[data-testid="inline-confirm"]').text()).toContain('data_issues.action.dismiss.confirm.message');
+    expect(wrapper.find('[data-testid="data-issue-detail-resolve"]').exists()).toBe(false);
+    expect(wrapper.emitted('dismiss')).toBeUndefined();
+  });
+
+  it('should emit dismiss with the issue id once confirmed, and bring the buttons back', async () => {
+    const wrapper = createWrapper(createIssue({ id: 8 }));
+
+    await wrapper.find('[data-testid="data-issue-detail-dismiss"]').trigger('click');
+    await wrapper.find('[data-testid="inline-confirm-accept"]').trigger('click');
 
     expect(wrapper.emitted('dismiss')?.[0]).toStrictEqual([8]);
-    expect(wrapper.emitted('resolve')?.[0]).toStrictEqual([8]);
+    expect(wrapper.find('[data-testid="data-issue-detail-dismiss"]').exists()).toBe(true);
+  });
+
+  it('should drop the question without dismissing when cancelled', async () => {
+    const wrapper = createWrapper(createIssue({ id: 8 }));
+
+    await wrapper.find('[data-testid="data-issue-detail-dismiss"]').trigger('click');
+    await wrapper.find('[data-testid="inline-confirm-cancel"]').trigger('click');
+
+    expect(wrapper.emitted('dismiss')).toBeUndefined();
+    expect(wrapper.find('[data-testid="inline-confirm"]').exists()).toBe(false);
+  });
+
+  it('should name a failed action of the issue shown, without a retry of its own', async () => {
+    const wrapper = createWrapper(createIssue({ id: 8 }));
+    await wrapper.setProps({ failure: { error: new Error('conflict'), id: 8, title: 'data_issues.action.retry.error' } });
+
+    const strip = wrapper.find('[data-testid="data-issue-detail-failure"]');
+    expect(strip.text()).toContain('data_issues.action.retry.error');
+    expect(strip.text()).toContain('conflict');
+    expect(strip.find('[data-testid="failure-strip-retry"]').exists()).toBe(false);
+  });
+
+  it('should not name a failure that concerns another issue', async () => {
+    const wrapper = createWrapper(createIssue({ id: 8 }));
+    await wrapper.setProps({ failure: { error: new Error('conflict'), id: 3, title: 'data_issues.action.retry.error' } });
+
+    expect(wrapper.find('[data-testid="data-issue-detail-failure"]').exists()).toBe(false);
   });
 
   it('should keep the retry action visible and disabled while remediation is running', () => {

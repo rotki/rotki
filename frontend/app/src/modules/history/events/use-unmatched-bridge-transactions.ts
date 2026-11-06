@@ -8,7 +8,6 @@ import { isRequestCancellation } from '@/modules/core/api/request-queue/is-reque
 import { type ActionStatus, actionStatusOf } from '@/modules/core/common/action';
 import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useBridgeMatchingApi } from '@/modules/history/api/events/use-bridge-matching-api';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
@@ -120,7 +119,6 @@ const triggerAutoMatchLoading = ref<boolean>(false);
 
 export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnmatchedBridgeTransactionsReturn => {
   const { t } = useI18n({ useScope: 'global' });
-  const { showSuccessMessage } = useNotifications();
   const { statusOf, submitTask, useIsActive } = useNativeTask();
 
   const { fetchHistoryEvents } = useHistoryEventsApi();
@@ -218,10 +216,8 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
     try {
       const success = await matchBridgeTransactionsApi(bridgeEventId, matchedEventIds);
 
-      if (success) {
-        showSuccessMessage(t('actions.bridge_matching.success.title'), t('actions.bridge_matching.success.description'));
+      if (success)
         signalEventsModified();
-      }
 
       return actionStatusOf(success, t('common.change_not_applied'));
     }
@@ -252,10 +248,8 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
     try {
       const success = await matchBridgeTransactionsApi(bridgeEventId, undefined, 'createCounterpart');
 
-      if (success) {
-        showSuccessMessage(t('actions.bridge_matching.create_counterpart_success.title'), t('actions.bridge_matching.create_counterpart_success.description'));
+      if (success)
         signalEventsModified();
-      }
 
       return actionStatusOf(success, t('common.change_not_applied'));
     }

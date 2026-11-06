@@ -85,7 +85,6 @@
     "advanced_tooltip": "显示高级 xpub 选项 | 隐藏高级 xpub 选项",
     "error": {
       "addition_failed": "未添加任何账户。 | 无法添加该地址。 | {count} 个地址均无法添加。",
-      "description": "添加账户时出错：{error}",
       "title": "添加账户",
       "validator_needs_credentials": "无法添加验证者。请在设置中配置共识层 RPC 或添加 Beaconcha.in API Key，然后重试。"
     },
@@ -242,13 +241,12 @@
         "view_affected_events": "查看受影响的事件"
       },
       "add": "添加会计规则",
-      "add_error": "无法添加会计规则：{message}",
+      "add_error": "无法添加会计规则",
       "confirm_delete": "确定要删除此自定义会计规则吗？",
       "confirm_reset": "确定要将所有会计规则重置为 rotki 默认值吗？这将移除所有自定义和已编辑的规则，且无法撤销。",
       "conflicts": {
         "banner": "{count} 条规则与最新的 rotki 更新冲突。 | {count} 条规则与最新的 rotki 更新冲突。",
         "error": {
-          "description": "解决会计规则冲突时出错：{error}",
           "title": "解决会计规则冲突"
         },
         "labels": {
@@ -275,9 +273,9 @@
       },
       "custom_events_info": "正在为选中的 {count} 个事件创建自定义会计规则",
       "delete": "删除会计规则",
-      "delete_error": "无法删除会计规则：{message}",
+      "delete_error": "无法删除会计规则",
       "edit": "编辑会计规则",
-      "edit_error": "无法编辑会计规则：{message}",
+      "edit_error": "无法编辑会计规则",
       "events_dialog": {
         "title": "受该会计规则影响的事件（{count}）"
       },
@@ -517,29 +515,14 @@
     "accounting_rules": {
       "export": {
         "message": {
-          "failure": "会计规则导出失败：{description}",
-          "success": "会计规则导出成功"
+          "failure": "会计规则导出失败：{description}"
         },
         "title": "会计规则导出"
       },
       "import": {
         "message": {
-          "failure": "会计规则导入失败：{description}",
-          "success": "会计规则导入成功"
-        },
-        "title": "会计规则导入"
-      },
-      "reset": {
-        "message": {
-          "success": "会计规则已成功重置为默认值"
-        },
-        "title": "会计规则重置"
-      }
-    },
-    "asset_movement_matching": {
-      "success": {
-        "description": "资产转移已成功匹配到链上事件。",
-        "title": "资产转移已匹配"
+          "failure": "会计规则导入失败：{description}"
+        }
       }
     },
     "assets": {
@@ -586,11 +569,9 @@
         "task": "正在构建 {source} 从 {fromAsset} 到 {toAsset} 的价格缓存"
       },
       "exchange_removal": {
-        "description": "删除 {exchange} 失败，原因是：{error}",
         "title": "交易所移除"
       },
       "exchange_setup": {
-        "description": "{exchange} 设置失败，原因是：{error}",
         "title": "交易所设置"
       },
       "historic_fetch_price": {
@@ -604,38 +585,20 @@
         }
       }
     },
-    "bridge_matching": {
-      "create_counterpart_success": {
-        "description": "已在另一条链上创建一个合成对应事件，并关联到该跨链桥交易。",
-        "title": "已创建跨链桥对应事件"
-      },
-      "success": {
-        "description": "跨链桥交易已成功匹配到其对应事件。",
-        "title": "跨链桥交易已匹配"
-      }
-    },
     "customized_event_duplicates": {
       "fix_error": {
-        "description": "修复重复的自定义事件失败：{error}",
         "title": "修复重复的自定义事件"
       },
-      "fix_success": {
-        "description": "已成功移除 {count} 个重复事件。",
-        "title": "重复项已修复"
-      },
       "mark_non_duplicated_error": {
-        "description": "将重复的自定义事件标记为非重复失败：{error}",
         "title": "将重复的自定义事件标记为非重复"
       },
       "unignore_error": {
-        "description": "恢复已忽略的重复自定义事件失败：{error}",
         "title": "恢复重复的自定义事件"
       }
     },
     "date_range": " 自 {from}| 至 {to}| 自 {from} 至 {to}",
     "delete_eth2_validator": {
       "error": {
-        "description": "删除 ETH 质押验证者失败：{message}",
         "title": "删除 ETH 质押验证者"
       }
     },
@@ -714,19 +677,18 @@
     },
     "ignore": {
       "error": {
-        "description": "忽略所选操作失败：{error}",
         "title": "忽略操作失败"
       }
     },
     "manual_balances": {
       "add": {
         "error": {
-          "description": "添加手动余额失败：{message}"
+          "title": "添加手动余额失败"
         }
       },
       "edit": {
         "error": {
-          "description": "编辑手动余额失败：{message}"
+          "title": "编辑手动余额失败"
         }
       }
     },
@@ -824,12 +786,12 @@
     "session": {
       "add_queriable_address": {
         "error": {
-          "message": "添加可查询地址失败：{message}"
+          "message": "添加可查询地址失败"
         }
       },
       "delete_queriable_address": {
         "error": {
-          "message": "删除可查询地址失败：{message}"
+          "message": "删除可查询地址失败"
         }
       },
       "fetch_queriable_address": {
@@ -855,7 +817,7 @@
         }
       },
       "password_change": {
-        "error": "更改用户密码时出错：{message}",
+        "error": "更改用户密码时出错",
         "success": "已成功修改用户密码"
       },
       "periodic_query": {
@@ -893,22 +855,14 @@
     },
     "unignore": {
       "error": {
-        "description": "取消忽略所选操作失败：{error}",
         "title": "取消忽略操作失败"
       }
-    }
-  },
-  "active_modules": {
-    "enable": {
-      "description": "你想启用 {name} 模块吗？",
-      "title": "启用模块"
     }
   },
   "address_book": {
     "actions": {
       "add": {
         "error": {
-          "description": "添加到地址簿失败：{message}",
           "title": "添加地址簿失败"
         }
       },
@@ -925,7 +879,6 @@
       },
       "edit": {
         "error": {
-          "description": "编辑地址簿失败：{message}",
           "title": "地址簿编辑失败"
         },
         "tooltip": "编辑或添加到地址簿"
@@ -1051,9 +1004,7 @@
     "optional": "可选字段",
     "replaced": "点击“保存”后将应用此图标。",
     "type_non_empty": "资产类型不能为空",
-    "types": {
-      "error": "无法加载资产类型：{message}"
-    },
+    "types": {},
     "underlying_tokens": "底层代币",
     "validation": {
       "address_non_empty": "地址不能为空",
@@ -1073,10 +1024,10 @@
     "title": "资产位置"
   },
   "asset_management": {
-    "add_error": "无法添加资产：{message}",
+    "add_error": "无法添加资产",
     "add_title": "添加新资产",
     "cex_mapping": {
-      "add_error": "无法添加映射：{message}",
+      "add_error": "无法添加映射",
       "add_mapping": "添加映射",
       "add_title": "添加新映射",
       "all_exchanges": "所有交易所",
@@ -1085,8 +1036,8 @@
         "message": "你确定要删除 {location} 中符号 {asset} 的资产映射吗？",
         "title": "删除交易所资产映射"
       },
-      "delete_error": "无法删除映射：{message}",
-      "edit_error": "无法编辑映射：{message}",
+      "delete_error": "无法删除映射",
+      "edit_error": "无法编辑映射",
       "edit_title": "编辑映射",
       "form": {
         "asset_non_empty": "识别的资产字段不能为空",
@@ -1115,8 +1066,8 @@
       },
       "subtitle": "你可以将交易对手上的资产符号关联到 rotki 识别的资产。rotki 需要这些映射才能处理某些交易对手上的资产。"
     },
-    "delete_error": "无法删除 {address}：{message}",
-    "edit_error": "无法编辑资产：{message}",
+    "delete_error": "无法删除 {address}",
+    "edit_error": "无法编辑资产",
     "edit_title": "编辑资产",
     "merge_assets": "合并资产",
     "merge_assets_tooltip": "将两个资产合并为一个（可用于将自定义资产迁移到官方支持的资产）",
@@ -1129,15 +1080,13 @@
       "migrate_button": "迁移",
       "migrating_asset": "正在迁移资产",
       "migration_error": "迁移失败",
-      "migration_success": "代币迁移成功",
       "solana_address": "Solana 地址",
       "validation": {
         "address_invalid": "该地址不是有效的 Solana 地址",
         "address_non_empty": "Solana 地址不能为空",
         "decimals_non_empty": "小数位数不能为空",
         "token_kind_non_empty": "代币种类不能为空"
-      },
-      "validation_error": "请填写所有必填字段"
+      }
     }
   },
   "asset_mappings": {
@@ -1155,8 +1104,7 @@
       "ignore_fiat_tooltip": "忽略所有法币转移（如 USD、EUR）。它们通常没有对应的事件。",
       "ignore_selected": "忽略所选",
       "ignore_selected_confirm": "确定要忽略所选的 {count} 笔资产转移吗？此操作会将其标记为没有对应事件。",
-      "restore_selected": "恢复所选",
-      "restore_selected_confirm": "确定要将所选的 {count} 笔资产转移恢复到未匹配列表吗？"
+      "restore_selected": "恢复所选"
     },
     "actions_pin": {
       "pin_section": "固定版块"
@@ -1845,15 +1793,12 @@
   "bridge_matching": {
     "actions": {
       "auto_match_tooltip": "根据数量、资产和时间戳，自动将跨链桥交易与另一条链上的对应事件匹配。",
-      "create_counterpart": "创建对应事件",
       "create_counterpart_confirm_in": "确定要为此跨链桥提取创建缺失的源事件吗？将在源链上创建一个镜像它（相同资产、数量和时间）的系统生成事件并关联，使该转账作为你自有资金的转移来计算。请在源链已无法查询时使用。该系统生成事件会被明确标记，取消关联后会被删除。",
       "create_counterpart_confirm_in_chain": "确定要在 {chain} 上为此跨链桥提取创建缺失的源事件吗？将在该链上创建一个镜像它（相同资产、数量和时间）的系统生成事件并关联，使该转账作为你自有资金的转移来计算。请在 {chain} 已无法查询时使用。该系统生成事件会被明确标记，取消关联后会被删除。",
       "create_counterpart_confirm_out": "确定要为此跨链桥存入创建缺失的目标事件吗？将在目标链上创建一个镜像它（相同资产、数量和时间）的系统生成事件并关联，使该转账作为你自有资金的转移来计算。请在目标链已无法查询时使用。该系统生成事件会被明确标记，取消关联后会被删除。",
       "create_counterpart_confirm_out_chain": "确定要在 {chain} 上为此跨链桥存入创建缺失的目标事件吗？将在该链上创建一个镜像它（相同资产、数量和时间）的系统生成事件并关联，使该转账作为你自有资金的转移来计算。请在 {chain} 已无法查询时使用。该系统生成事件会被明确标记，取消关联后会被删除。",
       "ignore_selected": "忽略所选",
-      "ignore_selected_confirm": "确定要忽略所选的 {count} 笔跨链桥交易吗？此操作会将其标记为没有对应事件。",
-      "restore_selected": "恢复所选",
-      "restore_selected_confirm": "确定要将所选的 {count} 笔跨链桥交易恢复到未匹配列表吗？"
+      "ignore_selected_confirm": "确定要忽略所选的 {count} 笔跨链桥交易吗？此操作会将其标记为没有对应事件。"
     },
     "dialog": {
       "confirm_ignore": "忽略此交易？",
@@ -1894,10 +1839,10 @@
     }
   },
   "calendar": {
-    "add_error": "无法添加事件：{message}",
+    "add_error": "无法添加事件",
     "add_event": "添加事件",
     "delete_error": {
-      "message": "删除事件失败：{message}"
+      "title": "删除事件失败"
     },
     "delete_event": "删除事件",
     "dialog": {
@@ -1918,7 +1863,7 @@
         "tooltip": "打开日历设置"
       }
     },
-    "edit_error": "无法编辑事件：{message}",
+    "edit_error": "无法编辑事件",
     "form": {
       "name": {
         "validation": {
@@ -2387,7 +2332,6 @@
         },
         "message": {
           "failure": "删除快照失败",
-          "success": "快照删除成功",
           "title": "删除快照"
         }
       },
@@ -2396,9 +2340,7 @@
           "add": "添加余额",
           "asset": "资产",
           "bulk_delete": {
-            "action": "移除零价值余额 | 移除 {count} 项零价值余额 | 移除 {count} 项零价值余额",
-            "message": "将移除 {count} 项无价值的余额。 | 将移除 {count} 项无价值的余额。它们不计入净资产，可放心清除。 | 将移除 {count} 项无价值的余额。它们不计入净资产，可放心清除。",
-            "title": "移除零价值余额"
+            "action": "移除零价值余额 | 移除 {count} 项零价值余额 | 移除 {count} 项零价值余额"
           },
           "category": "类别",
           "empty": "此快照中没有余额",
@@ -2575,8 +2517,6 @@
           },
           "location_data": {
             "add_title": "添加位置快照数据",
-            "delete_confirmation": "确定要删除此位置快照条目吗？",
-            "delete_title": "删除位置快照条目",
             "edit_title": "更新位置快照数据",
             "rules": {
               "location": "位置不能为空",
@@ -2781,10 +2721,6 @@
       }
     },
     "purge_images_cache": {
-      "confirm": {
-        "message": "确定要清除 {source} 的图片缓存吗？",
-        "title": "确认清除图片缓存"
-      },
       "error": "清除 {source} 的图片缓存失败：{message}",
       "hint": "清空此字段将删除全部缓存",
       "label": {
@@ -2799,10 +2735,6 @@
       "title": "清除图片缓存"
     },
     "refresh_cache": {
-      "confirm": {
-        "message": "确定要刷新 {source} 的协议数据吗？",
-        "title": "确认刷新协议数据"
-      },
       "error": "清除 {source} 的协议数据失败：{message}",
       "select_cache": "选择要刷新的协议数据",
       "subtitle": "刷新 rotki 中的协议数据",
@@ -3264,7 +3196,7 @@
       "safe_migration": {
         "account_label": "Gnosis Pay Safe",
         "add_action": "添加到 rotki",
-        "add_error": "添加 Safe 失败：{error}",
+        "add_error": "添加 Safe 失败",
         "add_success": "已将 {address} 添加为 Gnosis Chain 账户。",
         "missing_new": "Gnosis Pay 已更换你的 Safe。你目前只追踪了旧的 Safe；请添加新的活跃 Safe {address} 以追踪后续活动。",
         "missing_old": "Gnosis Pay 已更换你的 Safe。你目前只追踪了新的 Safe；请添加之前的 Safe {address} 以保留其历史活动。",
@@ -4079,12 +4011,6 @@
     "search_chain": "搜索链",
     "selection": "选择一条或多条链以重新解码其事件"
   },
-  "history_refresh_button": {
-    "confirm_refresh": {
-      "message": "确定要刷新所有账户交易和交易所事件吗？此操作可能需要较长时间。",
-      "title": "确认刷新历史"
-    }
-  },
   "history_refresh_selection": {
     "back_to_chain": "返回链选择",
     "no_banks": "尚未设置任何银行连接",
@@ -4115,11 +4041,6 @@
     }
   },
   "ignore": {
-    "confirm": {
-      "message": "确定要忽略 {asset} 吗？\n\n忽略 {asset} 后，rotki 将不再在任何位置显示其余额，并会隐藏所有相关事件。",
-      "these_assets": "这些资产",
-      "title": "忽略资产"
-    },
     "failed": {
       "ignore_message": "{length} 个资产无法添加到已忽略资产：{message}",
       "ignore_title": "忽略资产失败",
@@ -4945,7 +4866,6 @@
         "title": "编辑预言机价格"
       },
       "error": {
-        "description": "编辑预言机价格失败：{message}",
         "title": "预言机价格编辑失败"
       }
     },
@@ -5280,8 +5200,7 @@
         "learn_more": "了解更多"
       },
       "removing_failed": "删除密钥失败",
-      "setting_failed": "设置密钥失败",
-      "setup_failed_description": "设置 rotki 高级版订阅失败，原因：{error}"
+      "setting_failed": "设置密钥失败"
     },
     "fields": {
       "api_key": "API Key",
@@ -5485,7 +5404,6 @@
     "debug": {
       "export_data": "导出调试数据",
       "export_message": {
-        "success": "盈亏报告调试数据导出成功",
         "title": "导出盈亏报告调试数据"
       },
       "import_data": "导入调试数据",
@@ -5493,7 +5411,6 @@
         "title": "导入盈亏报告调试数据"
       },
       "import_message": {
-        "success": "盈亏报告调试数据导入成功",
         "title": "导入盈亏报告调试数据"
       },
       "title": "调试"
@@ -5713,7 +5630,6 @@
     "ignore_errors_tooltip": "保存余额快照时忽略外部 API 的所有错误，这可能导致快照不完整。",
     "menu_tooltip": "查看最近一次余额快照的日期",
     "messages": {
-      "failed_description": "导入快照失败：{message}",
       "success_description": "快照导入成功，即将退出登录。",
       "title": "快照导入"
     },
@@ -5780,11 +5696,11 @@
         }
       },
       "messages": {
-        "add_failed": "添加节点运营者失败：{message}",
+        "add_failed": "添加节点运营者失败",
         "confirm_delete_message": "确定要移除 {address} 的节点运营者 #{nodeOperatorId} 吗？",
         "confirm_delete_title": "删除节点运营者",
-        "delete_failed": "移除节点运营者失败：{message}",
-        "fetch_failed": "查询 Lido CSM 节点运营者失败：{message}"
+        "delete_failed": "移除节点运营者失败",
+        "fetch_failed": "查询 Lido CSM 节点运营者失败"
       },
       "table": {
         "address": "地址",
@@ -6403,7 +6319,6 @@
       "add_tx": "按交易哈希添加交易",
       "delete": {
         "error": {
-          "message": "失败：{message}",
           "title": "删除交易"
         },
         "message": "确定要删除此交易及其事件吗？要恢复它们，你必须清除所有交易，或按交易哈希重新添加。",
@@ -6421,8 +6336,6 @@
     "events": {
       "accounting_rule": {
         "different_types_error": "无法为类型或子类型不同的事件创建会计规则。请选择事件类型和子类型组合相同的事件。",
-        "error": "会计规则错误",
-        "incompatible_selection": "事件选择不兼容",
         "no_events_found": "未找到所选 ID 对应的事件。"
       },
       "actions": {
@@ -6468,10 +6381,7 @@
         "error": {
           "message": "删除事件失败",
           "title": "删除失败"
-        },
-        "success": "已成功删除 {count} 个事件 | 已成功删除 {count} 个事件",
-        "success_groups": "已成功删除 {count} 个分组中的事件 | 已成功删除 {count} 个分组中的事件",
-        "title": "删除事件"
+        }
       },
       "dialog": {
         "add": {
@@ -6487,9 +6397,6 @@
         "matched": "已匹配",
         "profit_adjustment": "盈利调整",
         "synthetic": "系统生成"
-      },
-      "export": {
-        "confirmation_message": "确定要导出应用了所选筛选条件的事件列表吗？"
       },
       "form": {
         "account_address": {
@@ -6669,9 +6576,7 @@
         "error": {
           "message": "将事件从会计中排除失败",
           "title": "排除失败"
-        },
-        "success": "已成功排除 {count} 笔交易 | 已成功排除 {count} 笔交易",
-        "title": "排除交易"
+        }
       },
       "note": {
         "merchant_code": "商户代码：{code}"
@@ -6708,9 +6613,7 @@
             "title": "重新处理已跳过事件时出错"
           },
           "success": {
-            "all": "所有已跳过的外部事件均已处理",
-            "some": "已处理 {successful}/{total} 个已跳过的外部事件",
-            "title": "已跳过事件处理完成"
+            "some": "已处理 {successful}/{total} 个已跳过的外部事件"
           }
         }
       },
@@ -6883,8 +6786,7 @@
       }
     },
     "confirmation": {
-      "message": "你确定要退出当前的 rotki 会话吗？",
-      "title": "需要确认"
+      "message": "你确定要退出当前的 rotki 会话吗？"
     },
     "logout": "退出登录",
     "settings": "设置",

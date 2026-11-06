@@ -16,6 +16,7 @@ import { useDataIssuesPanelList } from '@/modules/history/data-issues/use-data-i
 import { useDataIssuesPanelPolling } from '@/modules/history/data-issues/use-data-issues-panel-polling';
 import { useDataIssuesPanelSelection } from '@/modules/history/data-issues/use-data-issues-panel-selection';
 import { usePanelFilterEngagement } from '@/modules/history/data-issues/use-panel-filter-engagement';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import PinnedDetailSheet from '@/modules/shell/pinned/PinnedDetailSheet.vue';
 
 /** Mirrors whether a stacked detail/resolve overlay is open, so the host drawer can stay stateless. */
@@ -50,6 +51,7 @@ const {
 } = useDataIssuesPanelList(panelFilters);
 
 const {
+  actionFailure,
   modelActionBusy,
   modelDrawerOpen,
   modelResolveOpen,
@@ -59,6 +61,7 @@ const {
   onResolveRequest,
   onRetry,
   openDetail,
+  resolveFailure,
 } = useDataIssueDetailActions(
   reloadAll,
   () => get(rows).map(({ issue }) => issue),
@@ -175,6 +178,15 @@ onMounted(() => {
         </RuiButton>
       </div>
     </RuiAlert>
+
+    <FailureStrip
+      v-if="actionFailure && !modelDrawerOpen"
+      class="mx-3 mt-2 shrink-0"
+      :title="actionFailure.title"
+      :failure="actionFailure.error"
+      :retryable="false"
+      data-testid="data-issues-panel-action-failure"
+    />
 
     <div
       v-if="loading && isEmpty"
@@ -310,6 +322,7 @@ onMounted(() => {
       <DataIssueDetailContent
         :issue="modelSelectedIssue"
         :busy="modelActionBusy"
+        :failure="actionFailure"
         @close="modelDrawerOpen = false"
         @dismiss="onDismiss($event)"
         @retry="onRetry($event)"
@@ -327,6 +340,7 @@ onMounted(() => {
     <ResolveManuallyDialog
       v-model="modelResolveOpen"
       :loading="modelActionBusy"
+      :failure="resolveFailure"
       @confirm="onResolveConfirm($event)"
     />
   </div>

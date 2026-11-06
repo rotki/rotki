@@ -1,6 +1,6 @@
 import { expect, type Request, type Response } from '@playwright/test';
 import { cleanupContext, createLoggedInContext, type SharedTestContext, test } from '../../fixtures/test-fixtures';
-import { confirmDialog } from '../../helpers/utils';
+import { confirmInline } from '../../helpers/utils';
 import { TagManagerPage } from '../../pages/tag-manager';
 
 /**
@@ -75,7 +75,7 @@ test.describe.serial('session across a reload and a logout', () => {
     await sharedPage.locator('[data-testid=logout-button]').click();
     const loggedOut = sharedPage.waitForResponse(response => describeRequest(response.request()) === backendLogout);
     sharedPage.on('request', record);
-    await confirmDialog(sharedPage);
+    await confirmInline(sharedPage);
     await expect.poll(() => sent.includes(backendLogout)).toBe(true);
     sharedPage.off('request', record);
 

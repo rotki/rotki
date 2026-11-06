@@ -1,14 +1,14 @@
 import type { EffectScope } from 'vue';
 import { externalLinks } from '@shared/external-links';
+import { flushPromises } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ActionItem, ActionUrgency } from '@/modules/core/action-center/types';
 import { usePremiumRows } from '@/modules/shell/action-center/use-premium-rows';
 import { PremiumInactiveCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
-const { deletePremium, notifyError, show } = vi.hoisted(() => ({
+const { deletePremium, notifyError } = vi.hoisted(() => ({
   deletePremium: vi.fn<() => Promise<{ success: true } | { message: string; success: false }>>(),
   notifyError: vi.fn<(title: string, message: string) => void>(),
-  show: vi.fn<(message: { title: string; message: string }, onConfirm: () => Promise<void>) => void>(),
 }));
 
 vi.mock('@/modules/premium/use-premium-operations', () => ({
@@ -17,10 +17,6 @@ vi.mock('@/modules/premium/use-premium-operations', () => ({
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: (): object => ({ notifyError }),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): object => ({ show }),
 }));
 
 let scope: EffectScope | undefined;
@@ -74,29 +70,24 @@ describe('modules/shell/action-center/use-premium-rows', () => {
     expect(premiumRow(PremiumInactiveCause.UNREACHABLE).urgency).toBe(ActionUrgency.AUTOMATIC);
   });
 
-  it('should ask before removing the premium key, then remove it', async () => {
+  it('should have the row ask before removing the premium key, then remove it', () => {
     const option = premiumRow(PremiumInactiveCause.EXPIRED).options.find(({ id }) => id === 'remove-premium-key');
     assert(option?.target.kind === 'run');
     expect(option.danger).toBe(true);
+    expect(option.confirm?.title).toBe('action_center.rows.integrations.premium_inactive.remove_confirm.title');
 
     option.target.run();
-
-    expect(deletePremium).not.toHaveBeenCalled();
-    const [message, onConfirm] = show.mock.calls[0];
-    expect(message.title).toBe('action_center.rows.integrations.premium_inactive.remove_confirm.title');
-
-    await onConfirm();
 
     expect(deletePremium).toHaveBeenCalledOnce();
   });
 
-  it('should toast a failed removal, the confirmation having closed before it ran', async () => {
+  it('should toast a failed removal, the question having closed before it ran', async () => {
     deletePremium.mockResolvedValue({ message: 'server refused', success: false });
     const option = premiumRow(PremiumInactiveCause.EXPIRED).options.find(({ id }) => id === 'remove-premium-key');
     assert(option?.target.kind === 'run');
     option.target.run();
 
-    await show.mock.calls[0][1]();
+    await flushPromises();
 
     expect(notifyError).toHaveBeenCalledExactlyOnceWith('premium_settings.error.removing_failed', 'server refused');
   });

@@ -226,12 +226,11 @@ describe('useEthStaking', () => {
       expect(h.fetchEthStakingValidators).not.toHaveBeenCalled();
     });
 
-    it('should show an error message when deletion fails', async () => {
-      h.deleteEth2Validators.mockRejectedValue(new Error('delete failed'));
+    it('should hand a failed deletion back to the caller', async () => {
+      const error = new Error('delete failed');
+      h.deleteEth2Validators.mockRejectedValue(error);
       const { useEthStaking } = await importModule();
-      const result = await useEthStaking().deleteEth2Validators(['0xaaa']);
-      expect(result).toBe(false);
-      expect(h.showErrorMessage).toHaveBeenCalledOnce();
+      await expect(useEthStaking().deleteEth2Validators(['0xaaa'])).rejects.toBe(error);
     });
   });
 

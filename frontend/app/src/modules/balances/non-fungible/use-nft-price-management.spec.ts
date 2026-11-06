@@ -8,7 +8,6 @@ const { spies } = vi.hoisted(() => ({
   spies: {
     notifyError: vi.fn(),
     deleteLatestPrice: vi.fn(),
-    show: vi.fn(),
   },
 }));
 
@@ -17,9 +16,6 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
 }));
 vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
   useAssetPricesApi: (): object => ({ deleteLatestPrice: spies.deleteLatestPrice }),
-}));
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): object => ({ show: spies.show }),
 }));
 
 function nftBalance(): NonFungibleBalance {
@@ -56,10 +52,10 @@ describe('useNftPriceManagement', () => {
     expect(get(modelOpenPriceDialog)).toBe(true);
   });
 
-  it('should delete through the confirmation dialog', async () => {
-    useNftPriceManagement(fetchData).showDeleteConfirmation(nftBalance());
-    expect(spies.show).toHaveBeenCalledOnce();
-    await spies.show.mock.calls[0][1]();
-    expect(spies.deleteLatestPrice).toHaveBeenCalledWith('nft-1');
+  it('should ask about the NFT by name before its price is deleted', () => {
+    expect(useNftPriceManagement(fetchData).deleteConfirm(nftBalance())).toStrictEqual({
+      message: 'assets.custom_price.delete.message::Cool NFT',
+      title: 'assets.custom_price.delete.tooltip',
+    });
   });
 });

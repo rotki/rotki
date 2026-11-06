@@ -5,6 +5,7 @@ import { useTemplateRef } from 'vue';
 import RepullingTransactionForm from '@/modules/history/events/tx/RepullingTransactionForm.vue';
 import { useRepullingTransactionSubmission } from '@/modules/history/events/tx/use-repulling-transaction-submission';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
 
 const modelValue = defineModel<boolean>({ required: true });
@@ -25,6 +26,8 @@ const { useIsActive } = useTaskCenter();
 const taskRunning = useIsActive(ActivityKind.REPULLING);
 
 const {
+  answerWideRepull,
+  askingWideRepull,
   modelAccountType: accountType,
   modelErrorMessages: errorMessages,
   modelEthStakingData: ethStakingData,
@@ -62,5 +65,20 @@ const {
       v-model:state-updated="stateUpdated"
       v-model:eth-staking-data="ethStakingData"
     />
+
+    <template
+      v-if="askingWideRepull"
+      #footer
+    >
+      <InlineConfirm
+        class="w-full"
+        :title="t('transactions.repulling.confirmation.title')"
+        :message="t('transactions.repulling.confirmation.message')"
+        :confirm-label="t('transactions.repulling.action')"
+        data-testid="repulling-wide-confirm"
+        @cancel="answerWideRepull(false)"
+        @confirm="answerWideRepull(true)"
+      />
+    </template>
   </BigDialog>
 </template>

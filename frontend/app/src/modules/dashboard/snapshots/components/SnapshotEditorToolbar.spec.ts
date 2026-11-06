@@ -9,13 +9,25 @@ const TIMESTAMP = 1_600_000_000;
 
 const CHANGE: SnapshotChange = { after: bigNumberify(120), before: bigNumberify(100), kind: 'total-changed' };
 
-function mountToolbar(props: Record<string, unknown> = {}): VueWrapper {
+/** Opens through its activator and renders its content only while open, as the real menu does. */
+const RuiMenu = {
+  name: 'RuiMenu',
+  props: ['modelValue'],
+  emits: ['update:modelValue'],
+  template: `<div>
+    <slot name="activator" :attrs="{ onClick: () => $emit('update:modelValue', true) }" />
+    <div v-if="modelValue"><slot /></div>
+  </div>`,
+};
+
+function mountToolbar(props: Record<string, unknown> = {}, menu = false): VueWrapper {
   return mount(SnapshotEditorToolbar, {
     global: {
       provide: libraryDefaults,
       stubs: {
         DateDisplay: true,
         SnapshotChangesList: true,
+        ...(menu ? { RuiMenu } : {}),
       },
     },
     props: { changes: [], timestamp: TIMESTAMP, ...props },
@@ -56,5 +68,38 @@ describe('snapshotEditorToolbar', () => {
   it('should show the dirty badge only when there are changes', () => {
     expect(mountToolbar({ changes: [] }).find('[data-testid=snapshot-dirty-badge]').exists()).toBe(false);
     expect(mountToolbar({ changes: [CHANGE] }).find('[data-testid=snapshot-dirty-badge]').exists()).toBe(true);
+  });
+
+  describe('deleting from the overflow menu', () => {
+    async function askDelete(): Promise<VueWrapper> {
+      const wrapper = mountToolbar({}, true);
+      await wrapper.find('[data-testid=snapshot-overflow]').trigger('click');
+      await wrapper.find('[data-testid=snapshot-delete]').trigger('click');
+      return wrapper;
+    }
+
+    it('should ask in the menu instead of emitting delete straight away', async () => {
+      const wrapper = await askDelete();
+
+      expect(wrapper.find('[data-testid=inline-confirm]').text()).toContain('dashboard.snapshot.delete.dialog.message');
+      expect(wrapper.emitted('delete')).toBeUndefined();
+    });
+
+    it('should emit delete once accepted', async () => {
+      const wrapper = await askDelete();
+
+      await wrapper.find('[data-testid=inline-confirm-accept]').trigger('click');
+
+      expect(wrapper.emitted('delete')).toHaveLength(1);
+    });
+
+    it('should not emit delete when cancelled, and close the menu', async () => {
+      const wrapper = await askDelete();
+
+      await wrapper.find('[data-testid=inline-confirm-cancel]').trigger('click');
+
+      expect(wrapper.emitted('delete')).toBeUndefined();
+      expect(wrapper.find('[data-testid=inline-confirm]').exists()).toBe(false);
+    });
   });
 });

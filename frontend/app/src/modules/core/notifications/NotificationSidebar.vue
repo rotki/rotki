@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { NotificationDayLabel } from '@/modules/core/notifications/notification-days';
 import Notification from '@/modules/core/notifications/Notification.vue';
 import BackendProblemCard from '@/modules/core/notifications/problems/BackendProblemCard.vue';
 import { notificationMuteKey } from '@/modules/core/notifications/use-notification-mute';
 import { useNotificationSidebar } from '@/modules/core/notifications/use-notification-sidebar';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 import LazyLoader from '@/modules/shell/components/LazyLoader.vue';
 
 const display = defineModel<boolean>({ required: true });
@@ -15,11 +15,13 @@ const { t } = useI18n({ useScope: 'global' });
 const contentWrapper = useTemplateRef<HTMLDivElement>('contentWrapper');
 const { y } = useScroll(contentWrapper);
 
-const { visible: dialogVisible } = storeToRefs(useConfirmStore());
-
 const [DefineNoMessages, ReuseNoMessages] = createReusableTemplate();
 
 const {
+  askingToClear,
+  askToClear,
+  cancelClear,
+  clearAll,
   close,
   failures,
   historyDays,
@@ -34,7 +36,6 @@ const {
   problems,
   remove,
   removeProblem,
-  showConfirmation,
   silent,
   toggleSilentMode,
   unmuteNotification,
@@ -53,7 +54,6 @@ const mutedCount = computed<number>(() => get(muted).problems.length + get(muted
     width="400px"
     position="right"
     temporary
-    :stateless="dialogVisible"
   >
     <DefineNoMessages>
       <div
@@ -257,14 +257,32 @@ const mutedCount = computed<number>(() => get(muted).problems.length + get(muted
           </div>
         </div>
       </div>
-      <div class="p-3 flex justify-end border-t border-rui-divider mt-2">
+      <div
+        v-if="askingToClear"
+        class="p-3 border-t border-rui-divider mt-2"
+      >
+        <InlineConfirm
+          layout="panel"
+          class="p-0!"
+          :title="t('notification_sidebar.confirmation.title')"
+          :message="t('notification_sidebar.confirmation.message')"
+          :confirm-label="t('common.actions.clear')"
+          data-testid="clear-notifications-confirm"
+          @cancel="cancelClear()"
+          @confirm="clearAll()"
+        />
+      </div>
+      <div
+        v-else
+        class="p-3 flex justify-end border-t border-rui-divider mt-2"
+      >
         <RuiButton
           v-if="!isEmpty"
           variant="text"
           color="primary"
           class="me-auto"
           data-testid="clear-notifications"
-          @click="showConfirmation()"
+          @click="askToClear()"
         >
           {{ t('notification_sidebar.clear_tooltip') }}
         </RuiButton>

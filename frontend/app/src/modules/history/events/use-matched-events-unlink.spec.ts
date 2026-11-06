@@ -1,7 +1,8 @@
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import { createMock } from '@test/utils/create-mock';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useHistoryEventsActionFailure } from './use-history-events-action-failure';
 import { useMatchedEventsUnlink } from './use-matched-events-unlink';
 
 const { spies } = vi.hoisted(() => ({
@@ -12,21 +13,13 @@ const { spies } = vi.hoisted(() => ({
     getMatchedMovementIgnoreIds: vi.fn((): number[] => []),
     isAssetMovementEvent: vi.fn(() => false),
     matchAssetMovements: vi.fn(),
-    notifyError: vi.fn(),
     refreshUnmatchedAssetMovements: vi.fn(),
     refreshUnmatchedBridgeTransactions: vi.fn(),
-    show: vi.fn(),
     unlinkAssetMovement: vi.fn(),
     unlinkBridgeTransaction: vi.fn(),
   },
 }));
 
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): object => ({ show: spies.show }),
-}));
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: (): object => ({ notifyError: spies.notifyError }),
-}));
 vi.mock('@/modules/history/api/events/use-asset-movement-matching-api', () => ({
   useAssetMovementMatchingApi: (): object => ({
     matchAssetMovements: spies.matchAssetMovements,
@@ -62,19 +55,19 @@ function setup(): ReturnType<typeof useMatchedEventsUnlink> {
   return useMatchedEventsUnlink(computed<Record<string, HistoryEventRow[]>>(() => ({})), emit);
 }
 
-async function confirm(): Promise<void> {
-  await spies.show.mock.calls.at(-1)?.[1]();
-}
+const { actionFailure, clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
 
 describe('useMatchedEventsUnlink', () => {
+  beforeEach(() => {
+    clearActionFailure();
+  });
+
   afterEach(() => {
     vi.clearAllMocks();
   });
 
   it('should unlink an asset movement and ignore its movement legs', async () => {
-    setup().confirmUnlink({ identifier: 9, ignoredIdentifiers: [9], type: 'asset-movement' });
-    expect(spies.show.mock.calls[0][0].message).toBe('transactions.events.confirmation.unlink.message');
-    await confirm();
+    await setup().unlink({ identifier: 9, ignoredIdentifiers: [9], type: 'asset-movement' });
 
     expect(spies.unlinkAssetMovement).toHaveBeenCalledWith(9);
     // same durability as a bridge unlink: the matcher would otherwise relink it on its next run
@@ -86,17 +79,14 @@ describe('useMatchedEventsUnlink', () => {
 
   it('should not ignore any movement leg when the unlink itself fails', async () => {
     spies.unlinkAssetMovement.mockRejectedValueOnce(new Error('boom'));
-    setup().confirmUnlink({ identifier: 9, ignoredIdentifiers: [9, 10], type: 'asset-movement' });
-    await confirm();
+    await setup().unlink({ identifier: 9, ignoredIdentifiers: [9, 10], type: 'asset-movement' });
 
     expect(spies.matchAssetMovements).not.toHaveBeenCalled();
-    expect(spies.notifyError).toHaveBeenCalledWith('transactions.events.unlink_error', 'boom');
+    expect(get(actionFailure)).toEqual({ failure: new Error('boom'), title: 'transactions.events.unlink_error' });
   });
 
   it('should unlink a bridge transfer and ignore both legs', async () => {
-    setup().confirmUnlink({ hasSynthetic: false, identifier: 21, ignoredIdentifiers: [21, 22], type: 'bridge' });
-    expect(spies.show.mock.calls[0][0].message).toBe('transactions.events.confirmation.unlink.bridge_message');
-    await confirm();
+    await setup().unlink({ hasSynthetic: false, identifier: 21, ignoredIdentifiers: [21, 22], type: 'bridge' });
 
     expect(spies.unlinkBridgeTransaction).toHaveBeenCalledWith(21);
     // ignoring is matching with no counterpart, and keeps the automatic matcher off both legs
@@ -108,29 +98,33 @@ describe('useMatchedEventsUnlink', () => {
     expect(spies.busEmit).toHaveBeenCalledOnce();
   });
 
-  it('should warn that the synthetic counterpart is deleted and ignore only the real leg', async () => {
-    setup().confirmUnlink({ hasSynthetic: true, identifier: 21, ignoredIdentifiers: [21], type: 'bridge' });
-    expect(spies.show.mock.calls[0][0].message).toBe('transactions.events.confirmation.unlink.bridge_synthetic_message');
-    await confirm();
+  it('should ignore only the real leg when the synthetic counterpart is deleted', async () => {
+    await setup().unlink({ hasSynthetic: true, identifier: 21, ignoredIdentifiers: [21], type: 'bridge' });
 
     expect(spies.matchBridgeTransactions.mock.calls).toStrictEqual([[21]]);
   });
 
   it('should not ignore any leg when the unlink itself fails', async () => {
     spies.unlinkBridgeTransaction.mockRejectedValueOnce(new Error('boom'));
-    setup().confirmUnlink({ hasSynthetic: false, identifier: 21, ignoredIdentifiers: [21, 22], type: 'bridge' });
-    await confirm();
+    await setup().unlink({ hasSynthetic: false, identifier: 21, ignoredIdentifiers: [21, 22], type: 'bridge' });
 
     expect(spies.matchBridgeTransactions).not.toHaveBeenCalled();
-    expect(spies.notifyError).toHaveBeenCalledWith('transactions.events.unlink_bridge_error', 'boom');
+    expect(get(actionFailure)).toEqual({ failure: new Error('boom'), title: 'transactions.events.unlink_bridge_error' });
+  });
+
+  it('should drop the last failure when the next unlink starts', async () => {
+    reportActionFailure('transactions.events.unlink_error', 'boom');
+
+    await setup().unlink({ identifier: 9, ignoredIdentifiers: [9], type: 'asset-movement' });
+
+    expect(get(actionFailure)).toBeUndefined();
   });
 
   it('should report a failed bridge unlink without refreshing', async () => {
     spies.unlinkBridgeTransaction.mockRejectedValueOnce(new Error('boom'));
-    setup().confirmUnlink({ hasSynthetic: false, identifier: 21, ignoredIdentifiers: [21], type: 'bridge' });
-    await confirm();
+    await setup().unlink({ hasSynthetic: false, identifier: 21, ignoredIdentifiers: [21], type: 'bridge' });
 
-    expect(spies.notifyError).toHaveBeenCalledWith('transactions.events.unlink_bridge_error', 'boom');
+    expect(get(actionFailure)).toEqual({ failure: new Error('boom'), title: 'transactions.events.unlink_bridge_error' });
     expect(emit).not.toHaveBeenCalled();
     expect(spies.busEmit).not.toHaveBeenCalled();
   });
@@ -141,8 +135,7 @@ describe('useMatchedEventsUnlink', () => {
     spies.getGroupEvents.mockReturnValueOnce([fee, movement]);
     spies.isAssetMovementEvent.mockReturnValueOnce(true).mockReturnValueOnce(true);
 
-    setup().unlinkGroup('group-1');
-    await confirm();
+    await setup().unlinkGroup('group-1');
 
     expect(spies.unlinkAssetMovement).toHaveBeenCalledWith(5);
   });

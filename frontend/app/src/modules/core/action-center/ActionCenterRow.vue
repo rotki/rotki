@@ -1,7 +1,8 @@
 <script setup lang="ts" generic="TTarget extends { kind: string }">
 import type { ContextColorsType } from '@rotki/ui-library';
 import ActionCenterRowAction from '@/modules/core/action-center/ActionCenterRowAction.vue';
-import { type ActionItem, ActionUrgency, URGENCY_COLORS } from '@/modules/core/action-center/types';
+import { type ActionItem, type ActionItemOption, ActionUrgency, URGENCY_COLORS } from '@/modules/core/action-center/types';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 import { useLinks } from '@/modules/shell/layout/use-links';
 
 const { isNew = false, item, previousCount } = defineProps<{
@@ -29,6 +30,10 @@ const LOCKED_ICON_CLASS = 'bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-text-di
 const SET_ASIDE_ICON_CLASS = 'bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-text-secondary';
 
 const { t } = useI18n({ useScope: 'global' });
+
+/** The option whose question is open in place of the row's options, until it is answered. */
+const asking = shallowRef<ActionItemOption<TTarget>>();
+
 const { href, linkTarget, onLinkClick } = useLinks();
 
 /** A row the user set aside (snoozed or dismissed) keeps its actions but drops its urgency colour. */
@@ -53,6 +58,22 @@ const wentDown = computed<boolean>(() => previousCount !== undefined && previous
  * than one, or until it went down, where "down from 5" needs the 1 beside it.
  */
 const showCount = computed<boolean>(() => item.count > 1 || get(wentDown));
+
+/** Hands the option's target up, or first asks in the row when the option says it must. */
+function choose(option: ActionItemOption<TTarget>): void {
+  if (option.confirm) {
+    set(asking, option);
+    return;
+  }
+  emit('option', option.target);
+}
+
+function accept(): void {
+  const option = get(asking);
+  set(asking, undefined);
+  if (option)
+    emit('option', option.target);
+}
 </script>
 
 <template>
@@ -114,8 +135,19 @@ const showCount = computed<boolean>(() => item.count > 1 || get(wentDown));
       <p class="mt-0.5 text-caption text-rui-text-secondary">
         {{ item.locked ? lockedHint : item.description }}
       </p>
+      <InlineConfirm
+        v-if="!item.locked && asking?.confirm"
+        class="mt-1"
+        :tone="asking.danger ? 'error' : 'warning'"
+        :title="asking.confirm.title"
+        :message="asking.confirm.message"
+        :confirm-label="asking.label"
+        data-testid="actions-center-row-confirm"
+        @cancel="asking = undefined"
+        @confirm="accept()"
+      />
       <div
-        v-if="!item.locked && (item.options.length > 0 || item.status)"
+        v-else-if="!item.locked && (item.options.length > 0 || item.status)"
         class="mt-1 flex flex-wrap items-center gap-x-1 -ml-1.5"
       >
         <span
@@ -138,7 +170,7 @@ const showCount = computed<boolean>(() => item.count > 1 || get(wentDown));
           :class="{ 'hover:text-rui-error!': option.danger }"
           data-testid="actions-center-row-option"
           :data-key="option.id"
-          @click="emit('option', option.target)"
+          @click="choose(option)"
         >
           <template #prepend>
             <RuiIcon

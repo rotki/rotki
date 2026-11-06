@@ -3,12 +3,10 @@ import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { useIgnoredAssetConfirmation } from '@/modules/assets/use-ignored-asset-confirmation';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { useSelectedAssetIgnoring, useSelectedAssetSpam } from '@/modules/assets/use-selected-asset-actions';
 import { useSpamAsset } from '@/modules/assets/use-spam-asset';
 import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
-import { nonEmptyOr } from '@/modules/core/common/data/data';
 
 interface UseManagedAssetOperationsReturn {
   isAssetWhitelisted: (identifier: string) => boolean;
@@ -28,8 +26,7 @@ export function useManagedAssetOperations(
   ignoredHandling: MaybeRefOrGetter<IgnoredAssetsHandlingType>,
   selected: Ref<string[]>,
 ): UseManagedAssetOperationsReturn {
-  const { ignoreAssetWithConfirmation } = useIgnoredAssetConfirmation();
-  const { unignoreAsset } = useIgnoredAssetOperations();
+  const { ignoreAsset, unignoreAsset } = useIgnoredAssetOperations();
   const { ignoreSelected } = useSelectedAssetIgnoring();
   const { markSelectedAsSpam } = useSelectedAssetSpam();
   const { isAssetIgnored, isAssetWhitelisted, useIsAssetWhitelisted } = useAssetsStore();
@@ -49,15 +46,15 @@ export function useManagedAssetOperations(
   }
 
   const toggleIgnoreAsset = async (asset: SupportedAsset): Promise<void> => {
-    const { identifier, name, symbol } = asset;
+    const { identifier } = asset;
     set(loadingIgnore, identifier);
     try {
       if (isAssetIgnored(identifier)) {
         await unignoreAsset(identifier);
         refreshAssetsConditionally();
       }
-      else {
-        await ignoreAssetWithConfirmation(identifier, nonEmptyOr(symbol, name), refreshAssetsConditionally);
+      else if ((await ignoreAsset(identifier)).success) {
+        refreshAssetsConditionally();
       }
     }
     finally {

@@ -153,19 +153,16 @@ async function setup(): Promise<Harness> {
   const { useAccountDelete } = await import('@/modules/accounts/blockchain/use-account-delete');
   const { useAccountFetching } = await import('@/modules/accounts/use-account-fetching');
   const { useBlockchainAccountsStore } = await import('@/modules/accounts/use-blockchain-accounts-store');
-  const { useConfirmStore } = await import('@/modules/core/common/use-confirm-store');
-
   const accounts = useBlockchainAccountsStore();
   accounts.updateAccounts('eth', [account]);
 
-  const { showConfirmation } = useAccountDelete();
+  const { deleteConfirmed } = useAccountDelete();
 
   return {
     accounts,
     fetchChain: useAccountFetching().fetch,
     confirmRemoval: async (row): Promise<void> => {
-      showConfirmation({ data: row, type: 'account' });
-      await useConfirmStore().confirm();
+      await deleteConfirmed({ data: row, type: 'account' });
     },
   };
 }
@@ -296,12 +293,10 @@ describe('useAccountDelete against the real removal wiring', () => {
     /** Confirms the delete of the validators table rows, which is what the table hands over. */
     async function confirmValidatorRemoval(rows: ValidatorAccount[] = [stored]): Promise<void> {
       const { useAccountDelete } = await import('@/modules/accounts/blockchain/use-account-delete');
-      const { useConfirmStore } = await import('@/modules/core/common/use-confirm-store');
-      useAccountDelete().showConfirmation({
+      await useAccountDelete().deleteConfirmed({
         data: rows.map(({ index, publicKey, status }) => ({ amount: bigNumberify(32), index, publicKey, status, value: bigNumberify(32) })),
         type: 'validator',
       });
-      await useConfirmStore().confirm();
     }
 
     it('should drop exactly the deleted page of validators and keep the rest', async () => {

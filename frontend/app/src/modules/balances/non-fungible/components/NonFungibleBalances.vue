@@ -44,10 +44,11 @@ const filtered = computed<boolean>(() => get(modelIgnoredAssetsHandling) !== Ign
 
 const {
   customPrice,
+  deleteConfirm,
+  deletePrice,
   hasCustomPrice,
   modelOpenPriceDialog,
   setPriceForm,
-  showDeleteConfirmation,
 } = useNftPriceManagement(fetchData);
 
 const {
@@ -130,7 +131,8 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
             :delete-tooltip="t('assets.custom_price.delete.tooltip')"
             :edit-tooltip="t('assets.custom_price.edit.tooltip')"
             :delete-disabled="!row.manuallyInput"
-            @delete-click="showDeleteConfirmation(row)"
+            :delete-confirm="deleteConfirm(row)"
+            @delete-click="deletePrice(row)"
             @edit-click="setPriceForm(row)"
           />
         </template>

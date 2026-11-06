@@ -223,4 +223,29 @@ describe('modules/accounts/blockchain/AddressInput', () => {
     // One flat key comes back for both fields, so it has to be fanned onto whichever is on screen.
     expect(messages()).toEqual(['Account already exists']);
   });
+
+  describe('a failed wallet import', () => {
+    async function failImport(message: string): Promise<void> {
+      wrapper.findComponent({ name: 'WalletAddressesImport' }).vm.$emit('failure', message);
+      await nextTick();
+    }
+
+    it('should be named under the address field', async () => {
+      wrapper = createWrapper({ showWalletImport: true });
+
+      await failImport('Import from wallet: no provider');
+
+      expect(messages()).toEqual(['Import from wallet: no provider']);
+    });
+
+    it('should go once the field is edited', async () => {
+      wrapper = createWrapper({ showWalletImport: true });
+      await failImport('Import from wallet: no provider');
+      expect(messages()).toEqual(['Import from wallet: no provider']);
+
+      await type(ADDRESS);
+
+      expect(messages()).toEqual([]);
+    });
+  });
 });

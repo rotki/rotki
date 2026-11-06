@@ -2,12 +2,12 @@ import { mockUseNotifications } from '@test/utils/mocks/notifications';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSpamAsset } from '@/modules/assets/use-spam-asset';
 
-const { manualBalancesAssets, mockMarkAssetsAsSpam, mockShowErrorMessage } = await vi.hoisted(async () => {
+const { manualBalancesAssets, mockMarkAssetsAsSpam, mockNotifyWarning } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   return {
     manualBalancesAssets: ref<string[]>([]),
     mockMarkAssetsAsSpam: vi.fn<(tokens: string[]) => Promise<boolean>>(),
-    mockShowErrorMessage: vi.fn(),
+    mockNotifyWarning: vi.fn(),
   };
 });
 
@@ -37,7 +37,7 @@ vi.mock('@/modules/balances/manual/use-manual-balance-data', () => ({
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () =>
-  mockUseNotifications({ showErrorMessage: mockShowErrorMessage }));
+  mockUseNotifications({ notifyWarning: mockNotifyWarning }));
 
 describe('useSpamAsset', () => {
   beforeEach(() => {
@@ -54,7 +54,7 @@ describe('useSpamAsset', () => {
 
       expect(result.success).toBe(true);
       expect(mockMarkAssetsAsSpam).toHaveBeenCalledWith(['SPAM1', 'SPAM2']);
-      expect(mockShowErrorMessage).not.toHaveBeenCalled();
+      expect(mockNotifyWarning).not.toHaveBeenCalled();
     });
 
     it('should skip the assets held in manual balances and mark only the rest', async () => {
@@ -63,7 +63,10 @@ describe('useSpamAsset', () => {
 
       await markAssetsAsSpam(['SPAM1', 'MANUAL']);
 
-      expect(mockShowErrorMessage).toHaveBeenCalledOnce();
+      expect(mockNotifyWarning).toHaveBeenCalledExactlyOnceWith(
+        'ignore.spam.warning.manual_balances_title',
+        'ignore.spam.warning.manual_balances_message::MANUAL',
+      );
       expect(mockMarkAssetsAsSpam).toHaveBeenCalledWith(['SPAM1']);
     });
 
@@ -73,7 +76,7 @@ describe('useSpamAsset', () => {
 
       await markAssetsAsSpam(['MANUAL']);
 
-      expect(mockShowErrorMessage).toHaveBeenCalledOnce();
+      expect(mockNotifyWarning).toHaveBeenCalledOnce();
       expect(mockMarkAssetsAsSpam).not.toHaveBeenCalled();
     });
   });

@@ -28,6 +28,19 @@ function createWrapper(): VueWrapper {
   }, { global: { provide: libraryDefaults, stubs } });
 }
 
+const QUESTION = { confirmLabel: 'Delete', message: 'Delete 2 backups?', title: 'Delete backups' };
+
+function createAskingWrapper(onClick: () => void): VueWrapper {
+  return mount({
+    components: { TableSelectionAction, TableSelectionBar },
+    setup: () => ({ onClick, question: QUESTION }),
+    template: `
+      <TableSelectionBar :count="2">
+        <TableSelectionAction icon="lu-trash-2" :confirm="question" data-testid="delete" @click="onClick()">Delete</TableSelectionAction>
+      </TableSelectionBar>`,
+  }, { global: { provide: libraryDefaults, stubs } });
+}
+
 describe('modules/core/table/TableSelectionBar', () => {
   beforeEach(() => {
     set(collapsed, false);
@@ -62,5 +75,59 @@ describe('modules/core/table/TableSelectionBar', () => {
     expect(wrapper.find('[data-testid="table-selection-count"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="table-selection-clear"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="table-selection-exit"]').exists()).toBe(true);
+  });
+
+  describe('an action that asks first, once collapsed', () => {
+    async function openQuestion(onClick: () => void): Promise<VueWrapper> {
+      const wrapper = createAskingWrapper(onClick);
+      set(collapsed, true);
+      await nextTick();
+      await wrapper.find('[data-testid="delete"]').trigger('click');
+      return wrapper;
+    }
+
+    it('should ask in the menu in place of the entries, keeping the menu open, without acting', async () => {
+      const onClick = vi.fn<() => void>();
+      const wrapper = await openQuestion(onClick);
+
+      const menu = wrapper.findComponent(stubs.RuiMenu);
+      expect(menu.find('[data-testid="table-selection-confirm"]').text()).toContain('Delete 2 backups?');
+      expect(menu.find('[data-testid="table-selection-entries"]').attributes('style')).toContain('display: none');
+      expect(menu.attributes('close-on-content-click')).toBe('false');
+      expect(onClick).not.toHaveBeenCalled();
+    });
+
+    it('should act once the question is accepted', async () => {
+      const onClick = vi.fn<() => void>();
+      const wrapper = await openQuestion(onClick);
+
+      await wrapper.find('[data-testid="inline-confirm-accept"]').trigger('click');
+
+      expect(onClick).toHaveBeenCalledOnce();
+      expect(wrapper.find('[data-testid="table-selection-confirm"]').exists()).toBe(false);
+    });
+
+    it('should bring the entries back on cancel, without acting', async () => {
+      const onClick = vi.fn<() => void>();
+      const wrapper = await openQuestion(onClick);
+
+      await wrapper.find('[data-testid="inline-confirm-cancel"]').trigger('click');
+
+      expect(onClick).not.toHaveBeenCalled();
+      expect(wrapper.find('[data-testid="table-selection-entries"]').attributes('style') ?? '').not.toContain('display: none');
+      expect(wrapper.find('[data-testid="table-selection-confirm"]').exists()).toBe(false);
+    });
+  });
+
+  it('should ask beside the action, and only act once accepted, while the bar is wide', async () => {
+    const onClick = vi.fn<() => void>();
+    const wrapper = createAskingWrapper(onClick);
+
+    expect(onClick).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid="inline-confirm"]').text()).toContain('Delete 2 backups?');
+
+    await wrapper.find('[data-testid="inline-confirm-accept"]').trigger('click');
+
+    expect(onClick).toHaveBeenCalledOnce();
   });
 });

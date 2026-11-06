@@ -67,6 +67,14 @@ export interface HistoryEventBridgeUnlinkPayload {
   readonly hasSynthetic: boolean;
 }
 
+/** A question an action asks beside the control that starts it, before it runs. */
+export interface HistoryEventQuestion {
+  title: string;
+  message: string;
+  /** The accept button's label, when the action's own name says it better than the default. */
+  confirmLabel?: string;
+}
+
 /** Which match the event belongs to, since each link type has its own unlink endpoint. */
 export type HistoryEventUnlinkPayload = HistoryEventAssetMovementUnlinkPayload | HistoryEventBridgeUnlinkPayload;
 

@@ -1,8 +1,9 @@
 import type { ComputedRef, Ref } from 'vue';
+import type { HistoryEventQuestion } from '@/modules/history/events/types';
 import { startPromise } from '@shared/utils';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
+import { useHistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
 
 export interface UseHistoryEventsFiltersChipsOptions {
   /** The groups the URL asks the table to show, if any. */
@@ -42,8 +43,10 @@ export interface UseHistoryEventsFiltersChipsReturn {
   removeAccountingEventParam: () => void;
   /** Drop the duplicate filter from the URL. */
   removeDuplicateEventsParam: () => void;
-  /** Ask for confirmation, then fix every duplicate the chip is showing. */
-  confirmFixDuplicate: () => void;
+  /** What fixing every duplicate the chip shows asks beside its button, counting them. */
+  fixQuestion: ComputedRef<HistoryEventQuestion>;
+  /** Fix every duplicate the chip is showing, once its button asked; a failure is named above the table. */
+  fixShownDuplicates: () => Promise<void>;
   /** Re-point the URL at what is still a duplicate, or drop the filter when nothing is. */
   refreshDuplicateView: () => void;
 }
@@ -64,13 +67,13 @@ export function useHistoryEventsFiltersChips(
   const { t } = useI18n({ useScope: 'global' });
   const router = useRouter();
   const route = useRoute();
-  const { show } = useConfirmStore();
   const {
     autoFixGroupIds,
     fixDuplicates,
     fixLoading,
     manualReviewGroupIds,
   } = useCustomizedEventDuplicates();
+  const { clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
 
   const showMissingAcquisition = computed<boolean>(() => !!get(route).query.missingAcquisitionIdentifier);
 
@@ -159,26 +162,27 @@ export function useHistoryEventsFiltersChips(
     pushWithout('groupIdentifiers', 'duplicateHandlingStatus');
   }
 
-  async function fixDuplicateEvent(): Promise<void> {
+  async function fixShownDuplicates(): Promise<void> {
     const ids = groupIdentifiers();
     if (!ids || ids.length === 0)
       return;
 
+    clearActionFailure();
     const result = await fixDuplicates(ids);
     if (result.success) {
       removeDuplicateEventsParam();
       onRefresh();
     }
+    else {
+      reportActionFailure(t('actions.customized_event_duplicates.fix_error.title'), result.message);
+    }
   }
 
-  function confirmFixDuplicate(): void {
-    const count = groupIdentifiers()?.length ?? 0;
-    show({
-      message: t('customized_event_duplicates.actions.fix_selected_confirm', { count }),
-      primaryAction: t('common.actions.confirm'),
-      title: t('customized_event_duplicates.actions.fix_selected'),
-    }, async () => fixDuplicateEvent());
-  }
+  const fixQuestion = computed<HistoryEventQuestion>(() => ({
+    confirmLabel: t('customized_event_duplicates.actions.fix'),
+    message: t('customized_event_duplicates.actions.fix_selected_confirm', { count: groupIdentifiers()?.length ?? 0 }),
+    title: t('customized_event_duplicates.actions.fix_selected'),
+  }));
 
   function refreshDuplicateView(): void {
     const validIds = get(currentValidGroupIds);
@@ -195,10 +199,11 @@ export function useHistoryEventsFiltersChips(
 
   return {
     allDuplicatesResolved,
-    confirmFixDuplicate,
     duplicateChangesMessage,
     duplicateChipText,
     fixLoading,
+    fixQuestion,
+    fixShownDuplicates,
     hasDuplicateChanges,
     isAutoFixable,
     refreshDuplicateView,

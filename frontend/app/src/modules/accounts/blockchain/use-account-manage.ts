@@ -24,7 +24,7 @@ import { getKeyType, guessPrefix } from '@/modules/accounts/xpub';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { isBtcChain } from '@/modules/core/common/chains';
 import { logger } from '@/modules/core/common/logging/logging';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 
 interface AccountManageMode {
   readonly mode: 'edit' | 'add';
@@ -166,7 +166,6 @@ export function useAccountManage(): UseAccountManageReturn {
   const { addAccounts, fetchAccounts, refreshAccounts } = useBlockchainAccountManagement();
   const { addEth2Validator, editEth2Validator, updateEthStakingOwnership } = useEthStaking();
   const { editAccount, editAgnosticAccount } = useAccountEdits();
-  const { showErrorMessage } = useNotifications();
   const { addressCheck } = useAddressCheck();
 
   function handleErrors(error: unknown, props: Record<string, any> = {}): void {
@@ -182,12 +181,10 @@ export function useAccountManage(): UseAccountManageReturn {
     if (error instanceof ApiValidationError)
       errors = error.getValidationErrors(props);
 
-    if (typeof errors === 'string') {
-      showErrorMessage(t('account_form.error.title'), t('account_form.error.description', { error: errors }));
-    }
-    else {
+    if (typeof errors === 'string')
+      set(saveError, errors);
+    else
       set(modelErrorMessages, errors);
-    }
   }
 
   const additionFallback = (count: number): string =>

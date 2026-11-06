@@ -1,5 +1,5 @@
 import type { ActionItemOption, ActionTarget } from '@/modules/core/action-center/types';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { startPromise } from '@shared/utils';
 import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
 
 /** The indexer order in the chain settings, where a missing indexer or an indexer's key is dealt with. */
@@ -29,23 +29,22 @@ interface UseSuppressOptionReturn {
 }
 
 /**
- * Builds the "do not show again" option, which asks before it writes.
+ * Builds the "do not show again" option, which asks in its row before it writes.
  *
  * @remarks
  * The setting it writes is also what hides the row, so the row leaves on its own once the write lands.
  */
 export function useSuppressOption(): UseSuppressOptionReturn {
-  const { show } = useConfirmStore();
-
   function suppressOption({ confirmMessage, confirmTitle, label, suppress }: SuppressOptionDefinition): ActionItemOption {
     return {
+      confirm: { message: confirmMessage, title: confirmTitle },
       danger: true,
       icon: 'lu-bell-off',
       id: 'do-not-show-again',
       label,
       target: {
         kind: 'run',
-        run: () => show({ message: confirmMessage, title: confirmTitle }, suppress),
+        run: () => startPromise(suppress()),
       },
     };
   }

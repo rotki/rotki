@@ -7,7 +7,6 @@ import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import LatestPriceContent from '@/modules/assets/prices/latest/LatestPriceContent.vue';
 import LatestPriceFormDialog from '@/modules/assets/prices/latest/LatestPriceFormDialog.vue';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
@@ -136,30 +135,24 @@ describe('latestPriceContent', () => {
     expect(dialog().props()).toMatchObject({ open: true });
   });
 
-  it('should delete a price only once the deletion is confirmed', async () => {
+  it('should have the row ask before deleting a price', async () => {
     wrapper = createWrapper();
     await flushPromises();
 
-    wrapper.findComponent(RowActions).vm.$emit('delete-click');
-    await nextTick();
-
-    expect(useConfirmStore().visible).toBe(true);
-    expect(spies.deletePrice).not.toHaveBeenCalled();
-
-    await useConfirmStore().confirm();
-
-    expect(spies.deletePrice).toHaveBeenCalledExactlyOnceWith(PRICE);
+    expect(wrapper.findComponent(RowActions).props('deleteConfirm')).toStrictEqual({
+      message: 'price_table.delete.dialog.message',
+      title: 'price_table.delete.dialog.title',
+    });
   });
 
-  it('should keep the price when the deletion is dismissed', async () => {
+  it('should delete the price the row confirmed', async () => {
     wrapper = createWrapper();
     await flushPromises();
 
     wrapper.findComponent(RowActions).vm.$emit('delete-click');
     await nextTick();
-    await useConfirmStore().dismiss();
 
-    expect(spies.deletePrice).not.toHaveBeenCalled();
+    expect(spies.deletePrice).toHaveBeenCalledExactlyOnceWith(PRICE);
   });
 
   it('should narrow the prices to the asset picked in the filter', async () => {

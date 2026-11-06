@@ -4,6 +4,8 @@ import RowActions from '@/modules/shell/components/RowActions.vue';
 
 defineProps<{
   identifier: string;
+  /** What the delete button asks; `delete` is emitted once the user confirms. */
+  deleteConfirm: { title: string; message: string };
 }>();
 
 const emit = defineEmits<{
@@ -19,6 +21,7 @@ const { t } = useI18n({ useScope: 'global' });
     align="end"
     :edit-tooltip="t('asset_table.edit_tooltip')"
     :delete-tooltip="t('asset_table.delete_tooltip')"
+    :delete-confirm="deleteConfirm"
     @edit-click="emit('edit')"
     @delete-click="emit('delete')"
   >

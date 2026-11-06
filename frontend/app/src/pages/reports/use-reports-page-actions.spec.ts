@@ -15,8 +15,7 @@ const {
   interopState,
   notify,
   openDirectory,
-  showErrorMessage,
-  showSuccessMessage,
+  notifyError,
   submitTask,
   unpin,
   uploadReportData,
@@ -29,8 +28,7 @@ const {
   interopState: { appSession: false },
   notify: vi.fn(),
   openDirectory: vi.fn(async (): Promise<string | undefined> => '/tmp/out'),
-  showErrorMessage: vi.fn(),
-  showSuccessMessage: vi.fn(),
+  notifyError: vi.fn<(title: string, message: string) => void>(),
   submitTask: vi.fn(),
   unpin: vi.fn(),
   uploadReportData: vi.fn(async (): Promise<boolean> => true),
@@ -70,9 +68,8 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: (error: unknown): string => error instanceof Error ? error.message : String(error),
   useNotifications: (): {
     notify: typeof notify;
-    showErrorMessage: typeof showErrorMessage;
-    showSuccessMessage: typeof showSuccessMessage;
-  } => ({ notify, showErrorMessage, showSuccessMessage }),
+    notifyError: typeof notifyError;
+  } => ({ notify, notifyError }),
 }));
 
 vi.mock('@/modules/settings/use-setting', () => ({
@@ -151,7 +148,7 @@ describe('pages/reports/useReportsPageActions', () => {
       expect(exportReportData).not.toHaveBeenCalled();
     });
 
-    it('should pass the chosen directory and report success', async () => {
+    it('should pass the chosen directory and leave the result to its task row', async () => {
       await setup().exportData(PERIOD);
 
       expect(exportReportData).toHaveBeenCalledWith({
@@ -159,7 +156,7 @@ describe('pages/reports/useReportsPageActions', () => {
         fromTimestamp: PERIOD.start,
         toTimestamp: PERIOD.end,
       });
-      expect(showSuccessMessage).toHaveBeenCalled();
+      expect(notifyError).not.toHaveBeenCalled();
       expect(downloadFileByTextContent).not.toHaveBeenCalled();
     });
 
@@ -168,8 +165,7 @@ describe('pages/reports/useReportsPageActions', () => {
 
       await setup().exportData(PERIOD);
 
-      expect(showSuccessMessage).not.toHaveBeenCalled();
-      expect(showErrorMessage).not.toHaveBeenCalled();
+      expect(notifyError).not.toHaveBeenCalled();
     });
   });
 
@@ -194,12 +190,12 @@ describe('pages/reports/useReportsPageActions', () => {
       expect(downloadFileByTextContent).not.toHaveBeenCalled();
     });
 
-    it('should surface a thrown error as a message rather than rejecting', async () => {
+    it('should surface a thrown error as a toast rather than rejecting', async () => {
       exportReportData.mockRejectedValue(new Error('boom'));
 
       await expect(setup().exportData(PERIOD)).resolves.toBeUndefined();
 
-      expect(showErrorMessage).toHaveBeenCalledWith(expect.anything(), 'boom');
+      expect(notifyError).toHaveBeenCalledWith(expect.anything(), 'boom');
     });
   });
 
@@ -242,7 +238,6 @@ describe('pages/reports/useReportsPageActions', () => {
 
       await setup().importData();
 
-      expect(showSuccessMessage).toHaveBeenCalled();
       expect(fetchReports).toHaveBeenCalledTimes(1);
     });
 
@@ -253,7 +248,7 @@ describe('pages/reports/useReportsPageActions', () => {
       await setup().importData();
 
       expect(fetchReports).toHaveBeenCalledTimes(1);
-      expect(showErrorMessage).not.toHaveBeenCalled();
+      expect(notifyError).not.toHaveBeenCalled();
     });
 
     it('should leave an actionable failure to its task centre row', async () => {
@@ -263,7 +258,7 @@ describe('pages/reports/useReportsPageActions', () => {
       await setup().importData();
 
       expect(submitTask).toHaveBeenCalledOnce();
-      expect(showErrorMessage).not.toHaveBeenCalled();
+      expect(notifyError).not.toHaveBeenCalled();
       expect(fetchReports).not.toHaveBeenCalled();
     });
 

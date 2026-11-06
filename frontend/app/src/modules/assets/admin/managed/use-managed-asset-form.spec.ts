@@ -5,18 +5,13 @@ import { defineComponent, h, ref, type Ref } from 'vue';
 import { EVM_TOKEN } from '@/modules/assets/types';
 import { useManagedAssetForm } from './use-managed-asset-form';
 
-const { getAssetTypes, queryAllAssets, setMessage } = await vi.hoisted(async () => ({
+const { getAssetTypes, queryAllAssets } = await vi.hoisted(async () => ({
   getAssetTypes: vi.fn(),
   queryAllAssets: vi.fn(),
-  setMessage: vi.fn(),
 }));
 
 vi.mock('@/modules/assets/api/use-asset-management-api', () => ({
   useAssetManagementApi: (): Record<string, unknown> => ({ getAssetTypes, queryAllAssets }),
-}));
-
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): Record<string, unknown> => ({ setMessage }),
 }));
 
 const wrappers: VueWrapper[] = [];
@@ -71,16 +66,27 @@ describe('modules/assets/admin/managed/useManagedAssetForm', () => {
       expect(get(assetTypes)).toEqual(['evm token', 'custom asset']);
     });
 
-    it('should report a failure but still let the form open', async () => {
-      getAssetTypes.mockRejectedValue(new Error('offline'));
+    it('should expose a failure but still let the form open', async () => {
+      const failure = new Error('offline');
+      getAssetTypes.mockRejectedValue(failure);
 
-      const { add, assetTypes, modelValue } = await mountForm();
+      const { add, assetTypes, assetTypesFailure, modelValue } = await mountForm();
 
-      expect(setMessage).toHaveBeenCalledOnce();
+      expect(get(assetTypesFailure)).toBe(failure);
       expect(get(assetTypes)).toEqual([]);
 
       add();
       expect(get(modelValue)).toBeDefined();
+    });
+
+    it('should clear the failure once a retry loads them', async () => {
+      getAssetTypes.mockRejectedValueOnce(new Error('offline'));
+
+      const { assetTypes, assetTypesFailure, loadAssetTypes } = await mountForm();
+      await loadAssetTypes();
+
+      expect(get(assetTypesFailure)).toBeUndefined();
+      expect(get(assetTypes)).toEqual(['evm token', 'custom asset']);
     });
   });
 

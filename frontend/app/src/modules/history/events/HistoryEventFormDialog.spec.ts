@@ -2,12 +2,15 @@ import type { EvmSwapEvent, StandaloneEditableEvents } from '@/modules/history/e
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import { createMock } from '@test/utils/create-mock';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, ref, type VNode } from 'vue';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent, h, inject, nextTick, ref, type Ref, type VNode } from 'vue';
 import HistoryEventFormDialog from '@/modules/history/events/HistoryEventFormDialog.vue';
+import { HistoryEventSaveFailureKey } from '@/modules/history/management/forms/history-event-save-failure';
 
 const save = vi.fn(async () => true);
 const errorCount = ref<number>(0);
+/** The failure slot the dialog handed down, as the real forms see it through inject. */
+let failureSlot: Ref<string | undefined> | undefined;
 
 /**
  * The dialog reads the error count and saves through a template ref, so the stub exposes both. An
@@ -17,6 +20,7 @@ const FormStub = defineComponent({
   name: 'HistoryEventForm',
   props: ['data', 'stateUpdated'],
   setup(_, { expose }): () => VNode {
+    failureSlot = inject(HistoryEventSaveFailureKey);
     expose({ errorCount, save });
     return () => h('div');
   },
@@ -26,7 +30,7 @@ const FormStub = defineComponent({
 const BigDialogStub = {
   emits: ['confirm', 'cancel'],
   name: 'BigDialog',
-  props: ['title', 'display', 'action', 'errors', 'loading', 'promptOnClose'],
+  props: ['title', 'display', 'action', 'errors', 'loading', 'promptOnClose', 'failure', 'failureTitle'],
   template: `<div>
     <slot />
     <button data-testid="stub-confirm" @click="$emit('confirm')" />
@@ -97,6 +101,17 @@ describe('historyEventFormDialog', () => {
       expect(save).toHaveBeenCalledTimes(1);
       expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([undefined]);
       expect(wrapper.emitted('refresh')).toHaveLength(1);
+    });
+
+    it('should name a failure the form writes into the slot it hands down', async () => {
+      const wrapper = createWrapper(addData);
+      assert(failureSlot);
+
+      set(failureSlot, 'backend said no');
+      await nextTick();
+
+      expect(dialog(wrapper).props('failure')).toBe('backend said no');
+      expect(dialog(wrapper).props('failureTitle')).toBe('transactions.events.dialog.save_error');
     });
 
     it('should stay open when the form refused', async () => {

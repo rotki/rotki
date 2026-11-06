@@ -18,14 +18,18 @@ import { useAccountRemovals } from '@/modules/accounts/use-account-removals';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
 interface UseAccountDeleteReturn {
-  showConfirmation: (params: ShowConfirmationParams, onComplete?: () => void) => void;
   /** What deleting would remove, for a confirmation the caller shows itself, such as an inline one. */
   describeDeletion: (params: ShowConfirmationParams) => string;
-  /** Deletes at once, for a caller that has already confirmed with the user. */
+  /**
+   * Deletes at once, for a caller that has already confirmed with the user.
+   *
+   * @remarks
+   * A validator delete the backend rejects rejects here too, so the caller can name it where the
+   * user asked; the other kinds report through their task row.
+   */
   deleteConfirmed: (params: ShowConfirmationParams, onComplete?: () => void) => Promise<void>;
 }
 
@@ -36,7 +40,6 @@ export function useAccountDelete(): UseAccountDeleteReturn {
   const { deleteEth2Validators } = useEthStaking();
   const { deleteXpub, removeAccount, removeAgnosticAccount } = useAccountRemovals();
   const { t } = useI18n({ useScope: 'global' });
-  const { show } = useConfirmStore();
   const { getChainName } = useSupportedChains();
 
   function prune(removed: RemovedAccounts): void {
@@ -109,14 +112,6 @@ export function useAccountDelete(): UseAccountDeleteReturn {
     }
   }
 
-  function showConfirmation(params: ShowConfirmationParams, onComplete?: () => void): void {
-    const deletion = planDeletion(params);
-    show({ message: describe(deletion), title: t('account_balances.confirm_delete.title') }, async () => {
-      pipe(await execute(deletion), tapOption(prune));
-      onComplete?.();
-    });
-  }
-
   function describeDeletion(params: ShowConfirmationParams): string {
     return describe(planDeletion(params));
   }
@@ -129,6 +124,5 @@ export function useAccountDelete(): UseAccountDeleteReturn {
   return {
     deleteConfirmed,
     describeDeletion,
-    showConfirmation,
   };
 }

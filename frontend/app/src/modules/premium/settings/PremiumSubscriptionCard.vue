@@ -3,6 +3,7 @@ import { externalLinks } from '@shared/external-links';
 import PremiumPanel from '@/modules/premium/settings/PremiumPanel.vue';
 import PremiumPlanLimits from '@/modules/premium/settings/PremiumPlanLimits.vue';
 import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
+import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const { editing = false } = defineProps<{
@@ -12,6 +13,7 @@ const { editing = false } = defineProps<{
 
 const emit = defineEmits<{
   cancel: [];
+  /** The user accepted the question the remove button asks beside itself. */
   remove: [];
   replace: [];
   save: [];
@@ -109,14 +111,23 @@ const { currentTier } = usePremiumHelper();
         </RuiButton>
       </template>
       <template v-else>
-        <RuiButton
-          variant="text"
-          color="error"
-          data-testid="premium-delete"
-          @click="emit('remove')"
+        <ConfirmPopover
+          :title="t('premium_settings.delete_confirmation.title')"
+          :message="t('premium_settings.delete_confirmation.message')"
+          :confirm-label="t('premium_settings.actions.delete')"
+          @confirm="emit('remove')"
         >
-          {{ t('premium_settings.actions.delete') }}
-        </RuiButton>
+          <template #activator="{ attrs }">
+            <RuiButton
+              variant="text"
+              color="error"
+              data-testid="premium-delete"
+              v-bind="attrs"
+            >
+              {{ t('premium_settings.actions.delete') }}
+            </RuiButton>
+          </template>
+        </ConfirmPopover>
         <RuiButton
           color="primary"
           data-testid="premium-setup"

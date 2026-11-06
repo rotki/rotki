@@ -175,7 +175,7 @@ describe('modules::account::use-logout', () => {
   });
 
   describe('logoutRemoteSession', () => {
-    it('should show its failure on the logged-out screen', async () => {
+    it('should hand its failure back for the login form, opening no dialog', async () => {
       mockGetLoggedUsers.mockRejectedValue(new Error('unreachable'));
       endSession();
 
@@ -183,7 +183,7 @@ describe('modules::account::use-logout', () => {
       const status = await logoutRemoteSession();
 
       expect(status).toEqual({ message: 'unreachable', success: false });
-      expect(mockSetMessage).toHaveBeenCalledWith(expect.objectContaining({ description: 'unreachable', title: 'Remote session logout failure' }), { sessionless: true });
+      expect(mockSetMessage).not.toHaveBeenCalled();
     });
   });
 

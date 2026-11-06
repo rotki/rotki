@@ -2,7 +2,7 @@ import type { Ref } from 'vue';
 import dayjs from 'dayjs';
 import { downloadFileByBlob } from '@/modules/core/common/file/download';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSnapshotApi } from '@/modules/settings/api/use-snapshot-api';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
@@ -20,18 +20,22 @@ export function snapshotFileName(timestamp: number): string {
 
 /**
  * Exports a balance snapshot: the desktop app writes CSV files to a directory the user picks, the
- * browser downloads a zip. Failures and the desktop result are reported as a message.
+ * browser downloads a zip. Failures and the desktop result are reported as a toast.
  */
 export function useSnapshotExport(): UseSnapshotExportReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { setMessage } = useMessageStore();
+  const { notifyError, notifyInfo } = useNotifications();
   const { downloadSnapshot, exportSnapshotCSV } = useSnapshotApi();
   const { appSession, openDirectory } = useInterop();
 
   const exporting = shallowRef<number>();
 
   function report(description: string, success: boolean): void {
-    setMessage({ description, success, title: t('dashboard.snapshot.download.message.title') });
+    const title = t('dashboard.snapshot.download.message.title');
+    if (success)
+      notifyInfo(title, description);
+    else
+      notifyError(title, description);
   }
 
   async function exportToDirectory(timestamp: number): Promise<boolean> {

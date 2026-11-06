@@ -15,19 +15,21 @@ const { actions, source } = await vi.hoisted(async () => {
   return {
     actions: {
       actionFailure: shallowRef<unknown>(),
-      confirmCreateCounterpart: vi.fn<(item: unknown) => void>(),
-      confirmIgnoreAllFiat: vi.fn<() => void>(),
-      confirmIgnoreSelected: vi.fn<() => void>(),
-      confirmRestoreSelected: vi.fn<() => void>(),
+      createCounterpart: vi.fn<(item: unknown) => Promise<void>>(async () => Promise.resolve()),
       dismissResolution: vi.fn<() => void>(),
       fiat: ref<unknown[]>([]),
       ignore: vi.fn<(item: unknown) => Promise<void>>(async () => Promise.resolve()),
+      ignoreAllFiat: vi.fn<() => Promise<void>>(async () => Promise.resolve()),
+      ignoreFiatQuestion: ref<{ title: string; message: string }>({ message: 'Ignore 1 fiat movement?', title: 'Ignore fiat' }),
       ignoreLoading: ref<boolean>(false),
+      ignoreSelected: vi.fn<() => Promise<void>>(async () => Promise.resolve()),
+      ignoreSelectedQuestion: ref<{ title: string; message: string }>({ message: 'Ignore 1 selected?', title: 'Ignore selected' }),
       markExternal: vi.fn<(item: unknown) => Promise<void>>(async () => Promise.resolve()),
       modelSelectedIgnored: ref<string[]>([]),
       modelSelectedUnmatched: ref<string[]>([]),
       resolutionNotice: ref<{ message: string } | undefined>(),
       restore: vi.fn<(item: unknown) => Promise<void>>(async () => Promise.resolve()),
+      restoreSelected: vi.fn<() => Promise<void>>(async () => Promise.resolve()),
       undoResolution: vi.fn<() => Promise<void>>(async () => Promise.resolve()),
     },
     source: {
@@ -52,8 +54,8 @@ function sharedSource(): Record<string, unknown> {
 }
 
 function sharedActions(): Record<string, unknown> {
-  const { actionFailure, confirmIgnoreSelected, confirmRestoreSelected, dismissResolution, ignoreLoading, markExternal, modelSelectedIgnored, modelSelectedUnmatched, resolutionNotice, undoResolution } = actions;
-  return { actionFailure, confirmIgnoreSelected, confirmRestoreSelected, dismissResolution, ignoreLoading, markExternal, modelSelectedIgnored, modelSelectedUnmatched, resolutionNotice, undoResolution };
+  const { actionFailure, dismissResolution, ignoreLoading, ignoreSelected, ignoreSelectedQuestion, markExternal, modelSelectedIgnored, modelSelectedUnmatched, resolutionNotice, restoreSelected, undoResolution } = actions;
+  return { actionFailure, dismissResolution, ignoreLoading, ignoreSelected, ignoreSelectedQuestion, markExternal, modelSelectedIgnored, modelSelectedUnmatched, resolutionNotice, restoreSelected, undoResolution };
 }
 
 vi.mock('@/modules/history/events/use-unmatched-asset-movements', () => ({
@@ -69,8 +71,9 @@ vi.mock('@/modules/history/events/use-unmatched-asset-movements', () => ({
 vi.mock('@/modules/history/events/use-asset-movement-actions', () => ({
   useAssetMovementActions: (): Record<string, unknown> => ({
     ...sharedActions(),
-    confirmIgnoreAllFiat: actions.confirmIgnoreAllFiat,
     fiatMovements: actions.fiat,
+    ignoreAllFiat: actions.ignoreAllFiat,
+    ignoreFiatQuestion: actions.ignoreFiatQuestion,
     ignoreMovement: actions.ignore,
     restoreMovement: actions.restore,
   }),
@@ -90,7 +93,7 @@ vi.mock('@/modules/history/events/use-unmatched-bridge-transactions', async impo
 vi.mock('@/modules/history/events/use-bridge-transaction-actions', () => ({
   useBridgeTransactionActions: (): Record<string, unknown> => ({
     ...sharedActions(),
-    confirmCreateCounterpart: actions.confirmCreateCounterpart,
+    createCounterpart: actions.createCounterpart,
     ignoreTransaction: actions.ignore,
     restoreTransaction: actions.restore,
   }),
@@ -132,9 +135,21 @@ const TooltipStub = defineComponent({
   setup: (_, { slots }) => (): VNode[] => [...(slots.activator?.() ?? []), h('span', { 'data-testid': 'tooltip' }, slots.default?.())],
 });
 
+/** Opens through its activator and renders its content only while open, as the real menu does. */
+const MenuStub = defineComponent({
+  emits: ['update:modelValue'],
+  name: 'RuiMenu',
+  props: { modelValue: { default: false, type: Boolean } },
+  template: `<div>
+    <slot name="activator" :attrs="{ onClick: () => $emit('update:modelValue', true) }" />
+    <div v-if="modelValue"><slot /></div>
+  </div>`,
+});
+
 const contentGlobal = {
   stubs: {
     AssetMovementMatchingSettingsMenu: true,
+    RuiMenu: MenuStub,
     RuiTooltip: TooltipStub,
     UnmatchedList: ListStub,
     UnmatchedResolutionStrip: true,
@@ -291,12 +306,12 @@ describe.each(CONTENT_KINDS)('unmatched matching content ($name)', (kind) => {
       expect(actions.markExternal).toHaveBeenCalledExactlyOnceWith(item(5));
     });
 
-    it(`should ${kind.createsCounterpart ? 'confirm before creating' : 'ignore a request to create'} a counterpart`, async () => {
+    it(`should ${kind.createsCounterpart ? 'create the counterpart its row confirmed' : 'ignore a request to create a counterpart'}`, async () => {
       const wrapper = await mountContent();
 
       triggerAction(wrapper, UNMATCHED_ACTIONS.CREATE_COUNTERPART, item(6));
 
-      expect(actions.confirmCreateCounterpart.mock.calls).toEqual(counterpartCalls);
+      expect(actions.createCounterpart.mock.calls).toEqual(counterpartCalls);
       expect(actions.ignore).not.toHaveBeenCalled();
       expect(actions.restore).not.toHaveBeenCalled();
       expect(actions.markExternal).not.toHaveBeenCalled();
@@ -306,14 +321,25 @@ describe.each(CONTENT_KINDS)('unmatched matching content ($name)', (kind) => {
   });
 
   describe('the bulk actions', () => {
-    it('should confirm before ignoring the selection, rather than ignoring it outright', async () => {
+    it('should ask beside the button before ignoring the selection, rather than ignoring it outright', async () => {
       set(actions.modelSelectedUnmatched, ['1']);
       const wrapper = await mountContent();
 
       await wrapper.find('[data-testid="ignore-selected"]').trigger('click');
 
-      expect(actions.confirmIgnoreSelected).toHaveBeenCalledOnce();
+      expect(wrapper.find('[data-testid="inline-confirm"]').text()).toContain('Ignore 1 selected?');
+      expect(actions.ignoreSelected).not.toHaveBeenCalled();
       expect(actions.ignore).not.toHaveBeenCalled();
+    });
+
+    it('should ignore the selection once the question is accepted', async () => {
+      set(actions.modelSelectedUnmatched, ['1']);
+      const wrapper = await mountContent();
+
+      await wrapper.find('[data-testid="ignore-selected"]').trigger('click');
+      await wrapper.find('[data-testid="inline-confirm-accept"]').trigger('click');
+
+      expect(actions.ignoreSelected).toHaveBeenCalledOnce();
     });
 
     it(`should keep the ignore button ${kind.emptySelection} while nothing is selected`, async () => {
@@ -334,13 +360,16 @@ describe.each(CONTENT_KINDS)('unmatched matching content ($name)', (kind) => {
       expect(buttonState(wrapper, 'ignore-selected')).toBe(kind.gatesBulkOnTier ? 'disabled' : 'enabled');
     });
 
-    it.runIf(kind.ignoresFiat)('should confirm before ignoring every fiat item', async () => {
+    it.runIf(kind.ignoresFiat)('should ask beside the button before ignoring every fiat item', async () => {
       set(actions.fiat, [item(1)]);
       const wrapper = await mountContent();
 
       await wrapper.find('[data-testid="ignore-fiat"]').trigger('click');
+      expect(wrapper.find('[data-testid="inline-confirm"]').text()).toContain('Ignore 1 fiat movement?');
+      expect(actions.ignoreAllFiat).not.toHaveBeenCalled();
+      await wrapper.find('[data-testid="inline-confirm-accept"]').trigger('click');
 
-      expect(actions.confirmIgnoreAllFiat).toHaveBeenCalledOnce();
+      expect(actions.ignoreAllFiat).toHaveBeenCalledOnce();
     });
 
     it.skipIf(kind.ignoresFiat)('should offer no fiat ignore', async () => {
@@ -370,7 +399,7 @@ describe.each(CONTENT_KINDS)('unmatched matching content ($name)', (kind) => {
   });
 
   describe('the ignored tab', () => {
-    it('should confirm before restoring the selection', async () => {
+    it('should restore the selection when restore selected is clicked', async () => {
       set(source.ignored, [item(1)]);
       set(actions.modelSelectedIgnored, ['1']);
       const wrapper = await mountContent();
@@ -378,7 +407,7 @@ describe.each(CONTENT_KINDS)('unmatched matching content ($name)', (kind) => {
 
       await wrapper.find('[data-testid="restore-selected"]').trigger('click');
 
-      expect(actions.confirmRestoreSelected).toHaveBeenCalledOnce();
+      expect(actions.restoreSelected).toHaveBeenCalledOnce();
       expect(actions.restore).not.toHaveBeenCalled();
     });
 

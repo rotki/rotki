@@ -3,11 +3,11 @@ import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, type VNode } from 'vue';
 import SimpleRpcNodeManager from '@/modules/settings/general/rpc/simple/SimpleRpcNodeManager.vue';
+import RowActions from '@/modules/shell/components/RowActions.vue';
 import '@test/i18n';
 
-const { readSetting, show, write } = vi.hoisted(() => ({
+const { readSetting, write } = vi.hoisted(() => ({
   readSetting: vi.fn(),
-  show: vi.fn(),
   write: vi.fn(),
 }));
 
@@ -17,10 +17,6 @@ vi.mock('@/modules/settings/use-setting', () => ({
 
 vi.mock('@/modules/settings/settings-writer', () => ({
   useSettingsWriter: (): Record<string, unknown> => ({ write }),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): Record<string, unknown> => ({ show }),
 }));
 
 vi.mock('@/modules/settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue', async () => {
@@ -127,5 +123,63 @@ describe('settings/general/rpc/simple/SimpleRpcNodeManager.vue', () => {
 
     expect(wrapper.find('[data-testid=add-simple-node]').exists()).toBe(false);
     expect(wrapper.text()).toContain('https://rpc.polkadot.io');
+  });
+
+  describe('deleting the endpoint', () => {
+    beforeEach(() => {
+      readSetting.mockReturnValue(ref<string>('https://rpc.polkadot.io'));
+    });
+
+    it('should have the row ask before deleting, and write nothing until confirmed', async () => {
+      wrapper = createWrapper();
+      await nextTick();
+
+      expect(wrapper.findComponent(RowActions).props('deleteConfirm')).toEqual({
+        message: 'general_settings.simple_node_setting.delete_confirmation.subtitle',
+        title: 'general_settings.simple_node_setting.delete_confirmation.title',
+      });
+      expect(write).not.toHaveBeenCalled();
+    });
+
+    it('should clear the setting once the question is confirmed, without opening the dialog', async () => {
+      write.mockResolvedValue({ success: true });
+      wrapper = createWrapper();
+      await nextTick();
+
+      wrapper.findComponent(RowActions).vm.$emit('delete-click');
+      await flushPromises();
+
+      expect(write).toHaveBeenCalledWith('dotRpcEndpoint', '');
+      expect(wrapper.find('.big-dialog').attributes('data-display')).toBe('false');
+      expect(wrapper.find('[data-testid=simple-node-delete-error]').exists()).toBe(false);
+    });
+
+    it('should name a failed delete above the table, with no retry of its own', async () => {
+      write.mockResolvedValue({ message: 'node is in use', success: false });
+      wrapper = createWrapper();
+      await nextTick();
+
+      wrapper.findComponent(RowActions).vm.$emit('delete-click');
+      await flushPromises();
+
+      const strip = wrapper.find('[data-testid=simple-node-delete-error]');
+      expect(strip.text()).toContain('node is in use');
+      expect(strip.text()).toContain('general_settings.simple_node_setting.delete_error');
+      expect(strip.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
+    });
+
+    it('should drop the failure once a later delete succeeds', async () => {
+      write.mockResolvedValueOnce({ message: 'node is in use', success: false });
+      write.mockResolvedValueOnce({ success: true });
+      wrapper = createWrapper();
+      await nextTick();
+
+      wrapper.findComponent(RowActions).vm.$emit('delete-click');
+      await flushPromises();
+      wrapper.findComponent(RowActions).vm.$emit('delete-click');
+      await flushPromises();
+
+      expect(wrapper.find('[data-testid=simple-node-delete-error]').exists()).toBe(false);
+    });
   });
 });

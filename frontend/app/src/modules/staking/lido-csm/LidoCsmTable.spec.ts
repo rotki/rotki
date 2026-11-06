@@ -1,12 +1,9 @@
 import type { LidoCsmNodeOperator, LidoCsmNodeOperatorPayload } from '@/modules/staking/staking-types';
 import { bigNumberify } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { type DOMWrapper, flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import LidoCsmTable from '@/modules/staking/lido-csm/LidoCsmTable.vue';
@@ -145,15 +142,19 @@ describe('lidoCsmTable', () => {
   });
 
   describe('remove', () => {
-    it('should remove the operator only once confirmed, then ask for a reload', async () => {
+    it('should have each row\'s delete button ask about that operator first', () => {
+      wrapper = createWrapper([WITH_METRICS, WITHOUT_METRICS]);
+
+      expect(wrapper.findAllComponents(RowActions)[1].props('deleteConfirm')).toEqual({
+        message: `staking_page.lido_csm.messages.confirm_delete_message::${WITHOUT_METRICS.address}, staking_page.lido_csm.modules.csm, 3`,
+        title: 'staking_page.lido_csm.messages.confirm_delete_title',
+      });
+    });
+
+    it('should remove the operator once the delete is confirmed, then ask for a reload', async () => {
       wrapper = createWrapper([WITH_METRICS, WITHOUT_METRICS]);
 
       await removeRow(1);
-
-      expect(useConfirmStore().visible).toBe(true);
-      expect(spies.deleteNodeOperator).not.toHaveBeenCalled();
-
-      await useConfirmStore().confirm();
       await flushPromises();
 
       expect(spies.deleteNodeOperator).toHaveBeenCalledExactlyOnceWith({
@@ -170,7 +171,6 @@ describe('lidoCsmTable', () => {
       expect(row(CSM_0X02_OPERATOR).find('[data-testid=lido-csm-node-operator-id]').text()).toBe('staking_page.lido_csm.modules.csm_0x02 #4');
 
       await removeRow(0);
-      await useConfirmStore().confirm();
       await flushPromises();
 
       expect(spies.deleteNodeOperator).toHaveBeenCalledExactlyOnceWith({
@@ -194,8 +194,6 @@ describe('lidoCsmTable', () => {
       wrapper = createWrapper([WITHOUT_METRICS, sameIdInCsm0x02]);
 
       await removeRow(1);
-      startPromise(useConfirmStore().confirm());
-      await nextTick();
 
       expect(spies.deleteNodeOperator).toHaveBeenCalledExactlyOnceWith({
         address: WITHOUT_METRICS.address,
@@ -203,16 +201,6 @@ describe('lidoCsmTable', () => {
         stakingModuleId: 5,
       });
       expect(wrapper.findAllComponents(RowActions).map(action => action.props('disabled'))).toEqual([false, true]);
-    });
-
-    it('should keep the operator when the removal is dismissed', async () => {
-      wrapper = createWrapper([WITH_METRICS]);
-
-      await removeRow(0);
-      await useConfirmStore().dismiss();
-      await flushPromises();
-
-      expect(spies.deleteNodeOperator).not.toHaveBeenCalled();
     });
 
     it('should disable only the row being removed until the removal settles', async () => {
@@ -223,31 +211,27 @@ describe('lidoCsmTable', () => {
       wrapper = createWrapper([WITH_METRICS, WITHOUT_METRICS]);
 
       await removeRow(0);
-      const confirming = useConfirmStore().confirm();
-      await nextTick();
 
       const actions = wrapper.findAllComponents(RowActions);
       expect(actions.map(action => action.props('disabled'))).toEqual([true, false]);
 
       resolve(true);
-      await confirming;
       await flushPromises();
 
       expect(wrapper.findAllComponents(RowActions).map(action => action.props('disabled'))).toEqual([false, false]);
     });
 
-    it('should report a failed removal and not reload', async () => {
+    it('should name a failed removal above the table, without a retry, and not reload', async () => {
       spies.deleteNodeOperator.mockRejectedValue(new Error('operator not tracked'));
       wrapper = createWrapper([WITH_METRICS]);
 
       await removeRow(0);
-      await useConfirmStore().confirm();
       await flushPromises();
 
-      expect(useMessageStore().message).toMatchObject({
-        description: 'staking_page.lido_csm.messages.delete_failed::operator not tracked',
-        success: false,
-      });
+      const strip = wrapper.find('[data-testid=lido-csm-delete-error]');
+      expect(strip.text()).toContain('staking_page.lido_csm.messages.delete_failed');
+      expect(strip.text()).toContain('operator not tracked');
+      expect(strip.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
       expect(wrapper.emitted('refresh')).toBeUndefined();
       expect(wrapper.findComponent(RowActions).props('disabled')).toBe(false);
     });

@@ -25,7 +25,7 @@ const refreshable = computed(() => get(generalCaches).map(id => ({
   text: toSentenceCase(id),
 })));
 
-const { pending, showConfirmation, status } = useCacheClear<string>(
+const { pending, request, status } = useCacheClear<string>(
   refreshable,
   refreshGeneralCache,
   {
@@ -37,12 +37,6 @@ const { pending, showConfirmation, status } = useCacheClear<string>(
       source,
     }),
   },
-  (source: string) => ({
-    message: t('data_management.refresh_cache.confirm.message', {
-      source,
-    }),
-    title: t('data_management.refresh_cache.confirm.title'),
-  }),
 );
 
 const taskRunning = useIsActive(ActivityKind.PROTOCOL_CACHE);
@@ -53,9 +47,9 @@ async function getRefreshableCaches() {
   set(generalCaches, await getRefreshableGeneralCaches());
 }
 
-function confirm() {
+async function refresh(): Promise<void> {
   assert(isDefined(source));
-  showConfirmation(get(source));
+  await request(get(source));
 }
 
 onMounted(() => {
@@ -93,7 +87,7 @@ onMounted(() => {
         :disabled="!source || loading"
         :loading="loading"
         data-testid="refresh-cache-button"
-        @click="confirm()"
+        @click="refresh()"
       >
         <template #prepend>
           <RuiIcon

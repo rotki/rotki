@@ -8,7 +8,7 @@ import '@test/i18n';
 const mockQueriedAddresses = vi.fn();
 const mockAddQueriedAddress = vi.fn();
 const mockDeleteQueriedAddress = vi.fn();
-const mockShowErrorMessage = vi.fn();
+const mockNotifyError = vi.fn<(title: string, message: string) => void>();
 
 vi.mock('@/modules/accounts/api/use-queried-address-api', () => ({
   useQueriedAddressApi: vi.fn(() => ({
@@ -21,7 +21,7 @@ vi.mock('@/modules/accounts/api/use-queried-address-api', () => ({
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: vi.fn((e: unknown): string => (e instanceof Error ? e.message : String(e))),
   useNotifications: vi.fn(() => ({
-    showErrorMessage: mockShowErrorMessage,
+    notifyError: mockNotifyError,
   })),
 }));
 
@@ -55,7 +55,7 @@ describe('useQueriedAddressOperations', () => {
       expect(get(store.queriedAddresses)).toMatchObject(response);
     });
 
-    it('should show error on fetch failure', async () => {
+    it('should pop a notification on fetch failure, which has no dialog to show it', async () => {
       mockQueriedAddresses.mockRejectedValue(new Error('failed'));
 
       const { useQueriedAddressOperations } = await importModule();
@@ -65,7 +65,10 @@ describe('useQueriedAddressOperations', () => {
       const store = useSessionMetadataStore();
       expect(mockQueriedAddresses).toHaveBeenCalledOnce();
       expect(get(store.queriedAddresses)).toMatchObject({});
-      expect(mockShowErrorMessage).toHaveBeenCalledOnce();
+      expect(mockNotifyError).toHaveBeenCalledWith(
+        'queried_address_dialog.title',
+        'actions.session.fetch_queriable_address.error.message::failed',
+      );
     });
   });
 
@@ -82,28 +85,31 @@ describe('useQueriedAddressOperations', () => {
 
       const { useQueriedAddressOperations } = await importModule();
       const { addQueriedAddress } = useQueriedAddressOperations();
-      await addQueriedAddress(payload);
+      const failure = await addQueriedAddress(payload);
 
       const store = useSessionMetadataStore();
       expect(mockAddQueriedAddress).toHaveBeenCalledWith(payload);
       expect(get(store.queriedAddresses)).toMatchObject(response);
+      expect(failure).toBeUndefined();
     });
 
-    it('should show error on add failure', async () => {
+    it('should hand an add failure back instead of showing it', async () => {
       const payload: QueriedAddressPayload = {
         address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5',
         module: Module.MAKERDAO_DSR,
       };
-      mockAddQueriedAddress.mockRejectedValue(new Error('failed'));
+      const error = new Error('failed');
+      mockAddQueriedAddress.mockRejectedValue(error);
 
       const { useQueriedAddressOperations } = await importModule();
       const { addQueriedAddress } = useQueriedAddressOperations();
-      await addQueriedAddress(payload);
+      const failure = await addQueriedAddress(payload);
 
       const store = useSessionMetadataStore();
       expect(mockAddQueriedAddress).toHaveBeenCalledWith(payload);
       expect(get(store.queriedAddresses)).toMatchObject({});
-      expect(mockShowErrorMessage).toHaveBeenCalledOnce();
+      expect(failure).toEqual({ error });
+      expect(mockNotifyError).not.toHaveBeenCalled();
     });
   });
 
@@ -123,13 +129,14 @@ describe('useQueriedAddressOperations', () => {
 
       const { useQueriedAddressOperations } = await importModule();
       const { deleteQueriedAddress } = useQueriedAddressOperations();
-      await deleteQueriedAddress(payload);
+      const failure = await deleteQueriedAddress(payload);
 
       expect(mockDeleteQueriedAddress).toHaveBeenCalledWith(payload);
       expect(get(queriedAddresses)).toMatchObject({});
+      expect(failure).toBeUndefined();
     });
 
-    it('should show error on delete failure', async () => {
+    it('should hand a delete failure back instead of showing it', async () => {
       const store = useSessionMetadataStore();
       const { queriedAddresses } = storeToRefs(store);
       const originalState: QueriedAddresses = {
@@ -141,15 +148,17 @@ describe('useQueriedAddressOperations', () => {
         address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5',
         module: Module.MAKERDAO_DSR,
       };
-      mockDeleteQueriedAddress.mockRejectedValue(new Error('failed'));
+      const error = new Error('failed');
+      mockDeleteQueriedAddress.mockRejectedValue(error);
 
       const { useQueriedAddressOperations } = await importModule();
       const { deleteQueriedAddress } = useQueriedAddressOperations();
-      await deleteQueriedAddress(payload);
+      const failure = await deleteQueriedAddress(payload);
 
       expect(mockDeleteQueriedAddress).toHaveBeenCalledWith(payload);
       expect(get(queriedAddresses)).toMatchObject(originalState);
-      expect(mockShowErrorMessage).toHaveBeenCalledOnce();
+      expect(failure).toEqual({ error });
+      expect(mockNotifyError).not.toHaveBeenCalled();
     });
   });
 });

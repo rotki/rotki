@@ -188,6 +188,55 @@ describe('modules/core/action-center/ActionCenterRow', () => {
     expect(wrapper.emitted('action')).toBeUndefined();
   });
 
+  describe('an option that asks first', () => {
+    const silence: ActionTarget = { kind: 'run', run: vi.fn() };
+
+    function askingRow(): VueWrapper {
+      return mountRow(createItem({
+        options: [{
+          confirm: { message: 'Stop showing this?', title: 'Silence the row' },
+          danger: true,
+          icon: 'lu-bell-off',
+          id: 'do-not-show-again',
+          label: 'Silence',
+          target: silence,
+        }],
+      }));
+    }
+
+    it('should ask in the row in place of its options, and hand nothing up yet', async () => {
+      const wrapper = askingRow();
+
+      await wrapper.find('[data-testid=actions-center-row-option]').trigger('click');
+
+      const question = wrapper.find('[data-testid=actions-center-row-confirm]');
+      expect(question.text()).toContain('Stop showing this?');
+      expect(question.find('[data-testid=inline-confirm-accept]').text()).toBe('Silence');
+      expect(wrapper.find('[data-testid=actions-center-row-option]').exists()).toBe(false);
+      expect(wrapper.emitted('option')).toBeUndefined();
+    });
+
+    it('should hand the option\'s target up once accepted', async () => {
+      const wrapper = askingRow();
+
+      await wrapper.find('[data-testid=actions-center-row-option]').trigger('click');
+      await wrapper.find('[data-testid=inline-confirm-accept]').trigger('click');
+
+      expect(wrapper.emitted('option')).toEqual([[silence]]);
+      expect(wrapper.find('[data-testid=actions-center-row-confirm]').exists()).toBe(false);
+    });
+
+    it('should bring the options back on cancel without handing anything up', async () => {
+      const wrapper = askingRow();
+
+      await wrapper.find('[data-testid=actions-center-row-option]').trigger('click');
+      await wrapper.find('[data-testid=inline-confirm-cancel]').trigger('click');
+
+      expect(wrapper.find('[data-testid=actions-center-row-option]').exists()).toBe(true);
+      expect(wrapper.emitted('option')).toBeUndefined();
+    });
+  });
+
   it('should hide the options of a locked row along with its action', () => {
     const wrapper = mountRow(createItem({
       locked: true,

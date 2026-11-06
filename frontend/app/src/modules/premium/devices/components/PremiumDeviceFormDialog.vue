@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import type { PremiumDevice } from '@/modules/premium/devices/premium';
 import { useTemplateRef } from 'vue';
-import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { useSaveFailure } from '@/modules/core/form/use-save-failure';
 import PremiumDeviceForm from '@/modules/premium/devices/components/PremiumDeviceForm.vue';
 import { usePremiumDevicesApi } from '@/modules/premium/devices/devices';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
@@ -17,14 +15,13 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const newDeviceName = ref<string>('');
-const errorMessages = ref<ValidationErrors>({});
 const loading = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);
 
 const form = useTemplateRef<InstanceType<typeof PremiumDeviceForm>>('form');
 
 const { updatePremiumDevice } = usePremiumDevicesApi();
-const { setMessage } = useMessageStore();
+const { capture, clear, failure, modelFieldErrors } = useSaveFailure();
 
 async function save(): Promise<boolean> {
   const formRef = get(form);
@@ -38,32 +35,19 @@ async function save(): Promise<boolean> {
   const { deviceIdentifier } = get(modelValue);
   const payload = { deviceIdentifier, deviceName };
   try {
-    set(errorMessages, {});
-
+    clear();
     success = await updatePremiumDevice(payload);
-    set(modelValue, undefined);
   }
   catch (error: unknown) {
     success = false;
-    let errors: ValidationErrors | string = getErrorMessage(error);
-    if (error instanceof ApiValidationError)
-      errors = error.getValidationErrors(payload);
-
-    if (typeof errors === 'object') {
-      set(errorMessages, errors);
-    }
-    else {
-      setMessage({
-        description: errors,
-        title: t('premium_devices.form.error.title'),
-      });
-    }
+    capture(error, payload);
   }
   finally {
     set(loading, false);
   }
 
   if (success) {
+    set(modelValue, undefined);
     emit('refresh');
   }
 
@@ -71,6 +55,7 @@ async function save(): Promise<boolean> {
 }
 
 watchImmediate(modelValue, (value: PremiumDevice | undefined) => {
+  clear();
   if (isDefined(value)) {
     set(newDeviceName, get(value, 'deviceName'));
   }
@@ -88,6 +73,8 @@ watchImmediate(modelValue, (value: PremiumDevice | undefined) => {
     :action="{ primary: t('common.actions.save') }"
     :layout="{ autoHeight: true, divide: true, maxWidth: '560px' }"
     :prompt-on-close="stateUpdated"
+    :failure="failure"
+    :failure-title="t('premium_devices.form.error.title')"
     @confirm="save()"
     @cancel="modelValue = undefined"
   >
@@ -95,7 +82,7 @@ watchImmediate(modelValue, (value: PremiumDevice | undefined) => {
       v-if="modelValue"
       ref="form"
       v-model="newDeviceName"
-      v-model:error-messages="errorMessages"
+      v-model:error-messages="modelFieldErrors"
       v-model:state-updated="stateUpdated"
       :device="modelValue"
     />

@@ -12,20 +12,15 @@ import '@test/i18n';
 
 type Management = ReturnType<typeof useLocationManagement>;
 
-const { deleteLocation, editLocation, fetchUsage, onAliasesMounted, show } = vi.hoisted(() => ({
+const { deleteLocation, editLocation, fetchUsage, onAliasesMounted } = vi.hoisted(() => ({
   deleteLocation: vi.fn<Management['deleteLocation']>(),
   onAliasesMounted: vi.fn<() => void>(),
   editLocation: vi.fn<Management['editLocation']>(),
   fetchUsage: vi.fn<Management['fetchUsage']>(),
-  show: vi.fn(),
 }));
 
 vi.mock('@/modules/locations/use-location-management', () => ({
   useLocationManagement: (): Partial<Management> => ({ deleteLocation, editLocation, fetchUsage }),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): Record<string, unknown> => ({ show }),
 }));
 
 const { replace, route } = await vi.hoisted(async () => {
@@ -166,11 +161,23 @@ describe('locationManager', () => {
     await actionsOf('custom:ing').find('[data-testid=row-delete]').trigger('click');
     await flushPromises();
 
-    expect(show).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid=location-delete-confirm]').exists()).toBe(false);
     expect(deleteLocation).not.toHaveBeenCalled();
     expect(wrapper.find('[data-testid=location-usage-entry]').text()).toContain('3');
     await wrapper.find('[data-testid=location-usage-archive]').trigger('click');
     expect(editLocation).toHaveBeenCalledExactlyOnceWith('custom:ing', { isActive: false });
+  });
+
+  it('should ask in the location\'s own row before deleting it', async () => {
+    fetchUsage.mockResolvedValue(ok({ deletable: true, usage: {} }));
+    wrapper = createWrapper();
+
+    await actionsOf('custom:ing').find('[data-testid=row-delete]').trigger('click');
+    await flushPromises();
+
+    expect(deleteLocation).not.toHaveBeenCalled();
+    expect(actionsOf('custom:ing').find('[data-testid=location-delete-confirm]').text()).toContain('location_manager.delete.message::Banks › ING');
+    expect(actionsOf('banks').find('[data-testid=location-delete-confirm]').exists()).toBe(false);
   });
 
   it('should delete an unused location once confirmed', async () => {
@@ -180,11 +187,23 @@ describe('locationManager', () => {
 
     await actionsOf('custom:ing').find('[data-testid=row-delete]').trigger('click');
     await flushPromises();
-    expect(deleteLocation).not.toHaveBeenCalled();
-    expect(show.mock.calls[0][0].message).toBe('location_manager.delete.message::Banks › ING');
-    await show.mock.calls[0][1]();
+    await wrapper.find('[data-testid=location-delete-confirm] [data-testid=inline-confirm-accept]').trigger('click');
+    await flushPromises();
 
     expect(deleteLocation).toHaveBeenCalledExactlyOnceWith('custom:ing');
+    expect(wrapper.find('[data-testid=location-delete-confirm]').exists()).toBe(false);
+  });
+
+  it('should drop the question on cancel without deleting', async () => {
+    fetchUsage.mockResolvedValue(ok({ deletable: true, usage: {} }));
+    wrapper = createWrapper();
+
+    await actionsOf('custom:ing').find('[data-testid=row-delete]').trigger('click');
+    await flushPromises();
+    await wrapper.find('[data-testid=location-delete-confirm] [data-testid=inline-confirm-cancel]').trigger('click');
+
+    expect(wrapper.find('[data-testid=location-delete-confirm]').exists()).toBe(false);
+    expect(deleteLocation).not.toHaveBeenCalled();
   });
 
   it('should report a failed usage check instead of deleting', async () => {
@@ -195,7 +214,7 @@ describe('locationManager', () => {
     await flushPromises();
 
     expect(wrapper.find('[data-testid=location-manager-error]').text()).toContain('offline');
-    expect(show).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-testid=location-delete-confirm]').exists()).toBe(false);
   });
 
   it('should report a refused archive and not keep the location listed as archived', async () => {
@@ -228,7 +247,7 @@ describe('locationManager', () => {
 
     await actionsOf('custom:ing').find('[data-testid=row-delete]').trigger('click');
     await flushPromises();
-    await show.mock.calls[0][1]();
+    await wrapper.find('[data-testid=location-delete-confirm] [data-testid=inline-confirm-accept]').trigger('click');
 
     await flushPromises();
     expect(wrapper.find('[data-testid=location-manager-error]').text()).toContain('Location custom:ing is still in use');

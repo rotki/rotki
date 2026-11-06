@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM } from '../helpers/constants';
-import { confirmDialog, discardChanges, selectLocationOption } from '../helpers/utils';
+import { discardChanges, selectLocationOption } from '../helpers/utils';
 import { PillFilterBar } from './pill-filter-bar';
 import { RotkiApp } from './rotki-app';
 
@@ -118,13 +118,13 @@ export class LocationManagerPage {
     await expect(this.formDialog()).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
   }
 
-  confirmDialog(): Locator {
-    return this.page.getByTestId('confirm-dialog');
+  /** The question a location's row asks before deleting it. */
+  deleteQuestion(identifier: string): Locator {
+    return this.row(identifier).getByTestId('location-delete-confirm');
   }
 
-  async confirm(): Promise<void> {
-    await confirmDialog(this.page);
-    await this.confirmDialog().waitFor({ state: 'detached' });
+  async confirmDelete(identifier: string): Promise<void> {
+    await this.deleteQuestion(identifier).getByTestId('inline-confirm-accept').click();
   }
 
   usageNotice(): Locator {

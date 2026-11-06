@@ -21,7 +21,6 @@ const mockFetchAssociatedLocations = vi.fn();
 const mockRedecodeTargeted = vi.fn();
 
 const mockRedecodeTransactions = vi.fn();
-const mockShowConfirm = vi.fn();
 
 vi.mock('vue-router', async () => {
   const { ref } = await import('vue');
@@ -58,12 +57,6 @@ vi.mock('@/modules/history/events/tx/use-targeted-redecode', () => ({
 vi.mock('@/modules/history/events/mapping/use-history-event-mappings', () => ({
   useHistoryEventMappings: vi.fn(() => ({
     refresh: vi.fn(),
-  })),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: vi.fn(() => ({
-    show: mockShowConfirm,
   })),
 }));
 
@@ -121,7 +114,6 @@ describe('useHistoryEventsActions', () => {
     mockFetchAssociatedLocations.mockResolvedValue(undefined);
     mockRedecodeTargeted.mockResolvedValue(undefined);
     mockRedecodeTransactions.mockResolvedValue(undefined);
-    mockShowConfirm.mockImplementation((_opts, onConfirm) => onConfirm());
   });
 
   afterEach(() => {
@@ -368,14 +360,12 @@ describe('useHistoryEventsActions', () => {
       expect(mockFetchAssociatedLocations).toHaveBeenCalled();
     });
 
-    it('should refresh location labels after redecode all', async () => {
+    it('should redecode everything straight away, the chain picker having asked, then refresh location labels', async () => {
       const options = createOptions();
       const { redecode } = useHistoryEventsActions(options);
 
-      redecode.all();
-      await flushPromises();
+      await redecode.all();
 
-      expect(mockShowConfirm).toHaveBeenCalled();
       expect(mockRedecodeTransactions).toHaveBeenCalled();
       expect(mockFetchLocationLabels).toHaveBeenCalled();
       expect(mockFetchAssociatedLocations).toHaveBeenCalled();

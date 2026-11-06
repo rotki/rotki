@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { PremiumDevice } from '@/modules/premium/devices/premium';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import PremiumDeviceFormDialog from '@/modules/premium/devices/components/PremiumDeviceFormDialog.vue';
 import { usePremiumDevicesApi } from '@/modules/premium/devices/devices';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -18,11 +17,12 @@ const devicesLimit = ref<number>(0);
 const loading = ref<boolean>(false);
 const editingDevice = ref<PremiumDevice>();
 const currentDeviceId = ref<string>();
+/** Why the last load failed, named above the table with a retry. */
+const fetchError = shallowRef<unknown>();
 
 const { premium } = storeToRefs(usePremiumStore());
 
 const { deletePremiumDevice, fetchPremiumDevices } = usePremiumDevicesApi();
-const { setMessage } = useMessageStore();
 
 /** Every slot taken, so signing in on another device needs one removed first. */
 const atLimit = computed<boolean>(() => get(devicesLimit) > 0 && get(devices).length >= get(devicesLimit));
@@ -45,6 +45,7 @@ const cols = computed<DataTableColumn<PremiumDevice>[]>(() => [{
 
 async function fetchDevices(): Promise<void> {
   set(loading, true);
+  set(fetchError, undefined);
   try {
     const response = await fetchPremiumDevices();
     set(devices, response.devices);
@@ -52,10 +53,7 @@ async function fetchDevices(): Promise<void> {
     set(currentDeviceId, response.currentDeviceId);
   }
   catch (error: unknown) {
-    setMessage({
-      description: getErrorMessage(error),
-      title: t('premium_devices.fetch.error.title'),
-    });
+    set(fetchError, error);
   }
   finally {
     set(loading, false);
@@ -66,16 +64,13 @@ function edit(device: PremiumDevice): void {
   set(editingDevice, device);
 }
 
-const { showDeleteConfirmation } = useTableRowDeletion<PremiumDevice>({
+const { deleteConfirm, deleteRow, failure: deleteFailure } = useTableRowDeletion<PremiumDevice>({
   confirm: device => ({
     message: t('premium_devices.delete.message', { device: device.deviceName }),
     title: t('premium_devices.delete.title'),
   }),
   deleteItem: async device => deletePremiumDevice(device.deviceIdentifier),
-  errorMessage: (_device, error) => ({
-    description: getErrorMessage(error),
-    title: t('premium_devices.delete.error.title'),
-  }),
+  failureTitle: () => t('premium_devices.delete.error.title'),
   onDeleted: fetchDevices,
 });
 
@@ -127,6 +122,22 @@ onMounted(async () => {
       </RuiTooltip>
     </template>
 
+    <FailureStrip
+      v-if="fetchError"
+      class="m-3"
+      :title="t('premium_devices.fetch.error.title')"
+      :failure="fetchError"
+      data-testid="premium-devices-fetch-error"
+      @retry="fetchDevices()"
+    />
+    <FailureStrip
+      v-if="deleteFailure"
+      class="m-3"
+      :retryable="false"
+      :title="deleteFailure.title"
+      :failure="deleteFailure.error"
+      data-testid="premium-devices-delete-error"
+    />
     <RuiDataTable
       :cols="cols"
       :rows="devices"
@@ -163,7 +174,8 @@ onMounted(async () => {
           :delete-disabled="row.deviceIdentifier === currentDeviceId"
           :delete-tooltip="row.deviceIdentifier === currentDeviceId ? t('premium_devices.table.actions.delete_current_tooltip') : t('premium_devices.table.actions.delete_tooltip')"
           :edit-tooltip="t('premium_devices.table.actions.edit_tooltip')"
-          @delete-click="showDeleteConfirmation(row)"
+          :delete-confirm="deleteConfirm(row)"
+          @delete-click="deleteRow(row)"
           @edit-click="edit(row)"
         />
       </template>

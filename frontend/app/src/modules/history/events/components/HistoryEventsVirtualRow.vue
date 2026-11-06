@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import type { HistoryEventBridgeUnlinkPayload } from '@/modules/history/events/types';
+import type { HistoryEventBridgeUnlinkPayload, HistoryEventQuestion } from '@/modules/history/events/types';
 import type { VirtualRow } from '@/modules/history/events/use-virtual-rows';
+import { startPromise } from '@shared/utils';
 import { injectHistoryEventsRowContext } from '@/modules/history/events/use-history-events-row-context';
+import { type UnlinkKind, useUnlinkQuestion } from '@/modules/history/events/use-unlink-question';
 import HistoryEventsDetailItem from './HistoryEventsDetailItem.vue';
 import HistoryEventsGroupItem from './HistoryEventsGroupItem.vue';
 import HistoryEventsLoadMoreRow from './HistoryEventsLoadMoreRow.vue';
@@ -19,9 +21,16 @@ const { actions, display, highlight, lookups } = injectHistoryEventsRowContext()
 // Lifted to the top level so the template unwraps them; a ref nested in an object does not.
 const { duplicateHandlingStatus, eventsLoading, hideActions, variant } = display;
 
+const { unlinkQuestion } = useUnlinkQuestion();
+
 function unlinkBridge(payload?: HistoryEventBridgeUnlinkPayload): void {
   if (payload)
-    actions.unlinkEvent(payload);
+    startPromise(actions.unlinkEvent(payload));
+}
+
+/** What a collapsed match's header asks before it unlinks; nothing, when it cannot unlink. */
+function collapseUnlinkConfirm(kind: UnlinkKind | undefined): HistoryEventQuestion | undefined {
+  return kind && !get(hideActions) ? unlinkQuestion(kind) : undefined;
 }
 </script>
 
@@ -90,7 +99,7 @@ function unlinkBridge(payload?: HistoryEventBridgeUnlinkPayload): void {
     :event-count="row.eventCount"
     :subgroup-id="row.subgroupId"
     :label-type="row.bridge ? 'bridge' : undefined"
-    :can-unlink="row.bridgeUnlink !== undefined && !hideActions"
+    :unlink-confirm="collapseUnlinkConfirm(row.bridgeUnlink)"
     @unlink-event="unlinkBridge(row.bridgeUnlink)"
     @collapse="actions.toggleSwapExpanded(row.swapKey)"
   />
@@ -116,7 +125,7 @@ function unlinkBridge(payload?: HistoryEventBridgeUnlinkPayload): void {
     v-else-if="row.type === 'matched-movement-collapse'"
     :event-count="row.eventCount"
     label-type="movement"
-    :can-unlink="!hideActions"
+    :unlink-confirm="collapseUnlinkConfirm({ type: 'asset-movement' })"
     @unlink-event="actions.unlinkGroup(row.groupId)"
     @collapse="actions.toggleMovementExpanded(row.movementKey)"
   />

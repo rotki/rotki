@@ -16,7 +16,6 @@ import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 const { spies } = vi.hoisted(() => ({
   spies: {
     notifyFailure: vi.fn(),
-    showErrorMessage: vi.fn(),
     submitTask: vi.fn(),
   },
 }));
@@ -26,7 +25,7 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: (): object => ({ notifyFailure: spies.notifyFailure, showErrorMessage: spies.showErrorMessage }),
+  useNotifications: (): object => ({ notifyFailure: spies.notifyFailure }),
 }));
 
 vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
@@ -290,7 +289,6 @@ describe('useLatestPrices', () => {
       const { save } = useLatestPrices();
 
       await expect(save(payload)).resolves.toEqual(err(failure));
-      expect(spies.showErrorMessage).not.toHaveBeenCalled();
     });
 
     it('should hand back nothing to name when the save task was cancelled', async () => {

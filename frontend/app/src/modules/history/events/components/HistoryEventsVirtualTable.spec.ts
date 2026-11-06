@@ -8,6 +8,7 @@ import { type Component, defineComponent, h } from 'vue';
 import { RequestFailed, type RequestFailure } from '@/modules/core/api/request-result';
 import { provideTableFetchError } from '@/modules/core/table/use-table-empty-state';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
+import { useHistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
 import { createRuiPlugin } from '@/plugins/rui';
 import '@test/i18n';
 
@@ -131,6 +132,26 @@ describe('historyEventsVirtualTable', () => {
       await wrapper.find('[data-testid=history-events-events-error] [data-testid=failure-strip-retry]').trigger('click');
 
       expect(retryEvents).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('when an action on the events failed', () => {
+    const { clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
+
+    afterEach(() => {
+      clearActionFailure();
+    });
+
+    it('should name it above the rows, without a retry since its own button is the retry', async () => {
+      const wrapper = mountUnder(ref<unknown>());
+
+      reportActionFailure('transactions.events.delete.error.title', 'event is locked');
+      await nextTick();
+
+      const strip = wrapper.find('[data-testid=history-events-action-failure]');
+      expect(strip.text()).toContain('transactions.events.delete.error.title');
+      expect(strip.text()).toContain('event is locked');
+      expect(strip.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
     });
   });
 

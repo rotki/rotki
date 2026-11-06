@@ -1,8 +1,8 @@
 import type { ComputedRef } from 'vue';
 import { externalLinks } from '@shared/external-links';
+import { startPromise } from '@shared/utils';
 import { none, some } from 'plainfp/option';
 import { type ActionItem, type ActionItemOption, type ActionTarget, ActionUrgency, applicable, createActionItem } from '@/modules/core/action-center/types';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { usePremiumOperations } from '@/modules/premium/use-premium-operations';
 import {
@@ -35,24 +35,26 @@ export function usePremiumRows(): ComputedRef<ActionItem[]> {
 
   const { conditions } = storeToRefs(useRaisedConditionsStore());
   const { deletePremium } = usePremiumOperations();
-  const { show } = useConfirmStore();
   const { notifyError } = useNotifications();
 
+  async function removePremiumKey(): Promise<void> {
+    const result = await deletePremium();
+    if (!result.success)
+      notifyError(t('premium_settings.error.removing_failed'), result.message);
+  }
+
   const removeKey: ActionItemOption = {
+    confirm: {
+      message: t('action_center.rows.integrations.premium_inactive.remove_confirm.message'),
+      title: t('action_center.rows.integrations.premium_inactive.remove_confirm.title'),
+    },
     danger: true,
     icon: 'lu-trash-2',
     id: 'remove-premium-key',
     label: t('action_center.rows.integrations.premium_inactive.remove_key'),
     target: {
       kind: 'run',
-      run: () => show({
-        message: t('action_center.rows.integrations.premium_inactive.remove_confirm.message'),
-        title: t('action_center.rows.integrations.premium_inactive.remove_confirm.title'),
-      }, async () => {
-        const result = await deletePremium();
-        if (!result.success)
-          notifyError(t('premium_settings.error.removing_failed'), result.message);
-      }),
+      run: () => startPromise(removePremiumKey()),
     },
   };
 

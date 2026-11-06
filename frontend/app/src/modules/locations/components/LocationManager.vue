@@ -4,7 +4,6 @@ import type { LocationFormData } from '@/modules/locations/location-form';
 import type { LocationNode } from '@/modules/locations/use-location-tree-api';
 import { startPromise } from '@shared/utils';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useRowHighlight } from '@/modules/core/table/use-row-highlight';
 import LocationAliasesCard from '@/modules/locations/components/LocationAliasesCard.vue';
@@ -18,6 +17,7 @@ import { useLocationManagement } from '@/modules/locations/use-location-manageme
 import { useLocationTreeExpansion } from '@/modules/locations/use-location-tree-expansion';
 import { ROOT_LOCATION, useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 type ManagerTab = 'locations' | 'aliases';
@@ -29,6 +29,9 @@ const archivedHere = ref<Set<string>>(new Set());
 const formData = ref<LocationFormData>();
 const addingAlias = ref<boolean>(false);
 const blockedDeletion = ref<{ location: LocationNode; usage: Record<string, number> }>();
+/** The unused location whose row asks before deleting it, until the user answers. */
+const pendingDeletion = ref<LocationNode>();
+const deleting = ref<boolean>(false);
 /** Why the last archive, restore or deletion failed, until the next one. */
 const actionFailure = shallowRef<string>();
 
@@ -37,7 +40,6 @@ const route = useRoute();
 const router = useRouter();
 
 const treeStore = useLocationTreeStore();
-const { show } = useConfirmStore();
 const { deleteLocation, editLocation, fetchUsage } = useLocationManagement();
 const { isExpanded, reveal, toggle } = useLocationTreeExpansion();
 const { highlight, rowClass } = useRowHighlight<LocationRow>(row => row.node.identifier);
@@ -98,6 +100,7 @@ function addBelow(parentIdentifier: string, name?: string): void {
 async function setArchived(location: LocationNode, archived: boolean): Promise<void> {
   set(actionFailure, undefined);
   set(blockedDeletion, undefined);
+  set(pendingDeletion, undefined);
   const outcome = await editLocation(location.identifier, { isActive: !archived });
   if (!outcome.ok) {
     set(actionFailure, outcome.error);
@@ -108,10 +111,14 @@ async function setArchived(location: LocationNode, archived: boolean): Promise<v
   await bringIntoView(location.identifier);
 }
 
-/** A used location can not be deleted; the user then sees what uses it and may archive it. */
+/**
+ * A used location can not be deleted; the user then sees what uses it and may archive it. An unused
+ * one asks in its own row before it goes.
+ */
 async function requestDeletion(location: LocationNode): Promise<void> {
   set(actionFailure, undefined);
   set(blockedDeletion, undefined);
+  set(pendingDeletion, undefined);
   const usage = await fetchUsage(location.identifier);
   if (!usage.ok) {
     set(actionFailure, usage.error);
@@ -121,15 +128,16 @@ async function requestDeletion(location: LocationNode): Promise<void> {
     set(blockedDeletion, { location, usage: usage.value.usage });
     return;
   }
-  show({
-    message: t('location_manager.delete.message', { name: treeStore.pathLabelOf(location.identifier) }),
-    primaryAction: t('common.actions.delete'),
-    title: t('location_manager.delete.title'),
-  }, async () => {
-    const outcome = await deleteLocation(location.identifier);
-    if (!outcome.ok)
-      set(actionFailure, outcome.error);
-  });
+  set(pendingDeletion, location);
+}
+
+async function confirmDeletion(location: LocationNode): Promise<void> {
+  set(deleting, true);
+  const outcome = await deleteLocation(location.identifier);
+  set(deleting, false);
+  set(pendingDeletion, undefined);
+  if (!outcome.ok)
+    set(actionFailure, outcome.error);
 }
 
 /** A quick-add link adds to the tab it names, which clearing the link from the url would otherwise lose. */
@@ -245,6 +253,18 @@ onMounted(async () => {
             :row="row"
             :search="search"
             @toggle="toggle(row.node.identifier)"
+          />
+          <InlineConfirm
+            v-if="pendingDeletion?.identifier === row.node.identifier"
+            class="my-1"
+            tone="error"
+            :title="t('location_manager.delete.title')"
+            :message="t('location_manager.delete.message', { name: treeStore.pathLabelOf(row.node.identifier) })"
+            :confirm-label="t('common.actions.delete')"
+            :loading="deleting"
+            data-testid="location-delete-confirm"
+            @cancel="pendingDeletion = undefined"
+            @confirm="confirmDeletion(row.node)"
           />
         </template>
         <template #item.actions="{ row }">

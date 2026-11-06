@@ -1,10 +1,8 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { CustomAsset } from '@/modules/assets/types';
-import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { omit } from 'es-toolkit';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 
 interface CustomAssetFormHandle {
   /** Runs the form's own validation. */
@@ -28,6 +26,10 @@ interface UseCustomAssetFormDialogReturn {
   /** The dialog's title, which differs between adding and editing. */
   dialogTitle: ComputedRef<string>;
   /** Whether a write is in flight. */
+  /** Why the last write failed where no field is to blame, named in the dialog; Save is the retry. */
+  failure: Readonly<Ref<unknown>>;
+  /** The title the failure is named under, which differs between adding and editing. */
+  failureTitle: ComputedRef<string>;
   loading: Readonly<Ref<boolean>>;
   /** Field errors, which the form binds. */
   modelErrorMessages: Ref<ValidationErrors>;
@@ -72,7 +74,7 @@ export function useCustomAssetFormDialog(
   const modelErrorMessages = ref<ValidationErrors>({});
   const loading = shallowRef<boolean>(false);
 
-  const { setMessage } = useMessageStore();
+  const failure = shallowRef<unknown>();
   const { addCustomAsset, editCustomAsset } = useAssetManagementApi();
 
   const dialogTitle = computed<string>(() =>
@@ -81,13 +83,19 @@ export function useCustomAssetFormDialog(
       : t('asset_management.add_title'),
   );
 
-  function reportFailure(error: unknown, editMode: boolean): void {
-    const obj = { message: getErrorMessage(error) };
-    setMessage({
-      description: editMode
-        ? t('asset_management.edit_error', obj)
-        : t('asset_management.add_error', obj),
-    });
+  const failureTitle = computed<string>(() =>
+    toValue(editableItem)
+      ? t('asset_management.edit_error')
+      : t('asset_management.add_error'),
+  );
+
+  /** Errors on fields of the asset go to those fields; anything else is named above the form. */
+  function reportFailure(error: unknown, data: CustomAsset): void {
+    const errors = error instanceof ApiValidationError ? error.getValidationErrors(data) : undefined;
+    if (errors === undefined || typeof errors === 'string')
+      set(failure, errors ?? error);
+    else
+      set(modelErrorMessages, errors);
   }
 
   async function save(): Promise<boolean> {
@@ -104,6 +112,8 @@ export function useCustomAssetFormDialog(
     let success: boolean;
 
     set(loading, true);
+    set(failure, undefined);
+    set(modelErrorMessages, {});
     try {
       if (editMode) {
         success = await editCustomAsset(data);
@@ -118,7 +128,7 @@ export function useCustomAssetFormDialog(
     }
     catch (error: unknown) {
       success = false;
-      reportFailure(error, editMode);
+      reportFailure(error, data);
     }
     set(loading, false);
 
@@ -130,6 +140,7 @@ export function useCustomAssetFormDialog(
   }
 
   function mirrorEditableItem([isOpen, item]: [boolean, CustomAsset | null | undefined]): void {
+    set(failure, undefined);
     if (!isOpen) {
       set(modelValue, undefined);
       return;
@@ -142,6 +153,8 @@ export function useCustomAssetFormDialog(
 
   return {
     dialogTitle,
+    failure: readonly(failure),
+    failureTitle,
     loading: readonly(loading),
     modelErrorMessages,
     modelValue,

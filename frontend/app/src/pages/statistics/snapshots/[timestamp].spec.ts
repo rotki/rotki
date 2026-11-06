@@ -98,7 +98,7 @@ describe('pages/statistics/snapshots/[timestamp]', () => {
         provide: libraryDefaults,
         stubs: {
           ExportSnapshotDialog: true,
-          SnapshotBalancesTable: { emits: ['add', 'edit', 'delete'], props: ['snapshot', 'timestamp'], template: '<div data-testid="balances-stub" />' },
+          SnapshotBalancesTable: { emits: ['add', 'edit', 'delete', 'bulk-delete'], props: ['snapshot', 'timestamp'], template: '<div data-testid="balances-stub" />' },
           SnapshotEditorToolbar: { emits: ['save', 'discard', 'undo', 'export', 'delete', 'navigate'], props: ['timestamp', 'changes', 'canUndo', 'saving', 'hasPrev', 'hasNext'], template: '<div data-testid="toolbar-stub" />' },
           SnapshotLocationsDrawer: { emits: ['add', 'edit', 'delete', 'distribute'], props: ['snapshot', 'timestamp', 'modelValue'], template: '<div data-testid="locations-stub" />' },
           SnapshotSummary: { props: ['snapshot', 'timestamp', 'previous', 'autoTrack', 'excludeNfts'], template: '<div data-testid="summary-stub" />' },
@@ -189,14 +189,23 @@ describe('pages/statistics/snapshots/[timestamp]', () => {
     expect(refreshNetValue).not.toHaveBeenCalled();
   });
 
-  it('should re-pull the net-value series before leaving a deleted snapshot', async () => {
+  it('should sweep the flagged balances straight away, leaving the draft undoable', async () => {
+    wrapper = mountPage();
+    await flushPromises();
+
+    wrapper.findComponent(SnapshotBalancesTable).vm.$emit('bulk-delete', [0]);
+    await flushPromises();
+
+    expect(useConfirmStore().visible).toBe(false);
+    const toolbar = wrapper.findComponent(SnapshotEditorToolbar);
+    expect(toolbar.props('canUndo')).toBe(true);
+  });
+
+  it('should delete on the toolbar\'s already-confirmed delete, re-pulling the net-value series before leaving', async () => {
     wrapper = mountPage();
     await flushPromises();
 
     wrapper.findComponent(SnapshotEditorToolbar).vm.$emit('delete');
-    await flushPromises();
-    // The delete goes through a confirmation dialog, so run the confirmed branch.
-    await useConfirmStore().confirm();
     await flushPromises();
 
     expect(remove).toHaveBeenCalledWith(TIMESTAMP);

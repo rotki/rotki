@@ -63,6 +63,7 @@ const samples = new Map<string, readonly unknown[]>([
     { id: 4, kind: 'something_new', name: 'A task this build does not know', startedAt: 1, subject: { chain: 'eth' } },
   ]],
   ['accountImportActivity', [{ source: 'csv' }]],
+  ['accountImportTagActivity', [{ tag: 'savings' }, { tag: 'cold storage: ledger' }]],
   ['accountRemoveActivity', [
     { chain: 'eth', target: { address, kind: 'address' } },
     { chain: 'btc', target: { kind: 'xpub', xpub: 'xpub6CUGRUonZSQ4TWtTMmzXdrXDtypWKiKrhko4egpiMZbpiaQL2jkwSB1icqYh2cfDfVxdx4df189oLKnC5fSwqPfgyP3hooxujYzAu3fDVmz' } },

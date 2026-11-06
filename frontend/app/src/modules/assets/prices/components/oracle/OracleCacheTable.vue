@@ -8,7 +8,9 @@ import RowActions from '@/modules/shell/components/RowActions.vue';
 
 type CacheRow = OracleCacheMeta & { id: number };
 
-const { disabled = false, error, loading = false, rows } = defineProps<{
+const { deleteConfirm, disabled = false, error, loading = false, rows } = defineProps<{
+  /** What a row's delete button asks; `delete` is emitted once the user confirms. */
+  deleteConfirm: (entry: CacheRow) => { title: string; message: string };
   disabled?: boolean;
   /** why the caches could not be listed, named in place of the empty text */
   error?: unknown;
@@ -88,6 +90,7 @@ const columns = computed<DataTableColumn<CacheRow>[]>(() => [
         no-edit
         :disabled="disabled"
         :delete-tooltip="t('oracle_prices.cache.delete.tooltip')"
+        :delete-confirm="deleteConfirm(row)"
         @delete-click="emit('delete', row)"
       />
     </template>

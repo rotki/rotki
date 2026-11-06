@@ -86,6 +86,11 @@ export interface ActionItemOption<TTarget extends { kind: string } = ActionTarge
   target: TTarget;
   /** silences the row for good, rather than leading somewhere */
   danger?: boolean;
+  /**
+   * Asked in the row before the target is followed, with the option's label as the accepting button.
+   * Absent means the option acts at once.
+   */
+  confirm?: { title: string; message: string };
 }
 
 /**

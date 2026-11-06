@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
-const { authenticationRequired = false, syncing = false } = defineProps<{
+const { authenticationRequired = false, deleteConfirm, syncing = false } = defineProps<{
   authenticationRequired?: boolean;
   syncing?: boolean;
+  /** What the delete button asks beside it; `delete` is emitted only once the user confirms. */
+  deleteConfirm: { title: string; message: string };
 }>();
 
 const emit = defineEmits<{
@@ -53,6 +55,7 @@ const { t } = useI18n({ useScope: 'global' });
       align="center"
       :delete-tooltip="t('bank_settings.delete.tooltip')"
       :edit-tooltip="t('bank_settings.edit.tooltip')"
+      :delete-confirm="deleteConfirm"
       @delete-click="emit('delete')"
       @edit-click="emit('edit')"
     />

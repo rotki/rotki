@@ -8,8 +8,6 @@ import {
 } from '@/modules/assets/types';
 import { useAssets } from '@/modules/assets/use-assets';
 import { useRestartingStatus } from '@/modules/auth/use-restarting-status';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { SKIP_ASSET_UPDATE_KEY, SKIPPED_ASSET_VERSION_KEY } from '@/modules/shell/app/asset-update-keys';
 import { useBackendReload } from '@/modules/shell/app/use-backend-reload';
 
@@ -20,7 +18,7 @@ interface UseAssetUpdateOptions {
    * @remarks
    * Changes three behaviours rather than only the layout: the check runs on mount, a skipped
    * version short-circuits it, and "nothing to update" or a check that did not finish reports
-   * through `onSkip` instead of a message the user has nowhere to read.
+   * through `onSkip` instead of `upToDate`, which the settings row shows.
    */
   headless: MaybeRefOrGetter<boolean>;
   /** Called whenever this surface is finished and the app should move on. */
@@ -36,7 +34,12 @@ interface UseAssetUpdateReturn {
   conflicts: Readonly<Ref<AssetUpdateConflictResult[]>>;
   /** Asks the backend whether an update exists, and opens the prompt if one does. */
   check: () => Promise<void>;
-  /** True once a headless update finished and wants its own inline confirmation. */
+  /**
+   * True once an update finished and waits for the user to acknowledge the restart.
+   *
+   * @remarks
+   * Shown in place, under the settings row or on the pre-login screen, in both modes.
+   */
   inlineConfirm: Readonly<Ref<boolean>>;
   /** The versions in play; written back by the message component when the user retargets. */
   modelChanges: Ref<AssetVersionUpdate>;
@@ -44,6 +47,8 @@ interface UseAssetUpdateReturn {
   modelShowConflictDialog: Ref<boolean>;
   /** Whether the update prompt is open. */
   showUpdateDialog: Readonly<Ref<boolean>>;
+  /** True once a check from the settings row found nothing newer; cleared when the next check starts. */
+  upToDate: Readonly<Ref<boolean>>;
   /**
    * Dismisses the prompt and hands back to the app.
    *
@@ -78,6 +83,7 @@ export function useAssetUpdate(options: UseAssetUpdateOptions): UseAssetUpdateRe
   const applying = shallowRef<boolean>(false);
   const inlineConfirm = shallowRef<boolean>(false);
   const showUpdateDialog = shallowRef<boolean>(false);
+  const upToDate = shallowRef<boolean>(false);
   const modelShowConflictDialog = shallowRef<boolean>(false);
   const conflicts = ref<AssetUpdateConflictResult[]>([]);
   const modelChanges = ref<AssetVersionUpdate>({
@@ -89,12 +95,9 @@ export function useAssetUpdate(options: UseAssetUpdateOptions): UseAssetUpdateRe
 
   const skipped = useLocalStorage(SKIPPED_ASSET_VERSION_KEY, 0);
 
-  const { t } = useI18n({ useScope: 'global' });
   const { applyUpdates, checkForUpdate } = useAssets();
   const { reload } = useBackendReload();
-  const { setMessage } = useMessageStore();
   const { restarting } = useRestartingStatus();
-  const { show } = useConfirmStore();
 
   const status = computed<'checking' | 'applying' | null>(() => {
     if (get(checking))
@@ -108,6 +111,7 @@ export function useAssetUpdate(options: UseAssetUpdateOptions): UseAssetUpdateRe
 
   async function check(): Promise<void> {
     set(checking, true);
+    set(upToDate, false);
     const outcome = await checkForUpdate();
     set(checking, false);
 
@@ -129,15 +133,10 @@ export function useAssetUpdate(options: UseAssetUpdateOptions): UseAssetUpdateRe
     set(showUpdateDialog, checkResult.updateAvailable);
 
     if (!checkResult.updateAvailable) {
-      if (toValue(headless)) {
+      if (toValue(headless))
         onSkip();
-      }
-      else {
-        setMessage({
-          description: t('asset_update.up_to_date'),
-          success: true,
-        });
-      }
+      else
+        set(upToDate, true);
     }
 
     if (versions) {
@@ -172,26 +171,6 @@ export function useAssetUpdate(options: UseAssetUpdateOptions): UseAssetUpdateRe
     }
   }
 
-  function showDoneConfirmation(): void {
-    if (toValue(headless)) {
-      set(inlineConfirm, true);
-      return;
-    }
-
-    show(
-      {
-        message: t('asset_update.success.description', {
-          remoteVersion: get(modelChanges).upToVersion,
-        }),
-        primaryAction: t('common.actions.ok'),
-        singleAction: true,
-        title: t('asset_update.success.title'),
-        type: 'success',
-      },
-      updateComplete,
-    );
-  }
-
   async function updateAssets(resolution?: ConflictResolution): Promise<void> {
     set(showUpdateDialog, false);
     set(modelShowConflictDialog, false);
@@ -211,7 +190,7 @@ export function useAssetUpdate(options: UseAssetUpdateOptions): UseAssetUpdateRe
     }
 
     set(skipped, 0);
-    showDoneConfirmation();
+    set(inlineConfirm, true);
   }
 
   onMounted(async () => {
@@ -238,5 +217,6 @@ export function useAssetUpdate(options: UseAssetUpdateOptions): UseAssetUpdateRe
     status,
     updateAssets,
     updateComplete,
+    upToDate: readonly(upToDate),
   };
 }

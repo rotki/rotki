@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM, TIMEOUT_SHORT } from '../helpers/constants';
+import { confirmInline } from '../helpers/utils';
 
 type PurgeSourceLabel = 'Centralized Exchange' | 'Decentralized Exchange' | 'DeFi Module' | 'Transactions';
 
@@ -66,10 +67,7 @@ export class PurgeDataPage {
 
   async submitAndConfirm(): Promise<void> {
     await this.page.getByTestId('purge-submit').click();
-    const dialog = this.page.locator('[data-testid=confirm-dialog]');
-    await dialog.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
-    await dialog.locator('[data-testid=button-confirm]').click();
-    await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
+    await confirmInline(this.page, 'Confirm cached data purge');
     // The success indicator is what tells later assertions the purge has landed.
     await expect(this.page.getByText('Data was successfully deleted')).toBeVisible({ timeout: TIMEOUT_MEDIUM });
   }

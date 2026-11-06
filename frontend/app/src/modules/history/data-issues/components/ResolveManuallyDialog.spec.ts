@@ -77,4 +77,17 @@ describe('resolveManuallyDialog', () => {
 
     expect(wrapper.emitted('confirm')?.[0]).toStrictEqual([undefined]);
   });
+
+  it('should name a failed resolve inside the dialog, without a retry of its own', async () => {
+    await wrapper.setProps({ failure: new Error('bad state') });
+
+    const strip = document.body.querySelector('[data-testid="data-issue-resolve-failure"]');
+    expect(strip?.textContent).toContain('data_issues.action.resolve.error');
+    expect(strip?.textContent).toContain('bad state');
+    expect(strip?.querySelector('[data-testid="failure-strip-retry"]')).toBeNull();
+  });
+
+  it('should name no failure while there is none', () => {
+    expect(document.body.querySelector('[data-testid="data-issue-resolve-failure"]')).toBeNull();
+  });
 });

@@ -22,7 +22,7 @@ type CentralizedExchangePurgeType = 'all' | 'trades' | 'asset_movements' | 'othe
  *
  * @remarks
  * Purging one of these is not fully reversible: re-querying cannot recover trades older than the
- * window, so the confirmation grows an extra warning naming the limit. An exchange absent from
+ * window, so the question grows an extra warning naming the limit. An exchange absent from
  * this record is assumed to serve its full history.
  */
 const EXCHANGE_TRADE_HISTORY_LIMITS: Record<string, number> = {
@@ -62,13 +62,18 @@ interface UsePurgeDataReturn {
   /** Modules offered to the module picker, including the purgeable-only ones. */
   purgeableModules: PurgeableModule[];
   /**
-   * Opens the confirmation for `source`, and purges only once the user accepts.
+   * Purges `source` at once, against the current selection.
    *
    * @remarks
-   * Nothing is deleted by calling this. The destructive call happens in the confirmation's accept
-   * handler, against the selection held at the moment the user accepts.
+   * The purge button asks {@link UsePurgeDataReturn.purgeQuestion} first and calls this only once
+   * the user accepts.
    */
-  showConfirmation: (source: Purgeable) => void;
+  purge: (source: Purgeable) => Promise<void>;
+  /**
+   * What the purge button asks about the current source and selection. A second paragraph,
+   * separated by a blank line, warns when the exchange cannot serve its full history again.
+   */
+  purgeQuestion: ComputedRef<{ message: string; title: string }>;
   /** Outcome of the last purge, cleared a few seconds after a success. */
   status: DeepReadonly<Ref<BaseMessage | null>>;
 }
@@ -82,8 +87,8 @@ interface UsePurgeDataReturn {
  * falling back to a broader purge. A purgeable-only module is deleted directly instead of through
  * the purge activity, having no derived cache for a `staleAfter` edge to hang off.
  *
- * @returns the form's bindings plus {@link UsePurgeDataReturn.showConfirmation}, which is the only
- * way this composable deletes anything
+ * @returns the form's bindings plus {@link UsePurgeDataReturn.purge}, which is the only way this
+ * composable deletes anything
  */
 export function usePurgeData(): UsePurgeDataReturn {
   const isModule = isOfEnum(Module);
@@ -242,8 +247,10 @@ export function usePurgeData(): UsePurgeDataReturn {
     return `${message}\n\n${t('data_management.purge_data.csv_imports_confirm.version_warning')}`;
   }
 
-  function confirmText(textSource: string, source: Purgeable): { message: string; title: string } {
+  const purgeQuestion = computed<{ message: string; title: string }>(() => {
+    const source = get(modelSource);
     const value = selectedValue(source);
+    const textSource = purgeable.find(({ id }) => id === source)?.text ?? '';
 
     let message = '';
     if (source === Purgeable.TRANSACTIONS) {
@@ -275,37 +282,39 @@ export function usePurgeData(): UsePurgeDataReturn {
       message,
       title: t('data_management.purge_data.confirm.title'),
     };
-  }
+  });
 
-  const { pending: purgePending, showConfirmation: showPurgeConfirmation, status } = useCacheClear<Purgeable>(
+  const { pending: purgePending, request: requestPurge, status } = useCacheClear<Purgeable>(
     purgeable,
     purgeSource,
     {
       error: (source: string, message: string) => t('data_management.purge_data.error', { message, source }),
       success: (source: string) => t('data_management.purge_data.success', { source }),
     },
-    confirmText,
   );
   const pending = computed<boolean>(() => get(purgePending) || get(csvPreflightPending));
 
-  async function showCsvPurgeConfirmation(): Promise<void> {
+  /**
+   * Brings the CSV import counts the question quotes up to date, locking the button meanwhile.
+   *
+   * @remarks
+   * The question shows the moment the button is pressed, so the counts are refreshed when CSV
+   * imports are picked rather than when the user asks.
+   */
+  async function refreshCsvQuestion(): Promise<void> {
     set(csvPreflightPending, true);
     try {
       await refreshCsvImportedEventsSummary();
-      showPurgeConfirmation(Purgeable.CSV_IMPORTS);
     }
     finally {
       set(csvPreflightPending, false);
     }
   }
 
-  function showConfirmation(source: Purgeable): void {
-    if (source === Purgeable.CSV_IMPORTS) {
-      startPromise(showCsvPurgeConfirmation());
-      return;
-    }
-    showPurgeConfirmation(source);
-  }
+  watch(modelSource, (source) => {
+    if (source === Purgeable.CSV_IMPORTS)
+      startPromise(refreshCsvQuestion());
+  });
 
   startPromise(refreshCsvImportedEventsSummary());
 
@@ -322,9 +331,10 @@ export function usePurgeData(): UsePurgeDataReturn {
     modelModule,
     modelSource,
     pending,
+    purge: requestPurge,
     purgeable,
     purgeableModules,
-    showConfirmation,
+    purgeQuestion,
     status,
   };
 }

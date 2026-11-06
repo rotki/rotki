@@ -9,7 +9,7 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useEthValidatorFetching } from '@/modules/staking/eth/use-eth-validator-fetching';
@@ -41,7 +41,6 @@ export function useEthStaking(): UseEthStakingReturn {
 
   const premium = usePremium();
   const { submitTask } = useNativeTask();
-  const { showErrorMessage } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
   const addEth2Validator = async (payload: Eth2Validator): Promise<ActionStatus<ValidationErrors | string>> => {
@@ -129,10 +128,7 @@ export function useEthStaking(): UseEthStakingReturn {
         return false;
 
       logger.error(error);
-      showErrorMessage(t('actions.delete_eth2_validator.error.title'), t('actions.delete_eth2_validator.error.description', {
-        message: getErrorMessage(error),
-      }));
-      return false;
+      throw error;
     }
   };
 

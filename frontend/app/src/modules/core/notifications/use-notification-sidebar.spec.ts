@@ -213,34 +213,47 @@ describe('modules/core/notifications/useNotificationSidebar', () => {
       fileProblem();
     });
 
-    it('should discard nothing until the dialog is confirmed', () => {
-      const { isEmpty, showConfirmation } = sidebar();
-      showConfirmation();
+    it('should only raise the question when asked to clear, discarding nothing', () => {
+      const { askingToClear, askToClear, isEmpty } = sidebar();
+      askToClear();
 
-      expect(get(useConfirmStore().visible)).toBe(true);
+      expect(get(askingToClear)).toBe(true);
+      expect(get(useConfirmStore().visible)).toBe(false);
+      expect(get(storeToRefs(useNotificationsStore()).data)).toHaveLength(2);
       expect(get(isEmpty)).toBe(false);
       expect(get(display)).toBe(true);
     });
 
-    it('should discard the notifications and the problems, and close the drawer once confirmed', async () => {
-      const { isEmpty, showConfirmation } = sidebar();
-      showConfirmation();
-      await useConfirmStore().confirm();
+    it('should discard the notifications and the problems, and close the drawer once accepted', () => {
+      const { askingToClear, askToClear, clearAll, isEmpty } = sidebar();
+      askToClear();
+      clearAll();
 
       expect(get(storeToRefs(useNotificationsStore()).data)).toHaveLength(0);
       expect(get(storeToRefs(useBackendProblemsStore()).problems)).toHaveLength(0);
       expect(get(isEmpty)).toBe(true);
       expect(get(display)).toBe(false);
+      expect(get(askingToClear)).toBe(false);
     });
 
-    it('should discard nothing when the dialog is dismissed', async () => {
-      const { isEmpty, showConfirmation } = sidebar();
-      showConfirmation();
-      await useConfirmStore().dismiss();
+    it('should discard nothing when the question is cancelled', () => {
+      const { askingToClear, askToClear, cancelClear, isEmpty } = sidebar();
+      askToClear();
+      cancelClear();
 
+      expect(get(askingToClear)).toBe(false);
       expect(get(storeToRefs(useNotificationsStore()).data)).toHaveLength(2);
       expect(get(isEmpty)).toBe(false);
       expect(get(display)).toBe(true);
+    });
+
+    it('should drop the question when the drawer closes', async () => {
+      const { askingToClear, askToClear } = sidebar();
+      askToClear();
+      set(display, false);
+      await nextTick();
+
+      expect(get(askingToClear)).toBe(false);
     });
   });
 

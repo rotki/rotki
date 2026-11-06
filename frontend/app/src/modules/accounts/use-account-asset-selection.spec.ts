@@ -6,7 +6,7 @@ const h = vi.hoisted(() => ({
   ignoreAsset: vi.fn(),
   isAssetIgnored: vi.fn<(identifier: string) => boolean>(() => false),
   markAssetsAsSpam: vi.fn(),
-  showErrorMessage: vi.fn(),
+  notifyWarning: vi.fn(),
   unignoreAsset: vi.fn(),
 }));
 
@@ -23,7 +23,7 @@ vi.mock('@/modules/assets/use-spam-asset', () => ({
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn(() => ({ showErrorMessage: h.showErrorMessage })),
+  useNotifications: vi.fn(() => ({ notifyWarning: h.notifyWarning })),
 }));
 
 describe('useAccountAssetSelection', () => {
@@ -61,10 +61,10 @@ describe('useAccountAssetSelection', () => {
   });
 
   describe('handleIgnoreSelected', () => {
-    it('should show an error and not ignore when nothing is selected', async () => {
+    it('should warn and not ignore when nothing is selected', async () => {
       const { handleIgnoreSelected } = useAccountAssetSelection(onRefresh);
       await handleIgnoreSelected(true);
-      expect(h.showErrorMessage).toHaveBeenCalledOnce();
+      expect(h.notifyWarning).toHaveBeenCalledOnce();
       expect(h.ignoreAsset).not.toHaveBeenCalled();
     });
 
@@ -117,10 +117,10 @@ describe('useAccountAssetSelection', () => {
   });
 
   describe('handleMarkSelectedAsSpam', () => {
-    it('should show an error when nothing is selected', async () => {
+    it('should warn when nothing is selected', async () => {
       const { handleMarkSelectedAsSpam } = useAccountAssetSelection(onRefresh);
       await handleMarkSelectedAsSpam();
-      expect(h.showErrorMessage).toHaveBeenCalledOnce();
+      expect(h.notifyWarning).toHaveBeenCalledOnce();
       expect(h.markAssetsAsSpam).not.toHaveBeenCalled();
     });
 

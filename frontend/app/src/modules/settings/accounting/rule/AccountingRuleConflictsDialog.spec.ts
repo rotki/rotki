@@ -7,9 +7,10 @@ import AccountingRuleConflictsDialog from '@/modules/settings/accounting/rule/Ac
 import { type AccountingRule, type AccountingRuleConflict, AccountingTreatment } from '@/modules/settings/types/accounting';
 import { createRuiPlugin } from '@/plugins/rui';
 
-const { collection, modelResolution, modelSolveAllUsing, onResolved, refetch, save } = await vi.hoisted(async () => {
+const { collection, failure, modelResolution, modelSolveAllUsing, onResolved, refetch, save } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   return {
+    failure: ref<string>(),
     collection: ref<{ data: AccountingRuleConflict[]; found: number; limit: number; total: number }>({
       data: [],
       found: 0,
@@ -32,6 +33,7 @@ vi.mock('@/modules/settings/accounting/rule/use-accounting-rule-conflict-resolut
     return {
       collection,
       error: ref(undefined),
+      failure,
       isLoading: ref(false),
       loading: ref(false),
       modelResolution,
@@ -64,7 +66,7 @@ vi.mock('@/modules/settings/accounting/use-accounting-rule-mappings', () => ({
 const BigDialogStub = {
   emits: ['confirm', 'cancel'],
   name: 'BigDialog',
-  props: ['title', 'display', 'action', 'loading', 'layout', 'persistent'],
+  props: ['title', 'display', 'action', 'loading', 'layout', 'persistent', 'failure', 'failureTitle'],
   template: `<div>
     <slot />
     <button data-testid="stub-confirm" @click="$emit('confirm')" />
@@ -138,6 +140,7 @@ describe('accountingRuleConflictsDialog', () => {
     set(collection, { data: [], found: 0, limit: 10, total: 0 });
     set(modelResolution, {});
     set(modelSolveAllUsing, undefined);
+    set(failure, undefined);
   });
 
   it('should read the first page of conflicts when it opens', () => {
@@ -177,6 +180,18 @@ describe('accountingRuleConflictsDialog', () => {
 
       expect(wrapper.emitted('close')).toHaveLength(1);
       expect(save).not.toHaveBeenCalled();
+    });
+
+    it('should name a failed save in the dialog under its title, and stay open', async () => {
+      const wrapper = createWrapper();
+
+      set(failure, 'rule is gone');
+      await nextTick();
+
+      const dialog = wrapper.findComponent(BigDialogStub);
+      expect(dialog.props('failure')).toBe('rule is gone');
+      expect(dialog.props('failureTitle')).toBe('accounting_settings.rule.conflicts.error.title');
+      expect(wrapper.emitted('close')).toBeUndefined();
     });
 
     it('should refresh the rules and close once every conflict is resolved', () => {

@@ -16,11 +16,13 @@ interface AccountingRuleTableProps {
   pagination: TablePaginationData;
   isLoading: boolean;
   isCustom: boolean;
+  /** What a row's delete button asks; `delete-click` is emitted once the user confirms. */
+  deleteConfirm: (item: AccountingRuleEntry) => { title: string; message: string };
 }
 
 const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
 
-const { isCustom } = defineProps<AccountingRuleTableProps>();
+const { deleteConfirm, isCustom } = defineProps<AccountingRuleTableProps>();
 
 const emit = defineEmits<{
   'delete-click': [item: AccountingRuleEntry];
@@ -195,6 +197,7 @@ function openEventsDialog(eventIds: number[]): void {
         class="text-rui-text-secondary transition-opacity [tr:not(:hover)_&:not(:focus-within)]:opacity-0 motion-reduce:transition-none"
         :delete-tooltip="t('accounting_settings.rule.delete')"
         :edit-tooltip="t('accounting_settings.rule.edit')"
+        :delete-confirm="deleteConfirm(row)"
         @delete-click="emit('delete-click', row)"
         @edit-click="emit('edit-click', row)"
       >

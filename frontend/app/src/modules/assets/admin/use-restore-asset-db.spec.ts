@@ -57,39 +57,21 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
   });
 
   describe('before it resets anything', () => {
-    it.each(['soft', 'hard'] as const)('should reset nothing until the %s dialog is confirmed', (type) => {
-      const { showRestoreConfirmation } = restore();
-      showRestoreConfirmation(type);
-
-      expect(get(useConfirmStore().visible)).toBe(true);
-      expect(restoreAssetsDatabase).not.toHaveBeenCalled();
-    });
-
-    it('should reset nothing when the dialog is dismissed', async () => {
-      const { showRestoreConfirmation } = restore();
-      showRestoreConfirmation('hard');
-      await useConfirmStore().dismiss();
-      await flushPromises();
-
-      expect(restoreAssetsDatabase).not.toHaveBeenCalled();
-    });
-
     it.each([
       ['soft', 'asset_update.restore.delete_confirmation.soft_reset_message'],
       ['hard', 'asset_update.restore.delete_confirmation.hard_reset_message'],
-    ] as const)('should warn about what a %s reset costs', (type, expected) => {
-      const { showRestoreConfirmation } = restore();
-      showRestoreConfirmation(type);
+    ] as const)('should warn about what a %s reset costs, then about the shared database', (type, expected) => {
+      const { restoreQuestion } = restore();
 
-      expect(get(useConfirmStore().confirmation).message).toBe(`${expected} asset_update.restore.warning`);
+      expect(restoreQuestion(type).message).toBe(`${expected}\n\nasset_update.restore.warning`);
+      expect(get(useConfirmStore().visible)).toBe(false);
     });
 
     it('should refuse to start a second reset while one is running', async () => {
       set(loading, true);
 
-      const { showRestoreConfirmation } = restore();
-      showRestoreConfirmation('hard');
-      await useConfirmStore().confirm();
+      const { restoreAssets } = restore();
+      await restoreAssets('hard');
       await flushPromises();
 
       expect(restoreAssetsDatabase).not.toHaveBeenCalled();
@@ -97,19 +79,17 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
   });
 
   describe('a reset that lands', () => {
-    it.each(['soft', 'hard'] as const)('should run the %s reset the dialog named', async (type) => {
-      const { showRestoreConfirmation } = restore();
-      showRestoreConfirmation(type);
-      await useConfirmStore().confirm();
+    it.each(['soft', 'hard'] as const)('should run the %s reset the button named', async (type) => {
+      const { restoreAssets } = restore();
+      await restoreAssets(type);
       await flushPromises();
 
       expect(restoreAssetsDatabase).toHaveBeenCalledWith(type);
     });
 
     it('should ask to restart, and reload only once that is confirmed', async () => {
-      const { showRestoreConfirmation } = restore();
-      showRestoreConfirmation('soft');
-      await useConfirmStore().confirm();
+      const { restoreAssets } = restore();
+      await restoreAssets('soft');
       await flushPromises();
 
       expect(get(useConfirmStore().confirmation).message).toBe('asset_update.restore.success.description');
@@ -122,9 +102,8 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
     });
 
     it('should report nothing when it succeeds', async () => {
-      const { showRestoreConfirmation } = restore();
-      showRestoreConfirmation('soft');
-      await useConfirmStore().confirm();
+      const { restoreAssets } = restore();
+      await restoreAssets('soft');
       await flushPromises();
 
       expect(notify).not.toHaveBeenCalled();
@@ -135,9 +114,8 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
     it('should report the reason and not offer a restart', async () => {
       restoreAssetsDatabase.mockResolvedValue(err(TaskFailed({ message: 'the database is locked' })));
 
-      const { showRestoreConfirmation } = restore();
-      showRestoreConfirmation('soft');
-      await useConfirmStore().confirm();
+      const { restoreAssets } = restore();
+      await restoreAssets('soft');
       await flushPromises();
 
       expect(notify).toHaveBeenCalledWith(expect.objectContaining({ message: 'the database is locked' }));
@@ -149,9 +127,8 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
         message: 'There are assets that can not be deleted. Check logs for more details.',
       })));
 
-      const { showRestoreConfirmation } = restore();
-      showRestoreConfirmation('hard');
-      await useConfirmStore().confirm();
+      const { restoreAssets } = restore();
+      await restoreAssets('hard');
       await flushPromises();
 
       expect(get(useConfirmStore().confirmation).message)
@@ -164,9 +141,8 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
         message: 'There are assets that can not be deleted. Check logs for more details.',
       })));
 
-      const { showRestoreConfirmation } = restore();
-      showRestoreConfirmation('hard');
-      await useConfirmStore().confirm();
+      const { restoreAssets } = restore();
+      await restoreAssets('hard');
       await flushPromises();
 
       restoreAssetsDatabase.mockClear();
@@ -179,9 +155,8 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
     it('should stay quiet when the reset was cancelled', async () => {
       restoreAssetsDatabase.mockResolvedValue(err(Cancelled({ message: '' })));
 
-      const { showRestoreConfirmation } = restore();
-      showRestoreConfirmation('soft');
-      await useConfirmStore().confirm();
+      const { restoreAssets } = restore();
+      await restoreAssets('soft');
       await flushPromises();
 
       expect(notify).not.toHaveBeenCalled();
@@ -191,9 +166,8 @@ describe('modules/assets/admin/useRestoreAssetDb', () => {
     it('should not escalate for an unrelated failure', async () => {
       restoreAssetsDatabase.mockResolvedValue(err(TaskFailed({ message: 'the database is locked' })));
 
-      const { showRestoreConfirmation } = restore();
-      showRestoreConfirmation('hard');
-      await useConfirmStore().confirm();
+      const { restoreAssets } = restore();
+      await restoreAssets('hard');
       await flushPromises();
 
       expect(get(useConfirmStore().visible)).toBe(false);

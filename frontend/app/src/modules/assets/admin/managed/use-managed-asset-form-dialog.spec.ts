@@ -6,20 +6,15 @@ import { effectScope, type Ref, ref, shallowRef } from 'vue';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { useManagedAssetFormDialog } from './use-managed-asset-form-dialog';
 
-const { deleteCacheKey, saveAsset, saveIcon, setMessage, validate } = vi.hoisted(() => ({
+const { deleteCacheKey, saveAsset, saveIcon, validate } = vi.hoisted(() => ({
   deleteCacheKey: vi.fn(),
   saveAsset: vi.fn(),
   saveIcon: vi.fn(),
-  setMessage: vi.fn(),
   validate: vi.fn(() => true),
 }));
 
 vi.mock('@/modules/assets/use-asset-info-cache', () => ({
   useAssetInfoCache: (): Record<string, unknown> => ({ deleteCacheKey }),
-}));
-
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): Record<string, unknown> => ({ setMessage }),
 }));
 
 const ASSET = createMock<SupportedAsset>({ identifier: 'eip155:1/erc20:0xABC', name: 'Token' });
@@ -153,54 +148,49 @@ describe('modules/assets/admin/managed/useManagedAssetFormDialog', () => {
   });
 
   describe('reporting a failure', () => {
-    it('should report a plain failure with the adding wording', async () => {
-      saveAsset.mockRejectedValue(new Error('the backend is down'));
+    it('should keep a plain failure for the dialog with the adding wording', async () => {
+      const error = new Error('the backend is down');
+      saveAsset.mockRejectedValue(error);
 
-      const { save } = dialog();
+      const { failure, save } = dialog();
       await save();
 
-      expect(setMessage).toHaveBeenCalledWith({
-        description: 'the backend is down',
-        title: 'asset_form.add_error',
-      });
+      expect(get(failure)).toEqual({ error, title: 'asset_form.add_error' });
     });
 
     it('should report a plain failure with the editing wording', async () => {
       set(editMode, true);
       saveAsset.mockRejectedValue(new Error('the backend is down'));
 
-      const { save } = dialog();
+      const { failure, save } = dialog();
       await save();
 
-      expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({ title: 'asset_form.edit_error' }));
+      expect(get(failure)?.title).toBe('asset_form.edit_error');
     });
 
     it('should put field errors on the form and re-validate so they surface', async () => {
       saveAsset.mockRejectedValue(new ApiValidationError(JSON.stringify({ name: ['is required'] })));
 
-      const { modelErrorMessages, save } = dialog();
+      const { failure, modelErrorMessages, save } = dialog();
       validate.mockClear();
       await save();
 
       expect(get(modelErrorMessages)).toEqual({ name: ['is required'] });
       expect(validate).toHaveBeenCalledTimes(2);
-      expect(setMessage).not.toHaveBeenCalled();
+      expect(get(failure)).toBeUndefined();
     });
   });
 
   describe('a failure with no single field to blame', () => {
-    it('should report underlying tokens as a message, not on a field', async () => {
+    it('should name underlying tokens above the form, not on a field', async () => {
       saveAsset.mockRejectedValue(
         new ApiValidationError(JSON.stringify({ underlyingTokens: ['weights must add up to 100'] })),
       );
 
-      const { modelErrorMessages, save } = dialog();
+      const { failure, modelErrorMessages, save } = dialog();
       await save();
 
-      expect(setMessage).toHaveBeenCalledWith({
-        description: 'weights must add up to 100',
-        title: 'asset_form.underlying_tokens',
-      });
+      expect(get(failure)).toEqual({ error: 'weights must add up to 100', title: 'asset_form.underlying_tokens' });
       expect(get(modelErrorMessages)).toEqual({});
     });
 
@@ -209,22 +199,19 @@ describe('modules/assets/admin/managed/useManagedAssetFormDialog', () => {
         new ApiValidationError(JSON.stringify({ underlyingTokens: ['too many', 'bad weight'] })),
       );
 
-      const { save } = dialog();
+      const { failure, save } = dialog();
       await save();
 
-      expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({ description: 'too many,bad weight' }));
+      expect(get(failure)?.error).toBe('too many,bad weight');
     });
 
     it('should report a whole-payload failure, which arrives camelCased as Schema', async () => {
       saveAsset.mockRejectedValue(new ApiValidationError(JSON.stringify({ _schema: ['the payload is wrong'] })));
 
-      const { modelErrorMessages, save } = dialog();
+      const { failure, modelErrorMessages, save } = dialog();
       await save();
 
-      expect(setMessage).toHaveBeenCalledWith({
-        description: 'the payload is wrong',
-        title: 'asset_form.underlying_tokens',
-      });
+      expect(get(failure)).toEqual({ error: 'the payload is wrong', title: 'asset_form.underlying_tokens' });
       expect(get(modelErrorMessages)).toEqual({});
     });
 
@@ -233,21 +220,19 @@ describe('modules/assets/admin/managed/useManagedAssetFormDialog', () => {
         new ApiValidationError(JSON.stringify({ underlyingTokens: 'weights must add up to 100' })),
       );
 
-      const { save } = dialog();
+      const { failure, save } = dialog();
       await save();
 
-      expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({
-        description: 'weights must add up to 100',
-      }));
+      expect(get(failure)?.error).toBe('weights must add up to 100');
     });
 
     it('should report nothing when the payload failure is not a list', async () => {
       saveAsset.mockRejectedValue(new ApiValidationError(JSON.stringify({ _schema: 'the payload is wrong' })));
 
-      const { save } = dialog();
+      const { failure, save } = dialog();
       await save();
 
-      expect(setMessage).not.toHaveBeenCalled();
+      expect(get(failure)).toBeUndefined();
     });
 
     it('should keep the field errors while reporting the payload one', async () => {
@@ -255,10 +240,10 @@ describe('modules/assets/admin/managed/useManagedAssetFormDialog', () => {
         new ApiValidationError(JSON.stringify({ name: ['is required'], _schema: ['the payload is wrong'] })),
       );
 
-      const { modelErrorMessages, save } = dialog();
+      const { failure, modelErrorMessages, save } = dialog();
       await save();
 
-      expect(setMessage).toHaveBeenCalledOnce();
+      expect(get(failure)?.error).toBe('the payload is wrong');
       expect(get(modelErrorMessages)).toEqual({ name: ['is required'] });
     });
   });

@@ -37,7 +37,7 @@ function createContext(): HistoryEventsRowContext {
       toggleMovementExpanded: vi.fn(),
       toggleShowIgnoredAssets: vi.fn(),
       toggleSwapExpanded: vi.fn(),
-      unlinkEvent: vi.fn(),
+      unlinkEvent: vi.fn().mockResolvedValue(undefined),
       unlinkGroup: vi.fn(),
     },
     display: {
@@ -183,6 +183,20 @@ describe('modules/history/events/components/HistoryEventsVirtualRow', () => {
     expect(item.props('eventCount')).toBe(2);
   });
 
+  it('should have a matched movement header ask with the movement wording, then unlink its group', async () => {
+    const wrapper = mountRow({
+      eventCount: 2,
+      groupId: 'group-1',
+      movementKey: 'group-1-3',
+      type: 'matched-movement-collapse',
+    });
+
+    const header = wrapper.findComponent(HistoryEventsSwapCollapseRow);
+    expect(header.props('unlinkConfirm')).toMatchObject({ message: 'transactions.events.confirmation.unlink.message' });
+    await header.vm.$emit('unlink-event');
+    expect(context.actions.unlinkGroup).toHaveBeenCalledWith('group-1');
+  });
+
   it('should render a load more row for a load-more row', () => {
     const wrapper = mountRow({ groupId: 'group-1', hiddenCount: 4, totalCount: 10, type: 'load-more' });
 
@@ -241,7 +255,7 @@ describe('modules/history/events/components/HistoryEventsVirtualRow', () => {
     });
 
     const header = wrapper.findComponent(HistoryEventsSwapCollapseRow);
-    expect(header.props('canUnlink')).toBe(true);
+    expect(header.props('unlinkConfirm')).toMatchObject({ message: 'transactions.events.confirmation.unlink.bridge_message' });
     await header.vm.$emit('unlink-event');
     expect(context.actions.unlinkEvent).toHaveBeenCalledWith({ hasSynthetic: false, identifier: 4, ignoredIdentifiers: [4, 5], type: 'bridge' });
   });
@@ -256,7 +270,7 @@ describe('modules/history/events/components/HistoryEventsVirtualRow', () => {
     });
 
     const header = wrapper.findComponent(HistoryEventsSwapCollapseRow);
-    expect(header.props('canUnlink')).toBe(false);
+    expect(header.props('unlinkConfirm')).toBeUndefined();
     await header.vm.$emit('unlink-event');
     expect(context.actions.unlinkEvent).not.toHaveBeenCalled();
   });

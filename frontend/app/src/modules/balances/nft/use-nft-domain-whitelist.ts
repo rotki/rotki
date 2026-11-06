@@ -2,15 +2,22 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { startPromise } from '@shared/utils';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { getDomain } from '@/modules/core/common/helpers/url';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
+
+interface AllowDomainQuestion {
+  title: string;
+  message: string;
+  confirmLabel: string;
+}
 
 interface UseNftDomainWhitelistReturn {
   /** The registrable domain the NFT media is served from; empty when there is no media URL. */
   domain: ComputedRef<string>;
-  /** Asks the user to confirm, then adds `domain` to the domains whose NFT media is rendered. */
-  confirmAllowDomain: () => void;
+  /** What to ask beside the control that allows the domain, before `allowDomain` runs. */
+  question: ComputedRef<AllowDomainQuestion>;
+  /** Adds `domain` to the domains whose NFT media is rendered; call it once the user accepted. */
+  allowDomain: () => void;
 }
 
 /**
@@ -20,11 +27,16 @@ interface UseNftDomainWhitelistReturn {
  */
 export function useNftDomainWhitelist(mediaUrl: MaybeRefOrGetter<string | null>): UseNftDomainWhitelistReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { show } = useConfirmStore();
   const whitelistedDomainsForNftImages = useSetting('whitelistedDomainsForNftImages');
   const { updateFrontendSetting } = useSettingsOperations();
 
   const domain = computed<string>(() => getDomain(toValue(mediaUrl) ?? ''));
+
+  const question = computed<AllowDomainQuestion>(() => ({
+    confirmLabel: t('general_settings.nft_setting.update_whitelist_confirmation.confirm'),
+    message: t('general_settings.nft_setting.update_whitelist_confirmation.message', { domain: get(domain) }, 2),
+    title: t('general_settings.nft_setting.update_whitelist_confirmation.title'),
+  }));
 
   function allowDomain(): void {
     const domainVal = get(domain);
@@ -35,18 +47,9 @@ export function useNftDomainWhitelist(mediaUrl: MaybeRefOrGetter<string | null>)
     startPromise(updateFrontendSetting({ whitelistedDomainsForNftImages: whitelisted }));
   }
 
-  function confirmAllowDomain(): void {
-    show(
-      {
-        message: t('general_settings.nft_setting.update_whitelist_confirmation.message', { domain: get(domain) }, 2),
-        title: t('general_settings.nft_setting.update_whitelist_confirmation.title'),
-      },
-      allowDomain,
-    );
-  }
-
   return {
-    confirmAllowDomain,
+    allowDomain,
     domain,
+    question,
   };
 }

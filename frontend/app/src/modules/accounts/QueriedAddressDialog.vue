@@ -9,6 +9,7 @@ import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-a
 import { type Module, SUPPORTED_MODULES } from '@/modules/core/common/modules';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import LabeledAddressDisplay from '@/modules/shell/components/display/LabeledAddressDisplay.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import IconMark from '@/modules/shell/components/IconMark.vue';
 import TagDisplay from '@/modules/tags/TagDisplay.vue';
@@ -27,6 +28,8 @@ const { module } = defineProps<{ module: Module }>();
 const emit = defineEmits<{ close: [] }>();
 
 const selectedAccounts = ref<AddressAccount[]>([]);
+/** Why the last add or remove failed, named above the picker; the same button is the retry. */
+const failure = shallowRef<{ title: string; error: unknown }>();
 const ETH = Blockchain.ETH;
 
 const { addQueriedAddress, deleteQueriedAddress } = useQueriedAddressOperations();
@@ -68,14 +71,27 @@ const usableAddresses = computed(() => {
   return accountList.filter(address => !moduleAddresses.includes(address));
 });
 
-async function addAddress() {
+/** Adds the picked address, keeping it picked when the add fails so it can be retried. */
+async function addAddress(): Promise<void> {
   const currentAccount = get(selectedAccounts);
   assert(module && currentAccount.length > 0);
-  await addQueriedAddress({
+  set(failure, undefined);
+  const result = await addQueriedAddress({
     address: getAccountAddress(currentAccount[0]),
     module,
   });
+  if (result) {
+    set(failure, { error: result.error, title: t('actions.session.add_queriable_address.error.message') });
+    return;
+  }
   set(selectedAccounts, []);
+}
+
+async function removeAddress(address: string): Promise<void> {
+  set(failure, undefined);
+  const result = await deleteQueriedAddress({ address, module });
+  if (result)
+    set(failure, { error: result.error, title: t('actions.session.delete_queriable_address.error.message') });
 }
 
 function close() {
@@ -122,6 +138,13 @@ function close() {
           </RuiButton>
         </div>
       </template>
+      <FailureStrip
+        v-if="failure"
+        class="mb-3"
+        :title="failure.title"
+        :failure="failure.error"
+        :retryable="false"
+      />
       <div class="flex items-end gap-2">
         <BlockchainAccountSelector
           v-model="selectedAccounts"
@@ -180,12 +203,7 @@ function close() {
                 size="sm"
                 color="error"
                 data-testid="queried-address-remove"
-                @click="
-                  deleteQueriedAddress({
-                    module,
-                    address: row.address,
-                  })
-                "
+                @click="removeAddress(row.address)"
               >
                 <RuiIcon
                   size="16"

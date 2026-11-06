@@ -5,18 +5,13 @@ import { defineComponent, h, nextTick, type VNode } from 'vue';
 import AddressBookFormDialog from '@/modules/accounts/address-book/AddressBookFormDialog.vue';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 
-const { addAddressBook, setMessage, updateAddressBook } = vi.hoisted(() => ({
+const { addAddressBook, updateAddressBook } = vi.hoisted(() => ({
   addAddressBook: vi.fn(),
-  setMessage: vi.fn(),
   updateAddressBook: vi.fn(),
 }));
 
 vi.mock('@/modules/accounts/address-book/use-address-book-operations', () => ({
   useAddressBookOperations: (): Record<string, Mock> => ({ addAddressBook, updateAddressBook }),
-}));
-
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): Record<string, Mock> => ({ setMessage }),
 }));
 
 const validate = vi.fn(async () => true);
@@ -35,7 +30,7 @@ const FormStub = defineComponent({
 const BigDialogStub = {
   emits: ['confirm', 'cancel'],
   name: 'BigDialog',
-  props: ['title', 'display', 'action', 'loading', 'promptOnClose'],
+  props: ['title', 'display', 'action', 'loading', 'promptOnClose', 'failure', 'failureTitle'],
   template: `<div>
     <slot />
     <button data-testid="stub-confirm" @click="$emit('confirm')" />
@@ -246,32 +241,28 @@ describe('addressBookFormDialog', () => {
       await confirm(wrapper);
 
       expect(wrapper.findComponent(FormStub).props('errorMessages')).toEqual({ address: ['not an address'] });
-      expect(setMessage).not.toHaveBeenCalled();
+      expect(wrapper.findComponent(BigDialogStub).props('failure')).toBeUndefined();
     });
 
-    it('should surface an error that names no field', async () => {
-      updateAddressBook.mockRejectedValue(new Error('the backend said no'));
+    it('should name an error that blames no field in the dialog', async () => {
+      const error = new Error('the backend said no');
+      updateAddressBook.mockRejectedValue(error);
       const wrapper = editing();
 
       await confirm(wrapper);
 
-      expect(setMessage).toHaveBeenCalledWith({
-        description: 'address_book.actions.edit.error.description::the backend said no',
-        success: false,
-        title: 'address_book.actions.edit.error.title',
-      });
+      const dialog = wrapper.findComponent(BigDialogStub);
+      expect(dialog.props('failure')).toBe(error);
+      expect(dialog.props('failureTitle')).toBe('address_book.actions.edit.error.title');
     });
 
-    it('should word the error as an addition when the entry is new', async () => {
+    it('should title the error as an addition when the entry is new', async () => {
       addAddressBook.mockRejectedValue(new Error('the backend said no'));
+      const wrapper = createWrapper();
 
-      await confirm(createWrapper());
+      await confirm(wrapper);
 
-      expect(setMessage).toHaveBeenCalledWith({
-        description: 'address_book.actions.add.error.description::the backend said no',
-        success: false,
-        title: 'address_book.actions.add.error.title',
-      });
+      expect(wrapper.findComponent(BigDialogStub).props('failureTitle')).toBe('address_book.actions.add.error.title');
     });
   });
 

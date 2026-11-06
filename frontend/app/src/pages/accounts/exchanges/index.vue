@@ -7,15 +7,16 @@ import ExchangeBalancesEmpty from '@/modules/balances/exchanges/ExchangeBalances
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useNonSyncingExchanges } from '@/modules/balances/exchanges/use-non-syncing-exchanges';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useLocations } from '@/modules/core/common/use-locations';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useRowHighlight } from '@/modules/core/table/use-row-highlight';
+import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import ExchangeKeysFormDialog from '@/modules/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
@@ -34,7 +35,6 @@ const sort = ref<DataTableSortColumn<Exchange>>({
 const { exchangesWithKey } = storeToRefs(useLocationStore());
 const { removeExchange } = useExchanges();
 const { connectedExchanges: rows } = storeToRefs(useConnectedExchangesStore());
-const { show } = useConfirmStore();
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
@@ -124,19 +124,17 @@ function editExchange(exchangePayload: Exchange) {
   });
 }
 
-async function remove(item: Exchange) {
-  await removeExchange(item);
-}
-
-function showRemoveConfirmation(item: Exchange) {
-  show({
+const { deleteConfirm, deleteRow: removeRow, failure: removeFailure } = useTableRowDeletion<Exchange>({
+  confirm: item => ({
     message: t('exchange_settings.confirmation.message', {
-      location: item ? getExchangeName(item.location) : '',
-      name: item?.name ?? '',
+      location: getExchangeName(item.location),
+      name: item.name,
     }),
     title: t('exchange_settings.confirmation.title'),
-  }, () => remove(item));
-}
+  }),
+  deleteItem: removeExchange,
+  failureTitle: () => t('actions.balances.exchange_removal.title'),
+});
 
 onBeforeMount(() => {
   resetNonSyncingExchanges();
@@ -183,6 +181,15 @@ watch(route, async (route) => {
         {{ t('exchange_balances.add_exchange') }}
       </RuiButton>
     </template>
+
+    <FailureStrip
+      v-if="removeFailure"
+      class="mb-4"
+      :retryable="false"
+      :title="removeFailure.title"
+      :failure="removeFailure.error"
+      data-testid="exchange-remove-error"
+    />
 
     <ExchangeBalancesEmpty
       v-if="rows.length === 0"
@@ -258,7 +265,8 @@ watch(route, async (route) => {
             align="end"
             :delete-tooltip="t('exchange_settings.delete.tooltip')"
             :edit-tooltip="t('exchange_settings.edit.tooltip')"
-            @delete-click="showRemoveConfirmation(row)"
+            :delete-confirm="deleteConfirm(row)"
+            @delete-click="removeRow(row)"
             @edit-click="editExchange(row)"
           />
         </template>

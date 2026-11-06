@@ -11,7 +11,6 @@ import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import { type Blockchain, HistoryEventEntryType } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import {
   isEthBlockEvent,
   isEvmEvent,
@@ -52,7 +51,8 @@ interface UseHistoryEventsActionsReturn {
     undecodedStatus: () => Promise<void>;
   };
   redecode: {
-    all: () => void; // Shows confirmation dialog
+    /** Re-decodes every transaction, without asking: the chain picker asks before it emits this. */
+    all: () => Promise<void>;
     blocks: (data: PullEthBlockEventPayload) => Promise<void>;
     by: (scope: DecodeScope) => Promise<void>;
     evm: (data: PullLocationTransactionPayload) => Promise<void>;
@@ -75,7 +75,6 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     shouldFetchEventsRegularly,
   } = options;
 
-  const { t } = useI18n({ useScope: 'global' });
   const route = useRoute();
   const { fetchCustomizedEventDuplicates } = useCustomizedEventDuplicates();
 
@@ -125,7 +124,6 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     return next;
   }
 
-  const { show } = useConfirmStore();
   const { fetchAssociatedLocations, fetchLocationLabels } = useHistoryDataFetching();
   const historyStore = useHistoryStore();
   const { eventsVersion } = storeToRefs(historyStore);
@@ -211,14 +209,8 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     }
   }
 
-  function redecodeAllEvents(): void {
-    show({
-      message: t('transactions.events_decoding.confirmation'),
-      title: t('transactions.events_decoding.redecode_all'),
-    }, redecodeAllEventsHandler);
-  }
-
-  async function redecodeAllEventsHandler(): Promise<void> {
+  /** Re-decodes every transaction; the chain picker already asked, since this can take a long time. */
+  async function redecodeAllEvents(): Promise<void> {
     await fetchUndecodedTransactionsBreakdown();
     await redecodeTransactions(toValue(onlyChains));
     await fetchDataAndLocations();
@@ -227,7 +219,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   async function redecode(scope: DecodeScope): Promise<void> {
     switch (scope.type) {
       case 'all':
-        redecodeAllEvents();
+        await redecodeAllEvents();
         break;
       case 'chains':
         await redecodeTransactions(scope.chains);

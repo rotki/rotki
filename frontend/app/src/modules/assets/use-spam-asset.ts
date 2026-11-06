@@ -13,7 +13,7 @@ interface UseSpamAssetReturn {
 }
 
 export function useSpamAsset(): UseSpamAssetReturn {
-  const { notifyError, showErrorMessage } = useNotifications();
+  const { notifyError, notifyWarning } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
   const {
@@ -41,7 +41,7 @@ export function useSpamAsset(): UseSpamAssetReturn {
       }
 
       if (includedInManualBalances.length > 0) {
-        showErrorMessage(
+        notifyWarning(
           t('ignore.spam.warning.manual_balances_title'),
           t('ignore.spam.warning.manual_balances_message', {
             assets: includedInManualBalances.map(item => getAssetField(item, 'symbol')).join(', '),

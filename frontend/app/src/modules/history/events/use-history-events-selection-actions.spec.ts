@@ -1,18 +1,14 @@
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useHistoryEventsActionFailure } from './use-history-events-action-failure';
 import { useHistoryEventsSelectionActions } from './use-history-events-selection-actions';
 import { useHistoryEventsSelectionMode } from './use-selection-mode';
 
 const { spies } = vi.hoisted(() => ({
   spies: {
-    showConfirm: vi.fn(),
     ignore: vi.fn(),
   },
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): object => ({ show: spies.showConfirm }),
 }));
 
 vi.mock('@/modules/history/use-ignore', () => ({
@@ -46,9 +42,13 @@ function select(selectionMode: ReturnType<typeof useHistoryEventsSelectionMode>,
   ids.forEach(id => selectionMode.actions.toggleEvent(id));
 }
 
+const { actionFailure, clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
+
 describe('useHistoryEventsSelectionActions', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    clearActionFailure();
+    spies.ignore.mockResolvedValue({ success: true });
   });
 
   afterEach(() => {
@@ -59,6 +59,38 @@ describe('useHistoryEventsSelectionActions', () => {
     const { actions, deleteSelected } = setup([]);
     await actions.handleSelectionAction('delete');
     expect(deleteSelected).toHaveBeenCalledOnce();
+  });
+
+  it('should name a failed bulk exclusion above the table', async () => {
+    spies.ignore.mockResolvedValue({ message: 'boom', success: false });
+    const { actions, selectionMode } = setup([historyEvent({ identifier: 1 })]);
+    select(selectionMode, 1);
+
+    await actions.handleSelectionAction('ignore');
+
+    expect(spies.ignore).toHaveBeenCalledWith(true);
+    expect(get(actionFailure)).toEqual({ failure: 'boom', title: 'actions.ignore.error.title' });
+  });
+
+  it('should name a failed bulk inclusion under its own title', async () => {
+    spies.ignore.mockResolvedValue({ message: 'boom', success: false });
+    const { actions, selectionMode } = setup([historyEvent({ identifier: 1, ignoredInAccounting: true })]);
+    select(selectionMode, 1);
+
+    await actions.handleSelectionAction('unignore');
+
+    expect(spies.ignore).toHaveBeenCalledWith(false);
+    expect(get(actionFailure)).toEqual({ failure: 'boom', title: 'actions.unignore.error.title' });
+  });
+
+  it('should drop the last failure when the next exclusion starts', async () => {
+    reportActionFailure('actions.ignore.error.title', 'boom');
+    const { actions, selectionMode } = setup([historyEvent({ identifier: 1 })]);
+    select(selectionMode, 1);
+
+    await actions.handleSelectionAction('ignore');
+
+    expect(get(actionFailure)).toBeUndefined();
   });
 
   it('should drive selection-mode toggles', async () => {
@@ -82,22 +114,30 @@ describe('useHistoryEventsSelectionActions', () => {
     expect(get(actions.ignoreStatus)).toEqual({ ignoredCount: 1, notIgnoredCount: 2 });
   });
 
-  it('should warn when creating a rule with no selected events', async () => {
+  it('should name no rule blocker while nothing is selected', () => {
     const { actions } = setup([]);
+    expect(get(actions.ruleCreationBlocker)).toBeUndefined();
+  });
+
+  it('should block rule creation, seeding nothing, when no selected event is loaded', async () => {
+    const { actions, selectionMode } = setup([historyEvent({ identifier: 1 })]);
+    select(selectionMode, 7);
+    expect(get(actions.ruleCreationBlocker)).toBe('transactions.events.accounting_rule.no_events_found');
+
     await actions.handleSelectionAction('create-rule');
-    expect(spies.showConfirm).toHaveBeenCalledOnce();
     expect(get(actions.modelAccountingRuleToEdit)).toBeUndefined();
   });
 
-  it('should warn when the selected events have differing types', async () => {
+  it('should block rule creation, seeding nothing, when the selected events have differing types', async () => {
     const events = [
       historyEvent({ eventSubtype: 'fee', eventType: 'spend', identifier: 1 }),
       historyEvent({ eventSubtype: 'reward', eventType: 'receive', identifier: 2 }),
     ];
     const { actions, selectionMode } = setup(events);
     select(selectionMode, 1, 2);
+    expect(get(actions.ruleCreationBlocker)).toBe('transactions.events.accounting_rule.different_types_error');
+
     await actions.handleSelectionAction('create-rule');
-    expect(spies.showConfirm).toHaveBeenCalledOnce();
     expect(get(actions.modelAccountingRuleToEdit)).toBeUndefined();
   });
 
@@ -108,8 +148,8 @@ describe('useHistoryEventsSelectionActions', () => {
     ];
     const { actions, selectionMode } = setup(events);
     select(selectionMode, 1, 2);
+    expect(get(actions.ruleCreationBlocker)).toBeUndefined();
     await actions.handleSelectionAction('create-rule');
-    expect(spies.showConfirm).not.toHaveBeenCalled();
     expect(get(actions.selectedEventIds)).toEqual([1, 2]);
     expect(get(actions.modelAccountingRuleToEdit)).toMatchObject({ eventSubtype: 'fee', eventType: 'spend' });
   });

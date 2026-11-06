@@ -32,12 +32,14 @@ const pillParams = defineModel<PillParams>('pillParams', { required: true });
 
 const expanded = defineModel<SupportedAsset[]>('expanded', { required: true });
 
-const { collection, ignoredHandling, loading = false } = defineProps<{
+const { collection, deleteConfirm, ignoredHandling, loading = false } = defineProps<{
   collection: Collection<SupportedAsset>;
   fields: FieldDef[];
   /** Read-only here: it decides whether an ignore action needs the table re-fetched. */
   ignoredHandling: IgnoredAssetsHandlingType;
   loading?: boolean;
+  /** What a row's delete button asks; `delete-asset` is emitted once the user confirms. */
+  deleteConfirm: (asset: SupportedAsset) => { title: string; message: string };
 }>();
 
 const emit = defineEmits<{
@@ -158,6 +160,7 @@ const { fetchIgnoredAssets } = useIgnoredAssetOperations();
         <ManagedAssetRowActions
           v-if="canBeEdited(row)"
           :identifier="row.identifier"
+          :delete-confirm="deleteConfirm(row)"
           @edit="edit(row)"
           @delete="deleteAsset(row)"
         />

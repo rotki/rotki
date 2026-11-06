@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import TagFormDialog from '@/modules/tags/TagFormDialog.vue';
@@ -21,7 +22,6 @@ const originalName = ref<string>('');
 
 const { tags } = storeToRefs(useSessionMetadataStore());
 const { deleteTag } = useTagOperations();
-const { show } = useConfirmStore();
 
 const sort = ref<DataTableSortData<Tag>>({
   column: 'name',
@@ -57,17 +57,17 @@ function editItem(newTag: Tag) {
   set(tag, { ...newTag });
 }
 
-function showDeleteConfirmation(selectedTag: Tag) {
-  show(
-    {
-      message: t('tag_manager.confirmation.message', {
-        tagToDelete: selectedTag.name,
-      }),
-      title: t('tag_manager.confirmation.title'),
-    },
-    () => deleteTag(selectedTag.name),
-  );
-}
+const { deleteConfirm, deleteRow, failure: deleteFailure } = useTableRowDeletion<Tag>({
+  confirm: selectedTag => ({
+    message: t('tag_manager.confirmation.message', { tagToDelete: selectedTag.name }),
+    title: t('tag_manager.confirmation.title'),
+  }),
+  deleteItem: async (selectedTag) => {
+    await deleteTag(selectedTag.name);
+    return true;
+  },
+  failureTitle: () => t('actions.session.tag_delete.error.title'),
+});
 
 function handleCreateTagClick() {
   set(editMode, false);
@@ -113,6 +113,14 @@ onMounted(async () => {
           data-testid="tag-manager-search"
         />
       </template>
+      <FailureStrip
+        v-if="deleteFailure"
+        class="m-3"
+        :retryable="false"
+        :title="deleteFailure.title"
+        :failure="deleteFailure.error"
+        data-testid="tag-manager-delete-error"
+      />
       <RuiDataTable
         v-model:sort="sort"
         dense
@@ -132,8 +140,9 @@ onMounted(async () => {
           <RowActions
             v-if="!isReservedTag(row.name)"
             align="end"
+            :delete-confirm="deleteConfirm(row)"
             @edit-click="editItem(row)"
-            @delete-click="showDeleteConfirmation(row)"
+            @delete-click="deleteRow(row)"
           />
           <RuiTooltip
             v-else

@@ -5,19 +5,20 @@ import dayjs from 'dayjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { snapshotFileName, useSnapshotExport } from '@/modules/dashboard/snapshots/composables/use-snapshot-export';
 
-const { downloadFileByBlob, downloadSnapshot, exportSnapshotCSV, interop, openDirectory, setMessage } = vi.hoisted(() => ({
+const { downloadFileByBlob, downloadSnapshot, exportSnapshotCSV, interop, notifyError, notifyInfo, openDirectory } = vi.hoisted(() => ({
   downloadFileByBlob: vi.fn(),
   downloadSnapshot: vi.fn(),
   exportSnapshotCSV: vi.fn(),
   interop: { appSession: false },
+  notifyError: vi.fn<(title: string, message: string) => void>(),
+  notifyInfo: vi.fn<(title: string, message: string) => void>(),
   openDirectory: vi.fn(),
-  setMessage: vi.fn(),
 }));
 
 vi.mock('@/modules/core/common/file/download', () => ({ downloadFileByBlob }));
 
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): { setMessage: typeof setMessage } => ({ setMessage }),
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
+  useNotifications: (): { notifyError: typeof notifyError; notifyInfo: typeof notifyInfo } => ({ notifyError, notifyInfo }),
 }));
 
 vi.mock('@/modules/shell/app/use-electron-interop', () => ({
@@ -55,13 +56,13 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-export', () => {
     expect(downloadFileByBlob).toHaveBeenCalledWith(blob, snapshotFileName(100));
   });
 
-  it('should report a failed download as a message rather than rejecting', async () => {
+  it('should report a failed download as a toast rather than rejecting', async () => {
     downloadSnapshot.mockRejectedValue(new Error('backend said no'));
     const { exporting, exportSnapshot } = withSetup(() => useSnapshotExport()).result;
 
     await expect(exportSnapshot(100)).resolves.toBe(false);
 
-    expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({ description: 'backend said no', success: false }));
+    expect(notifyError).toHaveBeenCalledWith(expect.any(String), 'backend said no');
     expect(get(exporting)).toBeUndefined();
   });
 
@@ -74,7 +75,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-export', () => {
     await expect(exportSnapshot(100)).resolves.toBe(true);
 
     expect(exportSnapshotCSV).toHaveBeenCalledWith({ path: '/tmp/out', timestamp: 100 });
-    expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    expect(notifyInfo).toHaveBeenCalledWith(expect.any(String), 'dashboard.snapshot.download.message.success');
   });
 
   it('should do nothing when the directory picker is cancelled', async () => {
@@ -85,7 +86,8 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-export', () => {
     await expect(exportSnapshot(100)).resolves.toBe(false);
 
     expect(exportSnapshotCSV).not.toHaveBeenCalled();
-    expect(setMessage).not.toHaveBeenCalled();
+    expect(notifyInfo).not.toHaveBeenCalled();
+    expect(notifyError).not.toHaveBeenCalled();
   });
 
   it('should track the snapshot being exported, and ignore a second while it runs', async () => {

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { BigNumber } from '@rotki/common';
 import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { IssueDescription, RemediationTimelineItem } from '@/modules/history/data-issues/types';
@@ -7,11 +6,12 @@ import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import DataIssueBalanceDivergence from '@/modules/history/data-issues/components/DataIssueBalanceDivergence.vue';
 import DataIssueBalanceMismatchSummary from '@/modules/history/data-issues/components/DataIssueBalanceMismatchSummary.vue';
 import DataIssueDescription from '@/modules/history/data-issues/components/DataIssueDescription.vue';
+import DataIssueDetailFooter from '@/modules/history/data-issues/components/DataIssueDetailFooter.vue';
 import DataIssueKindChip from '@/modules/history/data-issues/components/DataIssueKindChip.vue';
 import DataIssueNegativeBalanceSummary from '@/modules/history/data-issues/components/DataIssueNegativeBalanceSummary.vue';
 import DataIssueRemediationTimeline from '@/modules/history/data-issues/components/DataIssueRemediationTimeline.vue';
 import DataIssueStateChip from '@/modules/history/data-issues/components/DataIssueStateChip.vue';
-import { canDismiss, canResolveManually, canRetry, IssueKind, IssueState } from '@/modules/history/data-issues/constants';
+import { IssueKind } from '@/modules/history/data-issues/constants';
 import { describeIssue, type NegativeBalanceValues, negativeBalanceValues, relatedEventRoute, toTimelineItems } from '@/modules/history/data-issues/transforms';
 import { dataIssueDivergenceKey } from '@/modules/history/data-issues/use-data-issue-divergence-store';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
@@ -24,9 +24,11 @@ import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vu
  * One issue's detail body, shared by both of its containers: the drawer on the data-issues page and
  * the bottom sheet in the pinned rail. Owns no open state, emitting `close` for each to interpret.
  */
-const { issue, busy = false } = defineProps<{
+const { issue, busy = false, failure } = defineProps<{
   issue?: DataIssue;
   busy?: boolean;
+  /** The last failed dismiss or retry; named only while it concerns the issue shown. */
+  failure?: { id: number; title: string; error: unknown };
 }>();
 
 const emit = defineEmits<{
@@ -37,6 +39,8 @@ const emit = defineEmits<{
   review: [item: RemediationTimelineItem];
 }>();
 
+type Amount = IssueDescription['amounts'][string];
+
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 
@@ -45,7 +49,7 @@ const description = computed<IssueDescription | undefined>(() => issue ? describ
 const negativeBalance = computed<NegativeBalanceValues | undefined>(() => issue ? negativeBalanceValues(issue) : undefined);
 
 /** Balance mismatches and negative balances show their amounts as values; every other kind keeps its sentence. */
-const mismatch = computed<{ derived: BigNumber; observed: BigNumber; delta: BigNumber } | undefined>(() => {
+const mismatch = computed<{ derived: Amount; observed: Amount; delta: Amount } | undefined>(() => {
   const amounts = get(description)?.amounts;
   if (issue?.kind !== IssueKind.CURRENT_BALANCE_MISMATCH || !amounts?.derived || !amounts.observed || !amounts.delta)
     return undefined;
@@ -250,33 +254,13 @@ const resolutionNote = computed<string | undefined>(() => {
       </section>
     </div>
 
-    <div class="flex items-center justify-end gap-2 p-4 border-t border-rui-divider">
-      <RuiButton
-        variant="outlined"
-        :disabled="busy || !canDismiss(issue.state)"
-        data-testid="data-issue-detail-dismiss"
-        @click="emit('dismiss', issue.id)"
-      >
-        {{ t('data_issues.action.dismiss.label') }}
-      </RuiButton>
-      <RuiButton
-        v-if="canRetry(issue.kind, issue.state) || issue.state === IssueState.AUTO_REMEDIATING"
-        variant="outlined"
-        color="primary"
-        :disabled="busy || !canRetry(issue.kind, issue.state)"
-        data-testid="data-issue-detail-retry"
-        @click="emit('retry', issue.id)"
-      >
-        {{ t('data_issues.action.retry.label') }}
-      </RuiButton>
-      <RuiButton
-        color="primary"
-        :disabled="busy || !canResolveManually(issue.state)"
-        data-testid="data-issue-detail-resolve"
-        @click="emit('resolve', issue.id)"
-      >
-        {{ t('data_issues.action.resolve.label') }}
-      </RuiButton>
-    </div>
+    <DataIssueDetailFooter
+      :issue="issue"
+      :busy="busy"
+      :failure="failure?.id === issue.id ? failure : undefined"
+      @dismiss="emit('dismiss', $event)"
+      @retry="emit('retry', $event)"
+      @resolve="emit('resolve', $event)"
+    />
   </div>
 </template>

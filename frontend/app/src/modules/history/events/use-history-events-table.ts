@@ -155,8 +155,8 @@ export function useHistoryEventsTable(
         if (group)
           forms.addMissingRule(payload, group);
       },
-      deleteEvents: operations.confirmDelete,
-      deleteTransaction: operations.confirmTxAndEventsDelete,
+      deleteEvents: operations.deleteEvents,
+      deleteTransaction: operations.deleteTransaction,
       editEvent: (payload, groupId): void => {
         const group = findGroup(groupId);
         if (group)
@@ -172,7 +172,7 @@ export function useHistoryEventsTable(
       toggleMovementExpanded: rows.toggleMovementExpanded,
       toggleShowIgnoredAssets: data.toggleShowIgnoredAssets,
       toggleSwapExpanded: rows.toggleSwapExpanded,
-      unlinkEvent: unlinking.confirmUnlink,
+      unlinkEvent: unlinking.unlink,
       unlinkGroup: unlinking.unlinkGroup,
     },
     display: {

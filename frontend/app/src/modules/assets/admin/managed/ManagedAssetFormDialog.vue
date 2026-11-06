@@ -21,7 +21,7 @@ const { t } = useI18n({ useScope: 'global' });
 const stateUpdated = ref<boolean>(false);
 const form = useTemplateRef<InstanceType<typeof ManagedAssetForm>>('form');
 
-const { dialogTitle, loading, modelErrorMessages, save } = useManagedAssetFormDialog({
+const { dialogTitle, failure, loading, modelErrorMessages, save } = useManagedAssetFormDialog({
   editMode: () => editMode,
   form,
   modelValue,
@@ -36,6 +36,8 @@ const { dialogTitle, loading, modelErrorMessages, save } = useManagedAssetFormDi
     :action="{ primary: t('common.actions.save') }"
     :layout="{ divide: true }"
     :loading="loading"
+    :failure="failure?.error"
+    :failure-title="failure?.title"
     :prompt-on-close="stateUpdated"
     @confirm="save()"
     @cancel="modelValue = undefined"

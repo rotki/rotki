@@ -176,6 +176,7 @@ const {
   handleAccountingRuleRefresh,
   handleSelectionAction,
   ignoreStatus,
+  ruleCreationBlocker,
   selectedEventIds,
 } = useHistoryEventsSelectionActions({
   deletion,
@@ -254,6 +255,7 @@ if (section)
                 :export-params="requestPayload"
                 :selection="selectionMode.state.value"
                 :ignore-status="ignoreStatus"
+                :rule-creation-blocker="ruleCreationBlocker"
                 @update:action="onActionChanged($event)"
                 @update:location-labels="onLocationLabelsChanged($event)"
                 @selection:action="handleSelectionAction($event)"

@@ -7,6 +7,7 @@ import {
   canRetry,
   IssueState,
 } from '@/modules/history/data-issues/constants';
+import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 
 const { issue, eventRoute } = defineProps<{
   issue: DataIssue;
@@ -51,27 +52,36 @@ function onGoto(): void {
       </template>
       {{ t('data_issues.panel.goto_event') }}
     </RuiTooltip>
-    <RuiTooltip
+    <span
       v-if="canDismiss(issue.state)"
-      :open-delay="300"
+      class="contents"
+      @click.stop
     >
-      <template #activator>
-        <RuiButton
-          variant="text"
-          icon
-          size="sm"
-          :aria-label="t('data_issues.action.dismiss.label')"
-          data-testid="data-issues-panel-dismiss"
-          @click.stop="emit('dismiss', issue)"
-        >
-          <RuiIcon
-            name="lu-archive"
-            size="16"
-          />
-        </RuiButton>
-      </template>
-      {{ t('data_issues.action.dismiss.label') }}
-    </RuiTooltip>
+      <ConfirmPopover
+        tone="warning"
+        :title="t('data_issues.action.dismiss.confirm.title')"
+        :message="t('data_issues.action.dismiss.confirm.message')"
+        :confirm-label="t('data_issues.action.dismiss.label')"
+        @confirm="emit('dismiss', issue)"
+      >
+        <template #activator="{ attrs }">
+          <RuiButton
+            variant="text"
+            icon
+            size="sm"
+            :title="t('data_issues.action.dismiss.label')"
+            :aria-label="t('data_issues.action.dismiss.label')"
+            data-testid="data-issues-panel-dismiss"
+            v-bind="attrs"
+          >
+            <RuiIcon
+              name="lu-archive"
+              size="16"
+            />
+          </RuiButton>
+        </template>
+      </ConfirmPopover>
+    </span>
     <RuiTooltip
       v-if="canRetry(issue.kind, issue.state) || issue.state === IssueState.AUTO_REMEDIATING"
       :open-delay="300"

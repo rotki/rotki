@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import { hexToRgbPoints } from '@rotki/common';
+import { confirmInline } from '../helpers/utils';
 import { RotkiApp } from './rotki-app';
 
 async function fillTagDialog(
@@ -96,8 +97,7 @@ export class TagManagerPage {
 
   async deleteTag(name: string): Promise<void> {
     await this.rowFor(name).locator('[data-testid=row-delete]').click();
-    const confirm = this.page.locator('[data-testid=confirm-dialog]');
-    await confirm.locator('[data-testid=button-confirm]').click();
+    await confirmInline(this.page, 'Confirm tag deletion');
     await expect(this.rowFor(name)).toHaveCount(0);
   }
 

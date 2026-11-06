@@ -13,10 +13,10 @@ const RuiDataTable = defineComponent({
   template: '<div><slot name="body.prepend" /><div data-testid="empty"><slot name="empty-description" /></div></div>',
 });
 
-function mountList(state: { error?: unknown; rows?: DuplicateRow[] } = {}): VueWrapper {
+function mountList(state: { actionFailure?: { title: string; failure: unknown }; error?: unknown; rows?: DuplicateRow[] } = {}): VueWrapper {
   return mount(CustomizedEventDuplicatesList, {
     global: { provide: libraryDefaults, stubs: { RuiDataTable } },
-    props: { description: 'description', error: state.error, rows: state.rows ?? [] },
+    props: { actionFailure: state.actionFailure, description: 'description', error: state.error, rows: state.rows ?? [] },
   });
 }
 
@@ -45,5 +45,18 @@ describe('customizedEventDuplicatesList', () => {
 
     expect(wrapper.findComponent(RuiDataTable).props('empty')).toEqual({ description: 'customized_event_duplicates.no_items' });
     expect(wrapper.find('[data-testid=duplicates-load-error]').exists()).toBe(false);
+  });
+
+  it('should name a failed action started from the tab without a retry, its own button being the retry', () => {
+    const wrapper = mountList({ actionFailure: { failure: 'boom', title: 'actions.customized_event_duplicates.fix_error.title' }, rows: [createMock<DuplicateRow>()] });
+
+    const strip = wrapper.find('[data-testid=duplicates-action-error]');
+    expect(strip.text()).toContain('actions.customized_event_duplicates.fix_error.title');
+    expect(strip.text()).toContain('boom');
+    expect(strip.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
+  });
+
+  it('should name no action failure while there is none', () => {
+    expect(mountList().find('[data-testid=duplicates-action-error]').exists()).toBe(false);
   });
 });

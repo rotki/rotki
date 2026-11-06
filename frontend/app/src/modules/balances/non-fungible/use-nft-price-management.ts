@@ -3,7 +3,6 @@ import type { ManualPriceFormPayload } from '@/modules/assets/prices/price-types
 import type { NonFungibleBalance } from '@/modules/balances/types/nfbalances';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
 interface UseNftPriceManagementReturn {
@@ -11,9 +10,11 @@ interface UseNftPriceManagementReturn {
   /** Whether the NFT in the form already has a custom price, so the form edits it rather than adds one. */
   hasCustomPrice: Readonly<Ref<boolean>>;
   modelOpenPriceDialog: Ref<boolean>;
+  /** For `RowActions`' `delete-confirm`, so a row's delete button asks before it emits. */
+  deleteConfirm: (item: NonFungibleBalance) => { title: string; message: string };
+  /** Deletes a custom price the user already confirmed. */
   deletePrice: (item: NonFungibleBalance) => Promise<void>;
   setPriceForm: (item: NonFungibleBalance) => void;
-  showDeleteConfirmation: (item: NonFungibleBalance) => void;
 }
 
 export function useNftPriceManagement(
@@ -22,7 +23,6 @@ export function useNftPriceManagement(
   const { t } = useI18n({ useScope: 'global' });
   const { notifyError } = useNotifications();
   const { deleteLatestPrice } = useAssetPricesApi();
-  const { show } = useConfirmStore();
 
   const modelOpenPriceDialog = shallowRef<boolean>(false);
   const customPrice = shallowRef<ManualPriceFormPayload | null>(null);
@@ -56,24 +56,19 @@ export function useNftPriceManagement(
     set(modelOpenPriceDialog, true);
   }
 
-  function showDeleteConfirmation(item: NonFungibleBalance): void {
-    show(
-      {
-        message: t('assets.custom_price.delete.message', {
-          asset: !item ? '' : item.name ?? item.id,
-        }),
-        title: t('assets.custom_price.delete.tooltip'),
-      },
-      async () => deletePrice(item),
-    );
+  function deleteConfirm(item: NonFungibleBalance): { title: string; message: string } {
+    return {
+      message: t('assets.custom_price.delete.message', { asset: item.name ?? item.id }),
+      title: t('assets.custom_price.delete.tooltip'),
+    };
   }
 
   return {
     customPrice: readonly(customPrice),
+    deleteConfirm,
     deletePrice,
     hasCustomPrice: readonly(hasCustomPrice),
     modelOpenPriceDialog,
     setPriceForm,
-    showDeleteConfirmation,
   };
 }

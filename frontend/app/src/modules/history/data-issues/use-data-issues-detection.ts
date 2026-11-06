@@ -1,7 +1,6 @@
 import type { Result } from 'plainfp/result';
 import type { Ref } from 'vue';
 import { msg } from '@/message-key';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { useTaskApi } from '@/modules/core/tasks/use-task-api';
 import { currentBalanceDetectionActivity } from '@/modules/history/balances/historical-balances.activity';
@@ -10,10 +9,12 @@ import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseDataIssuesDetectionReturn {
   detecting: Readonly<Ref<boolean>>;
+  /** Why the last comparison failed, for the page to name with a retry; cleared when the next one starts. */
+  detectFailure: Readonly<Ref<unknown>>;
   /**
    * Compares the balances rotki derived from events with the live chain balances, writing a data
    * issue for each difference, then calls `reload`. A failure to start, for example while the
-   * historical balances are still being processed, is shown as an error notification.
+   * historical balances are still being processed, is kept in `detectFailure`.
    */
   detect: () => Promise<void>;
 }
@@ -23,8 +24,8 @@ interface UseDataIssuesDetectionReturn {
  */
 export function useDataIssuesDetection(reload: () => Promise<void>): UseDataIssuesDetectionReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { showErrorMessage } = useNotifications();
   const detecting = shallowRef<boolean>(false);
+  const detectFailure = shallowRef<unknown>();
   const { triggerTask } = useTaskApi();
   const { submitTask } = useNativeTask();
 
@@ -48,12 +49,13 @@ export function useDataIssuesDetection(reload: () => Promise<void>): UseDataIssu
 
   async function detect(): Promise<void> {
     set(detecting, true);
+    set(detectFailure, undefined);
     try {
       await runDetection();
       await reload();
     }
     catch (error: unknown) {
-      showErrorMessage(t('data_issues.detect.action'), t('data_issues.detect.error', { error: getErrorMessage(error) }));
+      set(detectFailure, error);
     }
     finally {
       set(detecting, false);
@@ -62,6 +64,7 @@ export function useDataIssuesDetection(reload: () => Promise<void>): UseDataIssu
 
   return {
     detect,
+    detectFailure: shallowReadonly(detectFailure),
     detecting: readonly(detecting),
   };
 }

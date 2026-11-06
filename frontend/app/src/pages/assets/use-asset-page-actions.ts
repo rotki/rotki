@@ -1,6 +1,5 @@
 import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { useIgnoredAssetConfirmation } from '@/modules/assets/use-ignored-asset-confirmation';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { useSpamAsset } from '@/modules/assets/use-spam-asset';
 import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
@@ -35,8 +34,7 @@ interface UseAssetPageActionsReturn {
 export function useAssetPageActions(options: UseAssetPageActionsOptions): UseAssetPageActionsReturn {
   const { asset, identifier, refetchAssetInfo } = options;
 
-  const { ignoreAssetWithConfirmation } = useIgnoredAssetConfirmation();
-  const { unignoreAsset } = useIgnoredAssetOperations();
+  const { ignoreAsset, unignoreAsset } = useIgnoredAssetOperations();
   const { useIsAssetIgnored, useIsAssetWhitelisted } = useAssetsStore();
   const { unWhitelistAsset, whitelistAsset } = useWhitelistedAssetOperations();
   const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
@@ -69,13 +67,10 @@ export function useAssetPageActions(options: UseAssetPageActionsOptions): UseAss
     set(loadingIgnore, true);
     try {
       const id = get(identifier);
-      if (get(isIgnored)) {
+      if (get(isIgnored))
         await unignoreAsset(id);
-      }
-      else {
-        const info = get(asset);
-        await ignoreAssetWithConfirmation(id, info?.symbol ?? info?.name);
-      }
+      else
+        await ignoreAsset(id);
     }
     finally {
       set(loadingIgnore, false);

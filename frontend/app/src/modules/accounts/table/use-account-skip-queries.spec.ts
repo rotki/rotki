@@ -6,14 +6,14 @@ import { useSettingsRepo } from '@/modules/settings/settings-repo';
 const write = vi.fn<(key: string, value: Record<string, string[]>) => Promise<ActionStatus>>(
   async () => ({ success: true }),
 );
-const setMessage = vi.fn();
+const notifyError = vi.fn<(title: string, message: string) => void>();
 
 vi.mock('@/modules/settings/settings-writer', () => ({
   useSettingsWriter: (): { write: typeof write } => ({ write }),
 }));
 
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): { setMessage: typeof setMessage } => ({ setMessage }),
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
+  useNotifications: (): { notifyError: typeof notifyError } => ({ notifyError }),
 }));
 
 describe('useAccountSkipQueries', () => {
@@ -111,12 +111,12 @@ describe('useAccountSkipQueries', () => {
       expect(writtenPayload()).toEqual({});
     });
 
-    it('should report a rejected write', async () => {
+    it('should toast a rejected write', async () => {
       write.mockResolvedValue({ message: 'nope', success: false });
 
       await useAccountSkipQueries(ADDRESS, ['eth']).toggleChain('eth');
 
-      expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({ description: 'nope', success: false }));
+      expect(notifyError).toHaveBeenCalledExactlyOnceWith('account_balances.skip_queries.error', 'nope');
     });
 
     it('should not report a write that succeeded', async () => {
@@ -124,7 +124,7 @@ describe('useAccountSkipQueries', () => {
 
       await toggleChain('eth');
 
-      expect(setMessage).not.toHaveBeenCalled();
+      expect(notifyError).not.toHaveBeenCalled();
       expect(get(pending)).toBe(false);
     });
   });

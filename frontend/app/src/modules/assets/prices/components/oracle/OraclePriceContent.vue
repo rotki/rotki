@@ -9,7 +9,6 @@ import { getOracleSourceLabel } from '@/modules/assets/prices/oracle-source-labe
 import { priceDecimals } from '@/modules/assets/prices/price-decimals';
 import { useOraclePriceFields } from '@/modules/assets/prices/use-oracle-price-fields';
 import { useOraclePrices } from '@/modules/assets/prices/use-oracle-prices';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
@@ -118,20 +117,14 @@ function startEdit(item: OraclePriceEntry): void {
   set(editingItem, { ...item });
 }
 
-const { show } = useConfirmStore();
+const deleteConfirm = computed<{ title: string; message: string }>(() => ({
+  message: t('oracle_prices.delete.dialog.message'),
+  title: t('oracle_prices.delete.dialog.title'),
+}));
 
-function showDeleteConfirmation(item: OraclePriceEntry): void {
-  show(
-    {
-      message: t('oracle_prices.delete.dialog.message'),
-      title: t('oracle_prices.delete.dialog.title'),
-    },
-    async () => {
-      const deleted = await deletePrice(item);
-      if (deleted)
-        await refresh();
-    },
-  );
+async function deleteRow(item: OraclePriceEntry): Promise<void> {
+  if (await deletePrice(item))
+    await refresh();
 }
 
 onMounted(async () => {
@@ -206,7 +199,8 @@ defineExpose({
             :disabled="loading"
             :delete-tooltip="t('oracle_prices.actions.delete.tooltip')"
             :edit-tooltip="t('oracle_prices.actions.edit.tooltip')"
-            @delete-click="showDeleteConfirmation(row)"
+            :delete-confirm="deleteConfirm"
+            @delete-click="deleteRow(row)"
             @edit-click="startEdit(row)"
           />
         </template>

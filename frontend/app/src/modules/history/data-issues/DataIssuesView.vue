@@ -16,6 +16,7 @@ import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
 import { useDataIssuesAutoReload } from '@/modules/history/data-issues/use-data-issues-auto-reload';
 import { useDataIssuesDetection } from '@/modules/history/data-issues/use-data-issues-detection';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
@@ -69,6 +70,7 @@ async function reloadAll(): Promise<void> {
 }
 
 const {
+  actionFailure,
   modelActionBusy,
   modelDrawerOpen,
   modelResolveOpen,
@@ -78,9 +80,10 @@ const {
   onResolveRequest,
   onRetry,
   openDetail,
+  resolveFailure,
 } = useDataIssueDetailActions(reloadAll, () => get(state).data);
 
-const { detect, detecting } = useDataIssuesDetection(reloadAll);
+const { detect, detectFailure, detecting } = useDataIssuesDetection(reloadAll);
 
 const activeStates = computed<string[]>(() => {
   const value = get(filters).state;
@@ -237,6 +240,15 @@ onMounted(async () => {
       </RuiTooltip>
     </template>
 
+    <FailureStrip
+      v-if="detectFailure"
+      class="mb-4"
+      :title="t('data_issues.detect.error')"
+      :failure="detectFailure"
+      data-testid="data-issues-detect-failure"
+      @retry="detect()"
+    />
+
     <NoDataScreen
       v-if="isAllClear"
       full
@@ -259,6 +271,14 @@ onMounted(async () => {
         :failed="summaryFailed"
         :active-states="activeStates"
         @select="selectState($event)"
+      />
+
+      <FailureStrip
+        v-if="actionFailure && !modelDrawerOpen"
+        :title="actionFailure.title"
+        :failure="actionFailure.error"
+        :retryable="false"
+        data-testid="data-issues-action-failure"
       />
 
       <DataIssuesTable
@@ -289,6 +309,7 @@ onMounted(async () => {
       v-model="modelDrawerOpen"
       :issue="modelSelectedIssue"
       :busy="modelActionBusy"
+      :failure="actionFailure"
       @dismiss="onDismiss($event)"
       @retry="onRetry($event)"
       @resolve="onResolveRequest()"
@@ -297,6 +318,7 @@ onMounted(async () => {
     <ResolveManuallyDialog
       v-model="modelResolveOpen"
       :loading="modelActionBusy"
+      :failure="resolveFailure"
       @confirm="onResolveConfirm($event)"
     />
   </TablePageLayout>

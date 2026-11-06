@@ -7,7 +7,6 @@ import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSetting } from '@/modules/settings/use-setting';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
@@ -26,7 +25,6 @@ const { useAssetPriceInfo } = useAggregatedBalances();
 const { useAssetPrice, useIsManualAssetPrice } = usePriceUtils();
 const { getAssetField } = useAssetInfoRetrieval();
 const { refreshing: refreshingPrices, refreshPrice } = usePriceRefresh();
-const { show } = useConfirmStore();
 
 const info = useAssetPriceInfo(() => identifier, () => isCollectionParent);
 const price = useAssetPrice(() => identifier);
@@ -36,6 +34,13 @@ const pricesLoading = computed<boolean>(() => {
   const infoVal = get(info);
   return get(refreshing) || get(refreshingPrices) || !infoVal.price || infoVal.price.lt(0);
 });
+
+const deleteConfirm = computed<{ title: string; message: string }>(() => ({
+  message: t('assets.custom_price.delete.message', {
+    asset: getAssetField(identifier, 'name') || identifier,
+  }),
+  title: t('assets.custom_price.delete.tooltip'),
+}));
 
 function setPriceForm() {
   const toAsset = get(currencySymbol);
@@ -47,13 +52,8 @@ function setPriceForm() {
   set(openPriceDialog, true);
 }
 
-function showDeleteConfirmation() {
-  show({
-    message: t('assets.custom_price.delete.message', {
-      asset: getAssetField(identifier, 'name') || identifier,
-    }),
-    title: t('assets.custom_price.delete.tooltip'),
-  }, () => deletePrice({ fromAsset: identifier }));
+async function deleteCustomPrice(): Promise<void> {
+  await deletePrice({ fromAsset: identifier });
 }
 </script>
 
@@ -89,7 +89,8 @@ function showDeleteConfirmation() {
             :edit-tooltip="t('assets.custom_price.edit.tooltip')"
             :no-delete="!isManualPrice"
             :disabled="pricesLoading"
-            @delete-click="showDeleteConfirmation()"
+            :delete-confirm="deleteConfirm"
+            @delete-click="deleteCustomPrice()"
             @edit-click="setPriceForm()"
           />
         </div>

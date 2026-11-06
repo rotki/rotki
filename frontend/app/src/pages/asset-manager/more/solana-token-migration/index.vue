@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
+import type { MergeSuggestion } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-dialog';
 import { SolanaTokenKind } from '@rotki/common';
 import { msg } from '@/message-key';
 import AssetManagerMoreTitle from '@/modules/assets/admin/AssetManagerMoreTitle.vue';
@@ -7,7 +8,6 @@ import MergeDialog from '@/modules/assets/admin/MergeDialog.vue';
 import SolanaTokenMigrationDialog from '@/modules/assets/admin/solana-token-migration/SolanaTokenMigrationDialog.vue';
 import { useSolanaTokenMigrationStore } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-store';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
@@ -22,7 +22,6 @@ const { t } = useI18n({ useScope: 'global' });
 const solanaTokenMigrationStore = useSolanaTokenMigrationStore();
 const { identifiers } = storeToRefs(solanaTokenMigrationStore);
 const { removeIdentifier } = solanaTokenMigrationStore;
-const { show } = useConfirmStore();
 
 const migrationData = ref<{
   address: string;
@@ -69,27 +68,14 @@ function openMergeDialog(identifier: string) {
   set(mergeTool, true);
 }
 
-function handleMergeSuggestion({ sourceAsset, targetAsset }: { sourceAsset: string; targetAsset: string }) {
-  show(
-    {
-      message: t('asset_management.solana_token_migration.merge_suggestion.message', {
-        sourceAsset,
-        targetAsset,
-      }),
-      title: t('asset_management.solana_token_migration.merge_suggestion.title'),
-    },
-    () => openMergePrefilledWith(sourceAsset, targetAsset),
-  );
-}
-
 /**
  * Opens the merge tool with both assets already chosen.
  *
  * @remarks
- * Runs only once the user has accepted the suggestion, so the merge dialog opens on the pair the
- * suggestion named rather than empty.
+ * Runs only once the user has accepted the suggestion in the migration dialog, so the merge dialog
+ * opens on the pair the suggestion named rather than empty.
  */
-function openMergePrefilledWith(sourceAsset: string, targetAsset: string): void {
+function openMergePrefilledWith({ sourceAsset, targetAsset }: MergeSuggestion): void {
   set(mergeSourceIdentifier, sourceAsset);
   set(mergeTargetIdentifier, targetAsset);
   set(mergeTool, true);
@@ -166,7 +152,7 @@ function handleMergeCompleted({ sourceIdentifier }: { sourceIdentifier: string; 
     <SolanaTokenMigrationDialog
       v-model="migrationData"
       v-model:old-asset="oldAsset"
-      @suggest-merge="handleMergeSuggestion($event)"
+      @suggest-merge="openMergePrefilledWith($event)"
     />
 
     <MergeDialog

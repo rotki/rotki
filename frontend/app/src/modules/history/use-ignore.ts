@@ -5,7 +5,7 @@ import type {
 } from '@/modules/history/ignored';
 import type { EntryMeta } from '@/modules/history/meta';
 import { uniqueStrings } from '@/modules/core/common/data/data';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { useHistoryIgnoringApi } from '@/modules/history/api/use-history-ignoring-api';
 
 interface CommonIgnoreAction<T extends EntryMeta> {
@@ -15,15 +15,21 @@ interface CommonIgnoreAction<T extends EntryMeta> {
 interface UseIgnoreReturn<T extends EntryMeta> {
   ignore: (ignored: boolean) => Promise<ActionStatus>;
   ignoreSingle: (item: T, ignored: boolean) => Promise<ActionStatus>;
-  toggle: (item: T) => Promise<void>;
+  toggle: (item: T) => Promise<ActionStatus>;
 }
 
+/**
+ * Excludes the selected entries from accounting, or includes them again.
+ *
+ * @remarks
+ * Reports nothing itself: every action returns its status, the backend's message on a failure, for
+ * the surface that started it to name.
+ */
 export function useIgnore<T extends EntryMeta>(
   { toData }: CommonIgnoreAction<T>,
   selected: Ref<T[]>,
   refresh: () => any,
 ): UseIgnoreReturn<T> {
-  const { showErrorMessage } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const api = useHistoryIgnoringApi();
 
@@ -37,12 +43,7 @@ export function useIgnore<T extends EntryMeta>(
       }
     }
     catch (error: unknown) {
-      const message = getErrorMessage(error);
-      if (ignore)
-        showErrorMessage(t('actions.ignore.error.title'), t('actions.ignore.error.description', { error: message }));
-      else
-        showErrorMessage(t('actions.unignore.error.title'), t('actions.unignore.error.description', { error: message }));
-      return { message, success: false };
+      return { message: getErrorMessage(error), success: false };
     }
 
     return { success: true };
@@ -66,12 +67,8 @@ export function useIgnore<T extends EntryMeta>(
 
     let status: ActionStatus;
 
-    if (data.length === 0) {
-      const choice = ignored ? 1 : 2;
-      const message = t('ignore.no_items.description', choice);
-      showErrorMessage(t('ignore.no_items.title', choice), message);
-      return { message, success: false };
-    }
+    if (data.length === 0)
+      return { message: t('ignore.no_items.description', ignored ? 1 : 2), success: false };
 
     if (ignored)
       status = await ignoreActions(payload);
@@ -85,9 +82,9 @@ export function useIgnore<T extends EntryMeta>(
     return status;
   };
 
-  async function toggle(item: T): Promise<void> {
+  async function toggle(item: T): Promise<ActionStatus> {
     set(selected, [item]);
-    await ignore(!item.ignoredInAccounting);
+    return ignore(!item.ignoredInAccounting);
   }
 
   async function ignoreSingle(item: T, ignored: boolean): Promise<ActionStatus> {

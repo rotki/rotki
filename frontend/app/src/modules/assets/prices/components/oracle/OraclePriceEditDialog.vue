@@ -3,8 +3,6 @@ import type { OraclePriceEntry } from '@/modules/assets/prices/price-types';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
@@ -19,12 +17,14 @@ const { t } = useI18n({ useScope: 'global' });
 const { getAssetField } = useAssetInfoRetrieval();
 const { editHistoricalPrice } = useAssetPricesApi();
 const { resetHistoricalPricesData } = useHistoricPriceCache();
-const { showErrorMessage } = useNotifications();
 
 const loading = ref<boolean>(false);
 const editedPrice = ref<string>('');
+/** Why the last save failed; the typed price stays, and Save is the retry. */
+const saveError = shallowRef<unknown>();
 
 watch(modelValue, (item) => {
+  set(saveError, undefined);
   if (item)
     set(editedPrice, item.price.toFixed());
 });
@@ -45,6 +45,7 @@ async function save(): Promise<void> {
     return;
 
   set(loading, true);
+  set(saveError, undefined);
   try {
     await editHistoricalPrice({
       fromAsset: item.fromAsset,
@@ -58,10 +59,7 @@ async function save(): Promise<void> {
     emit('refresh');
   }
   catch (error: unknown) {
-    showErrorMessage(
-      t('oracle_prices.edit.error.title'),
-      t('oracle_prices.edit.error.description', { message: getErrorMessage(error) }),
-    );
+    set(saveError, error);
   }
   finally {
     set(loading, false);
@@ -76,6 +74,8 @@ async function save(): Promise<void> {
     :action="{ primary: t('common.actions.save'), disabled: !editedPrice }"
     :layout="{ autoHeight: true, divide: true, maxWidth: '560px' }"
     :loading="loading"
+    :failure="saveError"
+    :failure-title="t('oracle_prices.edit.error.title')"
     @confirm="save()"
     @cancel="modelValue = undefined"
   >

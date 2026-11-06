@@ -58,17 +58,21 @@ const AAVE: CounterpartyMapping = { asset: 'AAVE', counterparty: 'aave', counter
 
 const pagination = { limit: 10, page: 1, total: 0 };
 
+function deleteConfirm(): { title: string; message: string } {
+  return { message: 'Delete it?', title: 'Delete' };
+}
+
 function mountCex(rows: CexMapping[] = [KRAKEN, ALL_EXCHANGES]): VueWrapper<InstanceType<typeof ManageCexMappingTable>> {
   return mount(ManageCexMappingTable, {
     global: { stubs },
-    props: { collection: collection(rows), fields: [], filters: {}, loading: false, pagination },
+    props: { collection: collection(rows), deleteConfirm, fields: [], filters: {}, loading: false, pagination },
   });
 }
 
 function mountCounterparty(): VueWrapper<InstanceType<typeof ManageCounterpartyMappingTable>> {
   return mount(ManageCounterpartyMappingTable, {
     global: { stubs },
-    props: { collection: collection([AAVE]), fields: [], filters: {}, loading: false, pagination },
+    props: { collection: collection([AAVE]), deleteConfirm, fields: [], filters: {}, loading: false, pagination },
   });
 }
 

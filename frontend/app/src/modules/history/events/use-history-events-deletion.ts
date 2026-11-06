@@ -5,9 +5,10 @@ import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/even
 import { get, objectOmit, set } from '@vueuse/shared';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
+import { useHistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
 import { useIgnore } from '@/modules/history/use-ignore';
 import { EditKind } from '@/modules/task-center/core/rerun/policy';
 import { taskCenterBus } from '@/modules/task-center/events/task-center-bus';
@@ -28,7 +29,7 @@ export function useHistoryEventsDeletion(
 ): UseHistoryEventsDeletionReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { ask } = useConfirmStore();
-  const { showErrorMessage, showSuccessMessage } = useNotifications();
+  const { clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
   const { deleteHistoryEvent: deleteHistoryEventApi, deleteTransactions } = useHistoryEventsApi();
   const { deleteHistoryEvent } = useHistoryEvents();
   const { getChain } = useSupportedChains();
@@ -95,42 +96,24 @@ export function useHistoryEventsDeletion(
     }
   }
 
+  /**
+   * Settles a delete or an exclusion: the rows changing says it worked, so only a failure is named,
+   * above the table.
+   */
   function showDeletionResult(
     success: boolean,
-    count: number,
     type: 'delete' | 'ignore',
     message?: string,
-    isGroupCount = false,
   ): void {
-    const title = type === 'delete'
-      ? t('transactions.events.delete.title')
-      : t('transactions.events.ignore.title');
-
-    let successMessage: string;
-    if (type === 'delete') {
-      successMessage = isGroupCount
-        ? t('transactions.events.delete.success_groups', { count }, count)
-        : t('transactions.events.delete.success', { count }, count);
-    }
-    else {
-      successMessage = t('transactions.events.ignore.success', { count }, count);
-    }
-
-    const errorTitle = type === 'delete'
-      ? t('transactions.events.delete.error.title')
-      : t('transactions.events.ignore.error.title');
-
-    const errorMessage = type === 'delete'
-      ? message ?? t('transactions.events.delete.error.message')
-      : message ?? t('transactions.events.ignore.error.message');
-
     if (success) {
-      showSuccessMessage(title, successMessage);
       taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_DELETED });
+      return;
     }
-    else {
-      showErrorMessage(errorTitle, errorMessage);
-    }
+
+    if (type === 'delete')
+      reportActionFailure(t('transactions.events.delete.error.title'), message ?? t('transactions.events.delete.error.message'));
+    else
+      reportActionFailure(t('transactions.events.ignore.error.title'), message ?? t('transactions.events.ignore.error.message'));
   }
 
   async function deleteByFilter(totalCount: number): Promise<void> {
@@ -162,7 +145,7 @@ export function useHistoryEventsDeletion(
         'orderByAttributes',
       ]);
       const result = await deleteHistoryEventApi(filterParams, true);
-      showDeletionResult(result, totalCount, 'delete', undefined, true);
+      showDeletionResult(result, 'delete');
 
       if (result) {
         selectionMode.actions.exit();
@@ -170,11 +153,12 @@ export function useHistoryEventsDeletion(
       }
     }
     catch (error: unknown) {
-      showDeletionResult(false, totalCount, 'delete', getErrorMessage(error), true);
+      showDeletionResult(false, 'delete', getErrorMessage(error));
     }
   }
 
   async function deleteSelected(): Promise<void> {
+    clearActionFailure();
     const state = get(selectionMode.state);
 
     if (state.selectAllMatching) {
@@ -205,7 +189,7 @@ export function useHistoryEventsDeletion(
         await handlePartialSwapDeletion(partialSwapGroups, partialEventIds, completeTransactions);
       }
       else if (completeTransactions.size > 0) {
-        await handleCompleteTransactionDeletion(completeTransactions, partialEventIds, selectedIds.length);
+        await handleCompleteTransactionDeletion(completeTransactions, partialEventIds);
       }
       else {
         await handlePartialEventDeletion(partialEventIds, selectedIds.length);
@@ -219,7 +203,6 @@ export function useHistoryEventsDeletion(
   async function handleCompleteTransactionDeletion(
     transactions: Map<string, TransactionGroup>,
     remainingEventIds: number[],
-    totalCount: number,
   ): Promise<void> {
     const strategy: DeletionStrategy = {
       eventIds: remainingEventIds,
@@ -242,7 +225,7 @@ export function useHistoryEventsDeletion(
 
     const success = txResult.success && eventsResult.success;
     const message = txResult.message ?? eventsResult.message;
-    showDeletionResult(success, totalCount, 'delete', message);
+    showDeletionResult(success, 'delete', message);
 
     if (success) {
       selectionMode.actions.exit();
@@ -270,7 +253,7 @@ export function useHistoryEventsDeletion(
       return;
 
     const result = await deletePartialEvents(eventIds);
-    showDeletionResult(result.success, displayCount, 'delete', result.message);
+    showDeletionResult(result.success, 'delete', result.message);
 
     if (result.success) {
       selectionMode.actions.exit();
@@ -297,7 +280,7 @@ export function useHistoryEventsDeletion(
 
     const success = ignoreResult.success && deleteResult.success;
     const message = ignoreResult.message ?? deleteResult.message;
-    showDeletionResult(success, transactions.size, 'ignore', message);
+    showDeletionResult(success, 'ignore', message);
 
     if (success) {
       selectionMode.actions.exit();
@@ -342,7 +325,7 @@ export function useHistoryEventsDeletion(
 
     const success = txResult.success && eventsResult.success;
     const message = txResult.message ?? eventsResult.message;
-    showDeletionResult(success, allEventIds.length, 'delete', message);
+    showDeletionResult(success, 'delete', message);
 
     if (success) {
       selectionMode.actions.exit();

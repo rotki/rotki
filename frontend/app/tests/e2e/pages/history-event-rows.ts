@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { TIMEOUT_MEDIUM } from '../helpers/constants';
+import { confirmInline } from '../helpers/utils';
 
 /** A regular event row, and the sub-event rows of an expanded swap. */
 export const EVENT_ROW = '[data-testid=history-event-row]';
@@ -132,7 +133,7 @@ export class HistoryEventRows {
   }
 
   /**
-   * Deletes an already-resolved row and confirms the dialog.
+   * Deletes an already-resolved row, accepting the question its menu asks in place.
    *
    * @remarks
    * Resolve the row by id, never by index. The list is timestamp descending and re-renders under
@@ -143,8 +144,6 @@ export class HistoryEventRows {
    */
   async delete(row: Locator): Promise<void> {
     await this.rowAction(row, 'row-delete');
-    const dialog = this.page.locator('[data-testid=confirm-dialog]');
-    await dialog.locator('[data-testid=button-confirm]').click();
-    await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
+    await confirmInline(this.page);
   }
 }

@@ -20,25 +20,29 @@ vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
   })),
 }));
 
+const { manualBalancesAssets } = await vi.hoisted(async () => {
+  const { ref } = await import('vue');
+  return { manualBalancesAssets: ref<string[]>([]) };
+});
+
 vi.mock('@/modules/balances/manual/use-manual-balance-data', () => ({
-  useManualBalanceData: vi.fn(() => ({
-    manualBalancesAssets: ref<string[]>([]),
-  })),
+  useManualBalanceData: vi.fn(() => ({ manualBalancesAssets })),
 }));
 
-const { mockNotifyError, mockNotifyFailure, mockShowErrorMessage } = vi.hoisted(() => ({
+const { mockNotifyError, mockNotifyFailure, mockNotifyWarning } = vi.hoisted(() => ({
   mockNotifyError: vi.fn(),
   mockNotifyFailure: vi.fn(),
-  mockShowErrorMessage: vi.fn(),
+  mockNotifyWarning: vi.fn(),
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () =>
-  mockUseNotifications({ notifyError: mockNotifyError, notifyFailure: mockNotifyFailure, showErrorMessage: mockShowErrorMessage }));
+  mockUseNotifications({ notifyError: mockNotifyError, notifyFailure: mockNotifyFailure, notifyWarning: mockNotifyWarning }));
 
 describe('useIgnoredAssetOperations', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    set(manualBalancesAssets, []);
   });
 
   describe('fetchIgnoredAssets', () => {
@@ -72,6 +76,30 @@ describe('useIgnoredAssetOperations', () => {
 
       expect(result.success).toBe(true);
       expect(mockAddIgnoredAssets).toHaveBeenCalledWith(['DAI']);
+    });
+
+    it('should toast a warning for assets held in manual balances and ignore only the rest', async () => {
+      set(manualBalancesAssets, ['MANUAL']);
+      mockAddIgnoredAssets.mockResolvedValue({ successful: ['DAI'], noAction: [] });
+
+      const { ignoreAsset } = useIgnoredAssetOperations();
+      const result = await ignoreAsset(['DAI', 'MANUAL']);
+
+      expect(result.success).toBe(true);
+      expect(mockNotifyWarning).toHaveBeenCalledExactlyOnceWith(
+        'ignore.warning.manual_balances_title',
+        'ignore.warning.manual_balances_message::MANUAL',
+      );
+      expect(mockAddIgnoredAssets).toHaveBeenCalledWith(['DAI']);
+    });
+
+    it('should not warn when no asset is held in a manual balance', async () => {
+      mockAddIgnoredAssets.mockResolvedValue({ successful: ['DAI'], noAction: [] });
+
+      const { ignoreAsset } = useIgnoredAssetOperations();
+      await ignoreAsset('DAI');
+
+      expect(mockNotifyWarning).not.toHaveBeenCalled();
     });
 
     it('should handle multiple assets', async () => {

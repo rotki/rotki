@@ -5,6 +5,7 @@ import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display
 import { useNftDomainWhitelist } from '@/modules/balances/nft/use-nft-domain-whitelist';
 import { useNftImage } from '@/modules/balances/nft/use-nft-image';
 import AppImage from '@/modules/shell/components/AppImage.vue';
+import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import IconLink from '@/modules/shell/components/IconLink.vue';
 
@@ -15,7 +16,7 @@ const { item } = defineProps<{
 const imageUrlSource = computed<string | null>(() => item.imageUrl);
 
 const { isVideo, renderedMedia, shouldRender } = useNftImage(imageUrlSource);
-const { confirmAllowDomain, domain } = useNftDomainWhitelist(imageUrlSource);
+const { allowDomain, domain, question } = useNftDomainWhitelist(imageUrlSource);
 
 const name = computed(() => (item.name ? item.name : item.collection?.name));
 
@@ -71,27 +72,38 @@ const mediaStyle = computed<StyleValue>(() => {
         {{ t('nft_balance_table.hidden_hint') }}
       </RuiTooltip>
 
-      <RuiTooltip
+      <ConfirmPopover
         v-if="!shouldRender"
-        :options="{ placement: 'top' }"
-        :open-delay="400"
         class="absolute right-2 bottom-2"
+        tone="warning"
+        :title="question.title"
+        :message="question.message"
+        :confirm-label="question.confirmLabel"
+        @confirm="allowDomain()"
       >
-        <template #activator>
-          <RuiButton
-            class="p-2!"
-            icon
-            @click="confirmAllowDomain()"
+        <template #activator="{ attrs }">
+          <RuiTooltip
+            :options="{ placement: 'top' }"
+            :open-delay="400"
           >
-            <RuiIcon
-              name="lu-lock-keyhole-open"
-              size="16"
-            />
-          </RuiButton>
+            <template #activator>
+              <RuiButton
+                class="p-2!"
+                icon
+                data-testid="nft-allow-domain"
+                v-bind="attrs"
+              >
+                <RuiIcon
+                  name="lu-lock-keyhole-open"
+                  size="16"
+                />
+              </RuiButton>
+            </template>
+            {{ t('nft_gallery.allow_domain') }}
+            <strong class="text-rui-warning-lighter">{{ domain }}</strong>
+          </RuiTooltip>
         </template>
-        {{ t('nft_gallery.allow_domain') }}
-        <strong class="text-rui-warning-lighter">{{ domain }}</strong>
-      </RuiTooltip>
+      </ConfirmPopover>
     </div>
     <div class="p-4 flex flex-col min-w-0">
       <RuiTooltip

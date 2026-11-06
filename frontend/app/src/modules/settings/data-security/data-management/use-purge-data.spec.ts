@@ -1,4 +1,5 @@
 import { invalid } from '@test/utils/invalid';
+import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, nextTick } from 'vue';
 import { DECENTRALIZED_EXCHANGES, Module, PurgeableOnlyModule } from '@/modules/core/common/modules';
@@ -15,7 +16,6 @@ const {
   deleteTransactions,
   fetchCsvImportedEventsSummary,
   purgeData,
-  show,
 } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   return {
@@ -28,7 +28,6 @@ const {
     deleteTransactions: vi.fn(),
     fetchCsvImportedEventsSummary: vi.fn(),
     purgeData: vi.fn(),
-    show: vi.fn(),
   };
 });
 
@@ -66,24 +65,11 @@ vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   }),
 }));
 
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): Record<string, unknown> => ({ show }),
-}));
-
 let scope: ReturnType<typeof effectScope>;
 
-function purge(): ReturnType<typeof usePurgeData> {
+function createPurgeData(): ReturnType<typeof usePurgeData> {
   scope = effectScope();
   return scope.run(() => usePurgeData())!;
-}
-
-function confirmationMessage(): { message: string; title: string } {
-  expect(show).toHaveBeenCalledOnce();
-  return show.mock.calls[0][0];
-}
-
-async function accept(): Promise<void> {
-  await show.mock.calls[0][1]();
 }
 
 function everyDeleteCall(): number {
@@ -116,100 +102,64 @@ describe('modules/settings/data-security/data-management/usePurgeData', () => {
     scope?.stop();
   });
 
-  describe('the confirmation gate', () => {
-    it('should delete nothing merely because the user pressed purge', () => {
-      const { modelSource, showConfirmation } = purge();
-
-      showConfirmation(get(modelSource));
-
-      expect(show).toHaveBeenCalledOnce();
-      expect(everyDeleteCall()).toBe(0);
-      expect(purgeData).not.toHaveBeenCalled();
-    });
-
-    it('should delete nothing when the user never accepts', () => {
-      const { modelSource, showConfirmation } = purge();
-
-      showConfirmation(get(modelSource));
-
-      expect(everyDeleteCall()).toBe(0);
-    });
-
-    it('should delete once the user accepts', async () => {
-      const { showConfirmation } = purge();
-
-      showConfirmation(Purgeable.TRANSACTIONS);
-      await accept();
-
-      expect(deleteTransactions).toHaveBeenCalledOnce();
-    });
-  });
-
   describe('what each source deletes', () => {
     it('should route transactions to the transaction endpoint and nothing else', async () => {
-      const { modelChain, showConfirmation } = purge();
+      const { modelChain, purge } = createPurgeData();
       set(modelChain, 'ethereum');
 
-      showConfirmation(Purgeable.TRANSACTIONS);
-      await accept();
+      await purge(Purgeable.TRANSACTIONS);
 
       expect(deleteTransactions).toHaveBeenCalledExactlyOnceWith('ethereum');
       expect(everyDeleteCall()).toBe(1);
     });
 
     it('should route a defi module to the module endpoint and nothing else', async () => {
-      const { modelModule, showConfirmation } = purge();
+      const { modelModule, purge } = createPurgeData();
       set(modelModule, Module.LIQUITY);
 
-      showConfirmation(Purgeable.DEFI_MODULES);
-      await accept();
+      await purge(Purgeable.DEFI_MODULES);
 
       expect(deleteModuleData).toHaveBeenCalledExactlyOnceWith(Module.LIQUITY);
       expect(everyDeleteCall()).toBe(1);
     });
 
     it('should route a centralized exchange to the exchange endpoint and nothing else', async () => {
-      const { modelCentralizedExchange, showConfirmation } = purge();
+      const { modelCentralizedExchange, purge } = createPurgeData();
       set(modelCentralizedExchange, 'kraken');
 
-      showConfirmation(Purgeable.CENTRALIZED_EXCHANGES);
-      await accept();
+      await purge(Purgeable.CENTRALIZED_EXCHANGES);
 
       expect(deleteExchangeData).toHaveBeenCalledExactlyOnceWith('kraken', 'all');
       expect(everyDeleteCall()).toBe(1);
     });
 
     it('should route CSV imports to their endpoint and refresh the available locations', async () => {
-      const { modelCsvImportLocation, showConfirmation } = purge();
+      const { modelCsvImportLocation, purge } = createPurgeData();
       set(modelCsvImportLocation, 'kraken');
+      await flushPromises();
+      fetchCsvImportedEventsSummary.mockClear();
 
-      showConfirmation(Purgeable.CSV_IMPORTS);
-      await vi.waitFor(() => expect(show).toHaveBeenCalledOnce());
-      await accept();
+      await purge(Purgeable.CSV_IMPORTS);
 
       expect(deleteCsvImportedEvents).toHaveBeenCalledExactlyOnceWith('kraken');
-      expect(fetchCsvImportedEventsSummary).toHaveBeenCalledTimes(3);
+      expect(fetchCsvImportedEventsSummary).toHaveBeenCalledOnce();
     });
 
     it('should run a CSV purge at a location named like a purgeable-only module through the activity', async () => {
-      const { modelCsvImportLocation, showConfirmation } = purge();
+      const { modelCsvImportLocation, purge } = createPurgeData();
       set(modelCsvImportLocation, PurgeableOnlyModule.LOOPRING);
 
-      showConfirmation(Purgeable.CSV_IMPORTS);
-      await vi.waitFor(() => expect(show).toHaveBeenCalledOnce());
-      await accept();
+      await purge(Purgeable.CSV_IMPORTS);
 
       expect(purgeData).toHaveBeenCalledOnce();
       expect(deleteCsvImportedEvents).toHaveBeenCalledExactlyOnceWith(PurgeableOnlyModule.LOOPRING);
-      expect(fetchCsvImportedEventsSummary).toHaveBeenCalledTimes(3);
     });
 
     it('should route a decentralized exchange to the module endpoint and nothing else', async () => {
-      const { modelDecentralizedExchange, showConfirmation } = purge();
+      const { modelDecentralizedExchange, purge } = createPurgeData();
       set(modelDecentralizedExchange, Module.UNISWAP);
 
-      showConfirmation(Purgeable.DECENTRALIZED_EXCHANGES);
-      await accept();
+      await purge(Purgeable.DECENTRALIZED_EXCHANGES);
 
       expect(deleteModuleData).toHaveBeenCalledExactlyOnceWith(Module.UNISWAP);
       expect(everyDeleteCall()).toBe(1);
@@ -219,10 +169,9 @@ describe('modules/settings/data-security/data-management/usePurgeData', () => {
       ['a withdrawal', Purgeable.ETH_WITHDRAWAL_EVENT],
       ['a block', Purgeable.ETH_BLOCK_EVENT],
     ])('should route %s event to the stake-event endpoint and nothing else', async (_name, source) => {
-      const { showConfirmation } = purge();
+      const { purge } = createPurgeData();
 
-      showConfirmation(source);
-      await accept();
+      await purge(source);
 
       expect(deleteStakeEvents).toHaveBeenCalledExactlyOnceWith(source);
       expect(everyDeleteCall()).toBe(1);
@@ -231,60 +180,54 @@ describe('modules/settings/data-security/data-management/usePurgeData', () => {
 
   describe('what it sends for a narrowed selection', () => {
     it('should send the selected data type rather than always purging every kind', async () => {
-      const { modelCentralizedExchange, modelCentralizedExchangeDataType, showConfirmation } = purge();
+      const { modelCentralizedExchange, modelCentralizedExchangeDataType, purge } = createPurgeData();
       set(modelCentralizedExchange, 'kraken');
       set(modelCentralizedExchangeDataType, 'trades');
 
-      showConfirmation(Purgeable.CENTRALIZED_EXCHANGES);
-      await accept();
+      await purge(Purgeable.CENTRALIZED_EXCHANGES);
 
       expect(deleteExchangeData).toHaveBeenCalledWith('kraken', 'trades');
     });
 
     it('should send an empty chain, meaning all of them, when none was picked', async () => {
-      const { showConfirmation } = purge();
+      const { purge } = createPurgeData();
 
-      showConfirmation(Purgeable.TRANSACTIONS);
-      await accept();
+      await purge(Purgeable.TRANSACTIONS);
 
       expect(deleteTransactions).toHaveBeenCalledWith('');
     });
 
     it('should purge every decentralized exchange when none was picked', async () => {
-      const { showConfirmation } = purge();
+      const { purge } = createPurgeData();
 
-      showConfirmation(Purgeable.DECENTRALIZED_EXCHANGES);
-      await accept();
+      await purge(Purgeable.DECENTRALIZED_EXCHANGES);
 
       expect(deleteModuleData).toHaveBeenCalledTimes(DECENTRALIZED_EXCHANGES.length);
       expect(deleteModuleData.mock.calls.map(([module]) => module)).toEqual(DECENTRALIZED_EXCHANGES);
     });
 
     it('should send null for a module value it does not recognise, rather than the raw string', async () => {
-      const { modelModule, showConfirmation } = purge();
+      const { modelModule, purge } = createPurgeData();
       set(modelModule, 'not-a-module');
 
-      showConfirmation(Purgeable.DEFI_MODULES);
-      await accept();
+      await purge(Purgeable.DEFI_MODULES);
 
       expect(deleteModuleData).toHaveBeenCalledExactlyOnceWith(null);
     });
 
     it('should delete nothing for a source it does not recognise, rather than a broader purge', async () => {
-      const { showConfirmation } = purge();
+      const { purge } = createPurgeData();
 
-      showConfirmation(invalid<Purgeable>('not_a_purgeable_source'));
-      await accept();
+      await purge(invalid<Purgeable>('not_a_purgeable_source'));
 
       expect(everyDeleteCall()).toBe(0);
     });
 
     it('should delete nothing for a decentralized value it does not recognise', async () => {
-      const { modelDecentralizedExchange, showConfirmation } = purge();
+      const { modelDecentralizedExchange, purge } = createPurgeData();
       set(modelDecentralizedExchange, 'not-a-module');
 
-      showConfirmation(Purgeable.DECENTRALIZED_EXCHANGES);
-      await accept();
+      await purge(Purgeable.DECENTRALIZED_EXCHANGES);
 
       expect(everyDeleteCall()).toBe(0);
     });
@@ -292,11 +235,10 @@ describe('modules/settings/data-security/data-management/usePurgeData', () => {
 
   describe('the purge activity', () => {
     it('should run an ordinary purge through the activity so the caches follow', async () => {
-      const { modelChain, showConfirmation } = purge();
+      const { modelChain, purge } = createPurgeData();
       set(modelChain, 'ethereum');
 
-      showConfirmation(Purgeable.TRANSACTIONS);
-      await accept();
+      await purge(Purgeable.TRANSACTIONS);
 
       expect(purgeData).toHaveBeenCalledOnce();
       expect(purgeData.mock.calls[0][0]).toBe(Purgeable.TRANSACTIONS);
@@ -304,11 +246,10 @@ describe('modules/settings/data-security/data-management/usePurgeData', () => {
     });
 
     it('should delete a purgeable-only module directly, since it has no cache to invalidate', async () => {
-      const { modelModule, showConfirmation } = purge();
+      const { modelModule, purge } = createPurgeData();
       set(modelModule, PurgeableOnlyModule.LOOPRING);
 
-      showConfirmation(Purgeable.DEFI_MODULES);
-      await accept();
+      await purge(Purgeable.DEFI_MODULES);
 
       expect(purgeData).not.toHaveBeenCalled();
       expect(deleteModuleData).toHaveBeenCalledExactlyOnceWith(PurgeableOnlyModule.LOOPRING);
@@ -317,11 +258,10 @@ describe('modules/settings/data-security/data-management/usePurgeData', () => {
     it.each(Object.values(PurgeableOnlyModule))(
       'should purge only %s, never every module, when it is the selection',
       async (module) => {
-        const { modelModule, showConfirmation } = purge();
+        const { modelModule, purge } = createPurgeData();
         set(modelModule, module);
 
-        showConfirmation(Purgeable.DEFI_MODULES);
-        await accept();
+        await purge(Purgeable.DEFI_MODULES);
 
         expect(deleteModuleData).toHaveBeenCalledExactlyOnceWith(module);
         expect(deleteModuleData).not.toHaveBeenCalledWith(null);
@@ -329,69 +269,76 @@ describe('modules/settings/data-security/data-management/usePurgeData', () => {
     );
   });
 
-  describe('what the confirmation says', () => {
+  describe('what the purge button asks', () => {
     it('should warn about transactions in their own words, not the generic message', () => {
-      const { showConfirmation } = purge();
+      const { modelSource, purgeQuestion } = createPurgeData();
+      set(modelSource, Purgeable.TRANSACTIONS);
 
-      showConfirmation(Purgeable.TRANSACTIONS);
-
-      expect(confirmationMessage().message).toBe('data_management.purge_data.transaction_purge_confirm.message');
+      expect(get(purgeQuestion).message).toBe('data_management.purge_data.transaction_purge_confirm.message');
     });
 
     it('should name the selection when one was made', () => {
-      const { modelCentralizedExchange, showConfirmation } = purge();
+      const { modelCentralizedExchange, modelSource, purgeQuestion } = createPurgeData();
       set(modelCentralizedExchange, 'kraken');
+      set(modelSource, Purgeable.CENTRALIZED_EXCHANGES);
 
-      showConfirmation(Purgeable.CENTRALIZED_EXCHANGES);
-
-      expect(confirmationMessage().message).toContain('data_management.purge_data.confirm.message');
-      expect(confirmationMessage().message).toContain('Kraken');
+      expect(get(purgeQuestion).message).toContain('data_management.purge_data.confirm.message');
+      expect(get(purgeQuestion).message).toContain('Kraken');
     });
 
     it('should say all of them when nothing narrows the purge', () => {
-      const { showConfirmation } = purge();
+      const { modelSource, purgeQuestion } = createPurgeData();
+      set(modelSource, Purgeable.DEFI_MODULES);
 
-      showConfirmation(Purgeable.DEFI_MODULES);
-
-      expect(confirmationMessage().message).toContain('data_management.purge_data.confirm.message_all');
+      expect(get(purgeQuestion).message).toContain('data_management.purge_data.confirm.message_all');
     });
 
-    it('should add the retention warning for an exchange that cannot serve its full history', () => {
-      const { modelCentralizedExchange, showConfirmation } = purge();
+    it('should add the retention warning, as a second paragraph, for an exchange that cannot serve its full history', () => {
+      const { modelCentralizedExchange, modelSource, purgeQuestion } = createPurgeData();
       set(modelCentralizedExchange, 'poloniex');
+      set(modelSource, Purgeable.CENTRALIZED_EXCHANGES);
 
-      showConfirmation(Purgeable.CENTRALIZED_EXCHANGES);
-
-      expect(confirmationMessage().message).toContain('exchange_trade_history_warning');
-      expect(confirmationMessage().message).toContain('180');
+      expect(get(purgeQuestion).message).toMatch(/^data_management\.purge_data\.confirm\.message.*\n\n.*exchange_trade_history_warning/s);
+      expect(get(purgeQuestion).message).toContain('180');
     });
 
     it('should warn about edited CSV events and Binance API history', async () => {
-      const { modelCsvImportLocation, showConfirmation } = purge();
-      await nextTick();
+      const { modelCsvImportLocation, modelSource, purgeQuestion } = createPurgeData();
       set(modelCsvImportLocation, 'binance');
+      set(modelSource, Purgeable.CSV_IMPORTS);
+      await flushPromises();
 
-      showConfirmation(Purgeable.CSV_IMPORTS);
-      await vi.waitFor(() => expect(show).toHaveBeenCalledOnce());
+      expect(get(purgeQuestion).message).toContain('customized_warning');
+      expect(get(purgeQuestion).message).toContain('binance_warning');
+      expect(get(purgeQuestion).message).toContain('version_warning');
+    });
 
-      expect(confirmationMessage().message).toContain('customized_warning');
-      expect(confirmationMessage().message).toContain('binance_warning');
-      expect(confirmationMessage().message).toContain('version_warning');
+    it('should bring the CSV counts it quotes up to date when CSV imports are picked, locking the button meanwhile', async () => {
+      const { modelSource, pending } = createPurgeData();
+      await flushPromises();
+      fetchCsvImportedEventsSummary.mockClear();
+
+      set(modelSource, Purgeable.CSV_IMPORTS);
+      await nextTick();
+
+      expect(fetchCsvImportedEventsSummary).toHaveBeenCalledOnce();
+      expect(get(pending)).toBe(true);
+      await flushPromises();
+      expect(get(pending)).toBe(false);
     });
 
     it('should not add the retention warning for an exchange that can', () => {
-      const { modelCentralizedExchange, showConfirmation } = purge();
+      const { modelCentralizedExchange, modelSource, purgeQuestion } = createPurgeData();
       set(modelCentralizedExchange, 'kraken');
+      set(modelSource, Purgeable.CENTRALIZED_EXCHANGES);
 
-      showConfirmation(Purgeable.CENTRALIZED_EXCHANGES);
-
-      expect(confirmationMessage().message).not.toContain('exchange_trade_history_warning');
+      expect(get(purgeQuestion).message).not.toContain('exchange_trade_history_warning');
     });
   });
 
   describe('what it offers the form', () => {
     it('should offer every purgeable source', () => {
-      expect(purge().purgeable.map(item => item.id)).toEqual([
+      expect(createPurgeData().purgeable.map(item => item.id)).toEqual([
         Purgeable.CENTRALIZED_EXCHANGES,
         Purgeable.DECENTRALIZED_EXCHANGES,
         Purgeable.CSV_IMPORTS,
@@ -403,31 +350,31 @@ describe('modules/settings/data-security/data-management/usePurgeData', () => {
     });
 
     it('should offer the purgeable-only modules alongside the ordinary ones', () => {
-      const { purgeableModules } = purge();
+      const { purgeableModules } = createPurgeData();
 
       expect(purgeableModules).toContain(Module.LIQUITY);
       expect(purgeableModules).toContain(PurgeableOnlyModule.LOOPRING);
     });
 
     it('should offer every slice of exchange data, with all of it first', () => {
-      const options = get(purge().centralizedExchangePurgeTypeOptions);
+      const options = get(createPurgeData().centralizedExchangePurgeTypeOptions);
 
       expect(options.map(option => option.id)).toEqual(['all', 'trades', 'asset_movements', 'other']);
     });
 
     it('should offer the chains that can hold transactions', () => {
-      expect(get(purge().chainsSelection)).toEqual(['ethereum', 'optimism']);
+      expect(get(createPurgeData().chainsSelection)).toEqual(['ethereum', 'optimism']);
     });
 
     it('should offer only locations containing CSV-imported events', async () => {
-      const { csvImportLocations } = purge();
-      await nextTick();
+      const { csvImportLocations } = createPurgeData();
+      await flushPromises();
 
       expect(get(csvImportLocations)).toEqual(['binance', 'kraken']);
     });
 
     it('should start on transactions, the least destructive default', () => {
-      expect(get(purge().modelSource)).toBe(Purgeable.TRANSACTIONS);
+      expect(get(createPurgeData().modelSource)).toBe(Purgeable.TRANSACTIONS);
     });
   });
 });

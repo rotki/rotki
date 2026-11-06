@@ -6,7 +6,7 @@ import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-addr
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
-import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
+import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
@@ -40,6 +40,8 @@ interface UseSettingsOperationsReturn {
 export function useSettingsOperations(): UseSettingsOperationsReturn {
   const { addQueriedAddress } = useQueriedAddressOperations();
   const repo = useSettingsRepo();
+  const { notifyError } = useNotifications();
+  const { t } = useI18n({ useScope: 'global' });
   const { premium, premiumSync } = storeToRefs(usePremiumStore());
 
   const api = useSettingsApi();
@@ -91,7 +93,11 @@ export function useSettingsOperations(): UseSettingsOperationsReturn {
     await update({ activeModules: modules });
 
     for (const module of payload.enable) {
-      for (const address of payload.addresses) await addQueriedAddress({ address, module });
+      for (const address of payload.addresses) {
+        const failure = await addQueriedAddress({ address, module });
+        if (failure)
+          notifyError(t('actions.session.add_queriable_address.error.message'), getErrorMessage(failure.error));
+      }
     }
   };
 

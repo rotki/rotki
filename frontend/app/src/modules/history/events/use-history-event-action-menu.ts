@@ -21,6 +21,7 @@ import {
 } from '@/modules/history/event-utils';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
+import { useHistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import {
   type DecodableEventType,
@@ -76,10 +77,10 @@ export interface UseHistoryEventActionMenuReturn {
   deletableEventIds: () => number[];
   /** Open the issue reporter, pre-filled with what identifies this row. */
   openReportDialog: () => void;
-  /** Ask before fixing the row's duplicate. */
-  confirmFixDuplicate: () => void;
-  /** Ask before marking the row as not a duplicate. */
-  confirmIgnoreDuplicate: () => void;
+  /** Fixes the row's duplicate, once its button asked; a failure is named above the table. */
+  fixDuplicate: () => Promise<void>;
+  /** Marks the row as not a duplicate, once its button asked; a failure is named above the table. */
+  ignoreDuplicate: () => Promise<void>;
 }
 
 /**
@@ -99,11 +100,12 @@ export function useHistoryEventActionMenu(
   const { ethBlockEventsDecoding, txEventsDecoding } = useHistoryEventsStatus();
   const { show: showReportIssue } = useReportIssue();
   const {
-    confirmAndFixDuplicate,
-    confirmAndMarkNonDuplicated,
+    fixAndSettle,
     fixLoading,
     ignoreLoading,
+    markNonDuplicatedAndSettle,
   } = useCustomizedEventDuplicates();
+  const { clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
 
   const isAutoFixable = computed<boolean>(() => duplicateHandlingStatus() === DuplicateHandlingStatus.AUTO_FIX);
 
@@ -212,34 +214,36 @@ export function useHistoryEventActionMenu(
     });
   }
 
-  function confirmFixDuplicate(): void {
+  async function fixDuplicate(): Promise<void> {
     const groupIdentifier = event().groupIdentifier;
     if (!groupIdentifier)
       return;
 
-    confirmAndFixDuplicate([groupIdentifier], onFixDuplicate);
+    clearActionFailure();
+    await fixAndSettle([groupIdentifier], { onFailure: failure => reportActionFailure(failure.title, failure.failure), onSuccess: onFixDuplicate });
   }
 
-  function confirmIgnoreDuplicate(): void {
+  async function ignoreDuplicate(): Promise<void> {
     const groupIdentifier = event().groupIdentifier;
     if (!groupIdentifier)
       return;
 
-    confirmAndMarkNonDuplicated([groupIdentifier], onIgnoreDuplicate);
+    clearActionFailure();
+    await markNonDuplicatedAndSettle([groupIdentifier], { onFailure: failure => reportActionFailure(failure.title, failure.failure), onSuccess: onIgnoreDuplicate });
   }
 
   return {
     blockEvent,
     canAddEvent,
     canDeleteEvents,
-    confirmFixDuplicate,
-    confirmIgnoreDuplicate,
     decodableEvmEvent,
     deletableEventIds,
     ethBlockEventsDecoding,
     eventWithDecoding,
     eventWithTxRef,
+    fixDuplicate,
     fixLoading,
+    ignoreDuplicate,
     ignoreLoading,
     isAutoFixable,
     isDuplicate,

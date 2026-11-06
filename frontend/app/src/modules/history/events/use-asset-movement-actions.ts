@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
+import type { HistoryEventQuestion } from '@/modules/history/events/types';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useAssetMovementMatchingApi } from '@/modules/history/api/events/use-asset-movement-matching-api';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { type UnmatchedAssetMovement, useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
@@ -33,9 +33,15 @@ interface UseAssetMovementActionsReturn {
   modelSelectedIgnored: Ref<string[]>;
   modelSelectedUnmatched: Ref<string[]>;
   resolutionNotice: Readonly<Ref<MovementResolutionNotice | undefined>>;
-  confirmIgnoreAllFiat: () => void;
-  confirmIgnoreSelected: () => void;
-  confirmRestoreSelected: () => void;
+  /** Ignores every fiat movement, once its button asked. */
+  ignoreAllFiat: () => Promise<void>;
+  /** What ignoring every fiat movement asks beside its button, counting them. */
+  ignoreFiatQuestion: ComputedRef<HistoryEventQuestion>;
+  /** Ignores the selected movements, once their button asked. */
+  ignoreSelected: () => Promise<void>;
+  /** What ignoring the selection asks beside its button, counting the selected movements. */
+  ignoreSelectedQuestion: ComputedRef<HistoryEventQuestion>;
+  restoreSelected: () => Promise<void>;
   dismissResolution: () => void;
   ignoreMovement: (movement: UnmatchedAssetMovement) => Promise<void>;
   markExternal: (movement: UnmatchedAssetMovement) => Promise<void>;
@@ -58,7 +64,6 @@ export function useAssetMovementActions(
   } = useUnmatchedAssetMovements();
 
   const { matchAssetMovements, unlinkAssetMovement } = useAssetMovementMatchingApi();
-  const { show } = useConfirmStore();
 
   const ignoreLoading = shallowRef<boolean>(false);
   const actionFailure = shallowRef<unknown>();
@@ -172,25 +177,21 @@ export function useAssetMovementActions(
     });
   }
 
-  function confirmIgnoreSelected(): void {
-    const count = get(modelSelectedUnmatched).length;
-    show({
-      message: t('asset_movement_matching.actions.ignore_selected_confirm', { count }),
-      primaryAction: t('common.actions.confirm'),
-      title: t('asset_movement_matching.actions.ignore_selected'),
-    }, async () => ignoreSelectedMovements(get(modelSelectedUnmatched)));
+  const ignoreSelectedQuestion = computed<HistoryEventQuestion>(() => ({
+    message: t('asset_movement_matching.actions.ignore_selected_confirm', { count: get(modelSelectedUnmatched).length }),
+    title: t('asset_movement_matching.actions.ignore_selected'),
+  }));
+
+  async function ignoreSelected(): Promise<void> {
+    await ignoreSelectedMovements(get(modelSelectedUnmatched));
   }
 
-  function confirmRestoreSelected(): void {
-    const count = get(modelSelectedIgnored).length;
-    show({
-      message: t('asset_movement_matching.actions.restore_selected_confirm', { count }),
-      primaryAction: t('common.actions.confirm'),
-      title: t('asset_movement_matching.actions.restore_selected'),
-    }, async () => unignoreSelectedMovements(get(modelSelectedIgnored)));
+  /** Restores the selection without asking: ignoring them again is the undo. */
+  async function restoreSelected(): Promise<void> {
+    await unignoreSelectedMovements(get(modelSelectedIgnored));
   }
 
-  async function ignoreAllFiatMovements(): Promise<void> {
+  async function ignoreAllFiat(): Promise<void> {
     await runAction(async () => {
       for (const movement of get(fiatMovements))
         await matchAssetMovements(getMovementIdentifier(movement));
@@ -200,26 +201,24 @@ export function useAssetMovementActions(
     });
   }
 
-  function confirmIgnoreAllFiat(): void {
-    const count = get(fiatMovements).length;
-    show({
-      message: t('asset_movement_matching.actions.ignore_fiat_confirm', { count }),
-      primaryAction: t('common.actions.confirm'),
-      title: t('asset_movement_matching.actions.ignore_fiat'),
-    }, async () => ignoreAllFiatMovements());
-  }
+  const ignoreFiatQuestion = computed<HistoryEventQuestion>(() => ({
+    message: t('asset_movement_matching.actions.ignore_fiat_confirm', { count: get(fiatMovements).length }),
+    title: t('asset_movement_matching.actions.ignore_fiat'),
+  }));
 
   return {
     actionFailure: shallowReadonly(actionFailure),
-    confirmIgnoreAllFiat,
-    confirmIgnoreSelected,
-    confirmRestoreSelected,
     dismissResolution,
     fiatMovements,
+    ignoreAllFiat,
+    ignoreFiatQuestion,
     ignoreLoading: readonly(ignoreLoading),
+    ignoreSelected,
+    ignoreSelectedQuestion,
     ignoreMovement,
     markExternal,
     restoreMovement,
+    restoreSelected,
     modelSelectedIgnored,
     modelSelectedUnmatched,
     resolutionNotice: shallowReadonly(notice),

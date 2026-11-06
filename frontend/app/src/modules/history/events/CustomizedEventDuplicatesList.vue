@@ -14,6 +14,7 @@ import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 const selected = defineModel<string[]>('selected', { default: () => [] });
 
 const {
+  actionFailure,
   description,
   error,
   rows,
@@ -24,6 +25,8 @@ const {
   rows: DuplicateRow[];
   /** why the tab could not be read, shown in place of the rows or above the rows an earlier read left */
   error?: unknown;
+  /** why the last action started from this tab failed; its own button is the retry */
+  actionFailure?: { title: string; failure: unknown };
 }>();
 
 const emit = defineEmits<{
@@ -81,6 +84,14 @@ const columns = computed<DataTableColumn<DuplicateRow>[]>(() => [
         {{ t('customized_event_duplicates.actions.show_in_history') }}
       </RuiButton>
     </div>
+    <FailureStrip
+      v-if="actionFailure"
+      class="mb-4"
+      :title="actionFailure.title"
+      :failure="actionFailure.failure"
+      :retryable="false"
+      data-testid="duplicates-action-error"
+    />
     <ScrollableDialogContent :max-height="HISTORY_DIALOG_MAX_HEIGHT">
       <RuiDataTable
         v-model="selected"

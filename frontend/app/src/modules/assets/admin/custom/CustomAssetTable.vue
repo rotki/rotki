@@ -22,10 +22,12 @@ const expandedModel = defineModel<CustomAsset[]>('expanded', { required: true })
 
 const filtersModel = defineModel<Filters>('filters', { required: true });
 
-const { assets, fields, loading = false } = defineProps<{
+const { assets, deleteConfirm, fields, loading = false } = defineProps<{
   assets: CustomAsset[];
   fields: FieldDef[];
   loading?: boolean;
+  /** What a row's delete button asks; `delete-asset` is emitted once the user confirms. */
+  deleteConfirm: (asset: CustomAsset) => { title: string; message: string };
 }>();
 
 const emit = defineEmits<{
@@ -92,6 +94,7 @@ const deleteAsset = (asset: CustomAsset): void => emit('delete-asset', asset);
           align="end"
           :edit-tooltip="t('asset_table.edit_tooltip')"
           :delete-tooltip="t('asset_table.delete_tooltip')"
+          :delete-confirm="deleteConfirm(row)"
           @edit-click="edit(row)"
           @delete-click="deleteAsset(row)"
         >

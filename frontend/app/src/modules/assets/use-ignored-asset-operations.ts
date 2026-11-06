@@ -15,7 +15,7 @@ interface UseIgnoredAssetOperationsReturn {
 }
 
 export function useIgnoredAssetOperations(): UseIgnoredAssetOperationsReturn {
-  const { notifyError, notifyFailure, showErrorMessage } = useNotifications();
+  const { notifyError, notifyFailure, notifyWarning } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const { addIgnoredAssets, getIgnoredAssets, removeIgnoredAssets } = useAssetIgnoreApi();
   const { getAssetField } = useAssetInfoRetrieval();
@@ -52,7 +52,7 @@ export function useIgnoredAssetOperations(): UseIgnoredAssetOperationsReturn {
       }
 
       if (includedInManualBalances.length > 0) {
-        showErrorMessage(
+        notifyWarning(
           t('ignore.warning.manual_balances_title'),
           t('ignore.warning.manual_balances_message', {
             assets: includedInManualBalances.map(item => getAssetField(item, 'symbol')).join(', '),

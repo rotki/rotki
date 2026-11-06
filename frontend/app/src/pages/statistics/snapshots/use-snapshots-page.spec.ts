@@ -8,7 +8,6 @@ import { useSnapshotsPage } from './use-snapshots-page';
 const ITEMS_PER_PAGE = 10;
 
 const {
-  confirmCallbacks,
   deleteSnapshot,
   exportSnapshot,
   forceSave,
@@ -18,16 +17,12 @@ const {
   replaceMock,
   routeQuery,
   rowsState,
-  setMessage,
-  show,
 } = vi.hoisted(() => {
-  const confirmCallbacks: (() => Promise<void> | void)[] = [];
   const hasSnapshotsState = { current: true };
   const routeQuery: { current: Record<string, string> } = { current: {} };
   const rowsState: { current: SnapshotListRow[] } = { current: [] };
 
   return {
-    confirmCallbacks,
     deleteSnapshot: vi.fn(async (): Promise<boolean> => true),
     exportSnapshot: vi.fn(async (): Promise<boolean> => true),
     forceSave: vi.fn(async (): Promise<void> => {}),
@@ -37,10 +32,6 @@ const {
     replaceMock: vi.fn(async (): Promise<void> => {}),
     routeQuery,
     rowsState,
-    setMessage: vi.fn(),
-    show: vi.fn((_options: unknown, onConfirm: () => Promise<void> | void) => {
-      confirmCallbacks.push(onConfirm);
-    }),
   };
 });
 
@@ -78,6 +69,7 @@ vi.mock('@/modules/dashboard/snapshots/composables/use-snapshot-actions', async 
       importSnapshot: vi.fn(),
       importing: shallowRef(false),
       modelBalanceFile: shallowRef(undefined),
+      modelImportFailure: shallowRef(undefined),
       modelLocationFile: shallowRef(undefined),
     }),
   };
@@ -94,14 +86,6 @@ vi.mock('@/modules/settings/api/use-snapshot-api', () => ({
   useSnapshotApi: (): { deleteSnapshot: typeof deleteSnapshot } => ({ deleteSnapshot }),
 }));
 
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): { setMessage: typeof setMessage } => ({ setMessage }),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): { show: typeof show } => ({ show }),
-}));
-
 describe('pages/statistics/snapshots/useSnapshotsPage', () => {
   function setup(): ReturnType<typeof useSnapshotsPage> {
     return withSetup(() => useSnapshotsPage()).result;
@@ -109,7 +93,6 @@ describe('pages/statistics/snapshots/useSnapshotsPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    confirmCallbacks.length = 0;
     hasSnapshotsState.current = true;
     routeQuery.current = {};
     rowsState.current = [];
@@ -184,14 +167,13 @@ describe('pages/statistics/snapshots/useSnapshotsPage', () => {
     });
   });
 
-  it('should export a row straight away, without a dialog in between', async () => {
+  it('should export a row straight away', async () => {
     const { exportSnapshot: exportRow } = setup();
     await flushPromises();
 
     await exportRow(200);
 
     expect(exportSnapshot).toHaveBeenCalledWith(200);
-    expect(show).not.toHaveBeenCalled();
   });
 
   it('should open a snapshot detail page', async () => {
@@ -203,58 +185,53 @@ describe('pages/statistics/snapshots/useSnapshotsPage', () => {
     expect(pushMock).toHaveBeenCalledWith('/statistics/snapshots/1234');
   });
 
-  describe('deleting a snapshot', () => {
-    it('should ask first and delete nothing until it is confirmed', async () => {
-      const { confirmDelete } = setup();
+  describe('deleting a snapshot the row already confirmed', () => {
+    it('should delete it and re-read the list, so the row goes, without a failure', async () => {
+      const { deleteFailure, deleteSnapshotAt } = setup();
       await flushPromises();
 
-      confirmDelete(100);
-
-      expect(show).toHaveBeenCalledTimes(1);
-      expect(deleteSnapshot).not.toHaveBeenCalled();
-    });
-
-    it('should delete, refresh and report success once confirmed', async () => {
-      const { confirmDelete } = setup();
-      await flushPromises();
-
-      confirmDelete(100);
-      await confirmCallbacks[0]();
+      await deleteSnapshotAt(100);
 
       expect(deleteSnapshot).toHaveBeenCalledWith({ timestamp: 100 });
       expect(refresh).toHaveBeenCalledTimes(1);
-      expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+      expect(get(deleteFailure)).toBeUndefined();
     });
 
-    it('should report a refused delete without refreshing', async () => {
+    it('should keep a refused delete as a failure without refreshing', async () => {
       deleteSnapshot.mockResolvedValue(false);
-      const { confirmDelete } = setup();
+      const { deleteFailure, deleteSnapshotAt } = setup();
       await flushPromises();
 
-      confirmDelete(100);
-      await confirmCallbacks[0]();
+      await deleteSnapshotAt(100);
 
       expect(refresh).not.toHaveBeenCalled();
-      expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
+      expect(get(deleteFailure)).toBe('dashboard.snapshot.delete.message.failure');
     });
 
-    it('should report a thrown error as a message rather than rejecting', async () => {
-      deleteSnapshot.mockRejectedValue(new Error('backend said no'));
-      const { confirmDelete } = setup();
+    it('should keep a thrown error as the failure rather than rejecting', async () => {
+      const error = new Error('backend said no');
+      deleteSnapshot.mockRejectedValue(error);
+      const { deleteFailure, deleteSnapshotAt } = setup();
       await flushPromises();
 
-      confirmDelete(100);
-      await expect(confirmCallbacks[0]()).resolves.toBeUndefined();
+      await expect(deleteSnapshotAt(100)).resolves.toBeUndefined();
 
-      expect(setMessage).toHaveBeenCalledWith(expect.objectContaining({
-        description: 'backend said no',
-        success: false,
-      }));
+      expect(get(deleteFailure)).toMatchObject({ message: 'backend said no' });
       expect(refresh).not.toHaveBeenCalled();
+    });
+
+    it('should drop the last failure once a later delete succeeds', async () => {
+      deleteSnapshot.mockRejectedValueOnce(new Error('backend said no'));
+      const { deleteFailure, deleteSnapshotAt } = setup();
+      await flushPromises();
+
+      await deleteSnapshotAt(100);
+      await deleteSnapshotAt(100);
+
+      expect(get(deleteFailure)).toBeUndefined();
     });
   });
 
-  // the page asks in a popover on the button, so taking one no longer goes through the confirm dialog
   it('should force-save when asked to take a snapshot', async () => {
     const { takeSnapshot } = setup();
     await flushPromises();
@@ -262,6 +239,5 @@ describe('pages/statistics/snapshots/useSnapshotsPage', () => {
     await takeSnapshot();
 
     expect(forceSave).toHaveBeenCalledTimes(1);
-    expect(show).not.toHaveBeenCalled();
   });
 });

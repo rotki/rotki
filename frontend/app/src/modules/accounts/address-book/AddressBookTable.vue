@@ -70,7 +70,7 @@ function edit(item: AddressBookEntry) {
 }
 
 // a getter, as the one table now switches between the books and must delete from the one in view
-const { showDeleteConfirmation } = useAddressBookDeletion(toRef(() => location), refresh);
+const { deleteConfirm, deleteEntry } = useAddressBookDeletion(toRef(() => location), refresh);
 </script>
 
 <template>
@@ -115,7 +115,8 @@ const { showDeleteConfirmation } = useAddressBookDeletion(toRef(() => location),
         :disabled="loading"
         :delete-tooltip="t('address_book.actions.delete.tooltip')"
         :edit-tooltip="t('address_book.actions.edit.tooltip')"
-        @delete-click="showDeleteConfirmation(row)"
+        :delete-confirm="deleteConfirm(row)"
+        @delete-click="deleteEntry(row)"
         @edit-click="edit(row)"
       />
     </template>

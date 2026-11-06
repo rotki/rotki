@@ -4,8 +4,8 @@ import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { AddHistoryEventPayload, ModifyHistoryEventPayload } from '@/modules/history/events/request-types';
 import { toServerErrors } from '@/modules/core/form/server-errors';
 import { type FormApi, useForm } from '@/modules/core/form/use-form';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
+import { HistoryEventSaveFailureKey } from '@/modules/history/management/forms/history-event-save-failure';
 import { type PriceIntent, usePriceIntents } from '@/modules/history/management/forms/price-intent';
 
 type FormMessage = ValidationErrors | string;
@@ -70,7 +70,7 @@ export function useHistoryEventForm<
   const errorMessages = options.errorMessages ?? ref<Record<string, string[]>>({});
 
   const { t } = useI18n({ useScope: 'global' });
-  const { showErrorMessage } = useNotifications();
+  const saveFailure = inject(HistoryEventSaveFailureKey, shallowRef<string>());
   const { addHistoryEvent, editHistoryEvent } = useHistoryEvents();
   const { runPriceIntents } = usePriceIntents();
 
@@ -102,7 +102,7 @@ export function useHistoryEventForm<
     if (status.success)
       return true;
 
-    showErrorMessage(status.message || t('transactions.events.form.asset_price.failed'));
+    set(saveFailure, status.message || t('transactions.events.form.asset_price.failed'));
     return false;
   }
 
@@ -114,6 +114,7 @@ export function useHistoryEventForm<
   }
 
   async function save(): Promise<boolean> {
+    set(saveFailure, undefined);
     if (!form.validate())
       return false;
 
@@ -137,7 +138,7 @@ export function useHistoryEventForm<
       const hasMessage = outcome.message !== undefined && outcome.message !== '';
       const message = hasMessage ? outcome.message : t('transactions.events.form.save_failed');
       if (typeof message === 'string')
-        showErrorMessage(message);
+        set(saveFailure, message);
       set(errorMessages, fieldErrorsOf(message));
     }
 

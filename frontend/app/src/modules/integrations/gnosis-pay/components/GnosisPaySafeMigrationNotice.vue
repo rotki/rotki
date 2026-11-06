@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import type { Account } from '@rotki/common';
 import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
-const { account, adding = false, keypath } = defineProps<{
+const { account, adding = false, failure, keypath } = defineProps<{
   /** The Safe Gnosis Pay moved to or from that rotki does not track yet. */
   account?: Account;
   /** Whether the new or the old Safe is the one missing, which decides the wording. */
   keypath: string;
   adding?: boolean;
+  /** Why the last add failed; its retry adds again. */
+  failure?: string;
 }>();
 
 const emit = defineEmits<{
@@ -38,6 +41,14 @@ const { t } = useI18n({ useScope: 'global' });
           />
         </template>
       </i18n-t>
+      <FailureStrip
+        v-if="failure"
+        class="self-stretch"
+        :title="t('external_services.gnosispay.safe_migration.add_error')"
+        :failure="failure"
+        data-testid="gnosis-pay-safe-add-failure"
+        @retry="emit('add')"
+      />
       <RuiButton
         size="sm"
         color="primary"

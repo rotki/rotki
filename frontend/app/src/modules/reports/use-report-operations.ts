@@ -26,7 +26,7 @@ interface UseReportOperationsReturn {
 }
 
 export function useReportOperations(): UseReportOperationsReturn {
-  const { notifyError, notifyFailure, showErrorMessage, showSuccessMessage } = useNotifications();
+  const { notifyError, notifyFailure, notifyInfo } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const { fetchEnsNames } = useEnsOperations();
 
@@ -44,12 +44,12 @@ export function useReportOperations(): UseReportOperationsReturn {
     try {
       const success = await exportReportCSV(reportId, path);
       if (success)
-        showSuccessMessage(t('actions.reports.csv_export.title'), t('actions.reports.csv_export.message.success'));
+        notifyInfo(t('actions.reports.csv_export.title'), t('actions.reports.csv_export.message.success'));
       else
-        showErrorMessage(t('actions.reports.csv_export.title'), t('actions.reports.csv_export.message.failure'));
+        notifyError(t('actions.reports.csv_export.title'), t('actions.reports.csv_export.message.failure'));
     }
     catch (error: unknown) {
-      showErrorMessage(t('actions.reports.csv_export.title'), getErrorMessage(error));
+      notifyError(t('actions.reports.csv_export.title'), getErrorMessage(error));
     }
   }
 

@@ -3,15 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type Ref, ref, shallowRef } from 'vue';
 import { useMappingFormDialog } from './use-mapping-form-dialog';
 
-const { add, edit, setMessage, validate } = vi.hoisted(() => ({
+const { add, edit, validate } = vi.hoisted(() => ({
   add: vi.fn(async () => Promise.resolve(true)),
   edit: vi.fn(async () => Promise.resolve(true)),
-  setMessage: vi.fn(),
   validate: vi.fn(() => true),
-}));
-
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): Record<string, unknown> => ({ setMessage }),
 }));
 
 interface Mapping {
@@ -173,27 +168,35 @@ describe('modules/assets/admin/useMappingFormDialog', () => {
       expect(onSaved).not.toHaveBeenCalled();
     });
 
-    it('should report a failure while adding as an add failure', async () => {
-      add.mockRejectedValue(new Error('the backend is down'));
+    it('should keep a failure while adding for the dialog, titled as an add failure', async () => {
+      const error = new Error('the backend is down');
+      add.mockRejectedValue(error);
 
-      const { save } = dialog();
+      const { failure, failureTitle, save } = dialog();
 
       expect(await save()).toBe(false);
-      expect(setMessage).toHaveBeenCalledWith({
-        description: 'asset_management.cex_mapping.add_error::the backend is down',
-      });
+      expect(get(failure)).toBe(error);
+      expect(get(failureTitle)).toBe('asset_management.cex_mapping.add_error');
     });
 
-    it('should report a failure while editing as an edit failure', async () => {
+    it('should title a failure while editing as an edit failure', async () => {
       set(editMode, true);
       edit.mockRejectedValue(new Error('the backend is down'));
 
-      const { save } = dialog();
+      const { failureTitle, save } = dialog();
       await save();
 
-      expect(setMessage).toHaveBeenCalledWith({
-        description: 'asset_management.cex_mapping.edit_error::the backend is down',
-      });
+      expect(get(failureTitle)).toBe('asset_management.cex_mapping.edit_error');
+    });
+
+    it('should drop the failure when the next write starts', async () => {
+      add.mockRejectedValueOnce(new Error('the backend is down')).mockResolvedValueOnce(false);
+
+      const { failure, save } = dialog();
+      await save();
+      await save();
+
+      expect(get(failure)).toBeUndefined();
     });
 
     it('should stop loading so the user can try again', async () => {

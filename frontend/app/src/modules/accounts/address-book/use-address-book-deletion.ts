@@ -2,12 +2,14 @@ import type { MaybeRef } from 'vue';
 import type { AddressBookEntry, AddressBookLocation } from '@/modules/accounts/address-book/eth-names';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
 interface UseAddressBookDeletionReturn {
   deleteAddressBook: (address: string, blockchain: string | null) => Promise<void>;
-  showDeleteConfirmation: (item: AddressBookEntry) => void;
+  /** What the entry's delete button asks, beside it, before `deleteEntry` runs. */
+  deleteConfirm: (item: AddressBookEntry) => { title: string; message: string };
+  /** Deletes an entry the user already confirmed. */
+  deleteEntry: (item: AddressBookEntry) => Promise<void>;
 }
 
 export function useAddressBookDeletion(
@@ -15,7 +17,6 @@ export function useAddressBookDeletion(
   onSuccess?: () => void,
 ): UseAddressBookDeletionReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { show } = useConfirmStore();
   const { notifyError } = useNotifications();
   const { deleteAddressBook: deleteAddressBookCaller } = useAddressBookOperations();
 
@@ -36,21 +37,19 @@ export function useAddressBookDeletion(
     }
   };
 
-  const showDeleteConfirmation = (item: AddressBookEntry): void => {
-    show(
-      {
-        message: t('address_book.actions.delete.dialog.message', {
-          address: item.address,
-          chain: item.blockchain ?? t('common.multi_chain'),
-        }),
-        title: t('address_book.actions.delete.dialog.title'),
-      },
-      async () => deleteAddressBook(item.address, item.blockchain),
-    );
-  };
+  const deleteConfirm = (item: AddressBookEntry): { title: string; message: string } => ({
+    message: t('address_book.actions.delete.dialog.message', {
+      address: item.address,
+      chain: item.blockchain ?? t('common.multi_chain'),
+    }),
+    title: t('address_book.actions.delete.dialog.title'),
+  });
+
+  const deleteEntry = async (item: AddressBookEntry): Promise<void> => deleteAddressBook(item.address, item.blockchain);
 
   return {
     deleteAddressBook,
-    showDeleteConfirmation,
+    deleteConfirm,
+    deleteEntry,
   };
 }

@@ -1,12 +1,18 @@
 import type { DeepReadonly, MaybeRef, Ref } from 'vue';
 import type { BaseMessage } from '@/modules/core/messaging/base-message';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 
 interface UseCacheClearReturn<T> {
   status: DeepReadonly<Ref<BaseMessage | null>>;
   pending: Readonly<Ref<boolean>>;
-  showConfirmation: (source: T) => void;
+  /**
+   * Clears `source` straight away and settles once the clear has.
+   *
+   * @remarks
+   * A clear that loses something the user cannot fetch again (purged data) is confirmed by its
+   * trigger before this is called.
+   */
+  request: (source: T) => Promise<void>;
 }
 
 interface Clearable<T> { id: T; text: string }
@@ -17,18 +23,18 @@ interface ClearMessages {
   error: (source: string, message: string) => string;
 }
 
+/**
+ * Runs a cache clear and keeps its outcome for the screen.
+ *
+ * @param clearable - the sources, with the text the messages name them by
+ * @param clearHandle - the clear; resolves `false` when it did not happen and needs no message,
+ * such as a cancelled run
+ * @param message - what the screen says after the clear
+ */
 export function useCacheClear<T>(
   clearable: MaybeRef<Clearable<T>[]>,
-  /** Resolves `false` when the clear did not happen and needs no message, such as a cancelled run. */
   clearHandle: (source: T) => Promise<boolean | void>,
   message: ClearMessages,
-  confirmText: (
-    textSource: string,
-    source: T,
-  ) => {
-    title: string;
-    message: string;
-  },
 ): UseCacheClearReturn<T> {
   const status = shallowRef<BaseMessage | null>(null);
   const pending = shallowRef<boolean>(false);
@@ -47,7 +53,7 @@ export function useCacheClear<T>(
     set(status, null);
   }, 5000, { immediate: false });
 
-  const clear = async (source: T): Promise<void> => {
+  async function clear(source: T): Promise<void> {
     try {
       set(pending, true);
       if (await clearHandle(source) === false)
@@ -67,16 +73,11 @@ export function useCacheClear<T>(
     finally {
       set(pending, false);
     }
-  };
-
-  const { show } = useConfirmStore();
-  const showConfirmation = (source: T): void => {
-    show(confirmText(text(source), source), async () => clear(source));
-  };
+  }
 
   return {
     pending: readonly(pending),
-    showConfirmation,
+    request: clear,
     status: readonly(status),
   };
 }

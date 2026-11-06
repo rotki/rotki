@@ -10,7 +10,6 @@ import type {
   AccountingRuleConflictResolution,
 } from '@/modules/settings/types/accounting';
 import { getCollectionData } from '@/modules/core/common/data/collection-utils';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useAccountingSettings } from '@/modules/settings/accounting/use-accounting-settings';
 
@@ -24,6 +23,8 @@ interface UseAccountingRuleConflictResolutionReturn {
   collection: Ref<Collection<AccountingRuleConflict>>;
   /** The last fetch failure, so the table can name it in place of its empty text. */
   error: Ref<unknown>;
+  /** Why the last save failed, named in the dialog; Save is the retry. */
+  failure: Readonly<Ref<string | undefined>>;
   /** Whether the page is being read. */
   isLoading: Ref<boolean>;
   /** Whether a resolution is being submitted. */
@@ -46,7 +47,7 @@ interface UseAccountingRuleConflictResolutionReturn {
   remaining: ComputedRef<number>;
   /** How many conflicts the user has answered individually. */
   resolutionLength: ComputedRef<number>;
-  /** Submits the resolution, reporting a failure as a message and leaving the dialog open. */
+  /** Submits the resolution, keeping a failure in {@link UseAccountingRuleConflictResolutionReturn.failure} and the dialog open. */
   save: () => Promise<void>;
   /** Whether there is anything to submit. */
   valid: ComputedRef<boolean>;
@@ -63,13 +64,11 @@ export function useAccountingRuleConflictResolution(
 ): UseAccountingRuleConflictResolutionReturn {
   const { onResolved } = options;
 
-  const { t } = useI18n({ useScope: 'global' });
-
   const modelResolution = ref<Writeable<ConflictResolution>>({});
   const modelSolveAllUsing = ref<ConflictResolutionStrategy>();
   const loading = shallowRef<boolean>(false);
+  const failure = shallowRef<string>();
 
-  const { setMessage } = useMessageStore();
   const { getAccountingRulesConflicts, resolveAccountingRuleConflicts } = useAccountingSettings();
 
   const { collection, error, isLoading, pagination, refetch } = useServerTable<
@@ -104,21 +103,14 @@ export function useAccountingRuleConflictResolution(
 
   async function save(): Promise<void> {
     set(loading, true);
+    set(failure, undefined);
 
     const result = await resolveAccountingRuleConflicts(buildPayload());
 
-    if (result.success) {
+    if (result.success)
       onResolved();
-    }
-    else {
-      setMessage({
-        description: t('accounting_settings.rule.conflicts.error.description', {
-          error: result.message,
-        }),
-        success: false,
-        title: t('accounting_settings.rule.conflicts.error.title'),
-      });
-    }
+    else
+      set(failure, result.message);
 
     set(loading, false);
   }
@@ -126,6 +118,7 @@ export function useAccountingRuleConflictResolution(
   return {
     collection,
     error,
+    failure: readonly(failure),
     isLoading,
     loading: readonly(loading),
     modelResolution,

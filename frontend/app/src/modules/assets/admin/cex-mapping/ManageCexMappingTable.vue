@@ -15,6 +15,8 @@ defineProps<{
   collection: Collection<CexMapping>;
   fields: FieldDef[];
   loading: boolean;
+  /** What a row's delete button asks; `delete` is emitted once the user confirms. */
+  deleteConfirm: (mapping: CexMapping) => { title: string; message: string };
 }>();
 
 const emit = defineEmits<{
@@ -32,6 +34,7 @@ const { t } = useI18n({ useScope: 'global' });
     :collection="collection"
     :fields="fields"
     :loading="loading"
+    :delete-confirm="deleteConfirm"
     :subtitle="t('asset_management.cex_mapping.subtitle')"
     source-key="location"
     :source-label="t('common.exchange')"

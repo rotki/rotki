@@ -24,8 +24,7 @@ const uploadAccountingRulesData = vi.fn();
 const resetAccountingRules = vi.fn();
 
 const notifyFailure = vi.fn();
-const showErrorMessage = vi.fn();
-const showSuccessMessage = vi.fn();
+const notifyError = vi.fn<(title: string, message: string) => void>();
 
 const runTaskResult = vi.fn();
 const downloadFileByTextContent = vi.fn();
@@ -51,7 +50,7 @@ vi.mock('@/modules/settings/api/use-accounting-api', () => ({
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: (error: unknown): string => error instanceof Error ? error.message : String(error),
-  useNotifications: (): object => ({ notifyFailure, showErrorMessage, showSuccessMessage }),
+  useNotifications: (): object => ({ notifyError, notifyFailure }),
 }));
 
 vi.mock('@/modules/task-center/use-native-task', () => ({
@@ -170,12 +169,21 @@ describe('useAccountingSettings', () => {
       expect(downloadFileByTextContent).not.toHaveBeenCalled();
     });
 
-    it('should show a success message in an app session', async () => {
+    it('should leave a finished app-session export to its task centre row', async () => {
       appSession = true;
       openDirectory.mockResolvedValue('/tmp');
       runTaskResult.mockResolvedValue(ok(true));
       await useAccountingSettings().exportJSON();
-      expect(showSuccessMessage).toHaveBeenCalledOnce();
+      expect(submitTask).toHaveBeenCalledOnce();
+      expect(notifyError).not.toHaveBeenCalled();
+      expect(downloadFileByTextContent).not.toHaveBeenCalled();
+    });
+
+    it('should toast an export that threw before the task ran', async () => {
+      appSession = true;
+      openDirectory.mockRejectedValue(new Error('no dialog'));
+      await useAccountingSettings().exportJSON();
+      expect(notifyError).toHaveBeenCalledOnce();
     });
 
     it('should leave a failed app-session export to its task centre row', async () => {
@@ -184,7 +192,7 @@ describe('useAccountingSettings', () => {
       runTaskResult.mockResolvedValue(actionableFailure);
       await useAccountingSettings().exportJSON();
       expect(submitTask).toHaveBeenCalledOnce();
-      expect(showErrorMessage).not.toHaveBeenCalled();
+      expect(notifyError).not.toHaveBeenCalled();
     });
 
     it('should not download anything when a web-session export fails', async () => {
@@ -200,7 +208,7 @@ describe('useAccountingSettings', () => {
       runTaskResult.mockResolvedValue(cancelledFailure);
       await useAccountingSettings().exportJSON();
       expect(downloadFileByTextContent).not.toHaveBeenCalled();
-      expect(showErrorMessage).not.toHaveBeenCalled();
+      expect(notifyError).not.toHaveBeenCalled();
     });
   });
 
@@ -244,17 +252,17 @@ describe('useAccountingSettings', () => {
   });
 
   describe('resetToDefaults', () => {
-    it('should show a success message and return success', async () => {
+    it('should return success and leave the announcement to its task centre row', async () => {
       runTaskResult.mockResolvedValue(ok(true));
       const result = await useAccountingSettings().resetToDefaults();
-      expect(showSuccessMessage).toHaveBeenCalledOnce();
+      expect(notifyError).not.toHaveBeenCalled();
       expect(result).toEqual({ message: '', success: true });
     });
 
     it('should hand an actionable failure back without a message of its own', async () => {
       runTaskResult.mockResolvedValue(actionableFailure);
       const result = await useAccountingSettings().resetToDefaults();
-      expect(showErrorMessage).not.toHaveBeenCalled();
+      expect(notifyError).not.toHaveBeenCalled();
       expect(result).toEqual({ message: 'boom', success: false });
     });
 

@@ -6,7 +6,6 @@ import { useTemplateRef } from 'vue';
 import ManualBalancesForm from '@/modules/accounts/manual-balances/ManualBalancesForm.vue';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const modelValue = defineModel<ManualBalance | RawManualBalance | undefined>({ required: true });
@@ -21,8 +20,9 @@ const loading = ref(false);
 const errorMessages = ref<ValidationErrors>({});
 const form = useTemplateRef<InstanceType<typeof ManualBalancesForm>>('form');
 const stateUpdated = ref(false);
+/** Why the last save failed where no field is to blame; the form keeps what was typed. */
+const saveFailure = shallowRef<string>();
 
-const { setMessage } = useMessageStore();
 const { save: saveBalance } = useManualBalances();
 
 const { refreshPrice, refreshPrices } = usePriceRefresh();
@@ -34,6 +34,10 @@ const dialogTitle = computed<string>(() => {
     return t('manual_balances.dialog.edit.title');
   return t('manual_balances.dialog.add.title');
 });
+
+const failureTitle = computed<string>(() => (get(isEdit)
+  ? t('actions.manual_balances.edit.error.title')
+  : t('actions.manual_balances.add.error.title')));
 
 const dialogSubtitle = computed<string>(() => {
   if (get(isEdit))
@@ -63,7 +67,7 @@ function notifyTabChange(payload: ManualBalance | RawManualBalance): void {
 
 /**
  * Field-level errors go back to the form so it can mark the offending inputs; a plain string has no
- * field to attach to and is surfaced as a message instead.
+ * field to attach to and is named above the form instead.
  *
  * @remarks
  * The re-validation is what reveals the fields the user has not touched yet, so a rejected save
@@ -76,12 +80,7 @@ function reportSaveFailure(message: string | ValidationErrors, formRef: ManualBa
     return;
   }
 
-  const obj = { message };
-  setMessage({
-    description: get(isEdit)
-      ? t('actions.manual_balances.edit.error.description', obj)
-      : t('actions.manual_balances.add.error.description', obj),
-  });
+  set(saveFailure, message);
 }
 
 async function save(): Promise<boolean> {
@@ -94,6 +93,7 @@ async function save(): Promise<boolean> {
     return false;
 
   set(loading, true);
+  set(saveFailure, undefined);
   await refreshSavedPrices(formRef, get(modelValue).asset);
 
   const payload = get(modelValue);
@@ -123,6 +123,8 @@ async function save(): Promise<boolean> {
     :loading="loading"
     :action="{ primary: t('common.actions.save') }"
     :prompt-on-close="stateUpdated"
+    :failure="saveFailure"
+    :failure-title="failureTitle"
     @confirm="save()"
     @cancel="modelValue = undefined"
   >

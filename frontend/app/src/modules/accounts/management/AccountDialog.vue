@@ -48,6 +48,9 @@ const { currentTier, ethStakedLimit } = usePremiumHelper();
 const { upgradeText, upgradeUrl } = usePlanUpgradeLink();
 const { show: showImportDialog } = useAccountImportDialog();
 
+/** A refusal worded by the backend, named above the form; a plan limit gets its own alert with the upgrade link. */
+const saveFailure = computed<string | undefined>(() => (get(saveErrorIsPremium) ? undefined : get(saveError) || undefined));
+
 const isValidatorLimitReached = computed<boolean>(() =>
   isAddingValidator(get(model)) && get(validatorsLimitInfo).showWarning,
 );
@@ -102,6 +105,8 @@ watch(model, (model, oldModel) => {
     :loading="dialogLoading || pending"
     :prompt-on-close="stateUpdated"
     :layout="{ autoHeight: true }"
+    :failure="saveFailure"
+    :failure-title="t('account_form.error.title')"
     @confirm="confirm()"
     @cancel="dismiss()"
   >
@@ -116,54 +121,49 @@ watch(model, (model, oldModel) => {
     />
 
     <RuiAlert
-      v-if="saveError"
+      v-if="saveErrorIsPremium"
       type="error"
       class="mt-4"
     >
-      <template v-if="saveErrorIsPremium">
-        <i18n-t
-          v-if="ethStakedLimit > 0"
-          scope="global"
-          keypath="blockchain_balances.eth_staking_limit_error"
-          tag="span"
-        >
-          <template #limit>
-            {{ ethStakedLimit }}
-          </template>
-          <template #currentTier>
-            {{ currentTier }}
-          </template>
-          <template #link>
-            <ExternalLink
-              :text="upgradeText"
-              :url="upgradeUrl"
-              premium
-              color="primary"
-            />
-          </template>
-        </i18n-t>
-        <i18n-t
-          v-else
-          scope="global"
-          keypath="blockchain_balances.eth_staking_no_access"
-          tag="span"
-        >
-          <template #currentTier>
-            {{ currentTier }}
-          </template>
-          <template #link>
-            <ExternalLink
-              :text="upgradeText"
-              :url="upgradeUrl"
-              premium
-              color="primary"
-            />
-          </template>
-        </i18n-t>
-      </template>
-      <template v-else>
-        {{ saveError }}
-      </template>
+      <i18n-t
+        v-if="ethStakedLimit > 0"
+        scope="global"
+        keypath="blockchain_balances.eth_staking_limit_error"
+        tag="span"
+      >
+        <template #limit>
+          {{ ethStakedLimit }}
+        </template>
+        <template #currentTier>
+          {{ currentTier }}
+        </template>
+        <template #link>
+          <ExternalLink
+            :text="upgradeText"
+            :url="upgradeUrl"
+            premium
+            color="primary"
+          />
+        </template>
+      </i18n-t>
+      <i18n-t
+        v-else
+        scope="global"
+        keypath="blockchain_balances.eth_staking_no_access"
+        tag="span"
+      >
+        <template #currentTier>
+          {{ currentTier }}
+        </template>
+        <template #link>
+          <ExternalLink
+            :text="upgradeText"
+            :url="upgradeUrl"
+            premium
+            color="primary"
+          />
+        </template>
+      </i18n-t>
     </RuiAlert>
 
     <RuiAlert

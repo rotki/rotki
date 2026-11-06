@@ -4,13 +4,10 @@ import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import UserDropdown from '@/modules/shell/components/UserDropdown.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 
-const { confirm, currentTier, logout, premium, privacyModeIcon, username } = await vi.hoisted(async () => {
+const { currentTier, logout, premium, privacyModeIcon, username } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
-  /** Holds the callback the confirmation store was handed, so a test can accept the prompt. */
-  const confirm: { run?: () => Promise<void> } = {};
 
   return {
-    confirm,
     currentTier: ref<string>(''),
     logout: vi.fn(),
     premium: ref<boolean>(false),
@@ -38,14 +35,6 @@ vi.mock('@/modules/settings/use-privacy', () => ({
   }),
 }));
 
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): { show: (message: unknown, run: () => Promise<void>) => void } => ({
-    show: (_message, run): void => {
-      confirm.run = run;
-    },
-  }),
-}));
-
 function createWrapper(): VueWrapper<any> {
   return mount(UserDropdown, {
     global: {
@@ -58,6 +47,7 @@ function createWrapper(): VueWrapper<any> {
         RouterLink: { name: 'RouterLink', template: '<div><slot :navigate="() => {}" /></div>' },
         RuiMenu: {
           name: 'RuiMenu',
+          props: ['modelValue'],
           template: '<div><slot name="activator" :attrs="{}" /><slot /></div>',
         },
         ThemeControl: true,
@@ -66,16 +56,13 @@ function createWrapper(): VueWrapper<any> {
   });
 }
 
-/** Presses log out and accepts the confirmation. */
-async function logOut(wrapper: VueWrapper<any>): Promise<void> {
+async function pressLogout(wrapper: VueWrapper<any>): Promise<void> {
   await wrapper.find('[data-testid=logout-button]').trigger('click');
-  await confirm.run?.();
 }
 
 describe('userDropdown', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    confirm.run = undefined;
     set(currentTier, '');
     set(premium, false);
     set(username, 'alice');
@@ -107,20 +94,36 @@ describe('userDropdown', () => {
   });
 
   describe('logging out', () => {
-    it('should ask before doing it', async () => {
+    it('should ask in the menu, in place of its items, before doing it', async () => {
       const wrapper = createWrapper();
 
-      await wrapper.find('[data-testid=logout-button]').trigger('click');
+      await pressLogout(wrapper);
 
+      expect(wrapper.find('[data-testid=inline-confirm]').text()).toContain('user_dropdown.confirmation.message');
+      expect(wrapper.find('[data-testid=user-dropdown]').exists()).toBe(false);
       expect(logout).not.toHaveBeenCalled();
     });
 
-    it('should log out and forget the saved password once confirmed', async () => {
+    it('should log out and forget the saved password once accepted', async () => {
       const wrapper = createWrapper();
 
-      await logOut(wrapper);
+      await pressLogout(wrapper);
+      await wrapper.find('[data-testid=inline-confirm-accept]').trigger('click');
 
       expect(logout).toHaveBeenCalledExactlyOnceWith(true, { forgetSavedPassword: true });
+    });
+
+    it('should not log out when cancelled, and offer the items again next time', async () => {
+      const wrapper = createWrapper();
+      wrapper.findComponent({ name: 'RuiMenu' }).vm.$emit('update:modelValue', true);
+      await nextTick();
+
+      await pressLogout(wrapper);
+      await wrapper.find('[data-testid=inline-confirm-cancel]').trigger('click');
+
+      expect(logout).not.toHaveBeenCalled();
+      expect(wrapper.find('[data-testid=inline-confirm]').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=logout-button]').exists()).toBe(true);
     });
   });
 });

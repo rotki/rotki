@@ -9,8 +9,6 @@ import '@test/i18n';
 const addHistoricalPrice = vi.fn<(payload: HistoricalPriceFormPayload) => Promise<boolean>>();
 const resetHistoricalPricesData = vi.fn();
 const getHistoricPrice = vi.fn();
-const setMessage = vi.fn();
-
 vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
   useAssetPricesApi: vi.fn().mockImplementation(() => ({ addHistoricalPrice })),
 }));
@@ -21,10 +19,6 @@ vi.mock('@/modules/assets/prices/use-historic-price-cache', () => ({
 
 vi.mock('@/modules/assets/prices/use-price-task-manager', () => ({
   usePriceTaskManager: vi.fn().mockImplementation(() => ({ getHistoricPrice })),
-}));
-
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: vi.fn().mockImplementation(() => ({ setMessage })),
 }));
 
 const ReportProfitLossEventAction = (await import('@/modules/reports/ReportProfitLossEventAction.vue')).default;
@@ -216,7 +210,6 @@ describe('reportProfitLossEventAction', () => {
     await submit();
 
     expect(wrapper.find('[data-testid=edit-historic-price-save-error]').text()).toContain('nope');
-    expect(setMessage).not.toHaveBeenCalled();
   });
 
   it('should still name a failed save whose error carries no message', async () => {

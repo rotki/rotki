@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
-import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
+import type { HistoryEventDeletePayload, HistoryEventQuestion, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import type { HistoryEventNoteContext } from '@/modules/history/events/use-history-event-note';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
@@ -12,6 +12,7 @@ import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/modules/history/events/HistoryEventsListItemAction.vue';
 import HistoryEventType from '@/modules/history/events/HistoryEventType.vue';
 import { injectHistoryEventsSelection } from '@/modules/history/events/use-history-events-selection-context';
+import { useUnlinkQuestion } from '@/modules/history/events/use-unlink-question';
 import { useHistorySwapItem } from '../use-history-swap-item';
 
 const { events: eventsProp, variant = 'row' } = defineProps<{
@@ -86,6 +87,13 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
 const typeLabel = computed<string | undefined>(() =>
   get(isBridge) ? t('history_events_list_swap.bridge_label') : undefined,
 );
+
+const { unlinkQuestion } = useUnlinkQuestion();
+
+const unlinkConfirm = computed<HistoryEventQuestion | undefined>(() => {
+  const payload = get(bridgeUnlink);
+  return payload ? unlinkQuestion(payload) : undefined;
+});
 
 function unlink(): void {
   const payload = get(bridgeUnlink);
@@ -192,7 +200,7 @@ function unlink(): void {
         :item="primaryEvent"
         :index="0"
         :complete-group-events="completeGroupEvents"
-        :can-unlink="bridgeUnlink !== undefined"
+        :unlink-confirm="unlinkConfirm"
         class="shrink-0"
         @edit-event="emit('edit-event', $event)"
         @delete-event="emit('delete-event', $event)"
@@ -308,7 +316,7 @@ function unlink(): void {
       :item="primaryEvent"
       :index="0"
       :complete-group-events="completeGroupEvents"
-      :can-unlink="bridgeUnlink !== undefined"
+      :unlink-confirm="unlinkConfirm"
       collapse-action
       class="shrink-0 self-center"
       @edit-event="emit('edit-event', $event)"

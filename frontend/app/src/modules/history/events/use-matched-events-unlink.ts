@@ -1,22 +1,21 @@
 import type { ComputedRef } from 'vue';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
-import type { HistoryEventBridgeUnlinkPayload, HistoryEventsTableEmitFn, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import type { HistoryEventsTableEmitFn, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import { useAssetMovementMatchingApi } from '@/modules/history/api/events/use-asset-movement-matching-api';
 import { useBridgeMatchingApi } from '@/modules/history/api/events/use-bridge-matching-api';
 import { getMatchedMovementIgnoreIds, isAssetMovementEvent } from '@/modules/history/event-utils';
 import { useCompleteEvents } from '@/modules/history/events/use-complete-events';
+import { useHistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 import { useUnmatchedBridgeTransactions } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { EditKind } from '@/modules/task-center/core/rerun/policy';
 import { taskCenterBus } from '@/modules/task-center/events/task-center-bus';
 
 interface UseMatchedEventsUnlinkReturn {
-  confirmUnlink: (payload: HistoryEventUnlinkPayload) => void;
-  /** Unlinks the matched asset movement of a group, from its expanded header. */
-  unlinkGroup: (groupId: string) => void;
+  /** Unlinks a match the row already asked about; a failure is named above the table. */
+  unlink: (payload: HistoryEventUnlinkPayload) => Promise<void>;
+  /** Unlinks the matched asset movement of a group, from its expanded header, which already asked. */
+  unlinkGroup: (groupId: string) => Promise<void>;
 }
 
 /**
@@ -29,8 +28,7 @@ export function useMatchedEventsUnlink(
 ): UseMatchedEventsUnlinkReturn {
   const { t } = useI18n({ useScope: 'global' });
 
-  const { notifyError } = useNotifications();
-  const { show } = useConfirmStore();
+  const { clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
   const { getGroupEvents } = useCompleteEvents(completeEventsMapped);
   const { matchAssetMovements, unlinkAssetMovement } = useAssetMovementMatchingApi();
   const { matchBridgeTransactions, unlinkBridgeTransaction } = useBridgeMatchingApi();
@@ -47,7 +45,7 @@ export function useMatchedEventsUnlink(
    * calls are sequential rather than concurrent because they all write the same table, and they
    * follow the unlink so that a failed unlink ignores nothing.
    */
-  async function unlink(payload: HistoryEventUnlinkPayload): Promise<void> {
+  async function unlinkMatch(payload: HistoryEventUnlinkPayload): Promise<void> {
     if (payload.type === 'bridge') {
       await unlinkBridgeTransaction(payload.identifier);
       for (const identifier of payload.ignoredIdentifiers)
@@ -64,41 +62,26 @@ export function useMatchedEventsUnlink(
     }
   }
 
-  async function onConfirmUnlink(payload: HistoryEventUnlinkPayload): Promise<void> {
+  async function unlink(payload: HistoryEventUnlinkPayload): Promise<void> {
+    clearActionFailure();
     try {
-      await unlink(payload);
+      await unlinkMatch(payload);
       emit('refresh');
       taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_UNLINKED });
     }
     catch (error: unknown) {
-      notifyError(
+      reportActionFailure(
         payload.type === 'bridge' ? t('transactions.events.unlink_bridge_error') : t('transactions.events.unlink_error'),
-        getErrorMessage(error),
+        error,
       );
     }
   }
 
-  function bridgeMessage(payload: HistoryEventBridgeUnlinkPayload): string {
-    return payload.hasSynthetic
-      ? t('transactions.events.confirmation.unlink.bridge_synthetic_message')
-      : t('transactions.events.confirmation.unlink.bridge_message');
-  }
-
-  function confirmUnlink(payload: HistoryEventUnlinkPayload): void {
-    show({
-      message: payload.type === 'bridge'
-        ? bridgeMessage(payload)
-        : t('transactions.events.confirmation.unlink.message'),
-      primaryAction: t('common.actions.confirm'),
-      title: t('transactions.events.confirmation.unlink.title'),
-    }, async () => onConfirmUnlink(payload));
-  }
-
-  function unlinkGroup(groupId: string): void {
+  async function unlinkGroup(groupId: string): Promise<void> {
     const events = getGroupEvents(groupId);
     const event = events.find(item => isAssetMovementEvent(item) && item.eventSubtype !== 'fee' && !!item.actualGroupIdentifier);
     if (event) {
-      confirmUnlink({
+      await unlink({
         identifier: event.identifier,
         ignoredIdentifiers: getMatchedMovementIgnoreIds(events),
         type: 'asset-movement',
@@ -107,7 +90,7 @@ export function useMatchedEventsUnlink(
   }
 
   return {
-    confirmUnlink,
+    unlink,
     unlinkGroup,
   };
 }

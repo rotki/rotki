@@ -28,6 +28,16 @@ function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
   };
 }
 
+/** Opens through its activator and renders its content only while open, as the real menu does. */
+const RuiMenu = defineComponent({
+  emits: ['update:modelValue'],
+  props: ['modelValue'],
+  template: `<div>
+    <slot name="activator" :attrs="{ onClick: () => $emit('update:modelValue', true) }" />
+    <div v-if="modelValue"><slot /></div>
+  </div>`,
+});
+
 function createWrapper(rows: DataIssue[]): VueWrapper<InstanceType<typeof DataIssuesTable>> {
   return mount(DataIssuesTable, {
     global: {
@@ -40,6 +50,7 @@ function createWrapper(rows: DataIssue[]): VueWrapper<InstanceType<typeof DataIs
         DateDisplay: true,
         HistoryEventAccount: true,
         LocationDisplay: true,
+        RuiMenu,
       },
     },
     props: {
@@ -79,11 +90,22 @@ describe('data-issues table', () => {
     expect(wrapper.findComponent(CounterpartyDisplay).exists()).toBe(false);
   });
 
-  it('should forward a row quick dismiss action', async () => {
+  it('should ask beside a row quick dismiss and forward nothing until confirmed', async () => {
+    const wrapper = createWrapper([createIssue({ id: 5, state: IssueState.OPEN })]);
+
+    await wrapper.find('[data-testid="data-issues-panel-dismiss"]').trigger('click');
+
+    expect(wrapper.find('[data-testid="inline-confirm"]').text()).toContain('data_issues.action.dismiss.confirm.message');
+    expect(wrapper.emitted('dismiss')).toBeUndefined();
+    expect(wrapper.emitted('open')).toBeUndefined();
+  });
+
+  it('should forward a row quick dismiss once confirmed', async () => {
     const issue = createIssue({ id: 5, state: IssueState.OPEN });
     const wrapper = createWrapper([issue]);
 
     await wrapper.find('[data-testid="data-issues-panel-dismiss"]').trigger('click');
+    await wrapper.find('[data-testid="inline-confirm-accept"]').trigger('click');
 
     expect(wrapper.emitted('dismiss')?.[0]?.[0]).toStrictEqual(issue);
   });

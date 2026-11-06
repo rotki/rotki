@@ -6,6 +6,17 @@ import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import SnapshotListTable from '@/modules/dashboard/snapshots/components/SnapshotListTable.vue';
 
+/** Opens through its activator and renders its content only while open, as the real menu does. */
+const RuiMenu = {
+  emits: ['update:modelValue'],
+  name: 'RuiMenu',
+  props: ['modelValue'],
+  template: `<div>
+    <slot name="activator" :attrs="{ onClick: () => $emit('update:modelValue', true) }" />
+    <div v-if="modelValue"><slot /></div>
+  </div>`,
+};
+
 function createRow(overrides: Partial<SnapshotListRow> = {}): SnapshotListRow {
   return {
     previousTimestamp: 1_599_913_600,
@@ -24,6 +35,7 @@ describe('modules/dashboard/snapshots/components/SnapshotListTable', () => {
       global: {
         plugins: [createPinia()],
         provide: libraryDefaults,
+        stubs: { RuiMenu },
       },
       props: { pagination: { limit: 10, page: 1, total: rows.length }, rows },
     });
@@ -45,13 +57,29 @@ describe('modules/dashboard/snapshots/components/SnapshotListTable', () => {
     expect(wrapper.emitted('open')).toEqual([[1_600_000_000]]);
   });
 
-  it('should emit export and delete with the row timestamp', async () => {
+  it('should emit export with the row timestamp', async () => {
     wrapper = createWrapper([createRow({ timestamp: 1_600_000_000 })]);
 
     await wrapper.find('[data-testid=snapshot-export]').trigger('click');
-    await wrapper.find('[data-testid=snapshot-delete]').trigger('click');
 
     expect(wrapper.emitted('export')).toEqual([[1_600_000_000]]);
+  });
+
+  it('should ask beside the delete button and emit nothing until confirmed', async () => {
+    wrapper = createWrapper([createRow({ timestamp: 1_600_000_000 })]);
+
+    await wrapper.find('[data-testid=snapshot-delete]').trigger('click');
+
+    expect(wrapper.find('[data-testid=inline-confirm]').text()).toContain('dashboard.snapshot.delete.dialog.message');
+    expect(wrapper.emitted('delete')).toBeUndefined();
+  });
+
+  it('should emit delete with the row timestamp once confirmed', async () => {
+    wrapper = createWrapper([createRow({ timestamp: 1_600_000_000 })]);
+
+    await wrapper.find('[data-testid=snapshot-delete]').trigger('click');
+    await wrapper.find('[data-testid=inline-confirm-accept]').trigger('click');
+
     expect(wrapper.emitted('delete')).toEqual([[1_600_000_000]]);
   });
 

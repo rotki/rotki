@@ -13,6 +13,7 @@ import { useAccountingRuleMaintenance } from '@/modules/settings/accounting/rule
 import { useAccountingRulesTable } from '@/modules/settings/accounting/rule/use-accounting-rules-table';
 import { useRuleEventsLink } from '@/modules/settings/accounting/rule/use-rule-events-link';
 import { anchorId } from '@/modules/settings/settings-actions';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const {
   collection,
@@ -49,13 +50,15 @@ async function refresh(): Promise<void> {
 }
 
 const {
-  confirmDelete,
-  confirmReset,
+  deleteConfirm,
+  deleteFailure,
+  deleteRule,
   exportFileLoading,
   exportJSON,
   importFileLoading,
   modelImportDialogOpen,
   resetLoading,
+  resetRules,
 } = useAccountingRuleMaintenance({ refetch, refresh });
 
 onMounted(async () => {
@@ -76,7 +79,7 @@ onMounted(async () => {
       @add="add()"
       @export="exportJSON()"
       @import="modelImportDialogOpen = true"
-      @reset="confirmReset()"
+      @reset="resetRules()"
     />
 
     <AccountingRuleConflictsBanner
@@ -95,13 +98,22 @@ onMounted(async () => {
           @refresh="refresh()"
         />
       </template>
+      <FailureStrip
+        v-if="deleteFailure"
+        class="m-3"
+        :retryable="false"
+        :title="deleteFailure.title"
+        :failure="deleteFailure.error"
+        data-testid="accounting-rule-delete-error"
+      />
       <AccountingRuleTable
         :key="modelCustomRuleHandling"
         v-model:pagination="pagination"
         :state="collection"
         :is-loading="isLoading"
         :is-custom="showsCustomRules"
-        @delete-click="confirmDelete($event)"
+        :delete-confirm="deleteConfirm"
+        @delete-click="deleteRule($event)"
         @edit-click="edit($event)"
         @view-events-click="viewEvents($event)"
       />

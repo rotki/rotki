@@ -20,7 +20,7 @@ const refreshIconLoading = ref<boolean>(false);
 const refreshKey = ref<number>(0);
 /** Why the last icon refresh failed, named under the icon with a retry. */
 const refreshError = shallowRef<unknown>();
-const { showErrorMessage } = useNotifications();
+const { notifyError } = useNotifications();
 const { getPath } = useInterop();
 const { refreshIcon: refresh, setIcon, uploadIcon } = useAssetIconApi();
 
@@ -45,7 +45,14 @@ async function refreshIcon() {
   setLastRefreshedAssetIcon();
 }
 
-async function saveIcon(identifier: string) {
+/**
+ * Uploads the chosen icon for an asset that was just saved.
+ *
+ * @remarks
+ * The caller closes its dialog without waiting for this, so a failure is toasted: nothing inline
+ * is left on screen to carry it.
+ */
+async function saveIcon(identifier: string): Promise<void> {
   const iconVal = get(icon);
   if (!iconVal)
     return;
@@ -60,7 +67,7 @@ async function saveIcon(identifier: string) {
     setLastRefreshedAssetIcon();
   }
   catch (error: unknown) {
-    showErrorMessage(
+    notifyError(
       t('asset_form.icon_upload.title'),
       t('asset_form.icon_upload.description', { message: getErrorMessage(error) }),
     );

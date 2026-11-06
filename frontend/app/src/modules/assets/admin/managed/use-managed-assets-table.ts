@@ -11,7 +11,6 @@ import { type AssetRequestPayload, IgnoredAssetHandlingType, type IgnoredAssetsH
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { fromRequest } from '@/modules/core/api/request-result';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
 import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
@@ -46,13 +45,17 @@ interface UseManagedAssetsTableReturn {
   /** Jumps to a page. */
   setPage: (page: number) => void;
   /**
-   * Opens the delete confirmation for one asset; deletes only once accepted.
+   * Deletes an asset the user already confirmed at its row.
    *
    * @remarks
    * A successful delete also drops the asset from the info cache, which otherwise keeps serving the
    * name and symbol of something that no longer exists.
    */
-  showDeleteConfirmation: (item: SupportedAsset) => void;
+  deleteAsset: (item: SupportedAsset) => Promise<void>;
+  /** What a row's delete button asks before deleting its asset. */
+  deleteConfirm: (item: SupportedAsset) => { title: string; message: string };
+  /** Why the last delete failed, named above the table. */
+  deleteFailure: Readonly<Ref<{ title: string; error: unknown } | undefined>>;
   /** The active sort. */
   sort: Ref<DataTableSortData<SupportedAsset>>;
 }
@@ -62,12 +65,12 @@ interface UseManagedAssetsTableReturn {
  * deleting a row.
  *
  * @remarks
- * Deleting an asset is irreversible and is the only destructive path here, so it goes through a
- * confirmation and reports a failure rather than silently leaving the row in place.
+ * Deleting an asset is irreversible and is the only destructive path here, so the row asks first
+ * and a failure is named above the table rather than silently leaving the row in place.
  *
  * @param mainPage - whether this owns the route, and so may sync its state to the URL
  * @param assetTypes - the types the filter offers, loaded by {@link useManagedAssetForm}
- * @returns the table's bindings; only {@link UseManagedAssetsTableReturn.showDeleteConfirmation}
+ * @returns the table's bindings; only {@link UseManagedAssetsTableReturn.deleteAsset}
  * deletes anything
  */
 export function useManagedAssetsTable(
@@ -113,18 +116,13 @@ export function useManagedAssetsTable(
     urlState: routeWhen(mainPage),
   });
 
-  const { showDeleteConfirmation } = useTableRowDeletion<SupportedAsset>({
+  const { deleteConfirm, deleteRow, failure: deleteFailure } = useTableRowDeletion<SupportedAsset>({
     confirm: item => ({
       message: t('asset_management.confirm_delete.message', { asset: item?.symbol ?? '' }),
       title: t('asset_management.confirm_delete.title'),
     }),
     deleteItem: async item => deleteAsset(item.identifier),
-    errorMessage: (item, error) => ({
-      description: t('asset_management.delete_error', {
-        address: item.identifier,
-        message: getErrorMessage(error),
-      }),
-    }),
+    failureTitle: item => t('asset_management.delete_error', { address: item.identifier }),
     onDeleted: async (item) => {
       await refetch();
       deleteCacheKey(item.identifier);
@@ -154,7 +152,9 @@ export function useManagedAssetsTable(
     pagination,
     refetch,
     setPage,
-    showDeleteConfirmation,
+    deleteAsset: deleteRow,
+    deleteConfirm,
+    deleteFailure,
     sort,
   };
 }

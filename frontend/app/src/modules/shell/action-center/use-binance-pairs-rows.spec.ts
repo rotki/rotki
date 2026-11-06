@@ -5,11 +5,10 @@ import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-con
 import { useBinancePairsRows } from '@/modules/shell/action-center/use-binance-pairs-rows';
 import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
-const { queryBinanceUserMarkets, show, suppressed, updateFrontendSetting } = await vi.hoisted(async () => {
+const { queryBinanceUserMarkets, suppressed, updateFrontendSetting } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   return {
     queryBinanceUserMarkets: vi.fn<(name: string, location: string) => Promise<string[]>>(),
-    show: vi.fn<(message: { title: string; message: string }, onConfirm: () => Promise<void>) => void>(),
     suppressed: ref<string[]>([]),
     updateFrontendSetting: vi.fn<(payload: object) => Promise<{ success: boolean }>>(),
   };
@@ -25,10 +24,6 @@ vi.mock('@/modules/settings/use-setting', () => ({
 
 vi.mock('@/modules/settings/use-settings-operations', () => ({
   useSettingsOperations: (): object => ({ updateFrontendSetting }),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): object => ({ show }),
 }));
 
 let scope: EffectScope | undefined;
@@ -95,16 +90,13 @@ describe('modules/shell/action-center/use-binance-pairs-rows', () => {
     expect(get(binanceRows().rows)).toEqual([]);
   });
 
-  it('should ask before suppressing an account, then add it to the suppressed accounts', async () => {
+  it('should have the row ask before suppressing an account, then add it to the suppressed accounts', () => {
     set(suppressed, ['binanceus-other']);
     const option = get(binanceRows().rows)[0].options.find(({ id }) => id === 'do-not-show-again');
     assert(option?.target.kind === 'run');
-    option.target.run();
+    expect(option.confirm?.title).toBe('action_center.rows.integrations.binance_pairs_missing.suppress_confirm.title::Binance, main');
 
-    expect(updateFrontendSetting).not.toHaveBeenCalled();
-    const [message, onConfirm] = show.mock.calls[0];
-    expect(message.title).toBe('action_center.rows.integrations.binance_pairs_missing.suppress_confirm.title::Binance, main');
-    await onConfirm();
+    option.target.run();
 
     expect(updateFrontendSetting).toHaveBeenCalledWith({ suppressBinancePairsMissing: ['binanceus-other', 'binance-main'] });
   });

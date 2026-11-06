@@ -1,4 +1,4 @@
-import type { ExchangeFormData } from '@/modules/balances/types/exchanges';
+import type { Exchange, ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { bigNumberify } from '@rotki/common';
 import { createTestExchange } from '@test/utils/create-data';
 import { err, ok } from 'plainfp/result';
@@ -6,12 +6,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 
 const runTaskMock = vi.fn();
 const notifyError = vi.fn();
 const queryExchangeBalances = vi.fn();
 const callSetupExchange = vi.fn<(payload: ExchangeFormData) => Promise<string>>();
+const queryRemoveExchange = vi.fn<(exchange: Exchange) => Promise<boolean>>();
 
 vi.mock('@/modules/core/tasks/use-task-handler', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
@@ -30,7 +32,7 @@ vi.mock('@/modules/balances/api/use-exchange-api', () => ({
   useExchangeApi: vi.fn(() => ({
     callSetupExchange,
     queryExchangeBalances,
-    queryRemoveExchange: vi.fn(),
+    queryRemoveExchange,
   })),
 }));
 
@@ -84,6 +86,7 @@ describe('useExchanges', () => {
       expect(notifyError).not.toHaveBeenCalled();
     });
   });
+
   describe('setupExchange', () => {
     const form: ExchangeFormData = { apiKey: 'key', apiSecret: 'secret', location: 'kraken', mode: 'add', name: 'main', passphrase: '' };
 
@@ -108,6 +111,37 @@ describe('useExchanges', () => {
         ['kraken-other', 'other'],
         [kraken.identifier, 'renamed'],
       ]);
+    });
+  });
+
+  describe('removeExchange', () => {
+    const kraken = createTestExchange('kraken', 'main');
+
+    beforeEach(() => {
+      useConnectedExchangesStore().setConnectedExchanges([kraken]);
+    });
+
+    it('should drop the exchange from the connected list once the backend removed it', async () => {
+      queryRemoveExchange.mockResolvedValue(true);
+
+      await expect(exchanges.removeExchange(kraken)).resolves.toBe(true);
+
+      expect(get(storeToRefs(useConnectedExchangesStore()).connectedExchanges)).toEqual([]);
+    });
+
+    it('should reject with the error, for the page to name, when the removal fails', async () => {
+      const error = new Error('exchange is busy');
+      queryRemoveExchange.mockRejectedValue(error);
+
+      await expect(exchanges.removeExchange(kraken)).rejects.toBe(error);
+
+      expect(get(storeToRefs(useConnectedExchangesStore()).connectedExchanges)).toEqual([kraken]);
+    });
+
+    it('should resolve false, quietly, when the request was cancelled', async () => {
+      queryRemoveExchange.mockRejectedValue(new RequestCancelledError());
+
+      await expect(exchanges.removeExchange(kraken)).resolves.toBe(false);
     });
   });
 });

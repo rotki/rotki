@@ -3,22 +3,21 @@ import type { AddSwapEventPayload, EditSwapEventPayload } from '@/modules/histor
 import type { useHistoryEvents } from '@/modules/history/events/use-history-events';
 import type { PriceIntent, usePriceIntents } from '@/modules/history/management/forms/price-intent';
 import { HistoryEventEntryType } from '@rotki/common';
-import { mockUseNotifications } from '@test/utils/mocks/notifications';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, nextTick, ref, type Ref, useModel } from 'vue';
+import { defineComponent, nextTick, ref, type Ref, shallowRef, useModel } from 'vue';
 import { z } from 'zod';
+import { HistoryEventSaveFailureKey } from '@/modules/history/management/forms/history-event-save-failure';
 import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
 
 type HistoryEvents = ReturnType<typeof useHistoryEvents>;
 
 type PriceIntents = ReturnType<typeof usePriceIntents>;
 
-const { addHistoryEvent, editHistoryEvent, runPriceIntents, showErrorMessage } = vi.hoisted(() => ({
+const { addHistoryEvent, editHistoryEvent, runPriceIntents } = vi.hoisted(() => ({
   addHistoryEvent: vi.fn<HistoryEvents['addHistoryEvent']>(),
   editHistoryEvent: vi.fn<HistoryEvents['editHistoryEvent']>(),
   runPriceIntents: vi.fn<PriceIntents['runPriceIntents']>(),
-  showErrorMessage: vi.fn<(message: string) => void>(),
 }));
 
 vi.mock('@/modules/history/events/use-history-events', () => ({
@@ -32,7 +31,8 @@ vi.mock('@/modules/history/management/forms/price-intent', () => ({
   usePriceIntents: (): PriceIntents => ({ runPriceIntents }),
 }));
 
-vi.mock('@/modules/core/notifications/use-notifications', () => mockUseNotifications({ showErrorMessage }));
+/** The dialog's failure slot, which the forms write a save that blames no field into. */
+const saveFailure = shallowRef<string>();
 
 interface FormState {
   amount: string;
@@ -122,7 +122,7 @@ function mountForm({ errorMessages, serverErrorPaths }: MountOptions = {}): Host
       });
       return (): null => null;
     },
-  }));
+  }), { global: { provide: { [HistoryEventSaveFailureKey]: saveFailure } } });
   return { handle, wrapper };
 }
 
@@ -131,7 +131,7 @@ describe('useHistoryEventForm', () => {
     addHistoryEvent.mockReset().mockResolvedValue({ success: true });
     editHistoryEvent.mockReset().mockResolvedValue({ success: true });
     runPriceIntents.mockReset().mockResolvedValue({ success: true });
-    showErrorMessage.mockReset();
+    set(saveFailure, undefined);
     toEditPayload.mockClear();
   });
 
@@ -188,7 +188,7 @@ describe('useHistoryEventForm', () => {
 
       await expect(handle.save()).resolves.toBe(false);
 
-      expect(showErrorMessage).toHaveBeenCalledExactlyOnceWith(shown);
+      expect(get(saveFailure)).toBe(shown);
       expect(addHistoryEvent).not.toHaveBeenCalled();
     });
 
@@ -254,18 +254,18 @@ describe('useHistoryEventForm', () => {
       handle.form.state.amount = '3';
     }
 
-    it.each(modes)('should show a plain message as a notification and leave the fields clean ($mode)', async ({ identifiers, respond }) => {
+    it.each(modes)('should name a plain message in the dialog and leave the fields clean ($mode)', async ({ identifiers, respond }) => {
       respond({ message: 'backend said no', success: false });
       const { handle } = mountForm();
       seedEdited(handle, identifiers);
 
       await expect(handle.save()).resolves.toBe(false);
 
-      expect(showErrorMessage).toHaveBeenCalledExactlyOnceWith('backend said no');
+      expect(get(saveFailure)).toBe('backend said no');
       expect(handle.form.errors('amount')).toEqual([]);
     });
 
-    it.each(modes)('should show a field map on the fields, without a notification ($mode)', async ({ identifiers, respond }) => {
+    it.each(modes)('should show a field map on the fields, naming nothing in the dialog ($mode)', async ({ identifiers, respond }) => {
       respond({ message: { amount: ['too small'] }, success: false });
       const { handle } = mountForm();
       seedEdited(handle, identifiers);
@@ -273,7 +273,7 @@ describe('useHistoryEventForm', () => {
       await expect(handle.save()).resolves.toBe(false);
 
       expect(handle.form.errors('amount')).toEqual(['too small']);
-      expect(showErrorMessage).not.toHaveBeenCalled();
+      expect(get(saveFailure)).toBeUndefined();
     });
 
     it('should show a field error the endpoint sends as one message, not split into characters', async () => {
@@ -286,6 +286,17 @@ describe('useHistoryEventForm', () => {
       expect(handle.form.errors('amount')).toEqual(['too small']);
     });
 
+    it('should drop the named failure when the next save starts', async () => {
+      addHistoryEvent.mockResolvedValueOnce({ message: 'backend said no', success: false });
+      const { handle } = mountForm();
+      handle.seed(filledState());
+      await handle.save();
+
+      await expect(handle.save()).resolves.toBe(true);
+
+      expect(get(saveFailure)).toBeUndefined();
+    });
+
     it('should report a save rejected with an empty message as unsaved, with the generic save error', async () => {
       addHistoryEvent.mockResolvedValue({ message: '', success: false });
       const { handle } = mountForm();
@@ -293,7 +304,7 @@ describe('useHistoryEventForm', () => {
 
       await expect(handle.save()).resolves.toBe(false);
 
-      expect(showErrorMessage).toHaveBeenCalledExactlyOnceWith(SAVE_FAILED_KEY);
+      expect(get(saveFailure)).toBe(SAVE_FAILED_KEY);
       expect(handle.form.errors('amount')).toEqual([]);
       expect(handle.form.state.amount).toBe('1');
     });

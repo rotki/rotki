@@ -1,9 +1,9 @@
+import { externalLinks } from '@shared/external-links';
 import { createMock } from '@test/utils/create-mock';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { type DOMWrapper, mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePremium } from '@/modules/premium/use-premium';
 import { usePremiumCredentialsApi } from '@/modules/premium/use-premium-credentials-api';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
@@ -11,6 +11,7 @@ import PremiumSettings from '@/pages/api-keys/premium/index.vue';
 
 vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> => ({
   useInterop: vi.fn().mockReturnValue(createMock<ReturnType<typeof useInterop>>({
+    openUrl: vi.fn(async () => {}),
     premiumUserLoggedIn: vi.fn(),
   })),
 }));
@@ -125,23 +126,105 @@ describe('premium-settings', () => {
     expect(field('api-secret').element.value).toBe('');
   });
 
-  it('should update premium status upon removing keys', async () => {
-    const premium = usePremium();
-    set(premium, true);
+  it('should name a refused save above the cards, keeping what was typed', async () => {
+    api.setPremiumCredentials = vi.fn().mockRejectedValue(new Error('invalid api key'));
 
+    await field('api-key').setValue('1234');
+    await field('api-secret').setValue('5678');
+    await submit();
+
+    const strip = wrapper.find('[data-testid=premium-settings-failure]');
+    expect(strip.text()).toContain('invalid api key');
+    expect(field('api-key').element.value).toBe('1234');
+  });
+
+  it('should drop the named failure when the next save starts', async () => {
+    api.setPremiumCredentials = vi.fn().mockRejectedValueOnce(new Error('invalid api key')).mockResolvedValue(true);
+
+    await field('api-key').setValue('1234');
+    await field('api-secret').setValue('5678');
+    await submit();
+    await submit();
+
+    expect(wrapper.find('[data-testid=premium-settings-failure]').exists()).toBe(false);
+  });
+
+  async function refuseForDeviceLimit(): Promise<void> {
+    api.setPremiumCredentials = vi.fn().mockRejectedValue(new Error('too many devices _DEVICE_LIMIT_LINK_'));
+
+    await field('api-key').setValue('1234');
+    await field('api-secret').setValue('5678');
+    await submit();
+  }
+
+  it('should name a device limit refusal in the strip, without the link marker', async () => {
+    await refuseForDeviceLimit();
+
+    const strip = wrapper.find('[data-testid=premium-settings-failure]');
+    expect(strip.text()).toContain('too many devices');
+    expect(strip.text()).not.toContain('_DEVICE_LIMIT_LINK_');
+    expect(document.body.querySelector('[data-testid=inline-confirm]')).toBeNull();
+  });
+
+  it('should open the devices page from the device limit strip', async () => {
+    await refuseForDeviceLimit();
+
+    await wrapper.find('[data-testid=premium-settings-device-limit-learn-more]').trigger('click');
+
+    const { openUrl } = useInterop();
+    expect(openUrl).toHaveBeenCalledWith(externalLinks.premiumDevices);
+  });
+
+  it('should offer the devices link only for a device limit refusal', async () => {
+    api.setPremiumCredentials = vi.fn().mockRejectedValue(new Error('invalid api key'));
+
+    await field('api-key').setValue('1234');
+    await field('api-secret').setValue('5678');
+    await submit();
+
+    expect(wrapper.find('[data-testid=premium-settings-failure]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=premium-settings-device-limit-learn-more]').exists()).toBe(false);
+  });
+
+  async function askToRemove(): Promise<void> {
+    set(usePremium(), true);
     await nextTick();
     api.deletePremiumCredentials = vi.fn().mockResolvedValue({ result: true });
 
     await wrapper.find('[data-testid=premium-delete]').trigger('click');
     await nextTick();
     await flushPromises();
-    await flushPromises();
+  }
 
-    const { confirm } = useConfirmStore();
-    await confirm();
+  function questionButton(testId: 'inline-confirm-accept' | 'inline-confirm-cancel'): HTMLElement {
+    const button = document.body.querySelector<HTMLElement>(`[data-testid=${testId}]`);
+    assert(button);
+    return button;
+  }
+
+  it('should ask beside the remove button and keep the keys until accepted', async () => {
+    await askToRemove();
+
+    expect(document.body.querySelector('[data-testid=inline-confirm]')?.textContent).toContain('premium_settings.delete_confirmation.message');
+    expect(api.deletePremiumCredentials).not.toHaveBeenCalled();
+  });
+
+  it('should update premium status upon removing keys', async () => {
+    await askToRemove();
+
+    questionButton('inline-confirm-accept').click();
     await flushPromises();
 
     const { premiumUserLoggedIn } = useInterop();
     expect(premiumUserLoggedIn).toHaveBeenCalledWith(false);
+  });
+
+  it('should keep the keys when the question is cancelled', async () => {
+    await askToRemove();
+
+    questionButton('inline-confirm-cancel').click();
+    await flushPromises();
+
+    expect(api.deletePremiumCredentials).not.toHaveBeenCalled();
   });
 });

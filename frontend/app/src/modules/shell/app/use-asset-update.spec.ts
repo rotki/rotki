@@ -1,4 +1,5 @@
 import type { ApplyUpdateResult, AssetUpdateCheckResult, AssetUpdateConflictResult } from '@/modules/assets/types';
+import { startPromise } from '@shared/utils';
 import { createMock } from '@test/utils/create-mock';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { err, ok, type Result } from 'plainfp/result';
@@ -12,8 +13,6 @@ const {
   checkForUpdate,
   reload,
   restarting,
-  setMessage,
-  show,
 } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   return {
@@ -21,8 +20,6 @@ const {
     checkForUpdate: vi.fn(),
     reload: vi.fn(),
     restarting: ref<boolean>(false),
-    setMessage: vi.fn(),
-    show: vi.fn(),
   };
 });
 
@@ -36,14 +33,6 @@ vi.mock('@/modules/shell/app/use-backend-reload', () => ({
 
 vi.mock('@/modules/auth/use-restarting-status', () => ({
   useRestartingStatus: (): Record<string, unknown> => ({ restarting }),
-}));
-
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): Record<string, unknown> => ({ setMessage }),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): Record<string, unknown> => ({ show }),
 }));
 
 const wrappers: VueWrapper[] = [];
@@ -152,42 +141,52 @@ describe('modules/shell/app/useAssetUpdate', () => {
     });
 
     it('should tell a settings user there was nothing to do', async () => {
-      const { check } = mountUpdate(false);
+      const { check, upToDate } = mountUpdate(false);
 
       await check();
 
-      expect(setMessage).toHaveBeenCalledOnce();
+      expect(get(upToDate)).toBe(true);
       expect(onSkip).not.toHaveBeenCalled();
     });
 
-    it('should move the app on rather than message when it owns the screen', async () => {
-      const { check } = mountUpdate(true);
+    it('should stop saying so when the next check starts', async () => {
+      const { check, upToDate } = mountUpdate(false);
+      await check();
+      checkForUpdate.mockReturnValueOnce(new Promise(() => {}));
+
+      startPromise(check());
+
+      expect(get(upToDate)).toBe(false);
+    });
+
+    it('should move the app on rather than say so when it owns the screen', async () => {
+      const { check, upToDate } = mountUpdate(true);
       await flushPromises();
       onSkip.mockClear();
 
       await check();
 
       expect(onSkip).toHaveBeenCalledOnce();
-      expect(setMessage).not.toHaveBeenCalled();
+      expect(get(upToDate)).toBe(false);
     });
 
     it('should not tell a settings user they are up to date when the check failed', async () => {
       checkFails(TaskFailed({ message: 'unreachable' }));
-      const { check, showUpdateDialog } = mountUpdate(false);
+      const { check, showUpdateDialog, upToDate } = mountUpdate(false);
 
       await check();
 
-      expect(setMessage).not.toHaveBeenCalled();
+      expect(get(upToDate)).toBe(false);
       expect(get(showUpdateDialog)).toBe(false);
     });
 
     it('should not tell a settings user they are up to date when the check was cancelled', async () => {
       checkFails(Cancelled({ message: 'cancelled' }));
-      const { check } = mountUpdate(false);
+      const { check, upToDate } = mountUpdate(false);
 
       await check();
 
-      expect(setMessage).not.toHaveBeenCalled();
+      expect(get(upToDate)).toBe(false);
     });
 
     it('should move the app on when a check it owns the screen for fails', async () => {
@@ -196,7 +195,6 @@ describe('modules/shell/app/useAssetUpdate', () => {
       await flushPromises();
 
       expect(onSkip).toHaveBeenCalledOnce();
-      expect(setMessage).not.toHaveBeenCalled();
     });
 
     it('should not offer a version the user already skipped', async () => {
@@ -342,13 +340,13 @@ describe('modules/shell/app/useAssetUpdate', () => {
   describe('a conflicting update', () => {
     it('should surface the conflicts for resolution rather than reporting success', async () => {
       applyReturns({ conflicts: [conflict('ETH')], kind: 'conflicts' });
-      const { conflicts, modelShowConflictDialog, updateAssets } = mountUpdate();
+      const { conflicts, inlineConfirm, modelShowConflictDialog, updateAssets } = mountUpdate();
 
       await updateAssets();
 
       expect(get(modelShowConflictDialog)).toBe(true);
       expect(get(conflicts)).toHaveLength(1);
-      expect(show).not.toHaveBeenCalled();
+      expect(get(inlineConfirm)).toBe(false);
     });
 
     it('should leave the skipped version alone when the update did not land', async () => {
@@ -366,52 +364,34 @@ describe('modules/shell/app/useAssetUpdate', () => {
     it('should open neither the conflicts nor the confirmation, leaving the failure to its dock row', async () => {
       localStorage.setItem('rotki_skip_asset_db_version', '2');
       applyFails(TaskFailed({ message: 'disk full' }));
-      const { modelShowConflictDialog, skipped, updateAssets } = mountUpdate();
+      const { inlineConfirm, modelShowConflictDialog, skipped, updateAssets } = mountUpdate();
 
       await updateAssets();
 
       expect(get(modelShowConflictDialog)).toBe(false);
-      expect(show).not.toHaveBeenCalled();
+      expect(get(inlineConfirm)).toBe(false);
       expect(get(skipped)).toBe(2);
     });
 
     it('should do the same when the user cancelled the update', async () => {
       applyFails(Cancelled({ message: 'cancelled' }));
-      const { modelShowConflictDialog, updateAssets } = mountUpdate();
+      const { inlineConfirm, modelShowConflictDialog, updateAssets } = mountUpdate();
 
       await updateAssets();
 
       expect(get(modelShowConflictDialog)).toBe(false);
-      expect(show).not.toHaveBeenCalled();
+      expect(get(inlineConfirm)).toBe(false);
     });
   });
 
   describe('confirming a finished update', () => {
-    it('should ask a settings user to confirm before restarting', async () => {
-      const { updateAssets } = mountUpdate(false);
-
-      await updateAssets();
-
-      expect(show).toHaveBeenCalledOnce();
-      expect(reload).not.toHaveBeenCalled();
-    });
-
-    it('should restart once that confirmation is accepted', async () => {
-      const { updateAssets } = mountUpdate(false);
-      await updateAssets();
-
-      await show.mock.calls[0][1]();
-
-      expect(reload).toHaveBeenCalledOnce();
-    });
-
-    it('should confirm inline when it owns the screen, since there is no dialog host', async () => {
-      const { inlineConfirm, updateAssets } = mountUpdate(true);
+    it.each([false, true])('should report it in place, without restarting yet (headless: %s)', async (headless) => {
+      const { inlineConfirm, updateAssets } = mountUpdate(headless);
 
       await updateAssets();
 
       expect(get(inlineConfirm)).toBe(true);
-      expect(show).not.toHaveBeenCalled();
+      expect(reload).not.toHaveBeenCalled();
     });
   });
 

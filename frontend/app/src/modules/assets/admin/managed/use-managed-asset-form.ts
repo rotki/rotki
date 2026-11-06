@@ -2,8 +2,6 @@ import type { Nullable, SupportedAsset } from '@rotki/common';
 import type { MaybeRefOrGetter, Ref } from 'vue';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { EVM_TOKEN } from '@/modules/assets/types';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 
 function emptyAsset(): SupportedAsset {
   return {
@@ -24,6 +22,10 @@ function emptyAsset(): SupportedAsset {
 interface UseManagedAssetFormReturn {
   /** Asset types the form offers; empty when the backend could not be reached. */
   assetTypes: Readonly<Ref<string[]>>;
+  /** Why the asset types could not be loaded, for the page to name with a retry. */
+  assetTypesFailure: Readonly<Ref<unknown>>;
+  /** Reads the asset types again, clearing the failure first. */
+  loadAssetTypes: () => Promise<void>;
   /** Opens the form on a blank EVM token. */
   add: () => void;
   /** Opens the form on an existing asset. */
@@ -47,8 +49,8 @@ interface UseManagedAssetFormReturn {
  * edit, and the asset types it offers.
  *
  * @remarks
- * The asset types are read once on mount. A failure there is reported but not fatal: the form still
- * opens, with an empty type list, rather than the page refusing to load.
+ * The asset types are read once on mount. A failure there is exposed for the page to name, but not
+ * fatal: the form still opens, with an empty type list, rather than the page refusing to load.
  *
  * @returns the form's bindings; `identifier` is watched, so a route change reopens the form
  */
@@ -56,10 +58,9 @@ export function useManagedAssetForm(identifier: MaybeRefOrGetter<Nullable<string
   const modelValue = ref<SupportedAsset>();
   const editMode = shallowRef<boolean>(false);
   const assetTypes = ref<string[]>([]);
+  const assetTypesFailure = shallowRef<unknown>();
 
-  const { t } = useI18n({ useScope: 'global' });
   const { getAssetTypes, queryAllAssets } = useAssetManagementApi();
-  const { setMessage } = useMessageStore();
 
   function add(): void {
     set(modelValue, emptyAsset());
@@ -90,23 +91,28 @@ export function useManagedAssetForm(identifier: MaybeRefOrGetter<Nullable<string
     await editAsset(assetId);
   });
 
-  onBeforeMount(async () => {
+  async function loadAssetTypes(): Promise<void> {
+    set(assetTypesFailure, undefined);
     try {
       set(assetTypes, await getAssetTypes());
     }
     catch (error: unknown) {
-      setMessage({
-        description: t('asset_form.types.error', { message: getErrorMessage(error) }),
-      });
+      set(assetTypesFailure, error);
     }
+  }
+
+  onBeforeMount(async () => {
+    await loadAssetTypes();
   });
 
   return {
     add,
     assetTypes: shallowReadonly(assetTypes),
+    assetTypesFailure: readonly(assetTypesFailure),
     edit,
     editAsset,
     editMode: readonly(editMode),
+    loadAssetTypes,
     modelValue,
   };
 }

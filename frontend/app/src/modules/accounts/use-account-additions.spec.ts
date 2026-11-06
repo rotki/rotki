@@ -1,7 +1,7 @@
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { err, isErr, ok, type Result } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { accountAddActivity, accountImportActivity, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
+import { accountAddActivity, accountImportActivity, accountImportTagActivity, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { type AccountPayload, type XpubAccountPayload, XpubKeyType } from '@/modules/accounts/blockchain-accounts';
 import { Cancelled, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { peekActivityDetail } from '@/modules/task-center/use-activity-detail';
@@ -146,6 +146,22 @@ describe('useAccountAdditions', () => {
       expect(await submitTask.mock.results[0]?.value).toStrictEqual(
         err(Skipped({ message: 'actions.balances.blockchain_accounts_add.skipped.tracked' })),
       );
+      expect(runTaskResult).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('reportFailedTag', () => {
+    it('should settle failed with the backend message, under the import, on the tag\'s own id', async () => {
+      const parent = accountImportActivity.id({ source: 'csv' });
+      const { useAccountAdditions } = await importModule();
+      await useAccountAdditions().reportFailedTag('savings', 'tag name is taken', { parent, userStarted: true });
+
+      expect(submitTask).toHaveBeenCalledWith(expect.objectContaining({
+        id: accountImportTagActivity.id({ tag: 'savings' }),
+        parent,
+        userStarted: true,
+      }));
+      expect(await submitTask.mock.results[0]?.value).toStrictEqual(err(TaskFailed({ message: 'tag name is taken' })));
       expect(runTaskResult).not.toHaveBeenCalled();
     });
   });

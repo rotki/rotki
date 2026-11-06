@@ -22,7 +22,7 @@ interface UseSelectedAssetSpamReturn {
  */
 export function useSelectedAssetIgnoring(): UseSelectedAssetIgnoringReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { showErrorMessage } = useNotifications();
+  const { notifyWarning } = useNotifications();
   const { isAssetIgnored } = useAssetsStore();
   const { ignoreAsset, unignoreAsset } = useIgnoredAssetOperations();
 
@@ -40,7 +40,7 @@ export function useSelectedAssetIgnoring(): UseSelectedAssetIgnoringReturn {
 
     if (ids.length === 0) {
       const choice = ignored ? 1 : 2;
-      showErrorMessage(t('ignore.no_items.title', choice), t('ignore.no_items.description', choice));
+      notifyWarning(t('ignore.no_items.title', choice), t('ignore.no_items.description', choice));
       return false;
     }
 
@@ -57,14 +57,14 @@ export function useSelectedAssetIgnoring(): UseSelectedAssetIgnoringReturn {
  */
 export function useSelectedAssetSpam(): UseSelectedAssetSpamReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { showErrorMessage } = useNotifications();
+  const { notifyWarning } = useNotifications();
   const { markAssetsAsSpam } = useSpamAsset();
 
   async function markSelectedAsSpam(identifiers: string[]): Promise<boolean> {
     const ids = identifiers.filter(uniqueStrings);
 
     if (ids.length === 0) {
-      showErrorMessage(t('ignore.spam.no_items.title'), t('ignore.spam.no_items.description'));
+      notifyWarning(t('ignore.spam.no_items.title'), t('ignore.spam.no_items.description'));
       return false;
     }
 

@@ -13,19 +13,17 @@ const {
   repullingEthStakingEvents,
   repullingExchangeEvents,
   repullingTransactions,
+  notifyError,
   resetUndecodedTransactionsStatus,
-  setMessage,
   shouldShowConfirmation,
-  show,
 } = vi.hoisted(() => ({
   createDefaultFormData: vi.fn(),
   repullingEthStakingEvents: vi.fn(),
   repullingExchangeEvents: vi.fn(),
   repullingTransactions: vi.fn(),
+  notifyError: vi.fn<(title: string, message: string) => void>(),
   resetUndecodedTransactionsStatus: vi.fn(),
-  setMessage: vi.fn(),
   shouldShowConfirmation: vi.fn(),
-  show: vi.fn<(message: unknown, onConfirm: () => void) => void>(),
 }));
 
 vi.mock('@/modules/history/events/tx/use-history-transactions', () => ({
@@ -47,12 +45,8 @@ vi.mock('@/modules/history/use-decoding-status-store', () => ({
   useDecodingStatusStore: (): Record<string, unknown> => ({ resetUndecodedTransactionsStatus }),
 }));
 
-vi.mock('@/modules/core/common/use-message-store', () => ({
-  useMessageStore: (): Record<string, unknown> => ({ setMessage }),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): Record<string, unknown> => ({ show }),
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
+  useNotifications: (): Record<string, unknown> => ({ notifyError }),
 }));
 
 vi.mock('@/modules/core/common/logging/logging', () => ({
@@ -123,35 +117,59 @@ describe('modules/history/events/tx/useRepullingTransactionSubmission', () => {
       expect(repullingTransactions).not.toHaveBeenCalled();
     });
 
-    it('should ask for confirmation before a wide blockchain repull', async () => {
+    it('should ask in the dialog, keeping it open, before a wide blockchain repull', async () => {
       shouldShowConfirmation.mockReturnValue(true);
-      const { submit } = submission();
+      const { askingWideRepull, open, submit } = submission();
 
       await submit();
 
-      expect(show).toHaveBeenCalledOnce();
+      expect(get(askingWideRepull)).toBe(true);
+      expect(get(open)).toBe(true);
       expect(repullingTransactions).not.toHaveBeenCalled();
     });
 
-    it('should repull once the confirmation is accepted', async () => {
+    it('should repull once the question is accepted', async () => {
       shouldShowConfirmation.mockReturnValue(true);
-      const { submit } = submission();
+      const { answerWideRepull, askingWideRepull, submit } = submission();
 
       await submit();
-      show.mock.calls[0][1]();
-      await flushPromises();
+      await answerWideRepull(true);
 
+      expect(get(askingWideRepull)).toBe(false);
       expect(repullingTransactions).toHaveBeenCalledOnce();
     });
 
-    it.each(['exchange', 'eth_staking'] as const)('should never confirm a %s repull', async (type) => {
+    it('should go back to the form, repulling nothing, when the question is declined', async () => {
       shouldShowConfirmation.mockReturnValue(true);
-      const { modelAccountType, submit } = submission();
+      const { answerWideRepull, askingWideRepull, open, submit } = submission();
+
+      await submit();
+      await answerWideRepull(false);
+
+      expect(get(askingWideRepull)).toBe(false);
+      expect(get(open)).toBe(true);
+      expect(repullingTransactions).not.toHaveBeenCalled();
+    });
+
+    it('should drop the question when the dialog closes', async () => {
+      shouldShowConfirmation.mockReturnValue(true);
+      const { askingWideRepull, open, submit } = submission();
+
+      await submit();
+      set(open, false);
+      await flushPromises();
+
+      expect(get(askingWideRepull)).toBe(false);
+    });
+
+    it.each(['exchange', 'eth_staking'] as const)('should never ask about a %s repull', async (type) => {
+      shouldShowConfirmation.mockReturnValue(true);
+      const { askingWideRepull, modelAccountType, submit } = submission();
       set(modelAccountType, type);
 
       await submit();
 
-      expect(show).not.toHaveBeenCalled();
+      expect(get(askingWideRepull)).toBe(false);
     });
   });
 
@@ -305,13 +323,13 @@ describe('modules/history/events/tx/useRepullingTransactionSubmission', () => {
   });
 
   describe('when the repull is rejected', () => {
-    it('should show a plain failure as a message', async () => {
+    it('should report a plain failure in a toast, the dialog having closed', async () => {
       repullingTransactions.mockRejectedValue(new Error('backend down'));
       const { submit } = submission();
 
       await submit();
 
-      expect(setMessage).toHaveBeenCalledExactlyOnceWith({ description: 'backend down' });
+      expect(notifyError).toHaveBeenCalledExactlyOnceWith('actions.repulling_transaction.task.title', 'backend down');
     });
 
     it('should keep the form filled in, so the user can correct it', async () => {
@@ -335,7 +353,7 @@ describe('modules/history/events/tx/useRepullingTransactionSubmission', () => {
 
       expect(get(modelErrorMessages)).toEqual({ address: ['not an address'] });
       expect(form.validate).toHaveBeenCalledTimes(2);
-      expect(setMessage).not.toHaveBeenCalled();
+      expect(notifyError).not.toHaveBeenCalled();
     });
 
     it('should stop showing progress', async () => {

@@ -10,7 +10,6 @@ import { priceDecimals } from '@/modules/assets/prices/price-decimals';
 import { useLatestPrices } from '@/modules/assets/prices/use-latest-price-manager';
 import { type PriceAddLink, usePriceAddLink } from '@/modules/assets/prices/use-price-add-link';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
@@ -60,17 +59,10 @@ useRememberTableSorting<ManualPriceWithUsd>(TableId.LATEST_PRICES, sort, headers
 
 const { deletePrice, emptyState, items, loading, refreshCurrentPrices, refreshing } = useLatestPrices(filter);
 
-const { show } = useConfirmStore();
-
-function showDeleteConfirmation(item: ManualPriceWithUsd) {
-  show(
-    {
-      message: t('price_table.delete.dialog.message'),
-      title: t('price_table.delete.dialog.title'),
-    },
-    () => deletePrice(item),
-  );
-}
+const deleteConfirm = computed<{ title: string; message: string }>(() => ({
+  message: t('price_table.delete.dialog.message'),
+  title: t('price_table.delete.dialog.title'),
+}));
 
 const prefill = ref<ManualPriceFormPayload | null>(null);
 
@@ -190,7 +182,8 @@ onMounted(async () => {
             :disabled="loading"
             :delete-tooltip="t('price_table.actions.delete.tooltip')"
             :edit-tooltip="t('price_table.actions.edit.tooltip')"
-            @delete-click="showDeleteConfirmation(row)"
+            :delete-confirm="deleteConfirm"
+            @delete-click="deletePrice(row)"
             @edit-click="edit(row)"
           />
         </template>

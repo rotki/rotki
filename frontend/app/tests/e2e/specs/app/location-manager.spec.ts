@@ -123,8 +123,8 @@ test.describe.serial('location manager', () => {
   test('deletes a location nothing uses', async () => {
     const scratch = await customLocation(SCRATCH);
     await manager.requestDelete(scratch.identifier);
-    await expect(manager.confirmDialog()).toContainText('Delete location');
-    await manager.confirm();
+    await expect(manager.deleteQuestion(scratch.identifier)).toHaveAttribute('aria-label', 'Delete location');
+    await manager.confirmDelete(scratch.identifier);
 
     await expect(manager.row(scratch.identifier)).toHaveCount(0);
     await expect.poll(async () => apiCustomLocation(api, SCRATCH), { timeout: TIMEOUT_MEDIUM }).toBeUndefined();

@@ -2,6 +2,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
+import { useHistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
 import {
   useHistoryEventsFiltersChips,
   type UseHistoryEventsFiltersChipsReturn,
@@ -19,12 +20,6 @@ const { useRouteMock, useRouterMock } = vi.hoisted(() => ({
 vi.mock('vue-router', () => ({
   useRoute: useRouteMock,
   useRouter: useRouterMock,
-}));
-
-const show = vi.fn();
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): Record<string, unknown> => ({ show }),
 }));
 
 const autoFixGroupIds = ref<string[]>([]);
@@ -307,21 +302,12 @@ describe('useHistoryEventsFiltersChips', () => {
       set(groupIdentifiers, ['g1', 'g2']);
     });
 
-    async function confirmAndRun(chips: UseHistoryEventsFiltersChipsReturn): Promise<void> {
-      chips.confirmFixDuplicate();
-      const [, onConfirm] = show.mock.calls[0];
-      await onConfirm();
-    }
-
-    it('should ask before fixing anything', () => {
+    it('should count the pinned groups in the question the fix asks beside its button', () => {
       const { chips } = mountChips();
 
-      chips.confirmFixDuplicate();
-
-      const [message] = show.mock.calls[0];
-      expect(message).toStrictEqual({
+      expect(get(chips.fixQuestion)).toStrictEqual({
+        confirmLabel: 'customized_event_duplicates.actions.fix',
         message: 'customized_event_duplicates.actions.fix_selected_confirm::2',
-        primaryAction: 'common.actions.confirm',
         title: 'customized_event_duplicates.actions.fix_selected',
       });
       expect(fixDuplicates).not.toHaveBeenCalled();
@@ -330,28 +316,31 @@ describe('useHistoryEventsFiltersChips', () => {
     it('should clear the filter and reload once the fix succeeds', async () => {
       const { chips } = mountChips();
 
-      await confirmAndRun(chips);
+      await chips.fixShownDuplicates();
 
       expect(fixDuplicates).toHaveBeenCalledWith(['g1', 'g2']);
       expect(routerPush).toHaveBeenCalledTimes(1);
       expect(onRefresh).toHaveBeenCalledTimes(1);
     });
 
-    it('should leave the filter alone when the fix fails', async () => {
+    it('should leave the filter alone and name the failure above the table when the fix fails', async () => {
       fixDuplicates.mockResolvedValue({ message: 'nope', success: false });
+      const { actionFailure, clearActionFailure } = useHistoryEventsActionFailure();
+      clearActionFailure();
       const { chips } = mountChips();
 
-      await confirmAndRun(chips);
+      await chips.fixShownDuplicates();
 
       expect(routerPush).not.toHaveBeenCalled();
       expect(onRefresh).not.toHaveBeenCalled();
+      expect(get(actionFailure)).toEqual({ failure: 'nope', title: 'actions.customized_event_duplicates.fix_error.title' });
     });
 
     it('should not call the backend when nothing is pinned', async () => {
       set(groupIdentifiers, []);
       const { chips } = mountChips();
 
-      await confirmAndRun(chips);
+      await chips.fixShownDuplicates();
 
       expect(fixDuplicates).not.toHaveBeenCalled();
       expect(onRefresh).not.toHaveBeenCalled();

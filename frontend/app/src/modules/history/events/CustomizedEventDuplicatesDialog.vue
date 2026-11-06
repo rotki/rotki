@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
+import CustomizedEventDuplicatesFooter from '@/modules/history/events/CustomizedEventDuplicatesFooter.vue';
 import CustomizedEventDuplicatesList from '@/modules/history/events/CustomizedEventDuplicatesList.vue';
 import DuplicateRowActions from '@/modules/history/events/DuplicateRowActions.vue';
 import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
@@ -26,6 +27,7 @@ function closeDialog(): void {
 }
 
 const {
+  autoFixActionFailure,
   autoFixError,
   autoFixLoading,
   autoFixRows,
@@ -33,10 +35,12 @@ const {
   fixSingle,
   ignoreSelected,
   ignoreSingle,
+  ignoredActionFailure,
   ignoredError,
   ignoredLoading,
   ignoredRows,
   initialize,
+  manualReviewActionFailure,
   manualReviewError,
   manualReviewLoading,
   manualReviewRows,
@@ -130,6 +134,7 @@ onBeforeMount(async () => {
             :rows="autoFixRows"
             :loading="autoFixLoading"
             :error="autoFixError"
+            :action-failure="autoFixActionFailure"
             @retry="retry(DuplicatesTab.AUTO_FIX)"
             @show-in-history="showInHistoryEvents(autoFixGroupIds, DuplicateHandlingStatus.AUTO_FIX)"
           >
@@ -152,6 +157,7 @@ onBeforeMount(async () => {
             :rows="manualReviewRows"
             :loading="manualReviewLoading"
             :error="manualReviewError"
+            :action-failure="manualReviewActionFailure"
             @retry="retry(DuplicatesTab.MANUAL_REVIEW)"
             @show-in-history="showInHistoryEvents(manualReviewGroupIds, DuplicateHandlingStatus.MANUAL_REVIEW)"
           >
@@ -172,6 +178,7 @@ onBeforeMount(async () => {
             :rows="ignoredRows"
             :loading="ignoredLoading"
             :error="ignoredError"
+            :action-failure="ignoredActionFailure"
             @retry="retry(DuplicatesTab.IGNORED)"
             @show-in-history="showInHistoryEvents(ignoredGroupIds, DuplicateHandlingStatus.IGNORED)"
           >
@@ -186,116 +193,18 @@ onBeforeMount(async () => {
         </RuiTabItem>
       </RuiTabItems>
 
-      <div class="w-full flex justify-between gap-2 pb-4">
-        <div
-          v-if="modelActiveTab === DuplicatesTab.AUTO_FIX"
-          class="flex gap-2"
-        >
-          <RuiButton
-            variant="outlined"
-            color="primary"
-            data-testid="fix-selected"
-            :disabled="modelSelectedAutoFix.length === 0 || fixLoading"
-            :loading="fixLoading"
-            @click="fixSelected()"
-          >
-            <template #prepend>
-              <RuiIcon
-                size="16"
-                name="lu-wand-sparkles"
-              />
-            </template>
-            {{ t('customized_event_duplicates.actions.fix_selected') }}
-            <RuiChip
-              v-if="modelSelectedAutoFix.length > 0"
-              size="sm"
-              color="primary"
-              class="ml-2 py-0!"
-            >
-              {{ modelSelectedAutoFix.length }}
-            </RuiChip>
-          </RuiButton>
-          <RuiButton
-            variant="outlined"
-            data-testid="ignore-selected"
-            :disabled="modelSelectedAutoFix.length === 0 || ignoreLoading"
-            :loading="ignoreLoading"
-            @click="ignoreSelected()"
-          >
-            <template #prepend>
-              <RuiIcon
-                size="16"
-                name="lu-eye-off"
-              />
-            </template>
-            {{ t('customized_event_duplicates.actions.mark_non_duplicated_selected') }}
-          </RuiButton>
-        </div>
-        <div
-          v-else-if="modelActiveTab === DuplicatesTab.MANUAL_REVIEW"
-          class="flex gap-2"
-        >
-          <RuiButton
-            variant="outlined"
-            data-testid="ignore-selected"
-            :disabled="modelSelectedManualReview.length === 0 || ignoreLoading"
-            :loading="ignoreLoading"
-            @click="ignoreSelected()"
-          >
-            <template #prepend>
-              <RuiIcon
-                size="16"
-                name="lu-eye-off"
-              />
-            </template>
-            {{ t('customized_event_duplicates.actions.mark_non_duplicated_selected') }}
-            <RuiChip
-              v-if="modelSelectedManualReview.length > 0"
-              size="sm"
-              color="primary"
-              class="ml-2 py-0!"
-            >
-              {{ modelSelectedManualReview.length }}
-            </RuiChip>
-          </RuiButton>
-        </div>
-        <div
-          v-else
-          class="flex gap-2"
-        >
-          <RuiButton
-            variant="outlined"
-            color="primary"
-            data-testid="restore-selected"
-            :disabled="modelSelectedIgnored.length === 0 || ignoreLoading"
-            :loading="ignoreLoading"
-            @click="restoreSelected()"
-          >
-            <template #prepend>
-              <RuiIcon
-                size="16"
-                name="lu-rotate-ccw"
-              />
-            </template>
-            {{ t('customized_event_duplicates.actions.restore_selected') }}
-            <RuiChip
-              v-if="modelSelectedIgnored.length > 0"
-              size="sm"
-              color="primary"
-              class="ml-2 py-0!"
-            >
-              {{ modelSelectedIgnored.length }}
-            </RuiChip>
-          </RuiButton>
-        </div>
-        <RuiButton
-          variant="text"
-          data-testid="close-dialog"
-          @click="closeDialog()"
-        >
-          {{ t('common.actions.close') }}
-        </RuiButton>
-      </div>
+      <CustomizedEventDuplicatesFooter
+        :active-tab="modelActiveTab"
+        :auto-fix-count="modelSelectedAutoFix.length"
+        :manual-review-count="modelSelectedManualReview.length"
+        :ignored-count="modelSelectedIgnored.length"
+        :fix-loading="fixLoading"
+        :ignore-loading="ignoreLoading"
+        @fix-selected="fixSelected()"
+        @ignore-selected="ignoreSelected()"
+        @restore-selected="restoreSelected()"
+        @close="closeDialog()"
+      />
     </RuiCard>
   </RuiDialog>
 </template>

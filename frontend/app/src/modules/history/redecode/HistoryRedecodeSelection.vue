@@ -4,6 +4,7 @@ import type { DecodeScope } from '@/modules/history/events/event-payloads';
 import { getTextToken } from '@rotki/common';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import HistoryRedecodeChainItem from '@/modules/history/redecode/HistoryRedecodeChainItem.vue';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 
 const {
   loading,
@@ -22,6 +23,8 @@ const emit = defineEmits<{
 const open = ref<boolean>(false);
 const search = ref<string>('');
 const selection = ref<string[]>([]);
+/** Every chain picked is the full run, which can take a long time, so the footer asks first. */
+const confirmingAll = ref<boolean>(false);
 
 const { t } = useI18n({ useScope: 'global' });
 const { allTxChainsInfo } = useSupportedChains();
@@ -66,13 +69,28 @@ function reset() {
   set(open, false);
   set(selection, []);
   set(search, '');
+  set(confirmingAll, false);
 }
 
-/** Redecodes the picked chains; every chain is the full run, which asks for confirmation before it starts. */
+/** Redecodes the picked chains; every chain is the full run, which the footer asks about first. */
 function redecode() {
+  if (get(selected) && !get(confirmingAll)) {
+    set(confirmingAll, true);
+    return;
+  }
   emit('redecode', get(selected) ? { type: 'all' } : { chains: get(selection), type: 'chains' });
   reset();
 }
+
+watch(open, (isOpen) => {
+  if (!isOpen)
+    set(confirmingAll, false);
+});
+
+watch(selected, (all) => {
+  if (!all)
+    set(confirmingAll, false);
+});
 </script>
 
 <template>
@@ -133,7 +151,24 @@ function redecode() {
       />
     </div>
 
-    <div class="px-4 py-2 border-t border-default flex items-center justify-between">
+    <div
+      v-if="confirmingAll"
+      class="border-t border-default"
+    >
+      <InlineConfirm
+        layout="panel"
+        :title="t('transactions.events_decoding.redecode_all')"
+        :message="t('transactions.events_decoding.confirmation')"
+        :confirm-label="t('transactions.events_decoding.redecode')"
+        :loading="loading"
+        @cancel="confirmingAll = false"
+        @confirm="redecode()"
+      />
+    </div>
+    <div
+      v-else
+      class="px-4 py-2 border-t border-default flex items-center justify-between"
+    >
       <RuiCheckbox
         color="primary"
         :disabled="disabled"

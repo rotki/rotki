@@ -23,7 +23,7 @@ export class AccountSettingsPage {
   }
 
   async confirmSuccess(): Promise<void> {
-    await expect(this.page.locator('[data-testid=message-dialog-title]')).toContainText('Success');
-    await this.page.locator('[data-testid=message-dialog-ok]').click();
+    await expect(this.page.locator('[data-testid=change-password-success]')).toBeVisible();
+    await expect(this.page.locator('[data-testid=change-password-failure]')).toHaveCount(0);
   }
 }

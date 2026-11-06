@@ -14,7 +14,6 @@ import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-st
 import { useBankConnectionsTable } from '@/modules/banks/use-bank-connections-table';
 import { useBanks } from '@/modules/banks/use-banks';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
@@ -34,7 +33,6 @@ const requestedAuthentication = ref<string>();
 const { canAddBank, connections: rows, connectionsError, manifests, manifestsError } = storeToRefs(useBankConnectionsStore());
 const { manifestFor } = useBankConnectionsStore();
 const { refreshBankConnections, refreshSupportedBanks, removeBank, syncBanks } = useBanks();
-const { show } = useConfirmStore();
 const failureMessage = useFailureMessage();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -91,11 +89,12 @@ async function sync(row: BankConnection): Promise<void> {
   await whileSyncing(row, async () => syncBanks({ identifier: row.identifier }));
 }
 
-function showRemoveConfirmation(row: BankConnection): void {
-  show({
+/** What a row's delete button asks; a failed removal is reported by `removeBank` itself. */
+function removeConfirm(row: BankConnection): { title: string; message: string } {
+  return {
     message: t('bank_settings.confirmation.message', { bank: row.displayName, name: row.name }),
     title: t('bank_settings.confirmation.title'),
-  }, async () => removeBank(row));
+  };
 }
 
 onBeforeMount(() => {
@@ -227,10 +226,11 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
           <BankConnectionActions
             :authentication-required="!!row.syncStatus.authChallenge"
             :syncing="isSyncing(row)"
+            :delete-confirm="removeConfirm(row)"
             @authenticate="authenticate(row)"
             @sync="sync(row)"
             @edit="editBank(row)"
-            @delete="showRemoveConfirmation(row)"
+            @delete="removeBank(row)"
           />
         </template>
       </RuiDataTable>

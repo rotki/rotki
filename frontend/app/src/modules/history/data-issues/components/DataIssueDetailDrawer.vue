@@ -13,9 +13,11 @@ import DataIssueDetailContent from '@/modules/history/data-issues/components/Dat
  */
 const open = defineModel<boolean>({ required: true });
 
-const { issue, busy = false } = defineProps<{
+const { issue, busy = false, failure } = defineProps<{
   issue?: DataIssue;
   busy?: boolean;
+  /** The last failed dismiss or retry, named in the detail of the issue it concerns. */
+  failure?: { id: number; title: string; error: unknown };
 }>();
 
 const emit = defineEmits<{
@@ -41,6 +43,7 @@ const review = ref<RemediationTimelineItem>();
     <DataIssueDetailContent
       :issue="issue"
       :busy="busy"
+      :failure="failure"
       @close="open = false"
       @dismiss="emit('dismiss', $event)"
       @retry="emit('retry', $event)"

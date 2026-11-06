@@ -8,9 +8,13 @@ import type {
   HistoryEventEntry,
   StandaloneEditableEvents,
 } from '@/modules/history/events/schemas';
+import type { HistoryEventQuestion } from '@/modules/history/events/types';
+import { startPromise } from '@shared/utils';
+import HistoryEventDuplicateActions from '@/modules/history/events/HistoryEventDuplicateActions.vue';
 import RedecodeEventsButton from '@/modules/history/events/RedecodeEventsButton.vue';
 import { useHistoryEventActionMenu } from '@/modules/history/events/use-history-event-action-menu';
 import { type DecodableEventType, isGroupEditableHistoryEvent } from '@/modules/history/management/forms/form-guards';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 
 const { event, loading, redecoding, duplicateHandlingStatus, groupEvents } = defineProps<{
   event: HistoryEventEntry;
@@ -38,19 +42,21 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const showMenu = ref<boolean>(false);
+/** The delete the menu is asking about in place of its list, until it is answered or closed. */
+const pendingDelete = ref<'transaction' | 'events'>();
 
 const {
   blockEvent,
   canAddEvent,
   canDeleteEvents,
-  confirmFixDuplicate,
-  confirmIgnoreDuplicate,
   decodableEvmEvent,
   deletableEventIds,
   ethBlockEventsDecoding,
   eventWithDecoding,
   eventWithTxRef,
+  fixDuplicate,
   fixLoading,
+  ignoreDuplicate,
   ignoreLoading,
   isAutoFixable,
   isDuplicate,
@@ -80,48 +86,55 @@ function redecodeWithOptions(target: DecodableEventType): void {
   set(showMenu, false);
   emit('redecode-with-options', toRedecodePayload(target));
 }
+
+const deleteQuestion = computed<HistoryEventQuestion | undefined>(() => {
+  const pending = get(pendingDelete);
+  if (pending === 'transaction') {
+    return {
+      message: t('transactions.dialog.delete.message'),
+      title: t('transactions.dialog.delete.title'),
+    };
+  }
+  if (pending === 'events') {
+    return {
+      message: t('transactions.events.confirmation.delete.message'),
+      title: t('transactions.events.confirmation.delete.title'),
+    };
+  }
+  return undefined;
+});
+
+function acceptDelete(): void {
+  const pending = get(pendingDelete);
+  const txRef = get(eventWithTxRef);
+  set(showMenu, false);
+  if (pending === 'transaction' && txRef)
+    emit('delete-tx', txRef);
+  else if (pending === 'events')
+    emit('delete-events', deletableEventIds());
+}
+
+watch(showMenu, (open) => {
+  if (!open)
+    set(pendingDelete, undefined);
+});
 </script>
 
 <template>
   <div class="flex items-center">
-    <RuiButton
-      v-if="isAutoFixable"
-      size="sm"
-      color="primary"
-      class="mr-1"
-      :loading="fixLoading"
-      data-testid="event-fix-duplicate"
-      @click="confirmFixDuplicate()"
-    >
-      <template #prepend>
-        <RuiIcon
-          name="lu-wand-sparkles"
-          size="16"
-        />
-      </template>
-      {{ t('customized_event_duplicates.actions.fix') }}
-    </RuiButton>
-    <RuiButton
-      v-if="isDuplicate"
-      variant="outlined"
-      size="sm"
-      class="mr-2"
-      :loading="ignoreLoading"
-      data-testid="event-ignore-duplicate"
-      @click="confirmIgnoreDuplicate()"
-    >
-      <template #prepend>
-        <RuiIcon
-          name="lu-eye-off"
-          size="16"
-        />
-      </template>
-      {{ t('customized_event_duplicates.actions.mark_non_duplicated') }}
-    </RuiButton>
+    <HistoryEventDuplicateActions
+      :is-auto-fixable="isAutoFixable"
+      :is-duplicate="isDuplicate"
+      :fix-loading="fixLoading"
+      :ignore-loading="ignoreLoading"
+      @fix="startPromise(fixDuplicate())"
+      @ignore="startPromise(ignoreDuplicate())"
+    />
     <RuiMenu
       v-model="showMenu"
       lazy
-      :class-names="{ menu: 'max-w-60' }"
+      :role="deleteQuestion ? 'dialog' : undefined"
+      :class-names="{ menu: deleteQuestion ? 'w-72' : 'max-w-60' }"
       :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'bottom-end' }"
       close-on-content-click
     >
@@ -140,85 +153,97 @@ function redecodeWithOptions(target: DecodableEventType): void {
           />
         </RuiButton>
       </template>
-      <RuiButton
-        v-if="canAddEvent"
-        variant="list"
-        data-testid="event-add"
-        @click="addEvent()"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-plus" />
-        </template>
-        {{ t('transactions.actions.add_event_here') }}
-      </RuiButton>
-      <RuiButton
-        variant="list"
-        data-testid="event-toggle-ignore"
-        @click="emit('toggle-ignore', event)"
-      >
-        <template #prepend>
-          <RuiIcon :name="event.ignoredInAccounting ? 'lu-eye' : 'lu-eye-off'" />
-        </template>
-        {{ event.ignoredInAccounting ? t('transactions.unignore') : t('transactions.ignore') }}
-      </RuiButton>
-      <template v-if="blockEvent">
+      <InlineConfirm
+        v-if="deleteQuestion"
+        layout="panel"
+        tone="error"
+        :title="deleteQuestion.title"
+        :message="deleteQuestion.message"
+        :confirm-label="t('common.actions.delete')"
+        @cancel="showMenu = false"
+        @confirm="acceptDelete()"
+      />
+      <template v-else>
         <RuiButton
+          v-if="canAddEvent"
           variant="list"
-          :disabled="loading || redecoding || ethBlockEventsDecoding"
-          data-testid="event-redecode-block"
-          @click="emit('redecode', toRedecodePayload(blockEvent))"
+          data-testid="event-add"
+          @click="addEvent()"
         >
           <template #prepend>
-            <RuiIcon name="lu-rotate-ccw" />
+            <RuiIcon name="lu-plus" />
           </template>
-          {{ t('transactions.actions.redecode_events') }}
+          {{ t('transactions.actions.add_event_here') }}
+        </RuiButton>
+        <RuiButton
+          variant="list"
+          data-testid="event-toggle-ignore"
+          @click="emit('toggle-ignore', event)"
+        >
+          <template #prepend>
+            <RuiIcon :name="event.ignoredInAccounting ? 'lu-eye' : 'lu-eye-off'" />
+          </template>
+          {{ event.ignoredInAccounting ? t('transactions.unignore') : t('transactions.ignore') }}
+        </RuiButton>
+        <template v-if="blockEvent">
+          <RuiButton
+            variant="list"
+            :disabled="loading || redecoding || ethBlockEventsDecoding"
+            data-testid="event-redecode-block"
+            @click="emit('redecode', toRedecodePayload(blockEvent))"
+          >
+            <template #prepend>
+              <RuiIcon name="lu-rotate-ccw" />
+            </template>
+            {{ t('transactions.actions.redecode_events') }}
+          </RuiButton>
+        </template>
+        <template v-else-if="eventWithDecoding">
+          <RedecodeEventsButton
+            :disabled="loading || redecoding || txEventsDecoding"
+            :has-options="!!decodableEvmEvent"
+            @redecode="redecode(eventWithDecoding)"
+            @redecode-with-options="decodableEvmEvent && redecodeWithOptions(decodableEvmEvent)"
+          />
+        </template>
+        <RuiButton
+          v-if="eventWithTxRef"
+          variant="list"
+          color="error"
+          :disabled="loading"
+          data-testid="event-delete-tx"
+          @click.stop="pendingDelete = 'transaction'"
+        >
+          <template #prepend>
+            <RuiIcon name="lu-trash-2" />
+          </template>
+          {{ t('transactions.actions.delete_transaction') }}
+        </RuiButton>
+        <RuiButton
+          v-else-if="canDeleteEvents"
+          variant="list"
+          color="error"
+          :disabled="loading"
+          data-testid="event-delete-events"
+          @click.stop="pendingDelete = 'events'"
+        >
+          <template #prepend>
+            <RuiIcon name="lu-trash-2" />
+          </template>
+          {{ t('transactions.actions.delete_event') }}
+        </RuiButton>
+        <RuiDivider class="my-2" />
+        <RuiButton
+          variant="list"
+          data-testid="event-report-issue"
+          @click="openReportDialog()"
+        >
+          <template #prepend>
+            <RuiIcon name="lu-bug" />
+          </template>
+          {{ t('actions.history_events.report_issue.action') }}
         </RuiButton>
       </template>
-      <template v-else-if="eventWithDecoding">
-        <RedecodeEventsButton
-          :disabled="loading || redecoding || txEventsDecoding"
-          :has-options="!!decodableEvmEvent"
-          @redecode="redecode(eventWithDecoding)"
-          @redecode-with-options="decodableEvmEvent && redecodeWithOptions(decodableEvmEvent)"
-        />
-      </template>
-      <RuiButton
-        v-if="eventWithTxRef"
-        variant="list"
-        color="error"
-        :disabled="loading"
-        data-testid="event-delete-tx"
-        @click="emit('delete-tx', eventWithTxRef)"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-trash-2" />
-        </template>
-        {{ t('transactions.actions.delete_transaction') }}
-      </RuiButton>
-      <RuiButton
-        v-else-if="canDeleteEvents"
-        variant="list"
-        color="error"
-        :disabled="loading"
-        data-testid="event-delete-events"
-        @click="emit('delete-events', deletableEventIds())"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-trash-2" />
-        </template>
-        {{ t('transactions.actions.delete_event') }}
-      </RuiButton>
-      <RuiDivider class="my-2" />
-      <RuiButton
-        variant="list"
-        data-testid="event-report-issue"
-        @click="openReportDialog()"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-bug" />
-        </template>
-        {{ t('actions.history_events.report_issue.action') }}
-      </RuiButton>
     </RuiMenu>
   </div>
 </template>

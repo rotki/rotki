@@ -3,9 +3,9 @@ import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import { z, type ZodType } from 'zod';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { requiredField } from '@/modules/core/form/fields';
 import { useForm } from '@/modules/core/form/use-form';
+import { useSaveFailure } from '@/modules/core/form/use-save-failure';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import { useLidoCsmApi } from '@/modules/staking/api/use-lido-csm-api';
 import { LidoCsmStakingModule } from '@/modules/staking/lido-csm/constants';
@@ -18,7 +18,8 @@ defineOptions({
 const dialogOpen = defineModel<boolean>({ required: true });
 
 const emit = defineEmits<{
-  refresh: [];
+  /** The operator was added; `warning` says what the backend could not fetch for it, if anything. */
+  added: [warning?: string];
 }>();
 
 interface NodeOperatorState {
@@ -36,8 +37,11 @@ interface NodeOperatorPayload {
 const { t } = useI18n({ useScope: 'global' });
 
 const api = useLidoCsmApi();
-const { setMessage } = useMessageStore();
 const { stakingModuleOptions } = useLidoCsmStakingModules();
+const { capture, clear, failure, modelFieldErrors } = useSaveFailure();
+
+/** What the backend could not fetch for an operator it did add, handed to the page once it closes. */
+const addedWarning = shallowRef<string>();
 
 /**
  * Vuelidate validated the derived address string rather than the selection, so the rule is written
@@ -63,21 +67,11 @@ const form = useForm<NodeOperatorState, NodeOperatorPayload>({
   submit: async (payload: NodeOperatorPayload): Promise<{ success: boolean }> => {
     try {
       const { message } = await api.addNodeOperator(payload);
-
-      if (message) {
-        setMessage({
-          description: message,
-        });
-      }
-
+      set(addedWarning, message || undefined);
       return { success: true };
     }
     catch (error: unknown) {
-      setMessage({
-        description: t('staking_page.lido_csm.messages.add_failed', {
-          message: error instanceof Error ? error.message : String(error),
-        }),
-      });
+      capture(error, { ...payload });
       return { success: false };
     }
   },
@@ -97,16 +91,24 @@ function closeDialog(): void {
   set(dialogOpen, false);
 }
 
+/** The backend names the address field `address`; the form holds it as the picked account. */
+function showFieldErrors({ address, nodeOperatorId }: Record<string, string[]>): void {
+  form.setServerErrors({ nodeOperatorId: nodeOperatorId ?? [], selectedAccount: address ?? [] });
+}
+
 async function submitForm(): Promise<void> {
   if (get(submitting))
     return;
 
+  clear();
   const result = await form.submit();
+  if (result.outcome === 'error')
+    showFieldErrors(get(modelFieldErrors));
   if (result.outcome !== 'success')
     return;
 
   closeDialog();
-  emit('refresh');
+  emit('added', get(addedWarning));
 }
 </script>
 
@@ -119,6 +121,8 @@ async function submitForm(): Promise<void> {
       primary: t('staking_page.lido_csm.form.submit'),
     }"
     :loading="submitting"
+    :failure="failure"
+    :failure-title="t('staking_page.lido_csm.messages.add_failed')"
     :layout="{ autoHeight: true, maxWidth: '560px' }"
     data-testid="lido-csm-dialog"
     @confirm="submitForm()"

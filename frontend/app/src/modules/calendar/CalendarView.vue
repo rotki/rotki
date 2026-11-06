@@ -35,7 +35,7 @@ const {
 
 const { modelSelectedDate, selectedDateEvents, setSelectedDate, modelVisibleDate } = useCalendarDateManagement(eventsWithDate, dateFormat);
 
-const { add, deleteEvent, edit, editMode, modelValue } = useCalendarOperations(modelSelectedDate, fetchData);
+const { add, edit, editMode, modelValue } = useCalendarOperations(modelSelectedDate);
 
 function setToday(): void {
   const now = setTodayData();
@@ -136,7 +136,6 @@ onMounted(async () => {
       v-model="modelValue"
       :loading="isLoading"
       :edit-mode="editMode"
-      @delete="deleteEvent()"
       @refresh="fetchData()"
     />
   </TablePageLayout>

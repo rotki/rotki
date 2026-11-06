@@ -2,11 +2,11 @@ import type { ComputedRef, Ref } from 'vue';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { Collection } from '@/modules/core/common/collection';
 import type { HistoryEventCollectionRow, HistoryEventEntry, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
+import type { HistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { type CustomizedEventDuplicates, useCustomizedEventDuplicatesApi } from '@/modules/history/api/events/use-customized-event-duplicates-api';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 
@@ -25,13 +25,28 @@ export interface FetchDuplicateEventsPayload {
   offset: number;
 }
 
+/**
+ * What runs once a duplicates action settles.
+ *
+ * @remarks
+ * The action reports nothing itself: a success shows as the rows changing, and a failure goes to
+ * `onFailure`, for the surface that asked to name it.
+ */
+export interface DuplicatesActionHandlers {
+  onSuccess?: () => void;
+  onFailure?: (failure: HistoryEventsActionFailure) => void;
+}
+
 interface UseCustomizedEventDuplicatesReturn {
   actionableCount: ComputedRef<number>;
   autoFixCount: ComputedRef<number>;
   autoFixGroupIds: ComputedRef<string[]>;
-  confirmAndFixDuplicate: (groupIdentifiers: string[], onSuccess?: () => void) => void;
-  confirmAndMarkNonDuplicated: (groupIdentifiers: string[], onSuccess?: () => void) => void;
-  confirmAndRestore: (groupIdentifiers: string[], onSuccess?: () => void) => void;
+  /** Fixes the groups, once the button that started it asked (see `useDuplicatesQuestion`). */
+  fixAndSettle: (groupIdentifiers: string[], handlers?: DuplicatesActionHandlers) => Promise<void>;
+  /** Marks the groups as not duplicates, once the button that started it asked. */
+  markNonDuplicatedAndSettle: (groupIdentifiers: string[], handlers?: DuplicatesActionHandlers) => Promise<void>;
+  /** Restores ignored groups, once the button that started it asked. */
+  restoreAndSettle: (groupIdentifiers: string[], handlers?: DuplicatesActionHandlers) => Promise<void>;
   fetchCustomizedEventDuplicates: () => Promise<void>;
   /**
    * Why the last read of the duplicate group ids failed, kept until a read succeeds.
@@ -74,8 +89,6 @@ function mapToDuplicateRow(groupId: string, events: HistoryEventCollectionRow): 
 
 export const useCustomizedEventDuplicates = createSharedComposable((): UseCustomizedEventDuplicatesReturn => {
   const { t } = useI18n({ useScope: 'global' });
-  const { show: showConfirm } = useConfirmStore();
-  const { showErrorMessage, showSuccessMessage } = useNotifications();
 
   const { fetchHistoryEvents } = useHistoryEventsApi();
   const { fixCustomizedEventDuplicates, getCustomizedEventDuplicates, ignoreCustomizedEventDuplicates, unignoreCustomizedEventDuplicates } = useCustomizedEventDuplicatesApi();
@@ -176,14 +189,7 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
   const fixDuplicates = async (groupIdentifiers?: string[]): Promise<ActionStatus> => {
     set(fixLoading, true);
     try {
-      const result = await fixCustomizedEventDuplicates(groupIdentifiers);
-
-      if (result.removedEventIdentifiers.length > 0) {
-        showSuccessMessage(t('actions.customized_event_duplicates.fix_success.title'), t('actions.customized_event_duplicates.fix_success.description', {
-          count: result.removedEventIdentifiers.length,
-        }));
-      }
-
+      await fixCustomizedEventDuplicates(groupIdentifiers);
       await fetchCustomizedEventDuplicates();
 
       return { success: true };
@@ -191,7 +197,6 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
     catch (error: unknown) {
       const message = getErrorMessage(error);
       logger.error('Failed to fix customized event duplicates:', error);
-      showErrorMessage(t('actions.customized_event_duplicates.fix_error.title'), t('actions.customized_event_duplicates.fix_error.description', { error: message }));
       return { message, success: false };
     }
     finally {
@@ -209,7 +214,6 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
     catch (error: unknown) {
       const message = getErrorMessage(error);
       logger.error('Failed to ignore customized event duplicates:', error);
-      showErrorMessage(t('actions.customized_event_duplicates.mark_non_duplicated_error.title'), t('actions.customized_event_duplicates.mark_non_duplicated_error.description', { error: message }));
       return { message, success: false };
     }
     finally {
@@ -227,7 +231,6 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
     catch (error: unknown) {
       const message = getErrorMessage(error);
       logger.error('Failed to unignore customized event duplicates:', error);
-      showErrorMessage(t('actions.customized_event_duplicates.unignore_error.title'), t('actions.customized_event_duplicates.unignore_error.description', { error: message }));
       return { message, success: false };
     }
     finally {
@@ -235,64 +238,34 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
     }
   };
 
-  const confirmAndFixDuplicate = (groupIdentifiers: string[], onSuccess?: () => void): void => {
-    showConfirm({
-      message: groupIdentifiers.length === 1
-        ? t('customized_event_duplicates.actions.fix_single_confirm')
-        : t('customized_event_duplicates.actions.fix_selected_confirm', { count: groupIdentifiers.length }),
-      primaryAction: t('common.actions.confirm'),
-      title: groupIdentifiers.length === 1
-        ? t('customized_event_duplicates.actions.fix_single')
-        : t('customized_event_duplicates.actions.fix_selected'),
-    }, async () => {
-      const result = await fixDuplicates(groupIdentifiers);
-      if (result.success)
-        onSuccess?.();
-    });
+  /** Hands a settled action to the handlers, a failure under `title`. */
+  function settle(result: ActionStatus, title: string, handlers: DuplicatesActionHandlers): void {
+    if (result.success)
+      handlers.onSuccess?.();
+    else
+      handlers.onFailure?.({ failure: result.message, title });
+  }
+
+  const fixAndSettle = async (groupIdentifiers: string[], handlers: DuplicatesActionHandlers = {}): Promise<void> => {
+    settle(await fixDuplicates(groupIdentifiers), t('actions.customized_event_duplicates.fix_error.title'), handlers);
   };
 
-  const confirmAndMarkNonDuplicated = (groupIdentifiers: string[], onSuccess?: () => void): void => {
-    showConfirm({
-      message: groupIdentifiers.length === 1
-        ? t('customized_event_duplicates.actions.mark_non_duplicated_confirm')
-        : t('customized_event_duplicates.actions.mark_non_duplicated_selected_confirm', { count: groupIdentifiers.length }),
-      primaryAction: t('common.actions.confirm'),
-      title: groupIdentifiers.length === 1
-        ? t('customized_event_duplicates.actions.mark_non_duplicated')
-        : t('customized_event_duplicates.actions.mark_non_duplicated_selected'),
-    }, async () => {
-      const result = await ignoreDuplicates(groupIdentifiers);
-      if (result.success)
-        onSuccess?.();
-    });
+  const markNonDuplicatedAndSettle = async (groupIdentifiers: string[], handlers: DuplicatesActionHandlers = {}): Promise<void> => {
+    settle(await ignoreDuplicates(groupIdentifiers), t('actions.customized_event_duplicates.mark_non_duplicated_error.title'), handlers);
   };
 
-  const confirmAndRestore = (groupIdentifiers: string[], onSuccess?: () => void): void => {
-    showConfirm({
-      message: groupIdentifiers.length === 1
-        ? t('customized_event_duplicates.actions.restore_confirm')
-        : t('customized_event_duplicates.actions.restore_selected_confirm', { count: groupIdentifiers.length }),
-      primaryAction: t('common.actions.confirm'),
-      title: groupIdentifiers.length === 1
-        ? t('customized_event_duplicates.actions.restore')
-        : t('customized_event_duplicates.actions.restore_selected'),
-    }, async () => {
-      const result = await unignoreDuplicates(groupIdentifiers);
-      if (result.success)
-        onSuccess?.();
-    });
+  const restoreAndSettle = async (groupIdentifiers: string[], handlers: DuplicatesActionHandlers = {}): Promise<void> => {
+    settle(await unignoreDuplicates(groupIdentifiers), t('actions.customized_event_duplicates.unignore_error.title'), handlers);
   };
 
   return {
     actionableCount,
     autoFixCount,
     autoFixGroupIds,
-    confirmAndFixDuplicate,
-    confirmAndMarkNonDuplicated,
-    confirmAndRestore,
     fetchCustomizedEventDuplicates,
     fetchDuplicateEvents,
     fetchError: shallowReadonly(fetchError),
+    fixAndSettle,
     fixDuplicates,
     fixLoading,
     ignoreDuplicates,
@@ -302,6 +275,8 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
     loading,
     manualReviewCount,
     manualReviewGroupIds,
+    markNonDuplicatedAndSettle,
+    restoreAndSettle,
     totalCount,
     unignoreDuplicates,
   };

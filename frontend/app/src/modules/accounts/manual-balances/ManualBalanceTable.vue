@@ -3,12 +3,10 @@ import type { DataTableColumn, RuiIcons } from '@rotki/ui-library';
 import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
 import { isEqual } from 'es-toolkit';
 import { type Filters, manualBalanceTagsParams } from '@/modules/accounts/manual-balances/manual-balance-filter-keys';
-import ManualBalanceMissingAssetWarning
-  from '@/modules/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
+import ManualBalanceAssetCell from '@/modules/accounts/manual-balances/ManualBalanceAssetCell.vue';
 import { useManualBalanceFields } from '@/modules/accounts/manual-balances/use-manual-balance-fields';
 import { useManualBalanceTableActions } from '@/modules/accounts/manual-balances/use-manual-balance-table-actions';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display';
-import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useManualBalancesOrLiabilities } from '@/modules/balances/manual/use-manual-balances-or-liabilities';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
@@ -17,6 +15,7 @@ import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable, useTableEmptyState } from '@/modules/core/table/use-server-table';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 import TagDisplay from '@/modules/tags/TagDisplay.vue';
@@ -42,7 +41,7 @@ const tags = ref<string[]>([]);
 const { pillParams, source: tagsSource } = manualBalanceTagsParams(tags);
 
 const { dataSource, fetch, locations } = useManualBalancesOrLiabilities(() => type);
-const { prepareForEdit, pricesLoading, showDeleteConfirmation } = useManualBalanceTableActions();
+const { deleteConfirm, deleteFailure, deleteRow, prepareForEdit, pricesLoading } = useManualBalanceTableActions();
 
 const modelFilters = ref<Filters>({});
 const fields = useManualBalanceFields(locations, modelFilters);
@@ -186,6 +185,14 @@ watchDebounced(
         :labels="pillLabels"
       />
     </template>
+    <FailureStrip
+      v-if="deleteFailure"
+      class="m-3"
+      :retryable="false"
+      :title="deleteFailure.title"
+      :failure="deleteFailure.error"
+      data-testid="manual-balances-delete-error"
+    />
     <RuiDataTable
       v-model:sort.external="sort"
       v-model:pagination.external="pagination"
@@ -216,13 +223,10 @@ watchDebounced(
         </div>
       </template>
       <template #item.asset="{ row }">
-        <AssetDetails
-          v-if="!row.assetIsMissing"
-          class="[&>div]:max-w-48 xl:[&>div]:max-w-64 2xl:[&>div]:max-w-80"
+        <ManualBalanceAssetCell
           :asset="row.asset"
-          :actions="{ hideActions: true }"
+          :asset-is-missing="row.assetIsMissing"
         />
-        <ManualBalanceMissingAssetWarning v-else />
       </template>
       <template #item.price="{ row }">
         <FiatDisplay
@@ -264,8 +268,9 @@ watchDebounced(
           align="end"
           :edit-tooltip="t('manual_balances_table.edit_tooltip')"
           :delete-tooltip="t('manual_balances_table.delete_tooltip')"
+          :delete-confirm="deleteConfirm"
           @edit-click="edit(row)"
-          @delete-click="showDeleteConfirmation(row.identifier)"
+          @delete-click="deleteRow(row.identifier)"
         />
       </template>
       <template

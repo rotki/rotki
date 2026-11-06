@@ -2,7 +2,7 @@ import type { FixtureManualBalance } from './types';
 import { expect, type Page } from '@playwright/test';
 import { BigNumber, toSentenceCase } from '@rotki/common';
 import { TIMEOUT_LONG } from '../helpers/constants';
-import { confirmDialog, formatAmount, selectAsset, updateLocationBalance } from '../helpers/utils';
+import { confirmInline, formatAmount, selectAsset, updateLocationBalance } from '../helpers/utils';
 import { RotkiApp } from './rotki-app';
 
 export class ManualBalancesPage {
@@ -146,7 +146,7 @@ export class ManualBalancesPage {
   }
 
   async confirmDelete(): Promise<void> {
-    await confirmDialog(this.page, 'Delete manually tracked balance');
+    await confirmInline(this.page, 'Delete manually tracked balance');
   }
 
   /** The headers name no currency (the cells carry it), so the total shows whether the switch took. */

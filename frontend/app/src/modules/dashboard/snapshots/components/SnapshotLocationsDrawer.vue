@@ -2,7 +2,6 @@
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { LocationDataSnapshot, Snapshot } from '@/modules/dashboard/snapshots';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import SnapshotLocationEntryDialog from '@/modules/dashboard/snapshots/components/SnapshotLocationEntryDialog.vue';
@@ -31,8 +30,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { show } = useConfirmStore();
 
 const sort = ref<DataTableSortData<IndexedLocationDataSnapshot>>({
   column: 'usdValue',
@@ -110,16 +107,6 @@ function onSubmit(payload: { index: number | null; location: LocationDataSnapsho
     emit('add', payload.location);
   else
     emit('edit', { index: payload.index, location: payload.location });
-}
-
-function showDeleteConfirmation(item: IndexedLocationDataSnapshot): void {
-  show(
-    {
-      message: t('dashboard.snapshot.edit.dialog.location_data.delete_confirmation'),
-      title: t('dashboard.snapshot.edit.dialog.location_data.delete_title'),
-    },
-    () => emit('delete', item.index),
-  );
 }
 
 function applyDistribute(): void {
@@ -209,7 +196,7 @@ function applyDistribute(): void {
             :edit-tooltip="t('dashboard.snapshot.edit.dialog.actions.edit_item')"
             :delete-tooltip="t('dashboard.snapshot.edit.dialog.actions.delete_item')"
             @edit-click="editClick(row)"
-            @delete-click="showDeleteConfirmation(row)"
+            @delete-click="emit('delete', row.index)"
           />
         </template>
 

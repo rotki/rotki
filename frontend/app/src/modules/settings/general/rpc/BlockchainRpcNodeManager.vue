@@ -4,6 +4,7 @@ import BlockchainRpcNodeFormDialog from '@/modules/settings/general/rpc/Blockcha
 import RpcNodeStatusCell from '@/modules/settings/general/rpc/RpcNodeStatusCell.vue';
 import RpcReconnectButton from '@/modules/settings/general/rpc/RpcReconnectButton.vue';
 import { useBlockchainRpcNodeManager } from '@/modules/settings/general/rpc/use-blockchain-rpc-node-manager';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
 const { chain, chains } = defineProps<{
@@ -19,9 +20,12 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const {
+  actionFailure,
   addNewRpcNode,
   anyDisconnected,
   editRpcNode,
+  deleteConfirm,
+  deleteNode,
   getNodeStatus,
   isEtherscan,
   loadError,
@@ -32,7 +36,6 @@ const {
   onActiveChange,
   reConnect,
   reconnecting,
-  showDeleteConfirmation,
 } = useBlockchainRpcNodeManager(() => chain);
 
 onMounted(async () => {
@@ -52,6 +55,14 @@ defineExpose({
 </script>
 
 <template>
+  <FailureStrip
+    v-if="actionFailure"
+    class="mb-2"
+    :retryable="false"
+    :title="actionFailure.title"
+    :failure="actionFailure.error"
+    data-testid="rpc-node-action-error"
+  />
   <RuiTable
     class="bg-white dark:bg-transparent"
     :loading="loading"
@@ -162,8 +173,9 @@ defineExpose({
               :delete-tooltip="t('evm_rpc_node_manager.delete_tooltip')"
               :delete-disabled="isEtherscan(item)"
               :edit-tooltip="t('evm_rpc_node_manager.edit_tooltip')"
+              :delete-confirm="deleteConfirm(item)"
               @edit-click="editRpcNode(item)"
-              @delete-click="showDeleteConfirmation(item)"
+              @delete-click="deleteNode(item)"
             />
           </div>
         </td>
