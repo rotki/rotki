@@ -20,6 +20,7 @@ export const ExternalServiceKeys = z.object({
   monerium: ApiKey.optional(),
   moralis: ApiKey.optional(),
   opensea: ApiKey.optional(),
+  sochain: ApiKey.optional(),
   thegraph: ApiKey.optional(),
 });
 

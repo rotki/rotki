@@ -29,6 +29,16 @@ describe('createMissingApiKeyHandler', () => {
       .toEqual(['etherscan', 'blockscout']);
   });
 
+  it('should distinguish an unusable sochain key from a missing key', async () => {
+    const handler = createMissingApiKeyHandler();
+
+    await handler.handle({ location: 'dogecoin', reason: 'key_not_usable', service: 'sochain' });
+
+    expect(useRaisedConditionsStore().conditions).toEqual([
+      { keyRejected: true, kind: RaisedConditionKind.MISSING_API_KEY, location: 'dogecoin', service: 'sochain' },
+    ]);
+  });
+
   it('should distinguish an unusable blockscout key from a missing key', async () => {
     const handler = createMissingApiKeyHandler();
 
