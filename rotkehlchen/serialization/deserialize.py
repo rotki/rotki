@@ -566,6 +566,7 @@ def deserialize_evm_transaction(
         evm_inquirer: EvmNodeInquirer | None = None,
         parent_tx_hash: EVMTxHash | None = None,
         indexer: EtherscanLikeApi | None = None,
+        receipt_data: dict[str, Any] | None = None,
 ) -> tuple[EvmInternalTransaction, None]:
     ...
 
@@ -578,6 +579,7 @@ def deserialize_evm_transaction(
         evm_inquirer: None,
         parent_tx_hash: EVMTxHash | None = None,
         indexer: EtherscanLikeApi | None = None,
+        receipt_data: dict[str, Any] | None = None,
 ) -> tuple[EvmTransaction, None]:
     ...
 
@@ -590,6 +592,7 @@ def deserialize_evm_transaction(
         evm_inquirer: EvmNodeInquirer,
         parent_tx_hash: EVMTxHash | None = None,
         indexer: EtherscanLikeApi | None = None,
+        receipt_data: dict[str, Any] | None = None,
 ) -> tuple[L2WithL1FeesTransaction, dict[str, Any]]:
     ...
 
@@ -602,6 +605,7 @@ def deserialize_evm_transaction(
         evm_inquirer: EvmNodeInquirer,
         parent_tx_hash: EVMTxHash | None = None,
         indexer: EtherscanLikeApi | None = None,
+        receipt_data: dict[str, Any] | None = None,
 ) -> tuple[EvmTransaction, dict[str, Any]]:
     ...
 
@@ -613,6 +617,7 @@ def deserialize_evm_transaction(
         evm_inquirer: EvmNodeInquirer | None = None,
         parent_tx_hash: EVMTxHash | None = None,
         indexer: EtherscanLikeApi | None = None,
+        receipt_data: dict[str, Any] | None = None,
 ) -> tuple[EvmTransaction | EvmInternalTransaction, dict[str, Any] | None]:
     """Reads dict data of a transaction and deserializes it.
     If the transaction is not from etherscan then it's missing some data
@@ -628,11 +633,14 @@ def deserialize_evm_transaction(
 
     Can raise DeserializationError if something is wrong
 
+    receipt_data is the raw receipt of the transaction if the caller already has it, so that
+    it is not queried again.
+
     Returns the deserialized transaction and optionally raw receipt data if it was queried
     and if this is not for an internal transaction.
     """
     source = 'etherscan' if evm_inquirer is None else 'web3'
-    raw_receipt_data = None
+    raw_receipt_data = receipt_data
     try:
         if parent_tx_hash is not None:
             tx_hash = parent_tx_hash
@@ -646,7 +654,11 @@ def deserialize_evm_transaction(
             if evm_inquirer is None:
                 raise DeserializationError('Got in deserialize evm transaction without timestamp and without evm inquirer')  # noqa: E501
 
-            timestamp = evm_inquirer.get_block_timestamp(block_number=block_number)
+            # only the timestamp is read, so don't ask for every transaction of the block
+            timestamp = evm_inquirer.get_block_timestamp(
+                block_number=block_number,
+                full_transactions=False,
+            )
         else:
             timestamp = deserialize_timestamp(data['timeStamp'])
 

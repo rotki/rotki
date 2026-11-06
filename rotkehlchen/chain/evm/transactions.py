@@ -191,7 +191,8 @@ class EvmTransactions(ABC):  # noqa: B024
         """Ensure all tx hashes exist in DB with receipts.
 
         Bulk-reads pairs that already have both tx + receipt; fetches+persists missing
-        ones serially from the chain. Handles GENESIS_HASH via the dedicated helper.
+        ones from the chain in batches, falling back to one query per tx. Handles
+        GENESIS_HASH via the dedicated helper.
 
         Returns (hash→timestamp mapping for all hashes, list of newly-inserted tx hashes).
 
@@ -233,14 +234,20 @@ class EvmTransactions(ABC):  # noqa: B024
                     if has_address_mapping == 0:
                         unmapped_tx_data[deserialized_hash] = tx_id, has_mapping == 1
 
-        missing: set[EVMTxHash] = non_genesis - timestamps.keys()
+        missing = list(non_genesis - timestamps.keys())
         new_txs: list[Any] = []
         receipt_data_list: list[dict[str, Any]] = []
-        for tx_hash in missing:
-            transaction, raw_receipt = self.evm_inquirer.get_transaction_by_hash(tx_hash)
-            new_txs.append(transaction)
-            receipt_data_list.append(raw_receipt)
-            timestamps[tx_hash] = transaction.timestamp
+        for chunk in get_chunks(missing, n=RECEIPTS_QUERY_BATCH_SIZE):
+            checkpoint()  # cancellation checkpoint between batches of remote queries
+            if (fetched := self.evm_inquirer.get_transactions_by_hash(tx_hashes=chunk)) is None:
+                # No connected node could serve the batch. Query per-tx, which can
+                # also use indexers.
+                fetched = [self.evm_inquirer.get_transaction_by_hash(tx_hash) for tx_hash in chunk]
+
+            for transaction, raw_receipt in fetched:
+                new_txs.append(transaction)
+                receipt_data_list.append(raw_receipt)
+                timestamps[transaction.tx_hash] = transaction.timestamp
 
         newly_inserted: list[EVMTxHash] = []
         if len(new_txs) == 0 and (relevant_address is None or len(unmapped_tx_data) == 0):
