@@ -18,7 +18,7 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EVM_CHAIN_IDS_WITH_TRANSACTIONS, Timestamp
-from rotkehlchen.utils.data_structures import DefaultLRUCache, LRUCacheWithRemove
+from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -71,10 +71,17 @@ class Accountant:
         self.premium = premium
         # cache to know what events will be processed or not during accounting
         self.processable_events_cache: LRUCacheWithRemove[int, EventAccountingRuleStatus] = LRUCacheWithRemove(maxsize=PROCESSABLE_EVENTS_CACHE_SIZE)  # noqa: E501
-        # map event rules signatures to a list of event identifiers affected by them
-        # used to know which events need to be invalidated when updating a rule
-        self.processable_events_cache_signatures: DefaultLRUCache[int, list[int]] = DefaultLRUCache(default_factory=list, maxsize=PROCESSABLE_EVENTS_CACHE_SIZE)  # noqa: E501
         self.ignored_asset_ids: set[str] = set()  # populated in process_history so that we load them in memory once during accounting and not reload them from the DB for every single event processing  # noqa: E501
+
+    def clear_processable_events_cache(self) -> None:
+        """Forget the cached accounting rule statuses of the events. Called whenever the
+        accounting rules change.
+
+        The whole cache is cleared instead of only the affected events since which events a
+        rule affects depends on the rule precedence (a rule without counterparty applies to
+        the events of any counterparty that has no rule of its own) and on the callbacks that
+        consume other events. Rules change rarely and the cache only holds a few pages."""
+        self.processable_events_cache.clear()
 
     def activate_premium_status(self, premium: Premium) -> None:
         self.premium = premium
