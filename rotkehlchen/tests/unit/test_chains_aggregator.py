@@ -51,7 +51,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Generator
 
     from rotkehlchen.chain.base.manager import BaseManager
     from rotkehlchen.chain.gnosis.manager import GnosisManager
@@ -1254,7 +1254,7 @@ def test_activity_retry_scheduler_after_restart(task_manager: TaskManager) -> No
 
 
 @contextmanager
-def _only_hyperliquid_check_fails(blockchain: ChainsAggregator) -> Iterator[None]:
+def _only_hyperliquid_check_fails(blockchain: ChainsAggregator) -> Generator[None]:
     """Every chain reports no activity except Hyperliquid, whose HyperEVM and Core
     checks fail recoverably."""
     def has_activity(self: Any, chain_id: ChainID, account: ChecksumEvmAddress) -> HasChainActivity:  # noqa: E501

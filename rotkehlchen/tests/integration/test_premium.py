@@ -62,7 +62,8 @@ from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.network import create_session
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+
+    from collections.abc import Generator
 
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
@@ -691,7 +692,7 @@ def _mock_device_server(
         check_status: HTTPStatus,
         register_status: HTTPStatus = HTTPStatus.CREATED,
         delete_status: HTTPStatus = HTTPStatus.OK,
-) -> Iterator[tuple[MagicMock, MagicMock]]:
+) -> Generator[tuple[MagicMock, MagicMock]]:
     """Mocks the server for a new premium account with the real device registration and
     yields the mocks of the device register and delete requests"""
     session = create_session()

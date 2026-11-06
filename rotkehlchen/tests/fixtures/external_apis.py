@@ -14,7 +14,7 @@ from rotkehlchen.types import ChainID, ExternalService
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Generator
 
 
 @pytest.fixture(name='gnosispay_credentials')
@@ -47,7 +47,7 @@ def fixture_monerium_credentials(database):
 
 
 @contextmanager
-def _allow_routescan(chain: ChainID) -> Iterator[None]:
+def _allow_routescan(chain: ChainID) -> Generator[None]:
     """Let Routescan serve a chain it no longer supports, in the indexer order it had back then.
 
     Used by the fixtures below to keep cassettes recorded while Routescan served the chain
@@ -98,7 +98,7 @@ def fixture_allow_optimism_routescan():
 
 
 @contextmanager
-def _force_etherscan_indexer(chain: ChainID) -> Iterator[None]:
+def _force_etherscan_indexer(chain: ChainID) -> Generator[None]:
     """Pin a chain to etherscan regardless of the configured indexer order.
 
     Used by the fixtures below to keep cassettes recorded back when etherscan was the chain's
