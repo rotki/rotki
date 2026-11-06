@@ -528,15 +528,6 @@
           "title": "Запрос игнорируемых активов"
         }
       },
-      "kraken_account": {
-        "error": {
-          "title": "Ошибка настройки типа аккаунта Kraken"
-        },
-        "success": {
-          "message": "Тип аккаунта Kraken успешно установлен",
-          "title": "Успех"
-        }
-      },
       "password_change": {
         "error": "Ошибка при смене пароля: {message}",
         "success": "Пароль успешно изменен"

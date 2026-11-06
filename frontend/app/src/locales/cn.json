@@ -854,15 +854,6 @@
           "title": "无法加载已忽略资产"
         }
       },
-      "kraken_account": {
-        "error": {
-          "title": "设置 Kraken 账户类型出错"
-        },
-        "success": {
-          "message": "已成功设置 Kraken 账户类型",
-          "title": "成功"
-        }
-      },
       "password_change": {
         "error": "更改用户密码时出错：{message}",
         "success": "已成功修改用户密码"

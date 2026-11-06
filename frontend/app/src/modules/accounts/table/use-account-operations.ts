@@ -1,6 +1,5 @@
 import type { AccountDataRow } from './types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
-import type { ShowConfirmationParams } from '@/modules/accounts/core/account-deletion';
 import { getAccountAddress, getChain } from '@/modules/accounts/account-utils';
 import { useAddressBookForm } from '@/modules/accounts/address-book/use-address-book-form';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
@@ -13,32 +12,18 @@ interface AccountOperationCallbacks {
 }
 
 interface UseAccountOperationsReturn<T extends BlockchainAccountBalance> {
-  confirmDelete: (item: AccountDataRow<T>) => void;
   /** Deletes a row the user already confirmed, inline in its actions menu. */
   deleteAccount: (item: AccountDataRow<T>) => Promise<void>;
   edit: (group: string | undefined, row: AccountDataRow<T>) => Promise<void>;
   handleXpubChildEdit: (row: AccountDataRow<T>) => Promise<void>;
-  showConfirmation: (params: ShowConfirmationParams) => void;
 }
 
 export function useAccountOperations<T extends BlockchainAccountBalance>(
   callbacks: AccountOperationCallbacks,
 ): UseAccountOperationsReturn<T> {
-  const { deleteConfirmed, showConfirmation } = useAccountDelete();
+  const { deleteConfirmed } = useAccountDelete();
   const { showGlobalDialog } = useAddressBookForm();
   const { getAddressesNames } = useAddressesNamesApi();
-
-  function confirmDelete(item: AccountDataRow<T>): void {
-    showConfirmation(
-      {
-        data: item,
-        type: 'account',
-      },
-      () => {
-        callbacks.onRefresh();
-      },
-    );
-  }
 
   async function deleteAccount(item: AccountDataRow<T>): Promise<void> {
     await deleteConfirmed({ data: item, type: 'account' }, () => {
@@ -79,10 +64,8 @@ export function useAccountOperations<T extends BlockchainAccountBalance>(
   }
 
   return {
-    confirmDelete,
     deleteAccount,
     edit,
     handleXpubChildEdit,
-    showConfirmation,
   };
 }

@@ -339,15 +339,6 @@
           "title": "Interrogation des actifs ignorés"
         }
       },
-      "kraken_account": {
-        "error": {
-          "title": "Erreur lors du paramétrage du type de compte Kraken"
-        },
-        "success": {
-          "message": "Type de compte Kraken défini avec succès",
-          "title": "Succès"
-        }
-      },
       "password_change": {
         "error": "Erreur lors du changement de mot de passe de l'utilisateur : {message}",
         "success": "Mot de passe utilisateur changé avec succès"

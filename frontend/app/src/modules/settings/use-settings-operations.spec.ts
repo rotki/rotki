@@ -101,30 +101,6 @@ describe('useSettingsOperations', () => {
     });
   });
 
-  describe('setKrakenAccountType', () => {
-    it('should update kraken account type and show success', async () => {
-      const response = createSettingsResponse();
-      mockSetSettings.mockResolvedValue(response);
-
-      const { useSettingsOperations } = await importModule();
-      const { setKrakenAccountType } = useSettingsOperations();
-      await setKrakenAccountType('starter');
-
-      expect(mockSetSettings).toHaveBeenCalledWith({ krakenAccountType: 'starter' });
-      expect(mockShowSuccessMessage).toHaveBeenCalledOnce();
-    });
-
-    it('should show error on failure', async () => {
-      mockSetSettings.mockRejectedValue(new Error('kraken error'));
-
-      const { useSettingsOperations } = await importModule();
-      const { setKrakenAccountType } = useSettingsOperations();
-      await setKrakenAccountType('starter');
-
-      expect(mockShowErrorMessage).toHaveBeenCalledOnce();
-    });
-  });
-
   describe('applyFrontendSettingLocal', () => {
     it('should patch the frontend store without calling the API', async () => {
       const frontendStore = useSettingsRepo();
