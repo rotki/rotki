@@ -1749,7 +1749,7 @@
   "blockchain_balances": {
     "add_account": "添加账户",
     "add_validator_premium": "添加 ETH 质押验证者需要 rotki 高级版套餐。",
-    "binance_warning": "Binance Smart Chain 账户只能通过付费 Etherscan 密钥检测。",
+    "binance_warning": "BNB Smart Chain 账户只能通过付费 Etherscan 密钥检测。",
     "early_chain_warning": "rotki 对 {chain} 的集成尚处于早期：目前该链上仅能解码有限的协议。其他协议的交易将显示为普通转账，后续会逐步增加更多协议。",
     "eth_staking_limit_error": "添加此验证者将超出你 {currentTier} 套餐的 ETH 质押上限 {limit} ETH。{link}，或联系我们定制套餐，即可提高上限。",
     "eth_staking_no_access": "你的 {currentTier} 套餐不包含 ETH 质押。{link}，或联系我们定制套餐，即可获得权限。",

@@ -14392,7 +14392,7 @@ Get all EVM Chains
             "result": [
                 {"id": 1, "name": "ethereum", "label": "Ethereum"},
                 {"id": 10, "name": "optimism", "label": "Optimism"},
-                {"id": 56, "name": "binance", "label": "Binance Smart Chain"},
+                {"id": 56, "name": "binance", "label": "BNB Smart Chain"},
                 {"id": 100, "name": "gnosis", "label": "Gnosis"},
                 {"id": 137, "name": "polygon_pos", "label": "Polygon POS"},
                 {"id": 250, "name": "fantom", "label": "Fantom"},

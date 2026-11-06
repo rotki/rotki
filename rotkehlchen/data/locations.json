@@ -61,7 +61,7 @@
   },
   {
     "identifier": "binance sc",
-    "name": "Binance Smart Chain",
+    "name": "BNB Smart Chain",
     "parent_identifier": "evm chains",
     "image": "binance_sc.svg"
   },

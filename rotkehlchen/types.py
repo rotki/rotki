@@ -273,7 +273,7 @@ class ChainID(Enum):
         elif self == ChainID.POLYGON_ZKEVM:
             label = 'Polygon zkEVM'
         elif self == ChainID.BINANCE_SC:
-            label = 'Binance Smart Chain'
+            label = 'BNB Smart Chain'
         elif self == ChainID.ARBITRUM_ONE:
             label = 'Arbitrum One'
         elif self == ChainID.HYPERLIQUID:
@@ -622,7 +622,7 @@ SUPPORTED_BLOCKCHAIN_NAMES_MAPPING = {
     SupportedBlockchain.GNOSIS: 'Gnosis',
     SupportedBlockchain.HYPERLIQUID: 'Hyperliquid',
     SupportedBlockchain.ZKSYNC_LITE: 'ZKSync Lite',
-    SupportedBlockchain.BINANCE_SC: 'Binance Smart Chain',
+    SupportedBlockchain.BINANCE_SC: 'BNB Smart Chain',
 }
 
 SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {

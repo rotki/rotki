@@ -18,7 +18,7 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: (): Record<string, unknown> => ({
     getBlockchainRedirectLink: (): undefined => undefined,
     getChainImageUrl: (): string => '',
-    getChainName: (chain: string): string => (chain === 'binance_sc' ? 'Binance Smart Chain' : chain),
+    getChainName: (chain: string): string => (chain === 'binance_sc' ? 'BNB Smart Chain' : chain),
     matchChain: (id: string): string | undefined => (id === 'binance_sc' ? id : undefined),
   }),
 }));
@@ -79,7 +79,7 @@ describe('locationSelector', () => {
     useLocationStore().allLocations = { 'binance sc': { label: 'Binance sc' } };
     useLocationTreeStore().setNodes(belowTotal('binance sc'));
 
-    expect(selection('binance sc')).toBe('Binance Smart Chain');
+    expect(selection('binance sc')).toBe('BNB Smart Chain');
   });
 
   function mountSelector(modelValue: string): ReturnType<typeof mount> {
