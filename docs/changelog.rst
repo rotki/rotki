@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Uniswap on-chain prices for tokens that need a route through three pools are no longer wrong when the middle pool lists its tokens in the opposite order.
+* :bug:`-` The accounting rule status of history events is now updated right after the rules change. Before, an event could keep showing a missing rule after adding a rule without a counterparty that applies to it, or after resetting the rules, solving rule conflicts or receiving rule updates from the data repo, until rotki was restarted.
 * :bug:`13562` Pending Lido CSM rewards no longer drop out of the balance when an unrelated metrics call fails, and a balance query downloads the rewards tree only once.
 * :bug:`13354` Generating a PnL report while another one is running is now refused instead of corrupting both, and a cancelled report no longer stays in the reports list as an empty entry. The report progress no longer goes past 100%.
 * :bug:`13530` The desktop app's local API now only answers requests addressed to ``localhost``, ``127.0.0.1`` or ``[::1]``, so a web page cannot reach it through DNS rebinding. Docker is unchanged.

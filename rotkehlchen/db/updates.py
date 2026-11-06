@@ -47,6 +47,7 @@ from rotkehlchen.utils.version_check import get_current_version
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
+    from rotkehlchen.accounting.accountant import Accountant
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBCursor, DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
@@ -112,10 +113,12 @@ class RotkiDataUpdater:
             msg_aggregator: MessagesAggregator,
             user_db: DBHandler,
             chains_aggregator: ChainsAggregator | None = None,
+            accountant: Accountant | None = None,
     ) -> None:
         self.msg_aggregator = msg_aggregator
         self.user_db = user_db
         self.chains_aggregator = chains_aggregator
+        self.accountant = accountant  # its cached accounting rule statuses go stale on updates
         # an empty base ref is what the CI gives when the run is not triggered by a PR
         self.branch = os.getenv('GITHUB_BASE_REF') or 'develop'
         if is_production() or self.branch == 'master':
@@ -385,6 +388,7 @@ class RotkiDataUpdater:
                 log.debug(f'Failed to add accounting rule {rule_data} due to {e}')
                 continue
 
+        self._clear_cached_accounting_rule_statuses()
         if len(conflicts) == 0:
             return
 
@@ -394,6 +398,10 @@ class RotkiDataUpdater:
             message_type=WSMessageType.ACCOUNTING_RULE_CONFLICT,
             data={'num_of_conflicts': len(conflicts)},
         )
+
+    def _clear_cached_accounting_rule_statuses(self) -> None:
+        if self.accountant is not None:
+            self.accountant.clear_processable_events_cache()
 
     def reset_accounting_rules(self) -> None:
         """Reset all of the user's accounting rules to rotki's current defaults.
@@ -471,6 +479,8 @@ class RotkiDataUpdater:
                     links=links,
                     force_update=True,
                 )
+
+        self._clear_cached_accounting_rule_statuses()
 
     def update_contracts(self, data: dict[str, Any], version: int) -> None:
         """

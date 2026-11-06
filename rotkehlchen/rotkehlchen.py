@@ -650,6 +650,7 @@ class Rotkehlchen:
             msg_aggregator=self.msg_aggregator,
             user_db=self.data.db,
             chains_aggregator=self.chains_aggregator,
+            accountant=self.accountant,
         )
         self.task_manager = TaskManager(
             max_tasks_num=DEFAULT_MAX_TASKS_NUM,

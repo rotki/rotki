@@ -571,10 +571,79 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer) -> None:
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 2
-    all(
+    assert all(
         entry['event_accounting_rule_status'] == EventAccountingRuleStatus.NOT_PROCESSED.serialize()  # noqa: E501
         for entry in result['entries']
     )
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [False])
+def test_rule_changes_refresh_cached_statuses(rotkehlchen_api_server: APIServer) -> None:
+    """Every way the accounting rules change must refresh the statuses cached for the history
+    page, since a page whose events are all cached is served from the cache alone.
+
+    Covers a rule without counterparty matching an event with one, rule updates pulled from
+    the data repo and resetting the rules to the defaults of the data repo."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    def query_status(group_identifier: str) -> str:
+        result = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json={'group_identifiers': [group_identifier]},
+        ))
+        assert len(result['entries']) == 1
+        return result['entries'][0]['event_accounting_rule_status']
+
+    migrate_event, trade_fee_event = (store_and_retrieve_events([EvmEvent(
+        tx_ref=make_evm_tx_hash(),
+        sequence_index=0,
+        timestamp=TimestampMS(16433333000),
+        location=Location.ETHEREUM,
+        asset=A_USDC,
+        amount=ONE,
+        event_type=event_type,
+        event_subtype=event_subtype,
+        counterparty='my_custom_cpt',
+    )], rotki.data.db)[0] for event_type, event_subtype in (
+        # MIGRATE/RECEIVE has no rule in the defaults of the data repo
+        (HistoryEventType.MIGRATE, HistoryEventSubType.RECEIVE),
+        (HistoryEventType.TRADE, HistoryEventSubType.FEE),
+    ))
+    for event in (migrate_event, trade_fee_event):
+        assert query_status(event.group_identifier) == EventAccountingRuleStatus.NOT_PROCESSED.serialize()  # noqa: E501
+
+    assert_simple_ok_response(requests.put(  # a rule without counterparty applies to all of them
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json={
+            'event_type': HistoryEventType.MIGRATE.serialize(),
+            'event_subtype': HistoryEventSubType.RECEIVE.serialize(),
+            'counterparty': None,
+            'taxable': {'value': True},
+            'count_entire_amount_spend': {'value': True},
+            'count_cost_basis_pnl': {'value': True},
+            'accounting_treatment': None,
+        },
+    ))
+    assert query_status(migrate_event.group_identifier) == EventAccountingRuleStatus.HAS_RULE.serialize()  # noqa: E501
+    # cache the status again, since the rule change above cleared it
+    assert query_status(trade_fee_event.group_identifier) == EventAccountingRuleStatus.NOT_PROCESSED.serialize()  # noqa: E501
+
+    rotki.data_updater.update_accounting_rules(data=[{
+        'event_type': HistoryEventType.TRADE.serialize(),
+        'event_subtype': HistoryEventSubType.FEE.serialize(),
+        'counterparty': 'my_custom_cpt',
+        'taxable': True,
+        'count_entire_amount_spend': True,
+        'count_cost_basis_pnl': True,
+        'accounting_treatment': None,
+    }], version=1)
+    assert query_status(trade_fee_event.group_identifier) == EventAccountingRuleStatus.HAS_RULE.serialize()  # noqa: E501
+    assert query_status(migrate_event.group_identifier) == EventAccountingRuleStatus.HAS_RULE.serialize()  # noqa: E501
+
+    assert_simple_ok_response(requests.put(  # the defaults have no MIGRATE/RECEIVE rule
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresetresource'),
+    ))
+    assert query_status(migrate_event.group_identifier) == EventAccountingRuleStatus.NOT_PROCESSED.serialize()  # noqa: E501
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])

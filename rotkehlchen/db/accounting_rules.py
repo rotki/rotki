@@ -773,7 +773,8 @@ def query_missing_accounting_rules(
     """
     # Fast path: if every event on the page is already resolved in the cache (repeat/poll/
     # back-pagination loads), return the cached statuses directly and skip re-querying and
-    # re-deserializing all related events. Cache freshness is handled by rule invalidation.
+    # re-deserializing all related events. Every change of the rules clears the cache, see
+    # Accountant.clear_processable_events_cache.
     cached_statuses = [accountant.processable_events_cache.get(event.identifier) for event in events]  # type: ignore  # identifier is set for events loaded from the DB  # noqa: E501
     if all(status is not None for status in cached_statuses):
         return cached_statuses  # type: ignore  # all entries are non-None here
@@ -822,15 +823,13 @@ def query_missing_accounting_rules(
                 continue
 
             # check the rule in the database
-            cache_identifier, accounting_outcome, _ = _resolve_accounting_treatment(
+            _, accounting_outcome, _ = _resolve_accounting_treatment(
                 cursor=cursor,
                 event=event,
                 event_specific_treatments=event_specific_treatments,
                 generic_treatments=generic_treatments,
             )
             accountant.processable_events_cache.add(event.identifier, accounting_outcome)  # type: ignore
-            accountant.processable_events_cache_signatures.get(cache_identifier).append(event.identifier)  # type: ignore
-            accountant.processable_events_cache_signatures.get(event.identifier).append(event.identifier)  # type: ignore
 
             # the current event in addition to have an accounting rule could have a callback that
             # affects events that come after and is not enough to check the accounting rule
@@ -853,12 +852,11 @@ def query_missing_accounting_rules(
                     )
 
                 # update information about the new events
-                for processed_event_id, event_type_identifier in new_missing_accounting_rule:
+                for processed_event_id, _ in new_missing_accounting_rule:
                     accountant.processable_events_cache.add(
                         key=processed_event_id,
                         value=EventAccountingRuleStatus.PROCESSED,
                     )
-                    accountant.processable_events_cache_signatures.get(event_type_identifier).append(processed_event_id)
 
     result = []
     for event in events:
