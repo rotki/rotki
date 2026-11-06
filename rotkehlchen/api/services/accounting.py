@@ -210,8 +210,9 @@ class AccountingService:
                 conflict_db.solve_all_conflicts(solve_all_using=solve_all_using)
         except (InputError, KeyError) as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+        finally:  # earlier conflicts may already be committed when a later one fails
+            self.rotkehlchen.accountant.clear_processable_events_cache()
 
-        self.rotkehlchen.accountant.clear_processable_events_cache()
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
     def list_accounting_rules_conflicts(self, filter_query: DBFilterQuery) -> dict[str, Any]:

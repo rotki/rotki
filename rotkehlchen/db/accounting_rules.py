@@ -497,8 +497,9 @@ class DBAccountingRules:
         """Import the given accounting rules and linked properties into the database. It overwrites
         the existing rules if the same rule already exists. Returns a tuple with a boolean
         indicating success or failure and an error message."""
-        with self.db.conn.write_ctx() as write_cursor:
-            try:
+        import_section = 'accounting rules'
+        try:
+            with self.db.conn.write_ctx() as write_cursor:
                 write_cursor.executemany(
                     'INSERT OR REPLACE INTO accounting_rules(identifier, type, subtype, '
                     'counterparty, taxable, count_entire_amount_spend, count_cost_basis_pnl, '
@@ -526,10 +527,8 @@ class DBAccountingRules:
                         'INSERT OR REPLACE INTO accounting_rule_events(rule_id, event_id) VALUES (?, ?)',  # noqa: E501
                         event_entries,
                     )
-            except (sqlcipher.IntegrityError, DeserializationError) as e:  # pylint: disable=no-member
-                return False, f'Failed to import accounting rules due to: {e!s}'
 
-            try:
+                import_section = 'linked properties'
                 write_cursor.executemany(
                     'INSERT OR REPLACE INTO linked_rules_properties(identifier, accounting_rule, '
                     'property_name, setting_name) VALUES (?, ?, ?, ?)',
@@ -543,8 +542,8 @@ class DBAccountingRules:
                         for identifier, linked_property in linked_properties.items()
                     ],
                 )
-            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                return False, f'Failed to import linked properties due to: {e!s}'
+        except (sqlcipher.IntegrityError, DeserializationError) as e:  # pylint: disable=no-member
+            return False, f'Failed to import {import_section} due to: {e!s}'
 
         return True, ''
 

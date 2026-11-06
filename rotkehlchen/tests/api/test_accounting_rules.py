@@ -14,6 +14,7 @@ from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment
 from rotkehlchen.constants.assets import A_CUSDC, A_USDC
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_PROPERTIES,
     NO_ACCOUNTING_COUNTERPARTY,
@@ -347,6 +348,38 @@ def test_solving_conflicts(
         assert cursor.fetchone()[0] == 0  # remote version has it as false
         cursor.execute('SELECT taxable FROM accounting_rules WHERE identifier=?', (2,))
         assert cursor.fetchone()[0] == 1  # local version has it as true
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [False])
+def test_failed_conflict_resolution_clears_cache(
+        rotkehlchen_api_server: APIServer,
+        latest_accounting_rules_data: list[tuple[int, list[dict[str, Any]]]],
+) -> None:
+    """A later invalid conflict must not leave statuses cached before an earlier rule changed."""
+    _setup_conflict_tests(rotkehlchen_api_server, latest_accounting_rules_data)
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    rotki.accountant.processable_events_cache.add(
+        key=1,
+        value=EventAccountingRuleStatus.NOT_PROCESSED,
+    )
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'UPDATE unresolved_remote_conflicts SET remote_data=? WHERE local_id=?',
+            ('{}', 2),
+        )
+
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesconflictsresource'),
+        json={'conflicts': [
+            {'local_id': 1, 'solve_using': 'remote'},
+            {'local_id': 2, 'solve_using': 'remote'},
+        ]},
+    )
+    assert_error_response(response, contained_in_msg='event_type', status_code=HTTPStatus.CONFLICT)
+    assert rotki.accountant.processable_events_cache.get(1) is None
+    with rotki.data.db.conn.read_ctx() as cursor:
+        cursor.execute('SELECT taxable FROM accounting_rules WHERE identifier=?', (1,))
+        assert cursor.fetchone()[0] == 0  # the first remote rule was committed before the failure
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
@@ -861,6 +894,31 @@ def test_import_export_accounting_rules(rotkehlchen_api_server: APIServer) -> No
             (3, 65, 'count_entire_amount_spend', 'include_gas_costs'),
             (4, 65, 'count_cost_basis_pnl', 'include_crypto2crypto'),
         ] == initial_properties
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [False])
+def test_failed_import_is_atomic(rotkehlchen_api_server: APIServer) -> None:
+    """A failed event mapping must roll back rules inserted earlier in the import."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    success, error_message = DBAccountingRules(rotki.data.db).import_accounting_rules(
+        accounting_rules={'1': {
+            'event_type': HistoryEventType.DEPOSIT.serialize(),
+            'event_subtype': HistoryEventSubType.DEPOSIT_ASSET.serialize(),
+            'counterparty': None,
+            'event_ids': [1],  # no history event exists with this identifier
+            'rule': {
+                'taxable': {'value': False},
+                'count_entire_amount_spend': {'value': False},
+                'count_cost_basis_pnl': {'value': True},
+                'accounting_treatment': None,
+            },
+        }},
+        linked_properties={},
+    )
+    assert success is False
+    assert 'FOREIGN KEY constraint failed' in error_message
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM accounting_rules').fetchone()[0] == 0
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
