@@ -156,7 +156,7 @@ def test_across_relayed_bridge_receive_usdc_on_ethereum(ethereum_inquirer, ether
         asset=A_USDC,
         amount=FVal(bridge_amount := '99970.446325'),
         location_label=ethereum_accounts[0],
-        notes=f'Bridge {bridge_amount} USDC from Binance Smart Chain to Ethereum via Across',
+        notes=f'Bridge {bridge_amount} USDC from BNB Smart Chain to Ethereum via Across',
         counterparty=CPT_ACROSS,
         address=string_to_evm_address('0x07aE8551Be970cB1cCa11Dd7a11F47Ae82e70E67'),
         extra_data={'bridge': {

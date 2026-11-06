@@ -1834,7 +1834,7 @@
   "blockchain_balances": {
     "add_account": "Hesap ekle",
     "add_validator_premium": "ETH staking doğrulayıcıları eklemek için rotki Premium planı gerekir.",
-    "binance_warning": "Binance Smart Chain hesapları yalnızca ücretli bir Etherscan anahtarıyla tespit edilebilir.",
+    "binance_warning": "BNB Smart Chain hesapları yalnızca ücretli bir Etherscan anahtarıyla tespit edilebilir.",
     "early_chain_warning": "rotki'nin {chain} entegrasyonu henüz erken aşamada: şimdilik bu zincirde yalnızca sınırlı sayıda protokol çözümleniyor. Diğer protokollere ait işlemler düz transfer olarak görünecek; zamanla daha fazla protokol eklenecek.",
     "eth_staking_limit_error": "Bu doğrulayıcıyı eklerseniz {currentTier} planınızın {limit} ETH olan ETH staking limitini aşarsınız. {link} ya da özel bir plan için bizimle iletişime geçerek limitinizi artırın.",
     "eth_staking_no_access": "{currentTier} planınız ETH staking içermiyor. {link} ya da özel bir plan için bizimle iletişime geçerek erişim elde edin.",

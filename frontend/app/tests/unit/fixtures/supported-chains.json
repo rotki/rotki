@@ -101,7 +101,7 @@
     },
     {
       "id": "binance_sc",
-      "name": "Binance Smart Chain",
+      "name": "BNB Smart Chain",
       "type": "evm",
       "native_token": "BNB",
       "image": "binance_sc.svg",

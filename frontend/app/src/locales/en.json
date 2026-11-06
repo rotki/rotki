@@ -2155,7 +2155,7 @@
     "add_solana_account": "Add Solana account",
     "add_substrate_account": "Add Substrate account",
     "add_validator_premium": "Adding ETH staking validators needs a rotki Premium plan.",
-    "binance_warning": "Binance Smart Chain accounts can only be detected with a paid Etherscan key.",
+    "binance_warning": "BNB Smart Chain accounts can only be detected with a paid Etherscan key.",
     "early_chain_warning": "rotki's {chain} integration is early: only a limited set of protocols is decoded on this chain for now. Transactions from other protocols will appear as plain transfers, with more protocols added over time.",
     "eth_staking_limit_error": "Adding this validator would put you over your {currentTier} plan's ETH staking limit of {limit} ETH. {link}, or contact us for a custom plan, to raise your limit.",
     "eth_staking_no_access": "Your {currentTier} plan doesn't include ETH staking. {link}, or contact us for a custom plan, to get access.",

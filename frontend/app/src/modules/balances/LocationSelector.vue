@@ -60,7 +60,7 @@ const keptValue = computed<string>(() => {
 
 /**
  * The locations named the way the rest of the app names them, as the location icons do: a chain by
- * its name in the chain list, such as `Binance Smart Chain` for `binance sc`.
+ * its name in the chain list, such as `BNB Smart Chain` for `binance sc`.
  */
 const displayLocations = computed<TradeLocationData[]>(() => get(tradeLocations).map(location => ({
   ...location,
