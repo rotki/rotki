@@ -2219,7 +2219,10 @@ class RestAPI:
                 f'Failed to fetch Lido CSM metrics for new operator {node_operator_id}: {e}',
             )
             status_code = HTTPStatus.BAD_GATEWAY
-            message = f'Failed to fetch metrics for node operator {node_operator_id}'
+            message = (
+                f'Failed to fetch metrics for node operator '
+                f'{staking_module.name} #{node_operator_id}'
+            )
 
         payload = _wrap_in_ok_result(self._serialize_lido_csm_node_operators())
         if message:
@@ -2257,7 +2260,7 @@ class RestAPI:
         }
 
         result = []
-        failed_ids: list[int] = []
+        failed_ids: list[str] = []
         for entry in DBLidoCsm(self.rotkehlchen.data.db).get_node_operators():
             try:
                 metrics = metrics_fetchers[entry.staking_module].get_operator_stats(
@@ -2272,7 +2275,7 @@ class RestAPI:
             except RemoteError as e:
                 log.error(f'Failed to refresh Lido CSM metrics for {entry}: {e}')
                 metrics_payload = None
-                failed_ids.append(entry.node_operator_id)
+                failed_ids.append(f'{entry.staking_module.name} #{entry.node_operator_id}')
 
             result.append({
                 'address': entry.address,
@@ -2284,7 +2287,7 @@ class RestAPI:
         if failed_ids:
             payload['message'] = (
                 'Failed to refresh metrics for node operators: '
-                f"{', '.join(str(node_id) for node_id in failed_ids)}"
+                f"{', '.join(failed_ids)}"
             )
             return api_response(payload, status_code=HTTPStatus.BAD_GATEWAY)
         return api_response(payload, status_code=HTTPStatus.OK)

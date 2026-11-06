@@ -91,8 +91,7 @@ class LidoCsmBalances(ProtocolWithBalance):
     def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         """Return the Lido CSM balances tracked in the DB for stETH.
 
-        May raise:
-            RemoteError: bubbled up from `_metrics_fetcher` when fetching rewards.
+        Operators whose contract calls fail with a RemoteError are logged and skipped.
         """
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         if len(node_operators := self._node_operator_db.get_node_operators(
@@ -118,7 +117,7 @@ class LidoCsmBalances(ProtocolWithBalance):
             except RemoteError as e:
                 log.error(
                     f'Failed to fetch/convert Lido CSM bond shares for node operator '
-                    f'{entry.node_operator_id} due to {e}',
+                    f'{entry.node_operator_id} ({entry.staking_module.name}) due to {e}',
                 )
                 continue
 
@@ -132,7 +131,7 @@ class LidoCsmBalances(ProtocolWithBalance):
             except RemoteError as e:
                 log.error(
                     f'Failed to fetch Lido CSM pending rewards for node operator '
-                    f'{entry.node_operator_id} due to {e}',
+                    f'{entry.node_operator_id} ({entry.staking_module.name}) due to {e}',
                 )
 
             if (total_steth := bond_steth + rewards_steth) == ZERO:

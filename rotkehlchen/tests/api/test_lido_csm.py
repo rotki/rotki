@@ -5,7 +5,10 @@ import pytest
 import requests
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.ethereum.modules.lido_csm.constants import LidoCsmOperatorType
+from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
+    LidoCsmOperatorType,
+    LidoCsmStakingModule,
+)
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmNodeOperatorStats
 from rotkehlchen.db.lido_csm import DBLidoCsm
 from rotkehlchen.errors.misc import RemoteError
@@ -56,6 +59,7 @@ def test_get_lido_csm_node_operators(rotkehlchen_api_server) -> None:
     db.add_node_operator(
         address=address,
         node_operator_id=5,
+        staking_module=LidoCsmStakingModule.CSM,
     )
     stats = LidoCsmNodeOperatorStats(
         operator_type=LidoCsmOperatorType.PERMISSIONLESS,
@@ -65,7 +69,7 @@ def test_get_lido_csm_node_operators(rotkehlchen_api_server) -> None:
         total_deposited_validators=42,
         rewards_steth=FVal('0.3'),
     )
-    db.set_metrics(node_operator_id=5, metrics=stats)
+    db.set_metrics(node_operator_id=5, metrics=stats, staking_module=LidoCsmStakingModule.CSM)
     expected_metrics = stats.serialize()
 
     result = assert_proper_sync_response_with_result(
@@ -100,11 +104,13 @@ def test_add_lido_csm_node_operator(
     )
     assert len(result) == 1
     assert result[0]['node_operator_id'] == 10
+    assert result[0]['staking_module_id'] == LidoCsmStakingModule.CSM.value
     assert result[0]['metrics'] == metrics_payload
 
     entries = db.get_node_operators()
     assert len(entries) == 1
     assert entries[0].node_operator_id == 10
+    assert entries[0].staking_module == LidoCsmStakingModule.CSM
     assert entries[0].metrics is not None
     assert entries[0].metrics.serialize() == metrics_payload
 
@@ -136,6 +142,7 @@ def test_delete_lido_csm_node_operator(rotkehlchen_api_server) -> None:
     db.add_node_operator(
         address=address,
         node_operator_id=3,
+        staking_module=LidoCsmStakingModule.CSM,
     )
 
     result = assert_proper_sync_response_with_result(
@@ -162,6 +169,7 @@ def test_refresh_metrics_endpoint_persists(
     db.add_node_operator(
         address=address,
         node_operator_id=7,
+        staking_module=LidoCsmStakingModule.CSM,
     )
 
     result = assert_proper_sync_response_with_result(
@@ -200,7 +208,7 @@ def test_add_lido_csm_node_operator_returns_warning_on_metrics_failure(
     assert response.status_code == HTTPStatus.BAD_GATEWAY
     payload = response.json()
     assert payload['result'][0]['metrics'] is None
-    assert 'Failed to fetch metrics' in payload['message']
+    assert 'Failed to fetch metrics for node operator CSM #12' in payload['message']
 
 
 def test_refresh_metrics_endpoint_warns_on_failure(rotkehlchen_api_server) -> None:
@@ -211,6 +219,7 @@ def test_refresh_metrics_endpoint_warns_on_failure(rotkehlchen_api_server) -> No
     db.add_node_operator(
         address=address,
         node_operator_id=7,
+        staking_module=LidoCsmStakingModule.CSM,
     )
 
     with patch(
@@ -232,7 +241,11 @@ def test_lido_csm_0x02_node_operator_round_trip(
     """CSM 0x02 numbers its operators separately, so its operator 1 does not clash with CSM's"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     _register_eth_account(rotki, (address := make_evm_address()))
-    DBLidoCsm(rotki.data.db).add_node_operator(address=address, node_operator_id=1)
+    DBLidoCsm(rotki.data.db).add_node_operator(
+        address=address,
+        node_operator_id=1,
+        staking_module=LidoCsmStakingModule.CSM,
+    )
 
     result = assert_proper_sync_response_with_result(
         requests.put(
@@ -259,6 +272,42 @@ def test_lido_csm_0x02_node_operator_round_trip(
     assert result == [
         {'address': address, 'node_operator_id': 1, 'staking_module_id': 3, 'metrics': None},
     ]
+
+
+def test_refresh_metrics_uses_fetcher_of_each_staking_module(
+        rotkehlchen_api_server,
+) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBLidoCsm(rotki.data.db)
+    _register_eth_account(rotki, (address := make_evm_address()))
+    for module in LidoCsmStakingModule:
+        db.add_node_operator(address=address, node_operator_id=3, staking_module=module)
+
+    def get_stats(fetcher, node_operator_id):
+        return LidoCsmNodeOperatorStats(
+            operator_type=LidoCsmOperatorType.PERMISSIONLESS,
+            current_bond=FVal(fetcher.staking_module.value),
+            required_bond=FVal('2.0'),
+            claimable_bond=FVal('0.5'),
+            total_deposited_validators=node_operator_id,
+            rewards_steth=FVal('0.3'),
+        )
+
+    with patch(
+        'rotkehlchen.api.rest.LidoCsmMetricsFetcher.get_operator_stats',
+        autospec=True,
+        side_effect=get_stats,
+    ):
+        result = assert_proper_sync_response_with_result(
+            requests.post(api_url_for(rotkehlchen_api_server, 'lidocsmmetricsresource')),
+        )
+
+    assert {
+        (entry['staking_module_id'], entry['metrics']['bond']['current']) for entry in result
+    } == {(module.value, str(module.value)) for module in LidoCsmStakingModule}
+    assert {
+        (entry.staking_module, entry.metrics.current_bond) for entry in db.get_node_operators()
+    } == {(module, FVal(module.value)) for module in LidoCsmStakingModule}
 
 
 def test_add_lido_csm_node_operator_rejects_unsupported_staking_module(

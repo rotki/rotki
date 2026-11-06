@@ -65,7 +65,7 @@ class LidoCsmMetricsFetcher:
     def __init__(
             self,
             evm_inquirer: EthereumInquirer,
-            staking_module: LidoCsmStakingModule = LidoCsmStakingModule.CSM,
+            staking_module: LidoCsmStakingModule,
     ) -> None:
         # TODO: share conversion logic here mirrors balances.py; extract a shared helper.
         self.staking_module = staking_module
@@ -189,7 +189,10 @@ class LidoCsmMetricsFetcher:
             pending_shares = max(int(cumulative_shares) - int(distributed), 0)
             rewards_steth = self._convert_shares_to_steth(pending_shares)
         except RemoteError as e:
-            log.error(f'Failed to compute Lido CSM rewards for {node_operator_id}: {e}')
+            log.error(
+                f'Failed to compute Lido CSM rewards for {node_operator_id} '
+                f'({self.staking_module.name}): {e}',
+            )
             rewards_steth = ZERO
 
         return LidoCsmNodeOperatorStats(

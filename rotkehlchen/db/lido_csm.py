@@ -27,7 +27,7 @@ class LidoCsmNodeOperator:
     """Represents a Lido CSM node operator entry owned by the user."""
     address: ChecksumEvmAddress
     node_operator_id: int
-    staking_module: LidoCsmStakingModule = LidoCsmStakingModule.CSM
+    staking_module: LidoCsmStakingModule
     metrics: LidoCsmNodeOperatorStats | None = None
 
 
@@ -127,7 +127,7 @@ class DBLidoCsm:
             self,
             address: ChecksumEvmAddress,
             node_operator_id: int,
-            staking_module: LidoCsmStakingModule = LidoCsmStakingModule.CSM,
+            staking_module: LidoCsmStakingModule,
     ) -> None:
         """Insert a node operator; raises InputError for invalid ids or duplicates,
         or NotFoundError if the address is not registered as an Ethereum EVM account."""
@@ -150,14 +150,15 @@ class DBLidoCsm:
                         f'Address {address} is not registered as an Ethereum EVM account',
                     ) from e
                 raise InputError(
-                    f'Node operator id {node_operator_id} is already tracked',
+                    f'Node operator id {node_operator_id} is already tracked '
+                    f'for staking module {staking_module.name}',
                 ) from e
 
     def set_metrics(
             self,
             node_operator_id: int,
             metrics: LidoCsmNodeOperatorStats,
-            staking_module: LidoCsmStakingModule = LidoCsmStakingModule.CSM,
+            staking_module: LidoCsmStakingModule,
     ) -> None:
         """Persist metrics for a tracked operator.
 
@@ -172,7 +173,10 @@ class DBLidoCsm:
                 (staking_module.value, node_operator_id),
             ).fetchone()
         if existing is None:
-            raise InputError(f'Node operator id {node_operator_id} is not tracked')
+            raise InputError(
+                f'Node operator id {node_operator_id} is not tracked '
+                f'for staking module {staking_module.name}',
+            )
 
         payload = (
             staking_module.value,
@@ -214,7 +218,7 @@ class DBLidoCsm:
     def delete_metrics(
             self,
             node_operator_id: int,
-            staking_module: LidoCsmStakingModule = LidoCsmStakingModule.CSM,
+            staking_module: LidoCsmStakingModule,
     ) -> None:
         """Remove cached metrics for a tracked node operator."""
         with self.db.user_write() as write_cursor:
@@ -228,7 +232,7 @@ class DBLidoCsm:
             self,
             address: ChecksumEvmAddress,
             node_operator_id: int,
-            staking_module: LidoCsmStakingModule = LidoCsmStakingModule.CSM,
+            staking_module: LidoCsmStakingModule,
     ) -> None:
         """Delete a node operator; raises InputError when id is unknown or address mismatched."""
         with self.db.conn.read_ctx() as cursor:
@@ -239,7 +243,8 @@ class DBLidoCsm:
             ).fetchone()
         if row is None:
             raise InputError(
-                f'Node operator with id {node_operator_id} for {address} is not tracked',
+                f'Node operator with id {node_operator_id} for {address} is not tracked '
+                f'for staking module {staking_module.name}',
             )
 
         if (stored_address := ChecksumEvmAddress(row[0])) != address:

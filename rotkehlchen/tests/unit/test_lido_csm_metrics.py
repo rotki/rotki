@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
 
 from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
+    LIDO_CSM_MODULE_CONTRACTS,
     LidoCsmOperatorType,
     LidoCsmStakingModule,
 )
@@ -43,6 +44,7 @@ def test_lido_csm_metrics_fetcher_converts_values() -> None:
 
     fetcher = LidoCsmMetricsFetcher(
         evm_inquirer=cast('EthereumInquirer', SimpleNamespace()),
+        staking_module=LidoCsmStakingModule.CSM,
     )
     fetcher.accounting_contract = accounting_contract  # type: ignore[assignment]
     fetcher.module_contract = module_contract  # type: ignore[assignment]
@@ -94,6 +96,10 @@ def test_lido_csm_0x02_without_distributed_rewards_reports_zero_rewards() -> Non
         evm_inquirer=cast('EthereumInquirer', SimpleNamespace()),
         staking_module=LidoCsmStakingModule.CSM_0X02,
     )
+    contracts = LIDO_CSM_MODULE_CONTRACTS[LidoCsmStakingModule.CSM_0X02]
+    assert fetcher.accounting_contract.address == contracts.accounting
+    assert fetcher.module_contract.address == contracts.module
+    assert fetcher.fee_distributor_contract.address == contracts.fee_distributor
     fetcher.accounting_contract = DummyContract({  # type: ignore[assignment]
         'getBondCurveId': 0,
         'getBondSummaryShares': (25 * 10**17, 24 * 10**17),
