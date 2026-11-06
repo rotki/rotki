@@ -118,6 +118,16 @@ describe('modules/shell/action-center/use-integration-rows', () => {
       expect(get(result)).toEqual([]);
     });
 
+    it('should say what a refused sochain key costs', () => {
+      set(savedKeys, { sochain: 'refused-key' });
+      useRaisedConditionsStore().raise({ keyRejected: true, kind: RaisedConditionKind.MISSING_API_KEY, location: 'dogecoin', service: 'sochain' });
+
+      const row = onlyRow();
+
+      expect(row.title).toBe('action_center.rows.integrations.missing_api_key.title_rejected::Dogecoin, Sochain');
+      expect(row.description).toBe('action_center.rows.integrations.missing_api_key.description_sochain_rejected::Dogecoin, Sochain');
+    });
+
     it('should keep a refused key\'s row while that key is saved, and say the key was refused', () => {
       set(savedKeys, { blockscout: 'refused-key' });
       useRaisedConditionsStore().raise({ keyRejected: true, kind: RaisedConditionKind.MISSING_API_KEY, location: 'base', service: 'blockscout' });

@@ -1,4 +1,5 @@
 import logging
+import threading
 import time
 from http import HTTPStatus
 from json import JSONDecodeError
@@ -7,18 +8,22 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 import requests
 
 from rotkehlchen.concurrency import cancellable_sleep
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval_force_positive
-from rotkehlchen.utils.misc import set_user_agent
+from rotkehlchen.types import ExternalService, SupportedBlockchain, Timestamp
+from rotkehlchen.utils.misc import set_user_agent, ts_now
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.fval import FVal
-    from rotkehlchen.types import BTCAddress
+    from rotkehlchen.types import ApiKey, BTCAddress
     from rotkehlchen.utils.rate_limiter import TokenBucket
 
 logger = logging.getLogger(__name__)
@@ -49,7 +54,7 @@ def _retry_after_seconds(response: requests.Response) -> int:
 class SoChainLikeApi:
     """Base of the APIs that answer like SoChain's v3 API. Every answer is
     {"status": "success", "data": ...} or {"status": "fail", "data": {"error_message": ...}},
-    and a 429 says in Retry-After how many seconds to wait. None of them needs an API key.
+    and a 429 says in Retry-After how many seconds to wait. None of them requires an API key.
 
     If a rate limiter is given, every request waits for it first. A short 429 halves its
     rate, which recovers over the following minutes (RATE_RECOVERY_SECONDS).
@@ -79,8 +84,8 @@ class SoChainLikeApi:
         self.rate_limiter.widen(observed_rps=min(self.configured_rps, self.rate_limiter.rps * 2))
         self.last_slowdown = now
 
-    def _query(self, url: str) -> dict[str, Any]:
-        """Query the given url and return the data of the response.
+    def _query(self, url: str, headers: dict[str, str] | None = None) -> dict[str, Any]:
+        """Query the given url, with the given headers, and return the data of the response.
 
         May raise:
         - RemoteError if the request fails, stays rate limited, or the API does not
@@ -104,6 +109,7 @@ class SoChainLikeApi:
             try:
                 response = self.session.get(
                     url=url,
+                    headers=headers,
                     timeout=CachedSettings().get_timeout_tuple(),
                 )
             except requests.exceptions.RequestException as e:
@@ -178,15 +184,89 @@ class SoChainLikeApi:
             ) from e
 
 
-class SoChain(SoChainLikeApi):
-    """Client of the SoChain v3 API.
+class SoChain(SoChainLikeApi, ExternalServiceWithApiKey):
+    """Client of the SoChain v3 API. An API key is optional and only raises the limits.
 
     Docs: https://sochain.com/docs
     """
 
-    def __init__(self, network: Literal['DOGE']) -> None:
-        super().__init__(name='SoChain')
+    def __init__(self, network: Literal['DOGE'], database: DBHandler) -> None:
+        SoChainLikeApi.__init__(self, name='SoChain')
+        ExternalServiceWithApiKey.__init__(
+            self,
+            database=database,
+            service_name=ExternalService.SOCHAIN,
+        )
         self.network = network
+        self.refused_key_lock = threading.Lock()
+        self.reported_key_as_not_usable = False
+
+    def on_api_key_changed(self) -> None:
+        """Forget the cached key and what SoChain said about the previous one, so that the
+        new key is used and SoChain is asked again right away."""
+        self.api_key = None
+        self.last_ts = Timestamp(0)
+        self.unavailable_until = 0.0
+        self.reported_key_as_not_usable = False
+
+    def _handle_refused_key(self, api_key: ApiKey) -> None:
+        """Find out why SoChain answered a request made with the given key with a 401, which
+        has the same message for a key that does not work and for an account past its
+        allowance. In the second case account_info still accepts the key.
+
+        An account past its allowance is not asked again until the allowance resets at
+        00:00 UTC. A key that does not work is reported to the user once.
+        """
+        with self.refused_key_lock:
+            if (
+                self.reported_key_as_not_usable or
+                self.unavailable_until > time.monotonic() or
+                api_key != self._get_api_key()  # changed while the request was in flight
+            ):
+                return
+
+            try:
+                status_code = self.session.get(
+                    url=f'{SOCHAIN_BASE_URL}/account_info',
+                    headers={'API-KEY': api_key},
+                    timeout=CachedSettings().get_timeout_tuple(),
+                ).status_code
+            except requests.exceptions.RequestException as e:
+                log.warning('Could not check why SoChain refused the API key due to %s', e)
+                return
+
+            if api_key != self._get_api_key():
+                return
+
+            if status_code == HTTPStatus.OK:
+                log.warning('The SoChain allowance is used up. Not asking it until 00:00 UTC')
+                self.unavailable_until = (
+                    time.monotonic() + DAY_IN_SECONDS - ts_now() % DAY_IN_SECONDS
+                )
+            elif status_code == HTTPStatus.UNAUTHORIZED:
+                self.reported_key_as_not_usable = True
+                self.db.msg_aggregator.add_missing_key_message(
+                    service=self.service_name,
+                    location=str(SupportedBlockchain.DOGECOIN),
+                    reason='key_not_usable',
+                )
+
+    def _query_with_key(self, url: str) -> dict[str, Any]:
+        """Query the given url with the API key, if there is one.
+
+        May raise:
+        - RemoteError if the query fails. See _query.
+        """
+        api_key = self._get_api_key()
+        try:
+            return self._query(
+                url=url,
+                headers={'API-KEY': api_key} if api_key is not None else None,
+            )
+        except RemoteError as e:
+            if api_key is not None and e.error_code == HTTPStatus.UNAUTHORIZED:
+                self._handle_refused_key(api_key)
+            raise
 
     def get_balance(self, address: BTCAddress) -> FVal:
         """Query the confirmed balance of an address, in whole coins.
@@ -195,7 +275,7 @@ class SoChain(SoChainLikeApi):
         May raise:
         - RemoteError if the query fails or its response can't be deserialized.
         """
-        data = self._query(url=f'{SOCHAIN_BASE_URL}/balance/{self.network}/{address}')
+        data = self._query_with_key(url=f'{SOCHAIN_BASE_URL}/balance/{self.network}/{address}')
         if (confirmed := data.get('confirmed')) is None:
             raise RemoteError(
                 f'Unexpected SoChain {self.network} balance response for {address}: '

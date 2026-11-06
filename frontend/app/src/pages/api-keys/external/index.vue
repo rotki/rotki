@@ -47,6 +47,7 @@ const groups: ServiceGroup[] = [{
     card(EXTERNAL_API_KEY_SERVICES.etherscan),
     card(EXTERNAL_API_KEY_SERVICES.blockscout),
     card(EXTERNAL_API_KEY_SERVICES.helius),
+    card(EXTERNAL_API_KEY_SERVICES.sochain),
     card(EXTERNAL_API_KEY_SERVICES.thegraph),
   ],
   key: 'blockchain',

@@ -1149,8 +1149,8 @@ def fixture_bitcoin_cash_manager(database):
 
 
 @pytest.fixture(name='dogecoin_manager')
-def fixture_dogecoin_manager():
-    return DogecoinManager()
+def fixture_dogecoin_manager(database):
+    return DogecoinManager(database=database)
 
 
 @pytest.fixture(name='ethereum_modules')
