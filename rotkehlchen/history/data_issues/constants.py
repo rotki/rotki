@@ -29,9 +29,33 @@ ISSUE_KIND_SEVERITY: Final[dict[IssueKind, IssueSeverity]] = {
 }
 
 ALLOWED_STATE_TRANSITIONS: Final[dict[IssueState, frozenset[IssueState]]] = {
-    IssueState.OPEN: frozenset({IssueState.AUTO_REMEDIATING}),
-    IssueState.AUTO_REMEDIATING: frozenset({IssueState.RESOLVED, IssueState.UNRESOLVED}),
-    IssueState.UNRESOLVED: frozenset({IssueState.AUTO_REMEDIATING}),
-    IssueState.RESOLVED: frozenset(),
+    IssueState.OPEN: frozenset({
+        IssueState.AUTO_REMEDIATING,
+        IssueState.RESOLVED,
+        IssueState.DISMISSED,
+    }),
+    IssueState.AUTO_REMEDIATING: frozenset({
+        IssueState.RESOLVED,
+        IssueState.UNRESOLVED,
+        IssueState.DISMISSED,
+    }),
+    IssueState.UNRESOLVED: frozenset({
+        IssueState.AUTO_REMEDIATING,
+        IssueState.OPEN,
+        IssueState.RESOLVED,
+        IssueState.DISMISSED,
+    }),
+    IssueState.RESOLVED: frozenset({IssueState.OPEN, IssueState.DISMISSED}),
     IssueState.DISMISSED: frozenset(),
 }
+
+
+def transition_sources(target: IssueState) -> tuple[IssueState, ...]:
+    """The states from which ALLOWED_STATE_TRANSITIONS permits moving to `target`.
+
+    Bulk updates filter their rows with this instead of hand-writing a state exclusion,
+    so they can never reach a transition that the table forbids.
+    """
+    return tuple(
+        source for source, targets in ALLOWED_STATE_TRANSITIONS.items() if target in targets
+    )

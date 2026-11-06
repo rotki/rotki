@@ -813,25 +813,7 @@ def _detect_unmatched_bridge_issues(database: DBHandler) -> None:
                 ts_end=event.timestamp,
             )
 
-    # System-resolve issues whose leg is no longer unmatched (got matched, ignored
-    # or resolved as external). This is an observed fact, not a user/remediation
-    # state transition, so it bypasses the state machine on purpose.
-    with database.user_write() as write_cursor:
-        query = (
-            'UPDATE data_issues SET state = ?, resolved_at = ? WHERE kind = ? '
-            'AND state != ? AND resolved_at IS NULL'
-        )
-        bindings: tuple = (
-            IssueState.RESOLVED,
-            ts_now(),
-            IssueKind.UNMATCHED_BRIDGE,
-            IssueState.DISMISSED,
-        )
-        if len(unmatched_ids) > 0:
-            placeholders = ','.join(['?'] * len(unmatched_ids))
-            query += f' AND event_identifier NOT IN ({placeholders})'
-            bindings += tuple(unmatched_ids)
-        write_cursor.execute(query, bindings)
+    issues_manager.resolve_unmatched_bridge_issues_except(still_unmatched_ids=unmatched_ids)
 
 
 def _finalize_processing(
