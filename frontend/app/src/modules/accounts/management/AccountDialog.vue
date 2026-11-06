@@ -38,7 +38,11 @@ const subtitle = computed<string>(() =>
 );
 
 const { modelErrorMessages, pending, resetSaveError, save, saveError, saveErrorIsPremium } = useAccountManage();
-const { loading } = useAccountLoading();
+const { loading, mutationLoading } = useAccountLoading();
+const dialogLoading = computed<boolean>(() => {
+  const state = get(model);
+  return state?.mode === 'add' && state.type === 'account' ? get(mutationLoading) : get(loading);
+});
 const { validatorsLimitInfo } = useEthStaking();
 const { currentTier, ethStakedLimit } = usePremiumHelper();
 const { upgradeText, upgradeUrl } = usePlanUpgradeLink();
@@ -95,7 +99,7 @@ watch(model, (model, oldModel) => {
     :title="title"
     :subtitle="subtitle"
     :action="{ disabled: isValidatorLimitReached, primary: t('common.actions.save') }"
-    :loading="loading || pending"
+    :loading="dialogLoading || pending"
     :prompt-on-close="stateUpdated"
     :layout="{ autoHeight: true }"
     @confirm="confirm()"
@@ -107,7 +111,7 @@ watch(model, (model, oldModel) => {
       v-model="model"
       v-model:error-messages="modelErrorMessages"
       :chain-ids="chainIds"
-      :loading="loading"
+      :loading="dialogLoading || pending"
       @import-csv="importFromCsv()"
     />
 

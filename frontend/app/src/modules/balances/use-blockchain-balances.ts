@@ -2,6 +2,7 @@ import type { BlockchainBalancePayload } from '@/modules/balances/types/blockcha
 import type { ActivityId } from '@/modules/task-center/core/types';
 import { err, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { balancesRunActivity, chainBalancesActivity } from '@/modules/balances/balances.activity';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { RefreshMode } from '@/modules/balances/types/refresh-mode';
@@ -46,6 +47,12 @@ function refreshPriority(userStarted: boolean): Priority {
   return userStarted ? Priority.USER : DEFAULT_PRIORITY;
 }
 
+function accountRunRevision(chains: string[], revisions: Record<string, number>): string | undefined {
+  return chains.some(chain => revisions[chain] > 0)
+    ? chains.map(chain => `${chain}:${revisions[chain]}`).join(',')
+    : undefined;
+}
+
 /**
  * Layer 2 — the work, as **one chain job per chain**.
  *
@@ -76,19 +83,15 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
   const { runActivityBatch } = useActivityBatch();
   const { submitTask, supersedeTask } = useNativeTask();
   const refreshState = useBalanceRefreshState();
+  const { getAccounts, revisionOf } = useBlockchainAccountsStore();
   const { isAddressExcluded, isChainExcluded } = useDisabledChains();
 
   /**
    * Whether a *network* refresh is already running for this chain.
    *
-   * It does not wait on the chain's hydration from the DB, and must not: the two layers overlap
-   * by design. A cached read landing after a network result would overwrite fresh balances with
-   * stale ones, which balance writes being monotonic prevents outright — the older payload is
-   * discarded whichever order the two land in. Two mechanisms for one hazard, and the cheaper one
-   * wins.
-   *
-   * Read by the `periodic` branch only. It is not redundant with `submitTask`'s id dedup: dedup
-   * covers a run that is *submitted*, this covers the window where the POST itself is in flight.
+   * Hydration is independent. Result admission prevents a delayed cached response from replacing
+   * a network result, including when the backend supplies no timestamp. Periodic work checks
+   * both queued and running network jobs.
    */
   const isChainRefreshing = (chain: string): boolean => get(refreshState.refreshingChains).has(chain);
 
@@ -97,19 +100,19 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
    * under a single umbrella.
    *
    * @remarks
-   * Chains run on `BALANCES_LANE` at cap 2, and a background run pauses while a history sync holds
-   * the orchestrator. A `USER` refresh supersedes the run in flight rather than joining it, and
-   * jumps queued background work.
+   * Chains run on `BALANCES_LANE` at cap 2. Same-chain jobs queue before submission, so detection,
+   * querying and frontend result application complete in order without occupying a lane slot while
+   * waiting. Different chains remain independent.
    *
-   * The umbrella's identity is scope + mode, so two identical runs dedup onto one while a full
-   * refresh and a single-chain one coexist. Its scope comes from `/blockchains/supported`, which
+   * The umbrella's identity is scope, mode and account revision. Its scope comes from
+   * `/blockchains/supported`, which
    * lands before the account walk, so the denominator is honest from the first render — it must
    * never read a store that is still filling.
    *
    * @param payload - what to refresh; an empty `addresses` list means every address, the same as
    * omitting it
-   * @param mode - `USER` supersedes and jumps the queue, `PERIODIC` yields to a chain already
-   * refreshing, `BACKGROUND` neither
+   * @param mode - `USER` requests user priority, `PERIODIC` yields to a chain already refreshing,
+   * `BACKGROUND` neither
    * @param options - `detect` runs token detection before the query, narrowed to `detectAddresses`
    * when given
    */
@@ -122,10 +125,8 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     const { addresses, blockchain, isXpub = false } = payload;
     const chains = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
     const requestedAddresses = addresses?.length ? addresses : undefined;
-
-    /** Addresses of `chain` `disabledChainQueries` still allows, or `undefined` for the whole chain. */
-    const allowedAddresses = (chain: string): string[] | undefined =>
-      requestedAddresses?.filter(address => !isAddressExcluded(chain, address));
+    const revisions = Object.fromEntries(chains.map(chain => [chain, revisionOf(chain)]));
+    const runRevision = accountRunRevision(chains, revisions);
 
     const userStarted = mode === RefreshMode.USER;
     const submit = userStarted ? supersedeTask : submitTask;
@@ -139,7 +140,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
      * keep `withDetection` writing `lastAutoDetectAt`, so the cooldown would suppress the next
      * sweep too.
      */
-    const chainJobId = (chain: string): ActivityId => chainBalancesActivity.id({ chain, detect, detectAddresses });
+    const chainJobId = (chain: string): ActivityId => chainBalancesActivity.id({ chain, detect, detectAddresses, revision: revisions[chain] });
 
     /**
      * One chain's refresh: token detection when asked, then the network query.
@@ -152,43 +153,58 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
      * CANCELLED rather than `ok`, so nothing records a completion for work that did not run.
      */
     const chainJob = async (chain: string, parent: ActivityId | undefined): Promise<void> => {
-      const chainAddresses = allowedAddresses(chain);
-      const chainPayload = { addresses: chainAddresses ?? addresses, blockchain: chain, isXpub };
       const id = chainJobId(chain);
-      await submit({
-        id,
-        parent,
-        kind: chainBalancesActivity.kind,
-        lane: chainBalancesActivity.laneOf?.({ chain }),
-        priority,
-        rerunnable: true,
-        run: async ({ cancelled, runTask }): Promise<Result<void, TaskError>> => {
-          if (mode === RefreshMode.PERIODIC && isChainRefreshing(chain))
-            return err(Skipped({ message: t('actions.balances.blockchain.skipped.busy') }));
+      const alreadyRefreshing = isChainRefreshing(chain);
+      await refreshState.enqueue(chain, async () => {
+        const trackedAddresses = detect && requestedAddresses
+          ? new Set(getAccounts(chain).filter(account => account.kind === 'address').map(account => account.address.toLowerCase()))
+          : new Set<string>();
+        const pendingAddresses = refreshState.pendingAddresses(chain)
+          .filter(address => trackedAddresses.has(address.toLowerCase()));
+        const allowedAddresses = (addresses: string[]): string[] => Array.from(
+          new Map([...addresses, ...pendingAddresses]
+            .filter(address => !isAddressExcluded(chain, address))
+            .map(address => [address.toLowerCase(), address])).values(),
+        );
+        const chainAddresses = requestedAddresses ? allowedAddresses(requestedAddresses) : undefined;
+        const detectionAddresses = detectAddresses ? allowedAddresses(detectAddresses) : undefined;
+        const chainPayload = { addresses: chainAddresses, blockchain: chain, isXpub };
+        await submit({
+          id,
+          parent,
+          kind: chainBalancesActivity.kind,
+          lane: chainBalancesActivity.laneOf?.({ chain }),
+          priority,
+          rerunnable: true,
+          run: async ({ cancelled, runTask }): Promise<Result<void, TaskError>> => {
+            if (mode === RefreshMode.PERIODIC && alreadyRefreshing)
+              return err(Skipped({ message: t('actions.balances.blockchain.skipped.busy') }));
 
-          const everyNamedAddressExcluded = chainAddresses?.length === 0;
-          if (isChainExcluded(chain) || everyNamedAddressExcluded)
-            return err(Skipped({ message: t('actions.balances.blockchain.skipped.disabled') }));
+            const everyNamedAddressExcluded = chainAddresses?.length === 0;
+            if (isChainExcluded(chain) || everyNamedAddressExcluded)
+              return err(Skipped({ message: t('actions.balances.blockchain.skipped.disabled') }));
 
-          if (detect)
-            await detectForChain(chain, id, detectAddresses);
+            if (detect)
+              await detectForChain(chain, id, detectionAddresses);
 
-          // Cancelled children settle, so the await above resolves either way.
-          if (cancelled())
-            return err(Cancelled({ message: t('actions.balances.blockchain.cancelled') }));
+            // Cancelled children settle, so the await above resolves either way.
+            if (cancelled())
+              return err(Cancelled({ message: t('actions.balances.blockchain.cancelled') }));
 
-          return handleRefresh(runTask, chainPayload);
-        },
-        // Stage-neutral: fixed at submit time, while this job has two stages.
-        subtitle: activityLabelFor(msg.$t('task_center.activity.blockchain_balances.chain'), { chain: getChainName(chain) }),
-        title: t('task_center.group.blockchain_balances'),
-        userStarted,
+            return handleRefresh(runTask, chainPayload);
+          },
+          // Stage-neutral: fixed at submit time, while this job has two stages.
+          subtitle: activityLabelFor(msg.$t('task_center.activity.blockchain_balances.chain'), { chain: getChainName(chain) }),
+          title: t('task_center.group.blockchain_balances'),
+          userStarted,
+        });
       });
     };
+    const chainWork: Promise<void>[] = [];
 
     await runActivityBatch(
       {
-        id: balancesRunActivity.id({ chains, mode }),
+        id: balancesRunActivity.id({ chains, mode, revision: runRevision }),
         // The chains are the subjects; this only contains them, so it records no completion.
         container: true,
         kind: balancesRunActivity.kind,
@@ -198,8 +214,15 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
         userStarted,
       },
       chains,
-      async (chain, parent) => chainJob(chain, parent),
-      async (parent): Promise<unknown> => followUp?.(chains.map(chainJobId), parent),
+      async (chain, parent) => {
+        const work = chainJob(chain, parent);
+        chainWork.push(work);
+        return work;
+      },
+      async (parent): Promise<unknown> => {
+        await Promise.all(chainWork);
+        return followUp?.(chains.map(chainJobId), parent);
+      },
     );
   };
 

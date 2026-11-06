@@ -1,9 +1,14 @@
 import type { ComputedRef } from 'vue';
-import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
+import type { AccountDataRow } from './types';
+import type { AddressGroupWithBalance, BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
+import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getGroupId } from '@/modules/accounts/account-utils';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useAccountLoadingStates } from './use-account-loading-states';
 
 interface OrchestratorStatus { active: boolean; everCompleted: boolean }
@@ -90,5 +95,75 @@ describe('useAccountLoadingStates', () => {
     startHydration('eth');
 
     expect(get(isInitialLoading)).toBe(false);
+  });
+
+  it('should find a known balance on one chain while another is pending', () => {
+    const row: AccountDataRow<AddressGroupWithBalance> = {
+      address: '0xabc',
+      category: 'evm',
+      chains: ['eth', 'optimism'],
+      id: getGroupId({ address: '0xabc', chains: ['eth', 'optimism'], kind: 'address' }),
+      kind: 'address',
+      type: 'group',
+      value: bigNumberify(12),
+    };
+    const refresh = useBalanceRefreshState();
+    const { hasRowBalance, isRowPending } = useAccountLoadingStates<AddressGroupWithBalance>('evm');
+
+    refresh.markPending('optimism', row.address, 1);
+    expect(isRowPending(row)).toBe(true);
+    expect(hasRowBalance(row)).toBe(false);
+
+    useBalancesStore().updateBalances('eth', {
+      perAccount: { eth: { [row.address]: { assets: {}, liabilities: {} } } },
+      totals: { assets: {}, liabilities: {} },
+    });
+    expect(hasRowBalance(row)).toBe(true);
+    expect(isRowPending(row)).toBe(true);
+  });
+
+  it('should stop marking an available value as pending when only excluded chains remain', () => {
+    const row: AccountDataRow<AddressGroupWithBalance> = {
+      address: '0xabc',
+      category: 'evm',
+      chains: ['eth', 'optimism'],
+      id: getGroupId({ address: '0xabc', chains: ['eth', 'optimism'], kind: 'address' }),
+      kind: 'address',
+      type: 'group',
+      value: bigNumberify(12),
+    };
+    const refresh = useBalanceRefreshState();
+    const settings = useSettingsRepo();
+    const { isRowPending } = useAccountLoadingStates<AddressGroupWithBalance>('evm');
+    refresh.markPending('optimism', row.address, 1);
+    useBalancesStore().updateBalances('eth', {
+      perAccount: { eth: { [row.address]: { assets: {}, liabilities: {} } } },
+      totals: { assets: {}, liabilities: {} },
+    });
+
+    expect(isRowPending(row)).toBe(true);
+    settings.updateGeneral({ ...settings.general, disabledChainQueries: { optimism: [] } });
+    expect(isRowPending(row)).toBe(false);
+    settings.updateGeneral({ ...settings.general, disabledChainQueries: { optimism: ['0xABC'] } });
+    expect(isRowPending(row)).toBe(false);
+    settings.updateGeneral({ ...settings.general, disabledChainQueries: {} });
+    expect(isRowPending(row)).toBe(true);
+  });
+
+  it('should keep an entirely unqueried excluded account pending instead of showing zero', () => {
+    const row: AccountDataRow<AddressGroupWithBalance> = {
+      address: '0xabc',
+      category: 'evm',
+      chains: ['optimism'],
+      id: getGroupId({ address: '0xabc', chains: ['optimism'], kind: 'address' }),
+      kind: 'address',
+      type: 'group',
+      value: bigNumberify(0),
+    };
+    const settings = useSettingsRepo();
+    settings.updateGeneral({ ...settings.general, disabledChainQueries: { optimism: ['0xABC'] } });
+    useBalanceRefreshState().markPending('optimism', row.address, 1);
+
+    expect(useAccountLoadingStates<AddressGroupWithBalance>('evm').isRowPending(row)).toBe(true);
   });
 });

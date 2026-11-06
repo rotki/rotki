@@ -16,6 +16,7 @@ const h = vi.hoisted(() => ({
   enableModule: vi.fn(),
   fetchTags: vi.fn(),
   getAddresses: vi.fn((): string[] => []),
+  markAdded: vi.fn(),
   refreshBlockchainBalances: vi.fn(),
   supportsTransactions: vi.fn((): boolean => true),
   trackAddedAddresses: vi.fn(),
@@ -57,7 +58,7 @@ vi.mock('@/modules/balances/use-blockchain-balances', () => ({
 }));
 
 vi.mock('@/modules/accounts/use-blockchain-accounts-store', () => ({
-  useBlockchainAccountsStore: vi.fn(() => ({ trackAddedAddresses: h.trackAddedAddresses })),
+  useBlockchainAccountsStore: vi.fn(() => ({ markAdded: h.markAdded, trackAddedAddresses: h.trackAddedAddresses })),
 }));
 
 vi.mock('@/modules/tags/use-tag-operations', () => ({
@@ -195,6 +196,8 @@ describe('useAccountAdditionService', () => {
       const summary = await useAccountAdditionService().addAccounts('eth', [{ address: '0xabc', tags: null }], undefined, onComplete);
 
       expect(summary.added).toStrictEqual([{ address: '0xabc', chain: 'eth' }]);
+      expect(h.markAdded).toHaveBeenCalledWith('eth', '0xabc', false);
+      expect(h.markAdded.mock.invocationCallOrder[0]).toBeLessThan(onComplete.mock.invocationCallOrder[0]);
       expect(onComplete).toHaveBeenCalledWith({ addedAccounts: [{ address: '0xabc', chain: 'eth' }], chain: 'eth', isXpub: false, modulesToEnable: undefined });
     });
 
@@ -299,7 +302,7 @@ describe('useAccountAdditionService', () => {
       expect(onRefreshAccounts).not.toHaveBeenCalled();
     });
 
-    it('should run a chain job that detects the new addresses before querying', async () => {
+    it('should detect and query the new address on its chain', async () => {
       const onRefreshAccounts = vi.fn<() => Promise<void>>(async () => {});
       const onFetchAccounts = vi.fn<() => Promise<void>>(async () => {});
       const { useAccountAdditionService } = await importModule();
@@ -309,13 +312,13 @@ describe('useAccountAdditionService', () => {
         onFetchAccounts,
       );
       expect(h.refreshBlockchainBalances).toHaveBeenCalledWith(
-        { blockchain: 'eth' },
+        { addresses: ['0xabc'], blockchain: 'eth' },
         'background',
         { detect: true, detectAddresses: ['0xabc'] },
       );
     });
 
-    it('should narrow detection to the added addresses, per chain', async () => {
+    it('should detect and query only the added addresses on each chain', async () => {
       const onRefreshAccounts = vi.fn<() => Promise<void>>(async () => {});
       const onFetchAccounts = vi.fn<() => Promise<void>>(async () => {});
       const { useAccountAdditionService } = await importModule();
@@ -332,12 +335,12 @@ describe('useAccountAdditionService', () => {
       );
       expect(h.refreshBlockchainBalances).toHaveBeenCalledTimes(2);
       expect(h.refreshBlockchainBalances).toHaveBeenCalledWith(
-        { blockchain: Blockchain.ETH },
+        { addresses: ['0xabc', '0xdef'], blockchain: Blockchain.ETH },
         'background',
         { detect: true, detectAddresses: ['0xabc', '0xdef'] },
       );
       expect(h.refreshBlockchainBalances).toHaveBeenCalledWith(
-        { blockchain: Blockchain.OPTIMISM },
+        { addresses: ['0x123'], blockchain: Blockchain.OPTIMISM },
         'background',
         { detect: true, detectAddresses: ['0x123'] },
       );

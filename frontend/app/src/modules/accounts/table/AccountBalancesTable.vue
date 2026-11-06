@@ -80,7 +80,7 @@ const {
   totalValue,
 } = useAccountTableData<T>(() => accounts, expandedIds, chainFilter);
 
-const { accountOperation, isInitialLoading, isRowLoading, isSectionLoading } = useAccountLoadingStates<T>(() => category);
+const { accountOperation, hasRowBalance, isInitialLoading, isRowLoading, isRowPending, isSectionLoading } = useAccountLoadingStates<T>(() => category);
 
 const { confirmDelete, deleteAccount, edit } = useAccountOperations<T>({
   onEdit: account => emit('edit', account),
@@ -150,7 +150,9 @@ defineExpose({
     <template #item.value="{ row }">
       <AccountBalanceValue
         :included-value="row.includedValue"
+        :has-balance="hasRowBalance(row)"
         :value="row.value"
+        :pending="isRowPending(row)"
         :loading="isRowLoading(row)"
       />
     </template>

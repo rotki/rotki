@@ -11,6 +11,7 @@ const {
   currentTier,
   ethStakedLimit,
   loading,
+  mutationLoading,
   modelErrorMessages,
   pending,
   premium,
@@ -26,6 +27,7 @@ const {
     currentTier: ref<string>('free'),
     ethStakedLimit: ref<number>(0),
     loading: ref<boolean>(false),
+    mutationLoading: ref<boolean>(false),
     modelErrorMessages: ref<Record<string, string[]>>({}),
     pending: ref<boolean>(false),
     premium: ref<boolean>(false),
@@ -55,7 +57,7 @@ vi.mock('@/modules/accounts/blockchain/use-account-manage', async importOriginal
 }));
 
 vi.mock('@/modules/accounts/use-account-loading', () => ({
-  useAccountLoading: (): Record<string, unknown> => ({ loading }),
+  useAccountLoading: (): Record<string, unknown> => ({ loading, mutationLoading }),
 }));
 
 vi.mock('@/modules/accounts/use-eth-staking', () => ({
@@ -142,6 +144,7 @@ describe('accountDialog', () => {
     set(currentTier, 'free');
     set(ethStakedLimit, 0);
     set(loading, false);
+    set(mutationLoading, false);
     set(modelErrorMessages, {});
     set(pending, false);
     set(premium, false);
@@ -151,6 +154,19 @@ describe('accountDialog', () => {
     save.mockResolvedValue(true);
     validate.mockResolvedValue(true);
     set(useAccountImportDialog().modelOpen, false);
+  });
+
+  it('only relaxes balance-refresh loading for ordinary additions', async () => {
+    set(loading, true);
+    const wrapper = createWrapper();
+    expect(dialog(wrapper).props('loading')).toBe(false);
+    await wrapper.setProps({ modelValue: { chain: Blockchain.ETH2, data: {}, mode: 'add', type: 'validator' } });
+    expect(dialog(wrapper).props('loading')).toBe(true);
+    await wrapper.setProps({ modelValue: { ...createNewBlockchainAccount(), mode: 'edit' } });
+    expect(dialog(wrapper).props('loading')).toBe(true);
+    set(mutationLoading, true);
+    await wrapper.setProps({ modelValue: createNewBlockchainAccount() });
+    expect(dialog(wrapper).props('loading')).toBe(true);
   });
 
   describe('the heading', () => {

@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
-import { useAccountLoading } from '@/modules/accounts/use-account-loading';
 
 const chain = defineModel<string | undefined>('chain', { required: true });
 
 defineProps<{
   editMode: boolean;
   chainIds: string[];
+  loading: boolean;
 }>();
-
-const { loading } = useAccountLoading();
 </script>
 
 <template>

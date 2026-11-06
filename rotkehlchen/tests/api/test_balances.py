@@ -1848,12 +1848,16 @@ def test_blockchain_balances_partial_chain_failure(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     chains_aggregator = rotki.chains_aggregator
     eth_address, optimism_address = chains_aggregator.accounts.eth[0], chains_aggregator.accounts.optimism[0]  # noqa: E501
-    chains_aggregator.balances.optimism[optimism_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal(5), value=FVal(10))  # from a previous successful query  # noqa: E501
+    with chains_aggregator.balances_lock:
+        chains_aggregator.balances.optimism[optimism_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal(5), value=FVal(10))  # from a previous successful query  # noqa: E501
+        chains_aggregator.totals = chains_aggregator.balances.recalculate_totals()
 
     def mock_query_chain_balances(blockchain: SupportedBlockchain, **kwargs: Any) -> None:
         if blockchain == SupportedBlockchain.OPTIMISM:
             raise RemoteError('Error querying information from optimism')
-        chains_aggregator.balances.eth[eth_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=FVal(2))  # noqa: E501
+        with chains_aggregator.balances_lock:
+            chains_aggregator.balances.eth[eth_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=FVal(2))  # noqa: E501
+            chains_aggregator.totals = chains_aggregator.balances.recalculate_totals()
 
     with patch.object(chains_aggregator, '_query_chain_balances', side_effect=mock_query_chain_balances):  # noqa: E501
         result = assert_proper_sync_response_with_result(

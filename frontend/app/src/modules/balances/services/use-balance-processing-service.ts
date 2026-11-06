@@ -18,6 +18,7 @@ import { byChainKey } from '@/modules/core/common/chains';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Cancelled, isActionable, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
@@ -37,28 +38,33 @@ interface UseBalanceProcessingServiceReturn {
 
 export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn {
   const { queryBlockchainBalances, refreshBlockchainBalances, queryXpubBalances } = useBlockchainBalancesApi();
-  const { accounts } = storeToRefs(useBlockchainAccountsStore());
+  const accountsStore = useBlockchainAccountsStore();
+  const { accounts } = storeToRefs(accountsStore);
   const { updateBalances } = useBalancesStore();
   const { isStale, updateTimestamps } = useBlockchainRefreshTimestampsStore();
   const { t } = useI18n({ useScope: 'global' });
   const { invalidate, markCompleted } = useTaskOrchestrator();
   const { isEth2Enabled } = useBlockchainValidatorsStore();
   const refreshState = useBalanceRefreshState();
+  const { isAddressExcluded } = useDisabledChains();
 
-  const processBalanceResult = (blockchain: string, parsedBalances: BlockchainBalances): void => {
+  const processBalanceResult = (blockchain: string, parsedBalances: BlockchainBalances, revision: number): BlockchainBalances | undefined => {
+    if (accountsStore.revisionOf(blockchain) !== revision)
+      return undefined;
     const lastRefreshTs = parsedBalances.lastRefreshTs ? byChainKey(parsedBalances.lastRefreshTs) : undefined;
     if (isStale(blockchain, lastRefreshTs?.[blockchain]))
-      return;
+      return undefined;
 
     if (lastRefreshTs)
       updateTimestamps(lastRefreshTs);
 
     const perAccount = parsedBalances.perAccount[blockchain];
 
-    if (isBtcBalances(perAccount))
-      updateBalances(blockchain, convertBtcBalances(blockchain, parsedBalances.totals, perAccount));
-    else
-      updateBalances(blockchain, parsedBalances);
+    const balances = isBtcBalances(perAccount)
+      ? convertBtcBalances(blockchain, parsedBalances.totals, perAccount)
+      : parsedBalances;
+    updateBalances(blockchain, balances);
+    return balances;
   };
 
   const hasAccounts = (blockchain: string): boolean => {
@@ -149,6 +155,9 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   const settleChain = (
     blockchain: string,
     result: Result<BlockchainBalances, TaskError>,
+    revision: number,
+    addresses?: string[],
+    network = false,
   ): Result<void, TaskError> => {
     if (isErr(result)) {
       if (isActionable(result.error))
@@ -156,8 +165,17 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
       invalidate(chainBalancesActivity.kind, ...chainBalancesActivity.partsOf({ chain: blockchain }));
     }
     else {
-      processBalanceResult(blockchain, result.value);
-      markCompleted(chainBalancesActivity.kind, ...chainBalancesActivity.partsOf({ chain: blockchain }));
+      const balances = processBalanceResult(blockchain, result.value, revision);
+      if (balances) {
+        if (network) {
+          refreshState.markNetworkApplied(blockchain);
+          if (addresses?.length) {
+            const covered = new Set(Object.keys(balances.perAccount[blockchain] ?? {}).map(address => address.toLowerCase()));
+            refreshState.settlePending(blockchain, revision, addresses.filter(address => covered.has(address.toLowerCase())));
+          }
+        }
+        markCompleted(chainBalancesActivity.kind, ...chainBalancesActivity.partsOf({ chain: blockchain }));
+      }
     }
 
     return mapResult(result, () => {});
@@ -167,15 +185,28 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     runTask: RunBackendTask,
     blockchain: string,
     apiCall: () => Promise<{ taskId: number }>,
+    addresses?: string[],
   ): Promise<Result<void, TaskError>> => {
     const skipped = skipUnlessQueryable(blockchain);
     if (skipped)
       return skipped;
 
+    const revision = accountsStore.revisionOf(blockchain);
+    const generation = refreshState.beginNetwork(blockchain);
+    // Full responses can include frozen balances; only enabled pending addresses were queried.
+    const pendingTargets = addresses?.length
+      ? addresses
+      : refreshState.pendingAddresses(blockchain).filter(address => !isAddressExcluded(blockchain, address));
     // `runTask` types the payload but does not validate it — the schema is only applied here.
+    const result = mapResult(await runTask<unknown>(apiCall), result => BlockchainBalances.parse(result));
+    if (refreshState.networkGeneration(blockchain) !== generation)
+      return mapResult(result, () => {});
     return settleChain(
       blockchain,
-      mapResult(await runTask<unknown>(apiCall), result => BlockchainBalances.parse(result)),
+      result,
+      revision,
+      pendingTargets,
+      true,
     );
   };
 
@@ -192,6 +223,8 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     if (skipped)
       return skipped;
 
+    const revision = accountsStore.revisionOf(blockchain);
+    const networkGeneration = refreshState.appliedNetwork(blockchain);
     let result: Result<BlockchainBalances, TaskError>;
     try {
       result = ok(await queryBlockchainBalances(payload, threshold));
@@ -202,7 +235,9 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
         : TaskFailed({ cause: error, message: getErrorMessage(error) }));
     }
 
-    return settleChain(blockchain, result);
+    if (refreshState.appliedNetwork(blockchain) !== networkGeneration)
+      return mapResult(result, () => {});
+    return settleChain(blockchain, result, revision);
   };
 
   const handleRefresh = async (
@@ -216,6 +251,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
         runTask,
         blockchain,
         async () => !isXpub ? refreshBlockchainBalances(payload) : queryXpubBalances(payload),
+        payload.addresses,
       );
     }
     finally {
