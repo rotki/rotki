@@ -87,11 +87,7 @@ class LidoCsmBalances(ProtocolWithBalance):
         return token_normalized_value_decimals(pooled_eth, 18)
 
     def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
-        """Return the Lido CSM balances tracked in the DB for stETH.
-
-        May raise:
-            RemoteError: bubbled up from `_metrics_fetcher` when fetching rewards.
-        """
+        """Return the Lido CSM balances tracked in the DB for stETH."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         if len(node_operators := self._node_operator_db.get_node_operators(
             addresses=addresses,
@@ -103,6 +99,12 @@ class LidoCsmBalances(ProtocolWithBalance):
                 to_asset=CachedSettings().main_currency,
         )) == ZERO:
             log.error('Failed to fetch stETH price; reporting values as zero.')
+
+        rewards_tree = None
+        try:
+            rewards_tree = self._metrics_fetcher.get_rewards_tree()
+        except RemoteError as e:
+            log.error('Failed to fetch the Lido CSM rewards tree due to %s', e)
 
         for entry in node_operators:
             # Fetch bond shares and convert to stETH
@@ -119,14 +121,18 @@ class LidoCsmBalances(ProtocolWithBalance):
 
             # Fetch pending rewards (stETH) using the metrics fetcher
             rewards_steth = ZERO
-            try:
-                stats = self._metrics_fetcher.get_operator_stats(entry.node_operator_id)
-                rewards_steth = stats.rewards_steth
-            except RemoteError as e:
-                log.error(
-                    f'Failed to fetch Lido CSM pending rewards for node operator '
-                    f'{entry.node_operator_id} due to {e}',
-                )
+            if rewards_tree is not None:
+                try:
+                    rewards_steth = self._metrics_fetcher.get_pending_rewards(
+                        node_operator_id=entry.node_operator_id,
+                        rewards_tree=rewards_tree,
+                    )
+                except RemoteError as e:
+                    log.error(
+                        'Failed to fetch Lido CSM pending rewards for node operator %s due to %s',
+                        entry.node_operator_id,
+                        e,
+                    )
 
             if (total_steth := bond_steth + rewards_steth) == ZERO:
                 continue

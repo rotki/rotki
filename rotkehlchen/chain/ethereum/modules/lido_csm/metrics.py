@@ -116,6 +116,50 @@ class LidoCsmMetricsFetcher:
         """
         return query_file(f'{LIDO_CSM_IPFS_GATEWAY}{cid}', is_json=True)
 
+    def get_rewards_tree(self) -> dict[int, int]:
+        """Download the fee distributor's rewards tree and return the cumulative reward
+        shares of every node operator in it, by node operator id.
+
+        May raise:
+            RemoteError: if the tree's cid can't be read or the document can't be retrieved.
+        """
+        tree_cid = self.fee_distributor_contract.call(
+            node_inquirer=self.evm_inquirer,
+            method_name='treeCid',
+            arguments=[],
+        )
+        doc = self._fetch_ipfs_json(tree_cid)
+        # IPFS doc contains 'values', each with 'value': [nodeOperatorId, cumulativeShares]
+        values = doc.get('values', []) if isinstance(doc, dict) else []
+        rewards_tree: dict[int, int] = {}
+        for item in values:
+            val = item.get('value') if isinstance(item, dict) else item
+            if not (isinstance(val, (list, tuple)) and len(val) >= 2):
+                log.error('Skipping malformed Lido CSM rewards tree entry: %s', val)
+                continue
+
+            try:
+                rewards_tree[int(val[0])] = int(val[1])
+            except (TypeError, ValueError) as e:
+                log.error('Skipping Lido CSM rewards entry %s due to parsing error: %s', val, e)
+
+        return rewards_tree
+
+    def get_pending_rewards(self, node_operator_id: int, rewards_tree: dict[int, int]) -> FVal:
+        """Compute the pending rewards of a node operator, in stETH, from the result of
+        get_rewards_tree. The tree has every operator's entry, so it can be reused for many.
+
+        May raise:
+            RemoteError: if a contract call fails.
+        """
+        distributed = self.fee_distributor_contract.call(
+            node_inquirer=self.evm_inquirer,
+            method_name='distributedShares',
+            arguments=[node_operator_id],
+        )
+        pending_shares = max(rewards_tree.get(node_operator_id, 0) - int(distributed), 0)
+        return self._convert_shares_to_steth(pending_shares)
+
     def get_operator_stats(self, node_operator_id: int) -> LidoCsmNodeOperatorStats:
         """Gather and normalize bond/reward stats for a node operator.
 
@@ -151,43 +195,11 @@ class LidoCsmMetricsFetcher:
             arguments=[node_operator_id],
         )
 
-        # Compute operator rewards pending (stETH) from fee distributor
         try:
-            tree_cid = self.fee_distributor_contract.call(
-                node_inquirer=self.evm_inquirer,
-                method_name='treeCid',
-                arguments=[],
+            rewards_steth = self.get_pending_rewards(
+                node_operator_id=node_operator_id,
+                rewards_tree=self.get_rewards_tree(),
             )
-            doc = self._fetch_ipfs_json(tree_cid)
-            # IPFS doc contains 'values', each with 'value': [nodeOperatorId, cumulativeShares]
-            values = doc.get('values', []) if isinstance(doc, dict) else []
-            cumulative_shares = 0
-            for item in values:
-                val = item.get('value') if isinstance(item, dict) else item
-                if not (isinstance(val, (list, tuple)) and len(val) >= 2):
-                    log.error(f'Skipping malformed Lido CSM rewards tree entry: {val}')
-                    continue
-
-                try:
-                    operator_id_raw, cumulative_raw = val[0], val[1]
-                    if int(operator_id_raw) != int(node_operator_id):
-                        continue
-
-                    cumulative_shares = int(cumulative_raw)
-                    break
-                except (TypeError, ValueError) as e:
-                    log.error(
-                        f'Skipping Lido CSM rewards entry {val} due to parsing error: {e}',
-                    )
-                    continue
-
-            distributed = self.fee_distributor_contract.call(
-                node_inquirer=self.evm_inquirer,
-                method_name='distributedShares',
-                arguments=[node_operator_id],
-            )
-            pending_shares = max(int(cumulative_shares) - int(distributed), 0)
-            rewards_steth = self._convert_shares_to_steth(pending_shares)
         except RemoteError as e:
             log.error(f'Failed to compute Lido CSM rewards for {node_operator_id}: {e}')
             rewards_steth = ZERO
