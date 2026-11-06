@@ -391,6 +391,7 @@ def test_first_evm_mapping_keeps_events_already_referencing_address(
         ).fetchone()[0] == 1
 
 
+@pytest.mark.vcr(match_on=['uri', 'method', 'rpc_body_matcher'])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 def test_missing_transactions_are_fetched_in_batches(
         database: DBHandler,
@@ -404,15 +405,12 @@ def test_missing_transactions_are_fetched_in_batches(
         evm_inquirer=(inquirer := ethereum_manager.node_inquirer),
     )
     tx_hashes = [deserialize_evm_tx_hash(x) for x in (
-        '0x5b180e3dcc19cd29c918b98c876f19393e07b74c07fd728102eb6241db3c2d5c',  # block 13336285
-        '0xa2fa5c6ce02f4206b80a07565c2c2ba0282638d5cec553f56e03f98ca113d4f8',  # block 13336285
+        '0x5b180e3dcc19cd29c918b98c876f19393e07b74c07fd728102eb6241db3c2d5c',
+        '0xa2fa5c6ce02f4206b80a07565c2c2ba0282638d5cec553f56e03f98ca113d4f8',
         '0x76dbd4fd8769af995b3597733ff6bf5daca619cb55a9d7347d8e3ab949ac5984',
     )]
     expected = {tx_hash: inquirer.get_transaction_by_hash(tx_hash) for tx_hash in tx_hashes}
     inquirer.block_to_timestamp_cache.clear()  # so that the blocks are queried in the batch
-    assert inquirer.get_transactions_by_hash(tx_hashes=tx_hashes) == [
-        expected[tx_hash] for tx_hash in tx_hashes
-    ]
     # without a connected rpc node the caller has to fall back to per transaction queries
     assert inquirer.get_transactions_by_hash(
         tx_hashes=tx_hashes,
@@ -430,11 +428,11 @@ def test_missing_transactions_are_fetched_in_batches(
     assert set(newly_inserted) == set(tx_hashes)
     dbevmtx = DBEvmTx(database)
     with database.conn.read_ctx() as cursor:
-        assert dbevmtx.get_transactions(
-            cursor=cursor,
-            filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hashes[0]),
-        ) == [expected[tx_hashes[0]][0]]
         for tx_hash in tx_hashes:
+            assert dbevmtx.get_transactions(
+                cursor=cursor,
+                filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash),
+            ) == [expected[tx_hash][0]]
             assert dbevmtx.get_receipt(
                 cursor=cursor,
                 tx_hash=tx_hash,

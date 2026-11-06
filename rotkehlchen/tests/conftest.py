@@ -634,8 +634,9 @@ def vcr_fixture(vcr: VCR) -> VCR:
         return params1 == params2
 
     def rpc_body_matcher(r1, r2):
-        """Match request bodies exactly, except that a recorded full-block
-        eth_getBlockByNumber JSON-RPC call may answer a header-only one, since block
+        """Match request bodies, ignoring JSON-RPC call ids in single and batched calls,
+        since they depend on how many calls the provider made before. A recorded
+        full-block eth_getBlockByNumber call may also answer a header-only one, since block
         timestamps are now read from header-only blocks and the header is the same."""
         if r1.body == r2.body:
             return True
@@ -645,14 +646,23 @@ def vcr_fixture(vcr: VCR) -> VCR:
         except (TypeError, json.JSONDecodeError):
             return False
 
-        if (
-            isinstance(b1, dict) and isinstance(b2, dict) and
-            b1.get('method') == b2.get('method') == 'eth_getBlockByNumber' and
-            len(params1 := b1.get('params', [])) == len(params2 := b2.get('params', [])) == 2 and
-            params1[1] is False and params2[1] is True
-        ):
-            params1.pop()
-            params2.pop()
+        if isinstance(b1, dict) and isinstance(b2, dict):
+            b1, b2 = [b1], [b2]
+        if not (isinstance(b1, list) and isinstance(b2, list) and len(b1) == len(b2)):
+            return False
+
+        for call1, call2 in zip(b1, b2, strict=True):
+            if not (isinstance(call1, dict) and isinstance(call2, dict)):
+                return False
+            call1.pop('id', None)
+            call2.pop('id', None)
+            if (
+                call1.get('method') == call2.get('method') == 'eth_getBlockByNumber' and
+                len(params1 := call1.get('params', [])) == len(params2 := call2.get('params', [])) == 2 and  # noqa: E501
+                params1[1] is False and params2[1] is True
+            ):
+                params1.pop()
+                params2.pop()
 
         return b1 == b2
 

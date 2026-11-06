@@ -234,7 +234,9 @@ class EvmTransactions(ABC):  # noqa: B024
                     if has_address_mapping == 0:
                         unmapped_tx_data[deserialized_hash] = tx_id, has_mapping == 1
 
-        missing = list(non_genesis - timestamps.keys())
+        # Keep the order of the given hashes so that the batched requests are deterministic.
+        # Genesis, if given, is already in timestamps.
+        missing = [x for x in dict.fromkeys(tx_hashes) if x not in timestamps]
         new_txs: list[Any] = []
         receipt_data_list: list[dict[str, Any]] = []
         for chunk in get_chunks(missing, n=RECEIPTS_QUERY_BATCH_SIZE):
