@@ -6,11 +6,17 @@ import pytest
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.lido_csm.balances import LidoCsmBalances
-from rotkehlchen.chain.ethereum.modules.lido_csm.constants import CPT_LIDO_CSM, LidoCsmOperatorType
+from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
+    CPT_LIDO_CSM,
+    LIDO_CSM_MODULE_CONTRACTS,
+    LidoCsmOperatorType,
+    LidoCsmStakingModule,
+)
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import (
     LidoCsmMetricsFetcher,
     LidoCsmNodeOperatorStats,
 )
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_STETH
 from rotkehlchen.db.lido_csm import DBLidoCsm, LidoCsmNodeOperator
@@ -34,7 +40,11 @@ def _make_evm_inquirer():
 
 
 def test_lido_csm_balances_skips_on_error():
-    entry = LidoCsmNodeOperator(address=make_evm_address(), node_operator_id=5)
+    entry = LidoCsmNodeOperator(
+        address=make_evm_address(),
+        node_operator_id=5,
+        staking_module=LidoCsmStakingModule.CSM,
+    )
 
     def _raise_remote_error(*_args, **_kwargs):
         raise RemoteError('boom')
@@ -70,6 +80,48 @@ def test_lido_csm_balances_skips_on_error():
     assert len(result) == 0
 
 
+def test_lido_csm_balances_query_each_staking_module_accounting_contract():
+    """Operators sharing an id in different modules are priced from their own module's bond"""
+    address = make_evm_address()
+    entries = tuple(
+        LidoCsmNodeOperator(address=address, node_operator_id=3, staking_module=module)
+        for module in LidoCsmStakingModule
+    )
+    shares_by_accounting = {
+        LIDO_CSM_MODULE_CONTRACTS[module].accounting: 10 * (idx + 1)
+        for idx, module in enumerate(LidoCsmStakingModule)
+    }
+
+    def fake_call(self, node_inquirer, method_name, arguments):
+        assert method_name == 'getBondShares'
+        return shares_by_accounting[self.address]
+
+    stats = LidoCsmNodeOperatorStats(
+        operator_type=LidoCsmOperatorType.UNKNOWN,
+        current_bond=FVal(0),
+        required_bond=FVal(0),
+        claimable_bond=FVal(0),
+        total_deposited_validators=0,
+        rewards_steth=FVal(0),
+    )
+    with patch(
+        'rotkehlchen.db.lido_csm.DBLidoCsm.get_node_operators',
+        return_value=entries,
+    ), patch.object(EvmContract, 'call', autospec=True, side_effect=fake_call), patch.object(
+        LidoCsmBalances,
+        '_convert_shares_to_steth',
+        side_effect=lambda shares: FVal(shares),  # noqa: PLW0108
+    ), patch.object(Inquirer, 'find_price', return_value=FVal('2')), patch.object(
+        LidoCsmMetricsFetcher, 'get_operator_stats', return_value=stats,
+    ):
+        result = LidoCsmBalances(
+            evm_inquirer=_make_evm_inquirer(),
+            tx_decoder=MagicMock(),
+        ).query_balances(addresses=[address])
+
+    assert result[address].assets[A_STETH][CPT_LIDO_CSM].amount == FVal(30)
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 def test_lido_csm_balances_real_data(
@@ -91,6 +143,7 @@ def test_lido_csm_balances_real_data(
     db.add_node_operator(
         address=node_operator_address,
         node_operator_id=1,
+        staking_module=LidoCsmStakingModule.CSM,
     )
 
     balances = LidoCsmBalances(

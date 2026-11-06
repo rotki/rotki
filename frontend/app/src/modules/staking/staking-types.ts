@@ -51,6 +51,7 @@ export function emptyPagination(): KrakenStakingPagination {
 export const LidoCsmNodeOperatorPayloadSchema = z.object({
   address: z.string(),
   nodeOperatorId: z.number().int().nonnegative(),
+  stakingModuleId: z.number().int(),
 });
 
 export type LidoCsmNodeOperatorPayload = z.infer<typeof LidoCsmNodeOperatorPayloadSchema>;

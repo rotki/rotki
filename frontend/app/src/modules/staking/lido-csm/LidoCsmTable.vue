@@ -11,6 +11,7 @@ import HashLink from '@/modules/shell/components/HashLink.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import { useLidoCsmApi } from '@/modules/staking/api/use-lido-csm-api';
 import { STETH_IDENTIFIER } from '@/modules/staking/lido-csm/constants';
+import { useLidoCsmStakingModules } from '@/modules/staking/lido-csm/use-lido-csm-staking-modules';
 
 defineOptions({
   name: 'LidoCsmTable',
@@ -30,6 +31,7 @@ const { t } = useI18n({ useScope: 'global' });
 const { show } = useConfirmStore();
 const api = useLidoCsmApi();
 const { setMessage } = useMessageStore();
+const { stakingModuleLabel } = useLidoCsmStakingModules();
 
 const removingEntryKey = ref<string>('');
 
@@ -37,6 +39,7 @@ interface LidoCsmTableRow {
   key: string;
   address: string;
   nodeOperatorId: number;
+  stakingModuleId: number;
   operatorTypeLabel?: string;
   operatorTypeId?: number;
   bondCurrent?: BigNumber;
@@ -65,7 +68,7 @@ function bondFields(bond: NonNullable<LidoCsmMetrics>['bond'] | undefined): Pick
 }
 
 /** Flattens the optional metric groups onto the row; a group the backend omitted leaves them unset. */
-function metricFields(metrics: LidoCsmMetrics): Omit<LidoCsmTableRow, 'address' | 'key' | 'nodeOperatorId'> {
+function metricFields(metrics: LidoCsmMetrics): Omit<LidoCsmTableRow, 'address' | 'key' | 'nodeOperatorId' | 'stakingModuleId'> {
   const { bond, keys, operatorType, rewards } = metrics ?? {};
 
   return {
@@ -77,10 +80,15 @@ function metricFields(metrics: LidoCsmMetrics): Omit<LidoCsmTableRow, 'address' 
   };
 }
 
+function rowKey(address: string, stakingModuleId: number, nodeOperatorId: number): string {
+  return `${address}-${stakingModuleId}-${nodeOperatorId}`;
+}
+
 const tableRows = computed<LidoCsmTableRow[]>(() => rows.map(entry => ({
   address: entry.address,
-  key: `${entry.address}-${entry.nodeOperatorId}`,
+  key: rowKey(entry.address, entry.stakingModuleId, entry.nodeOperatorId),
   nodeOperatorId: entry.nodeOperatorId,
+  stakingModuleId: entry.stakingModuleId,
   ...metricFields(entry.metrics),
 })));
 
@@ -118,19 +126,23 @@ const tableColumns = computed<DataTableColumn<LidoCsmTableRow>[]>(() => [{
   label: '',
 }]);
 
-function handleRemove(address: string, nodeOperatorIdValue: number): void {
+function handleRemove({ address, nodeOperatorId, stakingModuleId }: LidoCsmTableRow): void {
   show(
     {
-      message: t('staking_page.lido_csm.messages.confirm_delete_message', { address, nodeOperatorId: nodeOperatorIdValue }),
+      message: t('staking_page.lido_csm.messages.confirm_delete_message', {
+        address,
+        module: stakingModuleLabel(stakingModuleId),
+        nodeOperatorId,
+      }),
       title: t('staking_page.lido_csm.messages.confirm_delete_title'),
     },
     async () => {
-      const key = `${address}-${nodeOperatorIdValue}`;
-      set(removingEntryKey, key);
+      set(removingEntryKey, rowKey(address, stakingModuleId, nodeOperatorId));
       try {
         await api.deleteNodeOperator({
           address,
-          nodeOperatorId: nodeOperatorIdValue,
+          nodeOperatorId,
+          stakingModuleId,
         });
         emit('refresh');
       }
@@ -185,8 +197,11 @@ function handleRemove(address: string, nodeOperatorIdValue: number): void {
       </template>
       <template #item.nodeOperatorId="{ row }">
         <div class="flex flex-col">
-          <span class="text-sm">
-            #{{ row.nodeOperatorId }}
+          <span
+            class="text-sm"
+            data-testid="lido-csm-node-operator-id"
+          >
+            {{ stakingModuleLabel(row.stakingModuleId) }} #{{ row.nodeOperatorId }}
           </span>
           <span
             v-if="row.operatorTypeLabel"
@@ -307,7 +322,7 @@ function handleRemove(address: string, nodeOperatorIdValue: number): void {
           align="end"
           :disabled="removingEntryKey === row.key"
           :delete-tooltip="t('staking_page.lido_csm.table.remove')"
-          @delete-click="handleRemove(row.address, row.nodeOperatorId)"
+          @delete-click="handleRemove(row)"
         />
       </template>
     </RuiDataTable>

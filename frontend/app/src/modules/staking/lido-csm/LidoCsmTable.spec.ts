@@ -1,5 +1,6 @@
 import type { LidoCsmNodeOperator, LidoCsmNodeOperatorPayload } from '@/modules/staking/staking-types';
 import { bigNumberify } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { type DOMWrapper, flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
@@ -29,12 +30,21 @@ const WITH_METRICS: LidoCsmNodeOperator = {
     rewards: { pending: bigNumberify('0.25') },
   },
   nodeOperatorId: 12,
+  stakingModuleId: 3,
 };
 
 const WITHOUT_METRICS: LidoCsmNodeOperator = {
   address: '0x2222222222222222222222222222222222222222',
   metrics: null,
   nodeOperatorId: 3,
+  stakingModuleId: 3,
+};
+
+const CSM_0X02_OPERATOR: LidoCsmNodeOperator = {
+  address: '0x3333333333333333333333333333333333333333',
+  metrics: null,
+  nodeOperatorId: 4,
+  stakingModuleId: 5,
 };
 
 describe('lidoCsmTable', () => {
@@ -52,7 +62,7 @@ describe('lidoCsmTable', () => {
           RuiDataTable: {
             props: ['rows', 'cols'],
             template: `<div>
-              <div v-for="row in rows" :key="row.key" :data-testid="'row-' + row.nodeOperatorId">
+              <div v-for="row in rows" :key="row.key" :data-testid="'row-' + row.key">
                 <div v-for="col in cols" :key="col.key" :data-testid="'cell-' + col.key">
                   <slot :name="'item.' + col.key" :row="row" />
                 </div>
@@ -65,12 +75,12 @@ describe('lidoCsmTable', () => {
     });
   }
 
-  function row(nodeOperatorId: number): DOMWrapper<Element> {
-    return wrapper.find(`[data-testid=row-${nodeOperatorId}]`);
+  function row(entry: LidoCsmNodeOperator): DOMWrapper<Element> {
+    return wrapper.find(`[data-testid=row-${entry.address}-${entry.stakingModuleId}-${entry.nodeOperatorId}]`);
   }
 
-  function amounts(nodeOperatorId: number): (string | undefined)[] {
-    const rowElement = row(nodeOperatorId).element;
+  function amounts(entry: LidoCsmNodeOperator): (string | undefined)[] {
+    const rowElement = row(entry).element;
     return wrapper
       .findAllComponents(BalanceDisplay)
       .filter(display => rowElement.contains(display.element))
@@ -97,25 +107,25 @@ describe('lidoCsmTable', () => {
     it('should show the bond, pending rewards and key count an operator reports', () => {
       wrapper = createWrapper([WITH_METRICS]);
 
-      expect(amounts(12)).toEqual(['2.5', '2', '0.5', '0.25']);
-      expect(row(12).find('[data-testid=cell-totalDeposited]').text()).toBe('7');
-      expect(row(12).find('[data-testid=cell-nodeOperatorId] span').text()).toBe('#12');
-      expect(row(12).find('[data-testid=lido-csm-operator-type]').text()).toBe('Permissionless');
+      expect(amounts(WITH_METRICS)).toEqual(['2.5', '2', '0.5', '0.25']);
+      expect(row(WITH_METRICS).find('[data-testid=cell-totalDeposited]').text()).toBe('7');
+      expect(row(WITH_METRICS).find('[data-testid=lido-csm-node-operator-id]').text()).toBe('staking_page.lido_csm.modules.csm #12');
+      expect(row(WITH_METRICS).find('[data-testid=lido-csm-operator-type]').text()).toBe('Permissionless');
     });
 
     it('should mark every metric unavailable for an operator without metrics', () => {
       wrapper = createWrapper([WITHOUT_METRICS]);
 
-      expect(amounts(3)).toEqual([]);
-      expect(row(3).find('[data-testid=lido-csm-operator-type]').exists()).toBe(false);
+      expect(amounts(WITHOUT_METRICS)).toEqual([]);
+      expect(row(WITHOUT_METRICS).find('[data-testid=lido-csm-operator-type]').exists()).toBe(false);
       for (const key of ['bondCurrent', 'bondRequired', 'bondClaimable', 'totalDeposited', 'rewardsPending'])
-        expect(row(3).find(`[data-testid=cell-${key}]`).text()).toBe('staking_page.lido_csm.table.not_available');
+        expect(row(WITHOUT_METRICS).find(`[data-testid=cell-${key}]`).text()).toBe('staking_page.lido_csm.table.not_available');
     });
 
     it('should not warn about the bond of an operator that meets the requirement', () => {
       wrapper = createWrapper([WITH_METRICS]);
 
-      expect(row(12).find('[data-testid=lido-csm-bond-short]').exists()).toBe(false);
+      expect(row(WITH_METRICS).find('[data-testid=lido-csm-bond-short]').exists()).toBe(false);
     });
 
     it('should warn about the bond of an under-bonded operator', () => {
@@ -130,7 +140,7 @@ describe('lidoCsmTable', () => {
       };
       wrapper = createWrapper([short]);
 
-      expect(row(12).find('[data-testid=lido-csm-bond-short]').exists()).toBe(true);
+      expect(row(WITH_METRICS).find('[data-testid=lido-csm-bond-short]').exists()).toBe(true);
     });
   });
 
@@ -149,8 +159,50 @@ describe('lidoCsmTable', () => {
       expect(spies.deleteNodeOperator).toHaveBeenCalledExactlyOnceWith({
         address: WITHOUT_METRICS.address,
         nodeOperatorId: 3,
+        stakingModuleId: 3,
       });
       expect(wrapper.emitted('refresh')).toHaveLength(1);
+    });
+
+    it('should name the staking module of a CSM 0x02 operator and remove it from that module', async () => {
+      wrapper = createWrapper([CSM_0X02_OPERATOR]);
+
+      expect(row(CSM_0X02_OPERATOR).find('[data-testid=lido-csm-node-operator-id]').text()).toBe('staking_page.lido_csm.modules.csm_0x02 #4');
+
+      await removeRow(0);
+      await useConfirmStore().confirm();
+      await flushPromises();
+
+      expect(spies.deleteNodeOperator).toHaveBeenCalledExactlyOnceWith({
+        address: CSM_0X02_OPERATOR.address,
+        nodeOperatorId: 4,
+        stakingModuleId: 5,
+      });
+    });
+
+    it('should list operators sharing an id and address in different modules as separate rows', () => {
+      const sameIdInCsm0x02: LidoCsmNodeOperator = { ...WITHOUT_METRICS, stakingModuleId: 5 };
+      wrapper = createWrapper([WITHOUT_METRICS, sameIdInCsm0x02]);
+
+      expect(row(WITHOUT_METRICS).find('[data-testid=lido-csm-node-operator-id]').text()).toBe('staking_page.lido_csm.modules.csm #3');
+      expect(row(sameIdInCsm0x02).find('[data-testid=lido-csm-node-operator-id]').text()).toBe('staking_page.lido_csm.modules.csm_0x02 #3');
+    });
+
+    it('should disable only the module row being removed when ids are shared across modules', async () => {
+      spies.deleteNodeOperator.mockReturnValue(new Promise(() => {}));
+      const sameIdInCsm0x02: LidoCsmNodeOperator = { ...WITHOUT_METRICS, stakingModuleId: 5 };
+      wrapper = createWrapper([WITHOUT_METRICS, sameIdInCsm0x02]);
+
+      await removeRow(1);
+      startPromise(useConfirmStore().confirm());
+      await nextTick();
+
+      expect(spies.deleteNodeOperator).toHaveBeenCalledExactlyOnceWith({
+        address: WITHOUT_METRICS.address,
+        nodeOperatorId: 3,
+        stakingModuleId: 5,
+      });
+      expect(wrapper.findAllComponents(RowActions).map(action => action.props('disabled'))).toEqual([false, true]);
     });
 
     it('should keep the operator when the removal is dismissed', async () => {
