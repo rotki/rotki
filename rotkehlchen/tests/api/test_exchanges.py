@@ -756,22 +756,26 @@ def test_exchange_balances_of_two_accounts_on_one_location(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize(('endpoint', 'url_args'), EXCHANGE_BALANCE_ENDPOINTS)
-def test_exchange_balances_value_threshold_per_account(
+def test_exchange_balances_value_threshold_applies_to_totals(
         rotkehlchen_api_server: APIServer,
         endpoint: str,
         url_args: dict[str, str],
 ) -> None:
-    """Test that the threshold applies to each account and to the location's total on their own,
-    and that filtering does not alter the balances an exchange may have cached"""
+    """Test that the threshold only filters the location totals
+
+    A balance below the threshold is still reported for the account holding it, so the value of
+    that account is not understated. Filtering must not alter the balances an exchange caches.
+    """
     main, trading = _connect_coinbase_accounts(rotkehlchen_api_server.rest_api.rotkehlchen, 2)
+    main_balances = {
+        A_BTC: Balance(amount=ONE, value=FVal('6')),
+        A_ETH: Balance(amount=ONE, value=FVal('20')),
+        A_USDT: Balance(amount=ONE, value=FVal('9')),
+    }
+    trading_balances = {A_BTC: Balance(amount=ONE, value=FVal('6'))}
     with (
-        patch.object(main, 'query_balances', return_value=({
-            A_BTC: Balance(amount=ONE, value=FVal('6')),
-            A_ETH: Balance(amount=ONE, value=FVal('20')),
-        }, '')),
-        patch.object(trading, 'query_balances', return_value=({
-            A_BTC: Balance(amount=ONE, value=FVal('6')),
-        }, '')),
+        patch.object(main, 'query_balances', return_value=(main_balances, '')),
+        patch.object(trading, 'query_balances', return_value=(trading_balances, '')),
     ):
         response = requests.get(
             api_url_for(rotkehlchen_api_server, endpoint, **url_args),
@@ -779,8 +783,14 @@ def test_exchange_balances_value_threshold_per_account(
         )
         assert assert_proper_sync_response_with_result(response) == {
             'per_account': {'coinbase': {
-                main.connection_identifier: {A_ETH.identifier: {'amount': '1', 'value': '20'}},
-                trading.connection_identifier: {},
+                main.connection_identifier: {
+                    A_BTC.identifier: {'amount': '1', 'value': '6'},
+                    A_ETH.identifier: {'amount': '1', 'value': '20'},
+                    A_USDT.identifier: {'amount': '1', 'value': '9'},
+                },
+                trading.connection_identifier: {
+                    A_BTC.identifier: {'amount': '1', 'value': '6'},
+                },
             }},
             'totals': {'coinbase': {
                 A_BTC.identifier: {'amount': '2', 'value': '12'},
@@ -794,6 +804,7 @@ def test_exchange_balances_value_threshold_per_account(
     assert result['per_account']['coinbase'][main.connection_identifier].keys() == {
         A_BTC.identifier,
         A_ETH.identifier,
+        A_USDT.identifier,
     }
     assert result['per_account']['coinbase'][trading.connection_identifier].keys() == {
         A_BTC.identifier,

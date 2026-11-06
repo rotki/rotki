@@ -90,7 +90,7 @@ describe('useExchanges', () => {
       });
     });
 
-    it('should keep the last balances when a connection of the location failed', async () => {
+    it('should update healthy connections and retain failed accounts and totals on partial failure', async () => {
       const { exchangeBalances } = storeToRefs(store);
       set(exchangeBalances, { kraken: { BTC: { amount: bigNumberify(2), value: bigNumberify(100000) } } });
       store.exchangeAccountBalances = { kraken: { 'kraken-main': { BTC: { amount: bigNumberify(2), value: bigNumberify(100000) } } } };
@@ -105,10 +105,30 @@ describe('useExchanges', () => {
       expect(get(exchangeBalances).kraken).toMatchObject({ BTC: { amount: bigNumberify(2) } });
       expect(store.exchangeAccountBalances.kraken).toEqual({
         'kraken-main': { BTC: { amount: bigNumberify(2), value: bigNumberify(100000) } },
+        'other': { BTC: { amount: bigNumberify(1), value: bigNumberify(50000) } },
       });
     });
 
+    it('should store healthy connection balances on a fresh login despite another connection failing', async () => {
+      runTaskMock.mockResolvedValue(ok({
+        failedAccounts: { kraken: { expired: 'Invalid key' } },
+        perAccount: { kraken: { healthy: { BTC: { amount: '1', value: '50000' } } } },
+        totals: { kraken: { BTC: { amount: '1', value: '50000' } } },
+      }));
+
+      await exchanges.fetchExchangeBalances({ location: 'kraken' });
+
+      expect(store.exchangeAccountBalances.kraken).toEqual({
+        healthy: { BTC: { amount: bigNumberify(1), value: bigNumberify(50000) } },
+      });
+      expect(store.exchangeBalances).toEqual({});
+    });
+
     it('should fail the task with the connection errors when a connection of the location failed', async () => {
+      useConnectedExchangesStore().setConnectedExchanges([
+        createTestExchange('kraken', 'a'),
+        createTestExchange('kraken', 'b'),
+      ]);
       runTaskMock.mockResolvedValue(ok({
         failedAccounts: { kraken: { 'kraken-a': 'first failed', 'kraken-b': 'second failed' } },
         perAccount: {},
@@ -120,7 +140,7 @@ describe('useExchanges', () => {
 
       const activity = get(useTaskOrchestrator().activities).find(({ id }) => id === exchangeBalancesActivity.id({ location: 'kraken' }));
       expect(activity?.status).toBe(ActivityStatus.FAILED);
-      expect(activity?.reason).toContain('first failed second failed');
+      expect(activity?.reason).toContain('a: first failed b: second failed');
     });
 
     it('should store the balances when only another location failed', async () => {
@@ -157,24 +177,40 @@ describe('useExchanges', () => {
       const main = createTestExchange('kraken', 'main');
       const other = createTestExchange('kraken', 'other');
       useConnectedExchangesStore().setConnectedExchanges([main, other]);
-      store.exchangeAccountBalances = { kraken: { [main.identifier]: {}, [other.identifier]: {} }, binance: {} };
+      store.exchangeAccountBalances = {
+        kraken: {
+          [main.identifier]: { BTC: { amount: bigNumberify(1), value: bigNumberify(50000) } },
+          [other.identifier]: { BTC: { amount: bigNumberify(2), value: bigNumberify(100000) } },
+        },
+        binance: {},
+      };
+      store.exchangeBalances = { kraken: { BTC: { amount: bigNumberify(3), value: bigNumberify(150000) } } };
       queryRemoveExchange.mockResolvedValue(true);
       runTaskMock.mockResolvedValue(err(TaskFailed({ message: 'offline' })));
 
       expect(await exchanges.removeExchange(main)).toBe(true);
 
-      expect(store.exchangeAccountBalances).toEqual({ kraken: { [other.identifier]: {} }, binance: {} });
+      expect(store.exchangeAccountBalances).toEqual({
+        kraken: { [other.identifier]: { BTC: { amount: bigNumberify(2), value: bigNumberify(100000) } } },
+        binance: {},
+      });
+      expect(store.exchangeBalances).toEqual({
+        kraken: { BTC: { amount: bigNumberify(2), value: bigNumberify(100000) } },
+      });
+      expect(useConnectedExchangesStore().connectedExchanges).toEqual([other]);
     });
 
     it('should clear the location after its last connection is removed', async () => {
       const main = createTestExchange('kraken', 'main');
       useConnectedExchangesStore().setConnectedExchanges([main]);
       store.exchangeAccountBalances = { kraken: { [main.identifier]: {} }, binance: {} };
+      store.exchangeBalances = { kraken: { BTC: { amount: bigNumberify(1), value: bigNumberify(50000) } } };
       queryRemoveExchange.mockResolvedValue(true);
 
       expect(await exchanges.removeExchange(main)).toBe(true);
 
       expect(store.exchangeAccountBalances).toEqual({ binance: {} });
+      expect(store.exchangeBalances).toEqual({});
     });
   });
   describe('setupExchange', () => {
