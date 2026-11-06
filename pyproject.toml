@@ -59,7 +59,7 @@ dependencies = [
     "google-api-python-client==2.192.0",
     "google-auth==2.49.1",
     # OAuth client for Monerium
-    "oauthlib==4.0.0",
+    "oauthlib==4.0.1",
     # To build JWT for coinbase exchange key validation
     "PyJWT==2.15.0",
     "construct==2.10.68",
