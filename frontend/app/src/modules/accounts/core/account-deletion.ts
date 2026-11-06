@@ -11,7 +11,7 @@ import { omit } from 'es-toolkit';
 import { getAccountAddress, getXpubGroupId, isAddressAccount, isXpubAccount } from '@/modules/accounts/account-utils';
 import { isBlockchain } from '@/modules/core/common/chains';
 
-export type ShowConfirmationParams = {
+export type AccountDeletionParams = {
   type: 'account';
   data: BlockchainAccountBalance;
 } | {
@@ -79,7 +79,7 @@ export function removedChains(removed: RemovedAccounts): readonly string[] {
  * group showing a subset deletes only the chains it shows, or the user loses chains they could not
  * see. Virtual chains are left out throughout, since the backend has no such chain to delete from.
  */
-export function planDeletion(params: ShowConfirmationParams): AccountDeletion {
+export function planDeletion(params: AccountDeletionParams): AccountDeletion {
   if (params.type === 'validator')
     return { kind: DeletionKind.VALIDATORS, validators: params.data };
 

@@ -1,5 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { HistoryEventQuestion } from '@/modules/history/events/types';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useAssetMovementMatchingApi } from '@/modules/history/api/events/use-asset-movement-matching-api';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
@@ -36,11 +36,11 @@ interface UseAssetMovementActionsReturn {
   /** Ignores every fiat movement, once its button asked. */
   ignoreAllFiat: () => Promise<void>;
   /** What ignoring every fiat movement asks beside its button, counting them. */
-  ignoreFiatQuestion: ComputedRef<HistoryEventQuestion>;
+  ignoreFiatQuestion: ComputedRef<ConfirmQuestion>;
   /** Ignores the selected movements, once their button asked. */
   ignoreSelected: () => Promise<void>;
   /** What ignoring the selection asks beside its button, counting the selected movements. */
-  ignoreSelectedQuestion: ComputedRef<HistoryEventQuestion>;
+  ignoreSelectedQuestion: ComputedRef<ConfirmQuestion>;
   restoreSelected: () => Promise<void>;
   dismissResolution: () => void;
   ignoreMovement: (movement: UnmatchedAssetMovement) => Promise<void>;
@@ -177,7 +177,8 @@ export function useAssetMovementActions(
     });
   }
 
-  const ignoreSelectedQuestion = computed<HistoryEventQuestion>(() => ({
+  const ignoreSelectedQuestion = computed<ConfirmQuestion>(() => ({
+    confirmLabel: t('asset_movement_matching.dialog.ignore'),
     message: t('asset_movement_matching.actions.ignore_selected_confirm', { count: get(modelSelectedUnmatched).length }),
     title: t('asset_movement_matching.actions.ignore_selected'),
   }));
@@ -201,7 +202,8 @@ export function useAssetMovementActions(
     });
   }
 
-  const ignoreFiatQuestion = computed<HistoryEventQuestion>(() => ({
+  const ignoreFiatQuestion = computed<ConfirmQuestion>(() => ({
+    confirmLabel: t('asset_movement_matching.dialog.ignore'),
     message: t('asset_movement_matching.actions.ignore_fiat_confirm', { count: get(fiatMovements).length }),
     title: t('asset_movement_matching.actions.ignore_fiat'),
   }));

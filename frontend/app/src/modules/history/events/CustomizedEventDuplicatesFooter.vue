@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { HistoryEventQuestion } from '@/modules/history/events/types';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { DuplicatesTab } from '@/modules/history/events/use-customized-event-duplicates-dialog';
-import { DuplicatesAction, useDuplicatesQuestion } from '@/modules/history/events/use-duplicates-question';
+import { useDuplicatesQuestion } from '@/modules/history/events/use-duplicates-question';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 
 /**
@@ -27,14 +27,14 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { duplicatesQuestion } = useDuplicatesQuestion();
+const questions = useDuplicatesQuestion();
 
 /** Marking non-duplicated acts on whichever of the two reviewable tabs is shown. */
 const ignoreCount = computed<number>(() => activeTab === DuplicatesTab.AUTO_FIX ? autoFixCount : manualReviewCount);
 
-const fixQuestion = computed<HistoryEventQuestion>(() => duplicatesQuestion(DuplicatesAction.FIX, autoFixCount));
-const ignoreQuestion = computed<HistoryEventQuestion>(() => duplicatesQuestion(DuplicatesAction.MARK_NON_DUPLICATED, get(ignoreCount)));
-const restoreQuestion = computed<HistoryEventQuestion>(() => duplicatesQuestion(DuplicatesAction.RESTORE, ignoredCount));
+const fixQuestion = computed<ConfirmQuestion>(() => questions.fixQuestion(autoFixCount));
+const ignoreQuestion = computed<ConfirmQuestion>(() => questions.markNonDuplicatedQuestion(get(ignoreCount)));
+const restoreQuestion = computed<ConfirmQuestion>(() => questions.restoreQuestion(ignoredCount));
 </script>
 
 <template>
@@ -44,10 +44,7 @@ const restoreQuestion = computed<HistoryEventQuestion>(() => duplicatesQuestion(
       class="flex gap-2"
     >
       <ConfirmPopover
-        tone="warning"
-        :title="restoreQuestion.title"
-        :message="restoreQuestion.message"
-        :confirm-label="t('customized_event_duplicates.actions.restore')"
+        :question="restoreQuestion"
         @confirm="emit('restore-selected')"
       >
         <template #activator="{ attrs }">
@@ -84,10 +81,7 @@ const restoreQuestion = computed<HistoryEventQuestion>(() => duplicatesQuestion(
     >
       <ConfirmPopover
         v-if="activeTab === DuplicatesTab.AUTO_FIX"
-        tone="warning"
-        :title="fixQuestion.title"
-        :message="fixQuestion.message"
-        :confirm-label="t('customized_event_duplicates.actions.fix')"
+        :question="fixQuestion"
         @confirm="emit('fix-selected')"
       >
         <template #activator="{ attrs }">
@@ -118,10 +112,7 @@ const restoreQuestion = computed<HistoryEventQuestion>(() => duplicatesQuestion(
         </template>
       </ConfirmPopover>
       <ConfirmPopover
-        tone="warning"
-        :title="ignoreQuestion.title"
-        :message="ignoreQuestion.message"
-        :confirm-label="t('customized_event_duplicates.actions.mark_non_duplicated')"
+        :question="ignoreQuestion"
         @confirm="emit('ignore-selected')"
       >
         <template #activator="{ attrs }">

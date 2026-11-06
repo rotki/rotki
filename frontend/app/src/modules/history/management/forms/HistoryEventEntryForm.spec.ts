@@ -284,7 +284,7 @@ describe('forms/HistoryEventEntryForm.vue, a plain or bank event', () => {
 
     addHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     expect(saveResult).toBe(true);
 
     expect(addHistoryEventMock).toHaveBeenCalledTimes(1);
@@ -321,7 +321,7 @@ describe('forms/HistoryEventEntryForm.vue, a plain or bank event', () => {
 
     addHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    expect(await wrapper.vm.save()).toBe(true);
+    expect((await wrapper.vm.save()).ok).toBe(true);
     expect(addHistoryEventMock).toHaveBeenCalledWith(expect.objectContaining({
       entryType: HistoryEventEntryType.BANK_TRANSACTION_EVENT,
       extraData: null,
@@ -376,7 +376,7 @@ describe('forms/HistoryEventEntryForm.vue, a plain or bank event', () => {
 
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     expect(saveResult).toBe(true);
 
     expect(editHistoryEventMock).toHaveBeenCalledTimes(1);
@@ -419,7 +419,7 @@ describe('forms/HistoryEventEntryForm.vue, a plain or bank event', () => {
 
     const saveMethod = wrapper.vm.save;
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     await nextTick();
 
     expect(editHistoryEventMock).toHaveBeenCalled();
@@ -448,7 +448,7 @@ describe('forms/HistoryEventEntryForm.vue, a plain or bank event', () => {
 
     addHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    const saveResult = await wrapper.vm.save();
+    const saveResult = (await wrapper.vm.save()).ok;
     expect(saveResult).toBe(true);
     expect(addHistoryEventMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -687,7 +687,7 @@ describe('forms/HistoryEventEntryForm.vue, an evm event', () => {
 
     addHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     expect(saveResult).toBe(true);
 
     expect(addHistoryEventMock).toHaveBeenCalledTimes(1);
@@ -772,7 +772,7 @@ describe('forms/HistoryEventEntryForm.vue, an evm event', () => {
 
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     expect(saveResult).toBe(true);
 
     expect(editHistoryEventMock).toHaveBeenCalledTimes(1);
@@ -819,7 +819,7 @@ describe('forms/HistoryEventEntryForm.vue, an evm event', () => {
 
     const saveMethod = wrapper.vm.save;
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     await nextTick();
 
     expect(editHistoryEventMock).toHaveBeenCalled();
@@ -1051,7 +1051,7 @@ describe('forms/HistoryEventEntryForm.vue, a solana event', () => {
 
     addHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     expect(saveResult).toBe(true);
 
     expect(addHistoryEventMock).toHaveBeenCalledTimes(1);
@@ -1135,7 +1135,7 @@ describe('forms/HistoryEventEntryForm.vue, a solana event', () => {
 
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     expect(saveResult).toBe(true);
 
     expect(editHistoryEventMock).toHaveBeenCalledTimes(1);
@@ -1180,7 +1180,7 @@ describe('forms/HistoryEventEntryForm.vue, a solana event', () => {
 
     const saveMethod = wrapper.vm.save;
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     await nextTick();
 
     expect(editHistoryEventMock).toHaveBeenCalled();
@@ -1438,7 +1438,7 @@ describe('forms/HistoryEventEntryForm.vue, a bitcoin event', () => {
 
     addHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     expect(saveResult).toBe(true);
 
     expect(addHistoryEventMock).toHaveBeenCalledTimes(1);
@@ -1522,7 +1522,7 @@ describe('forms/HistoryEventEntryForm.vue, a bitcoin event', () => {
 
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     expect(saveResult).toBe(true);
 
     expect(editHistoryEventMock).toHaveBeenCalledTimes(1);
@@ -1566,7 +1566,7 @@ describe('forms/HistoryEventEntryForm.vue, a bitcoin event', () => {
     await wrapper.find('[data-testid=amount] input').setValue('150');
 
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
-    expect(await wrapper.vm.save()).toBe(true);
+    expect((await wrapper.vm.save()).ok).toBe(true);
     expect(editHistoryEventMock).toHaveBeenCalledWith(expect.objectContaining({
       asset: 'BCH',
       location: 'bitcoin cash',
@@ -1594,7 +1594,7 @@ describe('forms/HistoryEventEntryForm.vue, a bitcoin event', () => {
 
     const saveMethod = wrapper.vm.save;
 
-    const saveResult = await saveMethod();
+    const saveResult = (await saveMethod()).ok;
     await nextTick();
 
     expect(editHistoryEventMock).toHaveBeenCalled();
@@ -1815,7 +1815,7 @@ describe('forms/HistoryEventEntryForm.vue, the kind of an event being added', ()
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.find('[data-testid=amount] input').setValue('2');
 
-    await expect(wrapper.vm.save()).resolves.toBe(true);
+    await expect(wrapper.vm.save()).resolves.toMatchObject({ ok: true });
     expect(editHistoryEventMock.mock.calls[0][0]).toMatchObject({ entryType: HistoryEventEntryType.EVM_EVENT, location: 'base' });
   });
 

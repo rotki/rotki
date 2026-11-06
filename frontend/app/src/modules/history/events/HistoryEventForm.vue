@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
+import type { HistoryEventSaveResult } from '@/modules/history/management/forms/history-event-save-result';
 import { HistoryEventEntryType } from '@rotki/common';
 import { kebabCase } from 'es-toolkit';
+import { err } from 'plainfp/result';
 import { useTemplateRef } from 'vue';
 import AssetMovementEventForm from '@/modules/history/management/forms/AssetMovementEventForm.vue';
 import EthBlockEventForm from '@/modules/history/management/forms/EthBlockEventForm.vue';
@@ -12,7 +14,7 @@ import SwapEventForm from '@/modules/history/management/forms/SwapEventForm.vue'
 
 /** The seam every entry-type form is driven through. */
 interface FormComponent {
-  save: () => Promise<boolean>;
+  save: () => Promise<HistoryEventSaveResult>;
   errorCount: number;
 }
 
@@ -58,9 +60,9 @@ const errorCount = computed<number>(() => {
   return formRef.errorCount;
 });
 
-async function save() {
+async function save(): Promise<HistoryEventSaveResult> {
   if (!isDefined(form))
-    return false;
+    return err(undefined);
 
   return await get(form).save();
 }

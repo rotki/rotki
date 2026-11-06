@@ -2,6 +2,7 @@ import type { ActionStatus } from '@/modules/core/common/action';
 import type { Module } from '@/modules/core/common/modules';
 import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import type { SettingsUpdate } from '@/modules/settings/types/user-settings';
+import { isErr } from 'plainfp/result';
 import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-address-operations';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { uniqueStrings } from '@/modules/core/common/data/data';
@@ -94,9 +95,9 @@ export function useSettingsOperations(): UseSettingsOperationsReturn {
 
     for (const module of payload.enable) {
       for (const address of payload.addresses) {
-        const failure = await addQueriedAddress({ address, module });
-        if (failure)
-          notifyError(t('actions.session.add_queriable_address.error.message'), getErrorMessage(failure.error));
+        const result = await addQueriedAddress({ address, module });
+        if (isErr(result))
+          notifyError(t('actions.session.add_queriable_address.error.message'), getErrorMessage(result.error));
       }
     }
   };

@@ -14,7 +14,7 @@ const RuiMenu = {
   </div>`,
 };
 
-const unlinkConfirm = { message: 'Unlink this bridge transfer?', title: 'Unlink' };
+const unlinkConfirm = { confirmLabel: 'Unlink', message: 'Unlink this bridge transfer?', title: 'Unlink' };
 
 /**
  * Seam: the header of an expanded subgroup offers unlink only when the parent hands it the question

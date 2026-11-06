@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { HistoryEventBridgeUnlinkPayload, HistoryEventQuestion } from '@/modules/history/events/types';
+import type { HistoryEventBridgeUnlinkPayload } from '@/modules/history/events/types';
 import type { VirtualRow } from '@/modules/history/events/use-virtual-rows';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { startPromise } from '@shared/utils';
 import { injectHistoryEventsRowContext } from '@/modules/history/events/use-history-events-row-context';
 import { type UnlinkKind, useUnlinkQuestion } from '@/modules/history/events/use-unlink-question';
@@ -29,7 +30,7 @@ function unlinkBridge(payload?: HistoryEventBridgeUnlinkPayload): void {
 }
 
 /** What a collapsed match's header asks before it unlinks; nothing, when it cannot unlink. */
-function collapseUnlinkConfirm(kind: UnlinkKind | undefined): HistoryEventQuestion | undefined {
+function collapseUnlinkConfirm(kind: UnlinkKind | undefined): ConfirmQuestion | undefined {
   return kind && !get(hideActions) ? unlinkQuestion(kind) : undefined;
 }
 </script>

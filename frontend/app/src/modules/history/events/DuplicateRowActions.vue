@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { HistoryEventQuestion } from '@/modules/history/events/types';
-import { DuplicatesAction, useDuplicatesQuestion } from '@/modules/history/events/use-duplicates-question';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { useDuplicatesQuestion } from '@/modules/history/events/use-duplicates-question';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 
 /** Each action asks beside its button, so `fix`, `ignore` and `restore` mean the user accepted. */
@@ -18,21 +18,18 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { duplicatesQuestion } = useDuplicatesQuestion();
+const questions = useDuplicatesQuestion();
 
-const fixQuestion = computed<HistoryEventQuestion>(() => duplicatesQuestion(DuplicatesAction.FIX, 1));
-const ignoreQuestion = computed<HistoryEventQuestion>(() => duplicatesQuestion(DuplicatesAction.MARK_NON_DUPLICATED, 1));
-const restoreQuestion = computed<HistoryEventQuestion>(() => duplicatesQuestion(DuplicatesAction.RESTORE, 1));
+const fixQuestion = computed<ConfirmQuestion>(() => questions.fixQuestion(1));
+const ignoreQuestion = computed<ConfirmQuestion>(() => questions.markNonDuplicatedQuestion(1));
+const restoreQuestion = computed<ConfirmQuestion>(() => questions.restoreQuestion(1));
 </script>
 
 <template>
   <div class="flex items-center gap-2">
     <ConfirmPopover
       v-if="mode === 'auto-fix'"
-      tone="warning"
-      :title="fixQuestion.title"
-      :message="fixQuestion.message"
-      :confirm-label="t('customized_event_duplicates.actions.fix')"
+      :question="fixQuestion"
       @confirm="emit('fix')"
     >
       <template #activator="{ attrs }">
@@ -55,10 +52,7 @@ const restoreQuestion = computed<HistoryEventQuestion>(() => duplicatesQuestion(
     </ConfirmPopover>
     <ConfirmPopover
       v-if="mode === 'ignored'"
-      tone="warning"
-      :title="restoreQuestion.title"
-      :message="restoreQuestion.message"
-      :confirm-label="t('customized_event_duplicates.actions.restore')"
+      :question="restoreQuestion"
       @confirm="emit('restore')"
     >
       <template #activator="{ attrs }">
@@ -89,10 +83,7 @@ const restoreQuestion = computed<HistoryEventQuestion>(() => duplicatesQuestion(
     </ConfirmPopover>
     <ConfirmPopover
       v-else
-      tone="warning"
-      :title="ignoreQuestion.title"
-      :message="ignoreQuestion.message"
-      :confirm-label="t('customized_event_duplicates.actions.mark_non_duplicated')"
+      :question="ignoreQuestion"
       @confirm="emit('ignore')"
     >
       <template #activator="{ attrs }">

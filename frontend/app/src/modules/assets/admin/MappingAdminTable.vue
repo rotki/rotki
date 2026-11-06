@@ -3,6 +3,7 @@ import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/modules/core/common/collection';
 import type { MatchedKeyword } from '@/modules/core/table/filtering';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
@@ -34,7 +35,7 @@ const { collection, deleteConfirm, sourceKey, sourceLabel, symbolKey, subtitle }
   /** The row attribute holding the symbol the source uses. */
   symbolKey: keyof T & string;
   /** What a row's delete button asks; `delete` is emitted once the user confirms. */
-  deleteConfirm: (mapping: T) => { title: string; message: string };
+  deleteConfirm: (mapping: T) => RowDeleteQuestion;
 }>();
 
 const emit = defineEmits<{

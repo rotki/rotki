@@ -1,5 +1,4 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { ActionStatus } from '@/modules/core/common/action';
 import type {
   LinkedMovementMatch,
   LocationAndTxRef,
@@ -11,6 +10,7 @@ import type {
 } from '@/modules/history/events/schemas';
 import type { HistoryEventDeletePayload, HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import { HistoryEventEntryType } from '@rotki/common';
+import { tap } from 'plainfp/result-async';
 import { Defaults } from '@/modules/core/common/defaults';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
@@ -63,7 +63,7 @@ export function useHistoryEventsOperations(
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const { clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
+  const { run: runAction } = useHistoryEventsActionFailure();
   const { getChain } = useSupportedChains();
 
   const { deleteTransactions } = useHistoryEventsApi();
@@ -109,19 +109,16 @@ export function useHistoryEventsOperations(
   }
 
   /**
-   * Names a failed exclusion from accounting, or a failed inclusion, above the table.
+   * The strip title for a failed exclusion from accounting, or a failed inclusion.
    *
-   * @param status - what the exclusion answered
    * @param excluded - whether it tried to exclude rather than include
    */
-  function reportIgnoreStatus(status: ActionStatus, excluded: boolean): void {
-    if (!status.success)
-      reportActionFailure(excluded ? t('actions.ignore.error.title') : t('actions.unignore.error.title'), status.message);
+  function ignoreFailureTitle(excluded: boolean): string {
+    return excluded ? t('actions.ignore.error.title') : t('actions.unignore.error.title');
   }
 
   async function toggle(event: HistoryEventEntry): Promise<void> {
-    clearActionFailure();
-    reportIgnoreStatus(await toggleIgnore(event), !event.ignoredInAccounting);
+    await runAction(ignoreFailureTitle(!event.ignoredInAccounting), async () => toggleIgnore(event));
   }
 
   function getItemClass(item: HistoryEventEntry): '' | 'opacity-50' {
@@ -129,20 +126,15 @@ export function useHistoryEventsOperations(
   }
 
   async function deleteEvents(payload: HistoryEventDeletePayload): Promise<void> {
-    clearActionFailure();
     if (payload.type === 'ignore') {
-      reportIgnoreStatus(await ignoreSingle(payload.event, true), true);
+      await runAction(ignoreFailureTitle(true), async () => ignoreSingle(payload.event, true));
       return;
     }
 
-    const result = await deleteHistoryEvent(payload.ids);
-    if (result.success) {
+    await runAction(t('transactions.events.delete.error.title'), async () => tap(deleteHistoryEvent(payload.ids), () => {
       emit('refresh');
       taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_DELETED });
-    }
-    else {
-      reportActionFailure(t('transactions.events.delete.error.title'), result.message || t('transactions.events.delete.error.message'));
-    }
+    }));
   }
 
   function suggestNextSequenceId(group: HistoryEventEntry): string {
@@ -161,15 +153,11 @@ export function useHistoryEventsOperations(
   }
 
   async function deleteTransaction({ location, txRef }: LocationAndTxRef): Promise<void> {
-    clearActionFailure();
-    try {
+    await runAction(t('transactions.dialog.delete.error.title'), async () => {
       await deleteTransactions(getChain(location), txRef);
       emit('refresh');
       taskCenterBus.emit('event:mutated', { kind: EditKind.TRANSACTION_DELETED });
-    }
-    catch (error: unknown) {
-      reportActionFailure(t('transactions.dialog.delete.error.title'), error);
-    }
+    });
   }
 
   function isEvmPayload(payload: PullEventPayload): boolean {

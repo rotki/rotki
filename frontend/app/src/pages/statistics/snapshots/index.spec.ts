@@ -1,4 +1,5 @@
 import type { SnapshotListRow } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
+import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import type { useSnapshotsPage } from '@/pages/statistics/snapshots/use-snapshots-page';
 import { bigNumberify } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
@@ -17,7 +18,7 @@ const refresh = vi.fn(async (): Promise<void> => {});
 const takeSnapshot = vi.fn(async (): Promise<void> => {});
 
 interface PageState {
-  deleteFailure: unknown;
+  deleteFailure: NamedFailure | undefined;
   rows: SnapshotListRow[];
 }
 
@@ -152,7 +153,7 @@ describe('pages/statistics/snapshots/index', () => {
   });
 
   it('should name a failed delete above the table', () => {
-    pageState.deleteFailure = new Error('backend said no');
+    pageState.deleteFailure = { failure: new Error('backend said no'), title: 'dashboard.snapshot.delete.message.title' };
 
     wrapper = mountPage();
 

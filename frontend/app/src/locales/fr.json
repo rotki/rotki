@@ -447,10 +447,6 @@
     },
     "help_coingecko": "Cliquer pour obtenir de l'aide sur la façon de trouver l'identifiant CoinGecko",
     "help_cryptocompare": "Cliquer pour obtenir de l'aide sur la façon de trouver l'identifiant CryptoCompare",
-    "icon_upload": {
-      "description": "L'upload de l'icône a échoué : {message}",
-      "title": "Upload de l'icône"
-    },
     "identifier": "Identifiant",
     "identifier_copy": "Copier l'identifiant",
     "labels": {

@@ -41,6 +41,6 @@ describe('useManualBalanceTableActions', () => {
 
     await deleteRow(4);
 
-    expect(get(deleteFailure)).toEqual({ error, title: 'actions.balances.manual_delete.error.title' });
+    expect(get(deleteFailure)).toEqual({ failure: error, title: 'actions.balances.manual_delete.error.title' });
   });
 });

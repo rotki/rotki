@@ -1,6 +1,7 @@
 import type { UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { assert } from '@rotki/common';
 import { createPinia, setActivePinia } from 'pinia';
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Currency, CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { Module } from '@/modules/core/common/modules';
@@ -132,7 +133,7 @@ describe('useSettingsOperations', () => {
     it('should enable module and add queried addresses', async () => {
       const response = createSettingsResponse();
       mockSetSettings.mockResolvedValue(response);
-      mockAddQueriedAddress.mockResolvedValue(undefined);
+      mockAddQueriedAddress.mockResolvedValue(ok(undefined));
 
       const { useSettingsOperations } = await importModule();
       const { enableModule } = useSettingsOperations();
@@ -152,7 +153,7 @@ describe('useSettingsOperations', () => {
 
     it('should toast an address the module could not be enabled for', async () => {
       mockSetSettings.mockResolvedValue(createSettingsResponse());
-      mockAddQueriedAddress.mockResolvedValue({ error: new Error('not tracked') });
+      mockAddQueriedAddress.mockResolvedValue(err(new Error('not tracked')));
 
       const { useSettingsOperations } = await importModule();
       await useSettingsOperations().enableModule({
@@ -175,7 +176,7 @@ describe('useSettingsOperations', () => {
 
       const response = createSettingsResponse();
       mockSetSettings.mockResolvedValue(response);
-      mockAddQueriedAddress.mockResolvedValue(undefined);
+      mockAddQueriedAddress.mockResolvedValue(ok(undefined));
 
       const { useSettingsOperations } = await importModule();
       const { enableModule } = useSettingsOperations();

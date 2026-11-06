@@ -3,6 +3,7 @@ import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Filters } from '@/modules/assets/admin/custom/custom-asset-filter-keys';
 import type { CustomAsset } from '@/modules/assets/types';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { useCustomAssetTable } from '@/modules/assets/admin/custom/use-custom-asset-table';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
@@ -27,7 +28,7 @@ const { assets, deleteConfirm, fields, loading = false } = defineProps<{
   fields: FieldDef[];
   loading?: boolean;
   /** What a row's delete button asks; `delete-asset` is emitted once the user confirms. */
-  deleteConfirm: (asset: CustomAsset) => { title: string; message: string };
+  deleteConfirm: (asset: CustomAsset) => RowDeleteQuestion;
 }>();
 
 const emit = defineEmits<{

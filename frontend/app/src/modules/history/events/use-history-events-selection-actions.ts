@@ -43,7 +43,7 @@ export function useHistoryEventsSelectionActions(
   options: UseHistoryEventsSelectionActionsOptions,
 ): HistoryEventsSelectionActions {
   const { t } = useI18n({ useScope: 'global' });
-  const { clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
+  const { run: runAction } = useHistoryEventsActionFailure();
 
   const { deletion, originalGroups, refreshCallback, selectionMode } = options;
 
@@ -60,32 +60,30 @@ export function useHistoryEventsSelectionActions(
     },
   );
 
+  /** The loaded events whose ids are selected, in table order. */
+  const selectedEvents = computed<HistoryEventEntry[]>(() => {
+    const { selectedIds } = get(selectionMode.state);
+    return toValue(originalGroups).flat().filter(
+      (event): event is HistoryEventEntry => !Array.isArray(event) && selectedIds.has(event.identifier),
+    );
+  });
+
   /**
    * Excludes the selection from accounting, or includes it again, naming a failure above the table.
    *
    * @param ignored - true to exclude, false to include
    */
   async function ignoreSelection(ignored: boolean): Promise<void> {
-    clearActionFailure();
-    set(selectedEventsForIgnore, getSelectedEvents());
-    const status = await ignore(ignored);
-    if (!status.success)
-      reportActionFailure(ignored ? t('actions.ignore.error.title') : t('actions.unignore.error.title'), status.message);
-  }
-
-  function getSelectedEvents(): HistoryEventEntry[] {
-    const selectedIds = Array.from(get(selectionMode.state).selectedIds);
-    const allEvents = toValue(originalGroups).flat();
-    return allEvents.filter(
-      (event): event is HistoryEventEntry => !Array.isArray(event) && selectedIds.includes(event.identifier),
-    );
+    await runAction(ignored ? t('actions.ignore.error.title') : t('actions.unignore.error.title'), async () => {
+      set(selectedEventsForIgnore, get(selectedEvents));
+      return ignore(ignored);
+    });
   }
 
   const ignoreStatus = computed<IgnoreStatus>(() => {
-    const selectedEvents = getSelectedEvents();
-    const ignoredCount = selectedEvents.filter(event => event.ignoredInAccounting).length;
-    const notIgnoredCount = selectedEvents.length - ignoredCount;
-    return { ignoredCount, notIgnoredCount };
+    const events = get(selectedEvents);
+    const ignoredCount = events.filter(event => event.ignoredInAccounting).length;
+    return { ignoredCount, notIgnoredCount: events.length - ignoredCount };
   });
 
   /**
@@ -110,19 +108,19 @@ export function useHistoryEventsSelectionActions(
     if (get(selectionMode.state).selectedIds.size === 0)
       return undefined;
 
-    const selectedEvents = getSelectedEvents();
-    if (selectedEvents.length === 0)
+    const events = get(selectedEvents);
+    if (events.length === 0)
       return t('transactions.events.accounting_rule.no_events_found');
 
-    const { eventSubtype, eventType } = selectedEvents[0];
-    const allSameType = selectedEvents.every(event =>
+    const { eventSubtype, eventType } = events[0];
+    const allSameType = events.every(event =>
       event.eventType === eventType && event.eventSubtype === eventSubtype,
     );
     return allSameType ? undefined : t('transactions.events.accounting_rule.different_types_error');
   });
 
   function startRuleCreation(selectedIds: number[]): void {
-    const [first] = getSelectedEvents();
+    const [first] = get(selectedEvents);
     if (!first || get(ruleCreationBlocker) !== undefined)
       return;
 

@@ -1,4 +1,5 @@
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { err } from 'plainfp/result';
@@ -19,7 +20,7 @@ import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
  */
 interface MockState {
   baselineTotal: number;
-  detectFailure?: unknown;
+  detectFailure?: NamedFailure;
   error?: RequestFailure;
   filters: Record<string, unknown>;
   isLoading: boolean;
@@ -205,7 +206,7 @@ describe('data-issues view failures', () => {
   });
 
   it('should name a failed balance check on the page, with a retry that checks again', async () => {
-    state.detectFailure = new Error('still processing');
+    state.detectFailure = { failure: new Error('still processing'), title: 'data_issues.detect.error' };
     const wrapper = await createWrapper();
 
     const strip = wrapper.find('[data-testid="data-issues-detect-failure"]');
@@ -222,7 +223,7 @@ describe('data-issues view failures', () => {
     expect(wrapper.find('[data-testid="data-issues-detect-failure"]').exists()).toBe(false);
   });
 
-  it('should name a failed row dismiss above the table without a retry, and hand it to the drawer', async () => {
+  it('should name a failed row dismiss above the table without a retry, and keep it from a drawer with no issue open', async () => {
     spies.dismiss.mockResolvedValue(err({ cause: new Error('nope'), message: 'nope', type: 'conflict' }));
     const wrapper = await createWrapper();
 
@@ -233,6 +234,6 @@ describe('data-issues view failures', () => {
     expect(strip.text()).toContain('data_issues.action.dismiss.error');
     expect(strip.text()).toContain('nope');
     expect(strip.find('[data-testid="failure-strip-retry"]').exists()).toBe(false);
-    expect(wrapper.findComponent(DataIssueDetailDrawer).props('failure')).toMatchObject({ id: 5 });
+    expect(wrapper.findComponent(DataIssueDetailDrawer).props('failure')).toBeUndefined();
   });
 });

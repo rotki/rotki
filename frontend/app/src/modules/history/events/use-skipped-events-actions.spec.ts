@@ -236,7 +236,10 @@ describe('modules/history/events/useSkippedEventsActions', () => {
 
       await reProcess();
 
-      expect(get(reprocessFailure)).toBe('transactions.events.skipped.reprocess.failed.no_processed_events');
+      expect(get(reprocessFailure)).toEqual({
+        failure: 'transactions.events.skipped.reprocess.failed.no_processed_events',
+        title: 'transactions.events.skipped.reprocess.failed.title',
+      });
     });
 
     it('should keep a run that threw as the failure', async () => {
@@ -246,7 +249,7 @@ describe('modules/history/events/useSkippedEventsActions', () => {
 
       await reProcess();
 
-      expect(get(reprocessFailure)).toBe(error);
+      expect(get(reprocessFailure)).toEqual({ failure: error, title: 'transactions.events.skipped.reprocess.failed.title' });
     });
 
     it('should drop the last failure and note when the next run starts', async () => {

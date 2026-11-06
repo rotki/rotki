@@ -10,7 +10,7 @@ import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { logger } from '@/modules/core/common/logging/logging';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/modules/core/common/use-csv-import-export';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { useTagOperations } from '@/modules/tags/use-tag-operations';
@@ -43,8 +43,8 @@ export function useAccountImport(): UseAccountImportReturn {
    * rows. A failed tag does not stop the import: its accounts are still added, without that tag.
    */
   async function createTags(tags: string[]): Promise<ImportItem[]> {
-    const statuses = await Promise.all(tags.map(async tag => attemptTagCreation(tag)));
-    return statuses.flatMap((status, index) => (status.success ? [] : [failedTagItem(tags[index], status.message)]));
+    const results = await Promise.all(tags.map(async tag => attemptTagCreation(tag)));
+    return results.flatMap((result, index) => (result.ok ? [] : [failedTagItem(tags[index], getErrorMessage(result.error))]));
   }
 
   /**

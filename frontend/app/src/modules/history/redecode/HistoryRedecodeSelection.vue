@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ChainInfo } from '@/modules/core/api/types/chains';
 import type { DecodeScope } from '@/modules/history/events/event-payloads';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { getTextToken } from '@rotki/common';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import HistoryRedecodeChainItem from '@/modules/history/redecode/HistoryRedecodeChainItem.vue';
@@ -36,6 +37,12 @@ const filteredChains = computed<ChainInfo[]>(() => {
     || ('evmChainName' in chain && getTextToken(chain.evmChainName).includes(query)),
   );
 });
+
+const redecodeAllQuestion = computed<ConfirmQuestion>(() => ({
+  confirmLabel: t('transactions.events_decoding.redecode'),
+  message: t('transactions.events_decoding.confirmation'),
+  title: t('transactions.events_decoding.redecode_all'),
+}));
 
 const indeterminate = computed<boolean>(() => {
   const selectedItems = get(selection).length;
@@ -157,9 +164,7 @@ watch(selected, (all) => {
     >
       <InlineConfirm
         layout="panel"
-        :title="t('transactions.events_decoding.redecode_all')"
-        :message="t('transactions.events_decoding.confirmation')"
-        :confirm-label="t('transactions.events_decoding.redecode')"
+        :question="redecodeAllQuestion"
         :loading="loading"
         @cancel="confirmingAll = false"
         @confirm="redecode()"

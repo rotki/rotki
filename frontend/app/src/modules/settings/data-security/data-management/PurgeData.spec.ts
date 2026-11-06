@@ -1,4 +1,5 @@
 import type { usePurgeData } from '@/modules/settings/data-security/data-management/use-purge-data';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, ref } from 'vue';
@@ -14,9 +15,11 @@ const { modelSource, purge, purgeQuestion } = await vi.hoisted(async () => {
   return {
     modelSource: ref<Purgeable>(Purgeable.CENTRALIZED_EXCHANGES),
     purge: vi.fn<(source: Purgeable) => Promise<void>>(async () => {}),
-    purgeQuestion: computed<{ message: string; title: string }>(() => ({
+    purgeQuestion: computed<ConfirmQuestion>(() => ({
+      confirmLabel: 'Purge data',
       message: 'Purge poloniex?\n\nOlder trades are lost.',
       title: 'Confirm purge',
+      tone: 'error',
     })),
   };
 });

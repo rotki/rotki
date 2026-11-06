@@ -64,12 +64,11 @@ interface UseNotificationSidebarReturn {
    * Whether the footer is asking before discarding every notification.
    *
    * @remarks
-   * Clearing is not undoable, so {@link UseNotificationSidebarReturn.askToClear} only raises the
-   * question; {@link UseNotificationSidebarReturn.clearAll} is its accept.
+   * Clearing is not undoable, so setting this only raises the question; cancelling it unsets it, and
+   * {@link UseNotificationSidebarReturn.clearAll} is its accept. Writable for the footer to raise and
+   * cancel the question; closing the drawer drops it.
    */
-  askingToClear: Readonly<Ref<boolean>>;
-  askToClear: () => void;
-  cancelClear: () => void;
+  modelAskingToClear: Ref<boolean>;
   /** Discards every notification and backend problem, then closes the drawer. */
   clearAll: () => void;
   /** Whether popups are suppressed. */
@@ -95,7 +94,7 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
   const initialAppear = shallowRef<boolean>(false);
   const modelProblemsOpen = shallowRef<boolean>(true);
   const modelMutedOpen = shallowRef<boolean>(false);
-  const askingToClear = shallowRef<boolean>(false);
+  const modelAskingToClear = shallowRef<boolean>(false);
 
   const notificationStore = useNotificationsStore();
   const { messageOverflow, newestFirst: allNotifications } = storeToRefs(notificationStore);
@@ -159,7 +158,7 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
    */
   watchImmediate([display, allNotifications, allProblems], ([open]) => {
     if (!open) {
-      set(askingToClear, false);
+      set(modelAskingToClear, false);
       return;
     }
 
@@ -171,16 +170,8 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
     startPromise(toggleSilent());
   }
 
-  function askToClear(): void {
-    set(askingToClear, true);
-  }
-
-  function cancelClear(): void {
-    set(askingToClear, false);
-  }
-
   function clearAll(): void {
-    set(askingToClear, false);
+    set(modelAskingToClear, false);
     notificationStore.$reset();
     problemsStore.$reset();
     close();
@@ -204,9 +195,6 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
   watch([(): number => toValue(scrollY), allNotifications], trackRowAppearance);
 
   return {
-    askingToClear: readonly(askingToClear),
-    askToClear,
-    cancelClear,
     clearAll,
     close,
     failures,
@@ -214,6 +202,7 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
     initialAppear: readonly(initialAppear),
     isEmpty,
     messageOverflow,
+    modelAskingToClear,
     modelMutedOpen,
     modelProblemsOpen,
     muted,

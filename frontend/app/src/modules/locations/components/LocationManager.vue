@@ -234,7 +234,6 @@ onMounted(async () => {
                 in-table
                 :title="t('location_manager.error')"
                 :failure="actionFailure"
-                :retryable="false"
                 data-testid="location-manager-error"
               />
             </td>
@@ -257,10 +256,12 @@ onMounted(async () => {
           <InlineConfirm
             v-if="pendingDeletion?.identifier === row.node.identifier"
             class="my-1"
-            tone="error"
-            :title="t('location_manager.delete.title')"
-            :message="t('location_manager.delete.message', { name: treeStore.pathLabelOf(row.node.identifier) })"
-            :confirm-label="t('common.actions.delete')"
+            :question="{
+              confirmLabel: t('common.actions.delete'),
+              message: t('location_manager.delete.message', { name: treeStore.pathLabelOf(row.node.identifier) }),
+              title: t('location_manager.delete.title'),
+              tone: 'error',
+            }"
             :loading="deleting"
             data-testid="location-delete-confirm"
             @cancel="pendingDeletion = undefined"

@@ -257,6 +257,7 @@ describe('use-asset-movement-actions', () => {
       set(composable.modelSelectedUnmatched, ['g1', 'g2']);
 
       expect(get(composable.ignoreSelectedQuestion)).toEqual({
+        confirmLabel: 'asset_movement_matching.dialog.ignore',
         message: 'asset_movement_matching.actions.ignore_selected_confirm::2',
         title: 'asset_movement_matching.actions.ignore_selected',
       });
@@ -432,6 +433,7 @@ describe('use-asset-movement-actions', () => {
       const composable = setupWithoutCallback();
 
       expect(get(composable.ignoreFiatQuestion)).toEqual({
+        confirmLabel: 'asset_movement_matching.dialog.ignore',
         message: 'asset_movement_matching.actions.ignore_fiat_confirm::2',
         title: 'asset_movement_matching.actions.ignore_fiat',
       });

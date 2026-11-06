@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import ConfirmInPlace from '@/modules/shell/components/ConfirmInPlace.vue';
 
 /**
  * A service card's delete button, which asks in its own place before it removes anything.
@@ -8,7 +9,7 @@ import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
  * Sits in the card dialog's left buttons, so the question appears where the user pressed, inside
  * the dialog, instead of in a second dialog over it. `confirm` means the user accepted.
  */
-const { disabled = false } = defineProps<{
+const { disabled = false, label, message, title } = defineProps<{
   label: string;
   title: string;
   message: string;
@@ -19,40 +20,32 @@ const emit = defineEmits<{
   confirm: [];
 }>();
 
-const asking = ref<boolean>(false);
-
-function accept(): void {
-  set(asking, false);
-  emit('confirm');
-}
+const question = computed<ConfirmQuestion>(() => ({ confirmLabel: label, message, title, tone: 'error' }));
 </script>
 
 <template>
-  <InlineConfirm
-    v-if="asking"
+  <ConfirmInPlace
     class="grow"
-    tone="error"
-    :title="title"
-    :message="message"
-    :confirm-label="label"
+    :question="question"
     data-testid="delete-confirm"
-    @cancel="asking = false"
-    @confirm="accept()"
-  />
-  <RuiButton
-    v-else
-    :disabled="disabled"
-    color="error"
-    variant="text"
-    data-testid="delete-button"
-    @click="asking = true"
+    @confirm="emit('confirm')"
   >
-    <template #prepend>
-      <RuiIcon
-        name="lu-trash-2"
-        size="16"
-      />
+    <template #activator="{ ask }">
+      <RuiButton
+        :disabled="disabled"
+        color="error"
+        variant="text"
+        data-testid="delete-button"
+        @click="ask()"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-trash-2"
+            size="16"
+          />
+        </template>
+        {{ label }}
+      </RuiButton>
     </template>
-    {{ label }}
-  </RuiButton>
+  </ConfirmInPlace>
 </template>

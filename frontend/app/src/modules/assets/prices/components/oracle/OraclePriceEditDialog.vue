@@ -6,6 +6,7 @@ import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
+import { useFailureSlot } from '@/modules/shell/components/named-failure';
 
 const modelValue = defineModel<OraclePriceEntry | undefined>({ required: true });
 
@@ -21,10 +22,10 @@ const { resetHistoricalPricesData } = useHistoricPriceCache();
 const loading = ref<boolean>(false);
 const editedPrice = ref<string>('');
 /** Why the last save failed; the typed price stays, and Save is the retry. */
-const saveError = shallowRef<unknown>();
+const { clear: clearSaveFailure, failure: saveFailure, run } = useFailureSlot();
 
 watch(modelValue, (item) => {
-  set(saveError, undefined);
+  clearSaveFailure();
   if (item)
     set(editedPrice, item.price.toFixed());
 });
@@ -45,8 +46,7 @@ async function save(): Promise<void> {
     return;
 
   set(loading, true);
-  set(saveError, undefined);
-  try {
+  await run(t('oracle_prices.edit.error.title'), async () => {
     await editHistoricalPrice({
       fromAsset: item.fromAsset,
       price: get(editedPrice),
@@ -57,13 +57,8 @@ async function save(): Promise<void> {
     resetHistoricalPricesData([{ fromAsset: item.fromAsset, timestamp: item.timestamp }]);
     set(modelValue, undefined);
     emit('refresh');
-  }
-  catch (error: unknown) {
-    set(saveError, error);
-  }
-  finally {
-    set(loading, false);
-  }
+  });
+  set(loading, false);
 }
 </script>
 
@@ -74,8 +69,8 @@ async function save(): Promise<void> {
     :action="{ primary: t('common.actions.save'), disabled: !editedPrice }"
     :layout="{ autoHeight: true, divide: true, maxWidth: '560px' }"
     :loading="loading"
-    :failure="saveError"
-    :failure-title="t('oracle_prices.edit.error.title')"
+    :failure="saveFailure?.failure"
+    :failure-title="saveFailure?.title"
     @confirm="save()"
     @cancel="modelValue = undefined"
   >

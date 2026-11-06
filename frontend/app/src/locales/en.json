@@ -1150,8 +1150,7 @@
     "help_coingecko": "Click for help on how to locate the CoinGecko identifier",
     "help_cryptocompare": "Click for help on how to locate the CryptoCompare identifier",
     "icon_upload": {
-      "description": "The icon upload failed: {message}",
-      "title": "Icon upload"
+      "failed": "The asset was saved, but its icon could not be uploaded"
     },
     "identifier": "Identifier",
     "identifier_copy": "Copy the identifier",
@@ -7525,7 +7524,6 @@
       "hidden_ignored_assets_warning": "Some events in this group are hidden because they contain ignored assets. Click to show.",
       "ignore": {
         "error": {
-          "message": "Failed to exclude events from accounting",
           "title": "Exclusion Failed"
         }
       },

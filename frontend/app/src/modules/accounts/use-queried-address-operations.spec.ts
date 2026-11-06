@@ -1,5 +1,6 @@
 import type { QueriedAddresses, QueriedAddressPayload } from '@/modules/session/types';
 import { createPinia, setActivePinia } from 'pinia';
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Module } from '@/modules/core/common/modules';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
@@ -64,7 +65,7 @@ describe('useQueriedAddressOperations', () => {
 
       const store = useSessionMetadataStore();
       expect(mockQueriedAddresses).toHaveBeenCalledOnce();
-      expect(get(store.queriedAddresses)).toMatchObject({});
+      expect(get(store.queriedAddresses)).toStrictEqual({});
       expect(mockNotifyError).toHaveBeenCalledWith(
         'queried_address_dialog.title',
         'actions.session.fetch_queriable_address.error.message::failed',
@@ -90,7 +91,7 @@ describe('useQueriedAddressOperations', () => {
       const store = useSessionMetadataStore();
       expect(mockAddQueriedAddress).toHaveBeenCalledWith(payload);
       expect(get(store.queriedAddresses)).toMatchObject(response);
-      expect(failure).toBeUndefined();
+      expect(failure).toStrictEqual(ok(undefined));
     });
 
     it('should hand an add failure back instead of showing it', async () => {
@@ -107,8 +108,8 @@ describe('useQueriedAddressOperations', () => {
 
       const store = useSessionMetadataStore();
       expect(mockAddQueriedAddress).toHaveBeenCalledWith(payload);
-      expect(get(store.queriedAddresses)).toMatchObject({});
-      expect(failure).toEqual({ error });
+      expect(get(store.queriedAddresses)).toStrictEqual({});
+      expect(failure).toStrictEqual(err(error));
       expect(mockNotifyError).not.toHaveBeenCalled();
     });
   });
@@ -132,8 +133,8 @@ describe('useQueriedAddressOperations', () => {
       const failure = await deleteQueriedAddress(payload);
 
       expect(mockDeleteQueriedAddress).toHaveBeenCalledWith(payload);
-      expect(get(queriedAddresses)).toMatchObject({});
-      expect(failure).toBeUndefined();
+      expect(get(queriedAddresses)).toStrictEqual({});
+      expect(failure).toStrictEqual(ok(undefined));
     });
 
     it('should hand a delete failure back instead of showing it', async () => {
@@ -157,7 +158,7 @@ describe('useQueriedAddressOperations', () => {
 
       expect(mockDeleteQueriedAddress).toHaveBeenCalledWith(payload);
       expect(get(queriedAddresses)).toMatchObject(originalState);
-      expect(failure).toEqual({ error });
+      expect(failure).toStrictEqual(err(error));
       expect(mockNotifyError).not.toHaveBeenCalled();
     });
   });

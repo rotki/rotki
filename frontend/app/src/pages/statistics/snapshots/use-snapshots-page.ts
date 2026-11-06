@@ -2,12 +2,14 @@ import type { TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
 import type { LocationQuery } from '@/modules/core/table/route';
 import { startPromise } from '@shared/utils';
+import { err, ok } from 'plainfp/result';
 import { applyPaginationDefaults, parseQueryPagination } from '@/modules/core/table/pagination-filter-utils';
 import { useSnapshotActions } from '@/modules/dashboard/snapshots/composables/use-snapshot-actions';
 import { useSnapshotExport } from '@/modules/dashboard/snapshots/composables/use-snapshot-export';
 import { type SnapshotListFilters, type SnapshotListRow, useSnapshotList } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
 import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 import { useSnapshotApi } from '@/modules/settings/api/use-snapshot-api';
+import { type NamedFailure, useFailureSlot } from '@/modules/shell/components/named-failure';
 import { parseSnapshotFilters, toSnapshotQuery } from '@/pages/statistics/snapshots/snapshot-query';
 
 type SnapshotActions = ReturnType<typeof useSnapshotActions>;
@@ -21,7 +23,7 @@ interface UseSnapshotsPageReturn {
    */
   deleteSnapshotAt: (timestamp: number) => Promise<void>;
   /** Why the last delete failed, until the next one starts: the error, or a sentence when refused. */
-  deleteFailure: Readonly<Ref<unknown>>;
+  deleteFailure: Readonly<Ref<NamedFailure | undefined>>;
   emptyDescription: ComputedRef<string>;
   exportSnapshot: SnapshotExport['exportSnapshot'];
   exporting: SnapshotExport['exporting'];
@@ -52,7 +54,7 @@ export function useSnapshotsPage(): UseSnapshotsPageReturn {
   const itemsPerPage = useItemsPerPage();
 
   const modelImportDialog = shallowRef<boolean>(false);
-  const deleteFailure = shallowRef<unknown>();
+  const { failure: deleteFailure, run } = useFailureSlot();
 
   // View state lives in the URL query, so a reload or a back navigation restores it.
   const modelFilters = ref<SnapshotListFilters>({});
@@ -100,20 +102,16 @@ export function useSnapshotsPage(): UseSnapshotsPageReturn {
   }
 
   async function deleteSnapshotAt(timestamp: number): Promise<void> {
-    set(deleteFailure, undefined);
-    try {
-      if (await deleteSnapshot({ timestamp }))
-        await refresh();
-      else
-        set(deleteFailure, t('dashboard.snapshot.delete.message.failure'));
-    }
-    catch (error: unknown) {
-      set(deleteFailure, error);
-    }
+    await run(t('dashboard.snapshot.delete.message.title'), async () => {
+      if (!await deleteSnapshot({ timestamp }))
+        return err(t('dashboard.snapshot.delete.message.failure'));
+      await refresh();
+      return ok(undefined);
+    });
   }
 
   return {
-    deleteFailure: readonly(deleteFailure),
+    deleteFailure,
     deleteSnapshotAt,
     emptyDescription,
     exporting,

@@ -119,7 +119,7 @@ describe('modules/assets/admin/custom/useCustomAssetsTable', () => {
       const { deleteAsset, deleteFailure } = table();
       await deleteAsset(asset({ identifier: 'custom-5' }));
 
-      expect(get(deleteFailure)).toEqual({ error, title: 'asset_management.delete_error::custom-5' });
+      expect(get(deleteFailure)).toEqual({ failure: error, title: 'asset_management.delete_error::custom-5' });
       expect(refetch).not.toHaveBeenCalled();
     });
   });

@@ -116,7 +116,7 @@ describe('modules/staking/lido-csm/LidoCsmPage.vue', () => {
       const wrapper = await addWith('Failed to fetch metrics for node operator 7');
 
       expect(strip(wrapper).props('failure')).toBe('Failed to fetch metrics for node operator 7');
-      expect(strip(wrapper).props('retryable')).toBe(true);
+      expect(strip(wrapper).props('onRetry')).toBeTypeOf('function');
     });
   });
 });

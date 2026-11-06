@@ -1,3 +1,4 @@
+import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import HistoryEventsSkippedExternalEvents from '@/modules/history/events/HistoryEventsSkippedExternalEvents.vue';
@@ -6,7 +7,7 @@ const state = await vi.hoisted(async () => {
   const { ref, shallowRef } = await import('vue');
   return {
     reProcessSkippedEvents: vi.fn<() => Promise<void>>(),
-    reprocessFailure: shallowRef<unknown>(),
+    reprocessFailure: shallowRef<NamedFailure>(),
     reprocessNote: ref<string>(),
   };
 });
@@ -40,7 +41,7 @@ describe('historyEventsSkippedExternalEvents', () => {
   });
 
   it('should name a failed reprocess on the row, with a retry that reprocesses again', async () => {
-    set(state.reprocessFailure, new Error('decoder crashed'));
+    set(state.reprocessFailure, { failure: new Error('decoder crashed'), title: 'transactions.events.skipped.reprocess.failed.title' });
     const wrapper = mountRow();
 
     const strip = wrapper.find('[data-testid=skipped-events-reprocess-failure]');

@@ -129,7 +129,6 @@ onMounted(load);
               in-table
               :title="t('location_manager.aliases.error')"
               :failure="actionFailure"
-              :retryable="false"
               data-testid="location-aliases-action-error"
             />
           </td>

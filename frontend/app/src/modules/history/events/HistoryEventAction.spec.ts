@@ -1,4 +1,5 @@
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
@@ -20,8 +21,8 @@ const RuiMenu = {
   </div>`,
 };
 
-const deleteConfirm = { confirmLabel: 'Delete', message: 'Delete the event?', title: 'Delete event' };
-const unlinkConfirm = { confirmLabel: 'Unlink', message: 'Unlink the match?', title: 'Unlink' };
+const deleteConfirm: ConfirmQuestion = { confirmLabel: 'Delete', message: 'Delete the event?', title: 'Delete event', tone: 'error' };
+const unlinkConfirm: ConfirmQuestion = { confirmLabel: 'Unlink', message: 'Unlink the match?', title: 'Unlink' };
 
 function mountMenu(props: Record<string, unknown> = {}): VueWrapper<InstanceType<typeof HistoryEventAction>> {
   return mount(HistoryEventAction, {
@@ -42,7 +43,7 @@ describe('modules/history/events/HistoryEventAction', () => {
     await wrapper.find('[data-testid=row-delete]').trigger('click');
 
     expect(wrapper.find('[data-testid=inline-confirm]').text()).toContain('Delete the event?');
-    expect(wrapper.find('[data-testid=row-unlink]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=confirm-menu-entries]').attributes('style')).toContain('display: none');
     expect(wrapper.emitted('delete')).toBeUndefined();
   });
 

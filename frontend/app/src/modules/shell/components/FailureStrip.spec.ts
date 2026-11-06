@@ -1,24 +1,33 @@
 import { mount } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import FailureStrip from './FailureStrip.vue';
 
 describe('failureStrip', () => {
-  it('should show the caller\'s action beside the message, keeping retry', async () => {
+  it('should offer retry when the caller listens for it, and call the listener', async () => {
+    const onRetry = vi.fn<() => void>();
+    const wrapper = mount(FailureStrip, {
+      props: { failure: 'node unreachable', onRetry, title: 'Load failed' },
+    });
+
+    await wrapper.find('[data-testid=failure-strip-retry]').trigger('click');
+
+    expect(onRetry).toHaveBeenCalledOnce();
+  });
+
+  it('should offer no retry when nobody listens for it', () => {
+    const wrapper = mount(FailureStrip, {
+      props: { failure: 'too many devices', title: 'Save failed' },
+    });
+
+    expect(wrapper.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
+  });
+
+  it('should show the caller\'s action beside the message', () => {
     const wrapper = mount(FailureStrip, {
       props: { failure: 'too many devices', title: 'Save failed' },
       slots: { action: '<button data-testid="extra-action">Learn more</button>' },
     });
 
     expect(wrapper.find('[data-testid=extra-action]').exists()).toBe(true);
-    await wrapper.find('[data-testid=failure-strip-retry]').trigger('click');
-    expect(wrapper.emitted('retry')).toHaveLength(1);
-  });
-
-  it('should render no action when the caller passes none', () => {
-    const wrapper = mount(FailureStrip, {
-      props: { failure: 'too many devices', retryable: false, title: 'Save failed' },
-    });
-
-    expect(wrapper.find('[data-testid=failure-strip]').findAll('button')).toHaveLength(0);
   });
 });

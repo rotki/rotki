@@ -1,11 +1,15 @@
+import type { ConfirmQuestion } from './confirm-question';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import InlineConfirm from './InlineConfirm.vue';
 
-function createWrapper(props: Partial<InstanceType<typeof InlineConfirm>['$props']> = {}): VueWrapper<InstanceType<typeof InlineConfirm>> {
+function createWrapper(
+  question: Partial<ConfirmQuestion> = {},
+  layout?: 'strip' | 'panel',
+): VueWrapper<InstanceType<typeof InlineConfirm>> {
   return mount(InlineConfirm, {
     attachTo: document.body,
-    props: { confirmLabel: 'Delete', message: 'Delete this tag?', ...props },
+    props: { layout, question: { confirmLabel: 'Delete', message: 'Delete this tag?', ...question } },
   });
 }
 
@@ -36,8 +40,16 @@ describe('inlineConfirm', () => {
   });
 
   it('should show the title in the panel layout only', () => {
-    expect(createWrapper({ layout: 'panel', title: 'Delete tag' }).text()).toContain('Delete tag');
-    expect(createWrapper({ layout: 'strip', title: 'Delete tag' }).text()).not.toContain('Delete tag');
+    expect(createWrapper({ title: 'Delete tag' }, 'panel').text()).toContain('Delete tag');
+    expect(createWrapper({ title: 'Delete tag' }, 'strip').text()).not.toContain('Delete tag');
+  });
+
+  it('should colour the accept button by the question tone, warning unless it destroys data', () => {
+    const accept = (wrapper: VueWrapper): unknown =>
+      wrapper.findAllComponents({ name: 'RuiButton' }).find(button => button.attributes('data-testid') === 'inline-confirm-accept')?.props('color');
+
+    expect(accept(createWrapper())).toBe('warning');
+    expect(accept(createWrapper({ tone: 'error' }))).toBe('error');
   });
 
   it('should name the question for assistive technology', () => {

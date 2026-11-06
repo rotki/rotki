@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { DuplicateRow } from '@/modules/history/events/use-customized-event-duplicates';
+import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
@@ -26,7 +27,7 @@ const {
   /** why the tab could not be read, shown in place of the rows or above the rows an earlier read left */
   error?: unknown;
   /** why the last action started from this tab failed; its own button is the retry */
-  actionFailure?: { title: string; failure: unknown };
+  actionFailure?: NamedFailure;
 }>();
 
 const emit = defineEmits<{
@@ -89,7 +90,6 @@ const columns = computed<DataTableColumn<DuplicateRow>[]>(() => [
       class="mb-4"
       :title="actionFailure.title"
       :failure="actionFailure.failure"
-      :retryable="false"
       data-testid="duplicates-action-error"
     />
     <ScrollableDialogContent :max-height="HISTORY_DIALOG_MAX_HEIGHT">

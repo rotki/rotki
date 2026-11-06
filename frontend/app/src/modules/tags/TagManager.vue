@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
@@ -57,11 +58,14 @@ function editItem(newTag: Tag) {
   set(tag, { ...newTag });
 }
 
-const { deleteConfirm, deleteRow, failure: deleteFailure } = useTableRowDeletion<Tag>({
-  confirm: selectedTag => ({
+function deleteConfirm(selectedTag: Tag): RowDeleteQuestion {
+  return {
     message: t('tag_manager.confirmation.message', { tagToDelete: selectedTag.name }),
     title: t('tag_manager.confirmation.title'),
-  }),
+  };
+}
+
+const { deleteRow, failure: deleteFailure } = useTableRowDeletion<Tag>({
   deleteItem: async (selectedTag) => {
     await deleteTag(selectedTag.name);
     return true;
@@ -116,9 +120,8 @@ onMounted(async () => {
       <FailureStrip
         v-if="deleteFailure"
         class="m-3"
-        :retryable="false"
         :title="deleteFailure.title"
-        :failure="deleteFailure.error"
+        :failure="deleteFailure.failure"
         data-testid="tag-manager-delete-error"
       />
       <RuiDataTable

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CexMapping, CexMappingRequestPayload } from '@/modules/assets/types';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { omit } from 'es-toolkit';
 import { CexMappingFilterKeys, type Filters } from '@/modules/assets/admin/cex-mapping/cex-mapping-filter-keys';
 import ManageCexMappingFormDialog from '@/modules/assets/admin/cex-mapping/ManageCexMappingFormDialog.vue';
@@ -50,14 +51,17 @@ onMounted(async () => {
   await refetch();
 });
 
-const { deleteConfirm, deleteRow, failure: deleteFailure } = useTableRowDeletion<CexMapping>({
-  confirm: item => ({
+function deleteConfirm(item: CexMapping): RowDeleteQuestion {
+  return {
     message: t('asset_management.cex_mapping.confirm_delete.message', {
       asset: item.locationSymbol,
       location: item.location || t('asset_management.cex_mapping.all_exchanges'),
     }),
     title: t('asset_management.cex_mapping.confirm_delete.title'),
-  }),
+  };
+}
+
+const { deleteRow, failure: deleteFailure } = useTableRowDeletion<CexMapping>({
   deleteItem: mapping => deleteCexMapping(omit(mapping, ['asset'])),
   failureTitle: () => t('asset_management.cex_mapping.delete_error'),
   onDeleted: refetch,
@@ -75,9 +79,8 @@ const { deleteConfirm, deleteRow, failure: deleteFailure } = useTableRowDeletion
     <FailureStrip
       v-if="deleteFailure"
       class="mb-4"
-      :retryable="false"
       :title="deleteFailure.title"
-      :failure="deleteFailure.error"
+      :failure="deleteFailure.failure"
       data-testid="cex-mapping-delete-error"
     />
     <ManageCexMappingTable

@@ -201,7 +201,6 @@ async function save(): Promise<void> {
         v-if="saveFailure"
         :title="t('location_manager.form.error')"
         :failure="saveFailure"
-        :retryable="false"
         data-testid="location-form-error"
       />
       <RuiTextField
@@ -236,7 +235,6 @@ async function save(): Promise<void> {
         v-if="imageFailure"
         :title="t('location_manager.image.error')"
         :failure="imageFailure"
-        :retryable="false"
         data-testid="location-form-image-error"
       />
       <LocationImageField

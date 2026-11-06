@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { SnapshotListRow } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import SnapshotDeltaDisplay from '@/modules/dashboard/snapshots/components/SnapshotDeltaDisplay.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import { useDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 
 const sort = defineModel<DataTableSortData<SnapshotListRow>>('sort', {
   default: () => ({ column: 'timestamp', direction: 'desc' as const }),
@@ -30,6 +32,12 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const toDeleteQuestion = useDeleteQuestion();
+
+const deleteQuestion = computed<ConfirmQuestion>(() => toDeleteQuestion({
+  message: t('dashboard.snapshot.delete.dialog.message'),
+  title: t('dashboard.snapshot.delete.dialog.title'),
+}));
 
 /**
  * Builds the snapshot table columns.
@@ -149,9 +157,7 @@ const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
         </RuiTooltip>
 
         <ConfirmPopover
-          :title="t('dashboard.snapshot.delete.dialog.title')"
-          :message="t('dashboard.snapshot.delete.dialog.message')"
-          :confirm-label="t('common.actions.delete')"
+          :question="deleteQuestion"
           @confirm="emit('delete', row.timestamp)"
         >
           <template #activator="{ attrs }">

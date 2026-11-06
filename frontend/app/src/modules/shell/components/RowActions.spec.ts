@@ -1,5 +1,6 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
+import ConfirmPopover from './ConfirmPopover.vue';
 import RowActions from './RowActions.vue';
 
 /** Opens through its activator and renders its content only while open, as the real menu does. */
@@ -58,12 +59,23 @@ describe('rowActions', () => {
       expect(wrapper.find('[data-testid=inline-confirm]').exists()).toBe(false);
     });
 
-    it('should label the confirm button Delete unless told otherwise', async () => {
-      const wrapper = createWrapper({ deleteConfirm: { ...deleteConfirm, confirmLabel: 'Remove' } });
+    it('should ask in the error tone with a Delete button when the question names neither', () => {
+      const wrapper = createWrapper({ deleteConfirm });
+
+      expect(wrapper.findComponent(ConfirmPopover).props('question')).toEqual({
+        ...deleteConfirm,
+        confirmLabel: 'common.actions.delete',
+        tone: 'error',
+      });
+    });
+
+    it('should keep the confirm label and tone the question names', async () => {
+      const wrapper = createWrapper({ deleteConfirm: { ...deleteConfirm, confirmLabel: 'Remove', tone: 'warning' } });
 
       await wrapper.find('[data-testid=row-delete]').trigger('click');
 
       expect(wrapper.find('[data-testid=inline-confirm-accept]').text()).toBe('Remove');
+      expect(wrapper.findComponent(ConfirmPopover).props('question')).toMatchObject({ tone: 'warning' });
     });
   });
 });

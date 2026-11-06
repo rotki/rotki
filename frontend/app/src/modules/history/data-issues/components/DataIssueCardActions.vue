@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import {
   canDismiss,
   canResolveManually,
@@ -22,6 +23,12 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const dismissQuestion = computed<ConfirmQuestion>(() => ({
+  confirmLabel: t('data_issues.action.dismiss.label'),
+  message: t('data_issues.action.dismiss.confirm.message'),
+  title: t('data_issues.action.dismiss.confirm.title'),
+}));
 
 function onGoto(): void {
   if (eventRoute)
@@ -58,10 +65,7 @@ function onGoto(): void {
       @click.stop
     >
       <ConfirmPopover
-        tone="warning"
-        :title="t('data_issues.action.dismiss.confirm.title')"
-        :message="t('data_issues.action.dismiss.confirm.message')"
-        :confirm-label="t('data_issues.action.dismiss.label')"
+        :question="dismissQuestion"
         @confirm="emit('dismiss', issue)"
       >
         <template #activator="{ attrs }">

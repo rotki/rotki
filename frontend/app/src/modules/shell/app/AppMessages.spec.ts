@@ -1,8 +1,7 @@
 import { shallowMount } from '@vue/test-utils';
-import flushPromises from 'flush-promises';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { useConfirm } from '@/modules/core/common/use-confirm';
 import AppMessages from '@/modules/shell/app/AppMessages.vue';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 
@@ -30,35 +29,26 @@ describe('modules/shell/app/AppMessages', () => {
   it('should hand a confirmation\'s own button labels to the dialog, the dismiss label included', async () => {
     const wrapper = shallowMount(AppMessages);
 
-    useConfirmStore().show({ alternativeAction: 'Exclude', message: 'message', primaryAction: 'Delete', secondaryAction: 'Keep it', title: 'Delete' }, vi.fn());
+    const answer = useConfirm().ask({ alternativeAction: 'Exclude', message: 'message', primaryAction: 'Delete', secondaryAction: 'Keep it', title: 'Delete' });
     await nextTick();
 
     const dialog = wrapper.findComponent(ConfirmDialog);
     expect(dialog.props('primaryAction')).toBe('Delete');
     expect(dialog.props('secondaryAction')).toBe('Keep it');
     expect(dialog.props('alternativeAction')).toBe('Exclude');
+    dialog.vm.$emit('cancel');
+    await answer;
   });
 
-  it('should run the alternative for the alternative button and the dismiss handler for backing out', async () => {
+  it('should answer the question with how the dialog was closed: backing out, the alternative, or confirm', async () => {
     const wrapper = shallowMount(AppMessages);
-    const onDismiss = vi.fn();
-    const onAlternative = vi.fn();
-    const store = useConfirmStore();
+    const { ask } = useConfirm();
 
-    store.show({ alternativeAction: 'Exclude', message: 'message', title: 'Delete' }, vi.fn(), onDismiss, onAlternative);
-    await nextTick();
-    wrapper.findComponent(ConfirmDialog).vm.$emit('cancel');
-    await flushPromises();
-
-    expect(onDismiss).toHaveBeenCalledOnce();
-    expect(onAlternative).not.toHaveBeenCalled();
-
-    store.show({ alternativeAction: 'Exclude', message: 'message', title: 'Delete' }, vi.fn(), onDismiss, onAlternative);
-    await nextTick();
-    wrapper.findComponent(ConfirmDialog).vm.$emit('alternative');
-    await flushPromises();
-
-    expect(onAlternative).toHaveBeenCalledOnce();
-    expect(onDismiss).toHaveBeenCalledOnce();
+    for (const [event, choice] of [['cancel', 'dismiss'], ['alternative', 'alternative'], ['confirm', 'confirm']] as const) {
+      const answer = ask({ alternativeAction: 'Exclude', message: 'message', title: 'Delete' });
+      await nextTick();
+      wrapper.findComponent(ConfirmDialog).vm.$emit(event);
+      await expect(answer).resolves.toBe(choice);
+    }
   });
 });

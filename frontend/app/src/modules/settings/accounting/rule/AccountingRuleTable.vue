@@ -2,6 +2,7 @@
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/modules/core/common/collection';
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import AccountingRuleColumnHeader from '@/modules/settings/accounting/rule/AccountingRuleColumnHeader.vue';
 import AccountingRuleEventCell from '@/modules/settings/accounting/rule/AccountingRuleEventCell.vue';
@@ -17,7 +18,7 @@ interface AccountingRuleTableProps {
   isLoading: boolean;
   isCustom: boolean;
   /** What a row's delete button asks; `delete-click` is emitted once the user confirms. */
-  deleteConfirm: (item: AccountingRuleEntry) => { title: string; message: string };
+  deleteConfirm: (item: AccountingRuleEntry) => RowDeleteQuestion;
 }
 
 const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });

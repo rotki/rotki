@@ -1,18 +1,15 @@
-import type { QueriedAddressPayload } from '@/modules/session/types';
+import type { QueriedAddresses, QueriedAddressPayload } from '@/modules/session/types';
+import { map as mapResult, type Result } from 'plainfp/result';
+import { fromPromise } from 'plainfp/result-async';
 import { useQueriedAddressApi } from '@/modules/accounts/api/use-queried-address-api';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 
-/** Why adding or removing a queried address failed, for the surface that asked to show. */
-interface QueriedAddressFailure {
-  error: unknown;
-}
-
 interface UseQueriedAddressOperationsReturn {
-  /** @returns the failure, or nothing once the address was added */
-  addQueriedAddress: (payload: QueriedAddressPayload) => Promise<QueriedAddressFailure | undefined>;
-  /** @returns the failure, or nothing once the address was removed */
-  deleteQueriedAddress: (payload: QueriedAddressPayload) => Promise<QueriedAddressFailure | undefined>;
+  /** @returns `err` with the request's error, for the caller to name where the user asked */
+  addQueriedAddress: (payload: QueriedAddressPayload) => Promise<Result<void, unknown>>;
+  /** @returns `err` with the request's error, for the caller to name where the user asked */
+  deleteQueriedAddress: (payload: QueriedAddressPayload) => Promise<Result<void, unknown>>;
   fetchQueriedAddresses: () => Promise<void>;
 }
 
@@ -30,24 +27,19 @@ export function useQueriedAddressOperations(): UseQueriedAddressOperationsReturn
   const api = useQueriedAddressApi();
   const { t } = useI18n({ useScope: 'global' });
 
-  async function addQueriedAddress(payload: QueriedAddressPayload): Promise<QueriedAddressFailure | undefined> {
-    try {
-      set(queriedAddresses, await api.addQueriedAddress(payload));
-      return undefined;
-    }
-    catch (error: unknown) {
-      return { error };
-    }
+  /** Stores the addresses a write answered with, and keeps a failed write's error as the value. */
+  async function storeAnswer(request: Promise<QueriedAddresses>): Promise<Result<void, unknown>> {
+    return mapResult(await fromPromise(request, (error: unknown) => error), (addresses) => {
+      set(queriedAddresses, addresses);
+    });
   }
 
-  async function deleteQueriedAddress(payload: QueriedAddressPayload): Promise<QueriedAddressFailure | undefined> {
-    try {
-      set(queriedAddresses, await api.deleteQueriedAddress(payload));
-      return undefined;
-    }
-    catch (error: unknown) {
-      return { error };
-    }
+  async function addQueriedAddress(payload: QueriedAddressPayload): Promise<Result<void, unknown>> {
+    return storeAnswer(api.addQueriedAddress(payload));
+  }
+
+  async function deleteQueriedAddress(payload: QueriedAddressPayload): Promise<Result<void, unknown>> {
+    return storeAnswer(api.deleteQueriedAddress(payload));
   }
 
   async function fetchQueriedAddresses(): Promise<void> {

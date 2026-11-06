@@ -125,9 +125,8 @@ async function confirmTakeSnapshot(): Promise<void> {
     <FailureStrip
       v-if="deleteFailure"
       class="mb-4"
-      :retryable="false"
-      :title="t('dashboard.snapshot.delete.message.title')"
-      :failure="deleteFailure"
+      :title="deleteFailure.title"
+      :failure="deleteFailure.failure"
       data-testid="snapshot-delete-error"
     />
 

@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
 const { authenticationRequired = false, deleteConfirm, syncing = false } = defineProps<{
   authenticationRequired?: boolean;
   syncing?: boolean;
   /** What the delete button asks beside it; `delete` is emitted only once the user confirms. */
-  deleteConfirm: { title: string; message: string };
+  deleteConfirm: RowDeleteQuestion;
 }>();
 
 const emit = defineEmits<{

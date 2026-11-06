@@ -143,7 +143,7 @@ describe('modules/assets/admin/managed/useManagedAssetsTable', () => {
 
       await deleteRow(asset('eip155:1/erc20:0xdead', 'DEAD'));
 
-      expect(get(deleteFailure)).toMatchObject({ error });
+      expect(get(deleteFailure)).toMatchObject({ failure: error });
       expect(deleteCacheKey).not.toHaveBeenCalled();
     });
   });

@@ -13,6 +13,7 @@ import RpcProviderRunResults from '@/modules/settings/general/rpc/providers/RpcP
 import { useRpcNodeFanOut } from '@/modules/settings/general/rpc/providers/use-rpc-node-fan-out';
 import { RPC_SETUP_STATUS, useRpcProviderSetup } from '@/modules/settings/general/rpc/providers/use-rpc-provider-setup';
 import BigDialog, { type BigDialogLayout } from '@/modules/shell/components/dialogs/BigDialog.vue';
+import { useFailureSlot } from '@/modules/shell/components/named-failure';
 
 const model = defineModel<BlockchainRpcNodeManageState | undefined>({ required: true });
 
@@ -58,7 +59,7 @@ const dialogTitle = computed(() => {
 
 const api = useEvmNodesApi(chain);
 /** Why the last save failed where no form field is to blame; Save is the retry. */
-const saveFailure = shallowRef<{ title: string; error: unknown }>();
+const { clear: clearSaveFailure, failure: saveFailure, report: reportSaveFailure } = useFailureSlot();
 
 const {
   candidates,
@@ -103,7 +104,7 @@ function resetForm(): void {
   resetRun();
   resetFanOut();
   set(phase, 'form');
-  set(saveFailure, undefined);
+  clearSaveFailure();
   set(model, undefined);
 }
 
@@ -136,7 +137,7 @@ async function save(): Promise<void> {
   let saved = false;
 
   set(submitting, true);
-  set(saveFailure, undefined);
+  clearSaveFailure();
   try {
     if (editing)
       await api.editEvmNode(node);
@@ -161,10 +162,10 @@ async function save(): Promise<void> {
       const nonFormKeys = keys.filter(key => !formKeys.includes(key) && nodeKeys.includes(key));
 
       if (nonFormKeys.length > 0)
-        set(saveFailure, { error: nonFormKeys.map(key => `${key}: ${messages[key]}`).join(', '), title: errorTitle });
+        reportSaveFailure(errorTitle, nonFormKeys.map(key => `${key}: ${messages[key]}`).join(', '));
     }
     else {
-      set(saveFailure, { error, title: errorTitle });
+      reportSaveFailure(errorTitle, error);
     }
   }
   finally {
@@ -205,7 +206,7 @@ async function confirm(): Promise<void> {
     :prompt-on-close="phase === 'form' && stateUpdated"
     :layout="layout"
     :loading="submitting"
-    :failure="saveFailure?.error"
+    :failure="saveFailure?.failure"
     :failure-title="saveFailure?.title"
     @confirm="confirm()"
     @cancel="resetForm()"

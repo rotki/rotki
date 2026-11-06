@@ -47,7 +47,6 @@ onUnmounted(() => {
 
     <FailureStrip
       v-if="failure && !(showTokenInput && !isPackaged)"
-      :retryable="false"
       class="my-2"
       :title="t('external_services.google_calendar.error')"
       :failure="failure"

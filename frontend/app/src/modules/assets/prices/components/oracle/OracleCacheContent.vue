@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { OracleCacheMeta } from '@/modules/assets/prices/price-types';
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { NotificationKind, Severity } from '@rotki/common';
 import OracleCacheFilter from '@/modules/assets/prices/components/oracle/OracleCacheFilter.vue';
 import OracleCacheFormDialog from '@/modules/assets/prices/components/oracle/OracleCacheFormDialog.vue';
@@ -142,7 +143,7 @@ async function clearCache(entry: OracleCacheMeta): Promise<void> {
 }
 
 /** What a cache row's delete button asks before the row is cleared. */
-function deleteConfirm(entry: OracleCacheMeta): { title: string; message: string } {
+function deleteConfirm(entry: OracleCacheMeta): RowDeleteQuestion {
   return {
     message: t('oracle_prices.cache.delete.message', {
       fromAsset: getAssetField(entry.fromAsset, 'symbol'),

@@ -81,7 +81,7 @@ describe('useDataIssueDetailActions', () => {
 
     await onDismiss(1);
 
-    expect(get(actionFailure)).toStrictEqual({ error: failure('nope'), id: 1, title: 'data_issues.action.dismiss.error' });
+    expect(get(actionFailure)).toStrictEqual({ failure: failure('nope'), title: 'data_issues.action.dismiss.error' });
     expect(get(modelDrawerOpen)).toBe(true);
     expect(reload).not.toHaveBeenCalled();
   });
@@ -104,7 +104,28 @@ describe('useDataIssueDetailActions', () => {
 
     await onRetry(4);
 
-    expect(get(actionFailure)).toStrictEqual({ error: failure('conflict'), id: 4, title: 'data_issues.action.retry.error' });
+    expect(get(actionFailure)).toStrictEqual({ failure: failure('conflict'), title: 'data_issues.action.retry.error' });
+  });
+
+  it('should hand the open issue its own failure', async () => {
+    retry.mockResolvedValue(err(failure('conflict')));
+    const { actionFailure, onRetry, openDetail, selectedIssueFailure } = useDataIssueDetailActions(vi.fn());
+    openDetail(createIssue({ id: 4 }));
+
+    await onRetry(4);
+
+    expect(get(selectedIssueFailure)).toBe(get(actionFailure));
+  });
+
+  it('should keep a failure on another issue out of the open one', async () => {
+    retry.mockResolvedValue(err(failure('conflict')));
+    const { actionFailure, onRetry, openDetail, selectedIssueFailure } = useDataIssueDetailActions(vi.fn());
+    openDetail(createIssue({ id: 8 }));
+
+    await onRetry(4);
+
+    expect(get(actionFailure)).toBeDefined();
+    expect(get(selectedIssueFailure)).toBeUndefined();
   });
 
   it('should reset the busy flag even if a dismiss rejects', async () => {

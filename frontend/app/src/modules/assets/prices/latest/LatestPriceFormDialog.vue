@@ -111,7 +111,6 @@ watchImmediate([open, () => editableItem, () => prefill], ([open, editableItemVa
   >
     <FailureStrip
       v-if="saveError"
-      :retryable="false"
       class="mb-4"
       :title="saveErrorTitle"
       :failure="saveError"

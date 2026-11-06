@@ -1,12 +1,10 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { ActionStatus } from '@/modules/core/common/action';
 import type { Collection } from '@/modules/core/common/collection';
 import type { HistoryEventCollectionRow, HistoryEventEntry, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
-import type { HistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
+import { err, ok, type Result } from 'plainfp/result';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
-import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { type CustomizedEventDuplicates, useCustomizedEventDuplicatesApi } from '@/modules/history/api/events/use-customized-event-duplicates-api';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 
@@ -25,28 +23,10 @@ export interface FetchDuplicateEventsPayload {
   offset: number;
 }
 
-/**
- * What runs once a duplicates action settles.
- *
- * @remarks
- * The action reports nothing itself: a success shows as the rows changing, and a failure goes to
- * `onFailure`, for the surface that asked to name it.
- */
-export interface DuplicatesActionHandlers {
-  onSuccess?: () => void;
-  onFailure?: (failure: HistoryEventsActionFailure) => void;
-}
-
 interface UseCustomizedEventDuplicatesReturn {
   actionableCount: ComputedRef<number>;
   autoFixCount: ComputedRef<number>;
   autoFixGroupIds: ComputedRef<string[]>;
-  /** Fixes the groups, once the button that started it asked (see `useDuplicatesQuestion`). */
-  fixAndSettle: (groupIdentifiers: string[], handlers?: DuplicatesActionHandlers) => Promise<void>;
-  /** Marks the groups as not duplicates, once the button that started it asked. */
-  markNonDuplicatedAndSettle: (groupIdentifiers: string[], handlers?: DuplicatesActionHandlers) => Promise<void>;
-  /** Restores ignored groups, once the button that started it asked. */
-  restoreAndSettle: (groupIdentifiers: string[], handlers?: DuplicatesActionHandlers) => Promise<void>;
   fetchCustomizedEventDuplicates: () => Promise<void>;
   /**
    * Why the last read of the duplicate group ids failed, kept until a read succeeds.
@@ -57,9 +37,17 @@ interface UseCustomizedEventDuplicatesReturn {
    */
   fetchError: Readonly<Ref<unknown>>;
   fetchDuplicateEvents: (payload: FetchDuplicateEventsPayload) => Promise<Collection<DuplicateRow>>;
-  fixDuplicates: (groupIdentifiers?: string[]) => Promise<ActionStatus>;
+  /**
+   * Fixes the groups (every auto-fixable one when none are given), then reads the group ids again.
+   *
+   * @remarks
+   * Like the two below, it reports nothing itself: a success shows as the rows changing, and the
+   * error it resolves to is for the surface that started it to name.
+   */
+  fixDuplicates: (groupIdentifiers?: string[]) => Promise<Result<void, unknown>>;
   fixLoading: Ref<boolean>;
-  ignoreDuplicates: (groupIdentifiers: string[]) => Promise<ActionStatus>;
+  /** Marks the groups as not duplicates, then reads the group ids again. */
+  ignoreDuplicates: (groupIdentifiers: string[]) => Promise<Result<void, unknown>>;
   ignoreLoading: Ref<boolean>;
   ignoredCount: ComputedRef<number>;
   ignoredGroupIds: ComputedRef<string[]>;
@@ -67,7 +55,8 @@ interface UseCustomizedEventDuplicatesReturn {
   manualReviewCount: ComputedRef<number>;
   manualReviewGroupIds: ComputedRef<string[]>;
   totalCount: ComputedRef<number>;
-  unignoreDuplicates: (groupIdentifiers: string[]) => Promise<ActionStatus>;
+  /** Restores ignored groups, then reads the group ids again. */
+  unignoreDuplicates: (groupIdentifiers: string[]) => Promise<Result<void, unknown>>;
 }
 
 function getEventEntry(row: HistoryEventCollectionRow): HistoryEventEntryWithMeta {
@@ -88,8 +77,6 @@ function mapToDuplicateRow(groupId: string, events: HistoryEventCollectionRow): 
 }
 
 export const useCustomizedEventDuplicates = createSharedComposable((): UseCustomizedEventDuplicatesReturn => {
-  const { t } = useI18n({ useScope: 'global' });
-
   const { fetchHistoryEvents } = useHistoryEventsApi();
   const { fixCustomizedEventDuplicates, getCustomizedEventDuplicates, ignoreCustomizedEventDuplicates, unignoreCustomizedEventDuplicates } = useCustomizedEventDuplicatesApi();
 
@@ -186,76 +173,52 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
     };
   };
 
-  const fixDuplicates = async (groupIdentifiers?: string[]): Promise<ActionStatus> => {
+  const fixDuplicates = async (groupIdentifiers?: string[]): Promise<Result<void, unknown>> => {
     set(fixLoading, true);
     try {
       await fixCustomizedEventDuplicates(groupIdentifiers);
       await fetchCustomizedEventDuplicates();
-
-      return { success: true };
+      return ok(undefined);
     }
     catch (error: unknown) {
-      const message = getErrorMessage(error);
       logger.error('Failed to fix customized event duplicates:', error);
-      return { message, success: false };
+      return err(error);
     }
     finally {
       set(fixLoading, false);
     }
   };
 
-  const ignoreDuplicates = async (groupIdentifiers: string[]): Promise<ActionStatus> => {
+  const ignoreDuplicates = async (groupIdentifiers: string[]): Promise<Result<void, unknown>> => {
     set(ignoreLoading, true);
     try {
       await ignoreCustomizedEventDuplicates(groupIdentifiers);
       await fetchCustomizedEventDuplicates();
-      return { success: true };
+      return ok(undefined);
     }
     catch (error: unknown) {
-      const message = getErrorMessage(error);
       logger.error('Failed to ignore customized event duplicates:', error);
-      return { message, success: false };
+      return err(error);
     }
     finally {
       set(ignoreLoading, false);
     }
   };
 
-  const unignoreDuplicates = async (groupIdentifiers: string[]): Promise<ActionStatus> => {
+  const unignoreDuplicates = async (groupIdentifiers: string[]): Promise<Result<void, unknown>> => {
     set(ignoreLoading, true);
     try {
       await unignoreCustomizedEventDuplicates(groupIdentifiers);
       await fetchCustomizedEventDuplicates();
-      return { success: true };
+      return ok(undefined);
     }
     catch (error: unknown) {
-      const message = getErrorMessage(error);
       logger.error('Failed to unignore customized event duplicates:', error);
-      return { message, success: false };
+      return err(error);
     }
     finally {
       set(ignoreLoading, false);
     }
-  };
-
-  /** Hands a settled action to the handlers, a failure under `title`. */
-  function settle(result: ActionStatus, title: string, handlers: DuplicatesActionHandlers): void {
-    if (result.success)
-      handlers.onSuccess?.();
-    else
-      handlers.onFailure?.({ failure: result.message, title });
-  }
-
-  const fixAndSettle = async (groupIdentifiers: string[], handlers: DuplicatesActionHandlers = {}): Promise<void> => {
-    settle(await fixDuplicates(groupIdentifiers), t('actions.customized_event_duplicates.fix_error.title'), handlers);
-  };
-
-  const markNonDuplicatedAndSettle = async (groupIdentifiers: string[], handlers: DuplicatesActionHandlers = {}): Promise<void> => {
-    settle(await ignoreDuplicates(groupIdentifiers), t('actions.customized_event_duplicates.mark_non_duplicated_error.title'), handlers);
-  };
-
-  const restoreAndSettle = async (groupIdentifiers: string[], handlers: DuplicatesActionHandlers = {}): Promise<void> => {
-    settle(await unignoreDuplicates(groupIdentifiers), t('actions.customized_event_duplicates.unignore_error.title'), handlers);
   };
 
   return {
@@ -265,7 +228,6 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
     fetchCustomizedEventDuplicates,
     fetchDuplicateEvents,
     fetchError: shallowReadonly(fetchError),
-    fixAndSettle,
     fixDuplicates,
     fixLoading,
     ignoreDuplicates,
@@ -275,8 +237,6 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
     loading,
     manualReviewCount,
     manualReviewGroupIds,
-    markNonDuplicatedAndSettle,
-    restoreAndSettle,
     totalCount,
     unignoreDuplicates,
   };

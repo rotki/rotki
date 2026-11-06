@@ -33,8 +33,8 @@ const headers: DataTableColumn<SkippedEventsLocation>[] = [
     <div class="flex flex-col gap-4">
       <FailureStrip
         v-if="reprocessFailure"
-        :title="t('transactions.events.skipped.reprocess.failed.title')"
-        :failure="reprocessFailure"
+        :title="reprocessFailure.title"
+        :failure="reprocessFailure.failure"
         data-testid="skipped-events-reprocess-failure"
         @retry="reProcessSkippedEvents()"
       />

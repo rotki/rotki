@@ -1,6 +1,7 @@
 import type { DeepReadonly, Ref } from 'vue';
 import type { ManualPriceFormPayload } from '@/modules/assets/prices/price-types';
 import type { NonFungibleBalance } from '@/modules/balances/types/nfbalances';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -11,7 +12,7 @@ interface UseNftPriceManagementReturn {
   hasCustomPrice: Readonly<Ref<boolean>>;
   modelOpenPriceDialog: Ref<boolean>;
   /** For `RowActions`' `delete-confirm`, so a row's delete button asks before it emits. */
-  deleteConfirm: (item: NonFungibleBalance) => { title: string; message: string };
+  deleteConfirm: (item: NonFungibleBalance) => RowDeleteQuestion;
   /** Deletes a custom price the user already confirmed. */
   deletePrice: (item: NonFungibleBalance) => Promise<void>;
   setPriceForm: (item: NonFungibleBalance) => void;
@@ -56,7 +57,7 @@ export function useNftPriceManagement(
     set(modelOpenPriceDialog, true);
   }
 
-  function deleteConfirm(item: NonFungibleBalance): { title: string; message: string } {
+  function deleteConfirm(item: NonFungibleBalance): RowDeleteQuestion {
     return {
       message: t('assets.custom_price.delete.message', { asset: item.name ?? item.id }),
       title: t('assets.custom_price.delete.tooltip'),

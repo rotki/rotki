@@ -1,8 +1,10 @@
 import type { ComputedRef, ModelRef, Ref } from 'vue';
 import type { EvmHistoryEvent, EvmSwapEvent, SolanaEvent, SolanaSwapEvent, SwapEvent } from '@/modules/history/events/schemas';
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
+import type { HistoryEventSaveResult } from '@/modules/history/management/forms/history-event-save-result';
 import { HistoryEventEntryType, toSnakeCase } from '@rotki/common';
 import { generateUUID } from '@shared/utils';
+import { err } from 'plainfp/result';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { collectPriceIntents } from '@/modules/history/management/forms/price-intent';
 import { applyRelocation } from '@/modules/history/management/forms/relocation';
@@ -23,7 +25,7 @@ interface UseSwapEventFormOptions {
 
 interface UseSwapEventFormReturn {
   readonly form: ReturnType<typeof useHistoryEventForm<SwapFormState, AddPayload, ReturnType<typeof toSwapEditPayload>>>['form'];
-  readonly save: () => Promise<boolean>;
+  readonly save: () => Promise<HistoryEventSaveResult>;
   readonly isEvm: ComputedRef<boolean>;
   readonly isPlain: ComputedRef<boolean>;
   /** Whether the group being edited is half a swap, which the form shows an error for instead of fields. */
@@ -108,9 +110,9 @@ export function useSwapEventForm({ data, stateUpdated }: UseSwapEventFormOptions
   }
 
   /** Saves the swap, unless it is half a swap, which has nothing complete to save. */
-  async function save(): Promise<boolean> {
+  async function save(): Promise<HistoryEventSaveResult> {
     if (get(incomplete))
-      return false;
+      return err(undefined);
     return saveForm();
   }
 

@@ -3,8 +3,9 @@ import type {
   HistoryEvent,
   HistoryEventEntry,
 } from '@/modules/history/events/schemas';
-import type { HistoryEventDeletePayload, HistoryEventQuestion } from '@/modules/history/events/types';
+import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import {
   isEventMissingAccountingRule,
   isEvmEvent,
@@ -16,6 +17,7 @@ import {
 } from '@/modules/history/events/event-action-visibility';
 import { editTargetFor } from '@/modules/history/events/history-event-edit-target';
 import HistoryEventAction from '@/modules/history/events/HistoryEventAction.vue';
+import { useDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 
 const { item, index, completeGroupEvents, unlinkConfirm, collapseAction } = defineProps<{
   item: HistoryEventEntry;
@@ -26,7 +28,7 @@ const { item, index, completeGroupEvents, unlinkConfirm, collapseAction } = defi
    */
   completeGroupEvents: HistoryEventEntry[];
   /** Offers unlink in the menu, asking this before `unlink-event` is emitted. */
-  unlinkConfirm?: HistoryEventQuestion;
+  unlinkConfirm?: ConfirmQuestion;
   collapseAction?: boolean;
 }>();
 
@@ -38,6 +40,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const toDeleteQuestion = useDeleteQuestion();
 
 const COLLAPSE_ACTION_CLASSES = 'w-0 group-hover/row:w-auto 2xl:w-24! 2xl:opacity-0 2xl:group-hover/row:opacity-100 2xl:focus-within:opacity-100';
 
@@ -61,7 +64,7 @@ const deletePayload = computed<HistoryEventDeletePayload>(() => {
   };
 });
 
-const deleteConfirm = computed<HistoryEventQuestion | undefined>(() => {
+const deleteConfirm = computed<ConfirmQuestion | undefined>(() => {
   if (hideDeleteAction(item, index, completeGroupEvents))
     return undefined;
 
@@ -70,14 +73,14 @@ const deleteConfirm = computed<HistoryEventQuestion | undefined>(() => {
       confirmLabel: t('transactions.events.confirmation.ignore.action'),
       message: t('transactions.events.confirmation.ignore.message'),
       title: t('transactions.events.confirmation.ignore.title'),
+      tone: 'error',
     };
   }
 
-  return {
-    confirmLabel: t('common.actions.delete'),
+  return toDeleteQuestion({
     message: t('transactions.events.confirmation.delete.message'),
     title: t('transactions.events.confirmation.delete.title'),
-  };
+  });
 });
 </script>
 

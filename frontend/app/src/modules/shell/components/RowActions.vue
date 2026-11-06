@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
+import { type RowDeleteQuestion, useDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 
 const { disabled = false, editDisabled = false, editTooltip = '', noEdit = false, deleteDisabled = false, deleteTooltip = '', noDelete = false, align = 'start', deleteConfirm } = defineProps<{
   disabled?: boolean;
@@ -12,9 +14,9 @@ const { disabled = false, editDisabled = false, editTooltip = '', noEdit = false
   align?: 'start' | 'center' | 'end';
   /**
    * When set, the delete button asks in a popover beside it, and `delete-click` means confirmed.
-   * `confirmLabel` defaults to "Delete".
+   * `confirmLabel` defaults to "Delete" and `tone` to `error`.
    */
-  deleteConfirm?: { message: string; title?: string; confirmLabel?: string };
+  deleteConfirm?: RowDeleteQuestion;
 }>();
 
 const emit = defineEmits<{
@@ -26,10 +28,14 @@ defineSlots<{
   default: () => any;
 }>();
 
-const { t } = useI18n({ useScope: 'global' });
+/** The delete button, bound to the popover's activator `attrs` or, without a question, to a plain click. */
+const [DefineDeleteButton, ReuseDeleteButton] = createReusableTemplate<{ attrs: Record<string, unknown> }>();
 
 const editClick = (): void => emit('edit-click');
 const deleteClick = (): void => emit('delete-click');
+
+const toDeleteQuestion = useDeleteQuestion();
+const deleteQuestion = computed<ConfirmQuestion | undefined>(() => deleteConfirm && toDeleteQuestion(deleteConfirm));
 
 const justify = computed<string>(() => {
   const justify = {
@@ -60,44 +66,35 @@ const justify = computed<string>(() => {
         name="lu-pencil"
       />
     </RuiButton>
-    <template v-if="!noDelete">
-      <ConfirmPopover
-        v-if="deleteConfirm"
-        :title="deleteConfirm.title"
-        :message="deleteConfirm.message"
-        :confirm-label="deleteConfirm.confirmLabel ?? t('common.actions.delete')"
-        @confirm="deleteClick()"
-      >
-        <template #activator="{ attrs }">
-          <RuiButton
-            :disabled="disabled || deleteDisabled"
-            :title="deleteTooltip || undefined"
-            variant="text"
-            data-testid="row-delete"
-            icon
-            v-bind="attrs"
-          >
-            <RuiIcon
-              size="16"
-              name="lu-trash-2"
-            />
-          </RuiButton>
-        </template>
-      </ConfirmPopover>
+    <DefineDeleteButton #default="{ attrs }">
       <RuiButton
-        v-else
         :disabled="disabled || deleteDisabled"
         :title="deleteTooltip || undefined"
         variant="text"
         data-testid="row-delete"
         icon
-        @click="deleteClick()"
+        v-bind="attrs"
       >
         <RuiIcon
           size="16"
           name="lu-trash-2"
         />
       </RuiButton>
+    </DefineDeleteButton>
+    <template v-if="!noDelete">
+      <ConfirmPopover
+        v-if="deleteQuestion"
+        :question="deleteQuestion"
+        @confirm="deleteClick()"
+      >
+        <template #activator="{ attrs }">
+          <ReuseDeleteButton :attrs="attrs" />
+        </template>
+      </ConfirmPopover>
+      <ReuseDeleteButton
+        v-else
+        :attrs="{ onClick: deleteClick }"
+      />
     </template>
     <slot />
   </div>

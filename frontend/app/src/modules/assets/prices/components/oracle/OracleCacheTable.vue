@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { OracleCacheMeta } from '@/modules/assets/prices/price-types';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -10,7 +11,7 @@ type CacheRow = OracleCacheMeta & { id: number };
 
 const { deleteConfirm, disabled = false, error, loading = false, rows } = defineProps<{
   /** What a row's delete button asks; `delete` is emitted once the user confirms. */
-  deleteConfirm: (entry: CacheRow) => { title: string; message: string };
+  deleteConfirm: (entry: CacheRow) => RowDeleteQuestion;
   disabled?: boolean;
   /** why the caches could not be listed, named in place of the empty text */
   error?: unknown;

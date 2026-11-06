@@ -113,7 +113,6 @@ async function exportZip(): Promise<void> {
     </RuiButton>
     <FailureStrip
       v-if="exportError"
-      :retryable="false"
       class="mt-3"
       :title="t('manage_user_assets.export.failed')"
       :failure="exportError"

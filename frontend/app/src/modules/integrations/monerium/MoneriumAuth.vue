@@ -280,7 +280,6 @@ onUnmounted(() => {
 
     <FailureStrip
       v-if="failure && !showTokenInput"
-      :retryable="false"
       class="mb-4"
       :title="t('external_services.monerium.error')"
       :failure="failure"

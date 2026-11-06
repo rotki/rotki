@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { SnapshotChange } from '@/modules/dashboard/snapshots/utils/snapshot-math';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import SnapshotChangesList from '@/modules/dashboard/snapshots/components/SnapshotChangesList.vue';
+import ConfirmMenu from '@/modules/shell/components/ConfirmMenu.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
-import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
+import { useDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 
 const {
   canUndo = false,
@@ -31,29 +33,17 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const toDeleteQuestion = useDeleteQuestion();
 
-const overflowOpen = ref<boolean>(false);
-/** The overflow menu asks about the delete in place of its items, until answered or closed. */
-const confirmingDelete = ref<boolean>(false);
 const reviewOpen = ref<boolean>(false);
 
 const isDirty = computed<boolean>(() => changes.length > 0);
 const dirtyCount = computed<number>(() => changes.length);
 
-function exportSnapshot(): void {
-  set(overflowOpen, false);
-  emit('export');
-}
-
-function deleteSnapshot(): void {
-  set(overflowOpen, false);
-  emit('delete');
-}
-
-watch(overflowOpen, (isOpen) => {
-  if (!isOpen)
-    set(confirmingDelete, false);
-});
+const deleteQuestion = computed<ConfirmQuestion>(() => toDeleteQuestion({
+  message: t('dashboard.snapshot.delete.dialog.message'),
+  title: t('dashboard.snapshot.delete.dialog.title'),
+}));
 </script>
 
 <template>
@@ -177,11 +167,9 @@ watch(overflowOpen, (isOpen) => {
         {{ t('common.actions.save') }}
       </RuiButton>
 
-      <RuiMenu
-        v-model="overflowOpen"
-        :role="confirmingDelete ? 'dialog' : undefined"
-        :class-names="{ menu: confirmingDelete ? 'w-72' : '' }"
+      <ConfirmMenu
         :options="{ placement: 'bottom-end' }"
+        close-on-content-click
       >
         <template #activator="{ attrs }">
           <RuiButton
@@ -194,45 +182,34 @@ watch(overflowOpen, (isOpen) => {
             <RuiIcon name="lu-ellipsis-vertical" />
           </RuiButton>
         </template>
-        <InlineConfirm
-          v-if="confirmingDelete"
-          layout="panel"
-          tone="error"
-          :title="t('dashboard.snapshot.delete.dialog.title')"
-          :message="t('dashboard.snapshot.delete.dialog.message')"
-          :confirm-label="t('common.actions.delete')"
-          @cancel="overflowOpen = false"
-          @confirm="deleteSnapshot()"
-        />
-        <div
-          v-else
-          class="py-1"
-        >
-          <RuiButton
-            variant="list"
-            data-testid="snapshot-export"
-            @click="exportSnapshot()"
-          >
-            <template #prepend>
-              <RuiIcon name="lu-download" />
-            </template>
-            {{ t('common.actions.export') }}
-          </RuiButton>
-          <RuiButton
-            variant="list"
-            data-testid="snapshot-delete"
-            @click.stop="confirmingDelete = true"
-          >
-            <template #prepend>
-              <RuiIcon
-                name="lu-trash-2"
-                color="error"
-              />
-            </template>
-            {{ t('common.actions.delete') }}
-          </RuiButton>
-        </div>
-      </RuiMenu>
+        <template #default="{ ask }">
+          <div class="py-1">
+            <RuiButton
+              variant="list"
+              data-testid="snapshot-export"
+              @click="emit('export')"
+            >
+              <template #prepend>
+                <RuiIcon name="lu-download" />
+              </template>
+              {{ t('common.actions.export') }}
+            </RuiButton>
+            <RuiButton
+              variant="list"
+              data-testid="snapshot-delete"
+              @click="ask(deleteQuestion, () => emit('delete'))"
+            >
+              <template #prepend>
+                <RuiIcon
+                  name="lu-trash-2"
+                  color="error"
+                />
+              </template>
+              {{ t('common.actions.delete') }}
+            </RuiButton>
+          </div>
+        </template>
+      </ConfirmMenu>
     </div>
   </div>
 </template>

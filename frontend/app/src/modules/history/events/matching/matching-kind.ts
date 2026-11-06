@@ -1,10 +1,10 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { MessageKey } from '@/message-key';
 import type { MatchingFlow, PotentialMatchEntryLabels, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
-import type { HistoryEventQuestion } from '@/modules/history/events/types';
 import type { UnmatchedFailure, UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
 import type { UnmatchedRow, UnmatchedVariant } from '@/modules/history/events/unmatched-row';
 import type { PinnedName } from '@/modules/session/types';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 
 /** A kind's unmatched and ignored items, and the backend calls that reload or auto-match them. */
 interface MatchingKindSource<TItem> {
@@ -33,7 +33,7 @@ interface MatchingKindActions<TItem> {
   /** Ignores the selection, once its button asked. */
   ignoreSelected: () => Promise<void>;
   /** What ignoring the selection asks beside its button, counting it. */
-  ignoreSelectedQuestion: Readonly<Ref<HistoryEventQuestion>>;
+  ignoreSelectedQuestion: Readonly<Ref<ConfirmQuestion>>;
   restore: (item: TItem) => Promise<void>;
   restoreSelected: () => Promise<void>;
   markExternal: (item: TItem) => Promise<void>;
@@ -44,7 +44,7 @@ interface MatchingKindActions<TItem> {
    * Absent for a kind that has no fiat items to ignore at once. `ignoreAll` runs once its button
    * asked `question`.
    */
-  fiat?: { items: ComputedRef<TItem[]>; ignoreAll: () => Promise<void>; question: Readonly<Ref<HistoryEventQuestion>> };
+  fiat?: { items: ComputedRef<TItem[]>; ignoreAll: () => Promise<void>; question: Readonly<Ref<ConfirmQuestion>> };
 }
 
 interface MatchingKindRowsOptions<TItem> {

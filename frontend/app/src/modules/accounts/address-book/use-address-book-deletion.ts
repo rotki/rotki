@@ -1,5 +1,6 @@
 import type { MaybeRef } from 'vue';
 import type { AddressBookEntry, AddressBookLocation } from '@/modules/accounts/address-book/eth-names';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -7,7 +8,7 @@ import { useNotifications } from '@/modules/core/notifications/use-notifications
 interface UseAddressBookDeletionReturn {
   deleteAddressBook: (address: string, blockchain: string | null) => Promise<void>;
   /** What the entry's delete button asks, beside it, before `deleteEntry` runs. */
-  deleteConfirm: (item: AddressBookEntry) => { title: string; message: string };
+  deleteConfirm: (item: AddressBookEntry) => RowDeleteQuestion;
   /** Deletes an entry the user already confirmed. */
   deleteEntry: (item: AddressBookEntry) => Promise<void>;
 }
@@ -37,7 +38,7 @@ export function useAddressBookDeletion(
     }
   };
 
-  const deleteConfirm = (item: AddressBookEntry): { title: string; message: string } => ({
+  const deleteConfirm = (item: AddressBookEntry): RowDeleteQuestion => ({
     message: t('address_book.actions.delete.dialog.message', {
       address: item.address,
       chain: item.blockchain ?? t('common.multi_chain'),

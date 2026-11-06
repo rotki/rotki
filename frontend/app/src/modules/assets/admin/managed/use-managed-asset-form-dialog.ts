@@ -1,8 +1,10 @@
 import type { SupportedAsset } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { omit } from 'es-toolkit';
+import { isErr, type Result } from 'plainfp/result';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
+import { type NamedFailure, useFailureSlot } from '@/modules/shell/components/named-failure';
 
 /**
  * The error keys the dialog names above the form rather than on a field.
@@ -20,7 +22,7 @@ interface ManagedAssetFormHandle {
   /** Writes the asset and resolves its identifier, or nothing when the write failed. */
   saveAsset: () => Promise<string | undefined>;
   /** Uploads the pending icon for the saved asset. */
-  saveIcon: (identifier: string) => void;
+  saveIcon: (identifier: string) => Promise<Result<void, unknown>>;
 }
 
 interface UseManagedAssetFormDialogOptions {
@@ -38,15 +40,20 @@ interface UseManagedAssetFormDialogReturn {
   /** The dialog's title, which differs between adding and editing. */
   dialogTitle: ComputedRef<string>;
   /** Why the last write failed where no field is to blame, named in the dialog; Save is the retry. */
-  failure: Readonly<Ref<{ title: string; error: unknown } | undefined>>;
+  failure: Readonly<Ref<NamedFailure | undefined>>;
   /** Field errors returned by the server. */
   modelErrorMessages: Ref<ValidationErrors>;
   /** Whether a write is in flight. */
   loading: Readonly<Ref<boolean>>;
   /**
-   * Validates and writes the asset.
+   * Validates and writes the asset, then uploads its icon.
    *
-   * @returns whether it landed; `false` leaves the dialog open with the reason shown
+   * @remarks
+   * When the asset lands but its icon does not, the list is refreshed and the dialog stays open
+   * naming the upload's failure; the next save retries only the icon, since writing the asset again
+   * would add it a second time.
+   *
+   * @returns whether both landed; `false` leaves the dialog open with the reason shown
    */
   save: () => Promise<boolean>;
 }
@@ -67,8 +74,11 @@ export function useManagedAssetFormDialog(
   const loading = shallowRef<boolean>(false);
   const modelErrorMessages = ref<ValidationErrors>({});
 
-  const failure = shallowRef<{ title: string; error: unknown }>();
+  const { clear: clearFailure, failure, report } = useFailureSlot();
   const { deleteCacheKey } = useAssetInfoCache();
+
+  /** The asset a save already wrote while its icon upload failed, so a retry skips the write. */
+  const writtenIdentifier = shallowRef<string>();
 
   const dialogTitle = computed<string>(() =>
     toValue(editMode) ? t('asset_management.edit_title') : t('asset_management.add_title'),
@@ -78,20 +88,20 @@ export function useManagedAssetFormDialog(
     const underlyingTokens = 'underlyingTokens' in errors ? errors.underlyingTokens : undefined;
     if (underlyingTokens) {
       const messages = Array.isArray(underlyingTokens) ? underlyingTokens : [underlyingTokens];
-      set(failure, { error: messages.join(','), title: t('asset_form.underlying_tokens') });
+      report(t('asset_form.underlying_tokens'), messages.join(','));
       return;
     }
 
     const schema = errors.Schema;
     if (Array.isArray(schema))
-      set(failure, { error: schema[0], title: t('asset_form.underlying_tokens') });
+      report(t('asset_form.underlying_tokens'), schema[0]);
   }
 
   function handleSaveError(error: unknown): void {
     const errors = error instanceof ApiValidationError ? error.getValidationErrors({}) : undefined;
 
     if (errors === undefined || typeof errors === 'string') {
-      set(failure, { error: errors ?? error, title: toValue(editMode) ? t('asset_form.edit_error') : t('asset_form.add_error') });
+      report(toValue(editMode) ? t('asset_form.edit_error') : t('asset_form.add_error'), errors ?? error);
       return;
     }
 
@@ -111,16 +121,26 @@ export function useManagedAssetFormDialog(
       return false;
 
     set(loading, true);
-    set(failure, undefined);
+    clearFailure();
     try {
-      const identifier = await formRef.saveAsset();
-      if (!identifier)
-        return false;
+      let identifier = get(writtenIdentifier);
+      if (!identifier) {
+        identifier = await formRef.saveAsset();
+        if (!identifier)
+          return false;
 
-      deleteCacheKey(identifier);
-      formRef.saveIcon(identifier);
+        deleteCacheKey(identifier);
+        onSaved();
+      }
+
+      const uploaded = await formRef.saveIcon(identifier);
+      if (isErr(uploaded)) {
+        set(writtenIdentifier, identifier);
+        report(t('asset_form.icon_upload.failed'), uploaded.error);
+        return false;
+      }
+
       set(modelValue, undefined);
-      onSaved();
       return true;
     }
     catch (error: unknown) {
@@ -132,9 +152,14 @@ export function useManagedAssetFormDialog(
     }
   }
 
+  watch(modelValue, (value) => {
+    if (!value)
+      set(writtenIdentifier, undefined);
+  });
+
   return {
     dialogTitle,
-    failure: readonly(failure),
+    failure,
     loading: readonly(loading),
     modelErrorMessages,
     save,

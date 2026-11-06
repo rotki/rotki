@@ -50,7 +50,6 @@ function confirm(): void {
         class="mb-4"
         :title="t('data_issues.action.resolve.error')"
         :failure="failure"
-        :retryable="false"
         data-testid="data-issue-resolve-failure"
       />
 

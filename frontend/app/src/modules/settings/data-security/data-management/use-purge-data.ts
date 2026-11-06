@@ -1,5 +1,6 @@
 import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import type { BaseMessage } from '@/modules/core/messaging/base-message';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { pluralize, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
@@ -73,7 +74,7 @@ interface UsePurgeDataReturn {
    * What the purge button asks about the current source and selection. A second paragraph,
    * separated by a blank line, warns when the exchange cannot serve its full history again.
    */
-  purgeQuestion: ComputedRef<{ message: string; title: string }>;
+  purgeQuestion: ComputedRef<ConfirmQuestion>;
   /** Outcome of the last purge, cleared a few seconds after a success. */
   status: DeepReadonly<Ref<BaseMessage | null>>;
 }
@@ -247,7 +248,7 @@ export function usePurgeData(): UsePurgeDataReturn {
     return `${message}\n\n${t('data_management.purge_data.csv_imports_confirm.version_warning')}`;
   }
 
-  const purgeQuestion = computed<{ message: string; title: string }>(() => {
+  const purgeQuestion = computed<ConfirmQuestion>(() => {
     const source = get(modelSource);
     const value = selectedValue(source);
     const textSource = purgeable.find(({ id }) => id === source)?.text ?? '';
@@ -279,8 +280,10 @@ export function usePurgeData(): UsePurgeDataReturn {
     }
 
     return {
+      confirmLabel: t('purge_selector.tooltip'),
       message,
       title: t('data_management.purge_data.confirm.title'),
+      tone: 'error',
     };
   });
 

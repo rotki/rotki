@@ -25,7 +25,7 @@ const { t } = useI18n({ useScope: 'global' });
 const form = useTemplateRef<InstanceType<typeof CustomAssetForm>>('form');
 const stateUpdated = ref<boolean>(false);
 
-const { dialogTitle, failure, failureTitle, loading, modelErrorMessages, modelValue, save } = useCustomAssetFormDialog({
+const { dialogTitle, failure, loading, modelErrorMessages, modelValue, save } = useCustomAssetFormDialog({
   editableItem: () => editableItem,
   form,
   onSaved: (identifier): void => {
@@ -43,8 +43,8 @@ const { dialogTitle, failure, failureTitle, loading, modelErrorMessages, modelVa
     :action="{ primary: t('common.actions.save') }"
     :layout="{ divide: true }"
     :loading="loading"
-    :failure="failure"
-    :failure-title="failureTitle"
+    :failure="failure?.failure"
+    :failure-title="failure?.title"
     :prompt-on-close="stateUpdated"
     @confirm="save()"
     @cancel="open = false"

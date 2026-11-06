@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { PremiumDevice } from '@/modules/premium/devices/premium';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import PremiumDeviceFormDialog from '@/modules/premium/devices/components/PremiumDeviceFormDialog.vue';
@@ -64,11 +65,14 @@ function edit(device: PremiumDevice): void {
   set(editingDevice, device);
 }
 
-const { deleteConfirm, deleteRow, failure: deleteFailure } = useTableRowDeletion<PremiumDevice>({
-  confirm: device => ({
+function deleteConfirm(device: PremiumDevice): RowDeleteQuestion {
+  return {
     message: t('premium_devices.delete.message', { device: device.deviceName }),
     title: t('premium_devices.delete.title'),
-  }),
+  };
+}
+
+const { deleteRow, failure: deleteFailure } = useTableRowDeletion<PremiumDevice>({
   deleteItem: async device => deletePremiumDevice(device.deviceIdentifier),
   failureTitle: () => t('premium_devices.delete.error.title'),
   onDeleted: fetchDevices,
@@ -133,9 +137,8 @@ onMounted(async () => {
     <FailureStrip
       v-if="deleteFailure"
       class="m-3"
-      :retryable="false"
       :title="deleteFailure.title"
-      :failure="deleteFailure.error"
+      :failure="deleteFailure.failure"
       data-testid="premium-devices-delete-error"
     />
     <RuiDataTable

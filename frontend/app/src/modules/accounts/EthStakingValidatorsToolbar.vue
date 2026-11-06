@@ -2,6 +2,7 @@
 import type { SavedViewState } from '@/modules/core/table/pill/composables/use-saved-views';
 import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import type { Filters } from '@/modules/staking/eth/eth-validator-filter-keys';
 import { SavedFilterLocations } from '@/modules/core/table/filtering';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
@@ -16,8 +17,14 @@ const selectionMode = defineModel<boolean>('selectionMode', { required: true });
 
 const { deleting = false, deleteQuestion, fields } = defineProps<{
   fields: FieldDef[];
-  /** What the delete action asks about the selection before `delete` is emitted. */
-  deleteQuestion: { title: string; message: string };
+  /**
+   * What the delete action asks about the selection before `delete` is emitted.
+   *
+   * @remarks
+   * Absent while nothing in view is selected, which also disables the action, so `delete` is never
+   * emitted unasked.
+   */
+  deleteQuestion?: ConfirmQuestion;
   deleting?: boolean;
 }>();
 
@@ -64,9 +71,9 @@ function exitSelection(): void {
     <TableSelectionAction
       icon="lu-trash-2"
       color="error"
-      :disabled="selected.length === 0"
+      :disabled="!deleteQuestion"
       :loading="deleting"
-      :confirm="{ ...deleteQuestion, confirmLabel: t('common.actions.delete') }"
+      :confirm="deleteQuestion"
       data-testid="validators-delete-selected"
       @click="emit('delete')"
     >

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import { canDismiss, canResolveManually, canRetry, IssueState } from '@/modules/history/data-issues/constants';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
@@ -14,7 +16,7 @@ import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 const { issue, busy = false, failure } = defineProps<{
   issue: DataIssue;
   busy?: boolean;
-  failure?: { title: string; error: unknown };
+  failure?: NamedFailure;
 }>();
 
 const emit = defineEmits<{
@@ -26,6 +28,12 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const askingDismiss = ref<boolean>(false);
+
+const dismissQuestion = computed<ConfirmQuestion>(() => ({
+  confirmLabel: t('data_issues.action.dismiss.label'),
+  message: t('data_issues.action.dismiss.confirm.message'),
+  title: t('data_issues.action.dismiss.confirm.title'),
+}));
 
 function confirmDismiss(): void {
   set(askingDismiss, false);
@@ -42,15 +50,12 @@ watch(() => issue.id, () => {
     <FailureStrip
       v-if="failure"
       :title="failure.title"
-      :failure="failure.error"
-      :retryable="false"
+      :failure="failure.failure"
       data-testid="data-issue-detail-failure"
     />
     <InlineConfirm
       v-if="askingDismiss"
-      :title="t('data_issues.action.dismiss.confirm.title')"
-      :message="t('data_issues.action.dismiss.confirm.message')"
-      :confirm-label="t('data_issues.action.dismiss.label')"
+      :question="dismissQuestion"
       @cancel="askingDismiss = false"
       @confirm="confirmDismiss()"
     />

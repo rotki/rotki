@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BankAuthenticationRequest, BankConnection, BankFormData } from '@/modules/banks/types';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
@@ -90,7 +91,7 @@ async function sync(row: BankConnection): Promise<void> {
 }
 
 /** What a row's delete button asks; a failed removal is reported by `removeBank` itself. */
-function removeConfirm(row: BankConnection): { title: string; message: string } {
+function removeConfirm(row: BankConnection): RowDeleteQuestion {
   return {
     message: t('bank_settings.confirmation.message', { bank: row.displayName, name: row.name }),
     title: t('bank_settings.confirmation.title'),

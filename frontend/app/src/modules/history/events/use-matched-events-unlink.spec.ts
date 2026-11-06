@@ -55,7 +55,7 @@ function setup(): ReturnType<typeof useMatchedEventsUnlink> {
   return useMatchedEventsUnlink(computed<Record<string, HistoryEventRow[]>>(() => ({})), emit);
 }
 
-const { actionFailure, clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
+const { failure: actionFailure, clear: clearActionFailure, report: reportActionFailure } = useHistoryEventsActionFailure();
 
 describe('useMatchedEventsUnlink', () => {
   beforeEach(() => {

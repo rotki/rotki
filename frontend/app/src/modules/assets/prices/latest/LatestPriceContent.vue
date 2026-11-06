@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/modules/assets/prices/price-types';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { omit } from 'es-toolkit';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
@@ -59,7 +60,7 @@ useRememberTableSorting<ManualPriceWithUsd>(TableId.LATEST_PRICES, sort, headers
 
 const { deletePrice, emptyState, items, loading, refreshCurrentPrices, refreshing } = useLatestPrices(filter);
 
-const deleteConfirm = computed<{ title: string; message: string }>(() => ({
+const deleteConfirm = computed<RowDeleteQuestion>(() => ({
   message: t('price_table.delete.dialog.message'),
   title: t('price_table.delete.dialog.title'),
 }));

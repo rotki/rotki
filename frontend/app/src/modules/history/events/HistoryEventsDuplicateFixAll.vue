@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { HistoryEventQuestion } from '@/modules/history/events/types';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 
 /** The duplicate chip's fix-all link. It asks `question` beside itself, so `confirm` means accepted. */
 const { loading = false } = defineProps<{
-  question: HistoryEventQuestion;
+  question: ConfirmQuestion;
   loading?: boolean;
 }>();
 
@@ -17,10 +17,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <ConfirmPopover
-    tone="warning"
-    :title="question.title"
-    :message="question.message"
-    :confirm-label="question.confirmLabel ?? t('common.actions.confirm')"
+    :question="question"
     @confirm="emit('confirm')"
   >
     <template #activator="{ attrs }">

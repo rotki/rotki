@@ -3,6 +3,7 @@ import { Blockchain } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import RpcProviderKeys from '@/modules/settings/general/rpc/providers/RpcProviderKeys.vue';
+import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 
 const { refresh, removeAll, usages } = await vi.hoisted(async () => {
   const { shallowRef } = await import('vue');
@@ -118,6 +119,17 @@ describe('settings/general/rpc/providers/RpcProviderKeys.vue', () => {
 
     expect(removeAll).not.toHaveBeenCalled();
     expect(wrapper.find('[data-testid=inline-confirm]').text()).toContain(`${Blockchain.ETH}, ${Blockchain.OPTIMISM}`);
+  });
+
+  it('should ask about a removal in the error tone, naming the provider in its title', () => {
+    set(usages, [usage('infura', 'dead…beef', [Blockchain.ETH])]);
+    const wrapper = mountKeys();
+
+    expect(wrapper.findComponent(ConfirmPopover).props('question')).toMatchObject({
+      confirmLabel: 'rpc_provider_setup.remove.confirm',
+      title: 'rpc_provider_setup.remove.title::Infura',
+      tone: 'error',
+    });
   });
 
   it('should remove nothing when the question is cancelled', async () => {

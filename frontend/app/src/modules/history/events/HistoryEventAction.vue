@@ -1,15 +1,15 @@
 <script lang="ts" setup>
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
-import type { HistoryEventQuestion } from '@/modules/history/events/types';
-import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import ConfirmMenu from '@/modules/shell/components/ConfirmMenu.vue';
 
 const { event, canEdit = false, deleteConfirm, unlinkConfirm } = defineProps<{
   event: HistoryEventEntry;
   canEdit?: boolean;
   /** Offers delete, asking this in the menu before `delete` is emitted. */
-  deleteConfirm?: HistoryEventQuestion;
+  deleteConfirm?: ConfirmQuestion;
   /** Offers unlink, asking this in the menu before `unlink` is emitted. */
-  unlinkConfirm?: HistoryEventQuestion;
+  unlinkConfirm?: ConfirmQuestion;
 }>();
 
 const emit = defineEmits<{
@@ -21,31 +21,6 @@ const emit = defineEmits<{
 const vueRouter = useRouter();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const open = ref<boolean>(false);
-/** The action the menu is asking about in place of its list, until it is answered or closed. */
-const pending = ref<'delete' | 'unlink'>();
-
-const pendingQuestion = computed<HistoryEventQuestion | undefined>(() => {
-  const action = get(pending);
-  if (action === 'delete')
-    return deleteConfirm;
-  return action === 'unlink' ? unlinkConfirm : undefined;
-});
-
-function accept(): void {
-  const action = get(pending);
-  set(open, false);
-  if (action === 'delete')
-    emit('delete');
-  else if (action === 'unlink')
-    emit('unlink');
-}
-
-watch(open, (isOpen) => {
-  if (!isOpen)
-    set(pending, undefined);
-});
 
 function onEditRule(): void {
   const entry = event;
@@ -69,11 +44,9 @@ function onEditRule(): void {
 
 <template>
   <div class="flex items-center">
-    <RuiMenu
-      v-model="open"
+    <ConfirmMenu
       lazy
-      :role="pendingQuestion ? 'dialog' : undefined"
-      :class-names="{ menu: pendingQuestion ? 'w-72' : 'max-w-60' }"
+      menu-class="max-w-60"
       :options="{ autoUpdate: { resize: false, scroll: false }, placement: 'bottom-end' }"
       close-on-content-click
     >
@@ -92,17 +65,7 @@ function onEditRule(): void {
           />
         </RuiButton>
       </template>
-      <InlineConfirm
-        v-if="pendingQuestion"
-        layout="panel"
-        :tone="pending === 'delete' ? 'error' : 'warning'"
-        :title="pendingQuestion.title"
-        :message="pendingQuestion.message"
-        :confirm-label="pendingQuestion.confirmLabel ?? t('common.actions.confirm')"
-        @cancel="open = false"
-        @confirm="accept()"
-      />
-      <template v-else>
+      <template #default="{ ask }">
         <RuiButton
           v-if="canEdit"
           variant="list"
@@ -133,7 +96,7 @@ function onEditRule(): void {
           v-if="unlinkConfirm"
           variant="list"
           data-testid="row-unlink"
-          @click.stop="pending = 'unlink'"
+          @click="unlinkConfirm && ask(unlinkConfirm, () => emit('unlink'))"
         >
           <template #prepend>
             <RuiIcon
@@ -149,7 +112,7 @@ function onEditRule(): void {
             variant="list"
             color="error"
             data-testid="row-delete"
-            @click.stop="pending = 'delete'"
+            @click="deleteConfirm && ask(deleteConfirm, () => emit('delete'))"
           >
             <template #prepend>
               <RuiIcon name="lu-trash-2" />
@@ -158,6 +121,6 @@ function onEditRule(): void {
           </RuiButton>
         </template>
       </template>
-    </RuiMenu>
+    </ConfirmMenu>
   </div>
 </template>

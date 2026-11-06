@@ -82,8 +82,7 @@ function accept(): void {
 <template>
   <InlineConfirm
     v-if="pendingConfirm"
-    :message="pendingConfirm.message"
-    :confirm-label="pendingConfirm.confirmLabel"
+    :question="pendingConfirm"
     :loading="ignoreLoading"
     @cancel="pending = undefined"
     @confirm="accept()"

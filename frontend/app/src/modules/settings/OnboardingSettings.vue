@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { BackendOptions } from '@shared/ipc';
 import type { BackendConfiguration } from '@/modules/shell/app/backend';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useForm } from '@/modules/core/form/use-form';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
@@ -141,6 +142,12 @@ const newUserOptions = computed<Partial<BackendOptions>>(() => diffBackendOption
 const anyValueChanged = computed<boolean>(() => hasBackendOptionChanges(get(formFields), get(initialOptions)));
 
 const { openDirectory } = useInterop();
+
+const resetQuestion = computed<ConfirmQuestion>(() => ({
+  confirmLabel: t('backend_settings.actions.reset'),
+  message: t('backend_settings.confirm.message'),
+  title: t('backend_settings.confirm.title'),
+}));
 
 async function reset() {
   dismiss();
@@ -310,9 +317,7 @@ watch(dataDirectory, (directory) => {
       <InlineConfirm
         v-if="confirmingReset"
         class="w-full"
-        :title="t('backend_settings.confirm.title')"
-        :message="t('backend_settings.confirm.message')"
-        :confirm-label="t('backend_settings.actions.reset')"
+        :question="resetQuestion"
         data-testid="onboarding-setting-reset-confirm"
         @cancel="confirmingReset = false"
         @confirm="reset()"

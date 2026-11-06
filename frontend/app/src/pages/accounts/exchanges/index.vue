@@ -124,14 +124,18 @@ function editExchange(exchangePayload: Exchange) {
   });
 }
 
-const { deleteConfirm, deleteRow: removeRow, failure: removeFailure } = useTableRowDeletion<Exchange>({
-  confirm: item => ({
+/** What a row's delete button asks; `RowActions` adds the "Delete" label and the error tone. */
+function deleteConfirm(item: Exchange): { message: string; title: string } {
+  return {
     message: t('exchange_settings.confirmation.message', {
       location: getExchangeName(item.location),
       name: item.name,
     }),
     title: t('exchange_settings.confirmation.title'),
-  }),
+  };
+}
+
+const { deleteRow: removeRow, failure: removeFailure } = useTableRowDeletion<Exchange>({
   deleteItem: removeExchange,
   failureTitle: () => t('actions.balances.exchange_removal.title'),
 });
@@ -185,9 +189,8 @@ watch(route, async (route) => {
     <FailureStrip
       v-if="removeFailure"
       class="mb-4"
-      :retryable="false"
       :title="removeFailure.title"
-      :failure="removeFailure.error"
+      :failure="removeFailure.failure"
       data-testid="exchange-remove-error"
     />
 

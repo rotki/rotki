@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { UserDbBackup, UserDbBackupWithId } from '@/modules/session/backup';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { size } from '@/modules/core/common/data/data';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { getFilepath } from '@/modules/core/common/file/file';
@@ -9,6 +10,7 @@ import { useBackupApi } from '@/modules/session/api/use-backup-api';
 import { useSetting } from '@/modules/settings/use-setting';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import { useDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 
 const selected = defineModel<UserDbBackupWithId[]>('selected', { required: true });
@@ -27,6 +29,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const toDeleteQuestion = useDeleteQuestion();
 
 const sort = ref<DataTableSortData<UserDbBackupWithId>>({
   column: 'size',
@@ -86,10 +89,13 @@ const { fileUrl } = useBackupApi();
 const getLink = (db: UserDbBackup) => fileUrl(getFilepath(db, directory));
 
 /** What a row's delete button asks, naming the backup by its date and size. */
-function deleteMessage(item: UserDbBackupWithId): string {
-  return t('database_backups.confirm.message', {
-    date: displayDateFormatter.format(new Date(item.time * 1000), get(dateDisplayFormat)),
-    size: size(item.size),
+function deleteQuestion(item: UserDbBackupWithId): ConfirmQuestion {
+  return toDeleteQuestion({
+    message: t('database_backups.confirm.message', {
+      date: displayDateFormatter.format(new Date(item.time * 1000), get(dateDisplayFormat)),
+      size: size(item.size),
+    }),
+    title: t('database_backups.confirm.title'),
   });
 }
 </script>
@@ -116,9 +122,7 @@ function deleteMessage(item: UserDbBackupWithId): string {
 
     <template #item.actions="{ row }">
       <ConfirmPopover
-        :title="t('database_backups.confirm.title')"
-        :message="deleteMessage(row)"
-        :confirm-label="t('common.actions.delete')"
+        :question="deleteQuestion(row)"
         @confirm="emit('remove', row)"
       >
         <template #activator="{ attrs }">

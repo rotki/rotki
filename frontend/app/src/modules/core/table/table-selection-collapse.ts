@@ -3,18 +3,6 @@ import type { InjectionKey, MaybeRefOrGetter, Ref } from 'vue';
 
 const TableSelectionCollapsedKey: InjectionKey<Readonly<Ref<boolean>>> = Symbol('table-selection-collapsed');
 
-/** What a bulk action asks before it runs. */
-export interface SelectionQuestion {
-  readonly title?: string;
-  readonly message: string;
-  readonly confirmLabel: string;
-}
-
-/** Shows `question` in the bar's overflow menu, and calls `onAccept` once the user accepts it. */
-type AskInMenu = (question: SelectionQuestion, onAccept: () => void) => void;
-
-const TableSelectionAskKey: InjectionKey<AskInMenu> = Symbol('table-selection-ask');
-
 /** What the bar knows about its own width on one measurement. */
 interface CollapseMeasurement {
   collapsed: boolean;
@@ -105,24 +93,4 @@ export function provideTableSelectionCollapsed(collapsed: Readonly<Ref<boolean>>
  */
 export function useTableSelectionCollapsed(): Readonly<Ref<boolean>> {
   return inject(TableSelectionCollapsedKey, shallowRef<boolean>(false));
-}
-
-/**
- * Lets the actions in a collapsed bar ask their question inside the bar's menu.
- *
- * @remarks
- * A popover anchored to a menu entry closes along with the menu, so a collapsed action hands its
- * question to the bar, which shows it in place of the entries.
- */
-export function provideTableSelectionAsk(ask: AskInMenu): void {
-  provide(TableSelectionAskKey, ask);
-}
-
-/**
- * How an action inside a collapsed bar asks its question.
- *
- * @returns `undefined` outside a bar
- */
-export function useTableSelectionAsk(): AskInMenu | undefined {
-  return inject(TableSelectionAskKey, undefined);
 }

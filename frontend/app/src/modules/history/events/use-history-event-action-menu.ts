@@ -8,6 +8,7 @@ import type {
   SolanaEvent,
   SolanaSwapEvent,
 } from '@/modules/history/events/schemas';
+import { tap } from 'plainfp/result';
 import { useReportIssue } from '@/modules/core/common/use-report-issue';
 import {
   isEthBlockEvent,
@@ -100,12 +101,12 @@ export function useHistoryEventActionMenu(
   const { ethBlockEventsDecoding, txEventsDecoding } = useHistoryEventsStatus();
   const { show: showReportIssue } = useReportIssue();
   const {
-    fixAndSettle,
+    fixDuplicates,
     fixLoading,
+    ignoreDuplicates,
     ignoreLoading,
-    markNonDuplicatedAndSettle,
   } = useCustomizedEventDuplicates();
-  const { clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
+  const { run: runAction } = useHistoryEventsActionFailure();
 
   const isAutoFixable = computed<boolean>(() => duplicateHandlingStatus() === DuplicateHandlingStatus.AUTO_FIX);
 
@@ -219,8 +220,10 @@ export function useHistoryEventActionMenu(
     if (!groupIdentifier)
       return;
 
-    clearActionFailure();
-    await fixAndSettle([groupIdentifier], { onFailure: failure => reportActionFailure(failure.title, failure.failure), onSuccess: onFixDuplicate });
+    await runAction(
+      t('actions.customized_event_duplicates.fix_error.title'),
+      async () => tap(await fixDuplicates([groupIdentifier]), onFixDuplicate),
+    );
   }
 
   async function ignoreDuplicate(): Promise<void> {
@@ -228,8 +231,10 @@ export function useHistoryEventActionMenu(
     if (!groupIdentifier)
       return;
 
-    clearActionFailure();
-    await markNonDuplicatedAndSettle([groupIdentifier], { onFailure: failure => reportActionFailure(failure.title, failure.failure), onSuccess: onIgnoreDuplicate });
+    await runAction(
+      t('actions.customized_event_duplicates.mark_non_duplicated_error.title'),
+      async () => tap(await ignoreDuplicates([groupIdentifier]), onIgnoreDuplicate),
+    );
   }
 
   return {

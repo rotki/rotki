@@ -38,8 +38,13 @@ const { collection, deleteConfirm, ignoredHandling, loading = false } = definePr
   /** Read-only here: it decides whether an ignore action needs the table re-fetched. */
   ignoredHandling: IgnoredAssetsHandlingType;
   loading?: boolean;
-  /** What a row's delete button asks; `delete-asset` is emitted once the user confirms. */
-  deleteConfirm: (asset: SupportedAsset) => { title: string; message: string };
+  /**
+   * What a row's delete button asks; `delete-asset` is emitted once the user confirms.
+   *
+   * @remarks
+   * Typed off the row actions it feeds, since the file is at its import ceiling.
+   */
+  deleteConfirm: (asset: SupportedAsset) => InstanceType<typeof ManagedAssetRowActions>['$props']['deleteConfirm'];
 }>();
 
 const emit = defineEmits<{

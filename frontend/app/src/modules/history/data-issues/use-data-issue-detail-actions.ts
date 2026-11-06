@@ -1,24 +1,19 @@
 import type { ResultAsync } from 'plainfp/result-async';
-import type { MaybeRefOrGetter, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { DataIssueError } from '@/modules/history/data-issues/types';
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
-
-/** A dismiss or retry that failed, kept for the surface that ran it to name. */
-interface DataIssueActionFailure {
-  /** The issue acted on, so the detail view names only its own issue's failure. */
-  id: number;
-  title: string;
-  error: DataIssueError;
-}
+import { type NamedFailure, useFailureSlot } from '@/modules/shell/components/named-failure';
 
 interface UseDataIssueDetailActionsReturn {
   modelSelectedIssue: Ref<DataIssue | undefined>;
   modelDrawerOpen: Ref<boolean>;
   modelResolveOpen: Ref<boolean>;
   modelActionBusy: Ref<boolean>;
-  /** Why the last dismiss or retry failed; cleared when the next action starts. */
-  actionFailure: Readonly<Ref<DataIssueActionFailure | undefined>>;
+  /** Why the last dismiss or retry failed, on whichever issue; cleared when the next action starts. */
+  actionFailure: Readonly<Ref<NamedFailure | undefined>>;
+  /** {@link UseDataIssueDetailActionsReturn.actionFailure} when it is the selected issue's own. */
+  selectedIssueFailure: ComputedRef<NamedFailure | undefined>;
   /** Why the last manual resolve failed, for the resolve dialog; cleared when it opens or resolves again. */
   resolveFailure: Readonly<Ref<DataIssueError | undefined>>;
   openDetail: (issue: DataIssue) => void;
@@ -50,7 +45,11 @@ export function useDataIssueDetailActions(
   const modelDrawerOpen = shallowRef<boolean>(false);
   const modelResolveOpen = shallowRef<boolean>(false);
   const modelActionBusy = shallowRef<boolean>(false);
-  const actionFailure = shallowRef<DataIssueActionFailure>();
+  const { clear: clearActionFailure, failure: actionFailure, report: reportActionFailure } = useFailureSlot();
+  /** The issue the last failed action ran on, kept beside the failure rather than inside it. */
+  const failedIssueId = shallowRef<number>();
+  const selectedIssueFailure = computed<NamedFailure | undefined>(() =>
+    get(failedIssueId) === get(modelSelectedIssue)?.id ? get(actionFailure) : undefined);
   const resolveFailure = shallowRef<DataIssueError>();
 
   function openDetail(issue: DataIssue): void {
@@ -71,13 +70,17 @@ export function useDataIssueDetailActions(
     onUpdated: (updated: DataIssue) => Promise<void>,
   ): Promise<void> {
     set(modelActionBusy, true);
-    set(actionFailure, undefined);
+    clearActionFailure();
+    set(failedIssueId, undefined);
     try {
       const result = await action;
-      if (result.ok)
+      if (result.ok) {
         await onUpdated(result.value);
-      else
-        set(actionFailure, { error: result.error, id, title });
+      }
+      else {
+        reportActionFailure(title, result.error);
+        set(failedIssueId, id);
+      }
     }
     finally {
       set(modelActionBusy, false);
@@ -141,7 +144,7 @@ export function useDataIssueDetailActions(
   });
 
   return {
-    actionFailure: shallowReadonly(actionFailure),
+    actionFailure,
     modelActionBusy,
     modelDrawerOpen,
     modelResolveOpen,
@@ -152,5 +155,6 @@ export function useDataIssueDetailActions(
     onRetry,
     openDetail,
     resolveFailure: shallowReadonly(resolveFailure),
+    selectedIssueFailure,
   };
 }

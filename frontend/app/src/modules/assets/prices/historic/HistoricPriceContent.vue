@@ -2,6 +2,7 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
+import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import HistoricPriceFormDialog from '@/modules/assets/prices/historic/HistoricPriceFormDialog.vue';
@@ -118,7 +119,7 @@ function edit(item: HistoricalPrice) {
   set(editMode, true);
 }
 
-const deleteConfirm = computed<{ title: string; message: string }>(() => ({
+const deleteConfirm = computed<RowDeleteQuestion>(() => ({
   message: t('price_table.delete.dialog.message'),
   title: t('price_table.delete.dialog.title'),
 }));

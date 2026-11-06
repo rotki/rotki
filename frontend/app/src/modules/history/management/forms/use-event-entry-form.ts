@@ -1,5 +1,6 @@
 import type { ComputedRef, ModelRef, Ref } from 'vue';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
+import type { HistoryEventSaveResult } from '@/modules/history/management/forms/history-event-save-result';
 import { HistoryEventEntryType, toSnakeCase } from '@rotki/common';
 import { generateUUID } from '@shared/utils';
 import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
@@ -40,7 +41,7 @@ interface UseEventEntryFormOptions {
 
 interface UseEventEntryFormReturn {
   readonly form: ReturnType<typeof useHistoryEventForm<EventEntryFormState, EventEntryPayload, ReturnType<typeof toEventEntryEditPayload>>>['form'];
-  readonly save: () => Promise<boolean>;
+  readonly save: () => Promise<HistoryEventSaveResult>;
   readonly isPlain: ComputedRef<boolean>;
   readonly isEvm: ComputedRef<boolean>;
   readonly isBitcoin: ComputedRef<boolean>;

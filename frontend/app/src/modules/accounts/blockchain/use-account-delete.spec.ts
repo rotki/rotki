@@ -1,6 +1,7 @@
-import type { AddressAccount, AddressGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
+import type { AddressAccount, AddressGroupWithBalance, EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import { bigNumberify } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { ok, type Result } from 'plainfp/result';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountDelete } from '@/modules/accounts/blockchain/use-account-delete';
@@ -149,6 +150,25 @@ describe('useAccountDelete', () => {
       await removal;
 
       expect(useBlockchainAccountsStore().accounts).toMatchObject({ eth: [], optimism: [] });
+    });
+  });
+
+  describe('describeDeletion of validators', () => {
+    const validator = createMock<EthereumValidator>({ index: 7, publicKey: '0xabc' });
+
+    it('should name a single validator by its index and public key', () => {
+      expect(useAccountDelete().describeDeletion({ data: [validator], type: 'validator' }))
+        .toBe('account_balances.confirm_delete.description_validator::7, 0xabc');
+    });
+
+    it('should count several validators', () => {
+      expect(useAccountDelete().describeDeletion({ data: [validator, validator], type: 'validator' }))
+        .toBe('account_balances.confirm_delete.description_multiple_validator::2');
+    });
+
+    it('should count an empty list rather than throw', () => {
+      expect(useAccountDelete().describeDeletion({ data: [], type: 'validator' }))
+        .toBe('account_balances.confirm_delete.description_multiple_validator::0');
     });
   });
 });

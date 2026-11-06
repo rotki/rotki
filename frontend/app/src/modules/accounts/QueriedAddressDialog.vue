@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AddressAccount, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { assert, Blockchain, transformCase } from '@rotki/common';
+import { tap } from 'plainfp/result';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -12,6 +13,7 @@ import LabeledAddressDisplay from '@/modules/shell/components/display/LabeledAdd
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import IconMark from '@/modules/shell/components/IconMark.vue';
+import { useFailureSlot } from '@/modules/shell/components/named-failure';
 import TagDisplay from '@/modules/tags/TagDisplay.vue';
 
 interface QueriedAddressRow {
@@ -29,7 +31,7 @@ const emit = defineEmits<{ close: [] }>();
 
 const selectedAccounts = ref<AddressAccount[]>([]);
 /** Why the last add or remove failed, named above the picker; the same button is the retry. */
-const failure = shallowRef<{ title: string; error: unknown }>();
+const { failure, run } = useFailureSlot();
 const ETH = Blockchain.ETH;
 
 const { addQueriedAddress, deleteQueriedAddress } = useQueriedAddressOperations();
@@ -75,23 +77,14 @@ const usableAddresses = computed(() => {
 async function addAddress(): Promise<void> {
   const currentAccount = get(selectedAccounts);
   assert(module && currentAccount.length > 0);
-  set(failure, undefined);
-  const result = await addQueriedAddress({
-    address: getAccountAddress(currentAccount[0]),
-    module,
-  });
-  if (result) {
-    set(failure, { error: result.error, title: t('actions.session.add_queriable_address.error.message') });
-    return;
-  }
-  set(selectedAccounts, []);
+  await run(t('actions.session.add_queriable_address.error.message'), async () => tap(
+    await addQueriedAddress({ address: getAccountAddress(currentAccount[0]), module }),
+    () => set(selectedAccounts, []),
+  ));
 }
 
 async function removeAddress(address: string): Promise<void> {
-  set(failure, undefined);
-  const result = await deleteQueriedAddress({ address, module });
-  if (result)
-    set(failure, { error: result.error, title: t('actions.session.delete_queriable_address.error.message') });
+  await run(t('actions.session.delete_queriable_address.error.message'), async () => deleteQueriedAddress({ address, module }));
 }
 
 function close() {
@@ -142,8 +135,7 @@ function close() {
         v-if="failure"
         class="mb-3"
         :title="failure.title"
-        :failure="failure.error"
-        :retryable="false"
+        :failure="failure.failure"
       />
       <div class="flex items-end gap-2">
         <BlockchainAccountSelector

@@ -1,16 +1,15 @@
 import type { EvmSwapEvent, StandaloneEditableEvents } from '@/modules/history/events/schemas';
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
+import type { HistoryEventSaveResult } from '@/modules/history/management/forms/history-event-save-result';
 import { createMock } from '@test/utils/create-mock';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
-import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, inject, nextTick, ref, type Ref, type VNode } from 'vue';
+import { err, ok } from 'plainfp/result';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent, h, ref, type VNode } from 'vue';
 import HistoryEventFormDialog from '@/modules/history/events/HistoryEventFormDialog.vue';
-import { HistoryEventSaveFailureKey } from '@/modules/history/management/forms/history-event-save-failure';
 
-const save = vi.fn(async () => true);
+const save = vi.fn<() => Promise<HistoryEventSaveResult>>();
 const errorCount = ref<number>(0);
-/** The failure slot the dialog handed down, as the real forms see it through inject. */
-let failureSlot: Ref<string | undefined> | undefined;
 
 /**
  * The dialog reads the error count and saves through a template ref, so the stub exposes both. An
@@ -20,7 +19,6 @@ const FormStub = defineComponent({
   name: 'HistoryEventForm',
   props: ['data', 'stateUpdated'],
   setup(_, { expose }): () => VNode {
-    failureSlot = inject(HistoryEventSaveFailureKey);
     expose({ errorCount, save });
     return () => h('div');
   },
@@ -74,7 +72,7 @@ function dialog(wrapper: VueWrapper<any>): VueWrapper<any> {
 describe('historyEventFormDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    save.mockResolvedValue(true);
+    save.mockResolvedValue(ok(undefined));
     set(errorCount, 0);
   });
 
@@ -103,19 +101,39 @@ describe('historyEventFormDialog', () => {
       expect(wrapper.emitted('refresh')).toHaveLength(1);
     });
 
-    it('should name a failure the form writes into the slot it hands down', async () => {
+    it('should name the failure the form\'s save returns', async () => {
+      save.mockResolvedValue(err('backend said no'));
       const wrapper = createWrapper(addData);
-      assert(failureSlot);
 
-      set(failureSlot, 'backend said no');
-      await nextTick();
+      await confirm(wrapper);
 
       expect(dialog(wrapper).props('failure')).toBe('backend said no');
       expect(dialog(wrapper).props('failureTitle')).toBe('transactions.events.dialog.save_error');
     });
 
+    it('should drop the named failure once the next save goes through', async () => {
+      save.mockResolvedValueOnce(err('backend said no'));
+      const wrapper = createWrapper(addData);
+      await confirm(wrapper);
+
+      await confirm(wrapper);
+
+      expect(dialog(wrapper).props('failure')).toBeUndefined();
+    });
+
+    it('should name nothing when the form refused on its fields', async () => {
+      save.mockResolvedValueOnce(err('backend said no'));
+      save.mockResolvedValueOnce(err(undefined));
+      const wrapper = createWrapper(addData);
+      await confirm(wrapper);
+
+      await confirm(wrapper);
+
+      expect(dialog(wrapper).props('failure')).toBeUndefined();
+    });
+
     it('should stay open when the form refused', async () => {
-      save.mockResolvedValue(false);
+      save.mockResolvedValue(err(undefined));
       const wrapper = createWrapper(addData);
 
       await confirm(wrapper);
@@ -126,15 +144,15 @@ describe('historyEventFormDialog', () => {
 
     /** A second press while the first save is in flight would submit the same event twice. */
     it('should ignore a second confirm while the first is still saving', async () => {
-      let release: (value: boolean) => void = () => {};
-      save.mockReturnValue(new Promise<boolean>((resolve) => {
+      let release: (value: HistoryEventSaveResult) => void = () => {};
+      save.mockReturnValue(new Promise<HistoryEventSaveResult>((resolve) => {
         release = resolve;
       }));
       const wrapper = createWrapper(addData);
 
       await wrapper.find('[data-testid=stub-confirm]').trigger('click');
       await wrapper.find('[data-testid=stub-confirm]').trigger('click');
-      release(true);
+      release(ok(undefined));
       await flushPromises();
 
       expect(save).toHaveBeenCalledTimes(1);
@@ -162,7 +180,7 @@ describe('historyEventFormDialog', () => {
     });
 
     it('should report the form errors once a save was refused', async () => {
-      save.mockResolvedValue(false);
+      save.mockResolvedValue(err(undefined));
       set(errorCount, 3);
       const wrapper = createWrapper(addData);
 
@@ -172,7 +190,7 @@ describe('historyEventFormDialog', () => {
     });
 
     it('should go quiet again once the dialog is closed', async () => {
-      save.mockResolvedValue(false);
+      save.mockResolvedValue(err(undefined));
       set(errorCount, 3);
       const wrapper = createWrapper(addData);
       await confirm(wrapper);

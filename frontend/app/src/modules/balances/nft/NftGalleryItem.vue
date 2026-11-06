@@ -75,10 +75,7 @@ const mediaStyle = computed<StyleValue>(() => {
       <ConfirmPopover
         v-if="!shouldRender"
         class="absolute right-2 bottom-2"
-        tone="warning"
-        :title="question.title"
-        :message="question.message"
-        :confirm-label="question.confirmLabel"
+        :question="question"
         @confirm="allowDomain()"
       >
         <template #activator="{ attrs }">

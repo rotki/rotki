@@ -1,6 +1,6 @@
 import type { HistoryEventCategoryDetailWithId } from '@/modules/history/events/event-type';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 
 const push = vi.fn(async (): Promise<void> => {});
@@ -19,19 +19,13 @@ function categoryDetail(identifier: string): HistoryEventCategoryDetailWithId {
 }
 
 describe('forms/HistoryEventTypeForm.vue', () => {
-  const wrappers: VueWrapper[] = [];
-
   beforeEach(() => {
     push.mockClear();
     findEventTypeData.mockReturnValue(categoryDetail('claim reward'));
   });
 
-  afterEach(() => {
-    while (wrappers.length > 0) wrappers.pop()?.unmount();
-  });
-
   function mountForm(props: Record<string, unknown>): VueWrapper {
-    const wrapper = mount(HistoryEventTypeForm, {
+    return mount(HistoryEventTypeForm, {
       global: {
         stubs: { HistoryEventActionPicker: true },
       },
@@ -42,8 +36,6 @@ describe('forms/HistoryEventTypeForm.vue', () => {
         ...props,
       },
     });
-    wrappers.push(wrapper);
-    return wrapper;
   }
 
   it('should not warn when the combination resolves for an empty counterparty', () => {

@@ -1,11 +1,11 @@
 import type { Ref } from 'vue';
-import type { ActionStatus } from '@/modules/core/common/action';
 import type {
   IgnorePayload,
 } from '@/modules/history/ignored';
 import type { EntryMeta } from '@/modules/history/meta';
+import { err, type Result } from 'plainfp/result';
+import { fromPromise, map } from 'plainfp/result-async';
 import { uniqueStrings } from '@/modules/core/common/data/data';
-import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { useHistoryIgnoringApi } from '@/modules/history/api/use-history-ignoring-api';
 
 interface CommonIgnoreAction<T extends EntryMeta> {
@@ -13,17 +13,17 @@ interface CommonIgnoreAction<T extends EntryMeta> {
 }
 
 interface UseIgnoreReturn<T extends EntryMeta> {
-  ignore: (ignored: boolean) => Promise<ActionStatus>;
-  ignoreSingle: (item: T, ignored: boolean) => Promise<ActionStatus>;
-  toggle: (item: T) => Promise<ActionStatus>;
+  ignore: (ignored: boolean) => Promise<Result<void, unknown>>;
+  ignoreSingle: (item: T, ignored: boolean) => Promise<Result<void, unknown>>;
+  toggle: (item: T) => Promise<Result<void, unknown>>;
 }
 
 /**
  * Excludes the selected entries from accounting, or includes them again.
  *
  * @remarks
- * Reports nothing itself: every action returns its status, the backend's message on a failure, for
- * the surface that started it to name.
+ * Reports nothing itself: every action returns an `Err` for the surface that started it to name,
+ * holding the request's own error, or the reason nothing was sent when no entry needed the change.
  */
 export function useIgnore<T extends EntryMeta>(
   { toData }: CommonIgnoreAction<T>,
@@ -33,61 +33,35 @@ export function useIgnore<T extends EntryMeta>(
   const { t } = useI18n({ useScope: 'global' });
   const api = useHistoryIgnoringApi();
 
-  const ignoreInAccounting = async (payload: IgnorePayload, ignore: boolean): Promise<ActionStatus> => {
-    try {
-      if (ignore) {
-        await api.ignoreActions(payload);
-      }
-      else {
-        await api.unignoreActions(payload);
-      }
-    }
-    catch (error: unknown) {
-      return { message: getErrorMessage(error), success: false };
-    }
+  async function ignoreInAccounting(payload: IgnorePayload, ignore: boolean): Promise<Result<void, unknown>> {
+    const request = ignore ? api.ignoreActions(payload) : api.unignoreActions(payload);
+    return map(fromPromise(request, (error: unknown) => error), () => undefined);
+  }
 
-    return { success: true };
-  };
-
-  const ignoreActions = async (payload: IgnorePayload): Promise<ActionStatus> =>
-    ignoreInAccounting(payload, true);
-
-  const unignoreActions = async (payload: IgnorePayload): Promise<ActionStatus> =>
-    ignoreInAccounting(payload, false);
-
-  const ignore = async (ignored: boolean): Promise<ActionStatus> => {
+  const ignore = async (ignored: boolean): Promise<Result<void, unknown>> => {
     const data = get(selected).filter((item) => {
       const { ignoredInAccounting } = item;
       return ignored ? !ignoredInAccounting : ignoredInAccounting;
     });
 
-    const payload: IgnorePayload = {
-      data: data.map(toData).filter(uniqueStrings),
-    };
-
-    let status: ActionStatus;
-
     if (data.length === 0)
-      return { message: t('ignore.no_items.description', ignored ? 1 : 2), success: false };
+      return err(t('ignore.no_items.description', ignored ? 1 : 2));
 
-    if (ignored)
-      status = await ignoreActions(payload);
-    else
-      status = await unignoreActions(payload);
+    const outcome = await ignoreInAccounting({ data: data.map(toData).filter(uniqueStrings) }, ignored);
 
-    if (status.success) {
+    if (outcome.ok) {
       refresh();
       set(selected, []);
     }
-    return status;
+    return outcome;
   };
 
-  async function toggle(item: T): Promise<ActionStatus> {
+  async function toggle(item: T): Promise<Result<void, unknown>> {
     set(selected, [item]);
     return ignore(!item.ignoredInAccounting);
   }
 
-  async function ignoreSingle(item: T, ignored: boolean): Promise<ActionStatus> {
+  async function ignoreSingle(item: T, ignored: boolean): Promise<Result<void, unknown>> {
     set(selected, [item]);
     return ignore(ignored);
   }

@@ -1,6 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { HistoryEventQuestion } from '@/modules/history/events/types';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { startPromise } from '@shared/utils';
+import { tap } from 'plainfp/result';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
 import { useHistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
@@ -44,7 +45,7 @@ export interface UseHistoryEventsFiltersChipsReturn {
   /** Drop the duplicate filter from the URL. */
   removeDuplicateEventsParam: () => void;
   /** What fixing every duplicate the chip shows asks beside its button, counting them. */
-  fixQuestion: ComputedRef<HistoryEventQuestion>;
+  fixQuestion: ComputedRef<ConfirmQuestion>;
   /** Fix every duplicate the chip is showing, once its button asked; a failure is named above the table. */
   fixShownDuplicates: () => Promise<void>;
   /** Re-point the URL at what is still a duplicate, or drop the filter when nothing is. */
@@ -73,7 +74,7 @@ export function useHistoryEventsFiltersChips(
     fixLoading,
     manualReviewGroupIds,
   } = useCustomizedEventDuplicates();
-  const { clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
+  const { run: runAction } = useHistoryEventsActionFailure();
 
   const showMissingAcquisition = computed<boolean>(() => !!get(route).query.missingAcquisitionIdentifier);
 
@@ -167,18 +168,13 @@ export function useHistoryEventsFiltersChips(
     if (!ids || ids.length === 0)
       return;
 
-    clearActionFailure();
-    const result = await fixDuplicates(ids);
-    if (result.success) {
+    await runAction(t('actions.customized_event_duplicates.fix_error.title'), async () => tap(await fixDuplicates(ids), () => {
       removeDuplicateEventsParam();
       onRefresh();
-    }
-    else {
-      reportActionFailure(t('actions.customized_event_duplicates.fix_error.title'), result.message);
-    }
+    }));
   }
 
-  const fixQuestion = computed<HistoryEventQuestion>(() => ({
+  const fixQuestion = computed<ConfirmQuestion>(() => ({
     confirmLabel: t('customized_event_duplicates.actions.fix'),
     message: t('customized_event_duplicates.actions.fix_selected_confirm', { count: groupIdentifiers()?.length ?? 0 }),
     title: t('customized_event_duplicates.actions.fix_selected'),

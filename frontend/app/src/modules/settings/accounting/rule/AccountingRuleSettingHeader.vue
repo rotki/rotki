@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
-import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
+import ConfirmMenu from '@/modules/shell/components/ConfirmMenu.vue';
 
 defineProps<{
   exportLoading: boolean;
@@ -17,19 +18,11 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const open = ref<boolean>(false);
-/** The menu asks about the reset in place of its items, until it is answered or closed. */
-const confirmingReset = ref<boolean>(false);
-
-function acceptReset(): void {
-  set(open, false);
-  emit('reset');
-}
-
-watch(open, (isOpen) => {
-  if (!isOpen)
-    set(confirmingReset, false);
-});
+const resetQuestion = computed<ConfirmQuestion>(() => ({
+  confirmLabel: t('accounting_settings.rule.reset'),
+  message: t('accounting_settings.rule.confirm_reset'),
+  tone: 'error',
+}));
 </script>
 
 <template>
@@ -54,10 +47,7 @@ watch(open, (isOpen) => {
         </template>
         {{ t('accounting_settings.rule.add') }}
       </RuiButton>
-      <RuiMenu
-        v-model="open"
-        :role="confirmingReset ? 'dialog' : undefined"
-        :class-names="{ menu: confirmingReset ? 'w-72' : '' }"
+      <ConfirmMenu
         :options="{ placement: 'bottom-end' }"
         close-on-content-click
       >
@@ -76,16 +66,7 @@ watch(open, (isOpen) => {
             />
           </RuiButton>
         </template>
-        <InlineConfirm
-          v-if="confirmingReset"
-          layout="panel"
-          tone="error"
-          :message="t('accounting_settings.rule.confirm_reset')"
-          :confirm-label="t('accounting_settings.rule.reset')"
-          @cancel="open = false"
-          @confirm="acceptReset()"
-        />
-        <template v-else>
+        <template #default="{ ask }">
           <RuiButton
             variant="list"
             :loading="exportLoading"
@@ -110,7 +91,7 @@ watch(open, (isOpen) => {
             variant="list"
             :loading="resetLoading"
             data-testid="accounting-rule-reset"
-            @click.stop="confirmingReset = true"
+            @click="ask(resetQuestion, () => emit('reset'))"
           >
             <template #prepend>
               <RuiIcon name="lu-history" />
@@ -118,7 +99,7 @@ watch(open, (isOpen) => {
             {{ t('accounting_settings.rule.reset') }}
           </RuiButton>
         </template>
-      </RuiMenu>
+      </ConfirmMenu>
     </div>
   </div>
 </template>

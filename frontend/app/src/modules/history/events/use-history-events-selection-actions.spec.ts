@@ -1,5 +1,6 @@
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryEventsActionFailure } from './use-history-events-action-failure';
 import { useHistoryEventsSelectionActions } from './use-history-events-selection-actions';
@@ -42,13 +43,13 @@ function select(selectionMode: ReturnType<typeof useHistoryEventsSelectionMode>,
   ids.forEach(id => selectionMode.actions.toggleEvent(id));
 }
 
-const { actionFailure, clearActionFailure, reportActionFailure } = useHistoryEventsActionFailure();
+const { failure: actionFailure, clear: clearActionFailure, report: reportActionFailure } = useHistoryEventsActionFailure();
 
 describe('useHistoryEventsSelectionActions', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     clearActionFailure();
-    spies.ignore.mockResolvedValue({ success: true });
+    spies.ignore.mockResolvedValue(ok(undefined));
   });
 
   afterEach(() => {
@@ -62,7 +63,7 @@ describe('useHistoryEventsSelectionActions', () => {
   });
 
   it('should name a failed bulk exclusion above the table', async () => {
-    spies.ignore.mockResolvedValue({ message: 'boom', success: false });
+    spies.ignore.mockResolvedValue(err('boom'));
     const { actions, selectionMode } = setup([historyEvent({ identifier: 1 })]);
     select(selectionMode, 1);
 
@@ -73,7 +74,7 @@ describe('useHistoryEventsSelectionActions', () => {
   });
 
   it('should name a failed bulk inclusion under its own title', async () => {
-    spies.ignore.mockResolvedValue({ message: 'boom', success: false });
+    spies.ignore.mockResolvedValue(err('boom'));
     const { actions, selectionMode } = setup([historyEvent({ identifier: 1, ignoredInAccounting: true })]);
     select(selectionMode, 1);
 

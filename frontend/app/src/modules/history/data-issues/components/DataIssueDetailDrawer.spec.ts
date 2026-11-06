@@ -287,21 +287,14 @@ describe('dataIssueDetailDrawer', () => {
     expect(wrapper.find('[data-testid="inline-confirm"]').exists()).toBe(false);
   });
 
-  it('should name a failed action of the issue shown, without a retry of its own', async () => {
+  it('should name the failed action it is handed, without a retry of its own', async () => {
     const wrapper = createWrapper(createIssue({ id: 8 }));
-    await wrapper.setProps({ failure: { error: new Error('conflict'), id: 8, title: 'data_issues.action.retry.error' } });
+    await wrapper.setProps({ failure: { failure: new Error('conflict'), title: 'data_issues.action.retry.error' } });
 
     const strip = wrapper.find('[data-testid="data-issue-detail-failure"]');
     expect(strip.text()).toContain('data_issues.action.retry.error');
     expect(strip.text()).toContain('conflict');
     expect(strip.find('[data-testid="failure-strip-retry"]').exists()).toBe(false);
-  });
-
-  it('should not name a failure that concerns another issue', async () => {
-    const wrapper = createWrapper(createIssue({ id: 8 }));
-    await wrapper.setProps({ failure: { error: new Error('conflict'), id: 3, title: 'data_issues.action.retry.error' } });
-
-    expect(wrapper.find('[data-testid="data-issue-detail-failure"]').exists()).toBe(false);
   });
 
   it('should keep the retry action visible and disabled while remediation is running', () => {

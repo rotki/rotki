@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Report } from '@/modules/reports/report-types';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import ReportActionableCardActions from '@/modules/reports/ReportActionableCardActions.vue';
 import { useReportActionableStepper } from '@/modules/reports/use-report-actionable-items';
 import { useReportFinishStep } from '@/modules/reports/use-report-finish-step';
@@ -69,6 +70,14 @@ const {
   cancel: cancelFinish,
   prompt: finishPrompt,
 } = useReportFinishStep({ onIgnore: ignoreIssues, onRegenerate: regenerateReport });
+
+/** The finish summary as a question, its offer (regenerate, or leave the issues) as the accept label. */
+const finishQuestion = computed<ConfirmQuestion | undefined>(() => {
+  const prompt = get(finishPrompt);
+  if (!prompt)
+    return undefined;
+  return { confirmLabel: prompt.primaryAction, message: prompt.message, title: prompt.title };
+});
 
 watch(step, () => cancelFinish());
 </script>
@@ -165,13 +174,11 @@ watch(step, () => cancelFinish());
         >
           <template #actions="{ items }">
             <InlineConfirm
-              v-if="finishPrompt"
+              v-if="finishQuestion"
               layout="panel"
               class="border-t border-rui-divider"
               :class="{ 'px-0! py-2!': isPinned }"
-              :title="finishPrompt.title"
-              :message="finishPrompt.message"
-              :confirm-label="finishPrompt.primaryAction"
+              :question="finishQuestion"
               :cancel-label="t('common.actions.back')"
               data-testid="report-actionable-finish"
               @cancel="cancelFinish()"

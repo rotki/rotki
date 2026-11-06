@@ -282,7 +282,7 @@ describe('forms/SwapEventForm', () => {
       await fillRows();
       await fill('unique-id', 'abcd');
 
-      await expect(wrapper.vm.save()).resolves.toBe(true);
+      await expect(wrapper.vm.save()).resolves.toMatchObject({ ok: true });
 
       expect(addHistoryEvent).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
         entryType: HistoryEventEntryType.SWAP_EVENT,
@@ -303,7 +303,7 @@ describe('forms/SwapEventForm', () => {
       });
       await wrapper.find('[data-testid=sub-event-amount][data-key=spend] input').setValue('0.02');
 
-      await expect(wrapper.vm.save()).resolves.toBe(true);
+      await expect(wrapper.vm.save()).resolves.toMatchObject({ ok: true });
 
       expect(editHistoryEvent).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
         groupIdentifier: 'group',
@@ -321,7 +321,7 @@ describe('forms/SwapEventForm', () => {
       });
       await wrapper.find('[data-testid=sub-event-amount][data-key=spend] input').setValue('0.02');
 
-      await expect(wrapper.vm.save()).resolves.toBe(false);
+      await expect(wrapper.vm.save()).resolves.toMatchObject({ ok: false });
       await nextTick();
 
       expect(wrapper.find('[data-testid=sub-event-amount][data-key=spend] .details').text()).toBe('too small');
@@ -336,7 +336,7 @@ describe('forms/SwapEventForm', () => {
 
       expect(wrapper.find('[data-testid=swap-event-form-incomplete]').text()).toBe('swap_event_form.incomplete');
       expect(has('[data-testid=location]')).toBe(false);
-      await expect(wrapper.vm.save()).resolves.toBe(false);
+      await expect(wrapper.vm.save()).resolves.toMatchObject({ ok: false });
       expect(editHistoryEvent).not.toHaveBeenCalled();
     });
 
@@ -350,7 +350,7 @@ describe('forms/SwapEventForm', () => {
       await wrapper.setProps({ data: halfSwap });
       await vi.advanceTimersToNextTimerAsync();
 
-      await expect(wrapper.vm.save()).resolves.toBe(false);
+      await expect(wrapper.vm.save()).resolves.toMatchObject({ ok: false });
       expect(editHistoryEvent).not.toHaveBeenCalled();
     });
 
@@ -365,7 +365,7 @@ describe('forms/SwapEventForm', () => {
       await wrapper.find('[data-testid=sub-event-amount][data-key=spend] input').setValue('0.2');
 
       expect(has('[data-testid=swap-event-form-incomplete]')).toBe(false);
-      await expect(wrapper.vm.save()).resolves.toBe(true);
+      await expect(wrapper.vm.save()).resolves.toMatchObject({ ok: true });
       expect(editHistoryEvent).toHaveBeenCalledOnce();
     });
   });
@@ -378,7 +378,7 @@ describe('forms/SwapEventForm', () => {
       });
       await wrapper.find('[data-testid=sub-event-amount][data-key=spend] input').setValue('0.2');
 
-      await expect(wrapper.vm.save()).resolves.toBe(true);
+      await expect(wrapper.vm.save()).resolves.toMatchObject({ ok: true });
 
       expect(editHistoryEvent).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
         entryType: HistoryEventEntryType.EVM_SWAP_EVENT,
@@ -399,7 +399,7 @@ describe('forms/SwapEventForm', () => {
       await vi.advanceTimersToNextTimerAsync();
       await wrapper.find('[data-testid=sub-event-amount][data-key=spend] input').setValue('0.2');
 
-      await expect(wrapper.vm.save()).resolves.toBe(true);
+      await expect(wrapper.vm.save()).resolves.toMatchObject({ ok: true });
       expect(editHistoryEvent.mock.calls[0][0]).toMatchObject({ entryType: HistoryEventEntryType.EVM_SWAP_EVENT, location: 'base' });
     });
 
@@ -411,7 +411,7 @@ describe('forms/SwapEventForm', () => {
       });
       await fillRows();
 
-      await expect(wrapper.vm.save()).resolves.toBe(true);
+      await expect(wrapper.vm.save()).resolves.toMatchObject({ ok: true });
 
       expect(addHistoryEvent).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
         location: 'ethereum',
@@ -472,7 +472,7 @@ describe('forms/SwapEventForm', () => {
       await fillRows();
 
       expect(wrapper.find<HTMLInputElement>('[data-testid=location] input').element.disabled).toBe(false);
-      await expect(wrapper.vm.save()).resolves.toBe(true);
+      await expect(wrapper.vm.save()).resolves.toMatchObject({ ok: true });
       expect(addHistoryEvent.mock.calls[0][0]).toMatchObject({ entryType: HistoryEventEntryType.SOLANA_SWAP_EVENT, txRef: solanaTxRef });
     });
 
@@ -487,7 +487,7 @@ describe('forms/SwapEventForm', () => {
       await locate(SOLANA_CHAIN);
       await fill('tx-ref', solanaTxRef);
 
-      await expect(wrapper.vm.save()).resolves.toBe(true);
+      await expect(wrapper.vm.save()).resolves.toMatchObject({ ok: true });
 
       const payload = addHistoryEvent.mock.calls[0][0];
       expect(payload).toMatchObject({ counterparty: 'uniswap-v3', entryType: HistoryEventEntryType.SOLANA_SWAP_EVENT, txRef: solanaTxRef });
@@ -523,7 +523,7 @@ describe('forms/SwapEventForm', () => {
       await wrapper.find('[data-testid=swap-sub-event-add][data-key=receive]').trigger('click');
 
       await locate('kraken');
-      await expect(wrapper.vm.save()).resolves.toBe(false);
+      await expect(wrapper.vm.save()).resolves.toMatchObject({ ok: false });
       await nextTick();
 
       expect(wrapper.findAll('[data-testid=sub-event-amount][data-key=receive]')).toHaveLength(2);
@@ -601,7 +601,7 @@ describe('forms/SwapEventForm', () => {
       await nextTick();
 
       expect(amounts('fee')).toEqual([]);
-      await expect(wrapper.vm.save()).resolves.toBe(true);
+      await expect(wrapper.vm.save()).resolves.toMatchObject({ ok: true });
       expect(addHistoryEvent.mock.calls[0][0]).not.toHaveProperty('fee');
     });
 
@@ -615,7 +615,7 @@ describe('forms/SwapEventForm', () => {
       await wrapper.find('[data-testid=has-fee] input').setValue(true);
       await nextTick();
 
-      await expect(wrapper.vm.save()).resolves.toBe(false);
+      await expect(wrapper.vm.save()).resolves.toMatchObject({ ok: false });
       expect(addHistoryEvent).not.toHaveBeenCalled();
     });
   });

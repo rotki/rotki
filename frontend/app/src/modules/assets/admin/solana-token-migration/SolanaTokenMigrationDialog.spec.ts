@@ -124,8 +124,8 @@ describe('modules/assets/admin/solana-token-migration/SolanaTokenMigrationDialog
       wrapper.findComponent(BigDialog).vm.$emit('confirm');
       await flushPromises();
 
-      const question = wrapper.findComponent(InlineConfirm);
-      expect(question.props('message')).toContain('asset_management.solana_token_migration.merge_suggestion.message');
+      const question = wrapper.find('[data-testid=solana-token-migration-merge-suggestion]');
+      expect(question.text()).toContain('asset_management.solana_token_migration.merge_suggestion.message');
       expect(wrapper.findComponent(BigDialog).props('failure')).toBeUndefined();
       expect(wrapper.emitted('suggest-merge')).toBeUndefined();
     });

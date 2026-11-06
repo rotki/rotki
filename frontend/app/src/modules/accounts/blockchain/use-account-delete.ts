@@ -5,13 +5,13 @@ import { map as mapOption, none, type Option, some, tap as tapOption } from 'pla
 import { isOk, map as mapResult, toOption } from 'plainfp/result';
 import {
   type AccountDeletion,
+  type AccountDeletionParams,
   DeletionKind,
   planDeletion,
   removedAccounts,
   type RemovedAccounts,
   removedChains,
   removedXpub,
-  type ShowConfirmationParams,
   withoutRemoved,
 } from '@/modules/accounts/core/account-deletion';
 import { useAccountRemovals } from '@/modules/accounts/use-account-removals';
@@ -22,7 +22,7 @@ import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
 interface UseAccountDeleteReturn {
   /** What deleting would remove, for a confirmation the caller shows itself, such as an inline one. */
-  describeDeletion: (params: ShowConfirmationParams) => string;
+  describeDeletion: (params: AccountDeletionParams) => string;
   /**
    * Deletes at once, for a caller that has already confirmed with the user.
    *
@@ -30,7 +30,7 @@ interface UseAccountDeleteReturn {
    * A validator delete the backend rejects rejects here too, so the caller can name it where the
    * user asked; the other kinds report through their task row.
    */
-  deleteConfirmed: (params: ShowConfirmationParams, onComplete?: () => void) => Promise<void>;
+  deleteConfirmed: (params: AccountDeletionParams) => Promise<void>;
 }
 
 export function useAccountDelete(): UseAccountDeleteReturn {
@@ -89,7 +89,7 @@ export function useAccountDelete(): UseAccountDeleteReturn {
     switch (deletion.kind) {
       case DeletionKind.VALIDATORS: {
         const { validators } = deletion;
-        if (validators.length > 1)
+        if (validators.length !== 1)
           return t('account_balances.confirm_delete.description_multiple_validator', { length: validators.length });
 
         const { index, publicKey } = validators[0];
@@ -112,13 +112,12 @@ export function useAccountDelete(): UseAccountDeleteReturn {
     }
   }
 
-  function describeDeletion(params: ShowConfirmationParams): string {
+  function describeDeletion(params: AccountDeletionParams): string {
     return describe(planDeletion(params));
   }
 
-  async function deleteConfirmed(params: ShowConfirmationParams, onComplete?: () => void): Promise<void> {
+  async function deleteConfirmed(params: AccountDeletionParams): Promise<void> {
     pipe(await execute(planDeletion(params)), tapOption(prune));
-    onComplete?.();
   }
 
   return {

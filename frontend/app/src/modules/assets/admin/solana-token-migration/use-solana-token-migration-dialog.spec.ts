@@ -145,7 +145,7 @@ describe('modules/assets/admin/solana-token-migration/useSolanaTokenMigrationDia
 
       expect(await save()).toBe(false);
       expect(get(failure)).toEqual({
-        error: 'asset_management.solana_token_migration.migration_error',
+        failure: 'asset_management.solana_token_migration.migration_error',
         title: 'asset_management.solana_token_migration.dialog_title',
       });
       expect(removeIdentifier).not.toHaveBeenCalled();
@@ -169,7 +169,7 @@ describe('modules/assets/admin/solana-token-migration/useSolanaTokenMigrationDia
       const { failure, save } = dialog();
       await save();
 
-      expect(get(failure)).toEqual({ error, title: 'asset_management.solana_token_migration.migration_error' });
+      expect(get(failure)).toEqual({ failure: error, title: 'asset_management.solana_token_migration.migration_error' });
       expect(get(modelValue)).toBeDefined();
     });
 
@@ -179,7 +179,7 @@ describe('modules/assets/admin/solana-token-migration/useSolanaTokenMigrationDia
       const { failure, save } = dialog();
       await save();
 
-      expect(get(failure)?.error).toBe('the token is not supported');
+      expect(get(failure)?.failure).toBe('the token is not supported');
     });
 
     it('should put field errors on the form rather than in the dialog', async () => {

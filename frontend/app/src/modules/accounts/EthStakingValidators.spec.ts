@@ -1,4 +1,6 @@
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import { bigNumberify, Blockchain } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,14 +23,18 @@ const {
   const { ref } = await import('vue');
   return {
     accountOperation: ref<boolean>(false),
-    deleteConfirm: vi.fn<(item: EthereumValidator) => { title: string; message: string }>(item => ({
+    deleteConfirm: vi.fn<(item: EthereumValidator) => ConfirmQuestion>(item => ({
+      confirmLabel: 'Delete',
       message: `remove ${item.index}?`,
       title: 'Delete validator',
+      tone: 'error',
     })),
-    deleteFailure: ref<unknown>(),
+    deleteFailure: ref<NamedFailure>(),
     deleteSelected: vi.fn(),
-    deleteSelectedConfirm: vi.fn<(rows: EthereumValidator[], selected: number[]) => { title: string; message: string }>(
-      (_rows, selected) => ({ message: `remove ${selected.length} validators?`, title: 'Delete validators' }),
+    deleteSelectedConfirm: vi.fn<(rows: EthereumValidator[], selected: number[]) => ConfirmQuestion | undefined>(
+      (_rows, selected) => (selected.length > 0
+        ? { confirmLabel: 'Delete', message: `remove ${selected.length} validators?`, title: 'Delete validators', tone: 'error' }
+        : undefined),
     ),
     deleteValidator: vi.fn<(item: EthereumValidator) => Promise<void>>(async () => {}),
     editValidator: vi.fn(),
@@ -288,8 +294,10 @@ describe('ethStakingValidators', () => {
 
     it('should have its delete button ask about that validator first', () => {
       expect(createWrapper().findComponent(RowActionsStub).props('deleteConfirm')).toEqual({
+        confirmLabel: 'Delete',
         message: 'remove 1?',
         title: 'Delete validator',
+        tone: 'error',
       });
     });
 
@@ -307,10 +315,11 @@ describe('ethStakingValidators', () => {
       const wrapper = createWrapper();
       expect(wrapper.find('[data-testid=eth-validators-delete-error]').exists()).toBe(false);
 
-      set(deleteFailure, new Error('backend refused'));
+      set(deleteFailure, { failure: new Error('backend refused'), title: 'Could not delete' });
       await nextTick();
 
       const strip = wrapper.find('[data-testid=eth-validators-delete-error]');
+      expect(strip.text()).toContain('Could not delete');
       expect(strip.text()).toContain('backend refused');
       expect(strip.find('[data-testid=failure-strip-retry]').exists()).toBe(false);
     });

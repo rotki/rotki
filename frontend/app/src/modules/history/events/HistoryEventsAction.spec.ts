@@ -296,7 +296,7 @@ describe('modules/history/events/HistoryEventsAction', () => {
       await view.find('[data-testid="event-delete-tx"]').trigger('click');
 
       expect(view.find('[data-testid="inline-confirm"]').text()).toContain('transactions.dialog.delete.message');
-      expect(view.find('[data-testid="event-report-issue"]').exists()).toBe(false);
+      expect(view.find('[data-testid=confirm-menu-entries]').attributes('style')).toContain('display: none');
       expect(view.emitted('delete-tx')).toBeUndefined();
     });
 

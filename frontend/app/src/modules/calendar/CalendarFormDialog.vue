@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CalendarEvent } from '@/modules/calendar/types';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { omit } from 'es-toolkit';
 import { useTemplateRef } from 'vue';
 import CalendarForm from '@/modules/calendar/CalendarForm.vue';
@@ -7,6 +8,7 @@ import { useCalendarApi } from '@/modules/calendar/use-calendar-api';
 import { useSaveFailure } from '@/modules/core/form/use-save-failure';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
+import { useDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 
 const modelValue = defineModel<CalendarEvent | undefined>({ required: true });
 
@@ -31,6 +33,7 @@ const deleteFailure = shallowRef<unknown>();
 
 const { capture, clear, failure, modelFieldErrors } = useSaveFailure();
 const { addCalendarEvent, deleteCalendarEvent, editCalendarEvent } = useCalendarApi();
+const toDeleteQuestion = useDeleteQuestion();
 
 type CalendarFormInstance = InstanceType<typeof CalendarForm> | null | undefined;
 
@@ -59,6 +62,7 @@ async function save() {
 
   set(submitting, true);
   clear();
+  set(deleteFailure, undefined);
   let success = true;
   try {
     await persistEvent(payload, formRef);
@@ -118,6 +122,10 @@ watch(() => get(modelValue)?.identifier, () => {
   set(deleteFailure, undefined);
 });
 
+const deleteQuestion = computed<ConfirmQuestion>(() => toDeleteQuestion({
+  message: t('calendar.dialog.delete.message'),
+}));
+
 const dialogTitle = computed<string>(() =>
   editMode ? t('calendar.dialog.edit.title') : t('calendar.dialog.add.title'),
 );
@@ -150,9 +158,7 @@ const dialogTitle = computed<string>(() =>
     >
       <InlineConfirm
         class="w-full"
-        tone="error"
-        :message="t('calendar.dialog.delete.message')"
-        :confirm-label="t('common.actions.delete')"
+        :question="deleteQuestion"
         :loading="deleting"
         data-testid="calendar-form-delete-confirm"
         @cancel="confirmingDelete = false"

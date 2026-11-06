@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { HistoryEventQuestion } from '@/modules/history/events/types';
-import { DuplicatesAction, useDuplicatesQuestion } from '@/modules/history/events/use-duplicates-question';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { useDuplicatesQuestion } from '@/modules/history/events/use-duplicates-question';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 
 /**
@@ -21,19 +21,16 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { duplicatesQuestion } = useDuplicatesQuestion();
+const questions = useDuplicatesQuestion();
 
-const fixQuestion = computed<HistoryEventQuestion>(() => duplicatesQuestion(DuplicatesAction.FIX, 1));
-const ignoreQuestion = computed<HistoryEventQuestion>(() => duplicatesQuestion(DuplicatesAction.MARK_NON_DUPLICATED, 1));
+const fixQuestion = computed<ConfirmQuestion>(() => questions.fixQuestion(1));
+const ignoreQuestion = computed<ConfirmQuestion>(() => questions.markNonDuplicatedQuestion(1));
 </script>
 
 <template>
   <ConfirmPopover
     v-if="isAutoFixable"
-    tone="warning"
-    :title="fixQuestion.title"
-    :message="fixQuestion.message"
-    :confirm-label="t('customized_event_duplicates.actions.fix')"
+    :question="fixQuestion"
     @confirm="emit('fix')"
   >
     <template #activator="{ attrs }">
@@ -57,10 +54,7 @@ const ignoreQuestion = computed<HistoryEventQuestion>(() => duplicatesQuestion(D
   </ConfirmPopover>
   <ConfirmPopover
     v-if="isDuplicate"
-    tone="warning"
-    :title="ignoreQuestion.title"
-    :message="ignoreQuestion.message"
-    :confirm-label="t('customized_event_duplicates.actions.mark_non_duplicated')"
+    :question="ignoreQuestion"
     @confirm="emit('ignore')"
   >
     <template #activator="{ attrs }">

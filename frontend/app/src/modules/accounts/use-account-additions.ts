@@ -9,7 +9,7 @@ import { evmAdditionOutcome, EvmSkipReason } from '@/modules/accounts/evm-additi
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { publishActivityDetail } from '@/modules/task-center/use-activity-detail';
-import { useNativeTask } from '@/modules/task-center/use-native-task';
+import { type NativeActivitySpec, useNativeTask } from '@/modules/task-center/use-native-task';
 
 /** The reason a skipped "every EVM chain" addition shows on its row. */
 const EVM_SKIP_MESSAGE: Record<EvmSkipReason, MessageKey> = {
@@ -152,35 +152,44 @@ export function useAccountAdditions(): UseAccountAdditionsReturn {
   };
 
   /**
+   * Files a row that settles at once with `error`, so the dock accounts for a row of an import that
+   * sends nothing to the backend.
+   */
+  async function reportSettled(
+    row: Pick<NativeActivitySpec<never>, 'id' | 'kind' | 'subtitle'>,
+    error: TaskError,
+    options?: AdditionOptions,
+  ): Promise<void> {
+    await submitTask<never>({
+      ...row,
+      parent: options?.parent,
+      rerunnable: false,
+      run: async (): Promise<Result<never, TaskError>> => err(error),
+      title: t('task_center.group.accounts'),
+      userStarted: options?.userStarted,
+    });
+  }
+
+  /**
    * Reports an account the user asked to add that is already tracked, as a skipped addition. Sends
    * nothing to the backend: it exists so the dock accounts for every row of an import, not only the
    * rows that needed work.
    */
   const reportTracked = async (chain: string, target: AccountTarget, options?: AdditionOptions): Promise<void> => {
     const subject: AccountSubject = { chain, target };
-    await submitTask<never>({
+    await reportSettled({
       id: accountAddActivity.id(subject),
       kind: accountAddActivity.kind,
-      parent: options?.parent,
-      rerunnable: false,
-      run: async (): Promise<Result<never, TaskError>> => err(Skipped({ message: t('actions.balances.blockchain_accounts_add.skipped.tracked') })),
       subtitle: accountActivityLabel.add(accountTargetLabel(target)),
-      title: t('task_center.group.accounts'),
-      userStarted: options?.userStarted,
-    });
+    }, Skipped({ message: t('actions.balances.blockchain_accounts_add.skipped.tracked') }), options);
   };
 
   const reportFailedTag = async (tag: string, message: string, options?: AdditionOptions): Promise<void> => {
-    await submitTask<never>({
+    await reportSettled({
       id: accountImportTagActivity.id({ tag }),
       kind: accountImportTagActivity.kind,
-      parent: options?.parent,
-      rerunnable: false,
-      run: async (): Promise<Result<never, TaskError>> => err(TaskFailed({ message })),
       subtitle: accountActivityLabel.createTag(tag),
-      title: t('task_center.group.accounts'),
-      userStarted: options?.userStarted,
-    });
+    }, TaskFailed({ message }), options);
   };
 
   return { addAccount, addEvmAccount, reportFailedTag, reportTracked };
