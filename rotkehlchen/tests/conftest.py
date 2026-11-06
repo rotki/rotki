@@ -590,7 +590,7 @@ def vcr_fixture(vcr: VCR) -> VCR:
                 _normalize_solana_rpc_uri(r1.uri) == _normalize_solana_rpc_uri(r2.uri) and
                 r1.method == r2.method
             )
-        if 'etherscan.io' not in uri_pair and 'blockscout.com' not in uri_pair:
+        if 'etherscan.io' not in uri_pair and 'blockscout.com' not in uri_pair and 'routescan.io' not in uri_pair:  # noqa: E501
             return r1.uri == r2.uri and r1.method == r2.method
 
         # Check base URL (scheme + netloc + path) matches
@@ -633,12 +633,36 @@ def vcr_fixture(vcr: VCR) -> VCR:
 
         return params1 == params2
 
+    def rpc_body_matcher(r1, r2):
+        """Match request bodies exactly, except that a recorded full-block
+        eth_getBlockByNumber JSON-RPC call may answer a header-only one, since block
+        timestamps are now read from header-only blocks and the header is the same."""
+        if r1.body == r2.body:
+            return True
+
+        try:
+            b1, b2 = json.loads(r1.body), json.loads(r2.body)
+        except (TypeError, json.JSONDecodeError):
+            return False
+
+        if (
+            isinstance(b1, dict) and isinstance(b2, dict) and
+            b1.get('method') == b2.get('method') == 'eth_getBlockByNumber' and
+            len(params1 := b1.get('params', [])) == len(params2 := b2.get('params', [])) == 2 and
+            params1[1] is False and params2[1] is True
+        ):
+            params1.pop()
+            params2.pop()
+
+        return b1 == b2
+
     vcr.register_matcher('alchemy_api_matcher', alchemy_api_matcher)
     vcr.register_matcher('beaconchain_matcher', beaconchain_matcher)
     vcr.register_matcher('github_branch_matcher', github_branch_matcher)
     vcr.register_matcher('match_rpc_calls', match_rpc_calls)
     vcr.register_matcher('solana_rpc_matcher', solana_rpc_matcher)
     vcr.register_matcher('etherscan_matcher', etherscan_matcher)
+    vcr.register_matcher('rpc_body_matcher', rpc_body_matcher)
     return vcr
 
 
