@@ -152,7 +152,7 @@ install), so the CI column names the step rather than a whole job:
 | Command | 16-core workstation, warm cache | CI (`ubuntu-latest`, 4 cores) |
 |---------|---------------------------------|-----------------------------------------------|
 | `pnpm run lint` | 54s at 4 workers (~15 GB peak); 116s at 2 (~8 GB); 159s single-threaded (~4.6 GB). The worker count follows free memory, see "Lint the whole project" | ESLint step: 110-154s at `--concurrency=4` (pinned); 208-226s single-threaded |
-| `pnpm run typecheck` | 56s | Typecheck step: 59-86s |
+| `pnpm run typecheck` | 55s (~3.7 GB peak, measured 2026-11-06; the Node heap limit on CI is ~4 GB) | Typecheck step: 59-86s |
 | `pnpm run build` | | Build step (`build:app`): 12-17s |
 | `pnpm run test:unit` (full) | 114s | "Frontend unit tests / vitest" job: 483-519s |
 | `pnpm run lint:style` | 2s | Stylelint step: 2s |

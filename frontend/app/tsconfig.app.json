@@ -8,7 +8,11 @@
       "@/*": ["./src/*"],
       "@shared/*": ["./shared/*"],
       "@electron/*": ["./electron/*"]
-    }
+    },
+    "declaration": true,
+    "declarationDir": "./node_modules/.tmp/app-types",
+    "emitDeclarationOnly": true,
+    "noEmit": false
   },
   "vueCompilerOptions": {
     "plugins": [

@@ -39,11 +39,34 @@ interface Permission {
   readonly parentCapability: string;
 }
 
+/**
+ * The build the premium bundle reports about itself once it loads.
+ */
+interface PremiumComponentsInfo {
+  build: number;
+  version: string;
+}
+
+/**
+ * Window globals belong here rather than in the module that sets them: specs are checked against the
+ * app's emitted declarations, so a `declare global` inside a `.ts` file is invisible to a spec that
+ * does not import that file.
+ */
 declare global {
   interface Window {
     interop?: Interop;
     ethereum?: EIP1193Provider;
     walletBridge?: WalletBridgeApi;
+    /**
+     * Set by the premium bundle once it loads; absent in a non-premium session.
+     */
+    PremiumComponents?: PremiumComponentsInfo;
+    Vue: any;
+    VueEcharts: any;
+    VueUse: any;
+    zod: any;
+    bn: any;
+    VueRouter: any;
   }
 
   interface WindowEventMap {
