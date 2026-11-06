@@ -1,12 +1,13 @@
 import os
 import random
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 from unittest.mock import _patch, patch
 
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.connections.types import ConnectionRangeKind, connection_range_name
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDT
@@ -67,6 +68,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.exchanges import (
     assert_binance_balances_result,
     assert_poloniex_balances_result,
+    create_test_coinbase,
     patch_binance_balances_query,
     patch_poloniex_balances_query,
     try_get_first_exchange,
@@ -83,6 +85,7 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.locations.types import LocationIdentifier
+    from rotkehlchen.rotkehlchen import Rotkehlchen
     from rotkehlchen.tests.fixtures import WebsocketReader
 
 
@@ -290,8 +293,10 @@ def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges: APISer
                 location='kraken',
             ),
         )
-    result = assert_proper_sync_response_with_result(response=response)
-    assert result == {}
+    assert assert_proper_sync_response_with_result(response=response) == {
+        'per_account': {'kraken': {kraken.connection_identifier: {}}},
+        'totals': {'kraken': {}},
+    }
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -667,7 +672,9 @@ def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges: APIServe
             rotkehlchen_api_server=rotkehlchen_api_server_with_exchanges,
             async_query=async_query,
         )
-    assert_binance_balances_result(outcome)
+    assert outcome['per_account'].keys() == outcome['totals'].keys() == {'binance'}
+    assert_binance_balances_result(outcome['per_account']['binance'][binance.connection_identifier])
+    assert_binance_balances_result(outcome['totals']['binance'])
 
     # query balances of all setup exchanges
     poloniex = try_get_first_exchange(rotki.exchange_manager, LOCATION_POLONIEX, Poloniex)
@@ -684,8 +691,176 @@ def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges: APIServe
             async_query=async_query,
         )
 
-    assert_binance_balances_result(result['binance'])
-    assert_poloniex_balances_result(result['poloniex'])
+    assert_binance_balances_result(result['per_account']['binance'][binance.connection_identifier])
+    assert_binance_balances_result(result['totals']['binance'])
+    assert_poloniex_balances_result(result['per_account']['poloniex'][poloniex.connection_identifier])
+    assert_poloniex_balances_result(result['totals']['poloniex'])
+
+
+def _connect_coinbase_accounts(rotki: Rotkehlchen, count: int) -> list[Coinbase]:
+    """Connect several coinbase accounts, so that they share one location"""
+    exchanges = [create_test_coinbase(
+        database=rotki.data.db,
+        msg_aggregator=rotki.msg_aggregator,
+        name=f'coinbase_{idx}',
+    ) for idx in range(count)]
+    rotki.exchange_manager.connected_exchanges[LOCATION_COINBASE].extend(exchanges)
+    return exchanges
+
+
+EXCHANGE_BALANCE_ENDPOINTS: Final[tuple[tuple[str, dict[str, str]], ...]] = (
+    ('exchangebalancesresource', {}),
+    ('named_exchanges_balances_resource', {'location': 'coinbase'}),
+)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize(('endpoint', 'url_args'), EXCHANGE_BALANCE_ENDPOINTS)
+def test_exchange_balances_of_two_accounts_on_one_location(
+        rotkehlchen_api_server: APIServer,
+        endpoint: str,
+        url_args: dict[str, str],
+) -> None:
+    """Test that each account of a location is returned and that totals adds up their assets"""
+    main, trading = _connect_coinbase_accounts(rotkehlchen_api_server.rest_api.rotkehlchen, 2)
+    with (
+        patch.object(main, 'query_balances', return_value=({
+            A_BTC: Balance(amount=FVal('0.5'), value=FVal('30000')),
+            A_ETH: Balance(amount=ONE, value=FVal('3000')),
+        }, '')),
+        patch.object(trading, 'query_balances', return_value=({
+            A_BTC: Balance(amount=FVal('0.25'), value=FVal('15000')),
+            A_USDT: Balance(amount=FVal('100'), value=FVal('100')),
+        }, '')),
+    ):
+        response = requests.get(api_url_for(rotkehlchen_api_server, endpoint, **url_args))
+
+    assert assert_proper_sync_response_with_result(response) == {
+        'per_account': {'coinbase': {
+            main.connection_identifier: {
+                A_BTC.identifier: {'amount': '0.5', 'value': '30000'},
+                A_ETH.identifier: {'amount': '1', 'value': '3000'},
+            },
+            trading.connection_identifier: {
+                A_BTC.identifier: {'amount': '0.25', 'value': '15000'},
+                A_USDT.identifier: {'amount': '100', 'value': '100'},
+            },
+        }},
+        'totals': {'coinbase': {
+            A_BTC.identifier: {'amount': '0.75', 'value': '45000'},
+            A_ETH.identifier: {'amount': '1', 'value': '3000'},
+            A_USDT.identifier: {'amount': '100', 'value': '100'},
+        }},
+    }
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize(('endpoint', 'url_args'), EXCHANGE_BALANCE_ENDPOINTS)
+def test_exchange_balances_value_threshold_applies_to_totals(
+        rotkehlchen_api_server: APIServer,
+        endpoint: str,
+        url_args: dict[str, str],
+) -> None:
+    """Test that the threshold only filters the location totals
+
+    A balance below the threshold is still reported for the account holding it, so the value of
+    that account is not understated. Filtering must not alter the balances an exchange caches.
+    """
+    main, trading = _connect_coinbase_accounts(rotkehlchen_api_server.rest_api.rotkehlchen, 2)
+    main_balances = {
+        A_BTC: Balance(amount=ONE, value=FVal('6')),
+        A_ETH: Balance(amount=ONE, value=FVal('20')),
+        A_USDT: Balance(amount=ONE, value=FVal('9')),
+    }
+    trading_balances = {A_BTC: Balance(amount=ONE, value=FVal('6'))}
+    with (
+        patch.object(main, 'query_balances', return_value=(main_balances, '')),
+        patch.object(trading, 'query_balances', return_value=(trading_balances, '')),
+    ):
+        response = requests.get(
+            api_url_for(rotkehlchen_api_server, endpoint, **url_args),
+            params={'value_threshold': '10'},
+        )
+        assert assert_proper_sync_response_with_result(response) == {
+            'per_account': {'coinbase': {
+                main.connection_identifier: {
+                    A_BTC.identifier: {'amount': '1', 'value': '6'},
+                    A_ETH.identifier: {'amount': '1', 'value': '20'},
+                    A_USDT.identifier: {'amount': '1', 'value': '9'},
+                },
+                trading.connection_identifier: {
+                    A_BTC.identifier: {'amount': '1', 'value': '6'},
+                },
+            }},
+            'totals': {'coinbase': {
+                A_BTC.identifier: {'amount': '2', 'value': '12'},
+                A_ETH.identifier: {'amount': '1', 'value': '20'},
+            }},
+        }
+
+        result = assert_proper_sync_response_with_result(
+            requests.get(api_url_for(rotkehlchen_api_server, endpoint, **url_args)),
+        )
+    assert result['per_account']['coinbase'][main.connection_identifier].keys() == {
+        A_BTC.identifier,
+        A_ETH.identifier,
+        A_USDT.identifier,
+    }
+    assert result['per_account']['coinbase'][trading.connection_identifier].keys() == {
+        A_BTC.identifier,
+    }
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize(('endpoint', 'url_args'), EXCHANGE_BALANCE_ENDPOINTS)
+def test_exchange_balances_with_one_failing_account(
+        rotkehlchen_api_server: APIServer,
+        endpoint: str,
+        url_args: dict[str, str],
+) -> None:
+    """Test that the other accounts of a location still report when one of them fails"""
+    main, trading = _connect_coinbase_accounts(rotkehlchen_api_server.rest_api.rotkehlchen, 2)
+    with (
+        patch.object(main, 'query_balances', return_value=({
+            A_BTC: Balance(amount=ONE, value=FVal('60000')),
+        }, '')),
+        patch.object(trading, 'query_balances', return_value=(None, 'Invalid key')),
+    ):
+        response = requests.get(api_url_for(rotkehlchen_api_server, endpoint, **url_args))
+
+    assert_proper_response(response)
+    assert response.json() == {
+        'result': {
+            'per_account': {'coinbase': {
+                main.connection_identifier: {A_BTC.identifier: {'amount': '1', 'value': '60000'}},
+            }},
+            'totals': {'coinbase': {A_BTC.identifier: {'amount': '1', 'value': '60000'}}},
+            'failed_accounts': {'coinbase': {trading.connection_identifier: 'Invalid key'}},
+        },
+        'message': 'Invalid key',
+    }
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize(('endpoint', 'url_args'), EXCHANGE_BALANCE_ENDPOINTS)
+def test_exchange_balances_with_every_account_failing(
+        rotkehlchen_api_server: APIServer,
+        endpoint: str,
+        url_args: dict[str, str],
+) -> None:
+    """Test that the query fails, with every reason, when no account could be queried"""
+    main, trading = _connect_coinbase_accounts(rotkehlchen_api_server.rest_api.rotkehlchen, 2)
+    with (
+        patch.object(main, 'query_balances', return_value=(None, 'Invalid key.')),
+        patch.object(trading, 'query_balances', return_value=(None, 'Rate limited.')),
+    ):
+        response = requests.get(api_url_for(rotkehlchen_api_server, endpoint, **url_args))
+
+    assert_error_response(
+        response=response,
+        contained_in_msg='Invalid key. Rate limited.',
+        status_code=HTTPStatus.CONFLICT,
+    )
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -710,7 +885,7 @@ def test_exchange_query_balances_ignore_cache(
             location='binance',
         ))
         result = assert_proper_sync_response_with_result(response)
-        assert_binance_balances_result(result)
+        assert_binance_balances_result(result['totals']['binance'])
         assert bnd.call_count == 2
         assert bnl.call_count == 4
         # Do the query again. Cache should be used.
@@ -721,7 +896,7 @@ def test_exchange_query_balances_ignore_cache(
             location='binance',
         ))
         result = assert_proper_sync_response_with_result(response)
-        assert_binance_balances_result(result)
+        assert_binance_balances_result(result['totals']['binance'])
         assert bnd.call_count == 2, 'call count should not have changed. Cache must have been used'
         assert bnl.call_count == 4, 'call count should not have changed. Cache must have been used'
         # Finally do the query and request ignoring of the cache
@@ -732,7 +907,7 @@ def test_exchange_query_balances_ignore_cache(
             location='binance',
         ), json={'ignore_cache': True})
         result = assert_proper_sync_response_with_result(response)
-        assert_binance_balances_result(result)
+        assert_binance_balances_result(result['totals']['binance'])
         assert bnd.call_count == 4, 'call count should have changed. Cache should have been ignored'  # noqa: E501
         assert bnl.call_count == 8, 'call count should have changed. Cache should have been ignored'  # noqa: E501
 
