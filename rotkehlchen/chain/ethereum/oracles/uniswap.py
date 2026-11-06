@@ -312,21 +312,15 @@ class UniswapOracle(HistoricalPriceOracleInterface, CacheableMixIn):
                 ),
             )
 
-        # Looking at which one is token0 and token1 we need to see if we need price or 1/price
-        if prices_and_tokens[0].token_0 != from_token:
-            prices_and_tokens[0] = prices_and_tokens[0].swap_tokens()
+        # Walk the route and orient every pool so that it is priced from the token
+        # entering it to the token leaving it, using price or 1/price accordingly.
+        oriented_prices, entering_token = [], from_token
+        for pool_price in prices_and_tokens:
+            oriented = pool_price if pool_price.token_0 == entering_token else pool_price.swap_tokens()  # noqa: E501
+            oriented_prices.append(oriented.price)
+            entering_token = oriented.token_1
 
-        # For the possible intermediate steps also make sure that we use the correct price
-        for pos, item in enumerate(prices_and_tokens[1:-1]):
-            if item.token_0 != prices_and_tokens[pos - 1].token_1:
-                prices_and_tokens[pos - 1] = prices_and_tokens[pos - 1].swap_tokens()
-
-        # Finally for the tail query the price
-        if prices_and_tokens[-1].token_1 != to_token:
-            prices_and_tokens[-1] = prices_and_tokens[-1].swap_tokens()
-
-        price = FVal(reduce(mul, [item.price for item in prices_and_tokens], 1))
-        return Price(price)
+        return Price(FVal(reduce(mul, oriented_prices, 1)))
 
     def query_current_price(
             self,
