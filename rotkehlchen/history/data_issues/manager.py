@@ -12,6 +12,7 @@ from rotkehlchen.history.data_issues.constants import (
     IssueKind,
     IssueSeverity,
     IssueState,
+    transition_sources,
 )
 from rotkehlchen.history.data_issues.types import (
     AutoRemediationAttempt,
@@ -100,9 +101,6 @@ def _row_to_data_issue(
 
 
 def _validate_state_transition(current_state: str | IssueState, new_state: IssueState) -> None:
-    if new_state == IssueState.DISMISSED:
-        return
-
     if isinstance(current_state, IssueState):
         current = current_state
     else:
@@ -112,6 +110,17 @@ def _validate_state_transition(current_state: str | IssueState, new_state: Issue
         raise InputError(
             f'Invalid data issue state transition from {current_state} to {new_state}',
         )
+
+
+def _resolved_at_for(state: IssueState) -> int | None:
+    """The `resolved_at` value a row takes when it enters `state`."""
+    return ts_now() if state == IssueState.RESOLVED else None
+
+
+def _source_states_clause(target: IssueState) -> tuple[str, list[IssueState]]:
+    """SQL condition and bindings selecting the rows allowed to move to `target`."""
+    sources = transition_sources(target)
+    return f'state IN ({", ".join("?" * len(sources))})', list(sources)
 
 
 def make_auto_remediation_attempt(
@@ -225,10 +234,18 @@ class DataIssuesManager:
 
         with self.db.user_write() as write_cursor:
             if existing_state == IssueState.RESOLVED:
+                _validate_state_transition(existing_state, IssueState.OPEN)
                 write_cursor.execute(
                     'UPDATE data_issues SET state = ?, ts_start = ?, ts_end = ?, '
-                    'payload_json = ?, resolved_at = NULL WHERE id = ?',
-                    (IssueState.OPEN, ts_start, ts_end, payload_json, issue_id),
+                    'payload_json = ?, resolved_at = ? WHERE id = ?',
+                    (
+                        IssueState.OPEN,
+                        ts_start,
+                        ts_end,
+                        payload_json,
+                        _resolved_at_for(IssueState.OPEN),
+                        issue_id,
+                    ),
                 )
             else:
                 write_cursor.execute(
@@ -246,19 +263,19 @@ class DataIssuesManager:
         if len(assets) == 0:
             return
 
-        resolved_at = ts_now()
+        resolved_at = _resolved_at_for(IssueState.RESOLVED)
+        sources_clause, sources = _source_states_clause(IssueState.RESOLVED)
         with self.db.user_write() as write_cursor:
             for chunk, placeholders in get_query_chunks(data=list(assets)):
                 write_cursor.execute(
                     'UPDATE data_issues SET state = ?, resolved_at = ? WHERE kind = ? '
-                    f'AND asset IN ({placeholders}) AND state NOT IN (?, ?)',
+                    f'AND asset IN ({placeholders}) AND {sources_clause}',
                     [
                         IssueState.RESOLVED,
                         resolved_at,
                         IssueKind.NEGATIVE_BALANCE,
                         *chunk,
-                        IssueState.RESOLVED,
-                        IssueState.DISMISSED,
+                        *sources,
                     ],
                 )
 
@@ -297,10 +314,11 @@ class DataIssuesManager:
             ts_end=ts_end,
         )
         if previous_delta is not None and abs(FVal(payload['delta'])) > abs(previous_delta):
+            _validate_state_transition(state, IssueState.OPEN)
             with self.db.user_write() as write_cursor:
                 write_cursor.execute(
-                    'UPDATE data_issues SET state = ?, resolved_at = NULL WHERE id = ?',
-                    (IssueState.OPEN, issue_id),
+                    'UPDATE data_issues SET state = ?, resolved_at = ? WHERE id = ? AND state = ?',
+                    (IssueState.OPEN, _resolved_at_for(IssueState.OPEN), issue_id, state),
                 )
             return IssueState.OPEN
 
@@ -313,31 +331,55 @@ class DataIssuesManager:
             asset: str,
     ) -> None:
         """Resolve, attributed to the system, a mismatch that is back within tolerance."""
+        sources_clause, sources = _source_states_clause(IssueState.RESOLVED)
         with self.db.user_write() as write_cursor:
             write_cursor.execute(
                 'UPDATE data_issues SET state = ?, resolved_at = ?, '
                 "payload_json = json_set(payload_json, '$.resolution', json(?)) "
                 "WHERE kind = ? AND location = ? AND location_label = ? AND protocol = '' "
-                'AND asset = ? AND state NOT IN (?, ?)',
+                f'AND asset = ? AND {sources_clause}',
                 (
                     IssueState.RESOLVED,
-                    ts_now(),
+                    _resolved_at_for(IssueState.RESOLVED),
                     json.dumps({'reason': 'within_tolerance'}),
                     IssueKind.CURRENT_BALANCE_MISMATCH,
                     location,
                     location_label,
                     asset,
-                    IssueState.RESOLVED,
-                    IssueState.DISMISSED,
+                    *sources,
                 ),
             )
 
+    def resolve_unmatched_bridge_issues_except(self, still_unmatched_ids: set[int]) -> None:
+        """Resolve unmatched bridge issues whose event is no longer unmatched."""
+        sources_clause, sources = _source_states_clause(IssueState.RESOLVED)
+        query = (
+            'UPDATE data_issues SET state = ?, resolved_at = ? WHERE kind = ? '
+            f'AND {sources_clause}'
+        )
+        bindings: list[Any] = [
+            IssueState.RESOLVED,
+            _resolved_at_for(IssueState.RESOLVED),
+            IssueKind.UNMATCHED_BRIDGE,
+            *sources,
+        ]
+        if len(still_unmatched_ids) > 0:
+            query += f' AND event_identifier NOT IN ({",".join("?" * len(still_unmatched_ids))})'
+            bindings.extend(still_unmatched_ids)
+        with self.db.user_write() as write_cursor:
+            write_cursor.execute(query, bindings)
+
     def reset_orphaned_remediations(self) -> None:
         """Make remediation rows left by a previous process retryable after login."""
+        _validate_state_transition(IssueState.AUTO_REMEDIATING, IssueState.UNRESOLVED)
         with self.db.user_write() as write_cursor:
             write_cursor.execute(
-                'UPDATE data_issues SET state = ? WHERE state = ?',
-                (IssueState.UNRESOLVED, IssueState.AUTO_REMEDIATING),
+                'UPDATE data_issues SET state = ?, resolved_at = ? WHERE state = ?',
+                (
+                    IssueState.UNRESOLVED,
+                    _resolved_at_for(IssueState.UNRESOLVED),
+                    IssueState.AUTO_REMEDIATING,
+                ),
             )
 
     def resolve_event_issues(
@@ -349,12 +391,13 @@ class DataIssuesManager:
         if len(issues) == 0:
             return
 
-        resolved_at = ts_now()
+        resolved_at = _resolved_at_for(IssueState.RESOLVED)
+        sources_clause, sources = _source_states_clause(IssueState.RESOLVED)
         with self.db.user_write() as write_cursor:
             write_cursor.executemany(
                 'UPDATE data_issues SET state = ?, resolved_at = ? WHERE kind = ? '
                 'AND location = ? AND location_label = ? AND protocol = ? AND asset = ? '
-                'AND event_identifier = ? AND state NOT IN (?, ?)',
+                f'AND event_identifier = ? AND {sources_clause}',
                 [(
                     IssueState.RESOLVED,
                     resolved_at,
@@ -364,8 +407,7 @@ class DataIssuesManager:
                     protocol or '',
                     asset,
                     event_identifier,
-                    IssueState.RESOLVED,
-                    IssueState.DISMISSED,
+                    *sources,
                 ) for location, location_label, protocol, asset, event_identifier in issues],
             )
 
@@ -440,12 +482,6 @@ class DataIssuesManager:
         if resolution is not None:
             payload = {**payload, 'resolution': resolution}
 
-        resolved_at = issue.resolved_at
-        if state == IssueState.RESOLVED:
-            resolved_at = ts_now()
-        elif state in {IssueState.OPEN, IssueState.AUTO_REMEDIATING, IssueState.UNRESOLVED}:
-            resolved_at = None
-
         with self.db.user_write() as write_cursor:
             row = write_cursor.execute(
                 'UPDATE data_issues SET state = ?, auto_remediation_attempts_json = ?, '
@@ -455,7 +491,7 @@ class DataIssuesManager:
                     state,
                     json.dumps(attempts, separators=(',', ':')),
                     json.dumps(payload, separators=(',', ':')),
-                    resolved_at,
+                    _resolved_at_for(state),
                     issue_id,
                 ),
             ).fetchone()
@@ -495,13 +531,22 @@ class DataIssuesManager:
 
     def dismiss(self, issue_id: int) -> DataIssue:
         issue = self.get_issue(issue_id)
+        if issue.state == IssueState.DISMISSED:
+            return issue
+
+        _validate_state_transition(issue.state, IssueState.DISMISSED)
         payload = dict(issue.payload)
         payload.pop('resolution', None)
         with self.db.user_write() as write_cursor:
             row = write_cursor.execute(
-                'UPDATE data_issues SET state = ?, payload_json = ?, resolved_at = NULL '
+                'UPDATE data_issues SET state = ?, payload_json = ?, resolved_at = ? '
                 f'WHERE id = ? RETURNING {DATA_ISSUE_COLUMNS}',
-                (IssueState.DISMISSED, json.dumps(payload, separators=(',', ':')), issue_id),
+                (
+                    IssueState.DISMISSED,
+                    json.dumps(payload, separators=(',', ':')),
+                    _resolved_at_for(IssueState.DISMISSED),
+                    issue_id,
+                ),
             ).fetchone()
         if row is None:
             raise NotFoundError(f'Data issue with id {issue_id} not found')
@@ -524,6 +569,7 @@ class DataIssuesManager:
             resolution['note'] = note
         payload = {**payload, 'resolution': resolution}
 
+        _validate_state_transition(issue.state, IssueState.RESOLVED)
         with self.db.user_write() as write_cursor:
             row = write_cursor.execute(
                 'UPDATE data_issues SET state = ?, payload_json = ?, resolved_at = ? '
@@ -531,7 +577,7 @@ class DataIssuesManager:
                 (
                     IssueState.RESOLVED,
                     json.dumps(payload, separators=(',', ':')),
-                    ts_now(),
+                    _resolved_at_for(IssueState.RESOLVED),
                     issue_id,
                 ),
             ).fetchone()

@@ -331,3 +331,72 @@ def test_dismiss_not_found(database: DBHandler) -> None:
     manager = DataIssuesManager(database)
     with pytest.raises(NotFoundError):
         manager.dismiss(999)
+
+
+def test_bulk_resolvers_only_touch_states_the_table_allows(database: DBHandler) -> None:
+    manager = DataIssuesManager(database)
+    open_id = _write_negative_balance_issue(manager, event_identifier=1)
+    unresolved_id = _write_negative_balance_issue(manager, event_identifier=2)
+    manager.update_state(unresolved_id, IssueState.AUTO_REMEDIATING)
+    manager.update_state(unresolved_id, IssueState.UNRESOLVED)
+    dismissed_id = _write_negative_balance_issue(manager, event_identifier=3)
+    manager.dismiss(dismissed_id)
+
+    manager.resolve_superseded_negative_balance_issues(frozenset({'ETH'}))
+
+    assert manager.get_issue(open_id).state == IssueState.RESOLVED
+    assert manager.get_issue(open_id).resolved_at is not None
+    assert manager.get_issue(unresolved_id).state == IssueState.RESOLVED
+    assert manager.get_issue(dismissed_id).state == IssueState.DISMISSED
+    assert manager.get_issue(dismissed_id).resolved_at is None
+
+
+def test_resolved_issue_reopens_through_the_table(database: DBHandler) -> None:
+    manager = DataIssuesManager(database)
+    issue_id = _write_negative_balance_issue(manager)
+    manager.resolve_manually(issue_id)
+    assert manager.get_issue(issue_id).resolved_at is not None
+
+    assert manager.update_state(issue_id, IssueState.OPEN).resolved_at is None
+    with pytest.raises(InputError):
+        manager.update_state(issue_id, IssueState.UNRESOLVED)
+
+
+def test_dismissed_is_terminal_and_dismiss_is_idempotent(database: DBHandler) -> None:
+    manager = DataIssuesManager(database)
+    issue_id = _write_negative_balance_issue(manager)
+    dismissed = manager.dismiss(issue_id)
+
+    assert manager.dismiss(issue_id) == dismissed
+    for state in IssueState:
+        with pytest.raises(InputError):
+            manager.update_state(issue_id, state)
+
+
+def test_resolve_unmatched_bridge_issues_except_keeps_unmatched_and_dismissed(
+        database: DBHandler,
+) -> None:
+    manager = DataIssuesManager(database)
+    ids = {}
+    for event_identifier in (1, 2, 3):
+        ids[event_identifier] = manager.write_issue(
+            IssueKind.UNMATCHED_BRIDGE,
+            location=LOCATION_ETHEREUM,
+            location_label='0x0000000000000000000000000000000000000001',
+            protocol=None,
+            asset='ETH',
+            payload={
+                'event_identifier': event_identifier,
+                'group_identifier': f'group-{event_identifier}',
+                'direction': 'deposit',
+            },
+            ts_start=1000,
+            ts_end=1000,
+        )
+    manager.dismiss(ids[3])
+
+    manager.resolve_unmatched_bridge_issues_except(still_unmatched_ids={1})
+
+    assert manager.get_issue(ids[1]).state == IssueState.OPEN
+    assert manager.get_issue(ids[2]).state == IssueState.RESOLVED
+    assert manager.get_issue(ids[3]).state == IssueState.DISMISSED

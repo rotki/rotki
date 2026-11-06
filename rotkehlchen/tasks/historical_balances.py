@@ -25,6 +25,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.bucket_state import (
     BucketKey,
+    BucketRunState,
     BucketStop,
     get_retained_stops,
     make_bucket_key,
@@ -75,7 +76,7 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.lockable import skip_if_running
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Mapping, Sequence
 
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
@@ -312,8 +313,6 @@ type ModifiedBucketData = tuple[TimestampMS, int]
 type ModifiedBuckets = dict[Bucket, ModifiedBucketData]
 type EventIssueScope = tuple[str, str | None, str | None, str, int]
 type RebasingReconciliationPoints = dict[tuple[int, Bucket], int | None]
-type PendingRebasingEvents = dict[Bucket, HistoryBaseEntry]
-type StoppedBuckets = dict[BucketKey, BucketStop]
 
 
 def _load_bucket_balances_before_ts(
@@ -594,10 +593,8 @@ def process_historical_balances(
 
     metrics_batch: list[MetricRow] = []
     modified_buckets: ModifiedBuckets = {}
-    pending_rebasing_events: PendingRebasingEvents = {}
-    reported_rebasing_buckets: set[Bucket] = set()
+    run_state = BucketRunState[Bucket](make_key=_bucket_key)
     resolved_rebasing_events: list[EventIssueScope] = []
-    stopped_buckets: StoppedBuckets = {}
     first_batch_written, send_ws_every = False, msg_aggregator.how_many_events_per_ws(total_events)
     for idx, event in enumerate(events):
         for event_to_apply in events_to_apply if (events_to_apply := _maybe_add_profit_event(
@@ -614,10 +611,8 @@ def process_historical_balances(
                 chains_aggregator=chains_aggregator,
                 metrics_batch=metrics_batch,
                 modified_buckets=modified_buckets,
-                pending_rebasing_events=pending_rebasing_events,
-                reported_rebasing_buckets=reported_rebasing_buckets,
+                run_state=run_state,
                 resolved_rebasing_events=resolved_rebasing_events,
-                stopped_buckets=stopped_buckets,
                 last_run_ts=last_run_ts,
                 rebasing_assets=rebasing_assets,
                 rebasing_reconciliation_points=rebasing_reconciliation_points,
@@ -678,7 +673,7 @@ def process_historical_balances(
         database=database,
         modification_ts_at_start=modification_ts_at_start,
         from_ts=from_ts,
-        stopped_buckets=stopped_buckets,
+        stopped_buckets=run_state.stops,
     )
     msg_aggregator.add_message(
         message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
@@ -813,32 +808,14 @@ def _detect_unmatched_bridge_issues(database: DBHandler) -> None:
                 ts_end=event.timestamp,
             )
 
-    # System-resolve issues whose leg is no longer unmatched (got matched, ignored
-    # or resolved as external). This is an observed fact, not a user/remediation
-    # state transition, so it bypasses the state machine on purpose.
-    with database.user_write() as write_cursor:
-        query = (
-            'UPDATE data_issues SET state = ?, resolved_at = ? WHERE kind = ? '
-            'AND state != ? AND resolved_at IS NULL'
-        )
-        bindings: tuple = (
-            IssueState.RESOLVED,
-            ts_now(),
-            IssueKind.UNMATCHED_BRIDGE,
-            IssueState.DISMISSED,
-        )
-        if len(unmatched_ids) > 0:
-            placeholders = ','.join(['?'] * len(unmatched_ids))
-            query += f' AND event_identifier NOT IN ({placeholders})'
-            bindings += tuple(unmatched_ids)
-        write_cursor.execute(query, bindings)
+    issues_manager.resolve_unmatched_bridge_issues_except(still_unmatched_ids=unmatched_ids)
 
 
 def _finalize_processing(
         database: DBHandler,
         modification_ts_at_start: int | None,
         from_ts: TimestampMS | None,
-        stopped_buckets: StoppedBuckets,
+        stopped_buckets: Mapping[BucketKey, BucketStop],
 ) -> None:
     """Update cache timestamps. Only clears stale marker if no modifications during processing.
 
@@ -917,25 +894,12 @@ def _write_metrics_batch(
     )
 
 
-def _record_stop(
-        stopped_buckets: StoppedBuckets,
-        bucket: Bucket,
-        event: HistoryBaseEntry,
-        balance_before_event: FVal,
-        negative_amount: FVal,
-) -> None:
-    """Remember the event at which the bucket stopped being processed, see BucketStop."""
-    assert event.identifier is not None, 'Processed history events should have identifiers'
-    stopped_buckets[make_bucket_key(
+def _bucket_key(bucket: Bucket) -> BucketKey:
+    return make_bucket_key(
         location=bucket.location,
         location_label=bucket.location_label,
         protocol=bucket.protocol,
         asset=bucket.asset,
-    )] = BucketStop(
-        event_identifier=event.identifier,
-        event_timestamp=event.timestamp,
-        derived_balance_before_event=balance_before_event,
-        negative_amount=negative_amount,
     )
 
 
@@ -946,10 +910,8 @@ def _apply_to_buckets(
         chains_aggregator: ChainsAggregator | None,
         metrics_batch: list[MetricRow],
         modified_buckets: ModifiedBuckets,
-        pending_rebasing_events: PendingRebasingEvents,
-        reported_rebasing_buckets: set[Bucket],
+        run_state: BucketRunState[Bucket],
         resolved_rebasing_events: list[EventIssueScope],
-        stopped_buckets: StoppedBuckets,
         last_run_ts: Timestamp | None,
         rebasing_assets: frozenset[str],
         rebasing_reconciliation_points: RebasingReconciliationPoints,
@@ -965,7 +927,7 @@ def _apply_to_buckets(
     for bucket_idx, (bucket, direction) in enumerate(bucket_directions):
         if (
             (current_balance := bucket_balances.get(bucket, ZERO)) < ZERO and
-            bucket not in pending_rebasing_events
+            not run_state.is_awaiting_reconciliation(bucket)
         ):
             continue
 
@@ -986,15 +948,14 @@ def _apply_to_buckets(
                     block_number=None,
                     reason='unsupported_bucket',
                 )
-                _record_stop(stopped_buckets, bucket, event, current_balance, new_balance)
+                run_state.record_stop(bucket, event, current_balance, new_balance)
                 bucket_balances[bucket] = new_balance
                 continue
 
-            if new_balance < ZERO and bucket not in pending_rebasing_events:
-                pending_rebasing_events[bucket] = event
-                _record_stop(stopped_buckets, bucket, event, current_balance, new_balance)
+            if new_balance < ZERO and not run_state.is_awaiting_reconciliation(bucket):
+                run_state.await_reconciliation(bucket, event, current_balance, new_balance)
 
-            if (negative_event := pending_rebasing_events.get(bucket)) is not None:
+            if (negative_event := run_state.negative_event(bucket)) is not None:
                 reconciliation_key = (event.identifier, bucket)
                 if (
                     reconciliation_key not in rebasing_reconciliation_points or
@@ -1011,8 +972,7 @@ def _apply_to_buckets(
                     chains_aggregator=chains_aggregator,
                 )
                 if failure is not None:
-                    if bucket not in reported_rebasing_buckets:
-                        reported_rebasing_buckets.add(bucket)
+                    if run_state.report_failure_once(bucket):
                         _write_rebasing_issue(
                             database=database,
                             event=negative_event,
@@ -1025,14 +985,7 @@ def _apply_to_buckets(
 
                 assert onchain_balance is not None
                 assert negative_event.identifier is not None
-                del pending_rebasing_events[bucket]
-                stopped_buckets.pop(make_bucket_key(
-                    location=bucket.location,
-                    location_label=bucket.location_label,
-                    protocol=bucket.protocol,
-                    asset=bucket.asset,
-                ), None)
-                reported_rebasing_buckets.discard(bucket)
+                run_state.reconcile(bucket)
                 resolved_rebasing_events.append((
                     bucket.location,
                     bucket.location_label,
@@ -1097,7 +1050,7 @@ def _apply_to_buckets(
                 event.identifier,
                 bucket,
             )
-            _record_stop(stopped_buckets, bucket, event, current_balance, new_balance)
+            run_state.record_stop(bucket, event, current_balance, new_balance)
             bucket_balances[bucket] = new_balance
             continue
 
