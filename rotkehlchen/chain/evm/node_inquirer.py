@@ -61,7 +61,7 @@ from rotkehlchen.chain.evm.types import (
     WeightedNode,
 )
 from rotkehlchen.chain.mixins.rpc_nodes import EVMRPCMixin, _is_rate_limit_error
-from rotkehlchen.chain.optimism.constants import OP_BEDROCK_UPGRADE
+from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ONE
@@ -1181,6 +1181,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         single node with one batched JSON-RPC request each and returns them in the order of
         the given hashes. Genesis is not supported, see ensure_genesis_tx_data_exists.
 
+        Receipts of Optimism transactions before bedrock are left out of the batch and are
+        queried by deserialization instead, since it has to ask the official node first.
+
         May raise:
         - RemoteError if web3 is None (indexers don't support JSON-RPC batching), if the node
           errors on or mishandles a batched request, or if a transaction can't be deserialized,
@@ -1211,17 +1214,27 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 f'batched query for {len(tx_hashes)} transactions',
             )
 
-        receipts = self._get_transaction_receipts(web3=web3, tx_hashes=tx_hashes)
         block_timestamps: dict[int, Timestamp] = {}
-        block_numbers = []
-        for tx_data in tx_results:
+        block_numbers: list[int] = []
+        receipt_hashes: list[EVMTxHash] = []
+        for tx_hash, tx_data in zip(tx_hashes, tx_results, strict=True):
             if (block_number := tx_data['blockNumber']) is None:
-                raise RemoteError(f'{self.chain_name} transaction {tx_data["hash"]!s} is pending')
+                raise RemoteError(f'{self.chain_name} transaction {tx_hash!s} is pending')
             if (cached := self.block_to_timestamp_cache.get(block_number)) is not None:
                 block_timestamps[block_number] = cached
             elif block_number not in block_timestamps:
                 block_timestamps[block_number] = Timestamp(0)  # placeholder until queried
                 block_numbers.append(block_number)
+            # Some nodes return null L1 fees for Optimism transactions before bedrock, so
+            # leave those receipts to deserialization, which queries the official node first.
+            if not (self.chain_id == ChainID.OPTIMISM and block_number < OP_BEDROCK_BLOCK):
+                receipt_hashes.append(tx_hash)
+
+        receipts: dict[EVMTxHash, dict[str, Any]] = {} if len(receipt_hashes) == 0 else dict(zip(
+            receipt_hashes,
+            self._get_transaction_receipts(web3=web3, tx_hashes=receipt_hashes),
+            strict=True,
+        ))
 
         if len(block_numbers) != 0:
             try:
@@ -1245,7 +1258,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 self.block_to_timestamp_cache.add(key=block_number, value=timestamp)
 
         result = []
-        for raw_tx_data, receipt in zip(tx_results, receipts, strict=True):
+        for tx_hash, raw_tx_data in zip(tx_hashes, tx_results, strict=True):
             tx_data = dict(raw_tx_data)  # copy so that the block timestamp can be added
             tx_data['timeStamp'] = block_timestamps[tx_data['blockNumber']]
             try:
@@ -1254,12 +1267,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     internal=False,
                     chain_id=self.chain_id,
                     evm_inquirer=self,
-                    # Some nodes return null L1 fees for Optimism transactions before bedrock,
-                    # so let deserialization query those receipts from the official node.
-                    receipt_data=None if (
-                        self.chain_id == ChainID.OPTIMISM and
-                        tx_data['timeStamp'] < OP_BEDROCK_UPGRADE
-                    ) else receipt,
+                    receipt_data=receipts.get(tx_hash),
                 )
             except (DeserializationError, ValueError) as e:
                 raise RemoteError(

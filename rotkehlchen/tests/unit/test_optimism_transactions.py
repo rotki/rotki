@@ -25,6 +25,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
+from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.optimism import OPTIMISM_MAINNET_NODE
 from rotkehlchen.types import (
@@ -1277,3 +1278,38 @@ def test_not_covered_older_range_does_not_skip_newer_range(
         assert optimism_transactions.database.get_used_query_range(cursor, location_string) == (
             OP_BEDROCK_UPGRADE + 10, OP_BEDROCK_UPGRADE + 1000,
         )
+
+
+@pytest.mark.parametrize('optimism_manager_connect_at_start', [(OPTIMISM_MAINNET_NODE,)])
+def test_batched_transactions_skip_pre_bedrock_receipts(
+        optimism_inquirer: OptimismInquirer,
+        optimism_manager_connect_at_start: list[WeightedNode],
+) -> None:
+    """Receipts of pre-bedrock transactions are left out of the receipt batch and queried
+    once by deserialization from the official node, so they aren't fetched twice."""
+    optimism_inquirer.maybe_connect_to_nodes(when_tracked_accounts=False)
+    wait_until_all_nodes_connected(
+        connect_at_start=optimism_manager_connect_at_start,
+        evm_inquirer=optimism_inquirer,
+    )
+    pre_bedrock_hash, post_bedrock_hash = (deserialize_evm_tx_hash(x) for x in (
+        '0x833cdf3278bae2bde858296d3da9ad7b96703d35320a566c3ea8a90c0bcd850d',  # block 105235050
+        '0x6eb136db4d36cf695f4026da16f602ed4a2583b2420dbbcbd4f436943190b665',
+    ))
+    with (
+        patch.object(optimism_inquirer, '_get_transaction_receipts', wraps=optimism_inquirer._get_transaction_receipts) as batched_receipts,  # noqa: E501
+        patch.object(optimism_inquirer, 'get_transaction_receipt', wraps=optimism_inquirer.get_transaction_receipt) as single_receipt,  # noqa: E501
+    ):
+        result = optimism_inquirer.get_transactions_by_hash(
+            tx_hashes=[pre_bedrock_hash, post_bedrock_hash],
+        )
+
+    assert result is not None
+    assert [tx.tx_hash for tx, _ in result] == [pre_bedrock_hash, post_bedrock_hash]
+    assert batched_receipts.call_count == 1
+    assert batched_receipts.call_args.kwargs['tx_hashes'] == [post_bedrock_hash]
+    assert single_receipt.call_count == 1
+    assert single_receipt.call_args.kwargs['tx_hash'] == pre_bedrock_hash
+    assert result[0][0].l1_fee == 137626007283240  # type: ignore[attr-defined]  # optimism tx
+    assert result[1][0].l1_fee == 115752642875381  # type: ignore[attr-defined]  # optimism tx
+    assert all(deserialize_evm_tx_hash(receipt['transactionHash']) == tx.tx_hash for tx, receipt in result)  # noqa: E501
