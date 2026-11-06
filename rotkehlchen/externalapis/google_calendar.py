@@ -65,7 +65,7 @@ class GoogleCalendarAPI:
                 self._credentials.refresh_token
             ):
                 log.debug('Refreshing expired Google Calendar credentials')
-                self._credentials.refresh(Request())
+                self._credentials.refresh(Request())  # type: ignore[no-untyped-call]
                 self._store_external_credentials(
                     self._credentials.token or '',
                     self._credentials.refresh_token,
