@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeVar, cast, overload
 
 import requests
 from eth_utils import is_hexstr
@@ -61,6 +61,7 @@ from rotkehlchen.chain.evm.types import (
     WeightedNode,
 )
 from rotkehlchen.chain.mixins.rpc_nodes import EVMRPCMixin, _is_rate_limit_error
+from rotkehlchen.chain.optimism.constants import OP_BEDROCK_UPGRADE
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ONE
@@ -1170,6 +1171,137 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             tx_hash=tx_hash,
             must_exist=True,
         )
+
+    def _get_transactions_by_hash(
+            self,
+            web3: Web3 | None,
+            tx_hashes: Sequence[EVMTxHash],
+    ) -> list[tuple[EvmTransaction, dict[str, Any]]]:
+        """Queries the transactions, their receipts and the timestamps of their blocks from a
+        single node with one batched JSON-RPC request each and returns them in the order of
+        the given hashes. Genesis is not supported, see ensure_genesis_tx_data_exists.
+
+        May raise:
+        - RemoteError if web3 is None (indexers don't support JSON-RPC batching), if the node
+          errors on or mishandles a batched request, or if a transaction can't be deserialized,
+          so that _query() fails over to the next node
+        - TransactionNotFound if the node is missing any of the transactions or receipts, in
+          which case _query() returns None and the caller falls back to per-tx queries
+        """
+        if web3 is None:
+            raise RemoteError(f'Batched transaction queries for {self.chain_name} require an rpc node')  # noqa: E501
+
+        try:
+            with web3.batch_requests() as batch:
+                for tx_hash in tx_hashes:
+                    batch.add(web3.eth.get_transaction(tx_hash))  # type: ignore
+                tx_results = cast('list[dict[str, Any]]', batch.execute())
+        except (Web3Exception, KeyError) as e:
+            if isinstance(e, TransactionNotFound):
+                raise  # the node is missing a transaction. Handled by _query() as documented
+
+            raise RemoteError(
+                f'Batched transaction query to a {self.chain_name} node failed, probably '
+                f'due to the node not supporting batched requests: {e!s}',
+            ) from e
+
+        if len(tx_results) != len(tx_hashes):
+            raise RemoteError(
+                f'A {self.chain_name} node returned {len(tx_results)} transactions to a '
+                f'batched query for {len(tx_hashes)} transactions',
+            )
+
+        receipts = self._get_transaction_receipts(web3=web3, tx_hashes=tx_hashes)
+        block_timestamps: dict[int, Timestamp] = {}
+        block_numbers = []
+        for tx_data in tx_results:
+            if (block_number := tx_data['blockNumber']) is None:
+                raise RemoteError(f'{self.chain_name} transaction {tx_data["hash"]!s} is pending')
+            if (cached := self.block_to_timestamp_cache.get(block_number)) is not None:
+                block_timestamps[block_number] = cached
+            elif block_number not in block_timestamps:
+                block_timestamps[block_number] = Timestamp(0)  # placeholder until queried
+                block_numbers.append(block_number)
+
+        if len(block_numbers) != 0:
+            try:
+                with web3.batch_requests() as batch:
+                    for block_number in block_numbers:
+                        batch.add(web3.eth.get_block(block_number))
+                    block_results = cast('list[dict[str, Any]]', batch.execute())
+            except (Web3Exception, KeyError) as e:
+                raise RemoteError(
+                    f'Batched block query to a {self.chain_name} node failed: {e!s}',
+                ) from e
+
+            if len(block_results) != len(block_numbers):
+                raise RemoteError(
+                    f'A {self.chain_name} node returned {len(block_results)} blocks to a '
+                    f'batched query for {len(block_numbers)} blocks',
+                )
+            for block_number, block_data in zip(block_numbers, block_results, strict=True):
+                timestamp = Timestamp(read_integer(block_data, 'timestamp', 'web3'))
+                block_timestamps[block_number] = timestamp
+                self.block_to_timestamp_cache.add(key=block_number, value=timestamp)
+
+        result = []
+        for raw_tx_data, receipt in zip(tx_results, receipts, strict=True):
+            tx_data = dict(raw_tx_data)  # copy so that the block timestamp can be added
+            tx_data['timeStamp'] = block_timestamps[tx_data['blockNumber']]
+            try:
+                transaction, receipt_data = deserialize_evm_transaction(
+                    data=tx_data,
+                    internal=False,
+                    chain_id=self.chain_id,
+                    evm_inquirer=self,
+                    # Some nodes return null L1 fees for Optimism transactions before bedrock,
+                    # so let deserialization query those receipts from the official node.
+                    receipt_data=None if (
+                        self.chain_id == ChainID.OPTIMISM and
+                        tx_data['timeStamp'] < OP_BEDROCK_UPGRADE
+                    ) else receipt,
+                )
+            except (DeserializationError, ValueError) as e:
+                raise RemoteError(
+                    f'Couldnt deserialize evm transaction data from {tx_data}. Error: {e!s}',
+                ) from e
+
+            result.append((transaction, receipt_data))
+
+        return result
+
+    def get_transactions_by_hash(
+            self,
+            tx_hashes: Sequence[EVMTxHash],
+            call_order: Sequence[WeightedNode] | None = None,
+    ) -> list[tuple[EvmTransaction, dict[str, Any]]] | None:
+        """Retrieves the transactions and raw receipts of the given tx hashes, which must exist
+        on-chain, with batched JSON-RPC requests and returns them in the order of the hashes.
+
+        Only already-connected non-pruned rpc nodes are tried, since indexers don't support
+        batching and old transactions may be missing from pruned nodes. Returns None if no
+        such node exists or none of them could serve the full batch, in which case the caller
+        should fall back to get_transaction_by_hash for each hash.
+        """
+        if len(tx_hashes) == 0:
+            return []
+
+        web3_call_order = [
+            node for node in (call_order if call_order is not None else self.default_call_order())
+            if (rpc_node := self.rpc_mapping.get(node.node_info)) is not None and
+            rpc_node.is_pruned is False
+        ]
+        if len(web3_call_order) == 0:
+            return None
+
+        try:
+            return self._query(
+                method=self._get_transactions_by_hash,
+                call_order=web3_call_order,
+                tx_hashes=tx_hashes,
+            )
+        except RemoteError:
+            return None
 
     def get_logs(
             self,

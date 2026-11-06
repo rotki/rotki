@@ -621,6 +621,16 @@ def vcr_fixture(vcr: VCR) -> VCR:
             elif key not in params2 and key in params1 and set(params1[key]).issubset(default_values):  # noqa: E501
                 params1.pop(key)
 
+        # Block timestamps are now read from header-only blocks. A full block, which existing
+        # cassettes recorded, carries the same header, so let it answer the header-only request.
+        if (
+            params1.get('action') == params2.get('action') == ['eth_getBlockByNumber'] and
+            params1.get('boolean') == ['false'] and
+            params2.get('boolean') == ['true']
+        ):
+            params1.pop('boolean')
+            params2.pop('boolean')
+
         return params1 == params2
 
     vcr.register_matcher('alchemy_api_matcher', alchemy_api_matcher)
