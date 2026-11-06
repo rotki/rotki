@@ -36,12 +36,13 @@ type BackoffCall<T> = () => Promise<T>;
 /** Waits `duration` ms, or until `signal` aborts, whichever comes first. */
 export async function wait(duration: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const done = (): void => {
       clearTimeout(timer);
       signal?.removeEventListener('abort', done);
       resolve();
     };
-    const timer = setTimeout(done, duration);
+    timer = setTimeout(done, duration);
     signal?.addEventListener('abort', done, { once: true });
   });
 }
