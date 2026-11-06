@@ -27,7 +27,7 @@ export function useHistoryEventsDeletion(
   requestPayload?: ComputedRef<HistoryEventRequestPayload>,
 ): UseHistoryEventsDeletionReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { show: showConfirm } = useConfirmStore();
+  const { ask } = useConfirmStore();
   const { showErrorMessage, showSuccessMessage } = useNotifications();
   const { deleteHistoryEvent: deleteHistoryEventApi, deleteTransactions } = useHistoryEventsApi();
   const { deleteHistoryEvent } = useHistoryEvents();
@@ -78,8 +78,11 @@ export function useHistoryEventsDeletion(
 
         for (const eventId of eventIds) {
           const event = allEvents.find((e: HistoryEventEntry) => e.identifier === eventId);
-          if (event)
-            await ignoreSingle(event, true);
+          if (!event)
+            continue;
+          const status = await ignoreSingle(event, true);
+          if (!status.success)
+            return status;
         }
       }
       return { success: true };
@@ -144,36 +147,31 @@ export function useHistoryEventsDeletion(
       title: t('transactions.events.confirmation.delete.title'),
     };
 
-    await new Promise<void>((resolve) => {
-      showConfirm(
-        confirmation,
-        async () => {
-          try {
-            // Remove pagination and sorting params for filter-based deletion
-            const filterParams = objectOmit(filterPayload, [
-              'aggregateByGroupIds',
-              'ascending',
-              'ignoreCache',
-              'limit',
-              'offset',
-              'onlyCache',
-              'orderByAttributes',
-            ]);
-            const result = await deleteHistoryEventApi(filterParams, true);
-            showDeletionResult(result, totalCount, 'delete', undefined, true);
+    if (await ask(confirmation) !== 'confirm')
+      return;
 
-            if (result) {
-              selectionMode.actions.exit();
-              await refreshCallback();
-            }
-          }
-          catch (error: unknown) {
-            showDeletionResult(false, totalCount, 'delete', getErrorMessage(error), true);
-          }
-          resolve();
-        },
-      );
-    });
+    try {
+      // Remove pagination and sorting params for filter-based deletion
+      const filterParams = objectOmit(filterPayload, [
+        'aggregateByGroupIds',
+        'ascending',
+        'ignoreCache',
+        'limit',
+        'offset',
+        'onlyCache',
+        'orderByAttributes',
+      ]);
+      const result = await deleteHistoryEventApi(filterParams, true);
+      showDeletionResult(result, totalCount, 'delete', undefined, true);
+
+      if (result) {
+        selectionMode.actions.exit();
+        await refreshCallback();
+      }
+    }
+    catch (error: unknown) {
+      showDeletionResult(false, totalCount, 'delete', getErrorMessage(error), true);
+    }
   }
 
   async function deleteSelected(): Promise<void> {
@@ -231,30 +229,25 @@ export function useHistoryEventsDeletion(
 
     const confirmation = buildDeletionConfirmationMessage(strategy, t);
 
-    await new Promise<void>((resolve) => {
-      showConfirm(
-        confirmation,
-        async () => {
-          const txResult = await deleteCompleteTransactions(transactions);
-          const eventsResult = await deletePartialEvents(remainingEventIds);
+    const choice = await ask(confirmation);
+    if (choice === 'alternative') {
+      await handleIgnoreOption(transactions, remainingEventIds);
+      return;
+    }
+    if (choice !== 'confirm')
+      return;
 
-          const success = txResult.success && eventsResult.success;
-          const message = txResult.message ?? eventsResult.message;
-          showDeletionResult(success, totalCount, 'delete', message);
+    const txResult = await deleteCompleteTransactions(transactions);
+    const eventsResult = await deletePartialEvents(remainingEventIds);
 
-          if (success) {
-            selectionMode.actions.exit();
-            await refreshCallback();
-          }
-          resolve();
-        },
-        resolve,
-        async () => {
-          await handleIgnoreOption(transactions, remainingEventIds);
-          resolve();
-        },
-      );
-    });
+    const success = txResult.success && eventsResult.success;
+    const message = txResult.message ?? eventsResult.message;
+    showDeletionResult(success, totalCount, 'delete', message);
+
+    if (success) {
+      selectionMode.actions.exit();
+      await refreshCallback();
+    }
   }
 
   async function handlePartialEventDeletion(
@@ -273,21 +266,16 @@ export function useHistoryEventsDeletion(
       count: displayCount,
     });
 
-    await new Promise<void>((resolve) => {
-      showConfirm(
-        confirmation,
-        async () => {
-          const result = await deletePartialEvents(eventIds);
-          showDeletionResult(result.success, displayCount, 'delete', result.message);
+    if (await ask(confirmation) !== 'confirm')
+      return;
 
-          if (result.success) {
-            selectionMode.actions.exit();
-            await refreshCallback();
-          }
-          resolve();
-        },
-      );
-    });
+    const result = await deletePartialEvents(eventIds);
+    showDeletionResult(result.success, displayCount, 'delete', result.message);
+
+    if (result.success) {
+      selectionMode.actions.exit();
+      await refreshCallback();
+    }
   }
 
   async function handleIgnoreOption(
@@ -301,25 +289,20 @@ export function useHistoryEventsDeletion(
 
     const ignoreConfirmation = buildDeletionConfirmationMessage(ignoreStrategy, t);
 
-    await new Promise<void>((resolve) => {
-      showConfirm(
-        ignoreConfirmation,
-        async () => {
-          const ignoreResult = await ignoreTransactionEvents(transactions);
-          const deleteResult = await deletePartialEvents(remainingEventIds);
+    if (await ask(ignoreConfirmation) !== 'confirm')
+      return;
 
-          const success = ignoreResult.success && deleteResult.success;
-          const message = ignoreResult.message ?? deleteResult.message;
-          showDeletionResult(success, transactions.size, 'ignore', message);
+    const ignoreResult = await ignoreTransactionEvents(transactions);
+    const deleteResult = await deletePartialEvents(remainingEventIds);
 
-          if (success) {
-            selectionMode.actions.exit();
-            await refreshCallback();
-          }
-          resolve();
-        },
-      );
-    });
+    const success = ignoreResult.success && deleteResult.success;
+    const message = ignoreResult.message ?? deleteResult.message;
+    showDeletionResult(success, transactions.size, 'ignore', message);
+
+    if (success) {
+      selectionMode.actions.exit();
+      await refreshCallback();
+    }
   }
 
   /**
@@ -347,29 +330,24 @@ export function useHistoryEventsDeletion(
 
     const confirmation = buildDeletionConfirmationMessage(strategy, t);
 
-    await new Promise<void>((resolve) => {
-      showConfirm(
-        confirmation,
-        async () => {
-          let txResult: { message?: string; success: boolean } = { success: true };
-          if (transactions.size > 0) {
-            txResult = await deleteCompleteTransactions(transactions);
-          }
+    if (await ask(confirmation) !== 'confirm')
+      return;
 
-          const eventsResult = await deletePartialEvents(allEventIds);
+    let txResult: { message?: string; success: boolean } = { success: true };
+    if (transactions.size > 0) {
+      txResult = await deleteCompleteTransactions(transactions);
+    }
 
-          const success = txResult.success && eventsResult.success;
-          const message = txResult.message ?? eventsResult.message;
-          showDeletionResult(success, allEventIds.length, 'delete', message);
+    const eventsResult = await deletePartialEvents(allEventIds);
 
-          if (success) {
-            selectionMode.actions.exit();
-            await refreshCallback();
-          }
-          resolve();
-        },
-      );
-    });
+    const success = txResult.success && eventsResult.success;
+    const message = txResult.message ?? eventsResult.message;
+    showDeletionResult(success, allEventIds.length, 'delete', message);
+
+    if (success) {
+      selectionMode.actions.exit();
+      await refreshCallback();
+    }
   }
 
   return {

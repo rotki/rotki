@@ -1,4 +1,5 @@
 import type { Ref } from 'vue';
+import type { ActionStatus } from '@/modules/core/common/action';
 import type { EntryMeta } from '@/modules/history/meta';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useIgnore } from '@/modules/history/use-ignore';
@@ -37,8 +38,8 @@ function item(groupIdentifier: string, ignoredInAccounting = false): TestItem {
 }
 
 function setup(items: TestItem[]): {
-  ignore: (ignored: boolean) => Promise<void>;
-  ignoreSingle: (item: TestItem, ignored: boolean) => Promise<void>;
+  ignore: (ignored: boolean) => Promise<ActionStatus>;
+  ignoreSingle: (item: TestItem, ignored: boolean) => Promise<ActionStatus>;
   toggle: (item: TestItem) => Promise<void>;
   refresh: ReturnType<typeof vi.fn>;
   selected: Ref<TestItem[]>;
@@ -104,11 +105,12 @@ describe('useIgnore', () => {
     spies.ignoreActions.mockRejectedValue(new Error('boom'));
     const { ignore, refresh, selected } = setup([item('a')]);
 
-    await ignore(true);
+    const status = await ignore(true);
 
     expect(spies.showErrorMessage).toHaveBeenCalledOnce();
     expect(refresh).not.toHaveBeenCalled();
     expect(get(selected)).toHaveLength(1);
+    expect(status).toEqual({ message: 'boom', success: false });
   });
 
   it('should toggle a single item based on its current state', async () => {

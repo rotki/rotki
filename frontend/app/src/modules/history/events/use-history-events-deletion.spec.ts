@@ -1,7 +1,8 @@
 import type { TransactionGroup } from './use-event-analysis';
+import type { ConfirmChoice } from '@/modules/core/common/use-confirm-store';
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { HistoryEventRow } from '@/modules/history/events/schemas';
+import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryEventsDeletion } from './use-history-events-deletion';
@@ -9,7 +10,7 @@ import { useHistoryEventsSelectionMode } from './use-selection-mode';
 
 const { spies } = vi.hoisted(() => ({
   spies: {
-    showConfirm: vi.fn(),
+    ask: vi.fn<(message: object) => Promise<ConfirmChoice>>(),
     showErrorMessage: vi.fn(),
     showSuccessMessage: vi.fn(),
     deleteHistoryEventApi: vi.fn(),
@@ -22,7 +23,7 @@ const { spies } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): object => ({ show: spies.showConfirm }),
+  useConfirmStore: (): object => ({ ask: spies.ask }),
 }));
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: (): object => ({ getChain: spies.getChain }),
@@ -67,16 +68,10 @@ function setup(requestPayload?: HistoryEventRequestPayload): {
   return { deletion, refreshCallback, selectionMode };
 }
 
-/**
- * Answers the confirm dialog a deletion is waiting on, then awaits the deletion itself.
- *
- * @param run - the deletion call, started but not awaited, since it settles only once answered
- * @param index - argument position of the callback in `show(message, onConfirm, onDismiss)`, so
- * 1 confirms and 2 dismisses
- */
-async function drive(run: Promise<void>, index = 1): Promise<void> {
-  await spies.showConfirm.mock.calls[0][index]();
-  await run;
+/** Queues how each confirmation the deletion raises gets answered, in order. */
+function answer(...choices: ConfirmChoice[]): void {
+  for (const choice of choices)
+    spies.ask.mockResolvedValueOnce(choice);
 }
 
 describe('useHistoryEventsDeletion', () => {
@@ -95,104 +90,163 @@ describe('useHistoryEventsDeletion', () => {
   it('should do nothing when the selection is empty', async () => {
     const { deletion } = setup();
     await deletion.deleteSelected();
-    expect(spies.showConfirm).not.toHaveBeenCalled();
+    expect(spies.ask).not.toHaveBeenCalled();
     expect(get(deletion.isDeleting)).toBe(false);
   });
 
-  it('should delete by filter when select-all-matching is active', async () => {
-    const { deletion, refreshCallback, selectionMode } = setup({
-      aggregateByGroupIds: true,
-      ascending: [true],
-      limit: 10,
-      notesSubstring: 'needle',
-      offset: 0,
-      onlyCache: true,
+  describe('select all matching', () => {
+    function selectAllMatching(): ReturnType<typeof setup> {
+      const context = setup({
+        aggregateByGroupIds: true,
+        ascending: [true],
+        limit: 10,
+        notesSubstring: 'needle',
+        offset: 0,
+        onlyCache: true,
+      });
+      context.selectionMode.actions.toggleSelectAllMatching();
+      context.selectionMode.setTotalMatchingCount(42);
+      return context;
+    }
+
+    it('should delete by filter once confirmed, without the pagination and sort keys', async () => {
+      answer('confirm');
+      const { deletion, refreshCallback } = selectAllMatching();
+
+      await deletion.deleteSelected();
+
+      expect(spies.ask).toHaveBeenCalledOnce();
+      expect(spies.deleteHistoryEventApi).toHaveBeenCalledWith({ notesSubstring: 'needle' }, true);
+      expect(spies.showSuccessMessage).toHaveBeenCalledOnce();
+      expect(refreshCallback).toHaveBeenCalledOnce();
+      expect(get(deletion.isDeleting)).toBe(false);
     });
-    selectionMode.actions.toggleSelectAllMatching();
-    selectionMode.setTotalMatchingCount(42);
 
-    const run = deletion.deleteSelected();
-    expect(spies.showConfirm).toHaveBeenCalledOnce();
+    it('should settle without deleting when cancelled', async () => {
+      answer('dismiss');
+      const { deletion } = selectAllMatching();
 
-    await drive(run);
-    // pagination/sort keys are stripped before the filter delete
-    expect(spies.deleteHistoryEventApi).toHaveBeenCalledWith({ notesSubstring: 'needle' }, true);
-    expect(spies.showSuccessMessage).toHaveBeenCalledOnce();
-    expect(refreshCallback).toHaveBeenCalledOnce();
-    expect(get(deletion.isDeleting)).toBe(false);
+      await deletion.deleteSelected();
+
+      expect(spies.deleteHistoryEventApi).not.toHaveBeenCalled();
+      expect(get(deletion.isDeleting)).toBe(false);
+    });
   });
 
   it('should delete partial events through the confirmation', async () => {
+    answer('confirm');
     spies.analyzeSelectedEvents.mockReturnValue({ completeTransactions: new Map(), partialEventIds: [1, 2], partialSwapGroups: [] });
     const { deletion, refreshCallback, selectionMode } = setup();
     selectionMode.actions.toggleEvent(1);
     selectionMode.actions.toggleEvent(2);
 
-    await drive(deletion.deleteSelected());
+    await deletion.deleteSelected();
 
     expect(spies.deleteHistoryEvent).toHaveBeenCalledWith([1, 2], false);
     expect(spies.showSuccessMessage).toHaveBeenCalledOnce();
     expect(refreshCallback).toHaveBeenCalledOnce();
   });
 
+  it('should settle without deleting partial events when cancelled', async () => {
+    answer('dismiss');
+    spies.analyzeSelectedEvents.mockReturnValue({ completeTransactions: new Map(), partialEventIds: [1], partialSwapGroups: [] });
+    const { deletion, selectionMode } = setup();
+    selectionMode.actions.toggleEvent(1);
+
+    await deletion.deleteSelected();
+
+    expect(spies.deleteHistoryEvent).not.toHaveBeenCalled();
+    expect(get(deletion.isDeleting)).toBe(false);
+  });
+
   it('should surface an error when partial event deletion fails', async () => {
+    answer('confirm');
     spies.deleteHistoryEvent.mockResolvedValue({ message: 'nope', success: false });
     spies.analyzeSelectedEvents.mockReturnValue({ completeTransactions: new Map(), partialEventIds: [1], partialSwapGroups: [] });
     const { deletion, refreshCallback, selectionMode } = setup();
     selectionMode.actions.toggleEvent(1);
 
-    await drive(deletion.deleteSelected());
+    await deletion.deleteSelected();
 
     expect(spies.showErrorMessage).toHaveBeenCalledOnce();
     expect(refreshCallback).not.toHaveBeenCalled();
   });
 
-  it('should delete complete transactions when the user confirms', async () => {
-    const transactions = new Map([['0xabc', txGroup('ethereum', 'g1', [1, 2])]]);
-    spies.analyzeSelectedEvents.mockReturnValue({ completeTransactions: transactions, partialEventIds: [], partialSwapGroups: [] });
-    const { deletion, refreshCallback, selectionMode } = setup();
-    selectionMode.actions.toggleEvent(1);
+  describe('complete transactions', () => {
+    function selectTransaction(): ReturnType<typeof setup> {
+      const transactions = new Map([['0xabc', txGroup('ethereum', 'g1', [1, 2])]]);
+      spies.analyzeSelectedEvents.mockReturnValue({ completeTransactions: transactions, partialEventIds: [], partialSwapGroups: [] });
+      const context = setup();
+      context.selectionMode.actions.toggleEvent(1);
+      return context;
+    }
 
-    await drive(deletion.deleteSelected());
-    expect(spies.deleteTransactions).toHaveBeenCalledWith('ethereum', '0xabc');
-    expect(spies.showSuccessMessage).toHaveBeenCalledOnce();
-    expect(refreshCallback).toHaveBeenCalledOnce();
-  });
+    it('should delete them when the user confirms', async () => {
+      answer('confirm');
+      const { deletion, refreshCallback } = selectTransaction();
 
-  it('should close the complete-transaction prompt without offering to exclude when the user backs out', async () => {
-    const transactions = new Map([['0xabc', txGroup('ethereum', 'g1', [1, 2])]]);
-    spies.analyzeSelectedEvents.mockReturnValue({ completeTransactions: transactions, partialEventIds: [], partialSwapGroups: [] });
-    const { deletion, selectionMode } = setup();
-    selectionMode.actions.toggleEvent(1);
+      await deletion.deleteSelected();
 
-    await drive(deletion.deleteSelected(), 2);
+      expect(spies.deleteTransactions).toHaveBeenCalledWith('ethereum', '0xabc');
+      expect(spies.showSuccessMessage).toHaveBeenCalledOnce();
+      expect(refreshCallback).toHaveBeenCalledOnce();
+    });
 
-    expect(spies.showConfirm).toHaveBeenCalledOnce();
-    expect(spies.deleteTransactions).not.toHaveBeenCalled();
-    expect(get(deletion.isDeleting)).toBe(false);
-  });
+    it('should close the prompt without offering to exclude when the user backs out', async () => {
+      answer('dismiss');
+      const { deletion } = selectTransaction();
 
-  it('should offer excluding from accounting as its own choice, which asks before excluding', async () => {
-    const transactions = new Map([['0xabc', txGroup('ethereum', 'g1', [1, 2])]]);
-    spies.analyzeSelectedEvents.mockReturnValue({ completeTransactions: transactions, partialEventIds: [], partialSwapGroups: [] });
-    const { deletion, selectionMode } = setup();
-    selectionMode.actions.toggleEvent(1);
+      await deletion.deleteSelected();
 
-    const run = deletion.deleteSelected();
-    expect(spies.showConfirm.mock.calls[0][0]).toMatchObject({ alternativeAction: 'transactions.events.confirmation.ignore.action_short' });
+      expect(spies.ask).toHaveBeenCalledOnce();
+      expect(spies.deleteTransactions).not.toHaveBeenCalled();
+      expect(get(deletion.isDeleting)).toBe(false);
+    });
 
-    const pickExclude = spies.showConfirm.mock.calls[0][3]();
-    await nextTick();
-    expect(spies.showConfirm).toHaveBeenCalledTimes(2);
-    expect(spies.showConfirm.mock.calls[1][0]).toMatchObject({ title: 'transactions.events.confirmation.ignore.title' });
+    it('should offer excluding from accounting as its own choice, which asks before excluding', async () => {
+      answer('alternative', 'confirm');
+      const { deletion } = selectTransaction();
 
-    await spies.showConfirm.mock.calls[1][1]();
-    await pickExclude;
-    await run;
-    expect(spies.deleteTransactions).not.toHaveBeenCalled();
+      await deletion.deleteSelected();
+
+      expect(spies.ask).toHaveBeenCalledTimes(2);
+      expect(spies.ask.mock.calls[0][0]).toMatchObject({ alternativeAction: 'transactions.events.confirmation.ignore.action_short' });
+      expect(spies.ask.mock.calls[1][0]).toMatchObject({ title: 'transactions.events.confirmation.ignore.title' });
+      expect(spies.deleteTransactions).not.toHaveBeenCalled();
+    });
+
+    it('should report a failed exclusion instead of success', async () => {
+      answer('alternative', 'confirm');
+      spies.ignoreSingle.mockResolvedValue({ message: 'boom', success: false });
+      const groupedEvents: Record<string, HistoryEventRow[]> = { g1: [createMock<HistoryEventEntry>({ identifier: 1 })] };
+      const transactions = new Map([['0xabc', txGroup('ethereum', 'g1', [1])]]);
+      spies.analyzeSelectedEvents.mockReturnValue({ completeTransactions: transactions, partialEventIds: [], partialSwapGroups: [] });
+      const selectionMode = useHistoryEventsSelectionMode();
+      const refreshCallback = vi.fn().mockResolvedValue(undefined);
+      const deletion = useHistoryEventsDeletion(selectionMode, ref(groupedEvents), ref<HistoryEventRow[]>([]), refreshCallback);
+      selectionMode.actions.toggleEvent(1);
+
+      await deletion.deleteSelected();
+
+      expect(spies.ignoreSingle).toHaveBeenCalledOnce();
+      expect(spies.showSuccessMessage).not.toHaveBeenCalled();
+      expect(spies.showErrorMessage).toHaveBeenCalledWith('transactions.events.ignore.error.title', 'boom');
+      expect(refreshCallback).not.toHaveBeenCalled();
+    });
+
+    it('should settle when the exclude question is cancelled', async () => {
+      answer('alternative', 'dismiss');
+      const { deletion } = selectTransaction();
+
+      await deletion.deleteSelected();
+
+      expect(spies.ignoreSingle).not.toHaveBeenCalled();
+      expect(get(deletion.isDeleting)).toBe(false);
+    });
   });
 
   it('should delete partial swap groups plus remaining events', async () => {
+    answer('confirm');
     spies.analyzeSelectedEvents.mockReturnValue({
       completeTransactions: new Map(),
       partialEventIds: [9],
@@ -201,10 +255,26 @@ describe('useHistoryEventsDeletion', () => {
     const { deletion, refreshCallback, selectionMode } = setup();
     selectionMode.actions.toggleEvent(1);
 
-    await drive(deletion.deleteSelected());
+    await deletion.deleteSelected();
 
     // full swap group ids (1,2) plus remaining event (9)
     expect(spies.deleteHistoryEvent).toHaveBeenCalledWith([1, 2, 9], false);
     expect(refreshCallback).toHaveBeenCalledOnce();
+  });
+
+  it('should settle without deleting a partial swap when cancelled', async () => {
+    answer('dismiss');
+    spies.analyzeSelectedEvents.mockReturnValue({
+      completeTransactions: new Map(),
+      partialEventIds: [],
+      partialSwapGroups: [{ groupIds: [1, 2], selectedIds: [1] }],
+    });
+    const { deletion, selectionMode } = setup();
+    selectionMode.actions.toggleEvent(1);
+
+    await deletion.deleteSelected();
+
+    expect(spies.deleteHistoryEvent).not.toHaveBeenCalled();
+    expect(get(deletion.isDeleting)).toBe(false);
   });
 });

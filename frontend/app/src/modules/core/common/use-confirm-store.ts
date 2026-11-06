@@ -4,6 +4,7 @@ interface ConfirmationMessage {
   title: string;
   message: string;
   type?: DialogType;
+  /** An acknowledgement with only the primary button; Escape acknowledges it too. */
   singleAction?: boolean;
   primaryAction?: string;
   /** Label of the button that backs out, which Escape does too; defaults to "Cancel". */
@@ -17,6 +18,9 @@ type AwaitableFunc = () => Promise<void>;
 type VoidFunc = () => void;
 
 type Func = VoidFunc | AwaitableFunc;
+
+/** Which way a confirmation was answered. */
+export type ConfirmChoice = 'confirm' | 'dismiss' | 'alternative';
 
 const defaultFunc: Func = () => {};
 
@@ -78,20 +82,41 @@ export const useConfirmStore = defineStore('confirm', () => {
     await method();
   };
 
-  const dismiss = async (): Promise<void> => {
-    const method = get(onDismiss);
-    reset();
-    await method();
-  };
-
   const confirm = async (): Promise<void> => {
     const method = get(onConfirm);
     reset();
     await method();
   };
 
+  const dismiss = async (): Promise<void> => {
+    if (get(confirmation).singleAction) {
+      await confirm();
+      return;
+    }
+    const method = get(onDismiss);
+    reset();
+    await method();
+  };
+
+  /**
+   * Opens the confirmation and settles with how it was answered.
+   *
+   * @remarks
+   * Every way out settles the promise, so a caller awaiting it cannot hang on a cancel. The
+   * alternative is only offered when `message.alternativeAction` is set.
+   */
+  const ask = async (message: ConfirmationMessage): Promise<ConfirmChoice> => new Promise<ConfirmChoice>((resolve) => {
+    show(
+      message,
+      () => resolve('confirm'),
+      () => resolve('dismiss'),
+      message.alternativeAction ? (): void => resolve('alternative') : undefined,
+    );
+  });
+
   return {
     alternative,
+    ask,
     confirm,
     confirmation,
     dismiss,

@@ -117,4 +117,37 @@ describe('useConfirmStore', () => {
     await alternative();
     expect(onAlternative).toHaveBeenCalledOnce();
   });
+
+  it('should treat escaping an acknowledgement as acknowledging it', async () => {
+    const { dismiss, show } = store;
+    const onConfirm = vi.fn();
+    const onDismiss = vi.fn();
+
+    show({ message, singleAction: true, title }, onConfirm, onDismiss);
+    await dismiss();
+
+    expect(onConfirm).toHaveBeenCalledOnce();
+    expect(onDismiss).not.toHaveBeenCalled();
+    expect(get(storeToRefs(store).visible)).toBe(false);
+  });
+
+  describe('ask', () => {
+    it('should settle with confirm when confirmed', async () => {
+      const answer = store.ask({ message, title });
+      await store.confirm();
+      await expect(answer).resolves.toBe('confirm');
+    });
+
+    it('should settle with dismiss when backed out', async () => {
+      const answer = store.ask({ message, title });
+      await store.dismiss();
+      await expect(answer).resolves.toBe('dismiss');
+    });
+
+    it('should settle with alternative when the alternative is offered and picked', async () => {
+      const answer = store.ask({ alternativeAction: 'Exclude', message, title });
+      await store.alternative();
+      await expect(answer).resolves.toBe('alternative');
+    });
+  });
 });

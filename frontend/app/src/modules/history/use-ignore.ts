@@ -13,8 +13,8 @@ interface CommonIgnoreAction<T extends EntryMeta> {
 }
 
 interface UseIgnoreReturn<T extends EntryMeta> {
-  ignore: (ignored: boolean) => Promise<void>;
-  ignoreSingle: (item: T, ignored: boolean) => Promise<void>;
+  ignore: (ignored: boolean) => Promise<ActionStatus>;
+  ignoreSingle: (item: T, ignored: boolean) => Promise<ActionStatus>;
   toggle: (item: T) => Promise<void>;
 }
 
@@ -37,24 +37,12 @@ export function useIgnore<T extends EntryMeta>(
       }
     }
     catch (error: unknown) {
-      let title: string;
-      let description: string;
+      const message = getErrorMessage(error);
       if (ignore)
-        title = t('actions.ignore.error.title');
-      else title = t('actions.unignore.error.title');
-
-      if (ignore) {
-        description = t('actions.ignore.error.description', {
-          error: getErrorMessage(error),
-        }).toString();
-      }
-      else {
-        description = t('actions.unignore.error.description', {
-          error: getErrorMessage(error),
-        }).toString();
-      }
-      showErrorMessage(title, description);
-      return { message: 'failed', success: false };
+        showErrorMessage(t('actions.ignore.error.title'), t('actions.ignore.error.description', { error: message }));
+      else
+        showErrorMessage(t('actions.unignore.error.title'), t('actions.unignore.error.description', { error: message }));
+      return { message, success: false };
     }
 
     return { success: true };
@@ -66,7 +54,7 @@ export function useIgnore<T extends EntryMeta>(
   const unignoreActions = async (payload: IgnorePayload): Promise<ActionStatus> =>
     ignoreInAccounting(payload, false);
 
-  const ignore = async (ignored: boolean): Promise<void> => {
+  const ignore = async (ignored: boolean): Promise<ActionStatus> => {
     const data = get(selected).filter((item) => {
       const { ignoredInAccounting } = item;
       return ignored ? !ignoredInAccounting : ignoredInAccounting;
@@ -80,8 +68,9 @@ export function useIgnore<T extends EntryMeta>(
 
     if (data.length === 0) {
       const choice = ignored ? 1 : 2;
-      showErrorMessage(t('ignore.no_items.title', choice), t('ignore.no_items.description', choice));
-      return;
+      const message = t('ignore.no_items.description', choice);
+      showErrorMessage(t('ignore.no_items.title', choice), message);
+      return { message, success: false };
     }
 
     if (ignored)
@@ -93,6 +82,7 @@ export function useIgnore<T extends EntryMeta>(
       refresh();
       set(selected, []);
     }
+    return status;
   };
 
   async function toggle(item: T): Promise<void> {
@@ -100,9 +90,9 @@ export function useIgnore<T extends EntryMeta>(
     await ignore(!item.ignoredInAccounting);
   }
 
-  async function ignoreSingle(item: T, ignored: boolean): Promise<void> {
+  async function ignoreSingle(item: T, ignored: boolean): Promise<ActionStatus> {
     set(selected, [item]);
-    await ignore(ignored);
+    return ignore(ignored);
   }
 
   return {

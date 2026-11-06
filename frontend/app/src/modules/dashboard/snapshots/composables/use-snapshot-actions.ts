@@ -112,6 +112,9 @@ export function useSnapshotActions(): UseSnapshotActionsReturn {
     }
 
     set(importing, false);
+    if (!success)
+      return;
+
     set(modelBalanceFile, undefined);
     set(modelLocationFile, undefined);
   }

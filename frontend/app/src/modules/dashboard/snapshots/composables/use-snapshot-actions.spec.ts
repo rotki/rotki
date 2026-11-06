@@ -147,5 +147,19 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-actions', () => {
       vi.advanceTimersByTime(3000);
       expect(logout).not.toHaveBeenCalled();
     });
+
+    it('should keep both chosen files after a failed import so a retry needs no re-picking', async () => {
+      uploadBalancesSnapshot.mockRejectedValue(new Error('boom'));
+      const { modelBalanceFile, importSnapshot, modelLocationFile } = withSetup(() => useSnapshotActions()).result;
+      const balance = new File([], 'balances.csv');
+      const location = new File([], 'locations.csv');
+      set(modelBalanceFile, balance);
+      set(modelLocationFile, location);
+
+      await importSnapshot();
+
+      expect(get(modelBalanceFile)).toBe(balance);
+      expect(get(modelLocationFile)).toBe(location);
+    });
   });
 });
