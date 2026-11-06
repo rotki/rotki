@@ -4,15 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 
 const push = vi.fn(async (): Promise<void> => {});
-const show = vi.fn<(options: unknown, onConfirm: () => void) => void>();
 const findEventTypeData = vi.fn<() => HistoryEventCategoryDetailWithId>();
 
 vi.mock('vue-router', () => ({
   useRouter: (): { push: typeof push } => ({ push }),
-}));
-
-vi.mock('@/modules/core/common/use-confirm-store', () => ({
-  useConfirmStore: (): { show: typeof show } => ({ show }),
 }));
 
 vi.mock('@/modules/history/events/mapping/use-history-event-mappings', () => ({
@@ -28,7 +23,6 @@ describe('forms/HistoryEventTypeForm.vue', () => {
 
   beforeEach(() => {
     push.mockClear();
-    show.mockClear();
     findEventTypeData.mockReturnValue(categoryDetail('claim reward'));
   });
 
@@ -118,19 +112,37 @@ describe('forms/HistoryEventTypeForm.vue', () => {
     expect(wrapper.find('[data-testid="view-accounting-rule"]').exists()).toBe(false);
   });
 
-  it('should confirm before navigating when the form has unsaved changes', async () => {
-    const wrapper = mountForm({ dirty: true, showAccountingRuleLink: true });
+  describe('with unsaved changes', () => {
+    it('should ask in place of the link instead of navigating', async () => {
+      const wrapper = mountForm({ dirty: true, showAccountingRuleLink: true });
 
-    await wrapper.find('[data-testid="view-accounting-rule"]').trigger('click');
+      await wrapper.find('[data-testid="view-accounting-rule"]').trigger('click');
 
-    expect(push).not.toHaveBeenCalled();
-    expect(show).toHaveBeenCalledTimes(1);
+      expect(push).not.toHaveBeenCalled();
+      expect(wrapper.find('[data-testid="inline-confirm"]').exists()).toBe(true);
+      expect(wrapper.find('[data-testid="view-accounting-rule"]').exists()).toBe(false);
+    });
 
-    const onConfirm = show.mock.calls[0][1];
-    onConfirm();
-    expect(push).toHaveBeenCalledWith({
-      name: '/settings/accounting/',
-      query: { eventSubtypes: 'reward', eventTypes: 'staking' },
+    it('should navigate once discarding is confirmed', async () => {
+      const wrapper = mountForm({ dirty: true, showAccountingRuleLink: true });
+
+      await wrapper.find('[data-testid="view-accounting-rule"]').trigger('click');
+      await wrapper.find('[data-testid="inline-confirm-accept"]').trigger('click');
+
+      expect(push).toHaveBeenCalledWith({
+        name: '/settings/accounting/',
+        query: { eventSubtypes: 'reward', eventTypes: 'staking' },
+      });
+    });
+
+    it('should stay and offer the link again when the user keeps editing', async () => {
+      const wrapper = mountForm({ dirty: true, showAccountingRuleLink: true });
+
+      await wrapper.find('[data-testid="view-accounting-rule"]').trigger('click');
+      await wrapper.find('[data-testid="inline-confirm-cancel"]').trigger('click');
+
+      expect(push).not.toHaveBeenCalled();
+      expect(wrapper.find('[data-testid="view-accounting-rule"]').exists()).toBe(true);
     });
   });
 });

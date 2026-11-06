@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { RuiCardClassNames } from '@rotki/ui-library';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useFormErrorFocus } from '@/modules/core/common/use-form-error-focus';
 import BigDialogConfirmButton from '@/modules/shell/components/dialogs/BigDialogConfirmButton.vue';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 
 /** The footer's two buttons. `primary` defaults to Confirm and `secondary` to Cancel. */
 export interface BigDialogAction {
@@ -57,6 +58,8 @@ const {
   action,
   display,
   errors,
+  failure,
+  failureTitle = '',
   layout,
   loading = false,
   onConfirm,
@@ -74,6 +77,15 @@ const {
   errors?: BigDialogErrors;
   persistent?: boolean;
   promptOnClose?: boolean;
+  /**
+   * Why the last save failed, named above the content while the form keeps what was typed.
+   *
+   * @remarks
+   * Shown in the header, outside the scroll area, so it is in view however far the form scrolled.
+   * Confirm is the retry, so the strip offers none. Usually `useSaveFailure().failure`.
+   */
+  failure?: unknown;
+  failureTitle?: string;
   /**
    * The save, bound as `@confirm`. A prop rather than an emit so the dialog can wait for it.
    *
@@ -100,10 +112,11 @@ defineSlots<{
 
 const wrapper = useTemplateRef('wrapper');
 const confirming = ref<boolean>(false);
+/** Asking, in the footer, whether to discard the edits. */
+const discarding = ref<boolean>(false);
 /** Bumped each time the dialog closes, so a save from an earlier opening cannot touch this one. */
 let opening = 0;
 
-const { show } = useConfirmStore();
 const { t } = useI18n({ useScope: 'global' });
 const { focusFirstError } = useFormErrorFocus(wrapper);
 
@@ -133,8 +146,10 @@ const hasErrors = computed<boolean>(() => get(errorCount) > 0);
 const busy = computed<boolean>(() => loading || get(confirming));
 
 watch(() => display, (shown) => {
-  if (!shown)
-    forgetPendingSave();
+  if (shown)
+    return;
+  forgetPendingSave();
+  set(discarding, false);
 });
 
 watch(errorCount, async (newCount, oldCount) => {
@@ -205,18 +220,21 @@ function cancelClicked(): void {
     cancel();
 }
 
+/**
+ * Asks in the footer, in place of its buttons, rather than in a second dialog over this one.
+ *
+ * @remarks
+ * A dismissal while the question is up, such as back pressed again, answers it with keep editing,
+ * the way dismissing a dialog of its own would.
+ */
 function promptClose() {
-  if (!promptOnClose)
-    return;
+  if (promptOnClose)
+    set(discarding, !get(discarding));
+}
 
-  show({
-    message: t('big_dialog.prompt_close.message'),
-    primaryAction: t('big_dialog.prompt_close.actions.discard'),
-    title: t('big_dialog.prompt_close.title'),
-    type: 'info',
-  }, async () => {
-    set(displayModel, false);
-  });
+function discard(): void {
+  set(discarding, false);
+  set(displayModel, false);
 }
 </script>
 
@@ -265,6 +283,14 @@ function promptClose() {
             >
               <slot name="header-append" />
             </div>
+            <FailureStrip
+              v-if="failure !== undefined"
+              class="mt-4"
+              :retryable="false"
+              :title="failureTitle"
+              :failure="failure"
+              data-testid="big-dialog-failure"
+            />
           </div>
         </template>
         <div
@@ -284,7 +310,19 @@ function promptClose() {
 
         <RuiDivider class="mb-4 -mx-4" />
 
-        <slot name="footer">
+        <InlineConfirm
+          v-if="discarding"
+          class="w-full"
+          :message="t('big_dialog.prompt_close.message')"
+          :confirm-label="t('big_dialog.prompt_close.actions.discard')"
+          :cancel-label="t('big_dialog.prompt_close.actions.keep_editing')"
+          @cancel="discarding = false"
+          @confirm="discard()"
+        />
+        <slot
+          v-else
+          name="footer"
+        >
           <div class="flex gap-2 w-full">
             <slot name="left-buttons" />
             <div class="grow" />

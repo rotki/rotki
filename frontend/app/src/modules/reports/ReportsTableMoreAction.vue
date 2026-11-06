@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ExportReportCsv from '@/modules/reports/ExportReportCsv.vue';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 
 defineProps<{
   reportId: number;
@@ -74,37 +75,15 @@ watch(open, (isOpen) => {
         {{ t('reports_table.delete') }}
       </RuiButton>
     </div>
-    <div
+    <InlineConfirm
       v-else
-      class="flex flex-col gap-3 p-4"
-      data-testid="report-delete-confirm"
-    >
-      <div class="flex flex-col gap-1">
-        <p class="text-sm font-medium text-rui-text">
-          {{ t('reports_table.delete_confirm.title') }}
-        </p>
-        <p class="text-sm text-rui-text-secondary">
-          {{ t('reports_table.delete_confirm.message') }}
-        </p>
-      </div>
-      <div class="flex justify-end gap-2">
-        <RuiButton
-          size="sm"
-          variant="text"
-          data-testid="report-delete-cancel"
-          @click="open = false"
-        >
-          {{ t('common.actions.cancel') }}
-        </RuiButton>
-        <RuiButton
-          size="sm"
-          color="error"
-          data-testid="report-delete-confirm-button"
-          @click="confirmDelete()"
-        >
-          {{ t('common.actions.delete') }}
-        </RuiButton>
-      </div>
-    </div>
+      layout="panel"
+      tone="error"
+      :title="t('reports_table.delete_confirm.title')"
+      :message="t('reports_table.delete_confirm.message')"
+      :confirm-label="t('common.actions.delete')"
+      @cancel="open = false"
+      @confirm="confirmDelete()"
+    />
   </RuiMenu>
 </template>

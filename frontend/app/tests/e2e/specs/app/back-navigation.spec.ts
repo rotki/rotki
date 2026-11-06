@@ -74,19 +74,19 @@ test.describe('back navigation', () => {
 
       await shared.goBack();
 
-      // The form is still up, and the prompt is now the layer back is talking to.
-      await expect(shared.locator('[data-testid=confirm-dialog]')).toBeVisible();
+      // The form is still up, asking in its footer whether to discard.
+      await expect(dialog.getByTestId('inline-confirm')).toBeVisible();
       await expect(dialog).toBeVisible();
       expect(shared.url()).toBe(url);
     });
 
     test('keeps the form when the discard prompt is declined', async () => {
       const shared = ctx.sharedPage;
-      const confirmPrompt = shared.locator('[data-testid=confirm-dialog]');
       const dialog = shared.locator('[data-testid=bottom-dialog]');
+      const confirmPrompt = dialog.getByTestId('inline-confirm');
       const url = shared.url();
 
-      await confirmPrompt.getByTestId('button-cancel').click();
+      await confirmPrompt.getByTestId('inline-confirm-cancel').click();
       await confirmPrompt.waitFor({ state: 'detached' });
 
       await shared.goBack();
@@ -98,8 +98,8 @@ test.describe('back navigation', () => {
 
     test('declines the discard prompt itself when back is pressed on it', async () => {
       const shared = ctx.sharedPage;
-      const confirmPrompt = shared.locator('[data-testid=confirm-dialog]');
       const dialog = shared.locator('[data-testid=bottom-dialog]');
+      const confirmPrompt = dialog.getByTestId('inline-confirm');
       const url = shared.url();
       await expect(confirmPrompt).toBeVisible();
 

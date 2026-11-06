@@ -1800,8 +1800,7 @@
       "actions": {
         "discard": "Değişiklikleri at"
       },
-      "message": "Değişiklikleri atmak istediğinizden emin misiniz?",
-      "title": "Kaydedilmemiş değişiklikleriniz var"
+      "message": "Değişiklikleri atmak istediğinizden emin misiniz?"
     }
   },
   "binance_market_selector": {

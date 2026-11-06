@@ -1781,8 +1781,7 @@
       "actions": {
         "discard": "放弃"
       },
-      "message": "确定要放弃更改吗？",
-      "title": "你有未保存的更改"
+      "message": "确定要放弃更改吗？"
     }
   },
   "binance_market_selector": {

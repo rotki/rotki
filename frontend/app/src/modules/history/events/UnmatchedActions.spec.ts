@@ -216,9 +216,9 @@ describe('modules/history/events/UnmatchedActions', () => {
       await wrapper.find('[data-testid=unmatched-action-ignore]').trigger('click');
 
       expect(wrapper.emitted('action')).toBeUndefined();
-      expect(wrapper.find('[data-testid=unmatched-confirm-strip]').text()).toContain('Ignore this row?');
+      expect(wrapper.find('[data-testid=inline-confirm]').text()).toContain('Ignore this row?');
 
-      await wrapper.find('[data-testid=unmatched-confirm-accept]').trigger('click');
+      await wrapper.find('[data-testid=inline-confirm-accept]').trigger('click');
 
       expect(wrapper.emitted('action')).toEqual([[UNMATCHED_ACTIONS.IGNORE]]);
     });
@@ -227,7 +227,7 @@ describe('modules/history/events/UnmatchedActions', () => {
       const wrapper = mountActions(layout, { confirms });
 
       await wrapper.find('[data-testid=unmatched-action-ignore]').trigger('click');
-      await wrapper.find('[data-testid=unmatched-confirm-cancel]').trigger('click');
+      await wrapper.find('[data-testid=inline-confirm-cancel]').trigger('click');
 
       expect(wrapper.emitted('action')).toBeUndefined();
       expect(wrapper.find('[data-testid=unmatched-action-ignore]').exists()).toBe(true);

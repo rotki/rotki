@@ -2,9 +2,9 @@
 import type { HistoryEventEntryType } from '@rotki/common';
 import type { LocationQueryRaw } from 'vue-router';
 import { startPromise } from '@shared/utils';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import HistoryEventActionPicker from '@/modules/history/events/action-picker/HistoryEventActionPicker.vue';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
+import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 
 interface HistoryEventTypeFormProps {
   counterparty?: string | null;
@@ -44,7 +44,6 @@ const emit = defineEmits<{
 }>();
 
 const router = useRouter();
-const { show } = useConfirmStore();
 const { t } = useI18n({ useScope: 'global' });
 
 const pickerValue = computed<{ eventType: string; eventSubtype: string } | undefined>({
@@ -103,18 +102,14 @@ function navigateToAccountingRule(): void {
   startPromise(router.push({ name: '/settings/accounting/', query }));
 }
 
-/** Navigating away discards unsaved edits, so a dirty form gets the dialog's prompt-on-close. */
-function viewAccountingRule(): void {
-  if (dirty) {
-    show({
-      message: t('big_dialog.prompt_close.message'),
-      primaryAction: t('big_dialog.prompt_close.actions.discard'),
-      title: t('big_dialog.prompt_close.title'),
-    }, navigateToAccountingRule);
-    return;
-  }
+/** Navigating away discards unsaved edits, so a dirty form asks first, in place of the link. */
+const confirmingLeave = ref<boolean>(false);
 
-  navigateToAccountingRule();
+function viewAccountingRule(): void {
+  if (dirty)
+    set(confirmingLeave, true);
+  else
+    navigateToAccountingRule();
 }
 </script>
 
@@ -135,8 +130,17 @@ function viewAccountingRule(): void {
       variant="filled"
       :description="t('transactions.events.form.resulting_combination.unknown')"
     />
+    <InlineConfirm
+      v-if="canLinkToAccountingRule && confirmingLeave"
+      class="-mt-2 mb-4"
+      :message="t('big_dialog.prompt_close.message')"
+      :confirm-label="t('big_dialog.prompt_close.actions.discard')"
+      :cancel-label="t('big_dialog.prompt_close.actions.keep_editing')"
+      @cancel="confirmingLeave = false"
+      @confirm="navigateToAccountingRule()"
+    />
     <RuiButton
-      v-if="canLinkToAccountingRule"
+      v-else-if="canLinkToAccountingRule"
       variant="text"
       color="primary"
       size="sm"
