@@ -1644,6 +1644,12 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         the node failover. Those queries fail and are recorded as if the nodes were reached.
         Requests of the user can skip the cooldown with forget_token_query_failures.
 
+        A multicall that reverts or runs out of gas was answered by the nodes, so it is not a
+        failure to reach them. That is what the contract does every time, e.g. a spam token
+        whose getters burn all the gas or return huge data, and treating it as an outage would
+        leave its transactions undecoded forever. All its calls are reported as failed instead,
+        which is the answer of a contract that does not conform to the token standard.
+
         May raise:
         - TokenQueryFailed if the nodes could not be reached, now or within the cooldown
         """
@@ -1671,6 +1677,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 require_success=False,
                 calls=[(address, contract.encode(method_name=prop)) for prop in properties],
             )
+        except (ContractReverted, RequestTooLargeError) as e:
+            log.warning('Token query of %s failed on chain due to %s', address, e)
+            output = [(False, b'')] * len(properties)
         except RemoteError as e:
             self.token_query_failures.add(address, ts_now())
             record_token_query_failure(address)
