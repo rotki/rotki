@@ -4,6 +4,7 @@ import { get } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
+import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { defaultGeneralSettings } from '@/modules/settings/factories';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useStatisticsStore } from './use-statistics-store';
@@ -159,6 +160,26 @@ describe('useStatisticsStore', () => {
 
       // Verify totalNetWorth equals calculateTotalValue without additional multiplication
       expect(totalValue.toNumber()).toBe(3460000);
+    });
+
+    it('should exclude ERC721 and Solana NFT chain balances when nftsInNetValue is false', () => {
+      const settingsStore = useSettingsRepo();
+      settingsStore.updateFrontend({ nftsInNetValue: false });
+
+      vi.mocked(useAggregatedBalances).mockReturnValueOnce({
+        getBalances: (): AssetBalanceWithPriceAndChains[] => [
+          createBalanceWithPrice('1', 'ETH', '2000'),
+          createBalanceWithPrice('1', 'eip155:1/erc721:0x1234/1', '500'),
+          createBalanceWithPrice('1', 'solana/nft:SoL111111', '300'),
+        ],
+        getLiabilities: (): AssetBalanceWithPriceAndChains[] => [],
+      } as any);
+
+      const store = useStatisticsStore();
+      const totalValue = get(store.totalNetWorth);
+
+      // 2000 ETH should be counted, 500 ERC721 and 300 Solana NFT should be excluded
+      expect(totalValue.toNumber()).toBe(2000);
     });
   });
 

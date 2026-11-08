@@ -3590,12 +3590,19 @@ class DBHandler:
                     'UNION ALL '
                     'SELECT timestamp, category, usd_value '
                     'FROM timed_balances AS nft_balances '
-                    'WHERE timestamp >= ? AND currency GLOB ? AND NOT EXISTS ('
+                    'WHERE timestamp >= ? AND '
+                    '(currency GLOB ? OR currency GLOB ? OR currency GLOB ?) AND NOT EXISTS ('
                     'SELECT 1 FROM multisettings '
                     "WHERE name='ignored_asset' AND value=nft_balances.currency)) "
                     'GROUP BY timestamp, category'
                 )
-                bindings = (from_ts, from_ts, f'{NFT_DIRECTIVE}*')
+                bindings = (
+                    from_ts,
+                    from_ts,
+                    f'{NFT_DIRECTIVE}*',
+                    'eip155:*/erc721:*',
+                    'solana/nft:*',
+                )
 
             asset_category = BalanceType.ASSET.serialize_for_db()  # pylint: disable=no-member
             for timestamp, category, usd_value in cursor.execute(query, bindings):

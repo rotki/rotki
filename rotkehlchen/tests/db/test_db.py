@@ -1323,6 +1323,108 @@ def test_get_netvalue_without_nfts_uses_exact_prefix(
     data.logout()
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_get_netvalue_without_nfts_excludes_erc721_and_solana(
+        data_dir,
+        username,
+        sql_vm_instructions_cb,
+):
+    """Test that get_netvalue_data with include_nfts=False excludes all NFT forms:
+    - _nft_* (legacy NFT directive)
+    - eip155:*/erc721:* (canonical EVM ERC721)
+    - solana/nft:* (Solana SPL NFT)
+    while keeping fungible tokens (including ERC20 tokens) and non-EVM identifiers
+    that might contain `/erc721:`.
+    """
+    data = DataHandler(data_dir, MessagesAggregator(), sql_vm_instructions_cb)
+    data.unlock(username, '123', create_new=True, resume_from_backup=False)
+    timestamp = Timestamp(1488326400)
+
+    legacy_nft = '_nft_pickle'
+    erc721_nft = 'eip155:1/erc721:0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D/1'
+    polygon_erc721_nft = 'eip155:137/erc721:0x701a038Af4bD0fc9b69A829DdcB64049e307c62D/42'
+    solana_nft = 'solana/nft:HFQ4rcivJ4PnY5EWDFJigoDACNEEUfFP2eexTKCJ4VzF'
+    erc20_token = 'eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+    unrelated_non_evm_asset = 'other_chain/erc721:not_an_evm_nft'
+
+    with data.db.user_write() as write_cursor:
+        data.db.add_asset_identifiers(write_cursor, [
+            A_BTC.identifier,
+            legacy_nft,
+            erc721_nft,
+            polygon_erc721_nft,
+            solana_nft,
+            erc20_token,
+            unrelated_non_evm_asset,
+        ])
+        data.db.add_multiple_balances(write_cursor, [
+            DBAssetBalance(
+                category=BalanceType.ASSET,
+                time=timestamp,
+                asset=A_BTC,
+                amount=FVal('1'),
+                usd_value=FVal('1000'),
+            ),
+            DBAssetBalance(
+                category=BalanceType.ASSET,
+                time=timestamp,
+                asset=Asset(legacy_nft),
+                amount=FVal('1'),
+                usd_value=FVal('1000'),
+            ),
+            DBAssetBalance(
+                category=BalanceType.ASSET,
+                time=timestamp,
+                asset=Asset(erc721_nft),
+                amount=FVal('1'),
+                usd_value=FVal('1500'),
+            ),
+            DBAssetBalance(
+                category=BalanceType.ASSET,
+                time=timestamp,
+                asset=Asset(polygon_erc721_nft),
+                amount=FVal('1'),
+                usd_value=FVal('500'),
+            ),
+            DBAssetBalance(
+                category=BalanceType.ASSET,
+                time=timestamp,
+                asset=Asset(solana_nft),
+                amount=FVal('1'),
+                usd_value=FVal('1000'),
+            ),
+            DBAssetBalance(
+                category=BalanceType.ASSET,
+                time=timestamp,
+                asset=Asset(erc20_token),
+                amount=FVal('500'),
+                usd_value=FVal('500'),
+            ),
+            DBAssetBalance(
+                category=BalanceType.ASSET,
+                time=timestamp,
+                asset=Asset(unrelated_non_evm_asset),
+                amount=FVal('200'),
+                usd_value=FVal('200'),
+            ),
+        ])
+        data.db.add_multiple_location_data(write_cursor, [LocationData(
+            time=timestamp,
+            location=LOCATION_TOTAL,  # pylint: disable=no-member
+            usd_value='5700',
+        )])
+
+    # With include_nfts=True, all assets are included in net value
+    assert data.db.get_netvalue_data(timestamp, include_nfts=True) == ([timestamp], ['5700'])
+    # With include_nfts=False:
+    # - legacy NFT (1000), Ethereum ERC721 (1500), Polygon ERC721 (500),
+    #   and Solana NFT (1000) are excluded
+    # - A_BTC (1000), erc20_token (500), and unrelated_non_evm_asset (200) are kept
+    # Net value = 5700 - (1000 + 1500 + 500 + 1000) = 1700 (1000 + 500 + 200)
+    assert data.db.get_netvalue_data(timestamp, include_nfts=False) == ([timestamp], ['1700'])
+    data.logout()
+
+
 def test_get_netvalue_data_with_ignored_assets(data_dir, username, sql_vm_instructions_cb):
     """Test that ignored assets are subtracted from the stored snapshot totals at query time.
 

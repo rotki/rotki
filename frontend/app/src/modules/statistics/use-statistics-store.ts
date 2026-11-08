@@ -66,7 +66,12 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const calculateTotalValue = (includeNft: MaybeRef<boolean> = false): ComputedRef<BigNumber> => computed<BigNumber>(() => {
     const nftTotal = get(includeNft) ? get(nftValue) : Zero;
-    return calculateSum(getBalances()).plus(nftTotal).minus(calculateSum(getLiabilities()));
+    const balances = get(includeNft)
+      ? getBalances()
+      : getBalances().filter(
+          item => !item.asset.includes('/erc721:') && !item.asset.startsWith('solana/nft:'),
+        );
+    return calculateSum(balances).plus(nftTotal).minus(calculateSum(getLiabilities()));
   });
 
   const totalNetWorth = calculateTotalValue(nftsInNetValue);
