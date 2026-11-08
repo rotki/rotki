@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.converters import asset_from_bittrex
 from rotkehlchen.data_import.utils import BaseExchangeImporter, maybe_set_transaction_extra_data
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
@@ -244,6 +245,13 @@ class BittrexImporter(BaseExchangeImporter):
                     events = consumer_fn(row, file_type, **kwargs)
                     self.add_history_events(write_cursor=write_cursor, history_events=events)
                     self.imported_entries += 1
+                except UnknownAsset as e:
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Unknown asset {e.identifier}.',
+                        is_error=True,
+                    )
                 except DeserializationError as e:
                     self.send_message(
                         row_index=index,
