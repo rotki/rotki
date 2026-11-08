@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.utils import token_normalized_value_decimals
@@ -105,6 +105,8 @@ class LidoCsmBalances(ProtocolWithBalance):
         )) == ZERO:
             log.error('Failed to fetch stETH price; reporting values as zero.')
 
+        rewards_trees: dict[LidoCsmStakingModule, dict[str, Any] | RemoteError] = {}
+
         for entry in node_operators:
             # Fetch bond shares and convert to stETH
             bond_steth = ZERO
@@ -124,10 +126,22 @@ class LidoCsmBalances(ProtocolWithBalance):
             # Fetch pending rewards (stETH) using the metrics fetcher
             rewards_steth = ZERO
             try:
-                stats = self._metrics_fetchers[entry.staking_module].get_operator_stats(
-                    entry.node_operator_id,
+                if entry.staking_module not in rewards_trees:
+                    try:
+                        rewards_trees[entry.staking_module] = self._metrics_fetchers[
+                            entry.staking_module
+                        ].get_rewards_tree()
+                    except RemoteError as exc:
+                        rewards_trees[entry.staking_module] = exc
+
+                tree_or_exc = rewards_trees[entry.staking_module]
+                if isinstance(tree_or_exc, RemoteError):
+                    raise tree_or_exc
+
+                rewards_steth = self._metrics_fetchers[entry.staking_module].get_operator_rewards(
+                    node_operator_id=entry.node_operator_id,
+                    rewards_tree=tree_or_exc,
                 )
-                rewards_steth = stats.rewards_steth
             except RemoteError as e:
                 log.error(
                     f'Failed to fetch Lido CSM pending rewards for node operator '
