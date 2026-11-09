@@ -131,6 +131,44 @@ describe('modules/wallet/bridge/use-wallet-proxy-client', () => {
     expect(get(client.lastError)).toContain('WebSocket connection error');
   });
 
+  describe('unparsable messages', () => {
+    it('should answer a parse error when the invalid message shows an id', () => {
+      const client = useWalletProxyClient();
+      client.connect();
+      lastSocket().open();
+
+      lastSocket().receive({ id: 7, jsonrpc: '1.0', method: 'eth_chainId' });
+
+      expect(lastSocket().sent).toEqual([
+        JSON.stringify({ error: { code: -32700, message: 'Parse error' }, id: '7', jsonrpc: '2.0' }),
+      ]);
+      expect(handleRequest).not.toHaveBeenCalled();
+    });
+
+    it('should stay silent on an invalid message without an id', () => {
+      const client = useWalletProxyClient();
+      client.connect();
+      lastSocket().open();
+
+      lastSocket().receive({ foo: 'bar' });
+
+      expect(lastSocket().sent).toEqual([]);
+    });
+
+    it('should stay silent on a frame that is not JSON, and keep handling later ones', async () => {
+      const client = useWalletProxyClient();
+      client.connect();
+      lastSocket().open();
+
+      lastSocket().onmessage?.({ data: '{"id":7,' });
+      expect(lastSocket().sent).toEqual([]);
+
+      lastSocket().receive({ id: 1, jsonrpc: '2.0', method: 'eth_chainId' });
+      await flushPromises();
+      expect(handleRequest).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('disconnect', () => {
     it('should not reconnect after an intentional disconnect', async () => {
       vi.useFakeTimers();
