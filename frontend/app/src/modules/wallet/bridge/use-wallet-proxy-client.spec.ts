@@ -281,6 +281,25 @@ describe('modules/wallet/bridge/use-wallet-proxy-client', () => {
       expect(get(client.state)).toEqual({ attempt: 1, phase: BridgeConnectionPhase.retryWaiting });
     });
 
+    it('should report and retry when the socket cannot even be created', async () => {
+      vi.useFakeTimers();
+      const client = useWalletProxyClient();
+      vi.stubGlobal('WebSocket', class {
+        constructor() {
+          throw new Error('bad url');
+        }
+      });
+
+      client.connect();
+
+      expect(get(client.lastError)).toContain('Failed to create WebSocket connection');
+      expect(get(client.state)).toEqual({ attempt: 1, phase: BridgeConnectionPhase.retryWaiting });
+
+      vi.stubGlobal('WebSocket', FakeWebSocket);
+      await vi.advanceTimersByTimeAsync(CLIENT_CONFIG.RETRY_DELAY);
+      expect(FakeWebSocket.instances).toHaveLength(1);
+    });
+
     it('should fail a handshake that never finishes, close it and retry', async () => {
       vi.useFakeTimers();
       const client = useWalletProxyClient();
