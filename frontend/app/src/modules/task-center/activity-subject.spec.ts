@@ -62,6 +62,7 @@ describe('activitySubject', () => {
 
     expect(activitySubject(balances('eth'))).toEqual({ chain: 'eth' });
     expect(activitySubject(balances('eth', ActivityPart.DETECT, 'digest'))).toEqual({ chain: 'eth' });
+    expect(activitySubject(balances('eth', ActivityPart.ADDRESSES, 'digest'))).toEqual({ chain: 'eth' });
     expect(activitySubject(balances(ActivityPart.RUN, 'digest', 'user'))).toBeUndefined();
   });
 

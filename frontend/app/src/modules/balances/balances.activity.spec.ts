@@ -31,6 +31,12 @@ describe('chain balance activity ids', () => {
       .toBe(`blockchain-balances:eth:detect:${setDigest([address])}`);
   });
 
+  it('should key a targeted refresh by its addresses, so it never joins a full one', () => {
+    expect(chainBalancesActivity.id({ addresses: [address], chain: 'eth' }))
+      .toBe(`blockchain-balances:eth:addresses:${setDigest([address])}`);
+    expect(chainBalancesActivity.id({ addresses: [], chain: 'eth' })).toBe('blockchain-balances:eth');
+  });
+
   it('should ignore the address narrowing when the refresh does not detect', () => {
     expect(chainBalancesActivity.id({ chain: 'eth', detectAddresses: [address] })).toBe('blockchain-balances:eth');
   });

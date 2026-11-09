@@ -50,14 +50,39 @@ describe('useBalanceRefreshState', () => {
     expect(get(isRefreshing)).toBe(false);
   });
 
-  it('should dedupe repeated starts for the same chain', () => {
+  it('should list a chain once, until the last of its overlapping queries stops', () => {
     const store = useBalanceRefreshState();
     const { refreshingChains } = storeToRefs(store);
     store.start('eth');
     store.start('eth');
     expect(get(refreshingChains).size).toBe(1);
     store.stop('eth');
+    expect(get(refreshingChains).size).toBe(1);
+    store.stop('eth');
     expect(get(refreshingChains).size).toBe(0);
+  });
+
+  it('should not count a stop that had no start against a later refresh', () => {
+    const store = useBalanceRefreshState();
+    const isEthRefreshing = store.useIsRefreshing('eth');
+    store.stop('eth');
+    store.start('eth');
+    expect(get(isEthRefreshing)).toBe(true);
+
+    store.stop('eth');
+    expect(get(isEthRefreshing)).toBe(false);
+  });
+
+  it('should forget overlapping queries on reset', () => {
+    const store = useBalanceRefreshState();
+    const isEthRefreshing = store.useIsRefreshing('eth');
+    store.start('eth');
+    store.start('eth');
+    store.reset();
+
+    store.start('eth');
+    store.stop('eth');
+    expect(get(isEthRefreshing)).toBe(false);
   });
 
   it('should reset all refreshing chains', () => {

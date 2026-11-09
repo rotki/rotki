@@ -139,7 +139,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
      * keep `withDetection` writing `lastAutoDetectAt`, so the cooldown would suppress the next
      * sweep too.
      */
-    const chainJobId = (chain: string): ActivityId => chainBalancesActivity.id({ chain, detect, detectAddresses });
+    const chainJobId = (chain: string): ActivityId => chainBalancesActivity.id({ addresses: requestedAddresses, chain, detect, detectAddresses });
 
     /**
      * One chain's refresh: token detection when asked, then the network query.
