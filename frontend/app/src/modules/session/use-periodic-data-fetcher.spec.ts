@@ -1,4 +1,5 @@
 import type { PeriodicClientQueryResult } from '@/modules/session/types';
+import { FetchError } from 'ofetch';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
@@ -14,7 +15,6 @@ vi.mock('@/modules/session/api/use-session-api', () => ({
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  getErrorMessage: vi.fn((e: unknown): string => (e instanceof Error ? e.message : String(e))),
   useNotifications: vi.fn(() => ({
     notifyFailure: mockNotifyFailure,
   })),
@@ -123,6 +123,19 @@ describe('usePeriodicDataFetcher', () => {
     await check();
 
     expect(mockNotifyFailure).toHaveBeenCalledOnce();
+  });
+
+  it('should name an unreachable backend in words rather than show the raw request line', async () => {
+    const rawRequestLine = '[GET] "http://127.0.0.1/api/1/periodic": <no response> fetch failed';
+    mockFetchPeriodicData.mockRejectedValue(new FetchError(rawRequestLine));
+
+    const { usePeriodicDataFetcher } = await importModule();
+    const { check } = usePeriodicDataFetcher();
+    await check();
+
+    const [, message] = mockNotifyFailure.mock.calls[0];
+    expect(message).toContain('common.backend_unreachable');
+    expect(message).not.toContain('<no response>');
   });
 
   it('should prevent concurrent executions', async () => {
