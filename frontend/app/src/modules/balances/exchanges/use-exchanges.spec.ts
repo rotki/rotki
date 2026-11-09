@@ -137,6 +137,24 @@ describe('useExchanges', () => {
       expect(store.exchangeBalances).toEqual({});
     });
 
+    it.each([
+      ['a rejected key alone offers no retry', [['one', 'auth']], 'auth'],
+      ['connections that all need fixing report the first cause', [['one', 'auth'], ['two', 'forbidden']], 'auth'],
+      ['any connection that could heal offers a retry', [['one', 'auth'], ['two', 'network']], 'network'],
+    ])('should report the cause of the failed connections: %s', async (_title, failed, expected) => {
+      runTaskMock.mockResolvedValue(ok({
+        failedAccounts: { kraken: Object.fromEntries(failed.map(([identifier, cause]) => [identifier, { cause, message: 'failed' }])) },
+        perAccount: {},
+        totals: {},
+      }));
+
+      await exchanges.fetchExchangeBalances({ location: 'kraken' });
+      await flushPromises();
+
+      const activity = get(useTaskOrchestrator().activities).find(({ id }) => id === exchangeBalancesActivity.id({ location: 'kraken' }));
+      expect(activity?.failureCause).toBe(expected);
+    });
+
     it('should fail the task with the connection errors when a connection of the location failed', async () => {
       useConnectedExchangesStore().setConnectedExchanges([
         createTestExchange('kraken', 'a'),
