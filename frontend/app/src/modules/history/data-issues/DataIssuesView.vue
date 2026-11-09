@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from 'vue-router';
 import type { Filters } from '@/modules/history/data-issues/data-issue-filter-keys';
 import type { DataIssue, DataIssuesRequestPayload } from '@/modules/history/data-issues/schemas';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
@@ -216,10 +215,6 @@ function clearFilters(): void {
   updateFilter({});
 }
 
-async function goToEvent(route: RouteLocationRaw): Promise<void> {
-  await router.push(route);
-}
-
 /**
  * Opens the resolve dialog against one row's issue.
  *
@@ -372,7 +367,7 @@ onMounted(async () => {
         :empty-description="emptyDescription"
         :show-clear-filters="isEmpty && hasActiveFilters"
         @open="openDetail($event)"
-        @goto="goToEvent($event)"
+        @goto="router.push($event)"
         @dismiss="onDismiss($event.id)"
         @retry="onRetry($event.id)"
         @resolve="onResolveFromRow($event)"

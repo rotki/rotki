@@ -4054,6 +4054,7 @@ class RestAPI:
                 'event_timestamp': int(bucket.stop.event_timestamp),
                 'derived_balance_before_event': str(bucket.stop.derived_balance_before_event),
                 'negative_amount': str(bucket.stop.negative_amount),
+                'group_identifier': bucket.stop.group_identifier,
             },
         }
 

@@ -42,14 +42,18 @@ const observedAt = computed<number | null>(() => get(amounts).observedAt);
 
 /** The event route is kept even when the issue link is missing or dismissed. */
 const eventRoute = computed<RouteLocationRaw | undefined>(() => {
-  const eventIdentifier = bucket.stop?.eventIdentifier;
-  if (eventIdentifier === undefined)
+  const { stop } = bucket;
+  if (stop === null)
     return undefined;
 
-  return {
-    name: '/history/events/',
-    query: { highlightedNegativeBalanceEvent: String(eventIdentifier) },
+  const query: Record<string, string> = {
+    highlightedNegativeBalanceEvent: String(stop.eventIdentifier),
+    asset: bucket.asset,
   };
+  if (stop.groupIdentifier)
+    query.targetGroupIdentifier = stop.groupIdentifier;
+
+  return { name: '/history/events/', query };
 });
 
 /**

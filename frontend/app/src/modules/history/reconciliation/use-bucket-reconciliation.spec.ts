@@ -1,4 +1,4 @@
-import type { ReconciliationAccount, ReconciliationBucket, ReconciliationResponse, StatusCounts } from '@/modules/history/reconciliation/schemas';
+import type { BucketStatus, ReconciliationAccount, ReconciliationBucket, ReconciliationResponse, StatusCounts } from '@/modules/history/reconciliation/schemas';
 import { get } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -80,7 +80,7 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
 describe('useBucketReconciliation', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('should let only the newest summary request write the store', async () => {
@@ -166,6 +166,61 @@ describe('useBucketReconciliation', () => {
 
     const detail = useBucketReconciliationStore().accountState(reconciliationAccountKey('ethereum', '0xA'));
     expect(detail?.buckets.map(item => item.asset)).toStrictEqual(['NEW']);
+  });
+
+  it.each([
+    { startsFiltered: true, oldFinishesFirst: true },
+    { startsFiltered: true, oldFinishesFirst: false },
+    { startsFiltered: false, oldFinishesFirst: true },
+    { startsFiltered: false, oldFinishesFirst: false },
+  ])('should replace in-flight rows on a view switch ($startsFiltered, $oldFinishesFirst)', async ({ startsFiltered, oldFinishesFirst }) => {
+    const attention: BucketStatus[] = ['mismatch', 'blocked'];
+    const previousStatuses = startsFiltered ? attention : undefined;
+    const nextStatuses = startsFiltered ? undefined : attention;
+    const first = deferred<ReconciliationAccount | undefined>();
+    const second = deferred<ReconciliationAccount | undefined>();
+    const eth = account();
+    const store = useBucketReconciliationStore();
+    store.setSummary(response({ accounts: [eth] }));
+    fetchAccount.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    const { ensureAccount, reloadAccounts, loadMore } = useBucketReconciliation();
+    const initial = ensureAccount(eth, previousStatuses);
+    const switched = reloadAccounts(nextStatuses);
+    const oldRows = account({
+      buckets: [bucket('OLD')],
+      pagination: { limit: 50, offset: 0, total: 1 },
+    });
+    const newRows = account({
+      buckets: [bucket('NEW'), bucket('CURRENT')],
+      pagination: { limit: 50, offset: 0, total: 3 },
+    });
+
+    async function finishOld(): Promise<void> {
+      first.resolve(oldRows);
+      await initial;
+    }
+
+    async function finishNew(): Promise<void> {
+      second.resolve(newRows);
+      await switched;
+    }
+
+    const completions = oldFinishesFirst ? [finishOld, finishNew] : [finishNew, finishOld];
+    await completions[0]();
+    await completions[1]();
+
+    const key = reconciliationAccountKey('ethereum', '0xA');
+    expect(store.accountState(key)?.buckets.map(item => item.asset)).toStrictEqual(['NEW', 'CURRENT']);
+    expect(store.accountState(key)?.pagination.total).toBe(3);
+    expect(store.accountState(key)?.statusKey).toBe(startsFiltered ? 'all' : 'blocked,mismatch');
+
+    fetchAccount.mockResolvedValueOnce(account({
+      buckets: [bucket('LAST')],
+      pagination: { limit: 50, offset: 2, total: 3 },
+    }));
+    await loadMore(eth, nextStatuses);
+    expect(fetchAccount.mock.calls[2][0]).toMatchObject({ offset: 2, status: nextStatuses });
+    expect(store.accountState(key)?.buckets.map(item => item.asset)).toStrictEqual(['NEW', 'CURRENT', 'LAST']);
   });
 
   it('should append the next page without duplicating a row that moved between reads', async () => {

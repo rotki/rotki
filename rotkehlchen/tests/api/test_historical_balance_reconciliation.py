@@ -231,6 +231,12 @@ def test_blocked_bucket_with_no_metric_keeps_dismissed_issue(
     assert bucket['stop']['event_identifier'] == seeded['blocked']['event_identifier']
     assert bucket['stop']['derived_balance_before_event'] == '1'
     assert bucket['stop']['negative_amount'] == '-2'
+    with database.conn.read_ctx() as cursor:
+        group_identifier = cursor.execute(
+            'SELECT group_identifier FROM history_events WHERE identifier = ?',
+            (seeded['blocked']['event_identifier'],),
+        ).fetchone()[0]
+    assert bucket['stop']['group_identifier'] == group_identifier
     assert bucket['issue_id'] == seeded['blocked']['issue_id']
     assert result['totals'][BucketStatus.BLOCKED] == 1
 

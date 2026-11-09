@@ -213,8 +213,9 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
   async function reloadAccounts(statuses?: BucketStatus[]): Promise<void> {
     const latest = get(store.summary)?.accounts ?? [];
     const byKey = new Map(latest.map(account => [accountKeyOf(account), account]));
+    const statusKey = statusSignature(statuses);
     const loadedKeys = Object.entries(get(store.accounts))
-      .filter(([, state]) => state.loaded)
+      .filter(([, state]) => state.loaded || (state.loading && state.statusKey !== statusKey))
       .map(([key]) => key);
 
     await Promise.all(loadedKeys.map(async (key) => {

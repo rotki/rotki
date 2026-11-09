@@ -40,11 +40,16 @@ class BucketStop:
     the bucket is blocked for as long as this record exists, whatever its inbox issue says. The
     record is replaced only by a completed processing pass that reprocessed the event
     (see replace_bucket_stops), never by dismissing or remediating the negative balance issue.
+
+    `group_identifier` lets the UI page to and highlight the event. It is null only when the
+    stopping event was deleted: the stop itself has no foreign key on the event on purpose, so
+    the blockage survives the deletion.
     """
     event_identifier: int
     event_timestamp: TimestampMS
     derived_balance_before_event: FVal
     negative_amount: FVal
+    group_identifier: str | None
 
 
 class BucketRunState[BucketT: Hashable]:
@@ -91,6 +96,7 @@ class BucketRunState[BucketT: Hashable]:
             event_timestamp=event.timestamp,
             derived_balance_before_event=balance_before_event,
             negative_amount=negative_amount,
+            group_identifier=event.group_identifier,
         )
 
     def await_reconciliation(
@@ -127,10 +133,12 @@ def get_bucket_stops(cursor: DBCursor) -> dict[BucketKey, BucketStop]:
             event_timestamp=TimestampMS(event_timestamp),
             derived_balance_before_event=FVal(balance_before),
             negative_amount=FVal(negative_amount),
-        ) for location, label, protocol, asset, event_identifier, event_timestamp, balance_before, negative_amount in cursor.execute(  # noqa: E501
-            'SELECT location, location_label, protocol, asset, event_identifier, '
-            'event_timestamp, derived_balance_before_event, negative_amount '
-            'FROM bucket_processing_stops',
+            group_identifier=group_identifier,
+        ) for location, label, protocol, asset, event_identifier, event_timestamp, balance_before, negative_amount, group_identifier in cursor.execute(  # noqa: E501
+            'SELECT s.location, s.location_label, s.protocol, s.asset, s.event_identifier, '
+            's.event_timestamp, s.derived_balance_before_event, s.negative_amount, '
+            'he.group_identifier FROM bucket_processing_stops s '
+            'LEFT JOIN history_events he ON he.identifier = s.event_identifier',
         )
     }
 

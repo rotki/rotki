@@ -4,7 +4,7 @@ import { startPromise } from '@shared/utils';
 import { addAccountLink } from '@/modules/accounts/add-account-link';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useSpamAsset } from '@/modules/assets/use-spam-asset';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { useConfirm } from '@/modules/core/common/use-confirm';
 import DataIssuesTabs from '@/modules/history/data-issues/DataIssuesTabs.vue';
 import { useDataIssuesAutoReload } from '@/modules/history/data-issues/use-data-issues-auto-reload';
 import { useDataIssuesDetection } from '@/modules/history/data-issues/use-data-issues-detection';
@@ -48,7 +48,7 @@ const { summary } = storeToRefs(store);
 
 const { getAssetField } = useAssetInfoRetrieval();
 const { markAssetsAsSpam } = useSpamAsset();
-const { show } = useConfirmStore();
+const { ask } = useConfirm();
 
 const checkError = ref<string>();
 
@@ -88,8 +88,9 @@ const { detect, detecting } = useDataIssuesDetection(() => refreshAll(get(status
 async function checkNow(): Promise<void> {
   set(checkError, undefined);
   const result = await detect();
-  if (result.conflict) {
+  if (!result.success)
     set(checkError, result.message);
+  if (result.conflict) {
     await refreshAll(get(statuses));
   }
 }
@@ -116,17 +117,19 @@ function openIssue(issueId: number): void {
   }));
 }
 
-function markSpam(bucket: ReconciliationBucket): void {
+async function markSpam(bucket: ReconciliationBucket): Promise<void> {
   const symbol = getAssetField(bucket.asset, 'symbol') || bucket.asset;
-  show({
+  const choice = await ask({
     message: t('data_issues.reconciliation.spam.message', { asset: symbol }),
     title: t('data_issues.reconciliation.spam.title'),
     type: 'warning',
-  }, async () => {
-    const result = await markAssetsAsSpam([bucket.asset]);
-    if (result.success)
-      await refreshAll(get(statuses));
   });
+  if (choice !== 'confirm')
+    return;
+
+  const result = await markAssetsAsSpam([bucket.asset]);
+  if (result.success)
+    await refreshAll(get(statuses));
 }
 
 function expandAccount(account: Parameters<typeof ensureAccount>[0]): void {

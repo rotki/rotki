@@ -3,7 +3,14 @@ import { bigNumberify } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { defineComponent } from 'vue';
 import ReconciliationStatusCell from '@/modules/history/reconciliation/components/ReconciliationStatusCell.vue';
+
+const RouterLinkStub = defineComponent({
+  name: 'RouterLink',
+  props: { to: { type: [Object, String], required: true } },
+  template: '<a><slot /></a>',
+});
 
 function bucket(overrides: Partial<ReconciliationBucket> = {}): ReconciliationBucket {
   return {
@@ -27,7 +34,7 @@ function mountCell(value: ReconciliationBucket): VueWrapper {
     global: {
       plugins: [createPinia()],
       stubs: {
-        'RouterLink': { template: '<a><slot /></a>' },
+        'RouterLink': RouterLinkStub,
         'i18n-t': { template: '<span class="i18n-t"><slot name="date" /><slot /></span>' },
       },
     },
@@ -90,12 +97,42 @@ describe('reconciliation status cell', () => {
         derivedBalanceBeforeEvent: bigNumberify('0.5'),
         eventIdentifier: 1234,
         eventTimestamp: 1_700_000_000_000,
+        groupIdentifier: '0xgroup',
         negativeAmount: bigNumberify('-1'),
       },
     }));
 
     expect(wrapper.find('[data-testid="reconciliation-view-event"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="reconciliation-open-issue"]').exists()).toBe(false);
+    expect(wrapper.findComponent({ name: 'RouterLink' }).props('to')).toEqual({
+      name: '/history/events/',
+      query: {
+        asset: 'ETH',
+        highlightedNegativeBalanceEvent: '1234',
+        targetGroupIdentifier: '0xgroup',
+      },
+    });
+  });
+
+  it('should link a stop whose event was deleted without a group or paging target', () => {
+    const wrapper = mountCell(bucket({
+      status: 'blocked',
+      stop: {
+        derivedBalanceBeforeEvent: bigNumberify('0.5'),
+        eventIdentifier: 1234,
+        eventTimestamp: 1_700_000_000_000,
+        groupIdentifier: null,
+        negativeAmount: bigNumberify('-1'),
+      },
+    }));
+
+    expect(wrapper.findComponent({ name: 'RouterLink' }).props('to')).toEqual({
+      name: '/history/events/',
+      query: {
+        asset: 'ETH',
+        highlightedNegativeBalanceEvent: '1234',
+      },
+    });
   });
 
   it('should render the status icon as well as the label', () => {

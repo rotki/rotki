@@ -54,6 +54,11 @@ const BucketStop = z.object({
   eventTimestamp: z.number(),
   derivedBalanceBeforeEvent: NumericString,
   negativeAmount: NumericString,
+  /**
+   * The stopping event's group, so the events view can page to it and highlight it. Null only
+   * when the event was deleted after the stop was recorded.
+   */
+  groupIdentifier: z.string().nullable(),
 });
 
 export const ReconciliationBucket = z.object({

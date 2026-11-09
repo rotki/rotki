@@ -162,11 +162,17 @@ def _first_event_negative(database: DBHandler) -> int:
 def test_first_event_negative_is_stopped_without_metrics(database: DBHandler) -> None:
     event_id = _first_event_negative(database)
     assert _metric_count(database, TEST_ADDR1) == 0
+    with database.conn.read_ctx() as cursor:
+        group_identifier = cursor.execute(
+            'SELECT group_identifier FROM history_events WHERE identifier = ?',
+            (event_id,),
+        ).fetchone()[0]
     assert _stops(database) == {_bucket_key(): BucketStop(
         event_identifier=event_id,
         event_timestamp=TimestampMS(1000),
         derived_balance_before_event=FVal(0),
         negative_amount=FVal(-1),
+        group_identifier=group_identifier,
     )}
 
 
