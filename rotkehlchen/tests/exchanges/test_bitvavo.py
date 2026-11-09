@@ -49,6 +49,8 @@ from rotkehlchen.types import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from rotkehlchen.db.updates import RotkiDataUpdater
+
 TIMESTAMP_MS = 1700490703564
 
 
@@ -741,6 +743,26 @@ def test_asset_symbol_resolution() -> None:
         asset_from_bitvavo('NOTAREALASSET')
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_symbols_of_other_projects_resolve_through_the_bitvavo_mappings(
+        data_updater: RotkiDataUpdater,
+) -> None:
+    """POL, SKY and TRAC exist in the global DB as identifiers of unrelated legacy assets,
+    so without a Bitvavo mapping the ticker fallback picks those silently. The mappings ship
+    as rotki/data location_asset_mappings v19 (rotki/data#297), whose payload this applies.
+    """
+    expected = {
+        'POL': 'eip155:137/erc20:0x0000000000000000000000000000000000001010',
+        'SKY': 'eip155:1/erc20:0x56072C95FAA701256059aa122697B133aDEd9279',
+        'TRAC': 'eip155:1/erc20:0xaA7a9CA87d3694B5755f213B5D04094b8d0F0A6F',
+    }
+    data_updater.update_location_asset_mappings(data={'additions': [
+        {'asset': asset, 'location': 'bitvavo', 'location_symbol': symbol}
+        for symbol, asset in expected.items()
+    ]}, version=19)
+    assert {symbol: asset_from_bitvavo(symbol).identifier for symbol in expected} == expected
+
+
 def ledger_row(ledger_type: str, side: str = 'received') -> dict[str, str]:
     return {
         'transactionId': f'{ledger_type}-row',
@@ -979,7 +1001,7 @@ def test_pagination_stops_on_an_empty_page(bitvavo_exchange: Bitvavo) -> None:
     ({'receivedAmount': 'not a number'}, 'Failed to deserialize value entry'),
     ({'executedAt': 'not a date'}, 'Failed to deserialize Bitvavo timestamp from not a date'),
 ])
-def test_ledger_row_with_an_unparseable_value_is_reported(
+def test_ledger_row_with_an_unparsable_value_is_reported(
         bitvavo_exchange: Bitvavo,
         override: dict[str, str],
         expected_in_error: str,
