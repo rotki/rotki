@@ -37,7 +37,6 @@ export function useDataIssuesDetection(reload: () => Promise<void>): UseDataIssu
       rerunnable: false,
       run: async ({ runTask }): Promise<Result<boolean, TaskError>> => runTask<boolean>(
         async () => triggerTask('current_balance_detection'),
-        { conflictFails: true },
       ),
       subtitle: activityLabelFor(msg.$t('task_center.activity.historical_balances.detection')),
       title: t('task_center.group.historical_balances'),

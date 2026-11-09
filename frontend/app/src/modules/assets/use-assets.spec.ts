@@ -178,6 +178,14 @@ describe('useAssets', () => {
       expect(result).toEqual(ok({ conflicts, kind: 'conflicts' }));
     });
 
+    it('should read a 409 as the conflicts to resolve rather than as the update failing', async () => {
+      whenTask(ok([]));
+
+      await store.applyUpdates(payload);
+
+      expect(runTaskResult).toHaveBeenCalledWith(expect.any(Function), { conflictIsResult: true });
+    });
+
     it('should return the failure with its reason and leave reporting it to the caller', async () => {
       whenTask(err(TaskFailed({ message: 'failed' })));
 

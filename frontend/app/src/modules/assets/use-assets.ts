@@ -94,6 +94,7 @@ export function useAssets(): UseAssetsReturn {
       run: async ({ runTask }): Promise<Result<AssetUpdateResult, TaskError>> => mapResult(
         await runTask<AssetUpdateResult>(
           async () => performUpdate(version, resolution),
+          { conflictIsResult: true },
         ),
         result => result,
       ),

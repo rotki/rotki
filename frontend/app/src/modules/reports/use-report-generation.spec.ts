@@ -77,15 +77,6 @@ describe('useReportGeneration', () => {
       expect(mockFetchReports).toHaveBeenCalledOnce();
     });
 
-    it('should read a 409 as the report failing, since an accounting error still hands back the report id', async () => {
-      mockRunTask.mockResolvedValue(ok(42));
-
-      const { generateReport } = scope.run(() => useReportGeneration())!;
-      await generateReport({ end: 2000, start: 1000 });
-
-      expect(mockRunTask).toHaveBeenCalledWith(expect.any(Function), expect.any(String), { conflictFails: true });
-    });
-
     it('should leave no progress poll behind when a second generation joins the running one', async () => {
       let finish: (value: unknown) => void = () => {};
       mockRunTask.mockReturnValue(new Promise((resolve) => {

@@ -109,10 +109,7 @@ export function useReportGeneration(): UseReportGenerationReturn {
       userStarted: true,
       run: async ({ runTask }): Promise<Result<number, TaskError>> => {
         intervalId = checkProgress(id);
-        const result = await runTask<number>(
-          async () => generateReportCaller(period),
-          { conflictFails: true },
-        );
+        const result = await runTask<number>(async () => generateReportCaller(period));
         if (isErr(result))
           return result;
 
