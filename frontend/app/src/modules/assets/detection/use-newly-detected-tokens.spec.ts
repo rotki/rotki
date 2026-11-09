@@ -201,7 +201,7 @@ describe('useNewlyDetectedTokens', () => {
 
       const result = await getData({ limit: 10, offset: 0 });
 
-      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, message: 'database closed', path: undefined, status: undefined })));
+      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, failureCause: 'unknown', message: 'database closed', path: undefined, status: undefined })));
     });
   });
 

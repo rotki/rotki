@@ -1,7 +1,8 @@
 import type { ActionResult } from '@rotki/common';
 import { FetchError } from 'ofetch';
+import { type CarriesFailureCause, parseFailureCause } from '@/modules/core/api/failure-cause';
 import { camelCaseTransformer, noRootCamelCaseTransformer } from '@/modules/core/api/transformers';
-import { ApiValidationError } from '@/modules/core/api/types/errors';
+import { ApiRequestError, ApiValidationError } from '@/modules/core/api/types/errors';
 import { HTTPStatus } from '@/modules/core/api/types/http';
 
 export interface ResponseParserOptions {
@@ -51,15 +52,19 @@ export function createStatusError(status: number, message?: string, data?: unkno
 }
 
 /**
- * Unwraps an ActionResult: returns its result, falls back to defaultValue, or
- * throws (ApiValidationError on 400, plain Error otherwise) when it is an error.
+ * Unwraps an ActionResult: returns its result, falls back to defaultValue, or throws
+ * (ApiValidationError on 400, ApiRequestError otherwise) when it is an error.
+ *
+ * @remarks
+ * A cause marks a failure whatever result it carries. The few failures that hand data back are read
+ * with `skipResultUnwrap`.
  */
-export function unwrapResult<T>(data: ActionResult<T> | undefined, status: number, defaultValue?: T): T {
+export function unwrapResult<T>(data: (ActionResult<T> & CarriesFailureCause) | undefined, status: number, defaultValue?: T): T {
   if (!data)
     throw createStatusError(status);
 
-  const { result, message } = data;
-  const isError = result === null || result === undefined || (!result && message);
+  const { cause, result, message } = data;
+  const isError = cause !== undefined || result === null || result === undefined || (!result && message);
 
   if (!isError)
     return result;
@@ -67,10 +72,12 @@ export function unwrapResult<T>(data: ActionResult<T> | undefined, status: numbe
   if (defaultValue !== undefined)
     return defaultValue;
 
-  if (status === HTTPStatus.BAD_REQUEST)
-    throw new ApiValidationError(message);
+  const options = { failureCause: parseFailureCause(cause), status };
 
-  throw new Error(message);
+  if (status === HTTPStatus.BAD_REQUEST)
+    throw new ApiValidationError(message, options);
+
+  throw new ApiRequestError(message, options);
 }
 
 /**

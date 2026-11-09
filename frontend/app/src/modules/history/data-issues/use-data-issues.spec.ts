@@ -64,7 +64,7 @@ describe('useDataIssues', () => {
 
     const result = await fetchData({ limit: 10, offset: 0 });
 
-    expect(result).toStrictEqual(err(RequestFailed({ cause, message: 'boom', path: undefined, status: 500 })));
+    expect(result).toStrictEqual(err(RequestFailed({ cause, failureCause: 'unknown', message: 'boom', path: undefined, status: 500 })));
   });
 
   it('should carry a cancelled list request as cancelled, not failed', async () => {

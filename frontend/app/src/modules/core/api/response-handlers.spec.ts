@@ -1,8 +1,53 @@
 import { FetchError } from 'ofetch';
-import { describe, expect, it } from 'vitest';
-import { createResponseParser, createStatusError, tryParseJson } from './response-handlers';
+import { assert, describe, expect, it } from 'vitest';
+import { ApiRequestError, ApiValidationError } from '@/modules/core/api/types/errors';
+import { createResponseParser, createStatusError, tryParseJson, unwrapResult } from './response-handlers';
+
+function thrownBy(run: () => unknown): unknown {
+  try {
+    run();
+  }
+  catch (error: unknown) {
+    return error;
+  }
+  return undefined;
+}
 
 describe('response-handlers', () => {
+  describe('unwrapResult', () => {
+    it('should keep the status and cause of a failure on an allowed status', () => {
+      const error = thrownBy(() => unwrapResult({ cause: 'conflict', message: 'taken', result: null }, 409));
+
+      assert(error instanceof ApiRequestError);
+      expect(error.message).toBe('taken');
+      expect(error.status).toBe(409);
+      expect(error.failureCause).toBe('conflict');
+    });
+
+    it('should keep the cause on the validation error of a 400', () => {
+      const error = thrownBy(() => unwrapResult({ cause: 'invalid_input', message: '{"name":["bad"]}', result: null }, 400));
+
+      assert(error instanceof ApiValidationError);
+      expect(error.failureCause).toBe('invalid_input');
+      expect(error.errors).toEqual({ name: ['bad'] });
+    });
+
+    it('should read a result that names a cause as a failure', () => {
+      const error = thrownBy(() => unwrapResult({ cause: 'network', message: 'partial', result: { id: 1 } }, 200));
+
+      assert(error instanceof ApiRequestError);
+      expect(error.failureCause).toBe('network');
+    });
+
+    it('should fall back to the default value for a failure that names a cause', () => {
+      expect(unwrapResult({ cause: 'network', message: 'down', result: null }, 409, 'fallback')).toBe('fallback');
+    });
+
+    it('should return a result with no cause, whatever message it carries', () => {
+      expect(unwrapResult({ message: 'partial', result: { id: 1 } }, 200)).toEqual({ id: 1 });
+    });
+  });
+
   describe('createResponseParser', () => {
     it('should return raw JSON parser when skipCamelCase is true', () => {
       const parser = createResponseParser({ skipCamelCase: true });

@@ -92,7 +92,7 @@ describe('useOraclePrices', () => {
 
     const collection = await result.fetchData({ limit: 100, offset: 0 });
 
-    expect(collection).toStrictEqual(err(RequestFailed({ cause: failure, message: 'Network error', path: undefined, status: undefined })));
+    expect(collection).toStrictEqual(err(RequestFailed({ cause: failure, failureCause: 'unknown', message: 'Network error', path: undefined, status: undefined })));
   });
 
   it('should delete a price and return true on success', async () => {

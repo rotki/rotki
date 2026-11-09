@@ -135,7 +135,7 @@ describe('useReportOperations', () => {
       const { fetchReportEvents } = useReportOperations();
       const result = await fetchReportEvents({ limit: 10, offset: 0, reportId: 1 });
 
-      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, message: 'Fetch failed', path: undefined, status: undefined })));
+      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, failureCause: 'unknown', message: 'Fetch failed', path: undefined, status: undefined })));
       expect(mockNotifyError).not.toHaveBeenCalled();
     });
   });
