@@ -188,13 +188,15 @@ def _get_accounts_with_pending_decoding(
         blockchain.to_chain_id().serialize_for_db(): blockchain
         for blockchain, _ in scope
     }
+    addresses = {address for _, address in scope}
     pending: set[tuple[SupportedBlockchain, str]] = set()
     for chain_id, address in cursor.execute(
         'SELECT DISTINCT C.chain_id, M.address FROM evmtx_address_mappings AS M '
         'INNER JOIN evm_transactions AS C ON M.tx_id = C.identifier '
-        f'WHERE C.chain_id IN ({",".join("?" * len(chain_of_serialized))}) AND NOT EXISTS ('
+        f'WHERE C.chain_id IN ({",".join("?" * len(chain_of_serialized))}) '
+        f'AND M.address IN ({",".join("?" * len(addresses))}) AND NOT EXISTS ('
         'SELECT 1 FROM evm_tx_mappings AS D WHERE D.tx_id = M.tx_id AND D.value = ?)',
-        (*chain_of_serialized, TX_DECODED),
+        (*chain_of_serialized, *addresses, TX_DECODED),
     ):
         if (blockchain := chain_of_serialized.get(chain_id)) is not None:
             pending.add((blockchain, address))
@@ -580,10 +582,10 @@ def get_wallet_evidence(
             blockchain=chain,
             addresses={address},
         ).get(address, AccountSync(None, None, False))
-        pending_decoding = len(_get_accounts_with_pending_decoding(
+        pending_decoding = (chain, address) in _get_accounts_with_pending_decoding(
             cursor=cursor,
             scope={(chain, address)},
-        )) != 0
+        )
         is_queried = len(observations) != 0 or database.get_dynamic_cache(
             cursor=cursor,
             name=DBCacheDynamic.LAST_ADDRESS_BALANCES_QUERY_TS,

@@ -429,6 +429,44 @@ def test_one_address_can_be_eligible_while_another_is_pending(database) -> None:
     assert BucketReason.HISTORY_NOT_SYNCED in pending.pending_reasons
 
 
+def test_pending_decoding_only_blocks_the_mapped_address(database) -> None:
+    for address in (TEST_ADDR1, TEST_ADDR2):
+        _sync(database, address, end=(now := ts_now()))
+        _observe(database, address, A_ETH.identifier, '0', now)
+
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO evm_transactions(identifier, tx_hash, chain_id, timestamp, block_number, '
+            'from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce) '
+            'VALUES (1, ?, ?, ?, 1, ?, ?, "0", "21000", "1", "21000", "", 0)',
+            (
+                make_evm_tx_hash(),
+                SupportedBlockchain.ETHEREUM.to_chain_id().serialize_for_db(),
+                now, TEST_ADDR2, TEST_ADDR2,
+            ),
+        )
+        write_cursor.execute(
+            'INSERT INTO evmtx_address_mappings(tx_id, address) VALUES (1, ?)',
+            (TEST_ADDR2,),
+        )
+
+    assert CurrentBalanceMismatchDetector(database=database).run() == 1
+    with database.conn.read_ctx() as cursor:
+        checks = get_balance_checks(cursor)
+    assert list(checks) == [(LOCATION_ETHEREUM, TEST_ADDR1, A_ETH.identifier)]
+    check = checks[LOCATION_ETHEREUM, TEST_ADDR1, A_ETH.identifier]
+    assert check.derived_balance == check.observed_balance == FVal(0)
+
+    pending = get_wallet_evidence(
+        database=database,
+        location=LOCATION_ETHEREUM,
+        address=TEST_ADDR2,
+        asset=A_ETH.identifier,
+        derived=None,
+    )
+    assert pending.pending_reasons == (BucketReason.HISTORY_PENDING_DECODING,)
+
+
 def test_swapped_identity_invalidates_saved_match_without_processing(database) -> None:
     """A changed asset identity stops trusting old evidence immediately, before reprocessing."""
     from rotkehlchen.globaldb.handler import GlobalDBHandler
