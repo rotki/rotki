@@ -162,7 +162,6 @@ export class RotkiApi {
       tags,
       dedupe,
       maxQueueTime,
-      queueRetries,
       sessionless,
       ...restOptions
     } = options;
@@ -180,7 +179,6 @@ export class RotkiApi {
       tags: sessionSignal ? [...(tags ?? []), SESSION_BOUND_TAG] : tags,
       dedupe,
       maxQueueTime,
-      maxRetries: queueRetries,
     });
   }
 
@@ -220,7 +218,7 @@ export class RotkiApi {
     return value as T;
   }
 
-  private async fetchDirect<T>(url: string, options: Omit<RotkiFetchOptions<'json', T>, 'skipQueue' | 'priority' | 'tags' | 'dedupe' | 'maxQueueTime' | 'queueRetries' | 'sessionless'> = {}): Promise<T> {
+  private async fetchDirect<T>(url: string, options: Omit<RotkiFetchOptions<'json', T>, 'skipQueue' | 'priority' | 'tags' | 'dedupe' | 'maxQueueTime' | 'sessionless'> = {}): Promise<T> {
     const {
       target,
       validStatuses,

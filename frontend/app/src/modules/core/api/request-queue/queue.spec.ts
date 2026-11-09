@@ -155,36 +155,13 @@ describe('requestQueue', () => {
     });
   });
 
-  describe('retry backoff', () => {
-    it('should release the slot while a request waits to be retried', async () => {
-      const started: string[] = [];
-      const retrying = new RequestQueue(mockFetchWrapper, {
-        maxConcurrent: 1,
-        maxPerSecond: 100,
-        maxRetries: 1,
-        retryDelay: 1000,
-      });
+  it('should reject a failed request on its first attempt rather than retrying it', async () => {
+    mockFetch.mockRejectedValue(new TypeError('network down'));
 
-      mockFetch.mockImplementation(async (url: string) => {
-        started.push(url);
-        if (url === '/flaky' && started.filter(u => u === '/flaky').length === 1)
-          throw new TypeError('network down');
+    await expect(queue.enqueue('/write', { method: 'POST' })).rejects.toThrow('network down');
+    await vi.advanceTimersByTimeAsync(60_000);
 
-        return neverSettles();
-      });
-
-      startPromise(retrying.enqueue('/flaky').catch(() => {}));
-      await vi.advanceTimersByTimeAsync(10);
-      expect(started).toEqual(['/flaky']);
-
-      // Still inside the 1000ms backoff: the slot the retry is waiting for must be usable.
-      startPromise(retrying.enqueue('/other'));
-      await vi.advanceTimersByTimeAsync(10);
-
-      expect(started).toContain('/other');
-
-      retrying.destroy();
-    });
+    expect(mockFetch).toHaveBeenCalledOnce();
   });
 
   describe('background slot cap', () => {

@@ -13,13 +13,11 @@ function request(priority: number): QueuedRequest {
     dedupeKey: null,
     id: `stub-${stubId}`,
     maxQueueTime: 60_000,
-    maxRetries: 0,
     options: {},
     priority,
     queuedAt: 0,
     reject: vi.fn(),
     resolve: vi.fn(),
-    retries: 0,
     tags: [],
     url: `/stub-${stubId}`,
   };

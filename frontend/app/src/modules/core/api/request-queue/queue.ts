@@ -1,5 +1,4 @@
 import type { BaseFetchOptions, EnqueueOptions, QueuedRequest, QueueOptions, QueueState, ResolvedEnqueueSettings } from './types';
-import { FetchError } from 'ofetch';
 import { reactive } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 import { QueueOverflowError, QueueTimeoutError, RequestCancelledError } from './errors';
@@ -29,10 +28,8 @@ export class RequestQueue {
       maxPerSecond: 30,
       maxQueueSize: 100,
       maxQueueTime: 60000,
-      maxRetries: 0,
       overflowStrategy: 'reject',
       overloadThreshold: 50,
-      retryDelay: 1000,
       ...options,
     };
     this.state = reactive<QueueState>({
@@ -50,13 +47,12 @@ export class RequestQueue {
     const {
       dedupe = false,
       maxQueueTime = this.options.maxQueueTime,
-      maxRetries = this.options.maxRetries,
       priority = RequestPriority.NORMAL,
       tags = [],
       ...fetchOptions
     } = options;
 
-    return { dedupe, fetchOptions, maxQueueTime, maxRetries, priority, tags };
+    return { dedupe, fetchOptions, maxQueueTime, priority, tags };
   }
 
   /** Attaches to an identical in-flight request, so both callers settle from the one response. */
@@ -82,7 +78,7 @@ export class RequestQueue {
   }
 
   async enqueue<T>(url: string, options: EnqueueOptions = {}): Promise<T> {
-    const { dedupe, fetchOptions, maxQueueTime, maxRetries, priority, tags } = this.resolveEnqueueSettings(options);
+    const { dedupe, fetchOptions, maxQueueTime, priority, tags } = this.resolveEnqueueSettings(options);
     const dedupeKey = dedupe ? createDedupeKey(url, fetchOptions) : null;
 
     if (dedupeKey) {
@@ -102,13 +98,11 @@ export class RequestQueue {
         dedupeKey,
         id,
         maxQueueTime,
-        maxRetries,
         options: { ...fetchOptions, signal: abortController.signal },
         priority,
         queuedAt: Date.now(),
         reject,
         resolve,
-        retries: 0,
         tags,
         url,
       };
@@ -283,16 +277,6 @@ export class RequestQueue {
       this.resolveWithSubscribers(request, response);
     }
     catch (error) {
-      if (this.shouldRetry(error, request)) {
-        request.retries++;
-        this.activeRequests.delete(request.id);
-        setTimeout(() => {
-          this.insertByPriority(request);
-          this.updateState();
-          this.processQueue().catch(catchError => logger.error(catchError));
-        }, this.options.retryDelay * (2 ** (request.retries - 1)));
-        return;
-      }
       this.cleanupRequest(request);
       this.rejectWithSubscribers(request, error);
     }
@@ -316,25 +300,6 @@ export class RequestQueue {
       for (const subscriber of request.dedupeSubscribers)
         subscriber.reject(error);
     }
-  }
-
-  /** Rate limiting, unavailability and any server-side failure are all worth another attempt. */
-  private isRetryableStatus(status: number | undefined): boolean {
-    if (status === undefined)
-      return false;
-
-    return status === 429 || status === 503 || status >= 500;
-  }
-
-  private shouldRetry<T>(error: unknown, request: QueuedRequest<T>): boolean {
-    if (request.retries >= request.maxRetries || request.abortController.signal.aborted)
-      return false;
-    if (error instanceof TypeError)
-      return true;
-    if (error instanceof DOMException && error.name === 'AbortError')
-      return false;
-
-    return error instanceof FetchError && this.isRetryableStatus(error.statusCode);
   }
 
   private cleanupRequest<T>(request: QueuedRequest<T>): void {
