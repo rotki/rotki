@@ -172,7 +172,7 @@ describe('useExchanges', () => {
     });
   });
 
-  describe('removeExchange', () => {
+  describe('removeExchange balance cleanup', () => {
     it('should remove only the deleted connection balance if the remaining query fails', async () => {
       const main = createTestExchange('kraken', 'main');
       const other = createTestExchange('kraken', 'other');
