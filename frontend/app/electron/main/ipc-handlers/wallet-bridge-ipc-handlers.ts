@@ -60,12 +60,43 @@ export class WalletBridgeIpcHandlers {
       return;
     }
 
+    if (await this.restartWebSocketServer()) {
+      await shell.openExternal(`http://localhost:${this.walletConnectBridgePort}/#/wallet-bridge`);
+      return;
+    }
+
     // Servers not running or not configured, start them with retry
     const portNumber = await this.startServersWithRetry();
     this.walletConnectBridgePort = portNumber;
 
     await shell.openExternal(`http://localhost:${portNumber}/#/wallet-bridge`);
   };
+
+  /**
+   * Brings back a websocket server the idle timeout stopped, on the port the page expects.
+   *
+   * @remarks
+   * The idle timeout leaves the http server running. Starting a fresh pair then would find its port
+   * taken, move both servers up by one, and orphan the old http server. An open bridge page would
+   * then be connecting to what is now the http server, which never finishes the handshake.
+   *
+   * @returns whether the servers are running again
+   */
+  private async restartWebSocketServer(): Promise<boolean> {
+    if (!this.walletConnectBridgePort || !this.appServer.isListening())
+      return false;
+
+    try {
+      await this.walletBridgeWebSocketServer.start(this.walletConnectBridgePort + 1);
+      this.logger.info('Restarted the wallet bridge WebSocket server after it stopped');
+      return true;
+    }
+    catch (error) {
+      this.logger.warn(`Failed to restart the wallet bridge WebSocket server: ${String(error)}`);
+      this.performCleanup();
+      return false;
+    }
+  }
 
   private async startServersWithRetry(): Promise<number> {
     const port = await selectPort(40010);
