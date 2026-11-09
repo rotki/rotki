@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useUnifiedProviders } from '../providers/use-unified-providers';
+import BridgeOverlay from './BridgeOverlay.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -17,23 +18,11 @@ const providerCount = computed<number>(() => get(availableProviders).length);
 </script>
 
 <template>
-  <div
+  <BridgeOverlay
     v-if="shouldShowNotification"
-    class="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50"
-  >
-    <RuiAlert
-      type="info"
-      variant="default"
-      class="max-w-md"
-    >
-      <div class="flex-1 min-w-0">
-        <p class="text-lg text-rui-text font-medium mb-1">
-          {{ t('trade.bridge.multiple_providers_detected') }}
-        </p>
-        <p class="text-md text-rui-text-secondary">
-          {{ t('trade.bridge.multiple_providers_message', { count: providerCount }) }}
-        </p>
-      </div>
-    </RuiAlert>
-  </div>
+    color="info"
+    icon="lu-info"
+    :title="t('trade.bridge.multiple_providers_detected')"
+    :description="t('trade.bridge.multiple_providers_message', { count: providerCount })"
+  />
 </template>

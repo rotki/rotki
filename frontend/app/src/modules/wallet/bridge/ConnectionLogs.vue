@@ -13,24 +13,31 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <div class="mt-4 pt-4 border-t border-default">
-    <h5 class="font-bold mb-3">
+  <RuiCard
+    divide
+    no-padding
+  >
+    <template #header>
       {{ t('trade.bridge.connection_logs') }}
-    </h5>
-    <div class="border border-default rounded-md p-4 max-h-75 overflow-y-auto bg-rui-grey-50 dark:bg-rui-grey-900">
-      <p
+    </template>
+    <div class="max-h-64 overflow-y-auto divide-y divide-default text-xs">
+      <div
         v-for="(log, index) in logs"
         :key="index"
-        class="mb-2 pb-2 border-b border-default font-mono last:mb-0 last:pb-0 last:border-0 text-sm break-words"
-        :class="{
-          'text-rui-primary': log.type === 'info',
-          'text-rui-success': log.type === 'success',
-          'text-rui-error': log.type === 'error',
-        }"
+        class="flex gap-3 px-4 py-2"
       >
-        <span class="text-gray-500 mr-1">{{ log.timestamp }}</span>
-        {{ log.message }}
-      </p>
+        <span class="font-mono text-rui-text-disabled shrink-0">{{ log.timestamp }}</span>
+        <span
+          class="break-words min-w-0"
+          :class="{
+            'text-rui-text-secondary': log.type === 'info',
+            'text-rui-success': log.type === 'success',
+            'text-rui-error': log.type === 'error',
+          }"
+        >
+          {{ log.message }}
+        </span>
+      </div>
     </div>
-  </div>
+  </RuiCard>
 </template>
