@@ -8,11 +8,9 @@ export const useBlockchainRefreshTimestampsStore = defineStore('balances/refresh
   /**
    * Monotonic per chain: a timestamp older than the one already stored is ignored.
    *
-   * Two independent things write a chain's balances — a data refresh from the DB and a network
-   * query — and they are deliberately allowed to overlap. Merging blindly meant whichever *landed*
-   * last won, so a slow local read finishing after a fresh network result would roll the chain back
-   * to stale data. Keeping the newest timestamp is what makes the ordering irrelevant, so nothing
-   * has to serialise the two.
+   * Two independent things write a chain's balances, a read from the DB and a network query, and
+   * they are deliberately allowed to overlap. The timestamp only settles part of that ordering; see
+   * {@link isStale} for what it cannot tell.
    */
   const updateTimestamps = (timestamps: Record<string, number>): void => {
     const current = get(refreshTimestamps);
@@ -36,8 +34,15 @@ export const useBlockchainRefreshTimestampsStore = defineStore('balances/refresh
    * Whether an incoming payload for this chain is older than what has already been stored.
    *
    * Only ever `true` when both sides are known. A payload with no timestamp is accepted: the
-   * backend omits `last_refresh_ts` when it has never queried the chain, and refusing those would
-   * mean a chain that has never been refreshed can never receive its first balances.
+   * backend omits `last_refresh_ts` when the chain has never been queried, when its last query
+   * stored no balances, and after its accounts or validators changed.
+   *
+   * @remarks
+   * Not sufficient for a cached read that overlaps a network result. The backend reads the timestamp
+   * after the balances, so such a read can carry the newer query's timestamp with older data, and a
+   * tie cannot be refused because a deliberate re-read (a threshold change, an un-ignored asset)
+   * legitimately has the same timestamp and different content. `handleCachedFetch` covers that case
+   * by comparing when the read began instead.
    */
   const isStale = (chain: string, timestamp: number | undefined): boolean => {
     if (timestamp === undefined)

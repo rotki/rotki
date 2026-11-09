@@ -68,4 +68,15 @@ describe('useBalanceRefreshState', () => {
     store.reset();
     expect(get(isRefreshing)).toBe(false);
   });
+
+  it('should count applied network results per chain and forget them on reset', () => {
+    const store = useBalanceRefreshState();
+    store.markNetworkResultApplied('eth');
+    store.markNetworkResultApplied('eth');
+    expect(store.networkResultCount('eth')).toBe(2);
+    expect(store.networkResultCount('optimism')).toBe(0);
+
+    store.reset();
+    expect(store.networkResultCount('eth')).toBe(0);
+  });
 });

@@ -45,10 +45,11 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   const { isEth2Enabled } = useBlockchainValidatorsStore();
   const refreshState = useBalanceRefreshState();
 
-  const processBalanceResult = (blockchain: string, parsedBalances: BlockchainBalances): void => {
+  /** @returns whether the balances were written, as opposed to refused for being older */
+  const processBalanceResult = (blockchain: string, parsedBalances: BlockchainBalances): boolean => {
     const lastRefreshTs = parsedBalances.lastRefreshTs ? byChainKey(parsedBalances.lastRefreshTs) : undefined;
     if (isStale(blockchain, lastRefreshTs?.[blockchain]))
-      return;
+      return false;
 
     if (lastRefreshTs)
       updateTimestamps(lastRefreshTs);
@@ -59,6 +60,8 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
       updateBalances(blockchain, convertBtcBalances(blockchain, parsedBalances.totals, perAccount));
     else
       updateBalances(blockchain, parsedBalances);
+
+    return true;
   };
 
   const hasAccounts = (blockchain: string): boolean => {
@@ -149,6 +152,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   const settleChain = (
     blockchain: string,
     result: Result<BlockchainBalances, TaskError>,
+    onApplied?: () => void,
   ): Result<void, TaskError> => {
     if (isErr(result)) {
       if (isActionable(result.error))
@@ -156,7 +160,8 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
       invalidate(chainBalancesActivity.kind, ...chainBalancesActivity.partsOf({ chain: blockchain }));
     }
     else {
-      processBalanceResult(blockchain, result.value);
+      if (processBalanceResult(blockchain, result.value))
+        onApplied?.();
       markCompleted(chainBalancesActivity.kind, ...chainBalancesActivity.partsOf({ chain: blockchain }));
     }
 
@@ -176,12 +181,18 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     return settleChain(
       blockchain,
       mapResult(await runTask<unknown>(apiCall), result => BlockchainBalances.parse(result)),
+      () => refreshState.markNetworkResultApplied(blockchain),
     );
   };
 
   /**
    * Layer 1's read. A plain cache-only GET, so its outcome is a rejection rather than a task result
    * — the only difference from {@link executeBalanceQuery}, and it ends at the same bookkeeping.
+   *
+   * @remarks
+   * A read that a network result overtook while it was in flight is dropped, whatever its timestamp
+   * says or whether it failed: the network result is newer and has already recorded the completion.
+   * It resolves `ok` so a failure cannot invalidate that result or trigger a hydration retry.
    */
   const handleCachedFetch = async (
     payload: FetchBlockchainBalancePayload,
@@ -192,6 +203,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     if (skipped)
       return skipped;
 
+    const networkResultsAtStart = refreshState.networkResultCount(blockchain);
     let result: Result<BlockchainBalances, TaskError>;
     try {
       result = ok(await queryBlockchainBalances(payload, threshold));
@@ -201,6 +213,9 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
         ? Cancelled({ message: t('actions.balances.blockchain.cancelled') })
         : TaskFailed({ cause: error, message: getErrorMessage(error) }));
     }
+
+    if (refreshState.networkResultCount(blockchain) !== networkResultsAtStart)
+      return ok(undefined);
 
     return settleChain(blockchain, result);
   };
