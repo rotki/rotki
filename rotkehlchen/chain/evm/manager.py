@@ -22,12 +22,17 @@ from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import EthSyncError, InputError, RemoteError
+from rotkehlchen.history.data_issues.observations import (
+    ObservationSource,
+    record_wallet_observations,
+)
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.locations.chains import (
     location_from_chain_id,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress, Price, Timestamp
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -199,13 +204,29 @@ class EvmManager(
         client and the chain is not synced
         """
         chain_balances: defaultdict[ChecksumEvmAddress, BalanceSheet] = defaultdict(BalanceSheet)
+        observed_at = ts_now()  # before the query, so the observation never postdates it
+        native_balances = self.node_inquirer.get_multi_balance(accounts)
+        native_token = self.node_inquirer.native_token
+        # The native balance was queried for every requested address, so a missing result is an
+        # explicit zero and not unknown coverage. Publish it only from this successful output.
+        with self.node_inquirer.database.user_write() as write_cursor:
+            for account in accounts:
+                record_wallet_observations(
+                    write_cursor=write_cursor,
+                    blockchain=self.node_inquirer.blockchain,
+                    address=account,
+                    amounts={native_token.identifier: native_balances.get(account, ZERO)},
+                    observed_at=observed_at,
+                    source=ObservationSource.BALANCE_QUERY,
+                )
+
         native_token_price = Inquirer.find_price(
-            from_asset=self.node_inquirer.native_token,
+            from_asset=native_token,
             to_asset=CachedSettings().main_currency,
         )
-        for account, balance in self.node_inquirer.get_multi_balance(accounts).items():
+        for account, balance in native_balances.items():
             if balance != ZERO:  # accounts (e.g. multisigs) can have zero balances
-                chain_balances[account].assets[self.node_inquirer.native_token][DEFAULT_BALANCE_LABEL] = Balance(  # noqa: E501
+                chain_balances[account].assets[native_token][DEFAULT_BALANCE_LABEL] = Balance(
                     amount=balance,
                     value=balance * native_token_price,
                 )

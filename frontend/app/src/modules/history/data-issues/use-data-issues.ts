@@ -9,6 +9,7 @@ import { useDataIssuesApi } from '@/modules/history/data-issues/api/use-data-iss
 
 interface UseDataIssuesReturn {
   fetchData: (payload: MaybeRef<DataIssuesRequestPayload>) => ResultAsync<Collection<DataIssue>, RequestError>;
+  fetchIssue: (id: number) => Promise<{ issue?: DataIssue; error?: string }>;
   /** The actions report nothing themselves: the surface that ran one names its failure. */
   dismiss: (id: number) => ResultAsync<DataIssue, DataIssueError>;
   resolveManually: (id: number, note?: string) => ResultAsync<DataIssue, DataIssueError>;
@@ -16,7 +17,7 @@ interface UseDataIssuesReturn {
 }
 
 export function useDataIssues(): UseDataIssuesReturn {
-  const { dismissIssue, listIssues, resolveIssueManually, retryAutoRemediation } = useDataIssuesApi();
+  const { dismissIssue, getIssue, listIssues, resolveIssueManually, retryAutoRemediation } = useDataIssuesApi();
 
   const fetchData = async (
     payload: MaybeRef<DataIssuesRequestPayload>,
@@ -25,9 +26,21 @@ export function useDataIssues(): UseDataIssuesReturn {
     mapError((error): RequestError => toRequestError(error.cause)),
   );
 
+  /**
+   * Reads one issue independently of the list filters, returning dead-link errors inline.
+   */
+  const fetchIssue = async (id: number): Promise<{ issue?: DataIssue; error?: string }> => {
+    const result = await getIssue(id);
+    if (result.ok)
+      return { issue: result.value };
+
+    return { error: result.error.message };
+  };
+
   return {
     dismiss: dismissIssue,
     fetchData,
+    fetchIssue,
     resolveManually: resolveIssueManually,
     retry: retryAutoRemediation,
   };

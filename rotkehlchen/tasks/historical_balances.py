@@ -28,6 +28,7 @@ from rotkehlchen.history.data_issues.bucket_state import (
     BucketRunState,
     BucketStop,
     get_retained_stops,
+    invalidate_swapped_asset_identities,
     make_bucket_key,
     replace_bucket_stops,
 )
@@ -521,6 +522,13 @@ def process_historical_balances(
     historical balance queries. Results are cached per address, token and block.
     """
     log.debug(f'Starting historical balance processing from_ts={from_ts}')
+    with database.user_write() as write_cursor:
+        if invalidate_swapped_asset_identities(write_cursor):
+            # The metrics of the old identity were dropped, so a scoped pass would start in the
+            # middle of a history whose earlier events are not represented under the new
+            # identity. Rebuild all of it.
+            from_ts = None
+
     rebasing_assets = GlobalDBHandler.get_asset_ids_with_flag(AssetFlag.REBASING)
     treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
     bucket_balances: dict[Bucket, FVal] = {}

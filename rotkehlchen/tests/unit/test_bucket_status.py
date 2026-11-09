@@ -404,15 +404,15 @@ def test_in_flight_comparison_cannot_write_after_a_lifecycle_change(
     """The change lands after the detector read its inputs and before it opens the write."""
     _add_balance(database, TEST_ADDR1, '5')
     detector = _make_detector(database, '3')
-    real = current_balance.read_cached_wallet_balances
+    real = current_balance.wallet_evidence_for_bucket
 
-    def read_then_change(**kwargs: Any) -> dict:
+    def read_then_change(**kwargs: Any) -> Any:
         result = real(**kwargs)
         if kwargs['address'] == TEST_ADDR1:
             mutation(database)
         return result
 
-    with patch.object(current_balance, 'read_cached_wallet_balances', read_then_change):
+    with patch.object(current_balance, 'wallet_evidence_for_bucket', read_then_change):
         assert detector.run() == 0
     assert _checks(database) == {}
     assert _get_issues(database) == []
@@ -423,14 +423,14 @@ def test_in_flight_comparison_cannot_write_after_a_lifecycle_change(
 def test_in_flight_comparison_cannot_write_after_a_new_observation(database: DBHandler) -> None:
     _add_balance(database, TEST_ADDR1, '5')
     detector = _make_detector(database, '3')
-    real = current_balance.read_cached_wallet_balances
+    real = current_balance.wallet_evidence_for_bucket
 
-    def read_then_refresh(**kwargs: Any) -> dict:
+    def read_then_refresh(**kwargs: Any) -> Any:
         result = real(**kwargs)
         _cache_balance(database, TEST_ADDR1, '5', refreshed_at=ts_now() + 100)
         return result
 
-    with patch.object(current_balance, 'read_cached_wallet_balances', read_then_refresh):
+    with patch.object(current_balance, 'wallet_evidence_for_bucket', read_then_refresh):
         assert detector.run() == 0
     assert _get_issues(database) == []
 

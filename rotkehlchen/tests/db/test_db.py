@@ -228,6 +228,7 @@ TABLES_AT_INIT = [
     'data_issues',
     'bucket_processing_stops',
     'bucket_balance_checks',
+    'wallet_balance_observations',
     'gnosispay_data',
     'historical_balance_cache',
     'solana_transactions',

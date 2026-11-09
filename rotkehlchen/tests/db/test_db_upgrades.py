@@ -3398,8 +3398,9 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
     assert new_tables == {
-        'bucket_processing_stops', 'bucket_balance_checks', 'locations', 'location_aliases',
-        'integration_connections', 'integration_connection_settings',
+        'bucket_processing_stops', 'bucket_balance_checks', 'wallet_balance_observations',
+        'locations', 'location_aliases', 'integration_connections',
+        'integration_connection_settings',
     }
     new_views = views_after_upgrade - views_before
     assert new_views == set()
@@ -5165,6 +5166,8 @@ def test_upgrade_db_53_to_54(
             ).fetchone()[0] == expected_notes, f'event {identifier} notes should be {expected_notes}'  # noqa: E501
         assert table_exists(cursor=cursor, name='bucket_processing_stops')
         assert table_exists(cursor=cursor, name='bucket_balance_checks')
+        assert table_exists(cursor=cursor, name='wallet_balance_observations')
+        assert column_exists(cursor, 'bucket_balance_checks', 'observation_id')
         assert cursor.execute(  # processing is asked to run again to find the stopped buckets
             'SELECT value FROM key_value_cache WHERE name=?',
             (DBCacheStatic.STALE_BALANCES_FROM_TS.value,),

@@ -70,7 +70,39 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.db.drivers.sqlite import DBCursor
+
+
+def evm_tx_query_range_prefixes(chain: SUPPORTED_EVM_CHAINS_TYPE) -> tuple[str, str, str]:
+    """The used_query_ranges prefixes whose intersection is the transaction history coverage."""
+    return (
+        chain.to_range_prefix('txs'),
+        chain.to_range_prefix('internaltxs'),
+        chain.to_range_prefix('tokentxs'),
+    )
+
+
+def intersect_evm_tx_query_ranges(
+        ranges: Sequence[tuple[Timestamp, Timestamp] | None],
+) -> tuple[Timestamp, Timestamp]:
+    """The least common denominator of the normal, internal and token transaction ranges.
+
+    A missing range means that part of the history was never queried, so the result is the empty
+    range (0, 0), which callers must read as "not synced", not as "nothing to sync".
+    """
+    starts, ends = [], []
+    for tx_range in ranges:
+        if tx_range is None:
+            return Timestamp(0), Timestamp(0)
+        starts.append(tx_range[0])
+        ends.append(tx_range[1])
+
+    if len(starts) == 0:
+        return Timestamp(0), Timestamp(0)
+
+    return max(starts), min(ends)
 
 
 class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTransactionsFilterQuery, EvmTransactionsNotDecodedFilterQuery]):  # noqa: E501
@@ -684,18 +716,11 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
 
         That means the least common denominator of normal, internal and token transactions
         """
-        starts = []
-        ends = []
-        prefixes = [chain.to_range_prefix('txs'), chain.to_range_prefix('internaltxs'), chain.to_range_prefix('tokentxs')]  # noqa: E501
-        for prefix in prefixes:
-            tx_range = self.db.get_used_query_range(cursor, f'{prefix}_{address}')
-            if tx_range is None:  # if any range is missing then we gotta requery
-                return Timestamp(0), Timestamp(0)
-
-            starts.append(tx_range[0])
-            ends.append(tx_range[1])
-
-        return max(starts), min(ends)
+        ranges = [
+            self.db.get_used_query_range(cursor, f'{prefix}_{address}')
+            for prefix in evm_tx_query_range_prefixes(chain)
+        ]
+        return intersect_evm_tx_query_ranges(ranges)
 
     def get_max_genesis_trace_id(self, chain_id: ChainID) -> int:
         """Get the max trace id of genesis internal transactions from the database.

@@ -297,7 +297,7 @@ onMounted(() => {
     </div>
 
     <div class="p-3 flex justify-end border-t border-default">
-      <RouterLink :to="{ name: '/history/data-issues/' }">
+      <RouterLink :to="{ name: '/history/data-issues/[[tab]]', params: { tab: 'issues' } }">
         <RuiButton
           variant="text"
           color="primary"

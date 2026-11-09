@@ -5,25 +5,25 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
-from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.concurrency import TaskCancelledError, checkpoint
-from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
-from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.bucket_checks import (
     BucketBalanceCheck,
+    DerivedSnapshot,
     balances_match,
     save_balance_check,
 )
-from rotkehlchen.history.data_issues.bucket_state import (
-    get_bucket_stops,
-    make_bucket_key,
-    wallet_bucket_assets,
+from rotkehlchen.history.data_issues.bucket_state import wallet_bucket_assets
+from rotkehlchen.history.data_issues.eligibility import (
+    WalletEvidence,
+    are_queries_disabled,
+    get_wallet_evidence,
+    load_wallet_evidence,
+    wallet_evidence_for_bucket,
 )
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.types import CurrentBalanceMismatchIssuePayload
@@ -31,15 +31,12 @@ from rotkehlchen.locations.chains import EVM_LOCATIONS, location_to_chain
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     EventMetricKey,
-    SupportedBlockchain,
     Timestamp,
     TimestampMS,
 )
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
-    from collections.abc import Collection
-
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.user_messages import MessagesAggregator
@@ -57,6 +54,13 @@ class WalletBalance:
     balance: FVal
     latest_event_identifier: int | None
     latest_ts: int
+
+    def to_snapshot(self) -> DerivedSnapshot:
+        return DerivedSnapshot(
+            balance=self.balance,
+            latest_event_identifier=self.latest_event_identifier,
+            latest_ts=TimestampMS(self.latest_ts),
+        )
 
 
 def get_derived_wallet_balances(
@@ -118,44 +122,6 @@ def get_derived_wallet_balances(
     return balances
 
 
-def are_queries_disabled(blockchain: SupportedBlockchain, address: str) -> bool:
-    """Whether the balance queries of the address are skipped, on their own or with their chain."""
-    return (skipped := CachedSettings().get_settings().disabled_chain_queries.get(
-        blockchain,
-    )) is not None and (len(skipped) == 0 or address in skipped)
-
-
-def get_wallet_query_scope(
-        database: DBHandler,
-) -> tuple[set[tuple[str, str]], set[tuple[str, str]]]:
-    """The (location, address) pairs of the tracked EVM accounts, and of those among them whose
-    balance queries are disabled, on their own or because their whole chain is.
-
-    Untracked accounts are out of scope. A tracked account with disabled queries is in scope
-    but can't be compared: nothing refreshes its balances. A removed account can keep a wallet
-    bucket, since a transfer to it from a tracked account stays in the history, but its derived
-    balance no longer covers its own activity.
-    """
-    location_of_chain = {
-        location_to_chain(location).value: location
-        for location in EVM_LOCATIONS
-    }
-    tracked: set[tuple[str, str]] = set()
-    disabled: set[tuple[str, str]] = set()
-    with database.conn.read_ctx() as cursor:
-        for blockchain, account in cursor.execute(
-            'SELECT blockchain, account FROM blockchain_accounts',
-        ):
-            if (location := location_of_chain.get(blockchain)) is None:
-                continue
-
-            tracked.add(wallet := (location, account))
-            if are_queries_disabled(SupportedBlockchain(blockchain), account):
-                disabled.add(wallet)
-
-    return tracked, disabled
-
-
 def _serialize_cursor(wallet: tuple[str, str]) -> str:
     """Location and address of the last wallet a full run reached, as stored in the cache."""
     return ':'.join(wallet)
@@ -166,50 +132,42 @@ def _deserialize_cursor(value: str) -> tuple[str, str]:
     return location, address
 
 
-def read_cached_wallet_balances(
-        cursor: DBCursor,
-        blockchain: SupportedBlockchain,
+def _is_stopped(
+        stopped_buckets: set[tuple[str, str, str, str]],
+        location: str,
         address: str,
-        assets: Collection[str],
-) -> dict[str, FVal]:
-    """Read from the balances cache what the address holds directly in its wallet.
-
-    That is the wallet label, plus the label of the token's own protocol for a token that carries
-    one, since the cache files those tokens (aTokens, LP tokens) under their protocol even when
-    the wallet holds them. Any other label is what the address has deposited in a protocol,
-    which a protocol bucket accounts for and the wallet bucket doesn't.
-
-    The cache can't tell an asset the address no longer holds from one it doesn't track, so an
-    asset without a row is left out of the result and not reported as zero.
-    """
-    return {
-        asset: FVal(amount)
-        for asset, label, amount in cursor.execute(
-            'SELECT asset, label, amount FROM blockchain_balances_cache '
-            'WHERE blockchain = ? AND address = ? AND category = ?',
-            (blockchain.serialize(), address, BalanceType.ASSET.serialize_for_db()),
-        ) if asset in assets and (
-            label == DEFAULT_BALANCE_LABEL or label == _get_token_protocol(asset)
-        )
-    }
-
-
-def _get_token_protocol(asset: str) -> str | None:
-    try:
-        return EvmToken(asset).protocol
-    except (UnknownAsset, WrongAssetType):
-        return None
+        asset: str,
+        treat_eth2_as_eth: bool,
+) -> bool:
+    return any(
+        (location, address, '', stopped_asset) in stopped_buckets
+        for stopped_asset in wallet_bucket_assets(asset=asset, treat_eth2_as_eth=treat_eth2_as_eth)
+    )
 
 
 class CurrentBalanceMismatchDetector:
-    """Compare the balances derived from events to the balances cached from the chains.
+    """Compare the balances derived from events to the observed balances of the wallet.
 
     Meant to run in its own task after a successful historical balance processing pass, never
-    inline with it. It only reads the cached balances and writes data issues, and it never
-    queries a chain, so how current the comparison is depends on the last balance refresh of the
-    address. A bucket with an event newer than that refresh is left alone, since the cache can't
-    know about it. Locating the events that cause a divergence is left to the archive node
-    search of the issue.
+    inline with it. It reads only the database: asset-specific observations written by the
+    balance queries, the transaction sync ranges and the decoding state. It never queries a
+    chain, so how current the comparison is depends on the last successful query of the asset.
+    A bucket whose observation is not usable yet is skipped and keeps its previous timestamps.
+    Locating the events that cause a divergence is left to the archive node search of the issue.
+
+    The observation is not a claim about a specific common block: the transaction sync and the
+    balance query happen at different moments, so a transaction mined between them can produce
+    a false mismatch for one cycle. It is deliberately not escalated; the next match resolves
+    the issue automatically, like any other later comparison.
+
+    A full run enumerates the union of derived wallet buckets and observed wallet holdings, so a
+    token held with no history at all is discovered. A scoped run only checks the buckets a
+    processing pass touched; discovery is the full run's job.
+
+    Mismatch issue policy: every non-ignored eligible mismatch reports an issue. There is no
+    fiat value threshold, so a bucket without a price can never be hidden by that; ignored
+    assets are the only spam filter applied here, and an observed-only holding is not assumed
+    to be spam.
 
     The tolerance is relative, like it is for asset movement matching: two balances match when
     they differ by at most that fraction of the larger one.
@@ -229,15 +187,16 @@ class CurrentBalanceMismatchDetector:
         )
         self.issues_manager = DataIssuesManager(database)
         self.treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
+        self.swapped_assets: frozenset[str] = frozenset()
         self.reached_end_of_scope = False  # False when the time budget cut the last run short
 
     def run(self, from_ts: TimestampMS | None = None) -> int:
         """Check the wallet buckets and return how many of them were compared.
 
-        Buckets are grouped per address so each one costs a single cache read. Buckets that
-        have nothing cached, that have an event newer than the last refresh of their address, or
-        that are left when the time budget runs out are skipped and neither opened nor
-        resolved, since nothing was observed for them.
+        Buckets are grouped per address so each one costs a single eligibility read. Buckets
+        without a usable observation (missing coverage, unsynced history, pending decoding, an
+        observation older than the latest derived event, a disabled or rebasing bucket) are
+        skipped and neither opened nor resolved, since nothing was observed for them.
 
         A full run (no from_ts) that runs out of its time budget records where it stopped, and
         the next full run starts from there, so every address is eventually compared.
@@ -249,30 +208,59 @@ class CurrentBalanceMismatchDetector:
                 name=DBCacheStatic.CURRENT_BALANCE_DETECTION_CURSOR,
             )
 
-        tracked_wallets, disabled_wallets = get_wallet_query_scope(self.database)
-        tracked_wallets -= disabled_wallets
-        with self.database.conn.read_ctx() as cursor:
-            blocked_buckets = set(get_bucket_stops(cursor))
-        by_address: defaultdict[tuple[str, str], dict[str, WalletBalance]] = defaultdict(dict)
-        for (location, address, asset), derived in get_derived_wallet_balances(
+        context = load_wallet_evidence(self.database)
+        self.swapped_assets = context.swapped_assets
+        derived = get_derived_wallet_balances(
             database=self.database,
             from_ts=from_ts,
             treat_eth2_as_eth=self.treat_eth2_as_eth,
-        ).items():
+        )
+        # A bucket is a candidate with its derived snapshot, None when only an observation
+        # exists. A stopped bucket says nothing about the chain through its frozen balance.
+        candidates: dict[tuple[str, str, str], DerivedSnapshot | None] = {}
+        for (location, address, asset), balance in derived.items():
             if (
-                asset not in ignored_assets and
-                (location, address) in tracked_wallets and
-                not any(make_bucket_key(
+                asset in ignored_assets or
+                (location, address) not in context.tracked or
+                (location, address) in context.disabled or
+                _is_stopped(
+                    stopped_buckets=context.stopped_buckets,
                     location=location,
-                    location_label=address,
-                    protocol=None,
-                    asset=stopped_asset,
-                ) in blocked_buckets for stopped_asset in wallet_bucket_assets(
+                    address=address,
                     asset=asset,
                     treat_eth2_as_eth=self.treat_eth2_as_eth,
-                ))  # its frozen derived balance says nothing about the chain
+                )
             ):
-                by_address[location, address][asset] = derived
+                continue
+
+            candidates[location, address, asset] = balance.to_snapshot()
+
+        if from_ts is None:  # a full run discovers the observed-only holdings
+            for location, address, raw_asset in context.observations:
+                asset = (
+                    A_ETH.identifier
+                    if self.treat_eth2_as_eth and raw_asset == A_ETH2
+                    else raw_asset
+                )
+                if (
+                    asset in ignored_assets or
+                    (location, address) not in context.tracked or
+                    (location, address) in context.disabled or
+                    _is_stopped(
+                        stopped_buckets=context.stopped_buckets,
+                        location=location,
+                        address=address,
+                        asset=asset,
+                        treat_eth2_as_eth=self.treat_eth2_as_eth,
+                    )
+                ):
+                    continue
+
+                candidates.setdefault((location, address, asset), None)
+
+        by_address: defaultdict[tuple[str, str], dict[str, DerivedSnapshot | None]] = defaultdict(dict)  # noqa: E501
+        for (location, address, asset), snapshot in candidates.items():
+            by_address[location, address][asset] = snapshot
 
         wallets = sorted(by_address)
         # Rotate rather than truncate: a run that stops early must not starve the wallets
@@ -290,39 +278,33 @@ class CurrentBalanceMismatchDetector:
                 break
 
             last_reached = (location, address)
-            assets = by_address[location, address]
             checkpoint()
-            blockchain = location_to_chain(location)
-            with self.database.conn.read_ctx() as cursor:  # balances and their time, one snapshot
-                queried_at = self.database.get_dynamic_cache(
-                    cursor=cursor,
-                    name=DBCacheDynamic.LAST_ADDRESS_BALANCES_QUERY_TS,
-                    blockchain=blockchain.serialize(),
-                    address=address,
-                )
-                observed = {} if queried_at is None else read_cached_wallet_balances(
-                    cursor=cursor,
-                    blockchain=blockchain,
-                    address=address,
-                    assets=assets,
-                )
-            if queried_at is None:
-                continue
-
-            for asset, derived in assets.items():
-                if (
-                    (observed_balance := observed.get(asset)) is not None and
-                    derived.latest_ts <= ts_sec_to_ms(queried_at) and
-                    self._compare(
+            with self.database.conn.read_ctx() as cursor:
+                for asset, snapshot in by_address[location, address].items():
+                    evidence = wallet_evidence_for_bucket(
+                        context=context,
+                        cursor=cursor,
                         location=location,
                         address=address,
                         asset=asset,
-                        derived=derived,
-                        observed_balance=observed_balance,
-                        queried_at=queried_at,
+                        derived=snapshot,
                     )
-                ):
-                    compared += 1
+                    if (
+                        evidence.unsupported or
+                        evidence.pending_reasons or
+                        evidence.derived_snapshot is None or
+                        evidence.amount is None or
+                        evidence.observed_at is None
+                    ):  # not comparable, so no comparison is opened, resolved or refreshed
+                        continue
+
+                    if self._compare(
+                        location=location,
+                        address=address,
+                        asset=asset,
+                        evidence=evidence,
+                    ):
+                        compared += 1
 
         else:  # every wallet was reached, so the next full run starts from the beginning
             self.reached_end_of_scope = True
@@ -350,9 +332,7 @@ class CurrentBalanceMismatchDetector:
             location: str,
             address: str,
             asset: str,
-            derived: WalletBalance,
-            observed_balance: FVal,
-            queried_at: Timestamp,
+            evidence: WalletEvidence,
     ) -> bool:
         """Save the comparison and update its issue in one transaction, and return whether it
         was saved. Nothing is written when what the comparison was based on changed since it
@@ -362,14 +342,20 @@ class CurrentBalanceMismatchDetector:
         The issue helpers open their own write contexts, which join the transaction of this
         thread as savepoints. They share its commit and rollback instead of committing alone.
         """
+        if (
+            evidence.derived_snapshot is None or
+            evidence.amount is None or
+            evidence.observed_at is None
+        ):
+            return False
+
         with self.database.user_write() as write_cursor:
             if self._is_obsolete(
                 write_cursor=write_cursor,
                 location=location,
                 address=address,
                 asset=asset,
-                derived=derived,
-                queried_at=queried_at,
+                evidence=evidence,
             ):
                 return False
 
@@ -377,19 +363,18 @@ class CurrentBalanceMismatchDetector:
                 location=location,
                 location_label=address,
                 asset=asset,
-                derived_balance=derived.balance,
-                observed_balance=observed_balance,
-                latest_event_identifier=derived.latest_event_identifier,
-                observed_at=queried_at,
+                derived_balance=evidence.derived_snapshot.balance,
+                observed_balance=evidence.amount,
+                latest_event_identifier=evidence.derived_snapshot.latest_event_identifier,
+                observed_at=evidence.observed_at,
                 compared_at=ts_now(),
+                observation_id=evidence.observation_id,
             ))
             self._update_issue(
                 location=location,
                 address=address,
                 asset=asset,
-                derived=derived,
-                observed_balance=observed_balance,
-                queried_at=queried_at,
+                evidence=evidence,
             )
         return True
 
@@ -399,11 +384,14 @@ class CurrentBalanceMismatchDetector:
             location: str,
             address: str,
             asset: str,
-            derived: WalletBalance,
-            queried_at: Timestamp,
+            evidence: WalletEvidence,
     ) -> bool:
         """Whether anything the comparison was based on no longer holds, read inside the write
-        transaction so that nothing can change between this check and the write."""
+        transaction so that nothing can change between this check and the write.
+
+        The eligibility facts are recomputed here with the same shared reader the run used, so
+        the write cannot resurrect a comparison after the bucket became ineligible.
+        """
         blockchain = location_to_chain(location)
         stopped_assets = wallet_bucket_assets(asset, self.treat_eth2_as_eth)
         if (
@@ -420,13 +408,7 @@ class CurrentBalanceMismatchDetector:
             write_cursor.execute(
                 'SELECT 1 FROM key_value_cache WHERE name = ?',
                 (DBCacheStatic.STALE_BALANCES_FROM_TS.value,),
-            ).fetchone() is not None or
-            self.database.get_dynamic_cache(
-                cursor=write_cursor,
-                name=DBCacheDynamic.LAST_ADDRESS_BALANCES_QUERY_TS,
-                blockchain=blockchain.serialize(),
-                address=address,
-            ) != queried_at
+            ).fetchone() is not None
         ):
             return True
 
@@ -435,15 +417,43 @@ class CurrentBalanceMismatchDetector:
         ).fetchone()) is not None and (stored[0] == 'True') != self.treat_eth2_as_eth:
             return True
 
-        current = get_derived_wallet_balances(
+        derived = evidence.derived_snapshot
+        if derived is None:
+            return True
+
+        # A history-free zero is not a metric. Verify the status again instead of looking for a
+        # row that legitimately doesn't exist; a normal derived snapshot is re-read and must
+        # still be the same.
+        fresh = get_wallet_evidence(
             database=self.database,
-            treat_eth2_as_eth=self.treat_eth2_as_eth,
-            only=(location, address, asset),
-        ).get((location, address, asset))
+            location=location,
+            address=address,
+            asset=asset,
+            derived=None if derived.is_history_free else derived,
+            swapped_assets=self.swapped_assets,
+        )
+        if derived.is_history_free:
+            if fresh.verified_history_free is False or fresh.derived_snapshot is None:
+                return True
+        else:
+            current = get_derived_wallet_balances(
+                database=self.database,
+                treat_eth2_as_eth=self.treat_eth2_as_eth,
+                only=(location, address, asset),
+            ).get((location, address, asset))
+            if (
+                current is None or
+                current.balance != derived.balance or
+                current.latest_event_identifier != derived.latest_event_identifier
+            ):
+                return True
+
         return (
-            current is None or
-            current.balance != derived.balance or
-            current.latest_event_identifier != derived.latest_event_identifier
+            len(fresh.unsupported) != 0 or
+            len(fresh.pending_reasons) != 0 or
+            fresh.amount != evidence.amount or
+            fresh.observed_at != evidence.observed_at or
+            fresh.observation_id != evidence.observation_id
         )
 
     def _update_issue(
@@ -451,11 +461,16 @@ class CurrentBalanceMismatchDetector:
             location: str,
             address: str,
             asset: str,
-            derived: WalletBalance,
-            observed_balance: FVal,
-            queried_at: Timestamp,
+            evidence: WalletEvidence,
     ) -> None:
-        if balances_match(derived.balance, observed_balance, self.tolerance):
+        if (
+            evidence.derived_snapshot is None or
+            evidence.amount is None or
+            evidence.observed_at is None
+        ):
+            return
+
+        if balances_match(evidence.derived_snapshot.balance, evidence.amount, self.tolerance):
             self.issues_manager.resolve_current_balance_mismatch(
                 location=location,
                 location_label=address,
@@ -468,14 +483,18 @@ class CurrentBalanceMismatchDetector:
             location_label=address,
             asset=asset,
             payload=CurrentBalanceMismatchIssuePayload(
-                derived_balance=str(derived.balance),
-                observed_balance=str(observed_balance),
-                delta=str(observed_balance - derived.balance),
-                queried_at_ts=queried_at,
-                latest_event_identifier=derived.latest_event_identifier,
+                derived_balance=str(evidence.derived_snapshot.balance),
+                observed_balance=str(evidence.amount),
+                delta=str(evidence.amount - evidence.derived_snapshot.balance),
+                queried_at_ts=evidence.observed_at,
+                latest_event_identifier=evidence.derived_snapshot.latest_event_identifier,
             ),
-            ts_start=derived.latest_ts,
-            ts_end=ts_sec_to_ms(queried_at),
+            ts_start=(
+                evidence.derived_snapshot.latest_ts
+                if evidence.derived_snapshot.latest_ts is not None else
+                ts_sec_to_ms(evidence.observed_at)
+            ),
+            ts_end=ts_sec_to_ms(evidence.observed_at),
         )
 
 

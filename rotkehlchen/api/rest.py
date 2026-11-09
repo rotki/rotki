@@ -184,6 +184,11 @@ from rotkehlchen.history.data_issues.manager import (
     DataIssuesManager,
     make_auto_remediation_attempt,
 )
+from rotkehlchen.history.data_issues.reconciliation import (
+    ReconciliationBucket,
+    ReconciliationReport,
+    get_reconciliation_report,
+)
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
@@ -305,6 +310,7 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.gate import GateLocation
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
+    from rotkehlchen.history.data_issues.bucket_checks import BucketStatus
     from rotkehlchen.history.data_issues.types import DataIssue
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.history.types import HistoricalPriceOracle
@@ -4023,6 +4029,92 @@ class RestAPI:
             ))
 
         return api_response(OkResult(self._serialize_data_issue(issue)))
+
+    @staticmethod
+    def _serialize_reconciliation_bucket(bucket: ReconciliationBucket) -> dict[str, Any]:
+        return {
+            'protocol': bucket.protocol,
+            'asset': bucket.asset,
+            'status': bucket.status.value,
+            'reasons': [reason.value for reason in bucket.reasons],
+            'derived_balance': None if bucket.derived_balance is None else str(bucket.derived_balance),  # noqa: E501
+            'observed_balance': None if bucket.observed_balance is None else str(bucket.observed_balance),  # noqa: E501
+            'observed_at': None if bucket.observed_at is None else int(bucket.observed_at),
+            'last_event_ts': None if bucket.last_event_ts is None else int(bucket.last_event_ts),
+            'issue_id': bucket.issue_id,
+            'check': None if bucket.check is None else {
+                'derived_balance': str(bucket.check.derived_balance),
+                'observed_balance': str(bucket.check.observed_balance),
+                'observed_at': int(bucket.check.observed_at),
+                'compared_at': int(bucket.check.compared_at),
+                'delta': str(bucket.delta),
+            },
+            'stop': None if bucket.stop is None else {
+                'event_identifier': bucket.stop.event_identifier,
+                'event_timestamp': int(bucket.stop.event_timestamp),
+                'derived_balance_before_event': str(bucket.stop.derived_balance_before_event),
+                'negative_amount': str(bucket.stop.negative_amount),
+            },
+        }
+
+    def _serialize_reconciliation_report(self, report: ReconciliationReport) -> dict[str, Any]:
+        accounts = []
+        for account in report.accounts:
+            serialized: dict[str, Any] = {
+                'location': LocationIdentifier(account.location),
+                'location_label': account.location_label,
+                'is_exchange': account.is_exchange,
+                'counts': {status.value: count for status, count in account.counts.items()},
+                'last_compared_at': (
+                    None if account.last_compared_at is None else int(account.last_compared_at)
+                ),
+                'last_event_ts': (
+                    None if account.last_event_ts is None else int(account.last_event_ts)
+                ),
+                'history_synced_to': (
+                    None if account.history_synced_to is None else int(account.history_synced_to)
+                ),
+            }
+            if report.scoped is True:
+                serialized['buckets'] = [
+                    self._serialize_reconciliation_bucket(bucket) for bucket in account.buckets
+                ]
+                serialized['pagination'] = {
+                    'limit': report.limit,
+                    'offset': report.offset,
+                    'total': report.entries_found,
+                }
+            accounts.append(serialized)
+
+        return {
+            'stale': report.stale,
+            'processing': report.processing,
+            'totals': {status.value: count for status, count in report.totals.items()},
+            'buckets_total': sum(report.totals.values()),
+            'accounts': accounts,
+        }
+
+    @accounting_update_required('Historical balance reconciliation is disabled', response=True)
+    def get_historical_balance_reconciliation(
+            self,
+            location: str | None,
+            location_label: str | None,
+            statuses: list[BucketStatus] | None,
+            limit: int,
+            offset: int,
+    ) -> Response:
+        report = get_reconciliation_report(
+            database=self.rotkehlchen.data.db,
+            location=location,
+            location_label=location_label,
+            statuses=statuses,
+            limit=limit,
+            offset=offset,
+        )
+        return api_response(_wrap_in_ok_result(
+            result=self._serialize_reconciliation_report(report),
+            status_code=HTTPStatus.OK,
+        ))
 
     @async_api_call()
     @accounting_update_required('Historical balances are disabled')

@@ -127,6 +127,7 @@ from rotkehlchen.api.v1.schemas import (
     GetUnmatchedAssetMovementsSchema,
     GnosisPaySiweChallengeSchema,
     HistoricalAssetsPriceSchema,
+    HistoricalBalanceReconciliationSchema,
     HistoricalBalancesAtEventsSchema,
     HistoricalBalanceSeriesSchema,
     HistoricalPerAssetBalanceSchema,
@@ -344,6 +345,7 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
     from rotkehlchen.fval import FVal
+    from rotkehlchen.history.data_issues.bucket_checks import BucketStatus
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
     from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
     from rotkehlchen.history.types import HistoricalPriceOracle
@@ -4039,6 +4041,28 @@ class DataIssueRetryAutoRemediationResource(BaseMethodView):
     @require_loggedin_user()
     def post(self, issue_id: int) -> Response:
         return self.rest_api.retry_data_issue_auto_remediation(issue_id=issue_id)
+
+
+class HistoricalBalancesReconciliationResource(BaseMethodView):
+    get_schema = HistoricalBalanceReconciliationSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+            self,
+            location: LocationIdentifier | None,
+            location_label: str | None,
+            status: list[BucketStatus] | None,
+            limit: int,
+            offset: int,
+    ) -> Response:
+        return self.rest_api.get_historical_balance_reconciliation(
+            location=location,
+            location_label=location_label,
+            statuses=status,
+            limit=limit,
+            offset=offset,
+        )
 
 
 class TimestampHistoricalBalanceResource(BaseMethodView):

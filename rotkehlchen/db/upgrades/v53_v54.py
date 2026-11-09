@@ -176,6 +176,7 @@ CREATE TABLE {table} (
     latest_event_identifier INTEGER,
     observed_at INTEGER NOT NULL,
     compared_at INTEGER NOT NULL,
+    observation_id INTEGER,
     PRIMARY KEY (location, location_label, asset)
 ) WITHOUT ROWID;"""),
     ('user_credentials', 'location', False, """
@@ -571,7 +572,20 @@ CREATE TABLE IF NOT EXISTS bucket_balance_checks (
     latest_event_identifier INTEGER,
     observed_at INTEGER NOT NULL,
     compared_at INTEGER NOT NULL,
+    observation_id INTEGER,
     PRIMARY KEY (location, location_label, asset)
+) WITHOUT ROWID;
+        """)
+        write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS wallet_balance_observations (
+    blockchain TEXT NOT NULL,
+    address TEXT NOT NULL,
+    asset TEXT NOT NULL,
+    amount TEXT NOT NULL,
+    observed_at INTEGER NOT NULL,
+    source TEXT NOT NULL,
+    observation_id INTEGER NOT NULL,
+    PRIMARY KEY (blockchain, address, asset)
 ) WITHOUT ROWID;
         """)
         if write_cursor.execute(

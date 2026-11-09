@@ -3,9 +3,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.observations import delete_wallet_observations
 from rotkehlchen.locations.chains import EVM_LOCATIONS, location_to_chain
 from rotkehlchen.types import SupportedBlockchain, TimestampMS
+from rotkehlchen.utils.misc import ts_now_in_ms
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -210,10 +214,25 @@ def delete_balance_checks_of_cleared_accounts(
     already cover: a comparison against a derived balance that no longer exists has nothing
     left to be compared to. An account with remaining events keeps its comparisons.
     """
+    cleared = [
+        (location, label) for location, label in accounts
+        if label is not None and location in EVM_LOCATIONS
+    ]
     write_cursor.executemany(
         'DELETE FROM bucket_balance_checks WHERE location = ? AND location_label = ? '
         'AND NOT EXISTS (SELECT 1 FROM history_events WHERE location = ? AND location_label = ?)',
-        [(location, label, location, label) for location, label in accounts if label is not None],
+        [(location, label, location, label) for location, label in cleared],
+    )
+    # The observations of an account reset to no events describe history that no longer exists.
+    delete_wallet_observations(
+        write_cursor=write_cursor,
+        accounts=tuple(
+            (location, label) for location, label in cleared
+            if write_cursor.execute(
+                'SELECT 1 FROM history_events WHERE location = ? AND location_label = ? LIMIT 1',
+                (location, label),
+            ).fetchone() is None
+        ),
     )
 
 
@@ -227,3 +246,58 @@ def wallet_bucket_assets(asset: str, treat_eth2_as_eth: bool) -> tuple[str, ...]
         (A_ETH.identifier, A_ETH2.identifier)
         if treat_eth2_as_eth and asset == A_ETH else (asset,)
     )
+
+
+def invalidate_swapped_asset_identities(
+        write_cursor: DBCursor,
+) -> bool:
+    """Invalidate the reconciliation evidence of assets whose identity resolves elsewhere.
+
+    `Bucket.from_event` resolves `swapped_for` when it maps an event to a bucket, so when an
+    asset update sets that field, events already processed under the old identifier would still
+    have metrics under it, and a saved comparison or stop would describe the old identity. The
+    event rows themselves are not rewritten by an asset update.
+
+    Every affected asset has its metrics, observations, checks and stops dropped, and a full
+    reprocessing is requested with the stale marker. Stops are not merged into the target
+    identity: the bucket never existed under it. Returns whether anything was invalidated, in
+    which case the caller must process the whole history, not a scoped range.
+
+    Only the global DB's swapped assets are examined, so this stays cheap: normally the set is
+    empty or tiny.
+    """
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        swapped = [
+            row[0] for row in cursor.execute(
+                'SELECT identifier FROM common_asset_details WHERE swapped_for IS NOT NULL',
+            )
+        ]
+    affected = [
+        asset for asset in swapped
+        if write_cursor.execute(
+            'SELECT 1 FROM event_metrics WHERE asset = ? LIMIT 1',
+            (asset,),
+        ).fetchone() is not None or write_cursor.execute(
+            'SELECT 1 FROM history_events WHERE asset = ? LIMIT 1',
+            (asset,),
+        ).fetchone() is not None
+    ]
+    if len(affected) == 0:
+        return False
+
+    for statement in (
+        'DELETE FROM event_metrics WHERE asset = ?',
+        'DELETE FROM bucket_processing_stops WHERE asset = ?',
+        'DELETE FROM bucket_balance_checks WHERE asset = ?',
+        'DELETE FROM wallet_balance_observations WHERE asset = ?',
+    ):
+        write_cursor.executemany(statement, [(asset,) for asset in affected])
+
+    write_cursor.executemany(
+        'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+        [
+            (DBCacheStatic.STALE_BALANCES_FROM_TS.value, '0'),
+            (DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value, str(ts_now_in_ms())),
+        ],
+    )
+    return True

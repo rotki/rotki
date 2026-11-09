@@ -2974,6 +2974,10 @@
         "label": "Retry auto-remediation"
       }
     },
+    "deep_link": {
+      "invalid": "\"{id}\" is not a valid issue id.",
+      "missing": "Issue #{id} could not be opened. {error}"
+    },
     "description": {
       "current_balance_mismatch": "rotki's calculated {asset} balance ({derived}) doesn't match the actual on-chain balance ({observed}), a difference of {delta}. Some {asset} transactions are probably missing or were recorded incorrectly.",
       "negative_balance": "An event spent more {asset} than rotki had tracked, so your balance went negative to {amount} (it was {before} just before). This usually means an earlier {asset} transaction is missing or was recorded incorrectly.",
@@ -3089,6 +3093,119 @@
       "title": "Data issues",
       "view_all": "View all"
     },
+    "reconciliation": {
+      "account_summary": {
+        "blocked": "{count} blocked",
+        "hidden": "{count} other balance hidden | {count} other balances hidden",
+        "mismatch": "{count} mismatch | {count} mismatches",
+        "not_checked": "{count} not checked",
+        "reconciled": "{count} match | {count} matches"
+      },
+      "action": {
+        "mark_spam": "Mark as spam",
+        "open_issue": "Open issue",
+        "sync_hint": "Sync this account's history, then check again.",
+        "view_event": "View event"
+      },
+      "bar_label": "Distribution of balance statuses",
+      "check": {
+        "action": "Check now",
+        "checked": "Checked {time}",
+        "processing": "Historical balances are being processed, so a check cannot start yet.",
+        "stale": "Balances are being recalculated, so a check cannot start yet."
+      },
+      "compared_at": "Compared {time}",
+      "empty": {
+        "add_account": "Add an account",
+        "never_checked": "Run a check to compare the balances rotki derived from your history with the balances on chain.",
+        "no_accounts": "Add a blockchain account to compare its history with the balances on chain.",
+        "no_accounts_title": "No accounts to check",
+        "nothing_attention": "No balances need your attention."
+      },
+      "exchanges_note": "Exchange accounts ({accounts}) are not compared yet.",
+      "footer": {
+        "accounts": "{count} account has nothing listed | {count} accounts have nothing listed",
+        "hidden": "{count} balance is hidden | {count} balances are hidden"
+      },
+      "headline": {
+        "blocked": "{count} balance stopped processing | {count} balances stopped processing",
+        "matches": "All {count} balance matches your history | All {count} balances match your history",
+        "mismatch": "{count} balance doesn't match your history | {count} balances don't match your history",
+        "never": "Not checked yet",
+        "nothing_checkable": "Balances can't be checked yet",
+        "partial": "No balance mismatches found"
+      },
+      "load_error": "Could not load the reconciliation report.",
+      "load_error_stale": "Could not refresh the reconciliation report. Showing the last result.",
+      "loading_balances": "Loading balances…",
+      "no_account_label": "Protocol positions",
+      "no_value": "—",
+      "not_available": "Not available",
+      "observed_at": "On-chain balance observed {time}",
+      "reason": {
+        "asset_coverage_missing": "The balance query does not cover this asset yet.",
+        "blocked": "History goes negative on {date}, so nothing after it can be compared. Fix that issue first.",
+        "derived_history_stale": "Your history changed since the last comparison, so it has to be compared again.",
+        "derived_snapshot_changed": "The balance derived from your history changed since the last comparison.",
+        "exchange": "Exchange balances are not compared with on-chain queries.",
+        "history_not_synced": "Waiting for this account's transactions to finish syncing.",
+        "history_pending_decoding": "Some transactions are not decoded yet, so history cannot be compared.",
+        "matches": "The current on-chain balance matches the balance from your history.",
+        "mismatch_higher": "On-chain balance is higher than your history explains. An incoming event may be missing.",
+        "mismatch_history_free": "Held on chain with no events explaining this balance. Sync or review the account history.",
+        "mismatch_lower": "Less on chain than your history says. An outgoing transfer may be missing.",
+        "never_compared": "Not compared yet. Run Check now to compare this balance.",
+        "non_evm_chain": "Balances on this chain are not compared yet.",
+        "observation_missing": "No on-chain balance observation is available yet.",
+        "observation_stale": "The on-chain observation predates the latest history. Refresh balances, then check again.",
+        "observation_superseded": "A newer on-chain balance is available; this balance waits for a new comparison.",
+        "protocol_bucket": "Protocol positions are not compared with wallet balances yet.",
+        "queries_disabled": "On-chain balance queries are disabled in the settings.",
+        "rebasing": "Rebasing token: its balance changes without events, so it is not compared.",
+        "result_expired": "The last comparison is out of date. Run Check now.",
+        "unknown_not_compared": "This balance is not checked.",
+        "unknown_pending": "This balance cannot be compared yet."
+      },
+      "recalculating": {
+        "processing": "History processing is running. Balances cannot be compared until it finishes.",
+        "stale": "History changed and needs processing before balances can be compared."
+      },
+      "spam": {
+        "message": "rotki will ignore {asset} in balances and history. Use this for tokens you did not ask to receive.",
+        "title": "Mark {asset} as spam?"
+      },
+      "status": {
+        "blocked": "Blocked",
+        "matches": "Matches",
+        "mismatch": "Mismatch",
+        "not_checked": "Not checked"
+      },
+      "subline": {
+        "blocked": "{count} stopped",
+        "explanation": "Compared against on-chain balances for each address.",
+        "matches": "{count} match",
+        "not_checked": "{count} can't be checked yet"
+      },
+      "table": {
+        "difference": "Difference",
+        "empty_all": "This account has no balances for this view.",
+        "empty_all_title": "No balances",
+        "empty_attention": "No balance mismatches or blocked processing were found. Show all balances to see what was checked.",
+        "empty_attention_title": "Nothing needs attention",
+        "empty_placeholder": "Nothing to show for this view.",
+        "error": "Could not load this account's balances.",
+        "from_history": "From history",
+        "load_more": "Load more balances ({shown} of {total})",
+        "loading": "Loading balances…",
+        "on_chain": "On chain",
+        "status": "Status"
+      },
+      "view": {
+        "all": "All balances · {count}",
+        "attention": "Needs attention · {count}",
+        "show_all": "Show all balances"
+      }
+    },
     "refresh_tooltip": "Reload the issues list.",
     "resolve_dialog": {
       "confirm": "Resolve",
@@ -3106,6 +3223,10 @@
     },
     "summary": {
       "all_clear": "All clear. No issues need your attention."
+    },
+    "tabs": {
+      "issues": "Issues",
+      "reconciliation": "Balance reconciliation"
     },
     "view_details": "View details"
   },

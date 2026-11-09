@@ -147,6 +147,10 @@ from rotkehlchen.history.data_issues.bucket_state import (
     delete_balance_checks,
     get_evm_location_code,
 )
+from rotkehlchen.history.data_issues.observations import (
+    delete_wallet_observations,
+    record_token_detection_observations,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.locations.chains import (
     location_from_chain,
@@ -211,7 +215,7 @@ from rotkehlchen.user_messages import (
     UnknownAssetSeen,
 )
 from rotkehlchen.utils.hashing import file_md5
-from rotkehlchen.utils.misc import get_chunks, ts_ms_to_sec, ts_now
+from rotkehlchen.utils.misc import get_chunks, ts_ms_to_sec, ts_now, ts_now_in_ms
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 if TYPE_CHECKING:
@@ -844,6 +848,7 @@ class DBHandler:
             settings.treat_eth2_as_eth != CachedSettings().get_entry('treat_eth2_as_eth')
         ):  # the saved comparisons of ETH and ETH2 were aggregated under the previous mapping
             delete_balance_checks(write_cursor=write_cursor, assets=(A_ETH.identifier, A_ETH2.identifier))  # noqa: E501
+            delete_wallet_observations(write_cursor=write_cursor, assets=(A_ETH.identifier, A_ETH2.identifier))  # noqa: E501
         CachedSettings().update_entries(settings)
 
     def patch_frontend_settings(
@@ -1563,6 +1568,8 @@ class DBHandler:
             blockchain: SupportedBlockchain,
             balances_per_address: Mapping[ChecksumEvmAddress, Mapping[Asset | EvmToken, FVal]],
             failed_detection_addresses: set[ChecksumEvmAddress],
+            queried_assets: Collection[str],
+            observed_at: Timestamp,
     ) -> None:
         rows: list[tuple[str, str, str, str, str, str]] = []
         asset_category = BalanceType.ASSET.serialize_for_db()
@@ -1600,8 +1607,10 @@ class DBHandler:
                     liability_category if token.is_liability() else asset_category,
                 ) for token in previous_tokens],
             )
+            observation_amounts: dict[str, FVal] = {}
             for asset, amount in token_balances.items():
                 token = asset if isinstance(asset, EvmToken) else EvmToken(asset.identifier)
+                observation_amounts[token.identifier] = amount
                 rows.append((
                     chain,
                     address,
@@ -1610,6 +1619,20 @@ class DBHandler:
                     liability_category if token.is_liability() else asset_category,
                     str(amount),
                 ))
+
+            # Token detection replaces the token rows without touching the address-wide balance
+            # stamp. Publish token-specific provenance instead: the tokens it found, and an
+            # explicit zero for the previously detected tokens it no longer finds. Only assets
+            # reconciliation can ask about are zeroed (see the helper), not every candidate.
+            record_token_detection_observations(
+                write_cursor=write_cursor,
+                blockchain=blockchain,
+                address=address,
+                amounts=observation_amounts,
+                previous_assets=tuple(token.identifier for token in previous_tokens),
+                queried_assets=queried_assets,
+                observed_at=observed_at,
+            )
 
         if len(rows) == 0:
             return
@@ -2314,6 +2337,10 @@ class DBHandler:
             delete_balance_checks(
                 write_cursor=write_cursor,
                 accounts=[(location_code, account) for account in accounts],
+            )
+            delete_wallet_observations(
+                write_cursor=write_cursor,
+                accounts=tuple((location_code, account) for account in accounts),
             )
         # Only remove the address' tag mappings if it is no longer tracked on any
         # other chain. The same address (e.g. an EVM address) can be tracked on
@@ -4041,6 +4068,29 @@ class DBHandler:
                 delete_balance_checks(  # the history events now sit under the target asset
                     write_cursor=write_cursor,
                     assets=(source_identifier, target_asset.identifier),
+                )
+                # The identity changed, so neither the observations nor the derived metrics of
+                # either identity describe the new asset. A stop is not merged into the target
+                # bucket: the stale marker requests a full reprocess, which recomputes both
+                # metrics and stops under the new identity.
+                delete_wallet_observations(
+                    write_cursor=write_cursor,
+                    assets=(source_identifier, target_asset.identifier),
+                )
+                write_cursor.executemany(
+                    'DELETE FROM event_metrics WHERE asset = ?',
+                    [(source_identifier,), (target_asset.identifier,)],
+                )
+                write_cursor.executemany(
+                    'DELETE FROM bucket_processing_stops WHERE asset = ?',
+                    [(source_identifier,), (target_asset.identifier,)],
+                )
+                write_cursor.executemany(
+                    'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+                    [
+                        (DBCacheStatic.STALE_BALANCES_FROM_TS.value, '0'),
+                        (DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value, str(ts_now_in_ms())),
+                    ],
                 )
 
     def get_latest_location_value_distribution(self) -> list[LocationData]:

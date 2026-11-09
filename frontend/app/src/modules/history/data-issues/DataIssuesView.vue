@@ -10,6 +10,7 @@ import DataIssuesTable from '@/modules/history/data-issues/components/DataIssues
 import DataIssueSummaryBar from '@/modules/history/data-issues/components/DataIssueSummaryBar.vue';
 import ResolveManuallyDialog from '@/modules/history/data-issues/components/ResolveManuallyDialog.vue';
 import { DEFAULT_LIST_STATES, IssueState } from '@/modules/history/data-issues/constants';
+import DataIssuesTabs from '@/modules/history/data-issues/DataIssuesTabs.vue';
 import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-data-issue-detail-actions';
 import { useDataIssueFields } from '@/modules/history/data-issues/use-data-issue-fields';
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
@@ -30,8 +31,9 @@ const { mainPage = false } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
+const currentRoute = router.currentRoute;
 
-const { fetchData } = useDataIssues();
+const { fetchData, fetchIssue } = useDataIssues();
 const { baselineTotal, counts, dismissInlinePanels, refreshSummary, summaryFailed } = useDataIssuesSummary();
 
 const fields = useDataIssueFields();
@@ -85,6 +87,69 @@ const {
 } = useDataIssueDetailActions(reloadAll, () => get(state).data);
 
 const { detect, detectFailure, detecting } = useDataIssuesDetection(reloadAll);
+
+/** A dead `?issue=` link is reported inline instead of as a toast about the whole inbox. */
+const deepLinkError = ref<string>();
+const deepLinkIssueId = ref<number>();
+
+async function clearIssueQuery(): Promise<void> {
+  if (get(currentRoute).query.issue === undefined)
+    return;
+
+  const { issue: _issue, ...query } = get(currentRoute).query;
+  set(deepLinkError, undefined);
+  set(deepLinkIssueId, undefined);
+  await router.replace({ query });
+}
+
+async function openIssueFromQuery(): Promise<void> {
+  if (!mainPage)
+    return;
+
+  const raw = get(currentRoute).query.issue;
+  if (raw === undefined) {
+    set(deepLinkError, undefined);
+    set(deepLinkIssueId, undefined);
+    return;
+  }
+
+  const id = typeof raw === 'string' ? Number(raw) : Number.NaN;
+  if (!Number.isInteger(id) || id <= 0) {
+    set(deepLinkError, t('data_issues.deep_link.invalid', { id: String(raw) }));
+    return;
+  }
+
+  if (id === get(deepLinkIssueId))
+    return;
+
+  set(deepLinkIssueId, id);
+  set(deepLinkError, undefined);
+
+  const result = await fetchIssue(id);
+  if (id !== get(deepLinkIssueId))
+    return;
+
+  if (result.issue) {
+    openDetail(result.issue);
+    return;
+  }
+
+  set(deepLinkError, t('data_issues.deep_link.missing', {
+    error: result.error ?? '',
+    id,
+  }));
+}
+
+/**
+ * The drawer fetches the issue itself, so a filter that excludes it does not matter. Removing the
+ * query when the drawer closes keeps a later reload from reopening a link the user has dismissed.
+ */
+watch(() => get(currentRoute).query.issue, openIssueFromQuery, { immediate: true });
+
+watch(modelDrawerOpen, async (open) => {
+  if (!open)
+    await clearIssueQuery();
+});
 
 const activeStates = computed<string[]>(() => {
   const value = get(filters).state;
@@ -204,6 +269,7 @@ onMounted(async () => {
     v-bind="$attrs"
   >
     <template #buttons>
+      <DataIssuesTabs />
       <RuiTooltip :open-delay="400">
         <template #activator>
           <RuiButton
@@ -249,6 +315,24 @@ onMounted(async () => {
       data-testid="data-issues-detect-failure"
       @retry="detect()"
     />
+
+    <RuiAlert
+      v-if="deepLinkError"
+      type="warning"
+      data-testid="data-issues-deep-link-error"
+    >
+      <div class="flex flex-wrap items-center gap-3">
+        <span>{{ deepLinkError }}</span>
+        <RuiButton
+          size="sm"
+          variant="text"
+          color="primary"
+          @click="clearIssueQuery()"
+        >
+          {{ t('common.actions.close') }}
+        </RuiButton>
+      </div>
+    </RuiAlert>
 
     <NoDataScreen
       v-if="isAllClear"
