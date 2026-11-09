@@ -1,8 +1,11 @@
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
+
+if TYPE_CHECKING:
+    from eth_typing import ABI
 
 CPT_MORPHO_BLUE: Final = 'morpho_blue'
 MORPHO_BLUE_CPT_DETAILS: Final = CounterpartyDetails(
@@ -19,6 +22,81 @@ MORPHO_BLUE_ADDRESSES: Final = {
     ChainID.MONAD: string_to_evm_address('0xD5D960E8C380B724a48AC59E2DfF1b2CB4a1eAee'),
     ChainID.OPTIMISM: string_to_evm_address('0xce95AfbB8EA029495c66020883F87aaE8864AF92'),
 }
+MORPHO_API_BASE_URL: Final = 'https://api.morpho.org/v0/blue'
+MORPHO_BLUE_ABI: ABI = [
+    {
+        'inputs': [
+            {'name': 'id', 'type': 'bytes32'},
+            {'name': 'user', 'type': 'address'},
+        ],
+        'name': 'position',
+        'outputs': [
+            {'name': 'supplyShares', 'type': 'uint256'},
+            {'name': 'borrowShares', 'type': 'uint128'},
+            {'name': 'collateral', 'type': 'uint128'},
+        ],
+        'stateMutability': 'view',
+        'type': 'function',
+    },
+    {
+        'inputs': [{'name': 'id', 'type': 'bytes32'}],
+        'name': 'idToMarketParams',
+        'outputs': [
+            {'name': 'loanToken', 'type': 'address'},
+            {'name': 'collateralToken', 'type': 'address'},
+            {'name': 'oracle', 'type': 'address'},
+            {'name': 'irm', 'type': 'address'},
+            {'name': 'lltv', 'type': 'uint256'},
+        ],
+        'stateMutability': 'view',
+        'type': 'function',
+    },
+    {
+        'inputs': [{'name': 'id', 'type': 'bytes32'}],
+        'name': 'market',
+        'outputs': [
+            {'name': 'totalSupplyAssets', 'type': 'uint128'},
+            {'name': 'totalSupplyShares', 'type': 'uint128'},
+            {'name': 'totalBorrowAssets', 'type': 'uint128'},
+            {'name': 'totalBorrowShares', 'type': 'uint128'},
+            {'name': 'lastUpdate', 'type': 'uint128'},
+            {'name': 'fee', 'type': 'uint128'},
+        ],
+        'stateMutability': 'view',
+        'type': 'function',
+    },
+]
+MORPHO_IRM_ABI: ABI = [{
+    'inputs': [
+        {
+            'components': [
+                {'name': 'loanToken', 'type': 'address'},
+                {'name': 'collateralToken', 'type': 'address'},
+                {'name': 'oracle', 'type': 'address'},
+                {'name': 'irm', 'type': 'address'},
+                {'name': 'lltv', 'type': 'uint256'},
+            ],
+            'name': 'marketParams',
+            'type': 'tuple',
+        },
+        {
+            'components': [
+                {'name': 'totalSupplyAssets', 'type': 'uint128'},
+                {'name': 'totalSupplyShares', 'type': 'uint128'},
+                {'name': 'totalBorrowAssets', 'type': 'uint128'},
+                {'name': 'totalBorrowShares', 'type': 'uint128'},
+                {'name': 'lastUpdate', 'type': 'uint128'},
+                {'name': 'fee', 'type': 'uint128'},
+            ],
+            'name': 'market',
+            'type': 'tuple',
+        },
+    ],
+    'name': 'borrowRateView',
+    'outputs': [{'name': '', 'type': 'uint256'}],
+    'stateMutability': 'view',
+    'type': 'function',
+}]
 
 # Supply(bytes32 indexed id, address indexed caller, address indexed onBehalf,
 # uint256 assets, uint256 shares)
