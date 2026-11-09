@@ -264,7 +264,8 @@ def invalidate_swapped_asset_identities(
     `Bucket.from_event` resolves `swapped_for` when it maps an event to a bucket, so when an
     asset update sets that field, events already processed under the old identifier would still
     have metrics under it, and a saved comparison or stop would describe the old identity. The
-    event rows themselves are not rewritten by an asset update.
+    event rows themselves are not rewritten by an asset update, so only derived metrics,
+    stops and checks can establish that an old identity still needs invalidation.
 
     Every affected asset has its metrics, observations, checks and stops dropped, and a full
     reprocessing is requested with the stale marker. Stops are not merged into the target
@@ -286,7 +287,10 @@ def invalidate_swapped_asset_identities(
             'SELECT 1 FROM event_metrics WHERE asset = ? LIMIT 1',
             (asset,),
         ).fetchone() is not None or write_cursor.execute(
-            'SELECT 1 FROM history_events WHERE asset = ? LIMIT 1',
+            'SELECT 1 FROM bucket_processing_stops WHERE asset = ? LIMIT 1',
+            (asset,),
+        ).fetchone() is not None or write_cursor.execute(
+            'SELECT 1 FROM bucket_balance_checks WHERE asset = ? LIMIT 1',
             (asset,),
         ).fetchone() is not None
     ]

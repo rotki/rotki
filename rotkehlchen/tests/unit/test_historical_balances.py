@@ -33,7 +33,11 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.data_issues.bucket_state import BucketStop, get_bucket_stops
+from rotkehlchen.history.data_issues.bucket_state import (
+    BucketStop,
+    get_bucket_stops,
+    invalidate_swapped_asset_identities,
+)
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -1920,6 +1924,22 @@ def test_swapped_for_asset_tracked_under_new_identifier(
             (glm.identifier, glm.identifier, '60'),  # spend 10 GLM -> 70 - 10 = 60
             (glm.identifier, glm.identifier, '110'),  # receive 50 GLM -> 60 + 50 = 110
         ]
+
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'CREATE TEMP TRIGGER prevent_metric_rebuild BEFORE INSERT ON event_metrics '
+            "BEGIN SELECT RAISE(ABORT, 'Incremental pass rewrote historical metrics'); END",
+        )
+
+    for _ in range(2):
+        with database.user_write() as write_cursor:
+            assert invalidate_swapped_asset_identities(write_cursor) is False
+
+        assert process_historical_balances(
+            database,
+            messages_aggregator,
+            from_ts=TimestampMS(4000),
+        ) is True
 
 
 def test_rebasing_token_deficit_uses_archive_balance_and_resolves_issue(
