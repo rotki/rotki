@@ -10,7 +10,6 @@ Each write replaces the row and with it the observation identifier, which is a m
 integer, so a replacement is detectable even when both observations happened within the same
 second. The identifier is what freshness checks compare, not only the observed_at timestamp.
 """
-from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
@@ -77,7 +76,6 @@ def record_wallet_observations(
         blockchain: SupportedBlockchain,
         address: str,
         amounts: Mapping[str, FVal],
-        *,
         observed_at: Timestamp,
         source: ObservationSource,
 ) -> None:
@@ -201,7 +199,6 @@ def record_token_detection_observations(
         blockchain: SupportedBlockchain,
         address: str,
         amounts: Mapping[str, FVal],
-        *,
         previous_assets: Collection[str],
         queried_assets: Collection[str],
         observed_at: Timestamp,

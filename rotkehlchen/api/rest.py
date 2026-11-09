@@ -4112,10 +4112,7 @@ class RestAPI:
             limit=limit,
             offset=offset,
         )
-        return api_response(_wrap_in_ok_result(
-            result=self._serialize_reconciliation_report(report),
-            status_code=HTTPStatus.OK,
-        ))
+        return api_response(OkResult(self._serialize_reconciliation_report(report)))
 
     @async_api_call()
     @accounting_update_required('Historical balances are disabled')

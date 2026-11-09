@@ -344,7 +344,6 @@ def _has_stop(
 
 
 def _assemble_evidence(
-        *,
         location: str,
         address: str,
         asset: str,

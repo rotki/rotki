@@ -336,6 +336,7 @@ class EvmTokens(ABC):  # noqa: B024
             raise RemoteError(
                 f'{self.evm_inquirer.chain_name} tokensBalance returned {len(result)} results '
                 f'for {len(tokens)} tokens',
+                cause=FailureCause.BAD_DATA,
             ) from e
 
         return balances
