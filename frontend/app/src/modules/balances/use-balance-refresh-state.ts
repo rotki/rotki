@@ -34,6 +34,21 @@ export const useBalanceRefreshState = defineStore('balances/refresh-state', () =
   const refreshingChains = ref<Set<string>>(new Set());
   const hydratingChains = ref<Set<string>>(new Set());
   const firstLoadSettled = ref<boolean>(false);
+  const appliedNetworkResults = new Map<string, number>();
+
+  /**
+   * How many network results have been applied to this chain's balances this session.
+   *
+   * @remarks
+   * Not reactive, because only the cached-read guard in `useBalanceProcessingService` compares it.
+   * A count that moved while a cached read was in flight means that read began before the network
+   * result landed, which timestamps cannot tell: see `isStale`.
+   */
+  const networkResultCount = (chain: string): number => appliedNetworkResults.get(chain) ?? 0;
+
+  const markNetworkResultApplied = (chain: string): void => {
+    appliedNetworkResults.set(chain, networkResultCount(chain) + 1);
+  };
 
   const start = (chain: string): void => {
     addChain(refreshingChains, chain);
@@ -69,6 +84,7 @@ export const useBalanceRefreshState = defineStore('balances/refresh-state', () =
   };
 
   const reset = (): void => {
+    appliedNetworkResults.clear();
     set(refreshingChains, new Set());
     set(hydratingChains, new Set());
     set(firstLoadSettled, false);
@@ -80,6 +96,8 @@ export const useBalanceRefreshState = defineStore('balances/refresh-state', () =
     hydratingChains,
     isHydrating,
     isRefreshing,
+    markNetworkResultApplied,
+    networkResultCount,
     refreshingChains,
     reset,
     settleFirstLoad,

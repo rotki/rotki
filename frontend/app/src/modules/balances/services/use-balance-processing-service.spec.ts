@@ -1,13 +1,13 @@
 import type { BlockchainBalances } from '@/modules/balances/types/blockchain-balances';
 import { Blockchain } from '@rotki/common';
-import { err, ok, type Result } from 'plainfp/result';
+import { err, isOk, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { Cancelled, type TaskError } from '@/modules/core/tasks/task-result';
+import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
@@ -262,6 +262,150 @@ describe('useBalanceProcessingService', () => {
         perAccount: {},
         totals: { assets: {}, liabilities: {} },
       });
+    });
+  });
+
+  describe('cached reads overlapping a network result', () => {
+    const CHAIN = Blockchain.ETH;
+    const OTHER_CHAIN = 'gnosis';
+
+    function beginCachedRead(service: ReturnType<typeof useBalanceProcessingService>): {
+      done: Promise<Result<void, TaskError>>;
+      land: (payload: BlockchainBalances) => Promise<void>;
+    } {
+      const read = deferred<BlockchainBalances>();
+      mockQueryBlockchainBalances.mockReturnValueOnce(read.promise);
+      const done = service.handleCachedFetch({ addresses: undefined, blockchain: CHAIN, isXpub: false }, undefined);
+      return {
+        done,
+        land: async (payload: BlockchainBalances): Promise<void> => {
+          read.resolve(payload);
+          await done;
+        },
+      };
+    }
+
+    async function landNetworkResult(
+      service: ReturnType<typeof useBalanceProcessingService>,
+      result: Result<unknown, TaskError>,
+      chain: string = CHAIN,
+    ): Promise<void> {
+      const taskId = nextTaskId;
+      mockRefreshBlockchainBalances.mockImplementation(async () => ({ taskId: nextTaskId++ }));
+      const refresh = service.handleRefresh(runTask, { addresses: undefined, blockchain: chain, isXpub: false });
+      await vi.waitFor(() => {
+        expect(pendingTasks.has(taskId)).toBe(true);
+      });
+      pendingTasks.get(taskId)!.resolve(result);
+      await refresh;
+    }
+
+    beforeEach(() => {
+      vi.mocked(useBalancesStore().updateBalances).mockClear();
+    });
+
+    it('should drop a read the network result overtook, even with the same timestamp', async () => {
+      const service = useBalanceProcessingService();
+      const { updateBalances } = useBalancesStore();
+      const read = beginCachedRead(service);
+
+      await landNetworkResult(service, ok(balancesAt(CHAIN, 2000)));
+      vi.mocked(updateBalances).mockClear();
+      await read.land(balancesAt(CHAIN, 2000));
+
+      expect(updateBalances).not.toHaveBeenCalled();
+    });
+
+    it('should drop a read the network result overtook when the read has no timestamp', async () => {
+      const service = useBalanceProcessingService();
+      const { updateBalances } = useBalancesStore();
+      const read = beginCachedRead(service);
+
+      await landNetworkResult(service, ok(balancesAt(CHAIN, 2000)));
+      vi.mocked(updateBalances).mockClear();
+      await read.land(emptyBalances(CHAIN));
+
+      expect(updateBalances).not.toHaveBeenCalled();
+    });
+
+    it('should not let an overtaken read that fails forget the network result', async () => {
+      const service = useBalanceProcessingService();
+      const { statusOf } = useTaskOrchestrator();
+      const gate = deferred<void>();
+      mockQueryBlockchainBalances.mockImplementationOnce(async () => {
+        await gate.promise;
+        throw new Error('backend down');
+      });
+      const read = service.handleCachedFetch({ addresses: undefined, blockchain: CHAIN, isXpub: false }, undefined);
+
+      await landNetworkResult(service, ok(balancesAt(CHAIN, 2000)));
+      gate.resolve();
+      const outcome = await read;
+
+      expect(isOk(outcome)).toBe(true);
+      expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, CHAIN).everCompleted).toBe(true);
+    });
+
+    it('should apply a re-read that began after the network result with the same timestamp', async () => {
+      const service = useBalanceProcessingService();
+      const { updateBalances } = useBalancesStore();
+
+      await landNetworkResult(service, ok(balancesAt(CHAIN, 2000)));
+      vi.mocked(updateBalances).mockClear();
+      await beginCachedRead(service).land(balancesAt(CHAIN, 2000));
+
+      expect(updateBalances).toHaveBeenCalledOnce();
+    });
+
+    it('should apply a re-read that began after the network result with no timestamp', async () => {
+      const service = useBalanceProcessingService();
+      const { updateBalances } = useBalancesStore();
+
+      await landNetworkResult(service, ok(balancesAt(CHAIN, 2000)));
+      vi.mocked(updateBalances).mockClear();
+      await beginCachedRead(service).land(emptyBalances(CHAIN));
+
+      expect(updateBalances).toHaveBeenCalledOnce();
+    });
+
+    it('should apply a read when the overlapping network query failed', async () => {
+      const service = useBalanceProcessingService();
+      const { updateBalances } = useBalancesStore();
+      const read = beginCachedRead(service);
+
+      await landNetworkResult(service, err(TaskFailed({ message: 'boom' })));
+      await read.land(balancesAt(CHAIN, 2000));
+
+      expect(updateBalances).toHaveBeenCalledOnce();
+    });
+
+    it('should apply a read when the overlapping network result was refused as older', async () => {
+      const service = useBalanceProcessingService();
+      const { updateBalances } = useBalancesStore();
+      await beginCachedRead(service).land(balancesAt(CHAIN, 3000));
+      vi.mocked(updateBalances).mockClear();
+      const read = beginCachedRead(service);
+
+      await landNetworkResult(service, ok(balancesAt(CHAIN, 2000)));
+      expect(updateBalances).not.toHaveBeenCalled();
+      await read.land(balancesAt(CHAIN, 3000));
+
+      expect(updateBalances).toHaveBeenCalledOnce();
+    });
+
+    it('should apply a read when the network result landed on another chain', async () => {
+      useBlockchainAccountsStore().updateAccounts(OTHER_CHAIN, [
+        createAccount({ address: '0x9', label: null, tags: null }, OTHER_CHAIN),
+      ]);
+      const service = useBalanceProcessingService();
+      const { updateBalances } = useBalancesStore();
+      const read = beginCachedRead(service);
+
+      await landNetworkResult(service, ok(balancesAt(OTHER_CHAIN, 2000)), OTHER_CHAIN);
+      vi.mocked(updateBalances).mockClear();
+      await read.land(balancesAt(CHAIN, 2000));
+
+      expect(updateBalances).toHaveBeenCalledExactlyOnceWith(CHAIN, balancesAt(CHAIN, 2000));
     });
   });
 
