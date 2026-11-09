@@ -1,4 +1,5 @@
 import base64
+import threading
 import uuid
 from argparse import Namespace
 from unittest import mock
@@ -99,6 +100,18 @@ def test_shutdown_waits_for_indexer_analytics_after_cleanup() -> None:
         'logging',
         'stop event',
     ]
+
+
+def test_cancel_api_tasks_without_initialized_premium_sync_manager() -> None:
+    rest_api = object.__new__(RestAPI)
+    rest_api.rotkehlchen = object.__new__(Rotkehlchen)
+    rest_api.rotkehlchen.api_tasks = []
+    rest_api.task_lock = threading.Semaphore()
+    rest_api.api_tasks_stop_reason = None
+
+    rest_api._cancel_api_tasks(reason='Cancelled before login')
+
+    assert rest_api.api_tasks_stop_reason == 'Cancelled before login'
 
 
 def test_initializing_exchanges(uninitialized_rotkehlchen):

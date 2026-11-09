@@ -58,6 +58,7 @@ export const useSync = createSharedComposable(() => {
   });
   const uploadStatusAlreadyHandled = useSessionStorage<boolean>('rotki.upload_status.handled', false);
   const uploadProgress = ref<DatabaseUploadProgress>();
+  const downloadActive = ref<boolean>(false);
 
   const showSyncConfirmation = (action: SyncAction): void => {
     set(syncAction, action);
@@ -122,6 +123,8 @@ export const useSync = createSharedComposable(() => {
     if (action === SYNC_UPLOAD)
       set(displaySyncConfirmation, false);
 
+    if (action === SYNC_DOWNLOAD)
+      set(downloadActive, true);
     const epoch = sessionEpoch();
     const outcome = await submitTask<ForceSyncResult>({
       id: makeActivityId(ActivityKind.SYNC),
@@ -143,7 +146,7 @@ export const useSync = createSharedComposable(() => {
         return runTask<ForceSyncResult>(async () => useSyncApi().forceSync(action));
       },
       title: t('task_center.group.sync'),
-    });
+    }).finally(() => set(downloadActive, false));
 
     // A session that ended meanwhile was already logged out, which locked colibri as well
     if (action === SYNC_DOWNLOAD && lockedColibri(outcome) && sessionEpoch() === epoch)
@@ -157,6 +160,11 @@ export const useSync = createSharedComposable(() => {
     set(uploadProgress, undefined);
   };
 
+  const waitForDownload = async (): Promise<void> => {
+    if (get(downloadActive))
+      await until(downloadActive).toBe(false);
+  };
+
   return {
     cancelSync,
     clearUploadStatus,
@@ -168,5 +176,6 @@ export const useSync = createSharedComposable(() => {
     uploadProgress,
     uploadStatus,
     uploadStatusAlreadyHandled,
+    waitForDownload,
   };
 });
