@@ -10,8 +10,11 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.utils.misc import combine_dicts, ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from rotkehlchen.accounting.structures.balance import Balance
     from rotkehlchen.assets.asset import AssetWithOracles
+    from rotkehlchen.exchanges.exchange import ExchangeInterface
     from rotkehlchen.exchanges.gate import GateLocation
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
@@ -19,6 +22,17 @@ if TYPE_CHECKING:
     from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.rotkehlchen import Rotkehlchen
     from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
+
+
+def _filter_by_value(
+        balances: dict[AssetWithOracles, Balance],
+        value_threshold: FVal | None,
+) -> dict[AssetWithOracles, Balance]:
+    """Keep the balances above the threshold in a new dict"""
+    if value_threshold is None:
+        return balances
+
+    return {asset: balance for asset, balance in balances.items() if balance.value > value_threshold}  # noqa: E501
 
 
 class ExchangesService:
@@ -176,84 +190,64 @@ class ExchangesService:
             ignore_cache: bool,
             value_threshold: FVal | None = None,
     ) -> dict[str, Any]:
-        if location is None:
-            return self._query_all_exchange_balances(
-                ignore_cache=ignore_cache,
-                value_threshold=value_threshold,
-            )
+        """Return the balances of each exchange connection and the totals of each location.
 
-        exchanges_list = self.rotkehlchen.exchange_manager.connected_exchanges.get(location)
-        if exchanges_list is None:
+        Connections are keyed by their identifier, since it survives renames and clients
+        rewrite the keys of a response, which would alter a name but not an identifier.
+        A connection whose query fails is left out of per_account and totals and listed in
+        failed_accounts instead. The query only fails if no connection could be queried.
+
+        The value threshold only applies to the totals. Each connection reports all its
+        holdings, so the value of an account is complete even when it holds assets that are
+        worth less than the threshold on their own.
+        """
+        manager = self.rotkehlchen.exchange_manager
+        exchanges: Iterable[ExchangeInterface]
+        if location is None:
+            exchanges = manager.iterate_exchanges()
+        elif (location_exchanges := manager.connected_exchanges.get(location)) is None:
             return {
                 'result': None,
                 'message': f'Could not query balances for {location!s} since it is not registered',
                 'status_code': HTTPStatus.CONFLICT,
             }
+        else:
+            exchanges = location_exchanges
 
-        balances: dict[AssetWithOracles, Balance] = {}
-        for exchange in exchanges_list:
-            result, msg = exchange.query_balances(ignore_cache=ignore_cache)
-            if result is None:
-                return {
-                    'result': result,
-                    'message': msg,
-                    'status_code': HTTPStatus.CONFLICT,
-                }
-            balances = combine_dicts(balances, result)
-
-        if value_threshold is not None:
-            balances = {
-                asset: balance for asset, balance in balances.items()
-                if balance.value > value_threshold
-            }
-
-        return {
-            'result': balances,
-            'message': '',
-            'status_code': HTTPStatus.OK,
-        }
-
-    def _query_all_exchange_balances(
-            self,
-            ignore_cache: bool,
-            value_threshold: FVal | None = None,
-    ) -> dict[str, Any]:
-        final_balances: dict[str, dict[AssetWithOracles, Balance]] = {}
-        error_msg = ''
-        for exchange_obj in self.rotkehlchen.exchange_manager.iterate_exchanges():
-            balances, msg = exchange_obj.query_balances(ignore_cache=ignore_cache)
+        per_account: dict[str, dict[str, dict[AssetWithOracles, Balance]]] = {}
+        totals: dict[str, dict[AssetWithOracles, Balance]] = {}
+        failed_accounts: dict[str, dict[str, str]] = {}
+        errors: list[str] = []
+        for exchange in exchanges:
+            balances, msg = exchange.query_balances(ignore_cache=ignore_cache)
+            location_str = str(exchange.data_location)
             if balances is None:
-                error_msg += msg
-            else:
-                location_str = str(exchange_obj.location)
-                if location_str not in final_balances:
-                    final_balances[location_str] = balances
-                else:
-                    final_balances[location_str] = combine_dicts(
-                        final_balances[location_str],
-                        balances,
-                    )
+                failed_accounts.setdefault(location_str, {})[exchange.connection_identifier] = msg
+                errors.append(msg)
+                continue
 
-        if final_balances == {}:
+            per_account.setdefault(location_str, {})[exchange.connection_identifier] = balances
+            totals[location_str] = combine_dicts(totals.get(location_str, {}), balances)
+
+        if len(per_account) == 0:
             return {
                 'result': None,
-                'message': error_msg,
+                'message': ' '.join(errors),
                 'status_code': HTTPStatus.CONFLICT,
             }
 
-        if value_threshold is not None:
-            filtered_balances = {}
-            for location_str, balances in final_balances.items():
-                filtered_balances[location_str] = {
-                    asset: balance for asset, balance in balances.items()
-                    if balance.value > value_threshold
-                }
-            result: dict[str, dict[AssetWithOracles, Balance]] = filtered_balances
-        else:
-            result = final_balances
+        result: dict[str, Any] = {
+            'per_account': per_account,
+            'totals': {
+                location_str: _filter_by_value(balances, value_threshold)
+                for location_str, balances in totals.items()
+            },
+        }
+        if len(failed_accounts) != 0:
+            result['failed_accounts'] = failed_accounts
 
         return {
             'result': result,
-            'message': error_msg,
+            'message': ' '.join(errors),
             'status_code': HTTPStatus.OK,
         }

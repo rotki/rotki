@@ -66,6 +66,24 @@ describe('useBalancesStore', () => {
     });
   });
 
+  it('should revalue each exchange connection without changing its holdings', () => {
+    store.exchangeAccountBalances = {
+      kraken: {
+        main: { ETH: { amount: bigNumberify(2), value: bigNumberify(4000) } },
+        trading: { ETH: { amount: bigNumberify(3), value: bigNumberify(6000) } },
+      },
+    };
+
+    store.updatePrices({
+      ETH: { isManualPrice: false, oracle: 'coingecko', usdPrice: null, value: bigNumberify(2500) },
+    });
+
+    expect(store.exchangeAccountBalances.kraken).toEqual({
+      main: { ETH: { amount: bigNumberify(2), value: bigNumberify(5000) } },
+      trading: { ETH: { amount: bigNumberify(3), value: bigNumberify(7500) } },
+    });
+  });
+
   describe('removeIgnoredAssets', () => {
     beforeEach(() => {
       store.balances = {

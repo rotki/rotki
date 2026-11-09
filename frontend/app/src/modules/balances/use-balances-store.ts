@@ -14,6 +14,7 @@ export const useBalancesStore = defineStore('balances', () => {
   const manualLiabilities = shallowRef<ManualBalanceWithValue[]>([]);
 
   const exchangeBalances = shallowRef<ExchangeData>({});
+  const exchangeAccountBalances = shallowRef<Record<string, ExchangeData>>({});
   /** What each bank connection holds; banks are a source of their own, never an exchange. */
   const bankBalances = shallowRef<BankConnectionBalances[]>([]);
   const nonFungibleTotalValue = ref<BigNumber>(Zero);
@@ -28,6 +29,14 @@ export const useBalancesStore = defineStore('balances', () => {
     for (const exchange in exchanges) exchanges[exchange] = updateExchangeBalancesPrices(exchanges[exchange], latestPrices);
 
     set(exchangeBalances, exchanges);
+    const accounts = { ...get(exchangeAccountBalances) };
+    for (const [location, balances] of Object.entries(accounts)) {
+      accounts[location] = Object.fromEntries(Object.entries(balances).map(([identifier, assets]) => [
+        identifier,
+        updateExchangeBalancesPrices(assets, latestPrices),
+      ]));
+    }
+    set(exchangeAccountBalances, accounts);
     set(bankBalances, updateBankBalancesPrices(get(bankBalances), latestPrices));
 
     set(manualBalances, updateAssetValuePrices(get(manualBalances), latestPrices));
@@ -83,6 +92,7 @@ export const useBalancesStore = defineStore('balances', () => {
   return {
     balances: blockchainBalances,
     bankBalances,
+    exchangeAccountBalances,
     exchangeBalances,
     manualBalances,
     manualLiabilities,
