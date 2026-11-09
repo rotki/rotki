@@ -23,8 +23,8 @@ export class WalletBridgeWebSocketServer {
   private readonly pendingRequests = new Map<string, PendingRequest>();
   private idleTimer?: NodeJS.Timeout;
   private requestIdNonce = 0;
-  private connectionManager: WalletBridgeConnectionManager;
-  private messageHandler: WalletBridgeMessageHandler;
+  private readonly connectionManager: WalletBridgeConnectionManager;
+  private readonly messageHandler: WalletBridgeMessageHandler;
 
   constructor(private readonly logger: LogService) {
     this.connectionManager = new WalletBridgeConnectionManager(logger);
@@ -80,15 +80,19 @@ export class WalletBridgeWebSocketServer {
 
         ws.on('message', (data) => {
           const messageString = typeof data === 'string' ? data : data.toString();
-          this.messageHandler.handleMessage(messageString, () => this.resetIdleTimer());
+          this.messageHandler.handleMessage(messageString, () => {
+            if (this.connectionManager.getActiveConnection() === ws)
+              this.resetIdleTimer();
+          });
         });
 
         ws.on('close', () => {
-          this.connectionManager.handleConnectionClose(
+          const wasActive = this.connectionManager.handleConnectionClose(
             ws,
             connectionId => this.cancelPendingRequestsForConnection(connectionId),
           );
-          this.clearIdleTimer();
+          if (wasActive)
+            this.clearIdleTimer();
         });
 
         ws.on('error', (error) => {
@@ -280,35 +284,9 @@ export class WalletBridgeWebSocketServer {
     });
   }
 
-  public setOnBridgeDisconnected(callback: () => void): void {
-    this.connectionManager = new WalletBridgeConnectionManager(
-      this.logger,
-      callback,
-      undefined,
-    );
-  }
-
-  public setOnBridgeReconnected(callback: () => void): void {
-    this.connectionManager = new WalletBridgeConnectionManager(
-      this.logger,
-      undefined,
-      callback,
-    );
-  }
-
   public setIpcCallbacks(callbacks: WalletBridgeIpcCallbacks): void {
-    this.connectionManager = new WalletBridgeConnectionManager(
-      this.logger,
-      undefined,
-      undefined,
-      callbacks,
-    );
-    this.messageHandler = new WalletBridgeMessageHandler(
-      this.logger,
-      this.pendingRequests,
-      () => this.connectionManager.getActiveConnectionId(),
-      callbacks,
-    );
+    this.connectionManager.setIpcCallbacks(callbacks);
+    this.messageHandler.setIpcCallbacks(callbacks);
   }
 
   private cancelPendingRequestsForConnection(connectionId: number): void {

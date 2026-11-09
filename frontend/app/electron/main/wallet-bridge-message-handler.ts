@@ -6,12 +6,17 @@ import { IPC_BRIDGE_EVENT_CHANNEL, type PendingRequest, type WalletBridgeIpcCall
  * Handles WebSocket message parsing and routing for the wallet bridge
  */
 export class WalletBridgeMessageHandler {
+  private ipcCallbacks?: WalletBridgeIpcCallbacks;
+
   constructor(
     private readonly logger: LogService,
     private readonly pendingRequests: Map<string, PendingRequest>,
     private readonly getActiveConnectionId: () => number,
-    private readonly ipcCallbacks?: WalletBridgeIpcCallbacks,
   ) {}
+
+  setIpcCallbacks(callbacks: WalletBridgeIpcCallbacks): void {
+    this.ipcCallbacks = callbacks;
+  }
 
   /**
    * Handle incoming WebSocket messages
@@ -45,6 +50,10 @@ export class WalletBridgeMessageHandler {
 
   /**
    * Handle RPC responses from the wallet bridge
+   *
+   * @remarks
+   * Deleting the pending entry disarms the request timeout, so every branch after it must settle
+   * the promise or the caller waits forever.
    */
   private handleResponse(data: any): void {
     const responseResult = WalletBridgeResponseSchema.safeParse(data);
@@ -60,21 +69,18 @@ export class WalletBridgeMessageHandler {
       return;
     }
 
-    // Verify this response is from the current active connection
-    if (requestInfo.connectionId === this.getActiveConnectionId()) {
-      const { resolve, reject } = requestInfo;
-      this.pendingRequests.delete(requestId);
+    const { resolve, reject, connectionId } = requestInfo;
+    this.pendingRequests.delete(requestId);
 
-      if (response.error) {
-        reject(Object.assign(new Error(response.error.message), { code: response.error.code }));
-      }
-      else {
-        resolve(response.result);
-      }
+    if (connectionId !== this.getActiveConnectionId()) {
+      this.logger.warn(`Ignoring response from old connection. Request connection ID: ${connectionId}, current: ${this.getActiveConnectionId()}`);
+      reject(new Error(`Connection ${connectionId} was replaced before it responded`));
+    }
+    else if (response.error) {
+      reject(Object.assign(new Error(response.error.message), { code: response.error.code }));
     }
     else {
-      this.logger.warn(`Ignoring response from old connection. Request connection ID: ${requestInfo.connectionId}, current: ${this.getActiveConnectionId()}`);
-      this.pendingRequests.delete(requestId);
+      resolve(response.result);
     }
   }
 

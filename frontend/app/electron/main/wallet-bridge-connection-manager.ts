@@ -11,13 +11,14 @@ export class WalletBridgeConnectionManager {
   private readonly connectionIds = new Map<WebSocket, number>();
   private readonly connectionsById = new Map<number, WebSocket>();
   private disconnectedState = false;
+  private ipcCallbacks?: WalletBridgeIpcCallbacks;
 
-  constructor(
-    private readonly logger: LogService,
-    private readonly onBridgeDisconnected?: () => void,
-    private readonly onBridgeReconnected?: () => void,
-    private readonly ipcCallbacks?: WalletBridgeIpcCallbacks,
-  ) {}
+  constructor(private readonly logger: LogService) {}
+
+  /** Set in place, so connections registered before the callbacks arrive are kept. */
+  setIpcCallbacks(callbacks: WalletBridgeIpcCallbacks): void {
+    this.ipcCallbacks = callbacks;
+  }
 
   /**
    * Register a new WebSocket connection
@@ -63,11 +64,14 @@ export class WalletBridgeConnectionManager {
 
   /**
    * Handle connection close events
+   *
+   * @returns whether the closed socket was the active connection; a superseded socket closing
+   * after a takeover returns false and must not touch state that belongs to its successor.
    */
   handleConnectionClose(
     ws: WebSocket,
     cancelPendingRequests: (connectionId: number) => void,
-  ): void {
+  ): boolean {
     const wsConnectionId = this.connectionIds.get(ws);
 
     this.connectionIds.delete(ws);
@@ -82,19 +86,20 @@ export class WalletBridgeConnectionManager {
 
       cancelPendingRequests(wsConnectionId);
 
-      if (this.onBridgeDisconnected) {
-        this.onBridgeDisconnected();
-      }
       if (this.ipcCallbacks) {
         this.ipcCallbacks.sendIpcMessage(IPC_CONNECTION_STATUS_CHANNEL, 'disconnected');
       }
+      return true;
+    }
+
+    if (wsConnectionId) {
+      this.logger.info(`Old wallet bridge connection (ID: ${wsConnectionId}) closed`);
+      cancelPendingRequests(wsConnectionId);
     }
     else {
-      this.logger.info(`Old wallet bridge connection (ID: ${wsConnectionId}) closed (takeover completed)`);
-      if (wsConnectionId) {
-        cancelPendingRequests(wsConnectionId);
-      }
+      this.logger.info('Superseded wallet bridge connection closed (takeover completed)');
     }
+    return false;
   }
 
   /**
@@ -103,9 +108,6 @@ export class WalletBridgeConnectionManager {
   notifyConnectionStatus(port: number, isReconnection: boolean): void {
     if (isReconnection) {
       this.logger.info(`Wallet bridge WebSocket reconnected on port ${port}`);
-      if (this.onBridgeReconnected) {
-        this.onBridgeReconnected();
-      }
       if (this.ipcCallbacks) {
         this.ipcCallbacks.sendIpcMessage(IPC_CONNECTION_STATUS_CHANNEL, 'reconnected');
       }
