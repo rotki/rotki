@@ -356,7 +356,7 @@ describe('useBlockchainBalances', () => {
 
     it('should settle a chain with no accounts as skipped, not drop it', async () => {
       const chainInScopeWithNoAccounts = Blockchain.BTC;
-      submitTask.mockImplementation(async (spec: SubmittedSpec) => spec.run({ cancelled: () => false, report: () => {}, runTask }));
+      submitTask.mockImplementation(async (spec: SubmittedSpec) => spec.run({ cancelled: () => false, report: () => {}, rerun: false, runTask }));
 
       await blockchainBalances.refreshBlockchainBalances({ blockchain: chainInScopeWithNoAccounts }, 'background');
 
@@ -383,7 +383,7 @@ describe('useBlockchainBalances', () => {
         stageCancelled = true;
       });
       submitTask.mockImplementation(async (spec: SubmittedSpec) =>
-        spec.run({ cancelled: () => stageCancelled, report: () => {}, runTask }));
+        spec.run({ cancelled: () => stageCancelled, report: () => {}, rerun: false, runTask }));
 
       await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, 'background', { detect: true });
 

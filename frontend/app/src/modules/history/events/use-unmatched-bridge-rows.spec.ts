@@ -134,7 +134,7 @@ describe('use-unmatched-bridge-rows', () => {
       transactions: [],
     });
 
-    expect(get(failure)).toEqual({ message: 'backend down', title: 'bridge_matching.dialog.load_failed.ignored' });
+    expect(get(failure)).toMatchObject({ message: 'backend down', title: 'bridge_matching.dialog.load_failed.ignored' });
     expect(get(emptyDescription)).toBe('bridge_matching.dialog.no_ignored');
   });
 

@@ -82,6 +82,7 @@ function getRowClass(row: TRow): string {
       >
         <TableFailureDescription
           :message="failure.message"
+          :failure="failure"
           @retry="emit('retry')"
         />
       </template>
@@ -95,7 +96,7 @@ function getRowClass(row: TRow): string {
               v-if="failure && rows.length > 0"
               in-table
               :title="failure.title"
-              :failure="failure.message"
+              :failure="failure"
               @retry="emit('retry')"
             />
             <slot name="alert" />

@@ -116,6 +116,7 @@ onMounted(load);
       >
         <TableFailureDescription
           :message="loadFailure"
+          :failure="loadFailure"
           @retry="load()"
         />
       </template>

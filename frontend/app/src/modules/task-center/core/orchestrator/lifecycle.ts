@@ -1,7 +1,9 @@
 import type { ActivitySpec, ReportProgress } from './spec';
+import type { FailureCause } from '@/modules/core/api/failure-cause';
 import { err, type Result } from 'plainfp/result';
 import { type ResultAsync, retry, timeout } from 'plainfp/result-async';
 import { hasTag } from 'plainfp/tagged';
+import { failureCauseOf } from '@/modules/core/api/request-result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { isTerminalStatus } from '../status';
@@ -91,6 +93,18 @@ export function terminalReason(
 }
 
 /**
+ * The backend's cause behind a FAILED activity, which decides whether the dock offers a retry.
+ *
+ * @returns `undefined` for any other status
+ */
+export function terminalFailureCause(
+  status: ActivityStatus,
+  outcome: Result<unknown, TaskError>,
+): FailureCause | undefined {
+  return !outcome.ok && status === Status.FAILED ? failureCauseOf(outcome.error) : undefined;
+}
+
+/**
  * Whether a skip asked to be held for the user, as a failure is. Only a SKIPPED activity carries
  * it; `undefined` rather than `false` otherwise, so the flag is absent from every other activity.
  */
@@ -115,9 +129,10 @@ export function terminalAttention(
 export async function runActivity(
   spec: ActivitySpec,
   report: ReportProgress,
+  rerun: boolean,
 ): Promise<Result<unknown, TaskError>> {
   const runOnce = async (): ResultAsync<unknown, TaskError> => {
-    const base = spec.run(report);
+    const base = spec.run(report, rerun);
     return spec.timeoutMs === undefined
       ? base
       : timeout(base, spec.timeoutMs, () => TaskFailed({ message: 'Timed out' }));

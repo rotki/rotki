@@ -6,7 +6,7 @@ import { type ActivityOutcome, activityOutcome } from '@/modules/task-center/act
 import { type ActivitySubject, activitySubject } from '@/modules/task-center/activity-subject';
 import DockActivityDetail from '@/modules/task-center/components/DockActivityDetail.vue';
 import { formatElapsed } from '@/modules/task-center/core/elapsed';
-import { isTerminalStatus } from '@/modules/task-center/core/status';
+import { isTerminalStatus, offersRetry } from '@/modules/task-center/core/status';
 import { type Activity, ActivityKind, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
 import { useActivityLabel } from '@/modules/task-center/use-activity-label';
 import { useWaitingLabel } from '@/modules/task-center/use-waiting-label';
@@ -112,7 +112,7 @@ const isRunning = computed<boolean>(() => activity.status === ActivityStatus.RUN
 const isFailed = computed<boolean>(() => get(status) === ActivityStatus.FAILED);
 
 /** Only an activity that failed itself can be run again; a parent reporting a child's failure retries through that child. */
-const retryable = computed<boolean>(() => activity.status === ActivityStatus.FAILED && activity.rerunnable);
+const retryable = computed<boolean>(() => activity.status === ActivityStatus.FAILED && offersRetry(activity));
 
 const outcome = computed<ActivityOutcome>(() => activityOutcome(get(status)));
 

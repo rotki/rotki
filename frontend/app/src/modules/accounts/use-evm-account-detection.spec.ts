@@ -141,7 +141,7 @@ describe('useEvmAccountDetection', () => {
         h.tracked = { eth: ['0xabc'], optimism: ['0xabc'] };
       });
 
-      await submittedSpec().run({ cancelled: () => false, report: () => {}, runTask: h.runTaskResult });
+      await submittedSpec().run({ cancelled: () => false, report: () => {}, rerun: false, runTask: h.runTaskResult });
 
       const store = useDetectedAccountsStore();
       expect(store.isDetected('optimism', '0xabc')).toBe(true);
@@ -153,7 +153,7 @@ describe('useEvmAccountDetection', () => {
       h.pending.mockImplementation(async () => {
         isCancelled = true;
       });
-      submitTask.mockImplementationOnce(async spec => spec.run({ cancelled: () => isCancelled, report: () => {}, runTask: h.runTaskResult }));
+      submitTask.mockImplementationOnce(async spec => spec.run({ cancelled: () => isCancelled, report: () => {}, rerun: false, runTask: h.runTaskResult }));
 
       await detect();
 
@@ -165,7 +165,7 @@ describe('useEvmAccountDetection', () => {
       h.fetchAccounts.mockImplementation(async () => {
         h.tracked = { eth: ['0xabc'], optimism: ['0xabc'] };
       });
-      submitTask.mockImplementationOnce(async spec => spec.run({ cancelled: () => true, report: () => {}, runTask: h.runTaskResult }));
+      submitTask.mockImplementationOnce(async spec => spec.run({ cancelled: () => true, report: () => {}, rerun: false, runTask: h.runTaskResult }));
 
       await detect();
 

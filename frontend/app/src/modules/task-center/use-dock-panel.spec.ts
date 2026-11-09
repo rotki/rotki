@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
+import { FailureCause } from '@/modules/core/api/failure-cause';
 import { type ActivityModel, assembleActivityModel } from '@/modules/task-center/core/model';
 import {
   type Activity,
@@ -207,6 +208,19 @@ describe('useDockPanel', () => {
 
       expect(rerun).toHaveBeenCalledOnce();
       expect(rerun.mock.calls[0]?.[0]).toMatchObject({ id: makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'gnosis') });
+    });
+
+    it('should leave out of retry a failed leaf no retry can fix', async () => {
+      const withCause = (run: ActivityStatus, gnosis: ActivityStatus): Activity[] => [
+        activity(ActivityKind.BLOCKCHAIN_BALANCES, 'run', run),
+        activity(ActivityKind.BLOCKCHAIN_BALANCES, 'gnosis', gnosis, balancesId, { failureCause: FailureCause.AUTH, rerunnable: true }),
+      ];
+      set(activities, withCause(RUNNING, RUNNING));
+      const { retryable } = panel();
+
+      await transition(withCause(COMPLETE, FAILED));
+
+      expect(get(retryable)).toEqual([]);
     });
 
     it('should say a clean run finished, with nothing to retry', async () => {

@@ -78,6 +78,8 @@ export interface UnmatchedRowActionSpec {
 export interface UnmatchedFailure {
   title: string;
   message: string;
+  /** What the load threw, which says whether a retry is worth offering. */
+  cause: unknown;
 }
 
 export const UNMATCHED_LAYOUTS = {

@@ -65,9 +65,9 @@ export function useExchanges(): UseExchangesReturn {
       kind: exchangeBalancesActivity.kind,
       lane: exchangeBalancesActivity.laneOf?.({ location }),
       rerunnable: true,
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => flatMapResult(
+      run: async ({ rerun, runTask }): Promise<Result<void, TaskError>> => flatMapResult(
         await runTask<ExchangeBalancesResponse>(
-          async () => queryExchangeBalances(location, ignoreCache, threshold),
+          async () => queryExchangeBalances(location, rerun || ignoreCache === true, threshold),
         ),
         (result): Result<void, TaskError> => {
           const { failedAccounts, perAccount, totals } = ExchangeBalancesResponse.parse(result);

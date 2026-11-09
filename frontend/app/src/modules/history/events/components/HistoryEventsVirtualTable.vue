@@ -161,6 +161,7 @@ provideHistoryEventsRowContext(rowContext);
         <template #description>
           <TableFailureDescription
             :message="emptyState.description ?? ''"
+            :failure="fetchError"
             @retry="emit('refetch')"
           />
         </template>

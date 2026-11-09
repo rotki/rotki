@@ -90,6 +90,19 @@ describe('useExchanges', () => {
       });
     });
 
+    it('should bypass the backend cache on a rerun, which would replay a cached failure', async () => {
+      runTaskMock.mockResolvedValue(err(TaskFailed({ message: 'API request failed' })));
+      await exchanges.fetchExchangeBalances({ ignoreCache: false, location: 'kraken' });
+      await flushPromises();
+      expect(queryExchangeBalances).toHaveBeenLastCalledWith('kraken', false, undefined);
+
+      useTaskOrchestrator().rerun(exchangeBalancesActivity.id({ location: 'kraken' }));
+      await flushPromises();
+
+      expect(queryExchangeBalances).toHaveBeenCalledTimes(2);
+      expect(queryExchangeBalances).toHaveBeenLastCalledWith('kraken', true, undefined);
+    });
+
     it('should update healthy connections and retain failed accounts and totals on partial failure', async () => {
       const { exchangeBalances } = storeToRefs(store);
       set(exchangeBalances, { kraken: { BTC: { amount: bigNumberify(2), value: bigNumberify(100000) } } });

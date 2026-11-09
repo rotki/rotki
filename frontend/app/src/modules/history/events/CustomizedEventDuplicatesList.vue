@@ -110,6 +110,7 @@ const columns = computed<DataTableColumn<DuplicateRow>[]>(() => [
         >
           <TableFailureDescription
             :message="failureMessage(error)"
+            :failure="error"
             @retry="emit('retry')"
           />
         </template>

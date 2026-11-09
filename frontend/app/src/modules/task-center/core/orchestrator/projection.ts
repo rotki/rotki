@@ -1,3 +1,4 @@
+import type { FailureCause } from '@/modules/core/api/failure-cause';
 import { INDETERMINATE, isTerminalStatus, percentageFromSteps } from '../status';
 import { type Activity, type ActivityId, type ActivityKind, ActivitySourceType, type ActivityStatus, type ActivitySteps, type CompletionRecord, ActivityStatus as Status, type WorkStatus } from '../types';
 
@@ -169,6 +170,7 @@ export interface RenderableRecord {
   readonly steps?: ActivitySteps;
   readonly startedAt?: number;
   readonly reason?: string;
+  readonly failureCause?: FailureCause;
   readonly attention?: true;
   readonly spec: {
     readonly id: ActivityId;
@@ -193,11 +195,12 @@ export interface RenderableRecord {
  * the queue, while a RUNNING one needs a handle to interrupt the work it started.
  */
 export function projectActivity(record: RenderableRecord, childSteps?: ActivitySteps): Activity {
-  const { attention, spec, status, steps, startedAt, reason } = record;
+  const { attention, failureCause, spec, status, steps, startedAt, reason } = record;
   return {
     attention,
     cancellable: status === Status.RUNNING ? Boolean(spec.cancel) : status === Status.PENDING,
     ephemeral: spec.ephemeral,
+    failureCause,
     group: spec.group,
     id: spec.id,
     kind: spec.kind,

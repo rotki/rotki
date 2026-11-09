@@ -1,7 +1,19 @@
+import { FailureCause, isRetryableCause } from '@/modules/core/api/failure-cause';
 import { type Activity, type ActivityStatus, ActivityStatus as Status, type WorkStatus } from './types';
 
 /** Sentinel percentage for work whose completion cannot be quantified. */
 export const INDETERMINATE = -1;
+
+/**
+ * Whether the dock offers to run this activity again as it stands.
+ *
+ * @remarks
+ * Not whether it can be rerun: a failure no retry can fix still reruns once the user has changed
+ * something, which is why a smart rerun reads `rerunnable` alone.
+ */
+export function offersRetry({ failureCause, rerunnable }: Pick<Activity, 'failureCause' | 'rerunnable'>): boolean {
+  return rerunnable && isRetryableCause(failureCause ?? FailureCause.UNKNOWN);
+}
 
 /**
  * Whether a guarded fetch should skip this run.

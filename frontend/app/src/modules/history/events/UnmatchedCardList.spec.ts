@@ -2,6 +2,7 @@ import type { UnmatchedFailure } from '@/modules/history/events/unmatched-action
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiRequestError } from '@/modules/core/api/types/errors';
 import UnmatchedCardList from '@/modules/history/events/UnmatchedCardList.vue';
 
 interface TestItem {
@@ -78,7 +79,15 @@ describe('modules/history/events/UnmatchedCardList', () => {
   });
 
   describe('a failed load', () => {
-    const failure: UnmatchedFailure = { message: 'backend down', title: 'Could not load' };
+    const failure: UnmatchedFailure = { cause: new Error('backend down'), message: 'backend down', title: 'Could not load' };
+
+    it('should offer no retry when the load failed for a reason no retry can fix', () => {
+      const permanent: UnmatchedFailure = { ...failure, cause: new ApiRequestError('no premium', { failureCause: 'forbidden' }) };
+      const wrapper = mountList([], undefined, { failure: permanent });
+
+      expect(wrapper.find('[data-testid=unmatched-card-error]').text()).toContain('backend down');
+      expect(wrapper.find('[data-testid=table-failure-retry]').exists()).toBe(false);
+    });
 
     it('should name the failure in place of the empty description', () => {
       const wrapper = mountList([], undefined, { failure });

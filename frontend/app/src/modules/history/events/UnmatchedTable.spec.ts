@@ -32,7 +32,7 @@ const RuiDataTable = defineComponent({
   `,
 });
 
-const failure: UnmatchedFailure = { message: 'backend down', title: 'Could not load' };
+const failure: UnmatchedFailure = { cause: new Error('backend down'), message: 'backend down', title: 'Could not load' };
 
 interface TableState {
   failure?: UnmatchedFailure;
