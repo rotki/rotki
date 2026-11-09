@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import call, patch
 
 import pytest
@@ -126,8 +126,13 @@ def test_api_query_errors(
 
 
 def test_validate_api_key(bitvavo_exchange: Bitvavo) -> None:
-    with patch.object(bitvavo_exchange, '_api_query', return_value=[]):
+    with patch.object(bitvavo_exchange, '_api_query', return_value=[]) as api_query:
         assert bitvavo_exchange.validate_api_key() == (True, '')
+
+    assert api_query.call_args_list == [
+        call(endpoint='/balance'),
+        call(endpoint='/stakingBalance'),
+    ]
 
     with patch.object(
         bitvavo_exchange,
@@ -141,6 +146,25 @@ def test_validate_api_key(bitvavo_exchange: Bitvavo) -> None:
 
     assert valid is False
     assert 'error code 305' in msg
+
+
+def test_validate_api_key_needs_the_staking_balance(bitvavo_exchange: Bitvavo) -> None:
+    """The balance query fails without /stakingBalance, so a key that can read /balance
+    alone is refused at setup instead of being accepted and never showing a balance.
+    """
+    def mock_api_query(endpoint: str) -> list:
+        if endpoint == '/stakingBalance':
+            raise RemoteError(
+                'Bitvavo request at x failed with error code 311: no access',
+                cause=FailureCause.AUTH,
+            )
+        return []
+
+    with patch.object(bitvavo_exchange, '_api_query', side_effect=mock_api_query):
+        valid, msg = bitvavo_exchange.validate_api_key()
+
+    assert valid is False
+    assert 'error code 311' in msg
 
 
 def test_edit_exchange_credentials_updates_key_header(bitvavo_exchange: Bitvavo) -> None:
@@ -204,8 +228,9 @@ def test_query_balances_skips_malformed_entries(bitvavo_exchange: Bitvavo) -> No
             {'symbol': 'BTC', 'available': '1', 'inOrder': '0'},
             {'symbol': 'ETH', 'available': 'not a number', 'inOrder': '0'},
             {'symbol': 'EUR'},  # amounts missing
+            None,  # not an object
         ],
-        '/stakingBalance': [{'symbol': 'BTC'}],  # amount missing
+        '/stakingBalance': [{'symbol': 'BTC'}, 'BTC'],  # amount missing, not an object
     }
     with patch.object(
         bitvavo_exchange,
@@ -218,7 +243,7 @@ def test_query_balances_skips_malformed_entries(bitvavo_exchange: Bitvavo) -> No
     assert balances == {A_BTC: Balance(amount=FVal('1'), value=FVal('1.5'))}
     assert consume_errors(bitvavo_exchange.msg_aggregator) == [
         'Failed to deserialize a Bitvavo balance entry. Check logs for details. Ignoring it.',
-    ] * 3
+    ] * 5
 
 
 def test_query_online_margin_history(bitvavo_exchange: Bitvavo) -> None:
@@ -354,10 +379,10 @@ LEDGER_PAGE_1: list[dict[str, Any]] = [
     }, {
         'transactionId': 'adj-2', 'executedAt': '2024-03-08T09:00:00.000Z',
         'type': 'manually_assigned', 'receivedCurrency': 'ETC', 'receivedAmount': '0.5',
-    }, {  # documented by Bitvavo but not handled: reported, never skipped silently
+    }, {  # a cancelled withdrawal credits the withdrawn amount back
         'transactionId': 'wc-1', 'executedAt': '2024-03-08T09:00:00.000Z',
         'type': 'withdrawal_cancelled', 'receivedCurrency': 'ETH', 'receivedAmount': '1',
-    }, {  # a type Bitvavo does not document: reported once for both rows
+    }, {  # a type rotki does not map: kept as informational, reported once for both rows
         'transactionId': 'unk-1', 'executedAt': '2024-03-08T09:00:00.000Z',
         'type': 'margin_interest', 'sentCurrency': 'EUR', 'sentAmount': '1',
     }, {
@@ -493,6 +518,30 @@ def expected_ledger_events() -> list[HistoryBaseEntry]:
             event_subtype=HistoryEventSubType.RECEIVE,
             notes='Balance correction of 0.5 ETC at Bitvavo',
         ),
+        HistoryEvent(
+            group_identifier=group_id('wc-1'),
+            sequence_index=0,
+            timestamp=TimestampMS(1709888400000),
+            location=LOCATION_BITVAVO,
+            location_label='bitvavo',
+            asset=a_eth,
+            amount=FVal('1'),
+            event_type=HistoryEventType.ADJUSTMENT,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            notes='Refund of a cancelled withdrawal of 1 ETH at Bitvavo',
+        ),
+        *(HistoryEvent(
+            group_identifier=group_id(f'unk-{amount}'),
+            sequence_index=0,
+            timestamp=TimestampMS(1709888400000),
+            location=LOCATION_BITVAVO,
+            location_label='bitvavo',
+            asset=a_eur,
+            amount=FVal(amount),
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            notes=f'Bitvavo margin_interest entry that sent {amount} EUR',
+        ) for amount in ('1', '2')),
         *create_asset_movement_with_fee(
             timestamp=TimestampMS(1709978400000),
             location=LOCATION_BITVAVO,
@@ -520,7 +569,8 @@ def mock_ledger_pages() -> Callable[..., dict[str, Any]]:
 
 def test_query_online_history_events(bitvavo_exchange: Bitvavo) -> None:
     """Every handled ledger row type is dispatched to the right event shape, unhandled
-    types are skipped with a warning that names every skipped type, and the range is always
+    types are kept as informational events with a warning that names every such type, and
+    the range is always
     sent because the endpoint otherwise silently returns only the last 30 days. It starts
     before the requested start, so that it overlaps the range queried before it.
     """
@@ -544,10 +594,9 @@ def test_query_online_history_events(bitvavo_exchange: Bitvavo) -> None:
         }) for page in (1, 2)
     ]
     assert events == expected_ledger_events()
-    assert consume_warnings(bitvavo_exchange.msg_aggregator) == [(
-        'Skipped Bitvavo history entries of type margin_interest, withdrawal_cancelled, which '
-        'rotki does not handle yet. Check logs for details and report it to rotki.'
-    )] * 2  # one warning per type, folded into one row that names both
+    assert consume_warnings(bitvavo_exchange.msg_aggregator) == [
+        unhandled_types_warning('margin_interest'),
+    ]  # once per type, not once per row
     assert consume_errors_and_unknown_assets(bitvavo_exchange.msg_aggregator) == ([(
         "Failed to deserialize a Bitvavo history entry: Missing key 'receivedAmount'. "
         'Check logs for details. Ignoring it.'
@@ -733,7 +782,11 @@ def test_reward_ledger_types(
     )]
 
 
-@pytest.mark.parametrize('ledger_type', ['manually_assigned', 'manually_assigned_bitvavo'])
+@pytest.mark.parametrize(('ledger_type', 'notes_prefix'), [
+    ('manually_assigned', 'Balance correction'),
+    ('manually_assigned_bitvavo', 'Balance correction'),
+    ('withdrawal_cancelled', 'Refund of a cancelled withdrawal'),
+])
 @pytest.mark.parametrize(('side', 'event_subtype'), [
     ('received', HistoryEventSubType.RECEIVE),
     ('sent', HistoryEventSubType.SPEND),
@@ -741,6 +794,7 @@ def test_reward_ledger_types(
 def test_adjustment_ledger_types(
         bitvavo_exchange: Bitvavo,
         ledger_type: str,
+        notes_prefix: str,
         side: str,
         event_subtype: HistoryEventSubType,
 ) -> None:
@@ -750,21 +804,113 @@ def test_adjustment_ledger_types(
     (event,) = bitvavo_exchange._deserialize_ledger_entry(ledger_row(ledger_type, side=side))
     assert (event.event_type, event.event_subtype) == (HistoryEventType.ADJUSTMENT, event_subtype)
     assert event.amount == FVal('1.5')
-    assert event.notes == 'Balance correction of 1.5 ETH at Bitvavo'
+    assert event.notes == f'{notes_prefix} of 1.5 ETH at Bitvavo'
+
+
+@pytest.mark.parametrize('ledger_type', ['convert_buy', 'convert_sell'])
+def test_convert_ledger_types_are_swaps(bitvavo_exchange: Bitvavo, ledger_type: str) -> None:
+    """Rows of Bitvavo's Convert feature are trades, not types to report as unhandled."""
+    assert bitvavo_exchange._deserialize_ledger_entry(
+        LEDGER_PAGE_1[0] | {'type': ledger_type},
+    ) == bitvavo_exchange._deserialize_ledger_entry(LEDGER_PAGE_1[0])
+    assert consume_warnings(bitvavo_exchange.msg_aggregator) == []
+
+
+@pytest.mark.parametrize('ledger_type', ['internal_transfer', 'external_transferred_funds'])
+@pytest.mark.parametrize(('side', 'event_subtype'), [
+    ('received', HistoryEventSubType.RECEIVE),
+    ('sent', HistoryEventSubType.SPEND),
+])
+def test_transfer_ledger_types(
+        bitvavo_exchange: Bitvavo,
+        ledger_type: str,
+        side: str,
+        event_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND],
+) -> None:
+    """Funds moved between Bitvavo accounts or brought over from LiteBit are the user's own,
+    so they move the balance as an asset movement in the direction of the filled side.
+    """
+    assert bitvavo_exchange._deserialize_ledger_entry(ledger_row(ledger_type, side=side)) == create_asset_movement_with_fee(  # noqa: E501
+        timestamp=TimestampMS(1709647200000),
+        location=LOCATION_BITVAVO,
+        location_label='bitvavo',
+        event_subtype=event_subtype,
+        asset=A_ETH.resolve_to_asset_with_oracles(),
+        amount=FVal('1.5'),
+        unique_id=f'{ledger_type}-row',
+    )
+
+
+def unhandled_types_warning(types: str) -> str:
+    return (
+        f'Imported Bitvavo history entries of type {types} as informational events, since '
+        f'rotki does not handle them yet. They do not count in balances or accounting until '
+        f'edited. Check logs for details and report it to rotki.'
+    )
 
 
 @pytest.mark.parametrize('ledger_type', [
     'loan',
-    'withdrawal_cancelled',
-    'internal_transfer',
-    'external_transferred_funds',
+    'margin_loan_borrow',
+    'transfer',
     'a_type_bitvavo_adds_later',
 ])
-def test_unhandled_ledger_types_are_reported(bitvavo_exchange: Bitvavo, ledger_type: str) -> None:
-    assert bitvavo_exchange._deserialize_ledger_entry(ledger_row(ledger_type)) == []
-    assert consume_warnings(bitvavo_exchange.msg_aggregator) == [(
-        f'Skipped Bitvavo history entries of type {ledger_type}, which rotki does not '
-        f'handle yet. Check logs for details and report it to rotki.'
+def test_unhandled_ledger_types_are_kept_as_informational(
+        bitvavo_exchange: Bitvavo,
+        ledger_type: str,
+) -> None:
+    """A type rotki does not map is kept, one informational event per filled side, so the
+    row is not lost when its range is recorded as queried and the user can edit it.
+    """
+    assert bitvavo_exchange._deserialize_ledger_entry(
+        ledger_row(ledger_type, side='sent') | {'receivedCurrency': 'EUR', 'receivedAmount': '7'},
+    ) == [HistoryEvent(
+        group_identifier=group_id(f'{ledger_type}-row'),
+        sequence_index=sequence_index,
+        timestamp=TimestampMS(1709647200000),
+        location=LOCATION_BITVAVO,
+        location_label='bitvavo',
+        asset=asset,
+        amount=FVal(amount),
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        notes=f'Bitvavo {ledger_type} entry that {side} {amount} {symbol}',
+    ) for sequence_index, (side, asset, amount, symbol) in enumerate((
+        ('sent', A_ETH, '1.5', 'ETH'),
+        ('received', A_EUR, '7', 'EUR'),
+    ))]
+    assert consume_warnings(bitvavo_exchange.msg_aggregator) == [
+        unhandled_types_warning(ledger_type),
+    ]
+
+
+def test_unhandled_ledger_type_without_an_amount_is_reported(bitvavo_exchange: Bitvavo) -> None:
+    with pytest.raises(DeserializationError, match='entry has no amount'):
+        bitvavo_exchange._deserialize_ledger_entry({
+            'transactionId': 'x', 'executedAt': '2024-03-05T14:00:00.000Z', 'type': 'loan',
+        })
+
+
+@pytest.mark.parametrize('malformed', [None, 'buy', [], {'transactionId': 'x'}, {'type': ['buy']}])
+def test_malformed_ledger_item_is_reported(bitvavo_exchange: Bitvavo, malformed: Any) -> None:
+    """An item that is not an object, or has no string type, is reported and skipped like
+    any other broken row, instead of aborting the whole history query.
+    """
+    with patch.object(bitvavo_exchange, '_api_query', return_value={
+        'items': [malformed, *LEDGER_PAGE_2],
+        'currentPage': 1,
+        'totalPages': 1,
+        'maxItems': HISTORY_MAX_ITEMS,
+    }):
+        events, _ = bitvavo_exchange.query_online_history_events(
+            start_ts=Timestamp(1600000000),
+            end_ts=Timestamp(1800000000),
+        )
+
+    assert len(events) == 1
+    assert consume_errors(bitvavo_exchange.msg_aggregator) == [(
+        f'Failed to deserialize a Bitvavo history entry: Unexpected Bitvavo history entry '
+        f'{malformed}. Check logs for details. Ignoring it.'
     )]
 
 

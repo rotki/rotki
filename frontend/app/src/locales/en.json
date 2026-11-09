@@ -1727,6 +1727,7 @@
       "asset": "Asset type",
       "asset_update_schema": "Asset update format",
       "exchange_strategy": "Exchange strategy",
+      "ledger_entry_type": "Exchange ledger entry type",
       "multi_trade": "Multi-asset trade",
       "vault_collateral_type": "Vault collateral type"
     },
