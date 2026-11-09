@@ -1,4 +1,5 @@
 import { isEmpty } from 'es-toolkit/compat';
+import { FailureCause } from '@/modules/core/api/failure-cause';
 import { camelCaseTransformer } from '@/modules/core/api/transformers';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 
@@ -50,8 +51,32 @@ export function toRpcError(error: unknown): RpcError {
   };
 }
 
-export class ApiKeyMissingError extends Error {
-  constructor(message: string, options?: ErrorOptions) {
+interface ApiRequestErrorOptions extends ErrorOptions {
+  /** The status the backend answered with, when one is known. */
+  readonly status?: number;
+  readonly failureCause?: FailureCause;
+}
+
+/**
+ * The backend answered and the answer was a failure.
+ *
+ * @remarks
+ * `failureCause` is the backend's value, kept apart from `Error.cause`, which holds a thrown value.
+ */
+export class ApiRequestError extends Error {
+  readonly status?: number;
+  readonly failureCause: FailureCause;
+
+  constructor(message: string, options: ApiRequestErrorOptions = {}) {
+    super(message, options);
+    this.name = 'ApiRequestError';
+    this.status = options.status;
+    this.failureCause = options.failureCause ?? FailureCause.UNKNOWN;
+  }
+}
+
+export class ApiKeyMissingError extends ApiRequestError {
+  constructor(message: string, options?: ApiRequestErrorOptions) {
     super(message, options);
     this.name = 'ApiKeyMissingError';
   }
@@ -61,16 +86,16 @@ export class ApiKeyMissingError extends Error {
  * The backend could not query everything the task asked for. The rest of the query completed, and
  * the parts it missed are retried by a later query.
  */
-export class IncompleteQueryError extends Error {
-  constructor(message: string, options?: ErrorOptions) {
+export class IncompleteQueryError extends ApiRequestError {
+  constructor(message: string, options?: ApiRequestErrorOptions) {
     super(message, options);
     this.name = 'IncompleteQueryError';
   }
 }
 
-export class ApiValidationError extends Error {
+export class ApiValidationError extends ApiRequestError {
   readonly errors: ValidationErrors;
-  constructor(message: string, options?: ErrorOptions) {
+  constructor(message: string, options?: ApiRequestErrorOptions) {
     super(message, options);
     this.name = 'ApiValidationError';
     this.errors = camelCaseTransformer(deserializeApiErrorMessage(message)) ?? {};

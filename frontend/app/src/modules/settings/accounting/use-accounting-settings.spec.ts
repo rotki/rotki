@@ -102,7 +102,7 @@ describe('useAccountingSettings', () => {
       const failure = new Error('nope');
       fetchAccountingRule.mockRejectedValue(failure);
       const result = await useAccountingSettings().getAccountingRule(rulePayload, null);
-      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, message: 'nope', path: undefined, status: undefined })));
+      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, failureCause: 'unknown', message: 'nope', path: undefined, status: undefined })));
       expect(notifyFailure).not.toHaveBeenCalled();
     });
   });
@@ -118,7 +118,7 @@ describe('useAccountingSettings', () => {
       const failure = new Error('nope');
       fetchAccountingRules.mockRejectedValue(failure);
       const result = await useAccountingSettings().getAccountingRules(rulePayload);
-      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, message: 'nope', path: undefined, status: undefined })));
+      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, failureCause: 'unknown', message: 'nope', path: undefined, status: undefined })));
       expect(notifyFailure).not.toHaveBeenCalled();
     });
   });
@@ -134,7 +134,7 @@ describe('useAccountingSettings', () => {
       const failure = new Error('nope');
       fetchAccountingRuleConflicts.mockRejectedValue(failure);
       const result = await useAccountingSettings().getAccountingRulesConflicts(conflictPayload);
-      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, message: 'nope', path: undefined, status: undefined })));
+      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, failureCause: 'unknown', message: 'nope', path: undefined, status: undefined })));
       expect(notifyFailure).not.toHaveBeenCalled();
     });
   });

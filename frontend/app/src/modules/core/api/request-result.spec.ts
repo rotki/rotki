@@ -1,9 +1,69 @@
 import { FetchError } from 'ofetch';
 import { assert, describe, expect, it } from 'vitest';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
-import { fromRequest, isRequestFailure, isUnreachable, RequestCancelled, RequestFailed, toRequestError } from '@/modules/core/api/request-result';
+import { failureCauseOf, fromRequest, isRequestFailure, isRetryableFailure, isUnreachable, RequestCancelled, RequestFailed, toRequestError } from '@/modules/core/api/request-result';
 import { createStatusError } from '@/modules/core/api/response-handlers';
+import { ApiRequestError } from '@/modules/core/api/types/errors';
 import { TaskFailed } from '@/modules/core/tasks/task-result';
+
+describe('failureCauseOf', () => {
+  const rejected = new ApiRequestError('key rejected', { failureCause: 'auth', status: 502 });
+
+  it('should read a thrown error\'s cause', () => {
+    expect(failureCauseOf(rejected)).toBe('auth');
+  });
+
+  it('should read the response body of a status the request did not allow', () => {
+    expect(failureCauseOf(createStatusError(403, 'nope', { cause: 'forbidden', message: 'nope' }))).toBe('forbidden');
+  });
+
+  it('should read a request failure', () => {
+    expect(failureCauseOf(toRequestError(rejected))).toBe('auth');
+  });
+
+  it('should read a task failure by its own cause, keeping the thrown value beside it', () => {
+    const thrown = new Error('boom');
+    const failure = TaskFailed({ cause: thrown, failureCause: 'local_db', message: 'boom' });
+
+    expect(failureCauseOf(failure)).toBe('local_db');
+    expect(failure.cause).toBe(thrown);
+  });
+
+  it('should reach the thrown value a task failure or domain error wraps', () => {
+    expect(failureCauseOf(TaskFailed({ cause: rejected, message: 'key rejected' }))).toBe('auth');
+    expect(failureCauseOf({ cause: rejected, message: 'key rejected', type: 'network' })).toBe('auth');
+  });
+
+  it.each([
+    ['a worded failure', 'something went wrong'],
+    ['a plain error', new Error('boom')],
+    ['a status error without a body', createStatusError(502)],
+    ['nothing', undefined],
+  ])('should read %s as unknown', (_name, failure) => {
+    expect(failureCauseOf(failure)).toBe('unknown');
+  });
+});
+
+describe('isRetryableFailure', () => {
+  it('should offer no retry for a failure the backend calls permanent', () => {
+    expect(isRetryableFailure(new ApiRequestError('key rejected', { failureCause: 'auth' }))).toBe(false);
+  });
+
+  it('should offer a retry for a transient failure or one that names no cause', () => {
+    expect(isRetryableFailure(new ApiRequestError('down', { failureCause: 'network' }))).toBe(true);
+    expect(isRetryableFailure('something went wrong')).toBe(true);
+  });
+});
+
+describe('toRequestError', () => {
+  it('should carry the status and cause of a failure on an allowed status', () => {
+    const failure = toRequestError(new ApiRequestError('taken', { failureCause: 'conflict', status: 409 }));
+
+    assert(isRequestFailure(failure));
+    expect(failure.status).toBe(409);
+    expect(failure.failureCause).toBe('conflict');
+  });
+});
 
 describe('fromRequest', () => {
   it('should carry the value of a request that resolves', async () => {
@@ -19,7 +79,7 @@ describe('fromRequest', () => {
     const result = await fromRequest(async () => Promise.reject(failure));
 
     expect(result).toStrictEqual({
-      error: RequestFailed({ cause: failure, message: 'Report 3 does not exist', path: '/api/1/reports/3', status: 409 }),
+      error: RequestFailed({ cause: failure, failureCause: 'unknown', message: 'Report 3 does not exist', path: '/api/1/reports/3', status: 409 }),
       ok: false,
     });
   });
@@ -41,7 +101,7 @@ describe('fromRequest', () => {
     const result = await fromRequest(async () => Promise.reject(failure));
 
     expect(result).toStrictEqual({
-      error: RequestFailed({ cause: failure, message: 'fetch failed', path: undefined, status: undefined }),
+      error: RequestFailed({ cause: failure, failureCause: 'unknown', message: 'fetch failed', path: undefined, status: undefined }),
       ok: false,
     });
   });

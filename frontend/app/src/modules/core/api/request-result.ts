@@ -1,7 +1,9 @@
 import { FetchError } from 'ofetch';
 import { fromAsync, type ResultAsync } from 'plainfp/result-async';
 import { hasTag, tag } from 'plainfp/tagged';
+import { FailureCause, isRetryableCause, parseFailureCause } from '@/modules/core/api/failure-cause';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
+import { ApiRequestError } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 
 /**
@@ -21,6 +23,8 @@ export type RequestFailure = ReturnType<typeof RequestFailed<{
   path?: string;
   /** The value the request threw, kept for callers that branch on its class. */
   cause: unknown;
+  /** Why the backend says it failed. */
+  failureCause?: FailureCause;
 }>>;
 
 export type RequestError =
@@ -48,6 +52,38 @@ export function isUnreachable(failure: unknown): boolean {
   return thrown instanceof FetchError && thrown.statusCode === undefined && thrown.response === undefined;
 }
 
+function responseCause(data: unknown): unknown {
+  return typeof data === 'object' && data !== null && 'cause' in data ? data.cause : undefined;
+}
+
+/**
+ * The backend's cause behind a failure, in any of the shapes a surface holds one.
+ *
+ * @remarks
+ * Takes a thrown value, a {@link RequestFailure}, a task `TaskFailed`, or a domain error wrapping a
+ * thrown value as its `cause`. Anything that does not lead to a cause is `UNKNOWN`.
+ */
+export function failureCauseOf(failure: unknown): FailureCause {
+  if (failure instanceof ApiRequestError)
+    return failure.failureCause;
+
+  if (failure instanceof FetchError)
+    return parseFailureCause(responseCause(failure.data));
+
+  if (typeof failure !== 'object' || failure === null)
+    return FailureCause.UNKNOWN;
+
+  if ('failureCause' in failure && failure.failureCause !== undefined)
+    return parseFailureCause(failure.failureCause);
+
+  return 'cause' in failure ? failureCauseOf(failure.cause) : FailureCause.UNKNOWN;
+}
+
+/** Whether offering the user a retry of this failure makes sense. */
+export function isRetryableFailure(failure: unknown): boolean {
+  return isRetryableCause(failureCauseOf(failure));
+}
+
 /** The message the backend put in the response body, which reads better than the error's own. */
 function responseMessage(data: unknown): string | undefined {
   if (typeof data !== 'object' || data === null || !('message' in data))
@@ -71,9 +107,10 @@ export function toRequestError(cause: unknown): RequestError {
 
   return RequestFailed({
     cause,
+    failureCause: failureCauseOf(cause),
     message: responseMessage(fetchError?.data) ?? getErrorMessage(cause),
     path: fetchError?.request?.toString(),
-    status: fetchError?.statusCode,
+    status: cause instanceof ApiRequestError ? cause.status : fetchError?.statusCode,
   });
 }
 

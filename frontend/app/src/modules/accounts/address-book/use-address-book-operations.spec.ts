@@ -111,7 +111,7 @@ describe('useAddressBookOperations', () => {
       const { getAddressBook } = useAddressBookOperations();
       const result = await getAddressBook('private', { limit: 10, offset: 0 });
 
-      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, message: 'Network error', path: undefined, status: undefined })));
+      expect(result).toStrictEqual(err(RequestFailed({ cause: failure, failureCause: 'unknown', message: 'Network error', path: undefined, status: undefined })));
     });
   });
 });
