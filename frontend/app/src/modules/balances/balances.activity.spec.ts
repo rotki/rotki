@@ -4,6 +4,7 @@ import {
   allBalancesLoginActivity,
   balancesRunActivity,
   chainBalancesActivity,
+  type ChainBalancesSubject,
   exchangeBalancesActivity,
   exchangeSavingsActivity,
   manualBalanceAddActivity,
@@ -37,14 +38,21 @@ describe('chain balance activity ids', () => {
     expect(chainBalancesActivity.id({ addresses: [], chain: 'eth' })).toBe('blockchain-balances:eth');
   });
 
-  it('should ignore the address narrowing when the refresh does not detect', () => {
+  it('should not compile a subject that names addresses and detects, since the id could not carry both', () => {
+    // @ts-expect-error the id would lose the addresses, so the two cannot be combined
+    expect(chainBalancesActivity.id({ addresses: [address], chain: 'eth', detect: true })).toBe('blockchain-balances:eth:detect');
+  });
+
+  it('should not compile a subject that narrows detection without detecting', () => {
+    // @ts-expect-error detection addresses mean nothing without detection
     expect(chainBalancesActivity.id({ chain: 'eth', detectAddresses: [address] })).toBe('blockchain-balances:eth');
   });
 
   it('should keep every variant under the chain prefix the readers ask by', () => {
     const within = chainBalancesActivity.partsWithin(['eth']);
     expect(within).toStrictEqual(['eth']);
-    for (const subject of [{ chain: 'eth' }, { chain: 'eth', detect: true }, { chain: 'eth', detect: true, detectAddresses: [address] }])
+    const subjects: ChainBalancesSubject[] = [{ chain: 'eth' }, { chain: 'eth', detect: true }, { chain: 'eth', detect: true, detectAddresses: [address] }, { addresses: [address], chain: 'eth' }];
+    for (const subject of subjects)
       expect(activityIdHasPrefix(chainBalancesActivity.id(subject), chainBalancesActivity.kind, ...within)).toBe(true);
   });
 

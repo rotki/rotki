@@ -35,7 +35,17 @@ interface RefreshOptions {
 }
 
 interface UseBlockchainBalancesReturn {
-  refreshBlockchainBalances: (payload?: BlockchainBalancePayload, mode?: RefreshMode, options?: RefreshOptions) => Promise<void>;
+  /**
+   * Refreshes the given chains, detecting tokens first when asked.
+   *
+   * @remarks
+   * Two signatures so that naming addresses and detecting cannot be combined, because the job's id
+   * can only carry one of them. See {@link ChainBalancesSubject}.
+   */
+  refreshBlockchainBalances: {
+    (payload: Omit<BlockchainBalancePayload, 'addresses'> & { readonly addresses?: undefined }, mode: RefreshMode, options: RefreshOptions): Promise<void>;
+    (payload?: BlockchainBalancePayload, mode?: RefreshMode, options?: Omit<RefreshOptions, 'detect' | 'detectAddresses'> & { readonly detect?: false; readonly detectAddresses?: undefined }): Promise<void>;
+  };
 }
 
 /**
@@ -141,7 +151,9 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
      * keep `withDetection` writing `lastAutoDetectAt`, so the cooldown would suppress the next
      * sweep too.
      */
-    const chainJobId = (chain: string): ActivityId => chainBalancesActivity.id({ addresses: requestedAddresses, chain, detect, detectAddresses });
+    const chainJobId = (chain: string): ActivityId => chainBalancesActivity.id(
+      detect ? { chain, detect, detectAddresses } : { addresses: requestedAddresses, chain },
+    );
 
     /**
      * One chain's refresh: token detection when asked, then the network query.
