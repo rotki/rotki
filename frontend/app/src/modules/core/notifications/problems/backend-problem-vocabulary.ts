@@ -65,6 +65,7 @@ export const UserMessageFeature = {
   ASSET: 'asset',
   ASSET_UPDATE_SCHEMA: 'asset_update_schema',
   EXCHANGE_STRATEGY: 'exchange_strategy',
+  LEDGER_ENTRY_TYPE: 'ledger_entry_type',
   MULTI_TRADE: 'multi_trade',
   VAULT_COLLATERAL_TYPE: 'vault_collateral_type',
 } as const;
@@ -120,6 +121,7 @@ export const FEATURE_LABELS: Record<UserMessageFeature, MessageKey> = {
   [UserMessageFeature.ASSET]: msg.$t('backend_problems.feature.asset'),
   [UserMessageFeature.ASSET_UPDATE_SCHEMA]: msg.$t('backend_problems.feature.asset_update_schema'),
   [UserMessageFeature.EXCHANGE_STRATEGY]: msg.$t('backend_problems.feature.exchange_strategy'),
+  [UserMessageFeature.LEDGER_ENTRY_TYPE]: msg.$t('backend_problems.feature.ledger_entry_type'),
   [UserMessageFeature.MULTI_TRADE]: msg.$t('backend_problems.feature.multi_trade'),
   [UserMessageFeature.VAULT_COLLATERAL_TYPE]: msg.$t('backend_problems.feature.vault_collateral_type'),
 };

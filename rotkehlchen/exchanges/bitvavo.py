@@ -74,8 +74,10 @@ HISTORY_MAX_ITEMS: Final = 100
 HISTORY_OVERLAP_MS: Final = 2000
 BitvavoEndpoint = Literal['/balance', '/account/history', '/stakingBalance']
 
-# GET /account/history row types that credit a single amount, mapped to the rotki event type,
-# subtype and note prefix.
+# GET /account/history row types that exchange one asset for another. The convert types come
+# from Bitvavo's Convert feature and carry the same sent, received and fee fields as trades.
+TRADE_LEDGER_TYPES: Final = frozenset({'buy', 'sell', 'convert_buy', 'convert_sell'})
+# Row types that credit a single amount, mapped to the rotki event type, subtype and note prefix.
 REWARD_LEDGER_TYPES: Final[dict[str, tuple[HistoryEventType, HistoryEventSubType, str]]] = {
     'staking': (HistoryEventType.STAKING, HistoryEventSubType.REWARD, 'Staking reward'),
     'fixed_staking': (HistoryEventType.STAKING, HistoryEventSubType.REWARD, 'Fixed staking reward'),  # noqa: E501
@@ -83,10 +85,19 @@ REWARD_LEDGER_TYPES: Final[dict[str, tuple[HistoryEventType, HistoryEventSubType
     'rebate': (HistoryEventType.RECEIVE, HistoryEventSubType.CASHBACK, 'Fee rebate'),
     'distribution': (HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP, 'Distribution'),
 }
-# Balance corrections booked by Bitvavo, in either direction. They map to ADJUSTMENT and not to
-# EXCHANGE_ADJUSTMENT, which is reserved for the asset movement matcher and is neutral for
-# balance tracking, so it would leave the tracked balance uncorrected.
-ADJUSTMENT_LEDGER_TYPES: Final = frozenset({'manually_assigned', 'manually_assigned_bitvavo'})
+# Row types that correct a balance in the direction of the side Bitvavo filled, mapped to the
+# note prefix. A cancelled withdrawal credits back the amount of a withdrawal row that never
+# left the exchange. They map to ADJUSTMENT and not to EXCHANGE_ADJUSTMENT, which is reserved
+# for the asset movement matcher and is neutral for balance tracking, so it would leave the
+# tracked balance uncorrected.
+ADJUSTMENT_LEDGER_TYPES: Final = {
+    'manually_assigned': 'Balance correction',
+    'manually_assigned_bitvavo': 'Balance correction',
+    'withdrawal_cancelled': 'Refund of a cancelled withdrawal',
+}
+# Row types that move the user's own funds into or out of this account without a blockchain
+# transaction: transfers between Bitvavo accounts, and balances brought over from LiteBit.
+TRANSFER_LEDGER_TYPES: Final = frozenset({'internal_transfer', 'external_transferred_funds'})
 
 
 def deserialize_bitvavo_timestamp(value: Any) -> TimestampMS:
@@ -233,9 +244,14 @@ class Bitvavo(ExchangeInterface, SignatureGeneratorMixin):
         return response_data
 
     def validate_api_key(self) -> tuple[bool, str]:
-        """Validates that the Bitvavo API key can read account balances."""
+        """Validates that the Bitvavo API key can read both endpoints the balance query needs.
+
+        query_balances() fails when either of them fails, so a key that can read only one
+        must be refused at setup instead of being accepted and then never showing a balance.
+        """
         try:
             self._api_query(endpoint='/balance')
+            self._api_query(endpoint='/stakingBalance')
         except RemoteError as e:
             return False, str(e)
         return True, ''
@@ -272,6 +288,9 @@ class Bitvavo(ExchangeInterface, SignatureGeneratorMixin):
                 ((entry, ('amount',)) for entry in staked),
         ):
             try:
+                if not isinstance(balance, dict):
+                    raise DeserializationError(f'Unexpected Bitvavo balance entry {balance}')
+
                 if (amount := sum(
                     (deserialize_fval(balance[key]) for key in amount_keys),
                     start=ZERO,
@@ -342,7 +361,7 @@ class Bitvavo(ExchangeInterface, SignatureGeneratorMixin):
             entry: dict[str, Any],
             is_deposit: bool,
     ) -> list[AssetMovement]:
-        """Deserialize a deposit or withdrawal ledger row into asset movement events.
+        """Deserialize a deposit, withdrawal or transfer ledger row into asset movement events.
 
         Deposits carry the received side, withdrawals the sent side net of the fee. Crypto
         withdrawals carry the destination address, fiat movements a masked IBAN.
@@ -397,45 +416,103 @@ class Bitvavo(ExchangeInterface, SignatureGeneratorMixin):
             notes=f'{notes_prefix} of {amount} {symbol} at Bitvavo',
         )
 
-    def _deserialize_ledger_entry(self, entry: dict[str, Any]) -> Sequence[HistoryBaseEntry]:
-        """Turn one GET /account/history row into rotki history events.
+    @staticmethod
+    def _filled_side(entry: dict[str, Any]) -> Literal['received', 'sent']:
+        """Return the side of a single sided row: received when it credits, sent otherwise."""
+        return 'received' if entry.get('receivedAmount') is not None else 'sent'
 
-        Returns an empty sequence for row types that are not handled, and reports each
-        such type to the user once. A type is never dropped silently, since one that
-        changes the balance would then leave the tracked balance wrong without a trace.
-        Repeated warnings fold into one notification that shows only the newest text,
-        so the warning names every unhandled type seen so far.
+    def _deserialize_unhandled_entry(
+            self,
+            entry: dict[str, Any],
+            ledger_type: str,
+    ) -> list[HistoryEvent]:
+        """Keep a row of a type rotki does not map as informational events, one per side.
+
+        Informational events leave balances and accounting untouched, but the row stays
+        visible and the user can edit it into the right type. That is why a range holding
+        such rows can still be recorded as queried: no data is lost. The raw type is kept
+        in the notes, so a later mapping can find and convert these events.
+
+        Each such type is reported to the user once. Repeated warnings fold into one
+        notification that shows only the newest text, so the warning names every type seen
+        so far.
 
         May raise DeserializationError, KeyError, UnknownAsset.
         """
-        ledger_type = entry['type']
-        if ledger_type in ('buy', 'sell'):
-            return self._deserialize_trade(entry)
-        if ledger_type in ('deposit', 'withdrawal'):
-            return self._deserialize_asset_movement(entry, is_deposit=ledger_type == 'deposit')
-        if (reward := REWARD_LEDGER_TYPES.get(ledger_type)) is not None:
-            return [self._deserialize_single_event(entry, *reward, side='received')]
-        if ledger_type in ADJUSTMENT_LEDGER_TYPES:
-            is_receive = entry.get('receivedAmount') is not None
-            return [self._deserialize_single_event(
-                entry=entry,
-                event_type=HistoryEventType.ADJUSTMENT,
-                event_subtype=(
-                    HistoryEventSubType.RECEIVE if is_receive else HistoryEventSubType.SPEND
+        events: list[HistoryEvent] = []
+        for side in ('sent', 'received'):
+            if entry.get(f'{side}Amount') is None:
+                continue
+
+            amount = deserialize_fval(entry[f'{side}Amount'])
+            symbol = entry[f'{side}Currency']
+            events.append(HistoryEvent(
+                group_identifier=create_group_identifier_from_unique_id(
+                    location=self.location,
+                    unique_id=entry['transactionId'],
                 ),
-                notes_prefix='Balance correction',
-                side='received' if is_receive else 'sent',
-            )]
+                sequence_index=len(events),
+                timestamp=deserialize_bitvavo_timestamp(entry['executedAt']),
+                location=self.location,
+                location_label=self.name,
+                asset=asset_from_bitvavo(symbol),
+                amount=amount,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.NONE,
+                notes=f'Bitvavo {ledger_type} entry that {side} {amount} {symbol}',
+            ))
+
+        if len(events) == 0:
+            raise DeserializationError(f'Bitvavo {ledger_type} entry has no amount')
+
         if ledger_type not in self.reported_unhandled_ledger_types:
             self.reported_unhandled_ledger_types.add(ledger_type)
             log.warning('Unhandled Bitvavo ledger type %s in entry %s', ledger_type, entry)
             self.add_classified_warning(
-                f'Skipped Bitvavo history entries of type '
-                f'{", ".join(sorted(self.reported_unhandled_ledger_types))}, which rotki '
-                f'does not handle yet. Check logs for details and report it to rotki.',
+                f'Imported Bitvavo history entries of type '
+                f'{", ".join(sorted(self.reported_unhandled_ledger_types))} as informational '
+                f'events, since rotki does not handle them yet. They do not count in balances '
+                f'or accounting until edited. Check logs for details and report it to rotki.',
                 Unsupported(feature=UserMessageFeature.LEDGER_ENTRY_TYPE),
             )
-        return []
+
+        return events
+
+    def _deserialize_ledger_entry(self, entry: Any) -> Sequence[HistoryBaseEntry]:
+        """Turn one GET /account/history row into rotki history events.
+
+        Rows of a type that is not mapped are kept as informational events, so that none is
+        dropped. See _deserialize_unhandled_entry.
+
+        May raise DeserializationError, KeyError, UnknownAsset.
+        """
+        if not isinstance(entry, dict) or not isinstance(ledger_type := entry.get('type'), str):
+            raise DeserializationError(f'Unexpected Bitvavo history entry {entry}')
+
+        if ledger_type in TRADE_LEDGER_TYPES:
+            return self._deserialize_trade(entry)
+        if ledger_type in ('deposit', 'withdrawal'):
+            return self._deserialize_asset_movement(entry, is_deposit=ledger_type == 'deposit')
+        if ledger_type in TRANSFER_LEDGER_TYPES:
+            return self._deserialize_asset_movement(
+                entry=entry,
+                is_deposit=self._filled_side(entry) == 'received',
+            )
+        if (reward := REWARD_LEDGER_TYPES.get(ledger_type)) is not None:
+            return [self._deserialize_single_event(entry, *reward, side='received')]
+        if (notes_prefix := ADJUSTMENT_LEDGER_TYPES.get(ledger_type)) is not None:
+            return [self._deserialize_single_event(
+                entry=entry,
+                event_type=HistoryEventType.ADJUSTMENT,
+                event_subtype=(
+                    HistoryEventSubType.RECEIVE
+                    if (side := self._filled_side(entry)) == 'received'
+                    else HistoryEventSubType.SPEND
+                ),
+                notes_prefix=notes_prefix,
+                side=side,
+            )]
+        return self._deserialize_unhandled_entry(entry=entry, ledger_type=ledger_type)
 
     def _query_ledger(
             self,

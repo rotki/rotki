@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :feature:`12596` Bitvavo is now a supported exchange. Add a Read-only API key under API Keys -> Exchanges to track your balances, including assets locked in Fixed Staking, and your full history of trades, deposits, withdrawals, staking rewards and other payouts.
+* :feature:`12596` Bitvavo is now a supported exchange. Add a Read-only API key under API Keys -> Exchanges to track your balances, including assets locked in Fixed Staking, and your history of trades, conversions, deposits, withdrawals, staking rewards and other payouts. Bitvavo history entries of a type rotki does not handle yet are kept as informational events that can be edited.
 * :bug:`-` Hide small balances no longer hides large blockchain balances when no historical price is cached for them, and a threshold change now applies at once.
 * :bug:`-` Hide small balances now keeps applying to blockchain balances after they are refreshed, instead of showing the hidden balances again.
 * :bug:`-` A slow read of saved blockchain balances that overlaps a balance refresh can no longer replace the refreshed balances with older ones.
