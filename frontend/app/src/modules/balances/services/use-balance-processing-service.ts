@@ -3,6 +3,7 @@ import { Blockchain } from '@rotki/common';
 import { err, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
 import { convertBtcBalances } from '@/modules/accounts/core/bitcoin-accounts';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import { chainBalancesActivity } from '@/modules/balances/balances.activity';
 import {
@@ -18,6 +19,7 @@ import { byChainKey } from '@/modules/core/common/chains';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Cancelled, isActionable, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
@@ -44,6 +46,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   const { invalidate, markCompleted } = useTaskOrchestrator();
   const { isEth2Enabled } = useBlockchainValidatorsStore();
   const refreshState = useBalanceRefreshState();
+  const valueThreshold = useValueThreshold(BalanceSource.BLOCKCHAIN);
 
   /** @returns whether the balances were written, as opposed to refused for being older */
   const processBalanceResult = (blockchain: string, parsedBalances: BlockchainBalances): boolean => {
@@ -230,7 +233,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
       return await executeBalanceQuery(
         runTask,
         blockchain,
-        async () => !isXpub ? refreshBlockchainBalances(payload) : queryXpubBalances(payload),
+        async () => !isXpub ? refreshBlockchainBalances(payload, get(valueThreshold)) : queryXpubBalances(payload),
       );
     }
     finally {

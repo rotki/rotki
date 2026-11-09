@@ -170,6 +170,22 @@ describe('composables/api/balances/blockchain', () => {
       expect(result.taskId).toBe(500);
     });
 
+    it('should send the value threshold with the refresh', async () => {
+      let capturedBody: DefaultBodyType = null;
+
+      server.use(
+        http.post(`${backendUrl}/api/1/balances/blockchains/eth`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({ result: { task_id: 501 }, message: '' });
+        }),
+      );
+
+      const { refreshBlockchainBalances } = useBlockchainBalancesApi();
+      await refreshBlockchainBalances({ blockchain: 'eth' }, '100');
+
+      expect(capturedBody).toEqual({ async_query: true, value_threshold: '100' });
+    });
+
     it('should send POST to refresh all blockchain balances', async () => {
       let capturedBody: DefaultBodyType = null;
 

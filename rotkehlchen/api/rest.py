@@ -1066,6 +1066,7 @@ class RestAPI:
             self,
             blockchain: SupportedBlockchain | None,
             addresses: ListOfBlockchainAddresses | None = None,
+            value_threshold: FVal | None = None,
     ) -> ApiResult:
         try:
             balances = self.rotkehlchen.chains_aggregator.query_balances(
@@ -1077,7 +1078,7 @@ class RestAPI:
             result = self._serialize_blockchain_balances(
                 balances=balances,
                 blockchain=blockchain,
-                value_threshold=None,
+                value_threshold=value_threshold,
             )
         except EthSyncError as e:
             return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.NETWORK)

@@ -1835,6 +1835,35 @@ def test_blockchain_balances_specific_addresses(
         assert address in eth_balances
 
 
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address(), make_evm_address()]])
+def test_refresh_blockchain_balances_value_threshold(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Test that a refresh filters its response by the value threshold, the way a cached
+    read does, without filtering the tracked balances that other consumers read."""
+    chains_aggregator = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator
+    big_address, small_address = chains_aggregator.accounts.eth
+
+    def mock_query_chain_balances(blockchain: SupportedBlockchain, **kwargs: Any) -> None:
+        with chains_aggregator.balances_lock:
+            chains_aggregator.balances.eth[big_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=FVal(100))  # noqa: E501
+            chains_aggregator.balances.eth[small_address].assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=FVal(2))  # noqa: E501
+
+    with patch.object(chains_aggregator, '_query_chain_balances', side_effect=mock_query_chain_balances):  # noqa: E501
+        filtered = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'named_blockchain_balances_resource', blockchain='eth'),  # noqa: E501
+            json={'async_query': False, 'value_threshold': '10'},
+        ))
+        unfiltered = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'named_blockchain_balances_resource', blockchain='eth'),  # noqa: E501
+            json={'async_query': False},
+        ))
+
+    assert set(filtered['per_account']['eth']) == {big_address}
+    assert set(unfiltered['per_account']['eth']) == {big_address, small_address}
+    assert set(chains_aggregator.balances.eth) == {big_address, small_address}
+
+
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
 @pytest.mark.parametrize('optimism_accounts', [[make_evm_address()]])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
