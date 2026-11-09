@@ -2,8 +2,10 @@ import { BRIDGE_NOTIFICATION_TYPES } from '@shared/proxy/constants';
 import {
   isWalletBridgeNotification,
   isWalletBridgeRequest,
-  validateWalletBridgeMessage,
+  parseWalletBridgeMessage,
+  type WalletBridgeMessage,
   type WalletBridgeNotification,
+  type WalletBridgeParseError,
   type WalletBridgeRequest,
   type WalletBridgeResponse,
 } from '@shared/wallet-bridge-types';
@@ -111,35 +113,35 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
     });
   }
 
-  const handleMessage = (rawMessage: unknown): void => {
-    try {
-      const message = validateWalletBridgeMessage(rawMessage);
-      logger.debug('Received WebSocket message:', message);
+  function dispatchMessage(message: WalletBridgeMessage): void {
+    logger.debug('Received WebSocket message:', message);
 
-      if (isWalletBridgeNotification(message)) {
-        handleBridgeNotification(message);
-        return;
-      }
+    if (isWalletBridgeNotification(message))
+      handleBridgeNotification(message);
+    else if (isWalletBridgeRequest(message))
+      handleWalletBridgeRequest(message);
+  }
 
-      if (isWalletBridgeRequest(message)) {
-        handleWalletBridgeRequest(message);
-      }
-    }
-    catch (error) {
-      logger.error('Failed to handle WebSocket message:', error);
-      if (!(typeof rawMessage === 'object' && rawMessage && 'id' in rawMessage)) {
-        return;
-      }
-      sendResponse({
-        error: {
-          code: -32700,
-          message: 'Parse error',
-        },
-        id: String(rawMessage.id),
-        jsonrpc: '2.0',
-      });
-    }
-  };
+  /**
+   * Reports a frame that could not be parsed.
+   *
+   * @remarks
+   * The sender only gets an answer when the frame decoded far enough to show an `id`, since an
+   * answer without one could not be matched to anything.
+   */
+  function rejectMessage(error: WalletBridgeParseError): void {
+    logger.error(`Failed to handle WebSocket message (${error.kind}):`, error.cause);
+    if (error.kind !== 'invalid-message' || !(typeof error.raw === 'object' && error.raw && 'id' in error.raw))
+      return;
+    sendResponse({
+      error: {
+        code: -32700,
+        message: 'Parse error',
+      },
+      id: String(error.raw.id),
+      jsonrpc: '2.0',
+    });
+  }
 
   const getWebSocketUrl = (): string => {
     const currentPort = defaultWindow?.location.port;
@@ -257,13 +259,11 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
       websocket.onmessage = (event): void => {
         if (!isCurrent())
           return;
-        try {
-          const rawMessage: unknown = JSON.parse(event.data);
-          handleMessage(rawMessage);
-        }
-        catch (error) {
-          logger.error('Failed to parse WebSocket message:', error);
-        }
+        const parsed = parseWalletBridgeMessage(event.data);
+        if (parsed.ok)
+          dispatchMessage(parsed.value);
+        else
+          rejectMessage(parsed.error);
       };
 
       websocket.onclose = (): void => {

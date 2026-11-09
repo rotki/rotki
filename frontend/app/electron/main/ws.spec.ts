@@ -3,7 +3,7 @@ import type { LogService } from '@electron/main/log-service';
 import { EventEmitter } from 'node:events';
 import { createMock } from '@test/utils/create-mock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { IDLE_TIMEOUT_MS, IPC_CONNECTION_STATUS_CHANNEL, type WalletBridgeIpcCallbacks } from './wallet-bridge-ws-types';
+import { IDLE_TIMEOUT_MS, IPC_BRIDGE_EVENT_CHANNEL, IPC_CONNECTION_STATUS_CHANNEL, type WalletBridgeIpcCallbacks } from './wallet-bridge-ws-types';
 import { WalletBridgeWebSocketServer } from './ws';
 
 const { servers } = vi.hoisted(() => {
@@ -134,6 +134,55 @@ describe('electron/main/ws', () => {
     socket.respond(lastRequestId(socket), '0x1');
 
     await expect(request).resolves.toBe('0x1');
+  });
+
+  it('should not extend the idle timer on a frame that fails to parse', async () => {
+    const { connect } = await startServer();
+    vi.useFakeTimers();
+    const socket = connect();
+
+    vi.advanceTimersByTime(IDLE_TIMEOUT_MS - 1);
+    socket.emit('message', '{not json');
+    socket.emit('message', JSON.stringify({ foo: 'bar' }));
+    vi.advanceTimersByTime(1);
+
+    expect(socket.readyState).toBe(3);
+  });
+
+  it('should extend the idle timer on a valid message from the active socket', async () => {
+    const { connect } = await startServer();
+    vi.useFakeTimers();
+    const socket = connect();
+
+    vi.advanceTimersByTime(IDLE_TIMEOUT_MS - 1);
+    socket.emit('message', JSON.stringify({ type: 'close_tab' }));
+    vi.advanceTimersByTime(1);
+
+    expect(socket.readyState).toBe(1);
+  });
+
+  it('should reject a pending request with the error the wallet answered', async () => {
+    const { connect, server } = await startServer();
+    const socket = connect();
+    const request = server.sendToWalletBridge({ method: 'eth_chainId', params: [] });
+
+    socket.emit('message', JSON.stringify({
+      error: { code: 4001, message: 'User rejected' },
+      id: lastRequestId(socket),
+      jsonrpc: '2.0',
+    }));
+
+    await expect(request).rejects.toMatchObject({ code: 4001, message: 'User rejected' });
+  });
+
+  it('should forward a wallet event over ipc', async () => {
+    const { connect, server } = await startServer();
+    const sendIpcMessage = vi.fn<WalletBridgeIpcCallbacks['sendIpcMessage']>();
+    server.setIpcCallbacks({ sendIpcMessage });
+
+    connect().emit('message', JSON.stringify({ eventData: ['0x1'], eventName: 'accountsChanged', type: 'wallet_event' }));
+
+    expect(sendIpcMessage).toHaveBeenCalledWith(IPC_BRIDGE_EVENT_CHANNEL, { eventData: ['0x1'], eventName: 'accountsChanged' });
   });
 
   it('should keep a live connection when the ipc callbacks are set after it connected', async () => {

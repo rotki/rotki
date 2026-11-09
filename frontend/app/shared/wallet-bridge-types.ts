@@ -1,3 +1,5 @@
+import { pipe, type ResultType as Result } from 'plainfp';
+import { err, flatMap, fromThrowable, ok } from 'plainfp/result';
 import * as z from 'zod/mini';
 
 /**
@@ -55,13 +57,13 @@ const WalletBridgeNotificationSchema = z.object({
 export type WalletBridgeNotification = z.infer<typeof WalletBridgeNotificationSchema>;
 
 // Union of all possible WebSocket messages
-export const WalletBridgeMessageSchema = z.union([
+const WalletBridgeMessageSchema = z.union([
   WalletBridgeRequestSchema,
   WalletBridgeResponseSchema,
   WalletBridgeNotificationSchema,
 ]);
 
-type WalletBridgeMessage = z.infer<typeof WalletBridgeMessageSchema>;
+export type WalletBridgeMessage = z.infer<typeof WalletBridgeMessageSchema>;
 
 export function isWalletBridgeRequest(message: unknown): message is WalletBridgeRequest {
   return WalletBridgeRequestSchema.safeParse(message).success;
@@ -71,11 +73,25 @@ export function isWalletBridgeNotification(message: unknown): message is WalletB
   return WalletBridgeNotificationSchema.safeParse(message).success;
 }
 
-/** Throws rather than returning a result: the caller cannot proceed with an unparsed message. */
-export function validateWalletBridgeMessage(message: unknown): WalletBridgeMessage {
-  const result = WalletBridgeMessageSchema.safeParse(message);
-  if (!result.success) {
-    throw new Error(`Invalid wallet bridge message: ${result.error.message}`);
-  }
-  return result.data;
+export type WalletBridgeParseError =
+  | { cause: unknown; kind: 'invalid-json' }
+  | { cause: unknown; kind: 'invalid-message'; raw: unknown };
+
+/**
+ * Parses one frame off the bridge socket, naming which of the two steps rejected it.
+ *
+ * @remarks
+ * `invalid-message` keeps the decoded value, so a caller can still answer a request whose `id` is
+ * readable even though the rest of it is not.
+ */
+export function parseWalletBridgeMessage(text: string): Result<WalletBridgeMessage, WalletBridgeParseError> {
+  return pipe(
+    fromThrowable((): unknown => JSON.parse(text), (cause): WalletBridgeParseError => ({ cause, kind: 'invalid-json' })),
+    flatMap((raw) => {
+      const parsed = WalletBridgeMessageSchema.safeParse(raw);
+      return parsed.success
+        ? ok(parsed.data)
+        : err<WalletBridgeParseError>({ cause: parsed.error, kind: 'invalid-message', raw });
+    }),
+  );
 }
