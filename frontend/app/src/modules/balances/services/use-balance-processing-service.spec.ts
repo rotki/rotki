@@ -1,7 +1,8 @@
 import type { BlockchainBalances } from '@/modules/balances/types/blockchain-balances';
 import { Blockchain } from '@rotki/common';
-import { err, isOk, ok, type Result } from 'plainfp/result';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { err, isErr, isOk, ok, type Result } from 'plainfp/result';
+import { hasTag } from 'plainfp/tagged';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
@@ -536,6 +537,39 @@ describe('useBalanceProcessingService', () => {
     await targeted;
 
     expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, CHAIN).everCompleted).toBe(true);
+  });
+
+  it('should report a malformed refresh response as a failure and forget the chain\'s earlier success', async () => {
+    const CHAIN = 'base';
+    mockRefreshBlockchainBalances.mockImplementation(async () => ({ taskId: nextTaskId++ }));
+    useBlockchainAccountsStore().updateAccounts(CHAIN, [
+      createAccount({ address: '0x2', label: null, tags: null }, CHAIN),
+    ]);
+    const service = useBalanceProcessingService();
+    const { statusOf } = useTaskOrchestrator();
+    const { updateBalances } = useBalancesStore();
+    const payload = { addresses: undefined, blockchain: CHAIN, isXpub: false };
+
+    const good = service.handleRefresh(runTask, payload);
+    await vi.waitFor(() => {
+      expect(pendingTasks.size).toBe(1);
+    });
+    pendingTasks.get(1)!.resolve(ok(emptyBalances(CHAIN)));
+    await good;
+    vi.mocked(updateBalances).mockClear();
+
+    pendingTasks.clear();
+    const malformed = service.handleRefresh(runTask, payload);
+    await vi.waitFor(() => {
+      expect(pendingTasks.size).toBe(1);
+    });
+    pendingTasks.get(2)!.resolve(ok({ per_account: 'not balances' }));
+    const outcome = await malformed;
+
+    assert(isErr(outcome));
+    expect(hasTag(outcome.error, 'TaskFailed')).toBe(true);
+    expect(updateBalances).not.toHaveBeenCalled();
+    expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, CHAIN).everCompleted).toBe(false);
   });
 
   it('should clear isRefreshing even when the refresh POST fails', async () => {
