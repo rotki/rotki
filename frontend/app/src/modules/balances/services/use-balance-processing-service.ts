@@ -151,16 +151,21 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
    * Both layers land here so the ledger is written in exactly one place: the network query owns its
    * result through a backend task, the cache-only read resolves directly, and neither difference
    * reaches the bookkeeping.
+   *
+   * @remarks
+   * A targeted refresh that fails says nothing about the rest of the chain, so it leaves the chain's
+   * earlier success in place. A full refresh that fails forgets it.
    */
   const settleChain = (
     blockchain: string,
     result: Result<BlockchainBalances, TaskError>,
-    onApplied?: () => void,
+    { isTargeted = false, onApplied }: { isTargeted?: boolean; onApplied?: () => void } = {},
   ): Result<void, TaskError> => {
     if (isErr(result)) {
       if (isActionable(result.error))
         logger.error(result.error.message);
-      invalidate(chainBalancesActivity.kind, ...chainBalancesActivity.partsOf({ chain: blockchain }));
+      if (!isTargeted)
+        invalidate(chainBalancesActivity.kind, ...chainBalancesActivity.partsOf({ chain: blockchain }));
     }
     else {
       if (processBalanceResult(blockchain, result.value))
@@ -175,6 +180,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     runTask: RunBackendTask,
     blockchain: string,
     apiCall: () => Promise<{ taskId: number }>,
+    isTargeted: boolean,
   ): Promise<Result<void, TaskError>> => {
     const skipped = skipUnlessQueryable(blockchain);
     if (skipped)
@@ -184,7 +190,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     return settleChain(
       blockchain,
       mapResult(await runTask<unknown>(apiCall), result => BlockchainBalances.parse(result)),
-      () => refreshState.markNetworkResultApplied(blockchain),
+      { isTargeted, onApplied: () => refreshState.markNetworkResultApplied(blockchain) },
     );
   };
 
@@ -234,6 +240,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
         runTask,
         blockchain,
         async () => !isXpub ? refreshBlockchainBalances(payload, get(valueThreshold)) : queryXpubBalances(payload),
+        Boolean(payload.addresses?.length),
       );
     }
     finally {
