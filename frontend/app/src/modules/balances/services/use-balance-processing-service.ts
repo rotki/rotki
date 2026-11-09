@@ -1,31 +1,27 @@
 import type { RunBackendTask } from '@/modules/task-center/use-native-task';
 import { Blockchain } from '@rotki/common';
-import { err, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
-import { convertBtcBalances } from '@/modules/accounts/core/bitcoin-accounts';
+import { fromZod } from 'plainfp/interop/zod';
+import { err, flatMap as flatMapResult, mapError, type Result } from 'plainfp/result';
+import { fromPromise } from 'plainfp/result-async';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import { chainBalancesActivity } from '@/modules/balances/balances.activity';
+import { useChainSettlement } from '@/modules/balances/services/use-chain-settlement';
 import {
   BlockchainBalances,
-  type BtcBalances,
   type FetchBlockchainBalancePayload,
 } from '@/modules/balances/types/blockchain-balances';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useBlockchainRefreshTimestampsStore } from '@/modules/balances/use-blockchain-refresh-timestamps-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
-import { byChainKey } from '@/modules/core/common/chains';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { logger } from '@/modules/core/common/logging/logging';
-import { Cancelled, isActionable, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { Cancelled, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
-function isBtcBalances(data?: BtcBalances | any): data is BtcBalances {
-  return !!data && (!!data.standalone || !!data.xpubs);
-}
+const parseBalances = fromZod(BlockchainBalances);
 
 interface UseBalanceProcessingServiceReturn {
   /** Empties a chain's balances and marks it loaded. No backend task, so no activity involved. */
@@ -41,31 +37,12 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   const { queryBlockchainBalances, refreshBlockchainBalances, queryXpubBalances } = useBlockchainBalancesApi();
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { updateBalances } = useBalancesStore();
-  const { isStale, updateTimestamps } = useBlockchainRefreshTimestampsStore();
+  const { settleChain } = useChainSettlement();
   const { t } = useI18n({ useScope: 'global' });
-  const { invalidate, markCompleted } = useTaskOrchestrator();
+  const { markCompleted } = useTaskOrchestrator();
   const { isEth2Enabled } = useBlockchainValidatorsStore();
   const refreshState = useBalanceRefreshState();
   const valueThreshold = useValueThreshold(BalanceSource.BLOCKCHAIN);
-
-  /** @returns whether the balances were written, as opposed to refused for being older */
-  const processBalanceResult = (blockchain: string, parsedBalances: BlockchainBalances): boolean => {
-    const lastRefreshTs = parsedBalances.lastRefreshTs ? byChainKey(parsedBalances.lastRefreshTs) : undefined;
-    if (isStale(blockchain, lastRefreshTs?.[blockchain]))
-      return false;
-
-    if (lastRefreshTs)
-      updateTimestamps(lastRefreshTs);
-
-    const perAccount = parsedBalances.perAccount[blockchain];
-
-    if (isBtcBalances(perAccount))
-      updateBalances(blockchain, convertBtcBalances(blockchain, parsedBalances.totals, perAccount));
-    else
-      updateBalances(blockchain, parsedBalances);
-
-    return true;
-  };
 
   const hasAccounts = (blockchain: string): boolean => {
     const account = get(accounts)[blockchain];
@@ -145,37 +122,6 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     return err(Skipped({ message: t('actions.balances.blockchain.skipped.no_accounts') }));
   };
 
-  /**
-   * Record one chain's outcome, whichever layer produced it.
-   *
-   * Both layers land here so the ledger is written in exactly one place: the network query owns its
-   * result through a backend task, the cache-only read resolves directly, and neither difference
-   * reaches the bookkeeping.
-   *
-   * @remarks
-   * A targeted refresh that fails says nothing about the rest of the chain, so it leaves the chain's
-   * earlier success in place. A full refresh that fails forgets it.
-   */
-  const settleChain = (
-    blockchain: string,
-    result: Result<BlockchainBalances, TaskError>,
-    { isTargeted = false, onApplied }: { isTargeted?: boolean; onApplied?: () => void } = {},
-  ): Result<void, TaskError> => {
-    if (isErr(result)) {
-      if (isActionable(result.error))
-        logger.error(result.error.message);
-      if (!isTargeted)
-        invalidate(chainBalancesActivity.kind, ...chainBalancesActivity.partsOf({ chain: blockchain }));
-    }
-    else {
-      if (processBalanceResult(blockchain, result.value))
-        onApplied?.();
-      markCompleted(chainBalancesActivity.kind, ...chainBalancesActivity.partsOf({ chain: blockchain }));
-    }
-
-    return mapResult(result, () => {});
-  };
-
   const executeBalanceQuery = async (
     runTask: RunBackendTask,
     blockchain: string,
@@ -189,7 +135,10 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     // `runTask` types the payload but does not validate it — the schema is only applied here.
     return settleChain(
       blockchain,
-      mapResult(await runTask<unknown>(apiCall), result => BlockchainBalances.parse(result)),
+      flatMapResult(await runTask<unknown>(apiCall), response => mapError(
+        parseBalances(response),
+        (error): TaskError => TaskFailed({ cause: error, message: getErrorMessage(error) }),
+      )),
       { isTargeted, onApplied: () => refreshState.markNetworkResultApplied(blockchain) },
     );
   };
@@ -199,9 +148,8 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
    * — the only difference from {@link executeBalanceQuery}, and it ends at the same bookkeeping.
    *
    * @remarks
-   * A read that a network result overtook while it was in flight is dropped, whatever its timestamp
-   * says or whether it failed: the network result is newer and has already recorded the completion.
-   * It resolves `ok` so a failure cannot invalidate that result or trigger a hydration retry.
+   * Counts the network results applied while the read is in flight, because a read that one of them
+   * overtook is dropped however it ended. See {@link decideChainResult}.
    */
   const handleCachedFetch = async (
     payload: FetchBlockchainBalancePayload,
@@ -213,20 +161,16 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
       return skipped;
 
     const networkResultsAtStart = refreshState.networkResultCount(blockchain);
-    let result: Result<BlockchainBalances, TaskError>;
-    try {
-      result = ok(await queryBlockchainBalances(payload, threshold));
-    }
-    catch (error: unknown) {
-      result = err(isRequestCancellation(error)
+    const result = await fromPromise(
+      queryBlockchainBalances(payload, threshold),
+      (error: unknown): TaskError => isRequestCancellation(error)
         ? Cancelled({ message: t('actions.balances.blockchain.cancelled') })
-        : TaskFailed({ cause: error, message: getErrorMessage(error) }));
-    }
+        : TaskFailed({ cause: error, message: getErrorMessage(error) }),
+    );
 
-    if (refreshState.networkResultCount(blockchain) !== networkResultsAtStart)
-      return ok(undefined);
-
-    return settleChain(blockchain, result);
+    return settleChain(blockchain, result, {
+      overtaken: refreshState.networkResultCount(blockchain) !== networkResultsAtStart,
+    });
   };
 
   const handleRefresh = async (
