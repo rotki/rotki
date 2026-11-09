@@ -56,13 +56,37 @@ class BankSyncStatus:
     """What the UI shows next to a connection"""
     running: bool = False
     last_sync_ts: Timestamp | None = None
+    # Written only through set_sync_error, set_balance_error and clear_balance_error.
     last_error: str | None = None
+    # Whether last_error came from a balance query, which a later balance success may clear.
+    error_from_balances: bool = field(default=False, repr=False, compare=False)
     auth_challenge: BankAuthChallenge | None = None
     # The bank rejected or expired the last pending authentication, so the user has to start it
     # again. Written only through set_challenge, drop_challenge and expire_challenge.
     auth_expired: bool = False
-    # Guards the challenge fields: a sync and a balance query write them from separate threads.
+    # Guards the error and challenge fields: a sync and a balance query write them from
+    # separate threads.
     lock: threading.Lock = field(default_factory=threading.Lock, repr=False, compare=False)
+
+    def set_sync_error(self, error: str | None) -> None:
+        """Record how the last history sync ended, which supersedes a balance query's error."""
+        with self.lock:
+            self.last_error = error
+            self.error_from_balances = False
+
+    def set_balance_error(self, error: str) -> None:
+        """Record a failed balance query, keeping a sync's error: only a sync can clear that."""
+        with self.lock:
+            if self.last_error is None or self.error_from_balances:
+                self.last_error = error
+                self.error_from_balances = True
+
+    def clear_balance_error(self) -> None:
+        """Forget a balance query's error once one succeeded, keeping a sync's error."""
+        with self.lock:
+            if self.error_from_balances:
+                self.last_error = None
+                self.error_from_balances = False
 
     def set_challenge(self, challenge: BankAuthChallenge | None) -> None:
         """Record the pending challenge, or None once none is pending. Either supersedes an
@@ -509,14 +533,14 @@ class BankManager:
         except BankMFARequired as e:
             e.connection_identifier = bank.connection_identifier
             status.set_challenge(e.challenge)
-            status.last_error = None
+            status.set_sync_error(None)
             raise
         except RemoteError as e:
-            status.last_error = str(e)
+            status.set_sync_error(str(e))
             raise
         else:
             status.set_challenge(None)
-            status.last_error = None
+            status.set_sync_error(None)
             status.last_sync_ts = ts_now()
         finally:
             status.running = False
