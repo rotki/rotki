@@ -39,8 +39,6 @@ export interface QueuedRequest<T = any> {
   tags: string[];
   queuedAt: number;
   maxQueueTime: number;
-  retries: number;
-  maxRetries: number;
   abortController: AbortController;
   resolve: (value: T) => void;
   reject: (error: unknown) => void;
@@ -62,10 +60,6 @@ export interface QueueOptions {
   maxBackgroundConcurrent?: number;
   /** Maximum requests per second (default: 30) */
   maxPerSecond?: number;
-  /** Base retry delay in ms (default: 1000) */
-  retryDelay?: number;
-  /** Maximum retry attempts (default: 0, no retry) */
-  maxRetries?: number;
   /** Maximum queue size before overflow (default: 100) */
   maxQueueSize?: number;
   /** Maximum time in queue before timeout in ms (default: 60000) */
@@ -81,8 +75,6 @@ export interface EnqueueOptions extends BaseFetchOptions {
   priority?: number;
   /** Tags for group cancellation */
   tags?: string[];
-  /** Override max retries */
-  maxRetries?: number;
   /** Override max queue time */
   maxQueueTime?: number;
   /** Deduplicate identical pending requests */
@@ -94,7 +86,6 @@ export interface ResolvedEnqueueSettings {
   dedupe: boolean;
   fetchOptions: BaseFetchOptions;
   maxQueueTime: number;
-  maxRetries: number;
   priority: number;
   tags: string[];
 }

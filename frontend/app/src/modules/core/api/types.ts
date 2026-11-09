@@ -71,8 +71,6 @@ export interface RotkiFetchOptions<R extends ResponseType = 'json', T = unknown>
   dedupe?: boolean;
   /** Override max queue time in ms (default: 60000) */
   maxQueueTime?: number;
-  /** Override max retries for queue (default: 0, no retry) */
-  queueRetries?: number;
   /** Skip the global 401 auth failure handler. Used for endpoints like password change where 401 means wrong password, not session expiry. */
   skipAuthHandler?: boolean;
   /**
