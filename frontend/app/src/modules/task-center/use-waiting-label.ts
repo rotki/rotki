@@ -52,6 +52,15 @@ export function useWaitingLabel(): UseWaitingLabelReturn {
     return subject?.address === undefined ? labelOf(other, true) : accountName(subject.address, subject.chain);
   }
 
+  function namedWaitingLabel(waiting: ActivityWaiting): string {
+    const name = nameOf(waiting);
+    if (name === undefined)
+      return t('task_dock.waiting.other_work');
+    return waiting.reason === WaitingReason.PARENT
+      ? t('task_dock.waiting.parent', { name })
+      : t('task_dock.waiting.dependency', { name });
+  }
+
   function waitingLabel(activity: Activity): string | undefined {
     const { waiting } = activity;
     if (waiting === undefined)
@@ -59,20 +68,16 @@ export function useWaitingLabel(): UseWaitingLabelReturn {
 
     switch (waiting.reason) {
       case WaitingReason.PARENT:
-      case WaitingReason.DEPENDENCY: {
-        const name = nameOf(waiting);
-        if (name === undefined)
-          return t('task_dock.waiting.other_work');
-        return waiting.reason === WaitingReason.PARENT
-          ? t('task_dock.waiting.parent', { name })
-          : t('task_dock.waiting.dependency', { name });
-      }
+      case WaitingReason.DEPENDENCY:
+        return namedWaitingLabel(waiting);
       case WaitingReason.HISTORY_SYNC:
         return t('task_dock.waiting.history_sync');
       case WaitingReason.REDECODE:
         return t('task_dock.waiting.redecode');
       case WaitingReason.MATCHING:
         return t('task_dock.waiting.matching');
+      case WaitingReason.SAME_CHAIN:
+        return t('task_dock.waiting.same_chain');
       case WaitingReason.SLOT:
         return t('task_dock.waiting.slot');
     }

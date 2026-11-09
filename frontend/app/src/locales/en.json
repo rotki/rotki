@@ -7085,6 +7085,7 @@
       "other_work": "Waiting for other work to finish",
       "parent": "Waiting for {name} to start",
       "redecode": "Waiting for the redecode to finish",
+      "same_chain": "Waiting for this chain's current refresh to finish",
       "slot": "Waiting its turn"
     }
   },
