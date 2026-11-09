@@ -119,13 +119,13 @@ describe('useActivityBatch', () => {
       started: () => boolean;
     } {
       const { statusOf, submit } = useTaskOrchestrator();
-      const id = makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'follow-up-spec', name);
+      const id = makeActivityId(ActivityKind.PRICES, 'follow-up-spec', name);
       let release!: () => void;
       let started = false;
       submit({
-        deps: deps.map(dep => makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, 'follow-up-spec', dep)),
+        deps: deps.map(dep => makeActivityId(ActivityKind.PRICES, 'follow-up-spec', dep)),
         id,
-        kind: ActivityKind.BLOCKCHAIN_BALANCES,
+        kind: ActivityKind.PRICES,
         run: async (): ResultAsync<void, TaskError> => {
           started = true;
           return new Promise<Result<void, TaskError>>((resolve) => {
@@ -135,7 +135,7 @@ describe('useActivityBatch', () => {
         title: name,
       });
       const settled = vi.waitFor(() => {
-        expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, 'follow-up-spec', name).active).toBe(false);
+        expect(statusOf(ActivityKind.PRICES, 'follow-up-spec', name).active).toBe(false);
       }, { interval: 5, timeout: 2000 });
       return { release: () => release?.(), settled, started: () => started };
     }
@@ -189,7 +189,7 @@ describe('useActivityBatch', () => {
       await vi.waitFor(() => expect(items.every(item => item.started())).toBe(true));
       items[0].release();
       await items[0].settled;
-      await vi.waitFor(() => expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, 'follow-up-spec', 'order-a').active).toBe(false));
+      await vi.waitFor(() => expect(statusOf(ActivityKind.PRICES, 'follow-up-spec', 'order-a').active).toBe(false));
       expect(node.started()).toBe(false);
 
       items[1].release();

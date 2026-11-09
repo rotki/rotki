@@ -144,6 +144,8 @@ export const WaitingReason = {
   REDECODE: 'redecode',
   /** A redecode, held back by matching that is already running. */
   MATCHING: 'matching',
+  /** A chain's balance query, held back by another query of that chain already running. */
+  SAME_CHAIN: 'same-chain',
   /** Everything else lets it start; its lane, or its lane family, has no free slot. */
   SLOT: 'slot',
 } as const;

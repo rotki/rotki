@@ -87,8 +87,10 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
    * discarded whichever order the two land in. Two mechanisms for one hazard, and the cheaper one
    * wins.
    *
-   * Read by the `periodic` branch only. It is not redundant with `submitTask`'s id dedup: dedup
-   * covers a run that is *submitted*, this covers the window where the POST itself is in flight.
+   * Read by the `periodic` branch only, at submit and again at start. It is not redundant with
+   * `submitTask`'s id dedup: dedup covers a run that is *submitted*, this covers the window where
+   * the POST itself is in flight. The submit check is what keeps a tick from querying right after
+   * `oneBalanceQueryPerChain` released it, when the chain it was waiting on has just refreshed.
    */
   const isChainRefreshing = (chain: string): boolean => get(refreshState.refreshingChains).has(chain);
 
@@ -155,6 +157,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
       const chainAddresses = allowedAddresses(chain);
       const chainPayload = { addresses: chainAddresses ?? addresses, blockchain: chain, isXpub };
       const id = chainJobId(chain);
+      const busyAtSubmit = isChainRefreshing(chain);
       await submit({
         id,
         parent,
@@ -163,7 +166,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
         priority,
         rerunnable: true,
         run: async ({ cancelled, runTask }): Promise<Result<void, TaskError>> => {
-          if (mode === RefreshMode.PERIODIC && isChainRefreshing(chain))
+          if (mode === RefreshMode.PERIODIC && (busyAtSubmit || isChainRefreshing(chain)))
             return err(Skipped({ message: t('actions.balances.blockchain.skipped.busy') }));
 
           const everyNamedAddressExcluded = chainAddresses?.length === 0;

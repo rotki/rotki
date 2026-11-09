@@ -42,6 +42,38 @@ export const pauseBalancesDuringHistorySync: EligibilityRule = (candidate, all) 
   );
 };
 
+/** The chain a balance job works on, or `undefined` for the run over several chains. */
+function balanceJobChain(activity: Activity): string | undefined {
+  if (activity.kind !== ActivityKind.BLOCKCHAIN_BALANCES)
+    return undefined;
+
+  const [chain] = activityParts(activity.id);
+  return chain === ActivityPart.RUN ? undefined : chain;
+}
+
+/**
+ * One balance query per chain, whatever its scope.
+ *
+ * @remarks
+ * The backend runs a chain's queries one at a time anyway, so a second one would only wait there
+ * while holding a lane slot, and two such waits stall every other chain. Held here it costs no slot.
+ *
+ * `Priority.USER` is not exempt, unlike {@link pauseBalancesDuringHistorySync}: letting it start
+ * would not make it finish sooner, because it would still wait on the backend's lock.
+ *
+ * Detection runs under another kind, so a chain job can never be held back by its own children.
+ */
+export const oneBalanceQueryPerChain: EligibilityRule = (candidate, all) => {
+  const chain = balanceJobChain(candidate);
+  if (chain === undefined)
+    return undefined;
+
+  return holdBy(
+    WaitingReason.SAME_CHAIN,
+    all.find(activity => activity.id !== candidate.id && activity.status === ActivityStatus.RUNNING && balanceJobChain(activity) === chain),
+  );
+};
+
 /**
  * Work that writes links onto existing history events, keyed by the part that discriminates it
  * within {@link ActivityKind.HISTORY_EVENTS}.
@@ -75,7 +107,7 @@ export const excludeMatchingDuringReset: EligibilityRule = (candidate, all) => {
 };
 
 /** The rule set the reactive orchestrator is configured with by default. */
-export const DEFAULT_RULES: readonly EligibilityRule[] = [pauseBalancesDuringHistorySync, excludeMatchingDuringReset];
+export const DEFAULT_RULES: readonly EligibilityRule[] = [pauseBalancesDuringHistorySync, oneBalanceQueryPerChain, excludeMatchingDuringReset];
 
 /** The first hold any rule puts on the candidate, in rule order, or `undefined` when every rule lets it start. */
 export function firstRuleHold(rules: readonly EligibilityRule[], candidate: Activity, all: readonly Activity[]): ActivityWaiting | undefined {

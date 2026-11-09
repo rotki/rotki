@@ -124,6 +124,7 @@ describe('useWaitingLabel', () => {
 
   it.each([
     [WaitingReason.HISTORY_SYNC, 'task_dock.waiting.history_sync'],
+    [WaitingReason.SAME_CHAIN, 'task_dock.waiting.same_chain'],
     [WaitingReason.REDECODE, 'task_dock.waiting.redecode'],
     [WaitingReason.MATCHING, 'task_dock.waiting.matching'],
     [WaitingReason.SLOT, 'task_dock.waiting.slot'],

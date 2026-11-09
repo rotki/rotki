@@ -8,7 +8,7 @@ import {
   ActivityStatus as Status,
   WaitingReason,
 } from '../types';
-import { type EligibilityRule, excludeMatchingDuringReset, firstRuleHold, pauseBalancesDuringHistorySync } from './rules';
+import { type EligibilityRule, excludeMatchingDuringReset, firstRuleHold, oneBalanceQueryPerChain, pauseBalancesDuringHistorySync } from './rules';
 import { Priority } from './spec';
 
 function activity(overrides: Partial<Activity> & Pick<Activity, 'id' | 'kind' | 'status'>): Activity {
@@ -85,6 +85,53 @@ describe('pauseBalancesDuringHistorySync', () => {
   it('should ignore non-balance candidates', () => {
     const candidate = activity({ id: makeActivityId(Kind.TX_SYNC, 'eth'), kind: Kind.TX_SYNC, status: Status.PENDING });
     expect(pauseBalancesDuringHistorySync(candidate, [candidate, historySync(Status.RUNNING)])).toBeUndefined();
+  });
+});
+
+describe('oneBalanceQueryPerChain', () => {
+  function chainJob(status: Activity['status'], ...parts: string[]): Activity {
+    return activity({ id: makeActivityId(Kind.BLOCKCHAIN_BALANCES, ...parts), kind: Kind.BLOCKCHAIN_BALANCES, status });
+  }
+
+  const queued = chainJob(Status.PENDING, 'eth', ActivityPart.ADDRESSES, 'digest');
+
+  it('should hold a chain\'s job back while another job of that chain runs, naming it', () => {
+    const running = chainJob(Status.RUNNING, 'eth');
+    expect(oneBalanceQueryPerChain(queued, [running, queued])).toEqual({ on: running.id, reason: WaitingReason.SAME_CHAIN });
+  });
+
+  it('should treat a detecting job as occupying its chain', () => {
+    const detecting = chainJob(Status.RUNNING, 'eth', ActivityPart.DETECT);
+    expect(oneBalanceQueryPerChain(queued, [detecting, queued])?.on).toBe(detecting.id);
+  });
+
+  it('should hold back a user-initiated job too', () => {
+    const user = { ...queued, priority: Priority.USER };
+    expect(oneBalanceQueryPerChain(user, [chainJob(Status.RUNNING, 'eth'), user])?.reason).toBe(WaitingReason.SAME_CHAIN);
+  });
+
+  it('should let a job start while another chain runs', () => {
+    expect(oneBalanceQueryPerChain(queued, [chainJob(Status.RUNNING, 'optimism'), queued])).toBeUndefined();
+  });
+
+  it('should let a job start while another job of its chain is only queued, or the two would deadlock', () => {
+    expect(oneBalanceQueryPerChain(queued, [chainJob(Status.PENDING, 'eth'), queued])).toBeUndefined();
+  });
+
+  it('should not be held back by itself', () => {
+    const running = { ...queued, status: Status.RUNNING };
+    expect(oneBalanceQueryPerChain(queued, [running])).toBeUndefined();
+  });
+
+  it('should ignore the run over several chains, as candidate and as blocker', () => {
+    const run = chainJob(Status.RUNNING, ActivityPart.RUN, 'digest', 'user');
+    expect(oneBalanceQueryPerChain(queued, [run, queued])).toBeUndefined();
+    expect(oneBalanceQueryPerChain(chainJob(Status.PENDING, ActivityPart.RUN, 'other', 'user'), [run])).toBeUndefined();
+  });
+
+  it('should ignore other kinds, so a chain job is never held back by its detection children', () => {
+    const detection = activity({ id: makeActivityId(Kind.TOKEN_DETECTION, 'eth', '0x1'), kind: Kind.TOKEN_DETECTION, status: Status.RUNNING });
+    expect(oneBalanceQueryPerChain(queued, [detection, queued])).toBeUndefined();
   });
 });
 
