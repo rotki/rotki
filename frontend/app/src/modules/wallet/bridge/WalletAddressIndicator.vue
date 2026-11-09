@@ -79,14 +79,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="mb-4">
-    <div class="flex items-center gap-3 mb-2">
-      <h5 class="font-bold">
-        {{ t('trade.bridge.wallet_status') }}
-      </h5>
-    </div>
+  <RuiCard divide>
+    <template #header>
+      {{ t('trade.bridge.wallet_status') }}
+    </template>
 
-    <div class="border border-default rounded-md px-3 py-2 flex items-center gap-2 font-mono text-sm font-medium bg-rui-grey-50 dark:bg-rui-grey-900">
+    <div class="flex items-center gap-3 min-h-9 text-sm">
       <template v-if="isConnected">
         <StatusDot status="connected" />
         <ProviderIcon :metadata="selectedProviderMetadata" />
@@ -97,7 +95,7 @@ onBeforeUnmount(() => {
         />
         <HashLink
           v-if="connectedAddress"
-          class="pl-0! flex-1"
+          class="pl-0! flex-1 font-mono"
           :location="chain"
           :text="connectedAddress"
           display-mode="copy"
@@ -153,34 +151,16 @@ onBeforeUnmount(() => {
 
     <div
       v-if="connectionError"
-      class="mt-2 p-2 rounded-md bg-rui-error/10 border border-rui-error/20"
+      class="mt-4"
     >
-      <div class="flex items-start gap-2">
-        <RuiIcon
-          name="lu-triangle-alert"
-          class="text-rui-error mt-0.5"
-          size="16"
-        />
-        <div class="flex-1">
-          <p class="text-sm text-rui-error font-medium mb-1">
-            {{ t('trade.bridge.connection_failed') }}
-          </p>
-          <p class="text-xs text-rui-error/80">
-            {{ connectionError }}
-          </p>
-        </div>
-        <RuiButton
-          variant="text"
-          size="sm"
-          icon
-          @click="resetError()"
-        >
-          <RuiIcon
-            name="lu-x"
-            size="14"
-          />
-        </RuiButton>
-      </div>
+      <RuiAlert
+        type="error"
+        :title="t('trade.bridge.connection_failed')"
+        closeable
+        @close="resetError()"
+      >
+        {{ connectionError }}
+      </RuiAlert>
     </div>
-  </div>
+  </RuiCard>
 </template>

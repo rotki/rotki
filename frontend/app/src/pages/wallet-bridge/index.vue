@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
 import { useMainStore } from '@/modules/core/common/use-main-store';
+import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
+import { CLIENT_CONFIG } from '@/modules/wallet/bridge/bridge-config';
+import BridgeOverlay from '@/modules/wallet/bridge/BridgeOverlay.vue';
 import ConnectionLogs from '@/modules/wallet/bridge/ConnectionLogs.vue';
 import ElectronConnectionStatus from '@/modules/wallet/bridge/ElectronConnectionStatus.vue';
 import ProviderSelectionNotification from '@/modules/wallet/bridge/ProviderSelectionNotification.vue';
 import { useBridgeLogging } from '@/modules/wallet/bridge/use-bridge-logging';
-import { useWalletProxyClient } from '@/modules/wallet/bridge/use-wallet-proxy-client';
+import { BridgeConnectionPhase, useWalletProxyClient } from '@/modules/wallet/bridge/use-wallet-proxy-client';
 import WalletAddressIndicator from '@/modules/wallet/bridge/WalletAddressIndicator.vue';
 
 definePage({
@@ -31,9 +34,9 @@ const {
   connect: connectToElectron,
   disconnect: disconnectFromElectron,
   isConnected: isElectronConnected,
-  isConnecting: isElectronConnecting,
   lastError,
   onTakeOver,
+  state: connectionState,
 } = useWalletProxyClient();
 
 function handleRetryConnection(): void {
@@ -57,10 +60,15 @@ onBeforeUnmount(() => {
 const { setConnected } = useMainStore();
 
 // Watch for connection state changes to log them
-watch(isElectronConnecting, (newValue, oldValue) => {
-  if (newValue && !oldValue) {
-    addLog('Attempting to connect to Electron app via WebSocket...', 'info');
-  }
+watch(connectionState, (state) => {
+  if (state.phase !== BridgeConnectionPhase.connecting)
+    return;
+  addLog(
+    state.attempt === 0
+      ? 'Attempting to connect to Electron app via WebSocket...'
+      : `Reconnecting to Electron app (attempt ${state.attempt + 1} of ${CLIENT_CONFIG.MAX_RETRIES})...`,
+    'info',
+  );
 });
 
 watch(isElectronConnected, (newValue, oldValue) => {
@@ -88,51 +96,38 @@ onBeforeMount(() => {
 
 <template>
   <div class="overflow-auto w-full text-rui-text">
-    <div
+    <BridgeOverlay
       v-if="showTakeoverMessage"
-      class="fixed inset-0 bg-black/80 backdrop-blur-xs flex items-center justify-center z-50"
-    >
-      <div class="bg-rui-grey-100 dark:bg-rui-grey-800 p-8 rounded-lg shadow-2xl max-w-md mx-4 flex flex-col items-center text-center">
-        <RuiIcon
-          name="lu-triangle-alert"
-          size="40"
-          class="text-rui-warning mb-4"
-        />
-        <h2 class="text-h4 mb-2 font-semibold">
-          {{ t('trade.bridge.takeover.title') }}
-        </h2>
-        <p class="text-rui-text-secondary">
-          {{ t('trade.bridge.takeover.description') }}
-        </p>
-      </div>
-    </div>
+      color="warning"
+      icon="lu-triangle-alert"
+      :title="t('trade.bridge.takeover.title')"
+      :description="t('trade.bridge.takeover.description')"
+    />
 
     <ProviderSelectionNotification />
 
-    <div class="container max-w-lg! pt-6">
+    <div class="container max-w-lg! min-h-screen py-8 flex flex-col gap-6">
+      <header class="flex items-center gap-3">
+        <RotkiLogo
+          size="2"
+          unique-key="wallet-bridge"
+        />
+        <h1 class="text-h5 font-medium">
+          {{ t('trade.bridge.title') }}
+        </h1>
+      </header>
+
       <RuiAlert
         type="warning"
         variant="default"
-        class="mb-4"
       >
-        <div class="flex-1 min-w-0">
-          <p class="text-md text-rui-text">
-            {{ t('trade.bridge.keep_tab_active') }}
-          </p>
-        </div>
+        {{ t('trade.bridge.keep_tab_active') }}
       </RuiAlert>
-    </div>
-
-    <div class="container max-w-lg! pb-6 min-h-screen">
-      <h4 class="text-h4 mb-4">
-        {{ t('trade.bridge.title') }}
-      </h4>
 
       <WalletAddressIndicator />
 
       <ElectronConnectionStatus
-        :is-connected="isElectronConnected"
-        :is-connecting="isElectronConnecting"
+        :state="connectionState"
         :error="lastError"
         :on-retry-connection="handleRetryConnection"
         :on-disconnect="handleDisconnect"

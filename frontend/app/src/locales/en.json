@@ -7137,11 +7137,13 @@
       "electron_connection": "rotki Bridge Connection",
       "electron_disconnected_message": "Connection to rotki is not available",
       "electron_ready_message": "Connection is established",
+      "electron_retries_exhausted_message": "Could not reach rotki. Make sure the app is running, then try again.",
       "keep_tab_active": "Keep this tab open and active for the wallet connection to work properly.",
       "multiple_providers_detected": "Multiple Wallet Providers Detected",
       "multiple_providers_message": "{count} wallet providers are available. Please select one in the main application.",
       "no_provider_selected": "No provider selected",
       "provider_not_connected": "{provider} - Not connected",
+      "reconnecting_to_electron": "Reconnecting to rotki (attempt {attempt} of {max})",
       "retry_connection": "Connect",
       "takeover": {
         "description": "Another bridge is now active. You can close this window.",

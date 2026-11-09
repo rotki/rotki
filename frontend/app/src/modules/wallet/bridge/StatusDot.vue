@@ -1,6 +1,6 @@
 <script setup lang="ts">
 interface Props {
-  status: 'connected' | 'connecting' | 'warning' | 'disconnected';
+  status: 'connected' | 'connecting' | 'warning' | 'error' | 'disconnected';
   animate?: boolean;
 }
 
@@ -22,6 +22,11 @@ const statusConfig = computed<{ borderClass: string; bgClass: string }>(() => {
       return {
         bgClass: 'bg-rui-warning',
         borderClass: 'border-rui-warning/40',
+      };
+    case 'error':
+      return {
+        bgClass: 'bg-rui-error',
+        borderClass: 'border-rui-error/40',
       };
     case 'disconnected':
     default:

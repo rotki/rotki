@@ -31,7 +31,7 @@ export const BridgeConnectionPhase = {
 } as const;
 
 /** `attempt` is zero-based and counts consecutive failures since the last successful open. */
-type BridgeConnectionState =
+export type BridgeConnectionState =
   | { phase: typeof BridgeConnectionPhase.disconnected }
   | { phase: typeof BridgeConnectionPhase.connecting; attempt: number }
   | { phase: typeof BridgeConnectionPhase.connected }
