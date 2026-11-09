@@ -17,7 +17,7 @@ interface UseTradableAssetReturn {
 type UseInjectedTradableAssetReturn = UseTradableAssetReturn;
 
 export function useTradableAsset(address: MaybeRefOrGetter<string | undefined>): UseTradableAssetReturn {
-  const { balances } = storeToRefs(useBalancesStore());
+  const { visibleBalances: balances } = storeToRefs(useBalancesStore());
   const { ignoredAssets } = storeToRefs(useAssetsStore());
   const { supportedChainsForConnectedAccount } = storeToRefs(useWalletStore());
   const { getAssetPrice } = usePriceUtils();

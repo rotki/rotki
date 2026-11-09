@@ -38,7 +38,7 @@ interface UseAggregatedBalancesReturn {
 const EXCLUDABLE_SOURCES = ['blockchain', 'exchange', 'manual'] as const satisfies readonly ExclusionSource[];
 
 export function useAggregatedBalances(): UseAggregatedBalancesReturn {
-  const { balances: blockchainBalances, bankBalances, exchangeBalances, manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
+  const { balances: allBlockchainBalances, bankBalances, exchangeBalances, manualBalances, manualLiabilities, visibleBalances: blockchainBalances } = storeToRefs(useBalancesStore());
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { manualBalanceByLocation } = useManualBalanceData();
   const { tradeLocations } = useLocations();
@@ -142,9 +142,10 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     getExchangeBalances(exchange ? toValue(exchange) : undefined),
   );
 
+  /** Read from the unfiltered balances, since an asset hidden for lacking a price still needs one. */
   const assets = computed<string[]>(() => heldAssets([
-    get(blockchainAssets),
-    get(blockchainLiabilities),
+    fromBlockchain(get(allBlockchainBalances)),
+    fromBlockchain(get(allBlockchainBalances), { key: 'liabilities' }),
     get(exchangeAssets),
     get(manualAssets),
     get(manualLiabilityEntries),

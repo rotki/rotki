@@ -38,11 +38,6 @@ vi.mock('@/modules/balances/api/use-blockchain-balances-api', () => ({
   })),
 }));
 
-vi.mock('@/modules/assets/amount-display/use-usd-value-threshold', async () => {
-  const { computed } = await import('vue');
-  return { useValueThreshold: vi.fn(() => computed<string | undefined>(() => undefined)) };
-});
-
 vi.mock('@/modules/core/common/use-supported-chains', async () => {
   const { computed } = await import('vue');
   const { Blockchain } = await import('@rotki/common');
@@ -112,7 +107,6 @@ describe('useBalanceHydration', () => {
     expect(h.queryBlockchainBalances).toHaveBeenCalledTimes(1);
     expect(h.queryBlockchainBalances).toHaveBeenCalledWith(
       { addresses: undefined, blockchain: Blockchain.ETH, isXpub: false },
-      undefined,
     );
   });
 
@@ -178,11 +172,9 @@ describe('useBalanceHydration', () => {
 
     expect(h.queryBlockchainBalances).toHaveBeenCalledWith(
       expect.objectContaining({ blockchain: Blockchain.BTC }),
-      undefined,
     );
     expect(h.queryBlockchainBalances).toHaveBeenCalledWith(
       expect.objectContaining({ blockchain: 'optimism' }),
-      undefined,
     );
   });
 

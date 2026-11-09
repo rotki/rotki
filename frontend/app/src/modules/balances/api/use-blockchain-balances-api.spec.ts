@@ -98,27 +98,6 @@ describe('composables/api/balances/blockchain', () => {
       expect(capturedParams!.get('ignore_cache')).toBeNull();
     });
 
-    it('should include value_threshold when provided', async () => {
-      let capturedParams: URLSearchParams | null = null;
-
-      server.use(
-        http.get(`${backendUrl}/api/1/balances/blockchains`, ({ request }) => {
-          const url = new URL(request.url);
-          capturedParams = url.searchParams;
-          return HttpResponse.json({
-            result: emptyBalances,
-            message: '',
-          });
-        }),
-      );
-
-      const { queryBlockchainBalances } = useBlockchainBalancesApi();
-      const payload: FetchBlockchainBalancePayload = { blockchain: '' };
-      await queryBlockchainBalances(payload, '1000');
-
-      expect(capturedParams!.get('value_threshold')).toBe('1000');
-    });
-
     it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/balances/blockchains`, () =>
@@ -168,22 +147,6 @@ describe('composables/api/balances/blockchain', () => {
         async_query: true,
       });
       expect(result.taskId).toBe(500);
-    });
-
-    it('should send the value threshold with the refresh', async () => {
-      let capturedBody: DefaultBodyType = null;
-
-      server.use(
-        http.post(`${backendUrl}/api/1/balances/blockchains/eth`, async ({ request }) => {
-          capturedBody = await request.json();
-          return HttpResponse.json({ result: { task_id: 501 }, message: '' });
-        }),
-      );
-
-      const { refreshBlockchainBalances } = useBlockchainBalancesApi();
-      await refreshBlockchainBalances({ blockchain: 'eth' }, '100');
-
-      expect(capturedBody).toEqual({ async_query: true, value_threshold: '100' });
     });
 
     it('should send POST to refresh all blockchain balances', async () => {

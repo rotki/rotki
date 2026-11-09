@@ -7,7 +7,7 @@ const balances = ref<Balances>({});
 const pendingAssets = ref<Set<string>>(new Set());
 
 vi.mock('@/modules/balances/use-balances-store', () => ({
-  useBalancesStore: vi.fn(() => ({ balances })),
+  useBalancesStore: vi.fn(() => ({ visibleBalances: balances })),
 }));
 
 vi.mock('@/modules/assets/prices/use-price-utils', () => ({

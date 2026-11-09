@@ -33,7 +33,7 @@ export interface ChainResultFacts {
  * timestamp check, which cannot see it. The backend reads the timestamp after the balances, so an
  * overtaken read can carry the newer query's timestamp, or none at all after an account change.
  *
- * A tie is not refused, because a deliberate re-read (a threshold change, an un-ignored asset) has
+ * A tie is not refused, because a deliberate re-read (an un-ignored asset, detected tokens) has
  * the same timestamp and different content.
  */
 export function decideChainResult({ failed, isTargeted, olderThanStored, overtaken }: ChainResultFacts): ChainResultDecision {

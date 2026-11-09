@@ -102,7 +102,7 @@ describe('useBalanceWatchers', () => {
     expect(hydrate).not.toHaveBeenCalled();
   });
 
-  it('should refetch blockchain balances when blockchain threshold changes', async () => {
+  it('should not refetch anything when the blockchain threshold changes, since it filters what the store holds', async () => {
     const { useBalanceWatchers } = await import('./use-balance-watchers');
 
     scope.run(() => {
@@ -112,7 +112,7 @@ describe('useBalanceWatchers', () => {
     set(mockBalanceValueThreshold, { [BalanceSource.BLOCKCHAIN]: '200' });
     await nextTick();
 
-    expect(hydrate).toHaveBeenCalledOnce();
+    expect(hydrate).not.toHaveBeenCalled();
     expect(fetchManualBalances).not.toHaveBeenCalled();
     expect(fetchConnectedExchangeBalances).not.toHaveBeenCalled();
   });

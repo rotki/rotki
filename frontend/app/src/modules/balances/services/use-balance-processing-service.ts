@@ -4,7 +4,6 @@ import { fromZod } from 'plainfp/interop/zod';
 import { err, flatMap as flatMapResult, mapError, type Result } from 'plainfp/result';
 import { fromPromise } from 'plainfp/result-async';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import { chainBalancesActivity } from '@/modules/balances/balances.activity';
 import { useChainSettlement } from '@/modules/balances/services/use-chain-settlement';
@@ -17,7 +16,6 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { Cancelled, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
-import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
@@ -26,7 +24,7 @@ const parseBalances = fromZod(BlockchainBalances);
 interface UseBalanceProcessingServiceReturn {
   /** Empties a chain's balances and marks it loaded. No backend task, so no activity involved. */
   clearChainBalances: (blockchain: string) => void;
-  handleCachedFetch: (payload: FetchBlockchainBalancePayload, threshold: string | undefined) => Promise<Result<void, TaskError>>;
+  handleCachedFetch: (payload: FetchBlockchainBalancePayload) => Promise<Result<void, TaskError>>;
   handleRefresh: (runTask: RunBackendTask, payload: FetchBlockchainBalancePayload) => Promise<Result<void, TaskError>>;
   hasAccounts: (blockchain: string) => boolean;
   /** Whether the chain has anything to query — `hasAccounts`, except eth2. */
@@ -42,7 +40,6 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   const { markCompleted } = useTaskOrchestrator();
   const { isEth2Enabled } = useBlockchainValidatorsStore();
   const refreshState = useBalanceRefreshState();
-  const valueThreshold = useValueThreshold(BalanceSource.BLOCKCHAIN);
 
   const hasAccounts = (blockchain: string): boolean => {
     const account = get(accounts)[blockchain];
@@ -153,7 +150,6 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
    */
   const handleCachedFetch = async (
     payload: FetchBlockchainBalancePayload,
-    threshold: string | undefined,
   ): Promise<Result<void, TaskError>> => {
     const { blockchain } = payload;
     const skipped = skipUnlessQueryable(blockchain);
@@ -162,7 +158,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
 
     const networkResultsAtStart = refreshState.networkResultCount(blockchain);
     const result = await fromPromise(
-      queryBlockchainBalances(payload, threshold),
+      queryBlockchainBalances(payload),
       (error: unknown): TaskError => isRequestCancellation(error)
         ? Cancelled({ message: t('actions.balances.blockchain.cancelled') })
         : TaskFailed({ cause: error, message: getErrorMessage(error) }),
@@ -183,7 +179,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
       return await executeBalanceQuery(
         runTask,
         blockchain,
-        async () => !isXpub ? refreshBlockchainBalances(payload, get(valueThreshold)) : queryXpubBalances(payload),
+        async () => !isXpub ? refreshBlockchainBalances(payload) : queryXpubBalances(payload),
         Boolean(payload.addresses?.length),
       );
     }

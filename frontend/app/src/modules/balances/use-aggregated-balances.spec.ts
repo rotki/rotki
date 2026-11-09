@@ -20,6 +20,8 @@ import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-sto
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { TRADE_LOCATION_BANKS } from '@/modules/core/common/defaults';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
+import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { useAggregatedBalances } from './use-aggregated-balances';
 import '@test/i18n';
 
@@ -257,6 +259,24 @@ describe('useAggregatedBalances', () => {
       const { assets } = useAggregatedBalances();
       const result = get(assets);
       expect(result).toEqual([]);
+    });
+
+    it('should include an asset hidden by the threshold, or it would never be priced and stay hidden', () => {
+      const { balances: blockchainBalances } = storeToRefs(useBalancesStore());
+      useSettingsRepo().updateFrontend({ balanceValueThreshold: { [BalanceSource.BLOCKCHAIN]: '100' } });
+      const { assets, getBalances } = useAggregatedBalances();
+
+      set(blockchainBalances, {
+        [Blockchain.ETH]: {
+          '0x123': {
+            assets: { ETH: { address: createTestBalance(10, 0) } },
+            liabilities: { DAI: { address: createTestBalance(1, 0) } },
+          },
+        },
+      });
+
+      expect(get(assets)).toEqual(expect.arrayContaining(['ETH', 'DAI']));
+      expect(getBalances()).toEqual([]);
     });
 
     it('should include assets from all balance sources', () => {

@@ -9,8 +9,6 @@ import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-s
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
-import { useSettingsRepo } from '@/modules/settings/settings-repo';
-import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
@@ -123,7 +121,6 @@ describe('useBalanceProcessingService', () => {
       mockQueryBlockchainBalances.mockResolvedValue(payload);
       await service.handleCachedFetch(
         { addresses: undefined, blockchain: CHAIN, isXpub: false },
-        undefined,
       );
     }
 
@@ -150,7 +147,7 @@ describe('useBalanceProcessingService', () => {
       const service = useBalanceProcessingService();
       const fetchAt = async (lastRefreshTs: number): Promise<void> => {
         mockQueryBlockchainBalances.mockResolvedValue({ ...balancesAt(chain, lastRefreshTs), lastRefreshTs: { arbitrumOne: lastRefreshTs } });
-        await service.handleCachedFetch({ addresses: undefined, blockchain: chain, isXpub: false }, undefined);
+        await service.handleCachedFetch({ addresses: undefined, blockchain: chain, isXpub: false });
       };
 
       await fetchAt(3000);
@@ -278,7 +275,7 @@ describe('useBalanceProcessingService', () => {
     } {
       const read = deferred<BlockchainBalances>();
       mockQueryBlockchainBalances.mockReturnValueOnce(read.promise);
-      const done = service.handleCachedFetch({ addresses: undefined, blockchain: CHAIN, isXpub: false }, undefined);
+      const done = service.handleCachedFetch({ addresses: undefined, blockchain: CHAIN, isXpub: false });
       return {
         done,
         land: async (payload: BlockchainBalances): Promise<void> => {
@@ -339,7 +336,7 @@ describe('useBalanceProcessingService', () => {
         await gate.promise;
         throw new Error('backend down');
       });
-      const read = service.handleCachedFetch({ addresses: undefined, blockchain: CHAIN, isXpub: false }, undefined);
+      const read = service.handleCachedFetch({ addresses: undefined, blockchain: CHAIN, isXpub: false });
 
       await landNetworkResult(service, ok(balancesAt(CHAIN, 2000)));
       gate.resolve();
@@ -418,7 +415,6 @@ describe('useBalanceProcessingService', () => {
     const service = useBalanceProcessingService();
     await service.handleCachedFetch(
       { addresses: undefined, blockchain: Blockchain.ETH, isXpub: false },
-      undefined,
     );
 
     expect(mockNotifyError).not.toHaveBeenCalled();
@@ -434,7 +430,6 @@ describe('useBalanceProcessingService', () => {
 
     const cachedPromise = service.handleCachedFetch(
       { addresses: undefined, blockchain: Blockchain.ETH, isXpub: false },
-      undefined,
     );
     const refreshPromise = service.handleRefresh(
       runTask,
@@ -490,23 +485,6 @@ describe('useBalanceProcessingService', () => {
     await failing;
 
     expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, CHAIN).everCompleted).toBe(false);
-  });
-
-  it('should refresh with the blockchain value threshold, not another source\'s', async () => {
-    useSettingsRepo().updateFrontend({
-      balanceValueThreshold: { [BalanceSource.BLOCKCHAIN]: '100', [BalanceSource.EXCHANGES]: '5' },
-    });
-    mockRefreshBlockchainBalances.mockImplementation(async () => ({ taskId: nextTaskId++ }));
-    const payload = { addresses: undefined, blockchain: Blockchain.ETH, isXpub: false };
-
-    const refresh = useBalanceProcessingService().handleRefresh(runTask, payload);
-    await vi.waitFor(() => {
-      expect(pendingTasks.size).toBe(1);
-    });
-    pendingTasks.get(1)!.resolve(ok(emptyBalances(Blockchain.ETH)));
-    await refresh;
-
-    expect(mockRefreshBlockchainBalances).toHaveBeenCalledExactlyOnceWith(payload, '100');
   });
 
   it.each([

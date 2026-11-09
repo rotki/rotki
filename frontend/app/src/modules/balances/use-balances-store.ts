@@ -5,9 +5,12 @@ import type { BlockchainAssetBalances, BlockchainBalances } from '@/modules/bala
 import type { ExchangeData } from '@/modules/balances/types/exchanges';
 import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
 import type { BankConnectionBalances } from '@/modules/banks/types';
-import { type BigNumber, Zero } from '@rotki/common';
+import { type BigNumber, bigNumberify, Zero } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
+import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
 import { updateAssetValuePrices, updateBankBalancesPrices, updateBlockchainAssetBalances, updateExchangeBalancesPrices } from '@/modules/assets/prices/price-utils';
+import { balancesAboveThreshold } from '@/modules/balances/aggregation/core/value-threshold';
+import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 
 export const useBalancesStore = defineStore('balances', () => {
   const manualBalances = shallowRef<ManualBalanceWithValue[]>([]);
@@ -20,6 +23,21 @@ export const useBalancesStore = defineStore('balances', () => {
   const nonFungibleTotalValue = ref<BigNumber>(Zero);
 
   const blockchainBalances = shallowRef<Balances>({});
+  const valueThreshold = useValueThreshold(BalanceSource.BLOCKCHAIN);
+
+  /**
+   * The blockchain balances to show, following the hide small balances setting.
+   *
+   * @remarks
+   * `balances` stays complete, because prices are fetched for what it holds and a balance can rise
+   * above the threshold once they land. Read it to price or change balances, and this to show them.
+   */
+  const visibleBalances = computed<Balances>(() => {
+    const threshold = get(valueThreshold);
+    return threshold === undefined
+      ? get(blockchainBalances)
+      : balancesAboveThreshold(get(blockchainBalances), bigNumberify(threshold));
+  });
 
   const updatePrices = (prices: MaybeRef<AssetPrices>): void => {
     const latestPrices = get(prices);
@@ -100,6 +118,7 @@ export const useBalancesStore = defineStore('balances', () => {
     removeIgnoredAssets,
     updateBalances: updateBlockchainBalances,
     updatePrices,
+    visibleBalances,
   };
 });
 

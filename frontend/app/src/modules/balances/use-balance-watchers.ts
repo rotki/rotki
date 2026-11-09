@@ -33,10 +33,6 @@ export function useBalanceWatchers(): void {
     if (!isEqual(current[BalanceSource.EXCHANGES], old[BalanceSource.EXCHANGES])) {
       startPromise(fetchConnectedExchangeBalances(false));
     }
-
-    if (!isEqual(current[BalanceSource.BLOCKCHAIN], old[BalanceSource.BLOCKCHAIN])) {
-      startPromise(hydrate());
-    }
   });
 
   watch(ignoredAssets, (curr, prev) => {
