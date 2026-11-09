@@ -19,6 +19,7 @@ export const PROXY_CONFIG = {
  */
 export const CLIENT_CONFIG = {
   DEFAULT_BASE_PORT: 40011, // port + 1 from the default bridge port
+  HANDSHAKE_TIMEOUT: 5000,
   MAX_RETRIES: 5,
   RETRY_DELAY: 500,
 } as const;

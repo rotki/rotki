@@ -243,6 +243,46 @@ describe('modules/wallet/bridge/use-wallet-proxy-client', () => {
       expect(get(client.state)).toEqual({ attempt: 1, phase: BridgeConnectionPhase.retryWaiting });
     });
 
+    it('should fail a handshake that never finishes, close it and retry', async () => {
+      vi.useFakeTimers();
+      const client = useWalletProxyClient();
+      client.connect();
+      const socket = lastSocket();
+
+      await vi.advanceTimersByTimeAsync(CLIENT_CONFIG.HANDSHAKE_TIMEOUT);
+
+      expect(socket.closeCalled).toBe(true);
+      expect(get(client.lastError)).toContain('timed out');
+      expect(get(client.state)).toEqual({ attempt: 1, phase: BridgeConnectionPhase.retryWaiting });
+
+      await vi.advanceTimersByTimeAsync(CLIENT_CONFIG.RETRY_DELAY);
+      expect(FakeWebSocket.instances).toHaveLength(2);
+    });
+
+    it('should not time out a socket that opened in time', async () => {
+      vi.useFakeTimers();
+      const client = useWalletProxyClient();
+      client.connect();
+      lastSocket().open();
+
+      await vi.advanceTimersByTimeAsync(CLIENT_CONFIG.HANDSHAKE_TIMEOUT * 2);
+
+      expect(get(client.isConnected)).toBe(true);
+      expect(lastSocket().closeCalled).toBe(false);
+    });
+
+    it('should not report a timeout for an attempt that closed just before the deadline', async () => {
+      vi.useFakeTimers();
+      const client = useWalletProxyClient();
+      client.connect();
+      await vi.advanceTimersByTimeAsync(CLIENT_CONFIG.HANDSHAKE_TIMEOUT - 1);
+
+      lastSocket().fail();
+      await vi.advanceTimersByTimeAsync(1);
+
+      expect(get(client.lastError)).toContain('connection error');
+    });
+
     it('should ignore callbacks from a socket superseded by a manual connect', async () => {
       vi.useFakeTimers();
       const client = useWalletProxyClient();
