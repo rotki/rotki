@@ -113,9 +113,10 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
    * Brings newly added accounts up to date: tags, balances, modules, then token detection.
    *
    * @remarks
-   * A chain that cannot hold tokens takes its balances from the refresh here; every other chain
-   * only reads accounts at this point and gets its balances from the chain job below, which has to
-   * run after the modules are enabled.
+   * A targeted chain that cannot hold tokens takes its balances from the refresh here; every other
+   * chain only reads accounts at this point and gets its balances from the chain jobs below, which
+   * have to run after the modules are enabled. An addition spanning every EVM chain has no single
+   * chain to refresh here, so its chains without detection get a plain query there instead.
    *
    * That job detects before it queries, and the order is not interchangeable: detection's cache
    * write deletes the address's default-label asset rows, the native coin among them, and only a
@@ -161,22 +162,26 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       }
     }
 
-    const accountsByChain = new Map<string, string[]>();
+    const detectable = new Map<string, string[]>();
+    const queryOnly = new Map<string, string[]>();
     for (const { address, chain: accountChain } of addedAccounts) {
-      if (!supportsTransactions(accountChain))
-        continue;
-
-      const existing = accountsByChain.get(accountChain) ?? [];
-      existing.push(address);
-      accountsByChain.set(accountChain, existing);
+      const group = supportsTransactions(accountChain) ? detectable : queryOnly;
+      group.set(accountChain, [...group.get(accountChain) ?? [], address]);
     }
 
-    await Promise.allSettled(Array.from(accountsByChain, async ([accountChain, chainAddresses]) =>
-      refreshBlockchainBalances(
+    await Promise.allSettled([
+      ...Array.from(detectable, async ([accountChain, chainAddresses]) => refreshBlockchainBalances(
         { blockchain: accountChain },
         'background',
         { detect: true, detectAddresses: chainAddresses },
-      )));
+      )),
+      ...(chain === undefined
+        ? Array.from(queryOnly, async ([accountChain, chainAddresses]) => refreshBlockchainBalances(
+            { addresses: chainAddresses, blockchain: accountChain },
+            'background',
+          ))
+        : []),
+    ]);
   };
 
   /**
