@@ -7,6 +7,8 @@ import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 /** One chain's balance refresh, and whether it detects tokens first. */
 export interface ChainBalancesSubject {
   readonly chain: string;
+  /** Narrows the query to these addresses. Ignored with `detect`, which no caller combines it with. */
+  readonly addresses?: readonly string[];
   readonly detect?: boolean;
   /** Narrows detection to these addresses. Ignored without `detect`. */
   readonly detectAddresses?: readonly string[];
@@ -35,13 +37,20 @@ type ChainBalancesKey = readonly [string] | readonly [string, ActivityPart] | re
  * Share an id and a login sweep joins an in-flight background refresh, or a second addition joins
  * the first, and detection for those addresses silently never happens.
  *
+ * `addresses` is part of it for the same reason. A query for a new address that joins a full refresh
+ * already running gets that refresh's account set, which predates the address, so the address is
+ * never queried.
+ *
  * Those parts are appended after the chain, never substituted: every reader asks by the chain
  * prefix, so the chain has to stay leading.
  */
 export const chainBalancesActivity = defineActivity<ChainBalancesSubject, ChainBalancesKey>({
   key: (subject): ChainBalancesKey => {
-    if (!subject.detect)
-      return [subject.chain];
+    if (!subject.detect) {
+      return subject.addresses?.length
+        ? [subject.chain, ActivityPart.ADDRESSES, setDigest(subject.addresses)]
+        : [subject.chain];
+    }
     return subject.detectAddresses?.length
       ? [subject.chain, ActivityPart.DETECT, setDigest(subject.detectAddresses)]
       : [subject.chain, ActivityPart.DETECT];

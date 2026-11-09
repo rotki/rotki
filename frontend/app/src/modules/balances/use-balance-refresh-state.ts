@@ -49,12 +49,21 @@ export const useBalanceRefreshState = defineStore('balances/refresh-state', () =
   const markNetworkResultApplied = (chain: string): void => {
     appliedNetworkResults.set(chain, networkResultCount(chain) + 1);
   };
+  const refreshCounts = new Map<string, number>();
 
   const start = (chain: string): void => {
+    refreshCounts.set(chain, (refreshCounts.get(chain) ?? 0) + 1);
     addChain(refreshingChains, chain);
   };
 
+  /** A chain stays refreshing until the last of its overlapping queries stops. */
   const stop = (chain: string): void => {
+    const remaining = (refreshCounts.get(chain) ?? 0) - 1;
+    if (remaining > 0) {
+      refreshCounts.set(chain, remaining);
+      return;
+    }
+    refreshCounts.delete(chain);
     removeChain(refreshingChains, chain);
   };
 
@@ -85,6 +94,7 @@ export const useBalanceRefreshState = defineStore('balances/refresh-state', () =
 
   const reset = (): void => {
     appliedNetworkResults.clear();
+    refreshCounts.clear();
     set(refreshingChains, new Set());
     set(hydratingChains, new Set());
     set(firstLoadSettled, false);

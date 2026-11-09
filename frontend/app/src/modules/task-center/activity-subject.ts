@@ -45,11 +45,11 @@ function eventsSubject(activity: Activity): ActivitySubject | undefined {
   return connection === undefined ? undefined : { location: connection.location };
 }
 
-/** A chain's balance job is `[chain]` or `[chain, detect, …]`; the run over several chains is `[run, …]`. */
+/** A chain's balance job is `[chain]`, `[chain, detect, …]` or `[chain, addresses, …]`; the run over several chains is `[run, …]`. */
 function chainBalancesSubject(_activity: Activity, [chain, part]: string[]): ActivitySubject | undefined {
   if (chain === undefined || chain === ActivityPart.RUN)
     return undefined;
-  return part === undefined || part === ActivityPart.DETECT ? { chain } : undefined;
+  return part === undefined || part === ActivityPart.DETECT || part === ActivityPart.ADDRESSES ? { chain } : undefined;
 }
 
 function detectionSubject(activity: Activity, [chain, address]: string[]): ActivitySubject | undefined {

@@ -89,7 +89,7 @@ const samples = new Map<string, readonly unknown[]>([
   ['bankEventsActivity', [{ location: 'bank', name: 'Checking' }]],
   ['blockDecodeActivity', [{ blockNumbers: [19000002, 19000001] }]],
   ['bridgeMatchActivity', [undefined]],
-  ['chainBalancesActivity', [{ chain: 'eth' }, { chain: 'eth', detect: true }, { chain: 'eth', detect: true, detectAddresses: [address] }]],
+  ['chainBalancesActivity', [{ chain: 'eth' }, { addresses: [address], chain: 'eth' }, { chain: 'eth', detect: true }, { chain: 'eth', detect: true, detectAddresses: [address] }]],
   ['chainSyncActivity', [{ chain: 'eth' }]],
   ['conflictResolutionActivity', [undefined]],
   ['csvImportActivity', [{ source: 'cointracking' }]],
