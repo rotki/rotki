@@ -2469,7 +2469,7 @@ Get, add, edit or remove bank connections
           "message": ""
       }
 
-   :resjson list result: One entry per connection. ``identifier`` is the connection's stable identifier, which every other bank endpoint takes and which survives renames. ``location`` is the location its balances and history belong to. ``sync_status.last_sync_ts`` is the time of the last successful history sync in this session, ``last_error`` the message of the last failed one, ``running`` whether one is in progress. ``auth_challenge`` is the authentication the bank is waiting on, or ``null``. ``auth_challenge`` stays until it is answered or dropped with ``DELETE /banks/auth``, since only the bank knows when it lapsed. ``auth_expired`` is ``true`` once the bank rejected the last pending authentication, until the bank raises a fresh challenge, an answer is accepted or a sync succeeds.
+   :resjson list result: One entry per connection. ``identifier`` is the connection's stable identifier, which every other bank endpoint takes and which survives renames. ``location`` is the location its balances and history belong to. ``sync_status.last_sync_ts`` is the time of the last successful history sync in this session, ``last_error`` the message of the last failed one or, when no sync error is set, of the last failed balance query until a balance query succeeds. ``running`` is whether a sync is in progress. ``auth_challenge`` is the authentication the bank is waiting on, or ``null``. ``auth_challenge`` stays until it is answered or dropped with ``DELETE /banks/auth``, since only the bank knows when it lapsed. ``auth_expired`` is ``true`` once the bank rejected the last pending authentication, until the bank raises a fresh challenge, an answer is accepted or a sync succeeds.
    :statuscode 200: Connections returned
    :statuscode 401: No user is logged in
    :statuscode 500: Internal rotki error
@@ -2620,7 +2620,7 @@ Query bank balances
           "message": ""
       }
 
-   :statuscode 200: Balances returned
+   :statuscode 200: Balances returned. A connection that failed to answer is left out of ``connections``, ``message`` says why, and ``GET /banks`` shows it under that connection's ``last_error``.
    :statuscode 401: No user is logged in
    :statuscode 409: No connection exists for the bank, or every connection failed to answer
    :statuscode 500: Internal rotki error

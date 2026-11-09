@@ -209,9 +209,11 @@ class BanksService:
             if isinstance(accounts, RemoteError):
                 error_msg += str(accounts)
                 failure_causes.add(accounts.cause)
+                status.set_balance_error(str(accounts))
                 continue
             # a cached success must not drop a challenge the connector still waits on
             status.drop_challenge(still_pending=bank.has_pending_authentication)
+            status.clear_balance_error()
             balances = sum_account_balances(accounts)
             if value_threshold is not None:
                 balances = {a: b for a, b in balances.items() if b.value > value_threshold}

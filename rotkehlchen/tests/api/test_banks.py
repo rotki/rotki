@@ -404,6 +404,76 @@ def test_failed_balance_query_keeps_why_it_failed(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_failed_balance_query_shows_on_its_connection(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """One failing connection of several still answers 200, so the connection says why"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    balances_url = api_url_for(rotkehlchen_api_server, 'bankbalancesresource')
+    banks_url = api_url_for(rotkehlchen_api_server, 'banksresource')
+
+    def last_errors() -> dict[str, str | None]:
+        return {
+            connection['identifier']: connection['sync_status']['last_error']
+            for connection in assert_proper_sync_response_with_result(requests.get(banks_url))
+        }
+
+    with _patch_bank_http(QontoFixtureTransport()):
+        failing = rotki.bank_manager.get_bank(failing_id := _add_qonto(rotkehlchen_api_server))
+        assert failing is not None
+        healthy_id = assert_proper_sync_response_with_result(requests.put(banks_url, json={
+            'connector': 'qonto',
+            'name': 'Qonto 2',
+            'credentials': {'api_key': 'login', 'api_secret': 'secret'},
+        }))['identifier']
+        unreachable = RemoteError('timed out', cause=FailureCause.NETWORK)
+        with patch.object(failing, 'query_accounts', side_effect=unreachable):
+            response = requests.get(balances_url)
+        assert response.status_code == HTTPStatus.OK
+        assert 'timed out' in response.json()['message']
+        assert [x['identifier'] for x in response.json()['result']['connections']] == [healthy_id]
+        errors = last_errors()
+        assert 'timed out' in (errors[failing_id] or '')
+        assert errors[healthy_id] is None
+
+        # the failure is cached like a success, so only a fresh answer clears it
+        requests.get(balances_url)
+        assert 'timed out' in (last_errors()[failing_id] or '')
+        assert_proper_sync_response_with_result(requests.get(balances_url, json={'ignore_cache': True}))  # noqa: E501
+        assert last_errors()[failing_id] is None
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_balance_query_leaves_a_sync_error_alone(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    url = api_url_for(rotkehlchen_api_server, 'bankbalancesresource')
+    with _patch_bank_http(QontoFixtureTransport()):
+        bank = rotki.bank_manager.get_bank(_add_qonto(rotkehlchen_api_server))
+        assert bank is not None
+        status = rotki.bank_manager.sync_status[bank.connection_identifier]
+        status.set_sync_error('sync failed')
+
+        unreachable = RemoteError('timed out', cause=FailureCause.NETWORK)
+        with patch.object(bank, 'query_accounts', side_effect=unreachable):
+            requests.get(url, json={'ignore_cache': True})
+        assert status.last_error == 'sync failed'
+
+        assert_proper_sync_response_with_result(requests.get(url, json={'ignore_cache': True}))
+        assert status.last_error == 'sync failed'
+
+        # and a sync's outcome replaces a balance query's error
+        status.set_sync_error(None)
+        with patch.object(bank, 'query_accounts', side_effect=unreachable):
+            requests.get(url, json={'ignore_cache': True})
+        assert 'timed out' in (status.last_error or '')
+        status.set_sync_error('sync failed')
+        assert_proper_sync_response_with_result(requests.get(url, json={'ignore_cache': True}))
+        assert status.last_error == 'sync failed'
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_unreachable_bank_at_setup_and_edit_is_network(
         rotkehlchen_api_server: APIServer,
 ) -> None:
