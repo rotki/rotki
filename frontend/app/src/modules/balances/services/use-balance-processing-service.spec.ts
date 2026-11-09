@@ -8,6 +8,8 @@ import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-s
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
+import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
@@ -487,6 +489,23 @@ describe('useBalanceProcessingService', () => {
     await failing;
 
     expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, CHAIN).everCompleted).toBe(false);
+  });
+
+  it('should refresh with the blockchain value threshold, not another source\'s', async () => {
+    useSettingsRepo().updateFrontend({
+      balanceValueThreshold: { [BalanceSource.BLOCKCHAIN]: '100', [BalanceSource.EXCHANGES]: '5' },
+    });
+    mockRefreshBlockchainBalances.mockImplementation(async () => ({ taskId: nextTaskId++ }));
+    const payload = { addresses: undefined, blockchain: Blockchain.ETH, isXpub: false };
+
+    const refresh = useBalanceProcessingService().handleRefresh(runTask, payload);
+    await vi.waitFor(() => {
+      expect(pendingTasks.size).toBe(1);
+    });
+    pendingTasks.get(1)!.resolve(ok(emptyBalances(Blockchain.ETH)));
+    await refresh;
+
+    expect(mockRefreshBlockchainBalances).toHaveBeenCalledExactlyOnceWith(payload, '100');
   });
 
   it('should clear isRefreshing even when the refresh POST fails', async () => {

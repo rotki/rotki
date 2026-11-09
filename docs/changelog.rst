@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Hide small balances now keeps applying to blockchain balances after they are refreshed, instead of showing the hidden balances again.
 * :bug:`-` A slow read of saved blockchain balances that overlaps a balance refresh can no longer replace the refreshed balances with older ones.
 * :bug:`-` The browser wallet bridge page no longer reconnects by itself after you disconnect while it is still connecting, and no longer stays stuck on "Connecting" when the connection never completes. While retrying it now shows which attempt it is on, and it says so when it gives up. Reopening the bridge after it has been idle now keeps the same address, so a tab that is already open can still reach rotki.
 * :feature:`-` Confirmations and errors now appear where you acted instead of in a dialog over the page. Deleting a row, logging out, purging data or resetting a database asks beside the button or inside the menu you used, and a save that fails is named inside its form, which stays open with what you typed. Bulk deletes of history events and leaving a snapshot with unsaved changes still ask in a dialog.

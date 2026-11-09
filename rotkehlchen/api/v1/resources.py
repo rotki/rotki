@@ -61,8 +61,8 @@ from rotkehlchen.api.v1.schemas import (
     BlockchainAccountsGetSchema,
     BlockchainAccountsPatchSchema,
     BlockchainAccountsPutSchema,
-    BlockchainBalanceBaseSchema,
     BlockchainBalanceQuerySchema,
+    BlockchainBalanceRefreshSchema,
     BlockchainTransactionDeletionSchema,
     BlockchainTypeAccountsDeleteSchema,
     ChainTypeAccountSchema,
@@ -1449,7 +1449,7 @@ class SupportedChainsResource(BaseMethodView):
 class BlockchainBalancesResource(BaseMethodView):
 
     get_schema = BlockchainBalanceQuerySchema()
-    post_schema = BlockchainBalanceBaseSchema()
+    post_schema = BlockchainBalanceRefreshSchema()
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
@@ -1476,11 +1476,13 @@ class BlockchainBalancesResource(BaseMethodView):
             blockchain: SupportedBlockchain | None,
             async_query: bool,
             addresses: ListOfBlockchainAddresses | None,
+            value_threshold: FVal | None,
     ) -> Response:
         return self.rest_api.refresh_blockchain_balances(
             blockchain=blockchain,
             async_query=async_query,
             addresses=addresses,
+            value_threshold=value_threshold,
         )
 
 
