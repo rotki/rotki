@@ -1,3 +1,4 @@
+import type { RunTaskOptions } from '@/modules/core/tasks/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { isErr, isOk } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
@@ -65,22 +66,46 @@ describe('useTaskHandler', () => {
     });
 
     /** Runs a task and settles it with `outcome`, a null result with no message unless overridden. */
-    async function settle<R>(outcome: object, options?: { conflictFails?: boolean }): ReturnType<typeof handler.runTask<R>> {
+    async function settle<R>(outcome: object, options?: RunTaskOptions): ReturnType<typeof handler.runTask<R>> {
       const promise = handler.runTask<R>(vi.fn().mockResolvedValue({ taskId: 7 }), 'Test task', options);
       await nextTick();
       handler.handleResult({ message: '', result: null, ...outcome }, 7);
       return promise;
     }
 
-    it('should fail with the backend\'s reason when a false result carries one', async () => {
-      const outcome = await settle<boolean>({ message: 'Upload failed. No premium', result: false });
+    it('should fail with the backend\'s reason and cause when a false result names a cause', async () => {
+      const outcome = await settle<boolean>({ cause: 'forbidden', message: 'Upload failed. No premium', result: false, statusCode: 403 });
 
       assert(isErr(outcome));
       assert(hasTag(outcome.error, 'TaskFailed'));
       expect(outcome.error.message).toBe('Upload failed. No premium');
+      expect(outcome.error.failureCause).toBe('forbidden');
     });
 
-    it('should keep a false result with no message as a result', async () => {
+    it('should fail any non-null result that names a cause', async () => {
+      const outcome = await settle<number>({ cause: 'conflict', message: 'ACB error', result: 12, statusCode: 409 });
+
+      assert(isErr(outcome));
+      assert(hasTag(outcome.error, 'TaskFailed'));
+      expect(outcome.error.message).toBe('ACB error');
+    });
+
+    it('should read a cause this build does not know as unknown', async () => {
+      const outcome = await settle<null>({ cause: 'from_the_future', message: 'nope' });
+
+      assert(isErr(outcome));
+      assert(hasTag(outcome.error, 'TaskFailed'));
+      expect(outcome.error.failureCause).toBe('unknown');
+    });
+
+    it('should report a cancelled cause as a backend cancellation', async () => {
+      const outcome = await settle<null>({ cause: 'cancelled', statusCode: 200 });
+
+      assert(isErr(outcome));
+      expect(hasTag(outcome.error, 'BackendCancelled')).toBe(true);
+    });
+
+    it('should keep a false result with no cause as a result', async () => {
       const outcome = await settle<boolean>({ result: false });
 
       assert(isOk(outcome));
@@ -96,19 +121,25 @@ describe('useTaskHandler', () => {
       expect(zero.value).toBe(0);
     });
 
-    it('should fail on a 409 carrying a message only for a task that opts in', async () => {
-      const report = await settle<number>({ message: 'ACB error', result: 12, statusCode: 409 }, { conflictFails: true });
-
-      assert(isErr(report));
-      assert(hasTag(report.error, 'TaskFailed'));
-      expect(report.error.message).toBe('ACB error');
-    });
-
-    it('should keep a 409 result for a task that does not opt in, as asset updates hand back conflicts', async () => {
-      const update = await settle<string[]>({ message: 'Found conflicts', result: ['conflict'], statusCode: 409 });
+    it('should keep a 409 result for a task that opts in, as asset updates hand back conflicts', async () => {
+      const update = await settle<string[]>(
+        { cause: 'conflict', message: 'Found conflicts', result: ['conflict'], statusCode: 409 },
+        { conflictIsResult: true },
+      );
 
       assert(isOk(update));
       expect(update.value).toEqual(['conflict']);
+    });
+
+    it('should still fail a non-409 failure for a task that opts in to 409 results', async () => {
+      const update = await settle<null>(
+        { cause: 'network', message: 'Could not reach GitHub', statusCode: 502 },
+        { conflictIsResult: true },
+      );
+
+      assert(isErr(update));
+      assert(hasTag(update.error, 'TaskFailed'));
+      expect(update.error.failureCause).toBe('network');
     });
 
     it('should return a Cancelled error when the task start is cancelled', async () => {

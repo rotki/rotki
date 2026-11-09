@@ -1,4 +1,5 @@
 import type { ActionResult } from '@rotki/common';
+import type { CarriesFailureCause } from '@/modules/core/api/failure-cause';
 import { z } from 'zod';
 
 /**
@@ -16,18 +17,21 @@ export interface TaskResultResponse<T> {
   statusCode?: number;
 }
 
-/** A finished task's result and message, with the status code the backend reported beside them. */
-export interface CompletedTaskOutcome<T> extends ActionResult<T> {
+/**
+ * A finished task's result and message, with the status code the backend reported beside them. A
+ * failed task also names its cause.
+ */
+export interface CompletedTaskOutcome<T> extends ActionResult<T>, CarriesFailureCause {
   statusCode?: number;
 }
 
-/** How one backend task reads its outcome, for the few whose failure still carries a result. */
+/** How one backend task reads its outcome, for the one whose failure is really a result. */
 export interface RunTaskOptions {
   /**
-   * A 409 that carries a message is this task's failure, whatever result it holds. Not a default,
-   * because asset updates answer a 409 with the conflicts the user has to resolve.
+   * A 409 hands back a result the caller acts on, instead of failing the task as any cause does.
+   * Asset updates answer one with the conflicts the user has to resolve.
    */
-  readonly conflictFails?: boolean;
+  readonly conflictIsResult?: boolean;
 }
 
 export interface TaskStatus {

@@ -1,3 +1,4 @@
+import type { FailureCause } from '@/modules/core/api/failure-cause';
 import { err, isErr, ok, type Result } from 'plainfp/result';
 import { hasTag, tag } from 'plainfp/tagged';
 
@@ -38,7 +39,7 @@ export type TaskError =
   | ReturnType<typeof Cancelled<{ message: string }>>
   | ReturnType<typeof BackendCancelled<{ message: string }>>
   | ReturnType<typeof Skipped<{ message: string; attention?: boolean }>>
-  | ReturnType<typeof TaskFailed<{ message: string; cause?: unknown }>>;
+  | ReturnType<typeof TaskFailed<{ message: string; cause?: unknown; failureCause?: FailureCause }>>;
 
 /** True when the error is any flavour of cancellation (user or backend). */
 export function isCancellation(error: TaskError): boolean {

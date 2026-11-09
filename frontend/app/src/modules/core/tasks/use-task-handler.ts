@@ -1,5 +1,6 @@
 import { checkIfDevelopment } from '@shared/utils';
 import { err, ok, type Result } from 'plainfp/result';
+import { FailureCause, parseFailureCause } from '@/modules/core/api/failure-cause';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { HTTPStatus } from '@/modules/core/api/types/http';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -23,18 +24,28 @@ interface TaskActionResult<T> extends CompletedTaskOutcome<T> {
 }
 
 /**
- * Whether a finished task failed although it carries a result.
+ * Reads the outcome of a task the backend gave a cause for, which makes it a failure whatever result
+ * it carries.
  *
  * @remarks
- * A failed task usually carries a null result, but a few backend endpoints answer a failure with
- * `false` and the reason, and the PnL report with the id of the report it stopped on and a 409.
- * Read as results, both would reach the caller as successes and the reason would be lost. A 409
- * only counts where the task opts in, since asset updates answer one with conflicts to resolve.
+ * A few endpoints answer a failure with `false` and the reason, and the PnL report with the id of
+ * the report it stopped on. A task opts out with `conflictIsResult` for a 409, since asset updates
+ * answer one with conflicts to resolve.
  */
-function isFailedWithResult({ message, result, statusCode }: TaskActionResult<unknown>, options: RunTaskOptions): boolean {
-  if (!message)
-    return false;
-  return result === false || (options.conflictFails === true && statusCode === HTTPStatus.CONFLICT);
+function readFailedOutcome<R>(
+  { cause, message, result, statusCode }: TaskActionResult<R>,
+  options: RunTaskOptions,
+  describeTask: () => string,
+): Result<R, TaskError> {
+  const failureCause = parseFailureCause(cause);
+
+  if (failureCause === FailureCause.CANCELLED)
+    return err(BackendCancelled({ message: `Backend cancelled ${describeTask()}` }));
+
+  if (options.conflictIsResult === true && statusCode === HTTPStatus.CONFLICT)
+    return ok(result);
+
+  return err(TaskFailed({ failureCause, message }));
 }
 
 function useTaskHandlerInternal(): {
@@ -92,14 +103,15 @@ function useTaskHandlerInternal(): {
 
     return new Promise<Result<R, TaskError>>((resolve) => {
       handlers.set(taskId, (outcome) => {
-        const { error, message, result } = outcome;
+        const { cause, error, message, result } = outcome;
+        const describeTask = (): string => `task_id: ${taskId}, task: ${label}`;
         handlers.delete(taskId);
 
         if (error) {
           resolve(err(TaskFailed({ cause: error, message: error.message ?? '' })));
         }
-        else if (isFailedWithResult(outcome, options)) {
-          resolve(err(TaskFailed({ message })));
+        else if (cause !== undefined) {
+          resolve(readFailedOutcome(outcome, options, describeTask));
         }
         else if (result !== null) {
           resolve(ok(result));
@@ -114,7 +126,7 @@ function useTaskHandlerInternal(): {
           resolve(err(TaskFailed({ message })));
         }
         else {
-          resolve(err(BackendCancelled({ message: `Backend cancelled task_id: ${taskId}, task: ${label}` })));
+          resolve(err(BackendCancelled({ message: `Backend cancelled ${describeTask()}` })));
         }
       });
     });

@@ -1,8 +1,8 @@
 import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IncompleteUpgradeError, SyncConflictError } from '@/modules/auth/login';
-import { ApiKeyMissingError, ApiValidationError, IncompleteQueryError } from '@/modules/core/api/types/errors';
+import { ApiKeyMissingError, ApiRequestError, ApiValidationError, IncompleteQueryError } from '@/modules/core/api/types/errors';
 import { TaskNotFoundError } from '@/modules/core/tasks/types';
 import { useTaskApi } from './use-task-api';
 
@@ -270,6 +270,45 @@ describe('composables/api/task', () => {
       await expect(queryTaskResult(123))
         .rejects
         .toThrow('Backend unavailable');
+    });
+
+    it('should keep the cause on the error a 502 outcome raises', async () => {
+      server.use(
+        http.get(`${backendUrl}/api/1/tasks/123`, () =>
+          HttpResponse.json({
+            result: {
+              outcome: { cause: 'remote_rejected', message: 'Key rejected', result: null },
+              status: 'completed',
+              status_code: 502,
+            },
+            message: '',
+          })),
+      );
+
+      const { queryTaskResult } = useTaskApi();
+      const failure: unknown = await queryTaskResult(123).catch((error: unknown) => error);
+
+      assert(failure instanceof ApiRequestError);
+      expect(failure.failureCause).toBe('remote_rejected');
+      expect(failure.status).toBe(502);
+    });
+
+    it('should hand back the cause of an outcome no status raises for', async () => {
+      server.use(
+        http.get(`${backendUrl}/api/1/tasks/123`, () =>
+          HttpResponse.json({
+            result: {
+              outcome: { cause: 'forbidden', message: 'No premium', result: null },
+              status: 'completed',
+              status_code: 403,
+            },
+            message: '',
+          })),
+      );
+
+      const { queryTaskResult } = useTaskApi();
+
+      expect(await queryTaskResult(123)).toMatchObject({ cause: 'forbidden', statusCode: 403 });
     });
 
     it('should throw IncompleteQueryError on statusCode 503', async () => {

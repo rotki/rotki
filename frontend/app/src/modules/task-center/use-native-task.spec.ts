@@ -28,11 +28,11 @@ describe('useNativeTask', () => {
     await submitTask<number>({
       id: makeActivityId(ActivityKind.PNL_REPORT, 'options'),
       kind: ActivityKind.PNL_REPORT,
-      run: async ({ runTask }) => runTask<number>(async () => ({ taskId: 3 }), { conflictFails: true }),
+      run: async ({ runTask }) => runTask<number>(async () => ({ taskId: 3 }), { conflictIsResult: true }),
       title: 'report',
     });
 
-    expect(handler.runTask).toHaveBeenCalledWith(expect.any(Function), 'report', { conflictFails: true });
+    expect(handler.runTask).toHaveBeenCalledWith(expect.any(Function), 'report', { conflictIsResult: true });
   });
 
   it('should run the spec and resolve ok on success', async () => {

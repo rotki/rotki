@@ -3,9 +3,10 @@ import { isEmpty } from 'es-toolkit/compat';
 import { ofetch } from 'ofetch';
 import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '@/modules/auth/login';
 import { CHAIN_KEYED_SETTINGS, DEFAULT_TIMEOUT, TASKS_TIMEOUT } from '@/modules/core/api/constants';
+import { type CarriesFailureCause, parseFailureCause } from '@/modules/core/api/failure-cause';
 import { api } from '@/modules/core/api/rotki-api';
 import { camelCaseTransformer } from '@/modules/core/api/transformers';
-import { ApiKeyMissingError, ApiValidationError, IncompleteQueryError } from '@/modules/core/api/types/errors';
+import { ApiKeyMissingError, ApiRequestError, ApiValidationError, IncompleteQueryError } from '@/modules/core/api/types/errors';
 import { HTTPStatus } from '@/modules/core/api/types/http';
 import { VALID_TASK_STATUS } from '@/modules/core/api/utils';
 import { type CompletedTaskOutcome, type PendingTask, PendingTaskSchema, TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/modules/core/tasks/types';
@@ -30,8 +31,9 @@ interface UseTaskApiReturn {
  * A 300 with a non-object result is deliberately not an error: the caller then treats the outcome as a
  * normal result, which is the behaviour the nested checks here preserve.
  */
-function raiseForOutcomeStatus<T>(statusCode: number | undefined, outcome: ActionResult<T>): void {
-  const { message, result } = outcome;
+function raiseForOutcomeStatus<T>(statusCode: number | undefined, outcome: ActionResult<T> & CarriesFailureCause): void {
+  const { cause, message, result } = outcome;
+  const options = { failureCause: parseFailureCause(cause), status: statusCode };
 
   if (statusCode === HTTPStatus.MULTIPLE_CHOICES) {
     if (typeof result !== 'object')
@@ -44,16 +46,16 @@ function raiseForOutcomeStatus<T>(statusCode: number | undefined, outcome: Actio
   }
 
   if (statusCode === HTTPStatus.BAD_REQUEST)
-    throw new ApiValidationError(message);
+    throw new ApiValidationError(message, options);
 
   if (statusCode === HTTPStatus.FAILED_DEPENDENCY)
-    throw new ApiKeyMissingError(message);
+    throw new ApiKeyMissingError(message, options);
 
   if (statusCode === HTTPStatus.BAD_GATEWAY)
-    throw new Error(message);
+    throw new ApiRequestError(message, options);
 
   if (statusCode === HTTPStatus.SERVICE_UNAVAILABLE)
-    throw new IncompleteQueryError(message);
+    throw new IncompleteQueryError(message, options);
 }
 
 export function useTaskApi(): UseTaskApiReturn {
