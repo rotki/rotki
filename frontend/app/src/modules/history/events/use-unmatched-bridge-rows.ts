@@ -111,6 +111,7 @@ export function useUnmatchedBridgeRows(options: UseUnmatchedBridgeRowsOptions): 
     if (!thrown)
       return undefined;
     return {
+      cause: thrown,
       message: failureMessage(thrown),
       title: toValue(showRestore)
         ? t('bridge_matching.dialog.load_failed.ignored')

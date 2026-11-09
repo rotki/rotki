@@ -1,5 +1,6 @@
 import type { ScheduledJob } from './scheduler';
 import type { ActivitySpec } from './spec';
+import type { FailureCause } from '@/modules/core/api/failure-cause';
 import { isTerminalStatus } from '../status';
 import { type ActivityStatus, type ActivitySteps, ActivityStatus as Status } from '../types';
 
@@ -20,8 +21,12 @@ export interface ActivityRecord {
    * which outcomes get one.
    */
   reason?: string;
+  /** Why this activity failed, in the backend's terms. See `terminalFailureCause`. */
+  failureCause?: FailureCause;
   /** Whether a skip is held for the user. See `terminalAttention`. */
   attention?: true;
+  /** Whether this run repeats an earlier one, rather than being a first submit. */
+  readonly rerun: boolean;
   /** Set when the user cancelled a running activity; forces the terminal status to CANCELLED. */
   cancelRequested: boolean;
   /** Guards the spec's `cleanup` to fire once per run. */
@@ -31,8 +36,8 @@ export interface ActivityRecord {
 }
 
 /** A record for a run that has not started yet, for a first submit and for a re-run alike. */
-export function pendingRecord(spec: ActivitySpec): ActivityRecord {
-  return { cancelRequested: false, cleanedUp: false, spec, status: Status.PENDING };
+export function pendingRecord(spec: ActivitySpec, rerun = false): ActivityRecord {
+  return { cancelRequested: false, cleanedUp: false, rerun, spec, status: Status.PENDING };
 }
 
 /**

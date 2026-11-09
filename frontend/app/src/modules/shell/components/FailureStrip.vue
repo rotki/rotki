@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isRetryableFailure } from '@/modules/core/api/request-result';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 
 /**
@@ -7,13 +8,13 @@ import { useFailureMessage } from '@/modules/core/api/use-failure-message';
  * @remarks
  * The content stays usable, so this stays quiet: a tinted, bordered line rather than an alert box.
  * Pass `in-table` for a row above a table's own rows, where the table supplies the frame. Retry
- * shows only when the caller binds `@retry`: a failed save leaves it off, since its own button is
- * the retry. `failure` is worded by
- * `useFailureMessage`, so a caller passes the error itself, or a string already worded. The
- * optional `action` slot holds one more thing the user can do about the failure, such as a link to
- * read more, shown beside the message and before retry.
+ * shows only when the caller binds `@retry` and the failure's cause leaves a retry worth offering: a
+ * failed save leaves it off, since its own button is the retry. `failure` is worded by
+ * `useFailureMessage`, so a caller passes the error itself, or a string already worded, which names
+ * no cause. The optional `action` slot holds one more thing the user can do about the failure, such
+ * as a link to read more, shown beside the message and before retry.
  */
-const { inTable = false, onRetry } = defineProps<{
+const { failure, inTable = false, onRetry } = defineProps<{
   title: string;
   failure: unknown;
   inTable?: boolean;
@@ -28,6 +29,8 @@ defineSlots<{
 const { t } = useI18n({ useScope: 'global' });
 
 const failureMessage = useFailureMessage();
+
+const canRetry = computed<boolean>(() => !!onRetry && isRetryableFailure(failure));
 </script>
 
 <template>
@@ -48,11 +51,11 @@ const failureMessage = useFailureMessage();
     </span>
     <slot name="action" />
     <button
-      v-if="onRetry"
+      v-if="canRetry"
       type="button"
       class="shrink-0 underline underline-offset-2 hover:no-underline"
       data-testid="failure-strip-retry"
-      @click="onRetry()"
+      @click="onRetry?.()"
     >
       {{ t('common.actions.retry') }}
     </button>

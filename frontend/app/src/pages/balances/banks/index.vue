@@ -54,9 +54,9 @@ const {
   total,
 } = useBankBalancesPage(selected);
 
-async function load(): Promise<void> {
+async function load(ignoreCache = false): Promise<void> {
   await refreshBankConnections();
-  await fetchBankBalances();
+  await fetchBankBalances(ignoreCache);
 }
 
 async function connect(connector?: string): Promise<void> {
@@ -106,7 +106,8 @@ onBeforeMount(() => {
       >
         <TableFailureDescription
           :message="failureMessage(connectionsError)"
-          @retry="load()"
+          :failure="connectionsError"
+          @retry="load(true)"
         />
       </TableEmptyNotice>
     </div>
@@ -116,7 +117,7 @@ onBeforeMount(() => {
       :title="t('bank_balances.connections_failed')"
       :failure="connectionsError"
       data-testid="bank-connections-error"
-      @retry="load()"
+      @retry="load(true)"
     />
 
     <BankBalancesEmpty

@@ -235,9 +235,10 @@ export interface ActivitySpec<T = unknown> {
   readonly rerunnable?: boolean;
   /**
    * Runs the work. Returns a {@link ResultAsync} so failures are values, not throws — the
-   * producer wraps `runTask` via `fromTaskResult`. `report` pushes optional step progress.
+   * producer wraps `runTask` via `fromTaskResult`. `report` pushes optional step progress, and
+   * `rerun` says this run repeats an earlier one.
    */
-  readonly run: (report: ReportProgress) => ResultAsync<T, TaskError>;
+  readonly run: (report: ReportProgress, rerun: boolean) => ResultAsync<T, TaskError>;
   /** Aborts in-flight work (request/task). Absent ⇒ the activity is not cancellable while
    *  running (queued cancellation still works). */
   readonly cancel?: () => void;

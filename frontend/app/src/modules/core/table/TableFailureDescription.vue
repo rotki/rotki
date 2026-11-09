@@ -1,7 +1,17 @@
 <script setup lang="ts">
-/** The reason a load failed and a retry, for the description slot of an empty state that names the failure. */
-defineProps<{
+import { isRetryableFailure } from '@/modules/core/api/request-result';
+
+/**
+ * The reason a load failed and a retry, for the description slot of an empty state that names the
+ * failure.
+ *
+ * @remarks
+ * `failure` is the failure itself, which decides whether a retry is offered. `message` stays apart
+ * because a caller words it: an empty state's text, or a reason already worded.
+ */
+const { failure, message } = defineProps<{
   message: string;
+  failure: unknown;
 }>();
 
 const emit = defineEmits<{
@@ -20,6 +30,7 @@ const { t } = useI18n({ useScope: 'global' });
       {{ message }}
     </p>
     <RuiButton
+      v-if="isRetryableFailure(failure)"
       variant="outlined"
       color="primary"
       size="sm"

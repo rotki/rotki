@@ -138,6 +138,7 @@ export function useUnmatchedMovementRows(options: UseUnmatchedMovementRowsOption
     if (!thrown)
       return undefined;
     return {
+      cause: thrown,
       message: failureMessage(thrown),
       title: toValue(showRestore)
         ? t('asset_movement_matching.dialog.load_failed.ignored')

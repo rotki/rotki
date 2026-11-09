@@ -52,7 +52,7 @@ vi.mock('@/modules/core/api/rotki-api', () => ({
 async function forceSyncCollectingOutcome(sync: ReturnType<typeof useSync>, logout: () => Promise<void>): Promise<unknown[]> {
   const outcomes: unknown[] = [];
   submitTask.mockImplementationOnce(async (spec) => {
-    const outcome = await spec.run({ cancelled: () => false, report: () => {}, runTask: runTaskResult });
+    const outcome = await spec.run({ cancelled: () => false, report: () => {}, rerun: false, runTask: runTaskResult });
     outcomes.push(outcome);
     return outcome;
   });

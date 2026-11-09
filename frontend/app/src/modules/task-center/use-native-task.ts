@@ -55,6 +55,11 @@ export interface ActivityContext {
   readonly report: ReportProgress;
   readonly runTask: RunBackendTask;
   /**
+   * Whether this run repeats an earlier one. A body reading a backend cache that also holds failures
+   * must bypass it here, or the rerun replays the failure it means to get past.
+   */
+  readonly rerun: boolean;
+  /**
    * True once this activity has been cancelled — **a body with more than one stage must check it
    * between them**.
    *
@@ -322,9 +327,9 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
      * @returns the spec's own promise, not a derived one. It carries the real outcome and the
      * store side effects, so the caller awaits the work itself rather than a status flip.
      */
-    async function run(report: ReportProgress): Promise<Result<T, TaskError>> {
+    async function run(report: ReportProgress, rerun: boolean): Promise<Result<T, TaskError>> {
       backendTaskId = undefined;
-      const outcome = spec.run({ cancelled: () => cancelRequested, report, runTask });
+      const outcome = spec.run({ cancelled: () => cancelRequested, report, rerun, runTask });
       outcome.then(finish, (error: unknown) => finish(err(TaskFailed({ cause: error, message: getErrorMessage(error) }))));
       return outcome;
     }

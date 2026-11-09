@@ -139,7 +139,7 @@ describe('use-unmatched-movement-rows', () => {
     it('should name the unmatched list and the reason it got back', () => {
       const { failure } = useUnmatchedMovementRows({ error: new Error('backend down'), matchDisabled: false, movements: [], showRestore: false });
 
-      expect(get(failure)).toEqual({ message: 'backend down', title: 'asset_movement_matching.dialog.load_failed.unmatched' });
+      expect(get(failure)).toMatchObject({ message: 'backend down', title: 'asset_movement_matching.dialog.load_failed.unmatched' });
     });
 
     it('should name the ignored list on the ignored tab', () => {

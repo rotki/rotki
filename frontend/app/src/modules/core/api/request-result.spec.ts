@@ -1,5 +1,6 @@
 import { FetchError } from 'ofetch';
 import { assert, describe, expect, it } from 'vitest';
+import { FailureCause } from '@/modules/core/api/failure-cause';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { failureCauseOf, fromRequest, isRequestFailure, isRetryableFailure, isUnreachable, RequestCancelled, RequestFailed, toRequestError } from '@/modules/core/api/request-result';
 import { createStatusError } from '@/modules/core/api/response-handlers';
@@ -23,7 +24,7 @@ describe('failureCauseOf', () => {
 
   it('should read a task failure by its own cause, keeping the thrown value beside it', () => {
     const thrown = new Error('boom');
-    const failure = TaskFailed({ cause: thrown, failureCause: 'local_db', message: 'boom' });
+    const failure = TaskFailed({ cause: thrown, failureCause: FailureCause.LOCAL_DB, message: 'boom' });
 
     expect(failureCauseOf(failure)).toBe('local_db');
     expect(failure.cause).toBe(thrown);

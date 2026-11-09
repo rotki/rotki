@@ -1,4 +1,5 @@
 import type { MessageKey } from '@/message-key';
+import type { FailureCause } from '@/modules/core/api/failure-cause';
 import { type Brand, make } from 'plainfp/brand';
 
 /**
@@ -207,6 +208,8 @@ export interface Activity {
   readonly steps?: ActivitySteps;
   /** Why a FAILED or SKIPPED activity ended so, already translated. See {@link terminalReason}. */
   readonly reason?: string;
+  /** Why a FAILED activity failed, in the backend's terms. See {@link offersRetry}. */
+  readonly failureCause?: FailureCause;
   /** Set only on a SKIPPED activity whose skip the user has to know about. See {@link terminalAttention}. */
   readonly attention?: boolean;
   /** Derived 0-100; `-1` for indeterminate kinds. */

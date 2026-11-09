@@ -18,7 +18,7 @@ import {
 } from '../types';
 import { AlreadyTerminal, type ControlError, NotCancellable, NotFound, NotRerunnable } from './errors';
 import { dropCompletions, markStaleAfter, recordCompletion, recordSettlement } from './ledger';
-import { endedIncomplete, liveChildrenOf, runActivity, terminalAttention, terminalReason, terminalStatus } from './lifecycle';
+import { endedIncomplete, liveChildrenOf, runActivity, terminalAttention, terminalFailureCause, terminalReason, terminalStatus } from './lifecycle';
 import { aggregateStatus, childProgress, projectActivity, statusForId } from './projection';
 import { abandonLive, type ActivityRecord, pendingRecord } from './record';
 import { DEFAULT_RULES } from './rules';
@@ -221,9 +221,10 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
       if (records.get(record.spec.id) === record)
         reportProgress(record.spec.id, steps);
     };
-    const outcome = await runActivity(record.spec, report);
+    const outcome = await runActivity(record.spec, report, record.rerun);
 
     const status = terminalStatus(record.cancelRequested, outcome);
+    record.failureCause = terminalFailureCause(status, outcome);
     settleTerminal(record, status, terminalReason(status, outcome), terminalAttention(status, outcome));
   }
 
@@ -333,7 +334,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     if (!record.spec.rerunnable || !isTerminalStatus(record.status))
       return err(NotRerunnable({ id }));
 
-    const fresh = pendingRecord(record.spec);
+    const fresh = pendingRecord(record.spec, true);
     records.set(id, fresh);
     dropDetail(id);
     schedule(fresh);

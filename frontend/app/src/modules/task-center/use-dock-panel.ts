@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { PendingJob } from '@/modules/task-center/use-pending-jobs';
 import { groupTitle, isSafeToStop } from '@/modules/task-center/core/kinds';
-import { isTerminalStatus, needsAttention, type StatusTally, tallyStatuses } from '@/modules/task-center/core/status';
+import { isTerminalStatus, needsAttention, offersRetry, type StatusTally, tallyStatuses } from '@/modules/task-center/core/status';
 import { someInSubtree, subtreeLeaves } from '@/modules/task-center/core/tree';
 import { type Activity, type ActivityId, type ActivityKind, ActivityStatus } from '@/modules/task-center/core/types';
 import { DockState } from '@/modules/task-center/dock-state';
@@ -188,7 +188,7 @@ export function useDockPanel(
   const summary = computed<boolean>(() => get(roots).length > 1);
 
   const retryable = computed<Activity[]>(() => (get(reportsFailure)
-    ? get(leaves).filter(leaf => isFailed(leaf) && leaf.rerunnable)
+    ? get(leaves).filter(leaf => isFailed(leaf) && offersRetry(leaf))
     : []));
 
   /**
@@ -200,7 +200,7 @@ export function useDockPanel(
     if (get(retryable).length < 2)
       return false;
     const groups = new Set(get(roots).flatMap(root => subtreeLeaves(toValue(children), root)
-      .filter(leaf => isFailed(leaf) && leaf.rerunnable)
+      .filter(leaf => isFailed(leaf) && offersRetry(leaf))
       .map(leaf => `${root.id}:${leaf.reason ?? ''}`)));
     return groups.size > 1;
   });

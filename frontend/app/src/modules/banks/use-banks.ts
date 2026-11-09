@@ -124,8 +124,8 @@ export function useBanks(): UseBanksReturn {
     await submitTask({
       ...activity,
       rerunnable: true,
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<BankBalancesResponse>(async () => api.queryBankBalances(ignoreCache, connection)),
+      run: async ({ rerun, runTask }): Promise<Result<void, TaskError>> => mapResult(
+        await runTask<BankBalancesResponse>(async () => api.queryBankBalances(ignoreCache || rerun, connection)),
         (result) => {
           const fresh = BankBalancesResponse.parse(result).connections;
           set(bankBalances, mergeConnectionBalances(get(bankBalances), fresh));

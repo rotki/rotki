@@ -2,6 +2,8 @@ import type { TaskOrchestrator } from './api';
 import { err, isErr, isOk, ok, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { assert, describe, expect, it, vi } from 'vitest';
+import { FailureCause } from '@/modules/core/api/failure-cause';
+import { ApiRequestError } from '@/modules/core/api/types/errors';
 import { BackendCancelled, Cancelled, Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { INDETERMINATE, isTerminalStatus } from '../status';
 import {
@@ -192,6 +194,42 @@ describe('createTaskOrchestrator', () => {
 
     orchestrator.rerun(id);
     expect(byId(orchestrator, id)?.reason).toBeUndefined();
+  });
+
+  it('should record the backend cause of a failure, and clear it when the activity is rerun', async () => {
+    const orchestrator = createTaskOrchestrator();
+    const work = controllable('r6', { rerunnable: true });
+    const id = orchestrator.submit(work.spec);
+
+    work.settle({ error: TaskFailed({ failureCause: FailureCause.AUTH, message: 'key rejected' }), ok: false });
+    await flush();
+    expect(byId(orchestrator, id)?.failureCause).toBe('auth');
+
+    orchestrator.rerun(id);
+    expect(byId(orchestrator, id)?.failureCause).toBeUndefined();
+  });
+
+  it('should read the cause off a thrown value a failure wraps', async () => {
+    const orchestrator = createTaskOrchestrator();
+    const work = controllable('r7');
+    const id = orchestrator.submit(work.spec);
+
+    work.settle({ error: TaskFailed({ cause: new ApiRequestError('down', { failureCause: 'network' }), message: 'down' }), ok: false });
+    await flush();
+
+    expect(byId(orchestrator, id)?.failureCause).toBe('network');
+  });
+
+  it('should tell a run that it repeats an earlier one, and only then', async () => {
+    const orchestrator = createTaskOrchestrator();
+    const run = vi.fn<ActivitySpec['run']>(async () => ({ error: TaskFailed({ message: 'failed' }), ok: false }));
+    const id = orchestrator.submit({ ...controllable('r8', { rerunnable: true }).spec, run });
+    await flush();
+
+    orchestrator.rerun(id);
+    await flush();
+
+    expect(run.mock.calls.map(([, rerun]) => rerun)).toEqual([false, true]);
   });
 
   it('should keep an earlier success when work is later skipped', async () => {

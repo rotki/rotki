@@ -439,6 +439,18 @@ describe('dockActivityRow', () => {
       expect(wrapper.emitted('retry')).toEqual([[failed]]);
     });
 
+    it('should offer no retry on a failure no retry can fix, though the activity can run again', () => {
+      const wrapper = createWrapper({ activity: activity({ failureCause: 'auth', rerunnable: true, status: ActivityStatus.FAILED }) });
+
+      expect(wrapper.find('[data-testid=retry-activity]').exists()).toBe(false);
+    });
+
+    it('should offer retry on a transient failure', () => {
+      const wrapper = createWrapper({ activity: activity({ failureCause: 'network', rerunnable: true, status: ActivityStatus.FAILED }) });
+
+      expect(wrapper.find('[data-testid=retry-activity]').exists()).toBe(true);
+    });
+
     it('should offer no retry on a failed activity that cannot run again', () => {
       const wrapper = createWrapper({ activity: activity({ rerunnable: false, status: ActivityStatus.FAILED }) });
 

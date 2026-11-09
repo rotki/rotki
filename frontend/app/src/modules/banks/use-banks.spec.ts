@@ -99,7 +99,7 @@ describe('useBanks', () => {
     getSupportedBanks.mockResolvedValue([manifest]);
     queryAllBankEvents.mockResolvedValue([ok(undefined)]);
     // the task runner hands the api result straight to the `run` callback
-    submitTask.mockImplementation(async spec => spec.run({ runTask: async (fn: () => Promise<unknown>) => ok(await fn()) }));
+    submitTask.mockImplementation(async spec => spec.run({ rerun: false, runTask: async (fn: () => Promise<unknown>) => ok(await fn()) }));
     queryBankBalances.mockResolvedValue({
       aggregate: eurOnTheWire,
       connections: [{ accounts: [], balances: eurOnTheWire, connector: 'qonto', identifier: 'c1', name: 'Qonto main' }],
@@ -427,6 +427,15 @@ describe('useBanks', () => {
     expect(queryBankBalances).toHaveBeenCalledOnce();
     expect(balances.bankBalances).toEqual([]);
     expect(Object.keys(balances.exchangeBalances)).toEqual(['kraken']);
+  });
+
+  it('should bypass the backend cache on a rerun, which would replay a cached failure', async () => {
+    useBankConnectionsStore().setConnections([connection]);
+    submitTask.mockImplementationOnce(async spec => spec.run({ rerun: true, runTask: async (fn: () => Promise<unknown>) => ok(await fn()) }));
+
+    await useBanks().fetchBankBalances();
+
+    expect(queryBankBalances).toHaveBeenCalledWith(true, undefined);
   });
 
   it('should refresh one connection without dropping the others', async () => {

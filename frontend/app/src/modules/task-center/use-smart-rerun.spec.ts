@@ -2,6 +2,7 @@ import type { ActivityModel } from './core/model';
 import { ok } from 'plainfp/result';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
+import { FailureCause } from '@/modules/core/api/failure-cause';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { EditKind } from './core/rerun/policy';
 import {
@@ -68,6 +69,15 @@ describe('useSmartRerun', () => {
 
     expect(rerun).toHaveBeenCalledWith(hist);
     expect(smart.needsRerun.value).toEqual([]);
+  });
+
+  it('should still offer a rerun of a failure no plain retry can fix, since an edit may have fixed it', () => {
+    const failed: Activity = { ...activity(ActivityKind.HISTORICAL_BALANCES, ActivityStatus.FAILED, true), failureCause: FailureCause.AUTH };
+    modelRef.value = model([failed]);
+
+    taskCenterBus.emit('event:mutated', { kind: EditKind.EVENT_REDECODED });
+
+    expect(smart.needsRerun.value).toEqual([failed]);
   });
 
   it('should collect invalidated activities into needsRerun when autoRerunOnEdit is off', () => {

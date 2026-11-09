@@ -308,6 +308,7 @@ onMounted(async () => {
     >
       <TableFailureDescription
         :message="failureMessage(error)"
+        :failure="error"
         @retry="refreshNotes()"
       />
     </TableEmptyNotice>

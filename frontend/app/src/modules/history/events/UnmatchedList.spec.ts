@@ -10,7 +10,7 @@ import { assetMovementMatchingKind } from '@/modules/history/events/matching/ass
 import { bridgeMatchingKind } from '@/modules/history/events/matching/bridge-matching-kind';
 import UnmatchedList from '@/modules/history/events/UnmatchedList.vue';
 
-const failure: UnmatchedFailure = { message: 'backend down', title: 'could not load' };
+const failure: UnmatchedFailure = { cause: new Error('backend down'), message: 'backend down', title: 'could not load' };
 
 const rowsComposable = vi.hoisted(() => (options: { error?: () => unknown }): Record<string, unknown> => ({
   description: computed<string>(() => 'description'),

@@ -28,6 +28,6 @@ export interface SubmittedSpec {
  * the orchestrator hands each activity a runner bound to it. Use `vi.fn(runSpecWith(runTask))`
  * and keep asserting on `runTask` as before.
  */
-export function runSpecWith(runTask: RunBackendTask): (spec: SubmittedSpec) => Promise<unknown> {
-  return async (spec: SubmittedSpec): Promise<unknown> => spec.run({ cancelled: () => false, report: () => {}, runTask });
+export function runSpecWith(runTask: RunBackendTask, rerun = false): (spec: SubmittedSpec) => Promise<unknown> {
+  return async (spec: SubmittedSpec): Promise<unknown> => spec.run({ cancelled: () => false, report: () => {}, rerun, runTask });
 }

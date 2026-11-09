@@ -136,7 +136,7 @@ describe('useTransactionSync', () => {
       ]);
       vi.setSystemTime(new Date('2026-10-09T12:05:00Z'));
       for (const spec of heldBackAccountRuns)
-        await spec.run({ cancelled: (): boolean => false, report: vi.fn(), runTask: sendThenSkip });
+        await spec.run({ cancelled: (): boolean => false, report: vi.fn(), rerun: false, runTask: sendThenSkip });
 
       const expectedEnd = Date.parse('2026-10-09T12:00:00Z') / 1000 - 15;
       expect(mocks.fetchTransactionsTask).toHaveBeenCalledTimes(3);
@@ -161,7 +161,7 @@ describe('useTransactionSync', () => {
           return accountOutcomes[account++] ?? ok(undefined);
 
         chainBodyRan = true;
-        return spec.run({ cancelled: (): boolean => false, report: vi.fn(), runTask: vi.fn() });
+        return spec.run({ cancelled: (): boolean => false, report: vi.fn(), rerun: false, runTask: vi.fn() });
       });
     }
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Activity } from '@/modules/task-center/core/types';
 import DockActivityRow from '@/modules/task-center/components/DockActivityRow.vue';
+import { offersRetry } from '@/modules/task-center/core/status';
 
 const { activities, now, parent, reason } = defineProps<{
   /** The failed leaves the group stands for, in the order they sorted. */
@@ -17,7 +18,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const retryable = computed<Activity[]>(() => activities.filter(activity => activity.rerunnable));
+const retryable = computed<Activity[]>(() => activities.filter(offersRetry));
 
 function retryAll(): void {
   for (const activity of get(retryable))

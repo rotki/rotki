@@ -177,6 +177,7 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
         >
           <TableFailureDescription
             :message="failureMessage(connectionsError)"
+            :failure="connectionsError"
             @retry="refreshBankConnections()"
           />
         </template>
