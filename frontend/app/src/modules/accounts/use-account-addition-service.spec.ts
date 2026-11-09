@@ -17,7 +17,7 @@ const h = vi.hoisted(() => ({
   fetchTags: vi.fn(),
   getAddresses: vi.fn((): string[] => []),
   refreshBlockchainBalances: vi.fn(),
-  supportsTransactions: vi.fn((): boolean => true),
+  supportsTransactions: vi.fn((_chain?: string): boolean => true),
   trackAddedAddresses: vi.fn(),
 }));
 
@@ -313,6 +313,47 @@ describe('useAccountAdditionService', () => {
         'background',
         { detect: true, detectAddresses: ['0xabc'] },
       );
+    });
+
+    it('should query the chains without detection when an addition spans several chains', async () => {
+      h.supportsTransactions.mockImplementation((chain?: string): boolean => chain !== Blockchain.AVAX);
+      const onRefreshAccounts = vi.fn<() => Promise<void>>(async () => {});
+      const onFetchAccounts = vi.fn<() => Promise<void>>(async () => {});
+      const { useAccountAdditionService } = await importModule();
+      await useAccountAdditionService().completeAccountAddition(
+        {
+          addedAccounts: [
+            { address: '0xabc', chain: Blockchain.ETH },
+            { address: '0xabc', chain: Blockchain.AVAX },
+          ],
+        },
+        onRefreshAccounts,
+        onFetchAccounts,
+      );
+      expect(h.refreshBlockchainBalances).toHaveBeenCalledTimes(2);
+      expect(h.refreshBlockchainBalances).toHaveBeenCalledWith(
+        { blockchain: Blockchain.ETH },
+        'background',
+        { detect: true, detectAddresses: ['0xabc'] },
+      );
+      expect(h.refreshBlockchainBalances).toHaveBeenCalledWith(
+        { addresses: ['0xabc'], blockchain: Blockchain.AVAX },
+        'background',
+      );
+    });
+
+    it('should not query a chain without detection twice when the addition targeted it', async () => {
+      h.supportsTransactions.mockReturnValue(false);
+      const onRefreshAccounts = vi.fn<() => Promise<void>>(async () => {});
+      const onFetchAccounts = vi.fn<() => Promise<void>>(async () => {});
+      const { useAccountAdditionService } = await importModule();
+      await useAccountAdditionService().completeAccountAddition(
+        { addedAccounts: [{ address: 'bc1q', chain: Blockchain.BTC }], chain: Blockchain.BTC },
+        onRefreshAccounts,
+        onFetchAccounts,
+      );
+      expect(onRefreshAccounts).toHaveBeenCalledOnce();
+      expect(h.refreshBlockchainBalances).not.toHaveBeenCalled();
     });
 
     it('should narrow detection to the added addresses, per chain', async () => {

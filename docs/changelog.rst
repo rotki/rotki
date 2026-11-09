@@ -4,6 +4,7 @@ Changelog
 
 * :bug:`-` Hide small balances now keeps applying to blockchain balances after they are refreshed, instead of showing the hidden balances again.
 * :bug:`-` A slow read of saved blockchain balances that overlaps a balance refresh can no longer replace the refreshed balances with older ones.
+* :bug:`-` Adding an EVM address to every EVM chain now also queries its balance on chains without token detection, such as Avalanche, instead of leaving it empty until the next refresh.
 * :bug:`-` An address added on a chain without token detection, such as Bitcoin, while that chain was refreshing now gets its balance queried, instead of staying without one until the next refresh.
 * :bug:`-` The browser wallet bridge page no longer reconnects by itself after you disconnect while it is still connecting, and no longer stays stuck on "Connecting" when the connection never completes. While retrying it now shows which attempt it is on, and it says so when it gives up. Reopening the bridge after it has been idle now keeps the same address, so a tab that is already open can still reach rotki.
 * :bug:`-` Retry is now only offered when trying again can help, so a rejected key or an action that needs premium no longer shows one. Retrying a failed exchange or bank balance query now asks the service again instead of repeating the saved failure, and a failure that keeps repeating takes one row in the notification drawer.
