@@ -1,6 +1,7 @@
 import { backoff } from '@shared/utils';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
-import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { useFailureMessage } from '@/modules/core/api/use-failure-message';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { sessionWorkSignal } from '@/modules/core/session/session-lifecycle';
 import { useSessionApi } from '@/modules/session/api/use-session-api';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
@@ -21,6 +22,7 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
   const { notifyFailure } = useNotifications();
   const { fetchPeriodicData } = useSessionApi();
   const { resync } = useBackgroundTasks();
+  const failureMessage = useFailureMessage();
 
   const check = async (): Promise<void> => {
     if (get(periodicRunning))
@@ -63,7 +65,7 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
       notifyFailure(
         t('actions.session.periodic_query.error.title'),
         t('actions.session.periodic_query.error.message', {
-          message: getErrorMessage(error),
+          message: failureMessage(error),
         }),
       );
     }
