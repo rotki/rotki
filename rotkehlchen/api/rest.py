@@ -9,7 +9,7 @@ import threading
 import time
 import traceback
 from collections import defaultdict
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
@@ -246,7 +246,7 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Mapping, Sequence
+    from collections.abc import Callable, Generator, Mapping, Sequence
 
     from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.assets.nft_handling import NftHandling
@@ -521,7 +521,7 @@ class RestAPI:
         self.rotkehlchen.rotki_notifier.disconnect_deauthorized(is_authorized)
 
     @contextmanager
-    def session_usage(self) -> Iterator[bool]:
+    def session_usage(self) -> Generator[bool]:
         """Register the calling request as using the logged-in session for its
         duration, so that a concurrent logout waits for it before tearing the DB
         down. Yields False when there is no usable session -- either no user is
@@ -650,24 +650,32 @@ class RestAPI:
         a remote query) is abandoned and dies at its next checkpoint, with its
         death logged without alerting the user since its token shows the
         cancellation was deliberate."""
-        with self.task_lock:
-            # From here on newly spawned tasks are cancelled at spawn (see
-            # _query_async), so a task slipping in during the grace period below
-            # cannot escape cancellation. Reset by user_logout and session takeover
-            # once their teardown is done; deliberately never reset on shutdown.
-            self.api_tasks_stop_reason = reason
-            pending = [x for x in self.rotkehlchen.api_tasks if x.dead is False]
-        if len(pending) != 0:
-            for task in pending:
-                task.request_cancellation(reason)
-            wait(pending, timeout=DEFAULT_CANCEL_GRACE_SECONDS)
-            if len(survivors := [x.task_id for x in pending if x.dead is False]) != 0:
-                log.warning(
-                    'Abandoning cancelled api tasks that did not exit within the grace period',
-                    task_ids=survivors,
-                )
-        with self.task_lock:
-            self.rotkehlchen.api_tasks.clear()
+        # A premium download replaces the open user DB. Let that critical section and its
+        # failure cleanup finish before cancellation can reach a database checkpoint. The
+        # manager does not exist yet on API servers without an initialized user session.
+        premium_sync_manager = getattr(self.rotkehlchen, 'premium_sync_manager', None)
+        with (
+            nullcontext() if premium_sync_manager is None
+            else premium_sync_manager.database_restore_lock
+        ):
+            with self.task_lock:
+                # From here on newly spawned tasks are cancelled at spawn (see
+                # _query_async), so a task slipping in during the grace period below
+                # cannot escape cancellation. Reset by user_logout and session takeover
+                # once their teardown is done; deliberately never reset on shutdown.
+                self.api_tasks_stop_reason = reason
+                pending = [x for x in self.rotkehlchen.api_tasks if x.dead is False]
+            if len(pending) != 0:
+                for task in pending:
+                    task.request_cancellation(reason)
+                wait(pending, timeout=DEFAULT_CANCEL_GRACE_SECONDS)
+                if len(survivors := [x.task_id for x in pending if x.dead is False]) != 0:
+                    log.warning(
+                        'Abandoning cancelled api tasks that did not exit within the grace period',
+                        task_ids=survivors,
+                    )
+            with self.task_lock:
+                self.rotkehlchen.api_tasks.clear()
 
     # - Public functions not exposed via the rest api
     def stop(self) -> None:

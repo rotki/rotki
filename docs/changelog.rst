@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Transactions involving a token whose contract fails every details query, such as some spam tokens, are now decoded again instead of staying undecoded forever.
+* :bug:`13418` Logging out now waits for a running premium database restore to finish instead of risking interruption while the local database is being replaced.
 * :bug:`-` Uniswap on-chain prices for tokens that need a route through three pools are no longer wrong when the middle pool lists its tokens in the opposite order.
 * :bug:`-` The accounting rule status of history events is now updated right after the rules change. Before, an event could keep showing a missing rule after adding a rule without a counterparty that applies to it, or after resetting the rules, solving rule conflicts or receiving rule updates from the data repo, until rotki was restarted.
 * :bug:`-` A failed accounting rules import no longer leaves rules that were processed before the error partially imported.

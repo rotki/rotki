@@ -6,6 +6,7 @@ import { api } from '@/modules/core/api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSchedulerState } from '@/modules/session/use-scheduler-state';
+import { useSync } from '@/modules/session/use-session-sync';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
 import { disconnectWalletIfActive } from '@/modules/wallet/use-wallet-store';
@@ -30,6 +31,8 @@ interface UseLogoutReturn {
   logoutRemoteSession: () => Promise<ActionStatus>;
 }
 
+let activeLogout: Promise<void> | undefined;
+
 export function useLogout(): UseLogoutReturn {
   const { navigateToUserLogin } = useAppNavigation();
   const { logged, username } = storeToRefs(useSessionAuthStore());
@@ -37,8 +40,10 @@ export function useLogout(): UseLogoutReturn {
   const { notifyUserLogout, resetMcpSession, resetTray } = useInterop();
   const { loggedUsers: getLoggedUsers, logout: callLogout } = useUsersApi();
   const { reset: resetSchedulerState } = useSchedulerState();
+  const { waitForDownload } = useSync();
 
-  const logout = async (navigate: boolean = true, options: LogoutOptions = {}): Promise<void> => {
+  const performLogout = async (navigate: boolean, options: LogoutOptions): Promise<void> => {
+    await waitForDownload();
     // Cancel all pending API requests first to prevent race conditions
     api.cancelAllQueued();
     api.cancel();
@@ -76,6 +81,18 @@ export function useLogout(): UseLogoutReturn {
 
     if (navigate)
       await navigateToUserLogin();
+  };
+
+  const logout = async (navigate: boolean = true, options: LogoutOptions = {}): Promise<void> => {
+    if (activeLogout)
+      return activeLogout;
+
+    const logoutPromise = performLogout(navigate, options).finally(() => {
+      if (activeLogout === logoutPromise)
+        activeLogout = undefined;
+    });
+    activeLogout = logoutPromise;
+    return logoutPromise;
   };
 
   const logoutRemoteSession = async (): Promise<ActionStatus> => {
