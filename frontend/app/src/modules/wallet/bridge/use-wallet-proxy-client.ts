@@ -13,32 +13,62 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useBridgeMessageHandlers } from '@/modules/wallet/bridge/use-bridge-message-handlers';
 import { CLIENT_CONFIG } from './bridge-config';
 
+/**
+ * Lifecycle of the bridge page's socket to the Electron app.
+ *
+ * @remarks
+ * `retriesExhausted`, `takenOver` and `disconnected` are resting phases: nothing leaves them except
+ * an explicit `connect()`. `takenOver` means another bridge page replaced this one, so reconnecting
+ * on our own would steal the connection back.
+ */
+export const BridgeConnectionPhase = {
+  disconnected: 'disconnected',
+  connecting: 'connecting',
+  connected: 'connected',
+  retryWaiting: 'retry-waiting',
+  retriesExhausted: 'retries-exhausted',
+  takenOver: 'taken-over',
+} as const;
+
+/** `attempt` is zero-based and counts consecutive failures since the last successful open. */
+type BridgeConnectionState =
+  | { phase: typeof BridgeConnectionPhase.disconnected }
+  | { phase: typeof BridgeConnectionPhase.connecting; attempt: number }
+  | { phase: typeof BridgeConnectionPhase.connected }
+  | { phase: typeof BridgeConnectionPhase.retryWaiting; attempt: number }
+  | { phase: typeof BridgeConnectionPhase.retriesExhausted }
+  | { phase: typeof BridgeConnectionPhase.takenOver };
+
 interface WalletProxyClientComposable {
   cleanup: () => void;
-  connect: () => Promise<void>;
+  connect: () => void;
   disconnect: () => void;
   isConnected: Readonly<Ref<boolean>>;
   isConnecting: Readonly<Ref<boolean>>;
   lastError: Readonly<Ref<string | undefined>>;
   onTakeOver: (callback: () => void) => void;
+  state: Readonly<Ref<BridgeConnectionState>>;
 }
 
 export function useWalletProxyClient(): WalletProxyClientComposable {
-  const ws = ref<WebSocket>();
-  const isConnected = shallowRef<boolean>(false);
-  const isConnecting = shallowRef<boolean>(false);
-  const intentionalDisconnect = shallowRef<boolean>(false);
+  const state = shallowRef<BridgeConnectionState>({ phase: BridgeConnectionPhase.disconnected });
   const lastError = ref<string>();
-  const preventReconnect = shallowRef<boolean>(false);
   const onTakeOverCallback = ref<() => void>();
+
+  /** The socket of the current generation, assigned at creation so a handshake can be cancelled. */
+  let socket: WebSocket | undefined;
+  /** Bumped whenever a socket is superseded; callbacks from an older generation are ignored. */
+  let generation = 0;
   let retryTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  const isConnected = computed<boolean>(() => get(state).phase === BridgeConnectionPhase.connected);
+  const isConnecting = computed<boolean>(() => get(state).phase === BridgeConnectionPhase.connecting);
 
   const { handleRequest } = useBridgeMessageHandlers(sendMessage);
 
   const sendResponse = (response: WalletBridgeResponse): void => {
-    const wsInstance = get(ws);
-    if (wsInstance?.readyState === WebSocket.OPEN) {
-      wsInstance.send(JSON.stringify(response));
+    if (socket?.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify(response));
     }
     else {
       logger.error('Cannot send response: WebSocket not connected');
@@ -57,7 +87,8 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
     }
     else if (notification.type === BRIDGE_NOTIFICATION_TYPES.RECONNECTED) {
       logger.info('Received reconnected notification, preventing automatic reconnection');
-      set(preventReconnect, true);
+      cancelRetry();
+      set(state, { phase: BridgeConnectionPhase.takenOver });
       if (isDefined(onTakeOverCallback)) {
         get(onTakeOverCallback)();
       }
@@ -95,7 +126,6 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
     }
     catch (error) {
       logger.error('Failed to handle WebSocket message:', error);
-      // Optionally send error response if we can extract ID
       if (!(typeof rawMessage === 'object' && rawMessage && 'id' in rawMessage)) {
         return;
       }
@@ -122,65 +152,91 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
     return `ws://localhost:${CLIENT_CONFIG.DEFAULT_BASE_PORT}/wallet-bridge`;
   };
 
-  const cancelRetry = (): void => {
+  function cancelRetry(): void {
     clearTimeout(retryTimeout);
     retryTimeout = undefined;
-  };
+  }
 
-  const scheduleRetry = (retryCount: number): void => {
-    if (retryCount < CLIENT_CONFIG.MAX_RETRIES && !get(preventReconnect)) {
-      retryTimeout = setTimeout(() => {
-        retryTimeout = undefined;
-        connect(retryCount + 1).catch((error) => {
-          logger.error('Failed to reconnect:', error);
-        });
-      }, CLIENT_CONFIG.RETRY_DELAY);
-    }
-  };
+  /** Abandons the current socket, if any, so none of its late callbacks can change state. */
+  function supersedeSocket(): void {
+    generation++;
+    const previous = socket;
+    socket = undefined;
+    previous?.close();
+  }
 
-  // A pending retry would otherwise outlive its owner and reopen the socket after teardown.
-  onScopeDispose(cancelRetry, true);
-
-  const disconnect = (): void => {
+  /**
+   * Moves on from failed attempt `attempt`: either waits and opens the next one, or gives up.
+   *
+   * @remarks
+   * Any timer already pending is cleared first, so two failure reports for one attempt can never
+   * leave two retries running.
+   */
+  function scheduleRetry(attempt: number): void {
     cancelRetry();
-    if (!ws.value) {
-      return;
-    }
-    set(intentionalDisconnect, true);
-    ws.value.close();
-    set(ws, undefined);
-    set(isConnected, false);
-  };
-
-  async function connect(retryCount = 0): Promise<void> {
-    if (ws.value?.readyState === WebSocket.OPEN) {
-      return;
-    }
-
-    if (retryCount >= CLIENT_CONFIG.MAX_RETRIES) {
+    const nextAttempt = attempt + 1;
+    if (nextAttempt >= CLIENT_CONFIG.MAX_RETRIES) {
       logger.error('Max WebSocket connection attempts reached');
-      set(isConnecting, false);
+      set(state, { phase: BridgeConnectionPhase.retriesExhausted });
       return;
     }
+    set(state, { attempt: nextAttempt, phase: BridgeConnectionPhase.retryWaiting });
+    retryTimeout = setTimeout(() => {
+      retryTimeout = undefined;
+      openSocket(nextAttempt);
+    }, CLIENT_CONFIG.RETRY_DELAY);
+  }
 
-    // Set connecting state when starting connection attempt
-    set(isConnecting, true);
+  /** A connection that dropped after opening starts a fresh retry budget. */
+  function failedAttempt(current: BridgeConnectionState): number {
+    return current.phase === BridgeConnectionPhase.connecting ? current.attempt : 0;
+  }
+
+  function handleClose(): void {
+    socket = undefined;
+    const current = get(state);
+    logger.info('WebSocket disconnected');
+    if (current.phase === BridgeConnectionPhase.takenOver)
+      return;
+    scheduleRetry(failedAttempt(current));
+  }
+
+  /**
+   * Records an error without acting on it.
+   *
+   * @remarks
+   * A WebSocket always fires `close` after `error`, so retrying is left to the close handler.
+   */
+  function handleError(attempt: number, error: unknown): void {
+    const errorMessage = `WebSocket connection error (attempt ${attempt + 1}/${CLIENT_CONFIG.MAX_RETRIES})`;
+    logger.error(errorMessage, error);
+    set(lastError, errorMessage);
+  }
+
+  function openSocket(attempt: number): void {
+    supersedeSocket();
+    cancelRetry();
+    const socketGeneration = generation;
+    const isCurrent = (): boolean => socketGeneration === generation;
+    set(state, { attempt, phase: BridgeConnectionPhase.connecting });
 
     try {
       const wsUrl = getWebSocketUrl();
       logger.info(`Attempting to connect to WebSocket: ${wsUrl}`);
-
       const websocket = new WebSocket(wsUrl);
+      socket = websocket;
 
       websocket.onopen = (): void => {
-        set(ws, websocket);
-        set(isConnected, true);
-        set(isConnecting, false);
+        if (!isCurrent())
+          return;
+        set(state, { phase: BridgeConnectionPhase.connected });
         set(lastError, undefined);
         logger.info('WebSocket connected to rotki app');
       };
 
       websocket.onmessage = (event): void => {
+        if (!isCurrent())
+          return;
         try {
           const rawMessage: unknown = JSON.parse(event.data);
           handleMessage(rawMessage);
@@ -191,47 +247,45 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
       };
 
       websocket.onclose = (): void => {
-        logger.info('WebSocket disconnected');
-        set(ws, undefined);
-        set(isConnected, false);
-
-        if (!get(intentionalDisconnect) && !get(preventReconnect)) {
-          scheduleRetry(retryCount);
-        }
-        else {
-          set(intentionalDisconnect, false);
-          set(isConnecting, false);
-        }
+        if (isCurrent())
+          handleClose();
       };
 
       websocket.onerror = (error): void => {
-        const errorMessage = `WebSocket connection error (attempt ${retryCount + 1}/${CLIENT_CONFIG.MAX_RETRIES})`;
-        logger.error(errorMessage, error);
-        set(lastError, errorMessage);
-        set(ws, undefined);
-        set(isConnected, false);
-
-        // Attempt to reconnect after delay if not prevented
-        if (!get(preventReconnect)) {
-          scheduleRetry(retryCount);
-        }
-        else {
-          set(isConnecting, false);
-        }
+        if (isCurrent())
+          handleError(attempt, error);
       };
     }
     catch (error) {
       const errorMessage = `Failed to create WebSocket connection: ${String(error)}`;
       logger.error(errorMessage);
       set(lastError, errorMessage);
-      if (!get(preventReconnect)) {
-        scheduleRetry(retryCount);
-      }
-      else {
-        set(isConnecting, false);
-      }
+      scheduleRetry(attempt);
     }
   }
+
+  /**
+   * Opens the bridge socket, or does nothing while one is already open or opening.
+   *
+   * @remarks
+   * Called from a resting phase or during a retry wait, it starts a fresh retry budget immediately.
+   */
+  function connect(): void {
+    const { phase } = get(state);
+    if (phase === BridgeConnectionPhase.connecting || phase === BridgeConnectionPhase.connected)
+      return;
+    openSocket(0);
+  }
+
+  /** Closes the socket, including one still handshaking, and cancels any pending retry. */
+  function disconnect(): void {
+    cancelRetry();
+    supersedeSocket();
+    set(state, { phase: BridgeConnectionPhase.disconnected });
+  }
+
+  // A pending retry or open socket would otherwise outlive its owner.
+  onScopeDispose(disconnect, true);
 
   /**
    * Sends one message over the bridge socket as JSON.
@@ -240,10 +294,9 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
    * The message is dropped without error while the socket is not open, so a return from here is
    * not evidence that anything was delivered.
    */
-  function sendMessage(message: any): void {
-    const wsInstance = get(ws);
-    if (wsInstance?.readyState === WebSocket.OPEN) {
-      wsInstance.send(JSON.stringify(message));
+  function sendMessage(message: unknown): void {
+    if (socket?.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify(message));
     }
   }
 
@@ -260,9 +313,10 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
     cleanup,
     connect,
     disconnect,
-    isConnected: readonly(isConnected),
-    isConnecting: readonly(isConnecting),
+    isConnected,
+    isConnecting,
     lastError: readonly(lastError),
     onTakeOver,
+    state: readonly(state),
   };
 }

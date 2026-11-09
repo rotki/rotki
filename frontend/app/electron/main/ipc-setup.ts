@@ -73,16 +73,6 @@ export class IpcManager {
     this.walletImportHandlers = new WalletImportHandlers(logger);
     this.walletBridgeIpcHandlers = new WalletBridgeIpcHandlers(logger, this.walletBridgeWebSocketServer);
     this.oauthHandlers = new OAuthHandlers(logger);
-
-    // Set up bridge disconnection callback
-    this.walletBridgeWebSocketServer.setOnBridgeDisconnected(() => {
-      this.handleBridgeDisconnected();
-    });
-
-    // Set up bridge reconnection callback
-    this.walletBridgeWebSocketServer.setOnBridgeReconnected(() => {
-      this.handleBridgeReconnected();
-    });
   }
 
   /**
@@ -236,16 +226,4 @@ export class IpcManager {
     // Cleanup wallet import handlers (they manage their own servers)
     this.walletImportHandlers.cleanup();
   }
-
-  /** Tells the renderer the wallet bridge has dropped, so it can show the disconnected state. */
-  private readonly handleBridgeDisconnected = (): void => {
-    this.logger.info('Bridge disconnected, sending notification to main window');
-    this.requireCallbacks.sendIpcMessage(IpcCommands.WALLET_BRIDGE_CONNECTION_STATUS, 'disconnected');
-  };
-
-  /** Tells the renderer the wallet bridge is back, so it can clear the disconnected state. */
-  private readonly handleBridgeReconnected = (): void => {
-    this.logger.info('Bridge reconnected, sending notification to main window');
-    this.requireCallbacks.sendIpcMessage(IpcCommands.WALLET_BRIDGE_CONNECTION_STATUS, 'reconnected');
-  };
 }
