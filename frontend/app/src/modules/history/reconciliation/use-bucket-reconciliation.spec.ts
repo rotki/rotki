@@ -223,6 +223,80 @@ describe('useBucketReconciliation', () => {
     expect(store.accountState(key)?.buckets.map(item => item.asset)).toStrictEqual(['NEW', 'CURRENT', 'LAST']);
   });
 
+  it('should keep loaded pages visible during refresh and paginate from the refreshed rows', async () => {
+    const eth = account();
+    const store = useBucketReconciliationStore();
+    const key = reconciliationAccountKey('ethereum', '0xA');
+    const original = Array.from({ length: 150 }, (_, index) => bucket(`OLD-${index}`));
+    store.setSummary(response({ accounts: [eth] }));
+    const { ensureAccount, loadMore, reloadAccounts } = useBucketReconciliation();
+    for (let offset = 0; offset < 150; offset += 50) {
+      fetchAccount.mockResolvedValueOnce(account({
+        buckets: original.slice(offset, offset + 50),
+        pagination: { limit: 50, offset, total: 200 },
+      }));
+      if (offset === 0)
+        await ensureAccount(eth);
+      else
+        await loadMore(eth);
+    }
+
+    const refresh = deferred<ReconciliationAccount | undefined>();
+    fetchAccount.mockReturnValueOnce(refresh.promise);
+    const refreshing = reloadAccounts();
+
+    expect(store.accountState(key)?.buckets).toEqual(original);
+    expect(store.accountState(key)?.loading).toBe(true);
+    expect(fetchAccount).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 150, offset: 0 }));
+
+    const updated = Array.from({ length: 150 }, (_, index) => bucket(`NEW-${index}`));
+    refresh.resolve(account({
+      buckets: updated,
+      pagination: { limit: 150, offset: 0, total: 151 },
+    }));
+    await refreshing;
+    expect(store.accountState(key)?.buckets).toEqual(updated);
+    expect(store.accountState(key)?.loading).toBe(false);
+
+    fetchAccount.mockResolvedValueOnce(account({
+      buckets: [bucket('LAST')],
+      pagination: { limit: 50, offset: 150, total: 151 },
+    }));
+    await loadMore(eth);
+    expect(fetchAccount).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 50, offset: 150 }));
+    expect(store.accountState(key)?.buckets).toEqual([...updated, bucket('LAST')]);
+  });
+
+  it('should discard previously loaded rows when refreshing with a different filter', async () => {
+    const eth = account();
+    const store = useBucketReconciliationStore();
+    const key = reconciliationAccountKey('ethereum', '0xA');
+    store.setSummary(response({ accounts: [eth] }));
+    fetchAccount.mockResolvedValueOnce(account({
+      buckets: [bucket('OLD')],
+      pagination: { limit: 50, offset: 0, total: 1 },
+    }));
+    const { ensureAccount, reloadAccounts } = useBucketReconciliation();
+    await ensureAccount(eth);
+    const refresh = deferred<ReconciliationAccount | undefined>();
+    fetchAccount.mockReturnValueOnce(refresh.promise);
+    const refreshing = reloadAccounts(['mismatch', 'blocked']);
+
+    expect(store.accountState(key)?.buckets).toEqual([]);
+    expect(store.accountState(key)?.loaded).toBe(false);
+    expect(fetchAccount).toHaveBeenLastCalledWith(expect.objectContaining({
+      limit: 50,
+      offset: 0,
+      status: ['mismatch', 'blocked'],
+    }));
+    refresh.resolve(account({
+      buckets: [bucket('NEW')],
+      pagination: { limit: 50, offset: 0, total: 1 },
+    }));
+    await refreshing;
+    expect(store.accountState(key)?.buckets).toEqual([bucket('NEW')]);
+  });
+
   it('should append the next page without duplicating a row that moved between reads', async () => {
     const paged = account({
       buckets: [bucket('A'), bucket('B')],

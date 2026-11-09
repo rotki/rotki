@@ -103,15 +103,24 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
     return current.loaded || current.loading;
   }
 
+  function accountRequestLimit(
+    current: AccountDetailState | undefined,
+    statusKey: string,
+    options: { append?: boolean; force?: boolean },
+  ): number {
+    if (!options.force || options.append || current?.statusKey !== statusKey)
+      return ACCOUNT_PAGE_SIZE;
+    return Math.min(MAX_ACCOUNT_BUCKETS, Math.max(ACCOUNT_PAGE_SIZE, current.buckets.length));
+  }
+
   function initialAccountState(
     current: AccountDetailState | undefined,
-    options: { append?: boolean },
     statusKey: string,
   ): AccountDetailState {
     return {
-      buckets: options.append ? current?.buckets ?? [] : [],
+      buckets: current?.statusKey === statusKey ? current.buckets : [],
       error: undefined,
-      loaded: false,
+      loaded: current?.statusKey === statusKey && current.loaded,
       loading: true,
       pagination: current?.pagination ?? { limit: 0, offset: 0, total: 0 },
       statusKey,
@@ -170,12 +179,12 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
 
     const request = nextAccountRequest(key);
     const offset = options.offset ?? 0;
-    const base = initialAccountState(current, options, statusKey);
+    const base = initialAccountState(current, statusKey);
     store.setAccountState(key, base);
 
     try {
       const response = await api.fetchAccount({
-        limit: ACCOUNT_PAGE_SIZE,
+        limit: accountRequestLimit(current, statusKey, options),
         location: account.location,
         locationLabel: account.locationLabel ?? '',
         offset,
