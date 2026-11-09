@@ -2,9 +2,12 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import patch
 
+import pytest
+
 from rotkehlchen.chain.ethereum.modules.lido_csm.constants import LidoCsmOperatorType
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmMetricsFetcher
 from rotkehlchen.constants import ZERO
+from rotkehlchen.errors.misc import IPFSRemoteError, RemoteError
 from rotkehlchen.fval import FVal
 
 if TYPE_CHECKING:
@@ -17,12 +20,17 @@ class DummyContract:
 
     def call(self, *, method_name: str, arguments: list[int] | tuple[int, ...] = (), **_: object) -> object:  # noqa: E501
         response = self.responses[method_name]
+        if isinstance(response, RemoteError):
+            raise response
         if callable(response):
             return response(*arguments)
         return response
 
 
-def test_lido_csm_metrics_fetcher_converts_values() -> None:
+@pytest.mark.parametrize('failure', [
+    None, 'treeCid', 'distributedShares', 'getPooledEthByShares', 'ipfs',
+])
+def test_lido_csm_metrics_fetcher_converts_values(failure: str | None) -> None:
     accounting_contract = DummyContract({
         'getBondCurveId': 0,
         'getBondSummaryShares': (10**18, 2 * 10**18),
@@ -46,8 +54,19 @@ def test_lido_csm_metrics_fetcher_converts_values() -> None:
     fetcher.module_contract = module_contract  # type: ignore[assignment]
     fetcher.steth_contract = steth_contract  # type: ignore[assignment]
     fetcher.fee_distributor_contract = fee_distributor_contract  # type: ignore[assignment]
+    if failure in {'treeCid', 'distributedShares'}:
+        fee_distributor_contract.responses[failure] = RemoteError(f'{failure} failed')
+    elif failure == 'getPooledEthByShares':
+        def fail_pending_conversion(shares: int) -> int:
+            if shares == 3 * 10**17:
+                raise RemoteError(f'{failure} failed')
+            return shares
+
+        steth_contract.responses[failure] = fail_pending_conversion
 
     def fake_fetch_ipfs_json(cid: str) -> dict[str, Any]:
+        if failure == 'ipfs':
+            raise IPFSRemoteError('All gateways failed')
         return {
             'values': [
                 {'value': [7, 5 * 10**17]},  # for node operator id 7
@@ -55,6 +74,11 @@ def test_lido_csm_metrics_fetcher_converts_values() -> None:
         }
 
     fetcher._fetch_ipfs_json = fake_fetch_ipfs_json  # type: ignore[method-assign]
+
+    if failure is not None and failure != 'ipfs':
+        with pytest.raises(RemoteError, match=f'{failure} failed'):
+            fetcher.get_operator_stats(7)
+        return
 
     stats = fetcher.get_operator_stats(7)
 
@@ -68,7 +92,7 @@ def test_lido_csm_metrics_fetcher_converts_values() -> None:
     assert serialized['operator_type']['label'] == 'Permissionless'
     assert serialized['bond']['current'] == '1'
     # rewards pending: cumulative(0.5e18) - distributed(0.2e18) = 0.3e18 => 0.3 stETH
-    assert serialized['rewards']['pending'] == '0.3'
+    assert serialized['rewards']['pending'] == (None if failure == 'ipfs' else '0.3')
     assert serialized['keys']['total_deposited'] == 42
 
 

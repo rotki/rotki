@@ -16,7 +16,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_STETH
 from rotkehlchen.db.lido_csm import DBLidoCsm, LidoCsmNodeOperator
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import IPFSRemoteError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE
@@ -145,7 +145,7 @@ def test_lido_csm_balances_keep_bond_if_rewards_tree_fails(operators):
     with patch.object(
         LidoCsmMetricsFetcher,
         '_fetch_ipfs_json',
-        side_effect=RemoteError('rate limited'),
+        side_effect=IPFSRemoteError('rate limited'),
     ) as fetch_tree:
         result = balances.query_balances(addresses=[x.address for x in operators])
 
@@ -177,7 +177,9 @@ def test_lido_csm_balances_use_stored_rewards_if_rewards_tree_fails():
     with (
         patch('rotkehlchen.db.lido_csm.DBLidoCsm.get_node_operators', return_value=operators),
         patch.object(Inquirer, 'find_price', return_value=FVal('2000')),
-        patch.object(LidoCsmMetricsFetcher, '_fetch_ipfs_json', side_effect=RemoteError('429')),
+        patch.object(
+            LidoCsmMetricsFetcher, '_fetch_ipfs_json', side_effect=IPFSRemoteError('429'),
+        ),
     ):
         result = balances.query_balances(addresses=[x.address for x in operators])
 

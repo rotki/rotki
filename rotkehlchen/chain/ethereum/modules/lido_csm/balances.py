@@ -19,7 +19,7 @@ from rotkehlchen.constants.assets import A_STETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.lido_csm import DBLidoCsm
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import IPFSRemoteError, RemoteError
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -100,10 +100,11 @@ class LidoCsmBalances(ProtocolWithBalance):
         )) == ZERO:
             log.error('Failed to fetch stETH price; reporting values as zero.')
 
-        rewards_tree, rewards_failed = None, False
+        rewards_tree, rewards_failed, ipfs_failed = None, False, False
         try:
             rewards_tree = self._metrics_fetcher.get_rewards_tree()
         except RemoteError as e:
+            ipfs_failed = isinstance(e, IPFSRemoteError)
             log.error('Failed to fetch the Lido CSM rewards tree due to %s', e)
 
         for entry in node_operators:
@@ -148,10 +149,17 @@ class LidoCsmBalances(ProtocolWithBalance):
             )
 
         if rewards_failed:
-            self.evm_inquirer.database.msg_aggregator.add_warning(
-                'Could not fetch the Lido CSM rewards from any IPFS gateway. The pending '
-                'rewards shown are the last known values, or missing if there are none. You can '
-                'set your own IPFS gateway in the settings.',
+            message = (
+                'Could not fetch the Lido CSM rewards from any IPFS gateway. '
+                if ipfs_failed else
+                'Could not fetch the Lido CSM rewards due to an on-chain query failure. '
             )
+            message += (
+                'The pending rewards shown are the last known values, '
+                'or missing if there are none.'
+            )
+            if ipfs_failed:
+                message += ' You can set your own IPFS gateway in the settings.'
+            self.evm_inquirer.database.msg_aggregator.add_warning(message)
 
         return balances

@@ -20,7 +20,7 @@ from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_STETH
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import IPFSRemoteError
 from rotkehlchen.externalapis.ipfs import IPFSGateway
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -110,7 +110,7 @@ class LidoCsmMetricsFetcher:
         """Fetch the fee distributor merkle tree document from IPFS.
 
         May raise:
-            RemoteError: if the document cannot be retrieved.
+            IPFSRemoteError: if the document cannot be retrieved.
         """
         return IPFSGateway(
             custom_gateway=CachedSettings().get_settings().ipfs_gateway,
@@ -121,7 +121,8 @@ class LidoCsmMetricsFetcher:
         shares of every node operator in it, by node operator id.
 
         May raise:
-            RemoteError: if the tree's cid can't be read or the document can't be retrieved.
+            RemoteError: if the tree's cid can't be read.
+            IPFSRemoteError: if the document can't be retrieved.
         """
         tree_cid = self.fee_distributor_contract.call(
             node_inquirer=self.evm_inquirer,
@@ -164,7 +165,7 @@ class LidoCsmMetricsFetcher:
         """Gather and normalize bond/reward stats for a node operator.
 
         May raise:
-            RemoteError: if any contract call other than the rewards ones fails.
+            RemoteError: if any contract call fails.
             ValueError: if numeric conversions from contract responses fail.
         """
         curve_id = self.accounting_contract.call(
@@ -197,12 +198,14 @@ class LidoCsmMetricsFetcher:
 
         rewards_steth: FVal | None = None  # None: rewards could not be fetched, not zero
         try:
+            rewards_tree = self.get_rewards_tree()
+        except IPFSRemoteError as e:
+            log.error('Failed to fetch Lido CSM rewards for %s: %s', node_operator_id, e)
+        else:
             rewards_steth = self.get_pending_rewards(
                 node_operator_id=node_operator_id,
-                rewards_tree=self.get_rewards_tree(),
+                rewards_tree=rewards_tree,
             )
-        except RemoteError as e:
-            log.error(f'Failed to compute Lido CSM rewards for {node_operator_id}: {e}')
 
         return LidoCsmNodeOperatorStats(
             operator_type=operator_type,
