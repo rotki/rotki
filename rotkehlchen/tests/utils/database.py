@@ -1,8 +1,9 @@
 import base64
 import os
+from contextlib import closing
 from dataclasses import asdict
 from shutil import copyfile
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import _patch, patch
 
 from sqlcipher3 import dbapi2 as sqlcipher
@@ -186,7 +187,28 @@ def mock_db_schema_sanity_check() -> _patch:
     )
 
 
+SQLCIPHER_DEFAULT_KDF_ITER: Final = 256000  # SQLCipher 4's default PBKDF2 iteration count
+TEST_KDF_ITER: Final = 1000
+
+
+def set_sqlcipher_default_kdf_iter(kdf_iter: int) -> int:
+    """Set the PBKDF2 iteration count SQLCipher uses for every connection opened from now on
+    (it is library-wide, across threads) and return the previous value.
+
+    The iteration count only makes password guessing more expensive; it does not change
+    how the database is encrypted or queried. It is however part of the key derivation,
+    so a database must be opened with the value it was created with.
+    """
+    with closing(sqlcipher.connect(':memory:')) as conn:  # pylint: disable=no-member
+        previous = int(conn.execute('PRAGMA cipher_default_kdf_iter').fetchone()[0])
+        conn.execute(f'PRAGMA cipher_default_kdf_iter={kdf_iter}')
+    return previous
+
+
 def _use_prepared_db(user_data_dir: Path, filename: str) -> None:
+    # Prepared databases were created with SQLCipher's real default, so opening them with
+    # the reduced test value would fail. The autouse fixture resets it for the next test.
+    set_sqlcipher_default_kdf_iter(SQLCIPHER_DEFAULT_KDF_ITER)
     dir_path = os.path.dirname(os.path.realpath(__file__))
     copyfile(
         os.path.join(os.path.dirname(dir_path), 'data', filename),
