@@ -508,6 +508,36 @@ describe('useBalanceProcessingService', () => {
     expect(mockRefreshBlockchainBalances).toHaveBeenCalledExactlyOnceWith(payload, '100');
   });
 
+  it.each([
+    ['fails', err(TaskFailed({ message: 'boom' }))],
+    ['is cancelled', err(Cancelled({ message: 'cancelled' }))],
+  ])('should keep the chain\'s earlier success when a targeted refresh %s', async (_name, outcome) => {
+    const CHAIN = 'base';
+    mockRefreshBlockchainBalances.mockImplementation(async () => ({ taskId: nextTaskId++ }));
+    useBlockchainAccountsStore().updateAccounts(CHAIN, [
+      createAccount({ address: '0x2', label: null, tags: null }, CHAIN),
+    ]);
+    const service = useBalanceProcessingService();
+    const { statusOf } = useTaskOrchestrator();
+
+    const full = service.handleRefresh(runTask, { addresses: undefined, blockchain: CHAIN, isXpub: false });
+    await vi.waitFor(() => {
+      expect(pendingTasks.size).toBe(1);
+    });
+    pendingTasks.get(1)!.resolve(ok(emptyBalances(CHAIN)));
+    await full;
+
+    pendingTasks.clear();
+    const targeted = service.handleRefresh(runTask, { addresses: ['0x3'], blockchain: CHAIN, isXpub: false });
+    await vi.waitFor(() => {
+      expect(pendingTasks.size).toBe(1);
+    });
+    pendingTasks.get(2)!.resolve(outcome);
+    await targeted;
+
+    expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, CHAIN).everCompleted).toBe(true);
+  });
+
   it('should clear isRefreshing even when the refresh POST fails', async () => {
     mockRefreshBlockchainBalances.mockImplementation(async () => ({ taskId: nextTaskId++ }));
 
