@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import IPFSRemoteError, RemoteError
 from rotkehlchen.externalapis.ipfs import (
     DEFAULT_IPFS_GATEWAYS,
     IPFSGateway,
@@ -61,7 +61,7 @@ def test_ipfs_gateway_all_gateways_fail():
     asked, query_file = _fake_query_file(working=set())
     with (
         patch('rotkehlchen.externalapis.ipfs.query_file', side_effect=query_file),
-        pytest.raises(RemoteError) as exc_info,
+        pytest.raises(IPFSRemoteError) as exc_info,
     ):
         IPFSGateway(custom_gateway='https://my.node').query_json('cid')
 
@@ -83,3 +83,11 @@ def test_normalize_ipfs_gateway_url(url: str, expected: str):
 def test_normalize_ipfs_gateway_url_rejects_non_http(url: str):
     with pytest.raises(ValueError, match='must be an http'):
         normalize_ipfs_gateway_url(url)
+
+
+@pytest.mark.parametrize('userinfo', ['user:secret', 'user', ':secret', ''])
+def test_ipfs_gateway_rejects_credentials(userinfo: str) -> None:
+    with pytest.raises(ValueError, match='credentials') as exc_info:
+        IPFSGateway(custom_gateway=f'https://{userinfo}@gateway.example')
+
+    assert 'secret' not in str(exc_info.value)

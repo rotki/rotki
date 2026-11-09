@@ -439,14 +439,22 @@ def test_empty_rpc_endpoint_in_db_treated_as_default(
     assert getattr(settings, rpc_setting) == default_value
 
 
-def test_invalid_ipfs_gateway(rotkehlchen_api_server: APIServer) -> None:
-    """The custom ipfs gateway has to be an http(s) url"""
+@pytest.mark.parametrize(('gateway', 'error'), [
+    ('ipfs://not-a-gateway', 'must be an http(s) url'),
+    ('https://user:secret@gateway.example', 'must not contain credentials'),
+])
+def test_invalid_ipfs_gateway(
+        rotkehlchen_api_server: APIServer,
+        gateway: str,
+        error: str,
+) -> None:
+    """The custom ipfs gateway must use HTTP(S) and cannot contain credentials."""
     assert_error_response(
         response=requests.put(
             api_url_for(rotkehlchen_api_server, 'settingsresource'),
-            json={'settings': {'ipfs_gateway': 'ipfs://not-a-gateway'}},
+            json={'settings': {'ipfs_gateway': gateway}},
         ),
-        contained_in_msg='must be an http(s) url',
+        contained_in_msg=error,
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

@@ -2,7 +2,7 @@ import logging
 from typing import Any, Final
 from urllib.parse import urlparse
 
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import IPFSRemoteError, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.network import query_file
 
@@ -27,9 +27,12 @@ def normalize_ipfs_gateway_url(url: str) -> str:
     Accepts `https://host`, `https://host/ipfs` or `https://host/ipfs/`.
 
     May raise:
-        ValueError: if the url is not an http(s) url.
+        ValueError: if the url contains credentials or is not an http(s) url.
     """
     parsed = urlparse(url := url.strip())
+    if parsed.username is not None or parsed.password is not None:
+        raise ValueError('IPFS gateway URL must not contain credentials')
+
     if parsed.scheme not in {'http', 'https'} or parsed.netloc == '':
         raise ValueError(f'IPFS gateway "{url}" must be an http(s) url')
 
@@ -56,7 +59,7 @@ class IPFSGateway:
         that serves it.
 
         May raise:
-            RemoteError: if every gateway failed. The error lists the reason for each.
+            IPFSRemoteError: if every gateway failed. The error lists the reason for each.
         """
         failures: list[str] = []
         for gateway in self.gateways:
@@ -66,6 +69,6 @@ class IPFSGateway:
                 log.warning('IPFS gateway %s failed to serve %s: %s', gateway, cid, e)
                 failures.append(f'{gateway}: {e}')
 
-        raise RemoteError(
+        raise IPFSRemoteError(
             f'Could not fetch IPFS content {cid} from any gateway. ' + '; '.join(failures),
         )

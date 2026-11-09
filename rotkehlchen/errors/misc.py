@@ -114,6 +114,10 @@ def remote_error_for_status(status_code: int) -> type[RemoteError]:
     return RemoteError
 
 
+class IPFSRemoteError(RemoteError):
+    """Raised when IPFS content cannot be retrieved from any configured gateway."""
+
+
 class APIKeyNotAvailable(RemoteError):
     """Raised when an API key required for a query is not available."""
 
