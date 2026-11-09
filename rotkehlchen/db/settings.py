@@ -159,6 +159,7 @@ STRING_KEYS: Final = (
     'frontend_settings',
     'mcp_privacy_mode',
     'csv_export_delimiter',
+    'ipfs_gateway',
 )
 # String settings whose empty value means "not set". For these we delete the
 # row from the DB instead of storing an empty string and we treat any empty
@@ -169,6 +170,7 @@ STRING_KEYS_REMOVE_IF_EMPTY: Final = frozenset({
     'dot_rpc_endpoint',
     'beacon_rpc_endpoint',
     'btc_mempool_api',
+    'ipfs_gateway',
 })
 FVAL_KEYS: Final = (
     'asset_movement_amount_tolerance',
@@ -233,6 +235,7 @@ CachedDBSettingsFieldNames = Literal[
     'internal_tx_conflict_repull_frequency',
     'disabled_chain_queries',
     'mcp_privacy_mode',
+    'ipfs_gateway',
 ]
 
 DBSettingsFieldTypes = (
@@ -315,6 +318,7 @@ class DBSettings:
     internal_txs_to_repull: int = DEFAULT_INTERNAL_TXS_TO_REPULL
     internal_tx_conflict_repull_frequency: int = DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY
     mcp_privacy_mode: str = DEFAULT_MCP_PRIVACY_MODE
+    ipfs_gateway: str = ''
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -401,6 +405,7 @@ class ModifiableDBSettings(NamedTuple):
     internal_txs_to_repull: int | None = None
     internal_tx_conflict_repull_frequency: int | None = None
     mcp_privacy_mode: str | None = None
+    ipfs_gateway: str | None = None
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}

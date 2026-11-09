@@ -11,7 +11,6 @@ from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
     LIDO_CSM_ACCOUNTING_CONTRACT_DEPLOYED_BLOCK,
     LIDO_CSM_FEE_DISTRIBUTOR_CONTRACT,
     LIDO_CSM_FEE_DISTRIBUTOR_CONTRACT_DEPLOYED_BLOCK,
-    LIDO_CSM_IPFS_GATEWAY,
     LIDO_CSM_MODULE_CONTRACT,
     LIDO_CSM_MODULE_CONTRACT_DEPLOYED_BLOCK,
     LIDO_STETH_DEPLOYED_BLOCK,
@@ -19,11 +18,11 @@ from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
     LidoCsmOperatorType,
 )
 from rotkehlchen.chain.evm.contracts import EvmContract
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_STETH
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.externalapis.ipfs import IPFSGateway
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils.network import query_file
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -40,7 +39,7 @@ class LidoCsmNodeOperatorStats:
     required_bond: FVal
     claimable_bond: FVal
     total_deposited_validators: int
-    rewards_steth: FVal
+    rewards_steth: FVal | None  # None when the rewards could not be fetched
 
     def serialize(self) -> dict[str, Any]:
         operator_type_id = int(self.operator_type)
@@ -59,7 +58,7 @@ class LidoCsmNodeOperatorStats:
                 'total_deposited': self.total_deposited_validators,
             },
             'rewards': {
-                'pending': str(self.rewards_steth),
+                'pending': None if self.rewards_steth is None else str(self.rewards_steth),
             },
         }
 
@@ -112,9 +111,10 @@ class LidoCsmMetricsFetcher:
 
         May raise:
             RemoteError: if the document cannot be retrieved.
-            ValueError: if the response is not valid JSON.
         """
-        return query_file(f'{LIDO_CSM_IPFS_GATEWAY}{cid}', is_json=True)
+        return IPFSGateway(
+            custom_gateway=CachedSettings().get_settings().ipfs_gateway,
+        ).query_json(cid)
 
     def get_rewards_tree(self) -> dict[int, int]:
         """Download the fee distributor's rewards tree and return the cumulative reward
@@ -164,7 +164,7 @@ class LidoCsmMetricsFetcher:
         """Gather and normalize bond/reward stats for a node operator.
 
         May raise:
-            RemoteError: if any contract call fails and is not handled by IPFS fallback.
+            RemoteError: if any contract call other than the rewards ones fails.
             ValueError: if numeric conversions from contract responses fail.
         """
         curve_id = self.accounting_contract.call(
@@ -195,6 +195,7 @@ class LidoCsmMetricsFetcher:
             arguments=[node_operator_id],
         )
 
+        rewards_steth: FVal | None = None  # None: rewards could not be fetched, not zero
         try:
             rewards_steth = self.get_pending_rewards(
                 node_operator_id=node_operator_id,
@@ -202,7 +203,6 @@ class LidoCsmMetricsFetcher:
             )
         except RemoteError as e:
             log.error(f'Failed to compute Lido CSM rewards for {node_operator_id}: {e}')
-            rewards_steth = ZERO
 
         return LidoCsmNodeOperatorStats(
             operator_type=operator_type,

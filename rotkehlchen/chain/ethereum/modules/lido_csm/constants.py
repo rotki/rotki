@@ -56,8 +56,5 @@ LIDO_CSM_FEE_DISTRIBUTOR_CONTRACT_DEPLOYED_BLOCK: Final[int] = 20935463
 
 FEE_DISTRIBUTOR_ABI: Final[ABI] = [{'inputs': [], 'name': 'treeCid', 'outputs': [{'name': '', 'type': 'string'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [{'name': 'nodeOperatorId', 'type': 'uint256'}], 'name': 'distributedShares', 'outputs': [{'name': 'distributed', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 
-# Public IPFS gateway used to fetch treeCid documents
-LIDO_CSM_IPFS_GATEWAY: Final = 'https://gateway.pinata.cloud/ipfs/'
-
 # Counterparty identifier for Lido CSM
 CPT_LIDO_CSM: Final = 'lido-csm'

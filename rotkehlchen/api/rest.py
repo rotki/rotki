@@ -2065,6 +2065,13 @@ class RestAPI:
             )
             status_code = HTTPStatus.BAD_GATEWAY
             message = f'Failed to fetch metrics for node operator {node_operator_id}'
+        else:
+            if metrics.rewards_steth is None:
+                status_code = HTTPStatus.BAD_GATEWAY
+                message = (
+                    f'Could not fetch the pending rewards of node operator {node_operator_id} '
+                    f'from any IPFS gateway. You can set your own IPFS gateway in the settings.'
+                )
 
         payload = _wrap_in_ok_result(self._serialize_lido_csm_node_operators())
         if message:
@@ -2098,10 +2105,16 @@ class RestAPI:
 
         result = []
         failed_ids: list[int] = []
+        unknown_rewards_ids: list[int] = []
         for entry in DBLidoCsm(self.rotkehlchen.data.db).get_node_operators():
             try:
                 metrics = metrics_fetcher.get_operator_stats(entry.node_operator_id)
                 metrics_payload = metrics.serialize()
+                if metrics.rewards_steth is None:
+                    unknown_rewards_ids.append(entry.node_operator_id)
+                    # report the stored value, which set_metrics keeps, and not null
+                    if entry.metrics is not None and entry.metrics.rewards_steth is not None:
+                        metrics_payload['rewards']['pending'] = str(entry.metrics.rewards_steth)
                 DBLidoCsm(self.rotkehlchen.data.db).set_metrics(
                     node_operator_id=entry.node_operator_id,
                     metrics=metrics,
@@ -2117,11 +2130,20 @@ class RestAPI:
                 'metrics': metrics_payload,
             })
         payload = _wrap_in_ok_result(result)
+        messages: list[str] = []
         if failed_ids:
-            payload['message'] = (
+            messages.append(
                 'Failed to refresh metrics for node operators: '
-                f"{', '.join(str(node_id) for node_id in failed_ids)}"
+                f"{', '.join(str(node_id) for node_id in failed_ids)}",
             )
+        if unknown_rewards_ids:
+            messages.append(
+                'Could not fetch the pending rewards from any IPFS gateway for node operators: '
+                f"{', '.join(str(node_id) for node_id in unknown_rewards_ids)}. The last known "
+                'values are kept. You can set your own IPFS gateway in the settings.',
+            )
+        if messages:
+            payload['message'] = '. '.join(messages)
             return api_response(payload, status_code=HTTPStatus.BAD_GATEWAY)
         return api_response(payload, status_code=HTTPStatus.OK)
 

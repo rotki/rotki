@@ -34,6 +34,7 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     inferZeroTimedBalances: false,
     internalTxConflictRepullFrequency: Defaults.DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY,
     internalTxsToRepull: Defaults.DEFAULT_INTERNAL_TXS_TO_REPULL,
+    ipfsGateway: '',
     ksmRpcEndpoint: Defaults.KSM_RPC_ENDPOINT,
     mainCurrency,
     mcpPrivacyMode: McpPrivacyMode.BALANCED,

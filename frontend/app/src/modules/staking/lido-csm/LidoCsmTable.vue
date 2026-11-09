@@ -61,7 +61,7 @@ function metricFields(metrics: LidoCsmMetrics): Omit<LidoCsmTableRow, 'address' 
     ...bondFields(bond),
     operatorTypeId: operatorType?.id,
     operatorTypeLabel: operatorType?.label,
-    rewardsPending: rewards?.pending,
+    rewardsPending: rewards?.pending ?? undefined,
     totalDeposited: keys?.totalDeposited,
   };
 }

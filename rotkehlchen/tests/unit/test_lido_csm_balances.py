@@ -7,9 +7,13 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.lido_csm.balances import LidoCsmBalances
-from rotkehlchen.chain.ethereum.modules.lido_csm.constants import CPT_LIDO_CSM
-from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmMetricsFetcher
+from rotkehlchen.chain.ethereum.modules.lido_csm.constants import CPT_LIDO_CSM, LidoCsmOperatorType
+from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import (
+    LidoCsmMetricsFetcher,
+    LidoCsmNodeOperatorStats,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_STETH
 from rotkehlchen.db.lido_csm import DBLidoCsm, LidoCsmNodeOperator
 from rotkehlchen.errors.misc import RemoteError
@@ -147,6 +151,37 @@ def test_lido_csm_balances_keep_bond_if_rewards_tree_fails(operators):
 
     assert fetch_tree.call_count == 1
     assert _steth_amounts(result, operators) == [FVal('1'), FVal('1')]
+    # the user is told that the rewards are missing
+    balances.evm_inquirer.database.msg_aggregator.add_warning.assert_called_once()
+
+
+def test_lido_csm_balances_use_stored_rewards_if_rewards_tree_fails():
+    """Test that rewards that can't be fetched fall back to the last stored value
+    for the operators that have one, instead of being reported as zero"""
+    operators = (
+        LidoCsmNodeOperator(
+            address=make_evm_address(),
+            node_operator_id=1,
+            metrics=LidoCsmNodeOperatorStats(
+                operator_type=LidoCsmOperatorType.PERMISSIONLESS,
+                current_bond=ONE,
+                required_bond=ONE,
+                claimable_bond=ZERO,
+                total_deposited_validators=1,
+                rewards_steth=FVal('0.25'),
+            ),
+        ),
+        LidoCsmNodeOperator(address=make_evm_address(), node_operator_id=2),
+    )
+    balances = _make_balances(FakeLidoContracts())
+    with (
+        patch('rotkehlchen.db.lido_csm.DBLidoCsm.get_node_operators', return_value=operators),
+        patch.object(Inquirer, 'find_price', return_value=FVal('2000')),
+        patch.object(LidoCsmMetricsFetcher, '_fetch_ipfs_json', side_effect=RemoteError('429')),
+    ):
+        result = balances.query_balances(addresses=[x.address for x in operators])
+
+    assert _steth_amounts(result, operators) == [FVal('1.25'), FVal('1')]
 
 
 def test_lido_csm_balances_keep_bond_if_pending_rewards_fail(operators):

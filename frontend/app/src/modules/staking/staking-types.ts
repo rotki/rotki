@@ -75,7 +75,7 @@ const LidoCsmKeysSchema = z.object({
 });
 
 const LidoCsmRewardsSchema = z.object({
-  pending: NumericString,
+  pending: NumericString.nullable(),
 });
 
 const LidoCsmNodeOperatorMetricsSchema = z.object({

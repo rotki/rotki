@@ -3737,6 +3737,14 @@
       "subtitle": "Manage your history event settings.",
       "title": "History Events"
     },
+    "ipfs_gateway": {
+      "error": "Error setting the IPFS gateway",
+      "hint": "Leave empty to use only the default gateways",
+      "label": "Gateway URL",
+      "subtitle": "An IPFS gateway rotki tries before its default ones, for example when fetching the Lido CSM rewards. Use it if the public gateways are rate limited.",
+      "success": "IPFS gateway saved",
+      "title": "Custom IPFS gateway"
+    },
     "labels": {
       "btc_derivation_gap": "BTC derivation gap limit",
       "csv_delimiter": "CSV export delimiter",
