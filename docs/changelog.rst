@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` The browser wallet bridge page no longer reconnects by itself after you disconnect while it is still connecting, and no longer stays stuck on "Connecting" when the connection never completes. While retrying it now shows which attempt it is on, and it says so when it gives up. Reopening the bridge after it has been idle now keeps the same address, so a tab that is already open can still reach rotki.
 * :feature:`-` Confirmations and errors now appear where you acted instead of in a dialog over the page. Deleting a row, logging out, purging data or resetting a database asks beside the button or inside the menu you used, and a save that fails is named inside its form, which stays open with what you typed. Bulk deletes of history events and leaving a snapshot with unsaved changes still ask in a dialog.
 * :bug:`-` Cancelling a bulk delete of history events no longer leaves the table stuck deleting. Closing the "asset database updated" or "restored" dialog with Escape now switches to the new database. A failed snapshot import keeps the chosen files for a retry, and excluding events from the delete prompt reports a failure instead of claiming they were excluded.
 * :feature:`-` Lido CSM 0x02 node operators can now be tracked. Pick the staking module when adding a node operator, and its bond, required bond, claimable bond, validators and pending rewards are shown next to those of the original CSM.
