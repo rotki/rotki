@@ -5,6 +5,7 @@ import { createNotification } from '@/modules/core/notifications/notification-ut
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 import { createBeaconchainRateLimitStrategy } from './strategies/beaconchain-rate-limit';
+import { createFailureFoldStrategy } from './strategies/failure-fold';
 import { createGroupUpdateStrategy } from './strategies/group-update';
 import { useNotificationCooldown } from './use-notification-cooldown';
 import { notificationMuteKey, useNotificationMute } from './use-notification-mute';
@@ -24,6 +25,7 @@ export function useNotificationDispatcher(): UseNotificationDispatcherReturn {
   const strategies: NotificationStrategy[] = [
     createBeaconchainRateLimitStrategy(t),
     createGroupUpdateStrategy(cooldown),
+    createFailureFoldStrategy(),
   ];
 
   /**
