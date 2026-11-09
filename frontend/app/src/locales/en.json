@@ -3122,7 +3122,6 @@
         "no_accounts_title": "No accounts to check",
         "nothing_attention": "No balances need your attention."
       },
-      "exchanges_note": "Exchange accounts ({accounts}) are not compared yet.",
       "footer": {
         "accounts": "{count} account has nothing listed | {count} accounts have nothing listed",
         "hidden": "{count} balance is hidden | {count} balances are hidden"

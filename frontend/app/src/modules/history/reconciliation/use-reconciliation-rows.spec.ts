@@ -73,13 +73,23 @@ describe('reconciliation row rules', () => {
       account({ counts: counts({ reconciled: 3 }), location: 'bitcoin', locationLabel: 'bc1' }),
       account({ counts: counts({ mismatch: 1 }), location: 'optimism', locationLabel: '0xB' }),
       account({ counts: counts({ blocked: 1 }), location: 'ethereum', locationLabel: '0xC' }),
-      account({ counts: counts({ mismatch: 1 }), isExchange: true, location: 'kraken' }),
     ];
 
     const visible = visibleAccounts(accounts, 'attention');
 
     expect(visible.map(item => item.location)).toStrictEqual(['optimism', 'ethereum']);
     expect(visibleAccounts(accounts, 'all').map(item => item.location)).toStrictEqual(['optimism', 'ethereum', 'bitcoin']);
+  });
+
+  it('should show blocked exchanges in attention and all exchanges in all balances', () => {
+    const blocked = account({ counts: counts({ blocked: 1 }), isExchange: true, location: 'kraken', locationLabel: 'Kraken 1' });
+    const unsupported = account({ counts: counts({ notCompared: 1 }), isExchange: true, location: 'coinbase', locationLabel: 'Coinbase 1' });
+    const mismatch = account({ counts: counts({ mismatch: 1 }), isExchange: true, location: 'binance', locationLabel: 'Binance 1' });
+    const accounts = [unsupported, blocked, mismatch];
+
+    expect(visibleAccounts(accounts, 'attention')).toStrictEqual([mismatch, blocked]);
+    expect(visibleAccounts(accounts, 'all')).toStrictEqual([mismatch, blocked, unsupported]);
+    expect(accounts).toStrictEqual([unsupported, blocked, mismatch]);
   });
 
   it('should count the balances a Needs-attention account hides', () => {

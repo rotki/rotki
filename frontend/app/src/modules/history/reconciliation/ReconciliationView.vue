@@ -5,7 +5,6 @@ import { addAccountLink } from '@/modules/accounts/add-account-link';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useSpamAsset } from '@/modules/assets/use-spam-asset';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useLocations } from '@/modules/core/common/use-locations';
 import DataIssuesTabs from '@/modules/history/data-issues/DataIssuesTabs.vue';
 import { useDataIssuesAutoReload } from '@/modules/history/data-issues/use-data-issues-auto-reload';
 import { useDataIssuesDetection } from '@/modules/history/data-issues/use-data-issues-detection';
@@ -20,7 +19,6 @@ import {
   notCheckedCount,
   type ReconciliationView as ReconciliationViewMode,
   statusFilterFor,
-  tableAccounts,
   totalBuckets,
   visibleAccounts,
 } from '@/modules/history/reconciliation/use-reconciliation-rows';
@@ -48,7 +46,6 @@ const {
 } = useBucketReconciliation();
 const { summary } = storeToRefs(store);
 
-const { getLocationData } = useLocations();
 const { getAssetField } = useAssetInfoRetrieval();
 const { markAssetsAsSpam } = useSpamAsset();
 const { show } = useConfirmStore();
@@ -72,8 +69,6 @@ const view = computed<ReconciliationViewMode>(() =>
 
 const statuses = computed<BucketStatus[] | undefined>(() => statusFilterFor(get(view)));
 const visible = computed<ReconciliationAccount[]>(() => visibleAccounts(get(accounts), get(view)));
-const tableAccountCount = computed<number>(() => tableAccounts(get(accounts)).length);
-const exchanges = computed<ReconciliationAccount[]>(() => get(accounts).filter(account => account.isExchange));
 
 const lastComparedAt = computed<number | null>(() => latestComparedAt(get(accounts)));
 const hasEverCompared = computed<boolean>(() => get(lastComparedAt) !== null);
@@ -84,12 +79,9 @@ const hiddenBalanceCount = computed<number>(() =>
   get(totals).reconciled + notCheckedCount(get(totals)));
 
 const hiddenAccountCount = computed<number>(() =>
-  tableAccounts(get(accounts))
+  get(accounts)
     .filter(account => account.counts.mismatch + account.counts.blocked === 0)
     .length);
-
-const exchangeNames = computed<string[]>(() =>
-  get(exchanges).map(account => get(getLocationData(account.location))?.name ?? account.location));
 
 const { detect, detecting } = useDataIssuesDetection(() => refreshAll(get(statuses)));
 
@@ -292,7 +284,7 @@ onMounted(() => {
             {{ t('data_issues.reconciliation.empty.never_checked') }}
           </NoDataScreen>
 
-          <template v-else-if="tableAccountCount > 0">
+          <template v-else-if="accounts.length > 0">
             <ReconciliationTable
               :accounts="visible"
               :details="details"
@@ -352,18 +344,6 @@ onMounted(() => {
               </RuiButton>
             </div>
           </template>
-
-          <div
-            v-if="exchangeNames.length > 0"
-            class="flex items-center gap-2 text-xs text-rui-text-secondary"
-            data-testid="reconciliation-exchanges-note"
-          >
-            <RuiIcon
-              name="lu-info"
-              size="14"
-            />
-            {{ t('data_issues.reconciliation.exchanges_note', { accounts: exchangeNames.join(', ') }) }}
-          </div>
         </div>
       </template>
     </div>

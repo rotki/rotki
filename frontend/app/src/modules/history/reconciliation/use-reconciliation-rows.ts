@@ -121,11 +121,6 @@ export function statusFilterFor(view: ReconciliationView): BucketStatus[] | unde
   return view === 'attention' ? ['mismatch', 'blocked'] : undefined;
 }
 
-/** Accounts the table can act on. Exchanges are summarised in a note instead. */
-export function tableAccounts(accounts: ReconciliationAccount[]): ReconciliationAccount[] {
-  return accounts.filter(account => !account.isExchange);
-}
-
 /**
  * The accounts the current view lists, most urgent first.
  *
@@ -141,7 +136,7 @@ function accountUrgency(account: ReconciliationAccount): number {
 }
 
 export function visibleAccounts(accounts: ReconciliationAccount[], view: ReconciliationView): ReconciliationAccount[] {
-  const rows = tableAccounts(accounts).filter(account => view === 'all'
+  const rows = accounts.filter(account => view === 'all'
     || account.counts.mismatch + account.counts.blocked > 0);
 
   return [...rows].sort((a, b) => {
@@ -287,9 +282,9 @@ export function headlineFor(totals: StatusCounts): Headline {
  * absent or describe work that does not apply to them.
  */
 export function latestComparedAt(accounts: ReconciliationAccount[]): number | null {
-  return tableAccounts(accounts).reduce<number | null>((latest, account) => {
+  return accounts.reduce<number | null>((latest, account) => {
     const comparedAt = account.lastComparedAt;
-    if (comparedAt === null)
+    if (account.isExchange || comparedAt === null)
       return latest;
     return latest === null ? comparedAt : Math.max(latest, comparedAt);
   }, null);
