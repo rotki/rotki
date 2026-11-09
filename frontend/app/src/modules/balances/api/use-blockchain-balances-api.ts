@@ -7,8 +7,8 @@ import { VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/core/a
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 
 interface UseBlockchainBalancesApiReturn {
-  queryBlockchainBalances: (payload: FetchBlockchainBalancePayload, valueThreshold?: string) => Promise<BlockchainBalances>;
-  refreshBlockchainBalances: (payload: FetchBlockchainBalancePayload, valueThreshold?: string) => Promise<PendingTask>;
+  queryBlockchainBalances: (payload: FetchBlockchainBalancePayload) => Promise<BlockchainBalances>;
+  refreshBlockchainBalances: (payload: FetchBlockchainBalancePayload) => Promise<PendingTask>;
   queryXpubBalances: (payload: FetchBlockchainBalancePayload) => Promise<PendingTask>;
   fetchDetectedTokens: (chain: string, addresses: string[] | null) => Promise<EvmTokensRecord>;
   fetchDetectedTokensTask: (chain: string, addresses: string[]) => Promise<PendingTask>;
@@ -16,7 +16,7 @@ interface UseBlockchainBalancesApiReturn {
 }
 
 export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
-  const queryBlockchainBalances = async ({ addresses, blockchain }: FetchBlockchainBalancePayload, valueThreshold?: string): Promise<BlockchainBalances> => {
+  const queryBlockchainBalances = async ({ addresses, blockchain }: FetchBlockchainBalancePayload): Promise<BlockchainBalances> => {
     let url = '/balances/blockchains';
     if (blockchain)
       url += `/${blockchain}`;
@@ -25,14 +25,13 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
       query: {
         addresses,
         onlyCache: true,
-        valueThreshold,
       },
       validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
     });
     return BlockchainBalances.parse(response);
   };
 
-  const refreshBlockchainBalances = async ({ addresses, blockchain }: FetchBlockchainBalancePayload, valueThreshold?: string): Promise<PendingTask> => {
+  const refreshBlockchainBalances = async ({ addresses, blockchain }: FetchBlockchainBalancePayload): Promise<PendingTask> => {
     let url = '/balances/blockchains';
     if (blockchain)
       url += `/${blockchain}`;
@@ -40,7 +39,6 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
     const response = await api.post<PendingTask>(url, {
       addresses,
       asyncQuery: true,
-      valueThreshold,
     }, {
       validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
     });

@@ -36,7 +36,7 @@ const chains = ref<string[]>([]);
 const chainExclusionFilter = ref<Record<string, string[]>>({});
 const detailsDrawer = useTemplateRef<ComponentExposed<typeof AccountDetailsDrawer>>('detailsDrawer');
 
-const { balances } = storeToRefs(useBalancesStore());
+const { visibleBalances: balances } = storeToRefs(useBalancesStore());
 const accountsStore = useBlockchainAccountsStore();
 const { accounts: accountsState } = storeToRefs(accountsStore);
 const { isChainSettled } = accountsStore;

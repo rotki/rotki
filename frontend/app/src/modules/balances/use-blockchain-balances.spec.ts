@@ -146,7 +146,7 @@ describe('useBlockchainBalances', () => {
         addresses: undefined,
         blockchain: Blockchain.ETH,
         isXpub: false,
-      }, undefined);
+      });
     }
 
     it('should refresh particular blockchain - default', () => {
@@ -433,7 +433,7 @@ describe('useBlockchainBalances', () => {
         addresses: ['0xallowed'],
         blockchain: Blockchain.ETH,
         isXpub: false,
-      }, undefined);
+      });
     });
 
     it('should skip a chain whose every requested address is excluded', async () => {

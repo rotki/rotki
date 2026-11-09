@@ -41,7 +41,7 @@ interface UseBlockchainAccountDataReturn {
 }
 
 export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
-  const { balances } = storeToRefs(useBalancesStore());
+  const { visibleBalances: balances } = storeToRefs(useBalancesStore());
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { getAddressName } = useAddressNameResolution();
   const { getChainAccountType, getNativeAsset } = useSupportedChains();

@@ -19,7 +19,7 @@ vi.mock('@/modules/balances/use-balances-store', async () => {
   const { ref } = await import('vue');
   return {
     useBalancesStore: vi.fn().mockReturnValue({
-      balances: ref<Record<string, Record<string, { assets: Record<string, unknown> }>>>({
+      visibleBalances: ref<Record<string, Record<string, { assets: Record<string, unknown> }>>>({
         eth: {
           '0xaddr1': {
             assets: {

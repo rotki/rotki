@@ -1,4 +1,5 @@
 import type { AddressAccount, AddressGroupWithBalance, EthereumValidator } from '@/modules/accounts/blockchain-accounts';
+import type { EthBalance } from '@/modules/balances/types/blockchain-balances';
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import { bigNumberify } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
@@ -7,6 +8,8 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountDelete } from '@/modules/accounts/blockchain/use-account-delete';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
+import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import '@test/i18n';
 
 const mocks = vi.hoisted(() => ({
@@ -71,6 +74,25 @@ describe('useAccountDelete', () => {
     expect(mocks.removeAccount).toHaveBeenCalledExactlyOnceWith({ accounts: ['0x123'], chain: 'eth' });
     expect(accountStore.accounts).toMatchObject({ eth: [] });
     expect(store.balances).toMatchObject({ eth: {} });
+  });
+
+  it('should keep the other balances a threshold hides when deleting an account', async () => {
+    const accountStore = useBlockchainAccountsStore();
+    const store = useBalancesStore();
+    const balance = (value: number): EthBalance => ({
+      assets: { ETH: { address: { amount: bigNumberify(1), value: bigNumberify(value) } } },
+      liabilities: {},
+    });
+    useSettingsRepo().updateFrontend({ balanceValueThreshold: { [BalanceSource.BLOCKCHAIN]: '100' } });
+    accountStore.updateAccounts('eth', [{ address: '0x123', chain: 'eth', kind: 'address' }, { address: '0x456', chain: 'eth', kind: 'address' }]);
+    store.updateBalances('eth', {
+      perAccount: { eth: { '0x123': balance(2501), '0x456': balance(1) } },
+      totals: { assets: {}, liabilities: {} },
+    });
+
+    await useAccountDelete().deleteConfirmed({ data: { ...groupAccount(['eth']), address: '0x123' }, type: 'account' });
+
+    expect(Object.keys(store.balances.eth)).toStrictEqual(['0x456']);
   });
 
   describe('removeGroupAccounts', () => {

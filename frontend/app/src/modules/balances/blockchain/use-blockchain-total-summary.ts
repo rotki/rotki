@@ -10,7 +10,7 @@ import { sortDesc } from '@/modules/core/common/data/bignumbers';
 interface UseBlockchainTotalSummaryReturn { blockchainTotals: ComputedRef<BlockchainTotal[]> }
 
 export function useBlockchainTotalSummary(): UseBlockchainTotalSummaryReturn {
-  const { balances } = storeToRefs(useBalancesStore());
+  const { visibleBalances: balances } = storeToRefs(useBalancesStore());
   const { isPricePending } = usePriceUtils();
 
   /**

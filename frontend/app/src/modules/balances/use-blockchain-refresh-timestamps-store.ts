@@ -40,7 +40,7 @@ export const useBlockchainRefreshTimestampsStore = defineStore('balances/refresh
    * @remarks
    * Not sufficient for a cached read that overlaps a network result. The backend reads the timestamp
    * after the balances, so such a read can carry the newer query's timestamp with older data, and a
-   * tie cannot be refused because a deliberate re-read (a threshold change, an un-ignored asset)
+   * tie cannot be refused because a deliberate re-read (an un-ignored asset, detected tokens)
    * legitimately has the same timestamp and different content. `handleCachedFetch` covers that case
    * by comparing when the read began instead.
    */

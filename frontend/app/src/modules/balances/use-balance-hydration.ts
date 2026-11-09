@@ -1,7 +1,6 @@
 import type { BlockchainBalancePayload } from '@/modules/balances/types/blockchain-balances';
 import { err, isErr, ok, type Result } from 'plainfp/result';
 import { allWithConcurrency, type ResultAsync, retry, type RetryOptions } from 'plainfp/result-async';
-import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
 import { useBalanceProcessingService } from '@/modules/balances/services/use-balance-processing-service';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
@@ -10,7 +9,6 @@ import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
-import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 
 /**
  * Chains hydrated at a time. Hydration's own bound and nowhere else's — never a lane, and never
@@ -54,7 +52,6 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
   const { prices } = storeToRefs(useBalancePricesStore());
   const { updatePrices } = useBalancesStore();
   const { startHydration, stopHydration } = useBalanceRefreshState();
-  const valueThreshold = useValueThreshold(BalanceSource.BLOCKCHAIN);
 
   /** The read in flight per chain — the subject dedup. Entries exist only while a read is live. */
   const inflight = new Map<string, Promise<void>>();
@@ -68,7 +65,6 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
 
   const readChain = async (payload: BlockchainBalancePayload, chain: string, era: number): Promise<void> => {
     const chainPayload = { addresses: payload.addresses, blockchain: chain, isXpub: payload.isXpub ?? false };
-    const threshold = get(valueThreshold);
 
     /**
      * One attempt, with its outcome placed in the channel `retry` reads.
@@ -79,7 +75,7 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
      * goes in `err`; everything else short-circuits as `ok`.
      */
     const readOnce = async (): ResultAsync<Result<void, TaskError>, TaskError> => {
-      const outcome = await handleCachedFetch(chainPayload, threshold);
+      const outcome = await handleCachedFetch(chainPayload);
       return isErr(outcome) && isActionable(outcome.error) ? err(outcome.error) : ok(outcome);
     };
 

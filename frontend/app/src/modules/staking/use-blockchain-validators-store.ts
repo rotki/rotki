@@ -21,7 +21,7 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
   const { accounts } = storeToRefs(blockchainAccountsStore);
   const { updateAccounts } = blockchainAccountsStore;
   const balancesStore = useBalancesStore();
-  const { balances } = storeToRefs(balancesStore);
+  const { visibleBalances: balances } = storeToRefs(balancesStore);
   const { updateBalances } = balancesStore;
 
   const activeModules = useSetting('activeModules');

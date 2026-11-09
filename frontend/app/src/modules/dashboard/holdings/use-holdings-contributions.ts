@@ -31,7 +31,7 @@ export interface HoldingsInputs {
  * to the headline.
  */
 export function useHoldingsContributions(): HoldingsInputs {
-  const { balances, manualBalances } = storeToRefs(useBalancesStore());
+  const { manualBalances, visibleBalances: balances } = storeToRefs(useBalancesStore());
   const { nftValue } = storeToRefs(useStatisticsStore());
   const { isAssetIgnored } = useAssetsStore();
   const { isPricePending } = usePriceUtils();

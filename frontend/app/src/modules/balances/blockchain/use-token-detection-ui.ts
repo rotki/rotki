@@ -70,7 +70,7 @@ export function useTokenDetectionUi(
   accountAddress: MaybeRefOrGetter<string | null> = null,
 ): UseTokenDetectionUiReturn {
   const { tokensState } = storeToRefs(useTokenDetectionStore());
-  const { balances } = storeToRefs(useBalancesStore());
+  const { visibleBalances: balances } = storeToRefs(useBalancesStore());
   const { isAssetIgnored } = useAssetsStore();
   const { supportsTransactions } = useSupportedChains();
   const { isAddressExcluded, isChainExcluded } = useDisabledChains();

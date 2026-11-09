@@ -4,6 +4,8 @@ import { cloneDeep } from 'es-toolkit';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
+import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 
 describe('useBalancesStore', () => {
   let store: ReturnType<typeof useBalancesStore>;
@@ -63,6 +65,78 @@ describe('useBalancesStore', () => {
     expect(get(balances).eth['0xacc'].assets.ETH.address).toMatchObject({
       amount: bigNumberify(10),
       value: bigNumberify(25000),
+    });
+  });
+
+  describe('visibleBalances', () => {
+    const ETH_BALANCES = (value: number): Parameters<typeof store.updateBalances>[1] => ({
+      perAccount: {
+        [Blockchain.ETH]: {
+          '0xa': {
+            assets: { ETH: { address: { amount: bigNumberify(2), value: bigNumberify(value) } } },
+            liabilities: {},
+          },
+        },
+      },
+      totals: { assets: {}, liabilities: {} },
+    });
+
+    function setThreshold(threshold: string | undefined): void {
+      useSettingsRepo().updateFrontend({
+        balanceValueThreshold: threshold === undefined ? {} : { [BalanceSource.BLOCKCHAIN]: threshold },
+      });
+    }
+
+    function price(value: number): AssetPrices {
+      return { ETH: { isManualPrice: false, oracle: 'coingecko', usdPrice: null, value: bigNumberify(value) } };
+    }
+
+    it('should show everything without a threshold', () => {
+      store.updateBalances(Blockchain.ETH, ETH_BALANCES(1));
+      expect(Object.keys(store.visibleBalances[Blockchain.ETH])).toStrictEqual(['0xa']);
+    });
+
+    it('should hide a small balance from the view but keep it in the state', () => {
+      setThreshold('100');
+      store.updateBalances(Blockchain.ETH, ETH_BALANCES(1));
+
+      expect(store.visibleBalances[Blockchain.ETH]).toStrictEqual({});
+      expect(Object.keys(store.balances[Blockchain.ETH])).toStrictEqual(['0xa']);
+    });
+
+    it('should show an unpriced balance once its price makes it worth more than the threshold', () => {
+      setThreshold('100');
+      store.updateBalances(Blockchain.ETH, ETH_BALANCES(0));
+      expect(store.visibleBalances[Blockchain.ETH]).toStrictEqual({});
+
+      store.updatePrices(price(2500));
+
+      expect(Object.keys(store.visibleBalances[Blockchain.ETH])).toStrictEqual(['0xa']);
+    });
+
+    it('should hide a balance again when a price drop takes it under the threshold', () => {
+      setThreshold('100');
+      store.updateBalances(Blockchain.ETH, ETH_BALANCES(5000));
+
+      store.updatePrices(price(10));
+
+      expect(store.visibleBalances[Blockchain.ETH]).toStrictEqual({});
+    });
+
+    it('should apply a threshold change to what it already holds', () => {
+      store.updateBalances(Blockchain.ETH, ETH_BALANCES(50));
+      setThreshold('100');
+      expect(store.visibleBalances[Blockchain.ETH]).toStrictEqual({});
+
+      setThreshold('10');
+      expect(Object.keys(store.visibleBalances[Blockchain.ETH])).toStrictEqual(['0xa']);
+    });
+
+    it('should ignore another source\'s threshold', () => {
+      useSettingsRepo().updateFrontend({ balanceValueThreshold: { [BalanceSource.EXCHANGES]: '100' } });
+      store.updateBalances(Blockchain.ETH, ETH_BALANCES(1));
+
+      expect(Object.keys(store.visibleBalances[Blockchain.ETH])).toStrictEqual(['0xa']);
     });
   });
 

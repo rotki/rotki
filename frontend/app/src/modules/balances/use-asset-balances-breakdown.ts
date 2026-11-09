@@ -13,7 +13,7 @@ interface UseAssetBalancesBreakdownReturn {
 }
 
 export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
-  const { balances, bankBalances, exchangeBalances, manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
+  const { bankBalances, exchangeBalances, manualBalances, manualLiabilities, visibleBalances: balances } = storeToRefs(useBalancesStore());
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { getEvmChainName } = useSupportedChains();
 

@@ -42,7 +42,7 @@ const hidesEmpty = computed<boolean>(() => emptyCount > 0 && !get(showEmpty));
 
 const { fetchGroupAccounts } = useBlockchainAccountData();
 
-const { balances } = storeToRefs(useBalancesStore());
+const { visibleBalances: balances } = storeToRefs(useBalancesStore());
 const { accounts: accountsState } = storeToRefs(useBlockchainAccountsStore());
 
 const {
