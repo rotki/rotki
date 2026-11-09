@@ -23,7 +23,12 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError, cause_of, combined_cause
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithExtras, HistoryEventQueue
+from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
+    ExchangeInterface,
+    ExchangeWithExtras,
+    HistoryEventQueue,
+)
 from rotkehlchen.locations.constants import (
     LOCATION_BINANCE,
     LOCATION_BINANCEUS,
@@ -105,6 +110,14 @@ def exchange_connector_class(connector: str) -> type[ExchangeInterface]:
     return getattr(import_module(module_name), class_name)
 
 
+def _checked_api_key(exchange: ExchangeInterface) -> ApiKeyCheck:
+    """Validate an exchange's credentials, reporting anything it raises as a failed check"""
+    try:
+        return exchange.validate_api_key()
+    except Exception as e:  # pylint: disable=broad-except
+        return ApiKeyCheck(False, str(e), cause_of(e, FailureCause.INTERNAL))
+
+
 class ExchangeManager:
 
     def __init__(self, msg_aggregator: MessagesAggregator) -> None:
@@ -164,19 +177,28 @@ class ExchangeManager:
             binance_selected_trade_pairs: list[str] | None,
             okx_location: OkxLocation | None,
             gate_location: GateLocation | None = None,
-    ) -> tuple[bool, str]:
+    ) -> tuple[bool, str, FailureCause | None]:
         """Edits both the exchange object and the database entry
 
-        Returns True if an entry was found and edited and false otherwise
+        Returns True if an entry was found and edited and false otherwise, with the reason
+        and the cause of the failure
         """
         exchangeobj = self.get_exchange(identifier)
         if not exchangeobj:
-            return False, f'Could not find exchange connection {identifier} for editing'
+            return (
+                False,
+                f'Could not find exchange connection {identifier} for editing',
+                FailureCause.NOT_FOUND,
+            )
         if (
                 new_name is not None and new_name != exchangeobj.name and
                 self.get_exchange_by_name(connector=exchangeobj.location, name=new_name) is not None  # noqa: E501
         ):
-            return False, f'{exchangeobj.location!s} exchange {new_name} is already registered'
+            return (
+                False,
+                f'{exchangeobj.location!s} exchange {new_name} is already registered',
+                FailureCause.CONFLICT,
+            )
 
         # First validate exchange credentials
         edited = exchangeobj.edit_exchange_credentials(ExchangeAuthCredentials(
@@ -185,15 +207,10 @@ class ExchangeManager:
             passphrase=passphrase,
         ))
         if edited is True:
-            try:
-                credentials_are_valid, msg = exchangeobj.validate_api_key()
-            except Exception as e:  # pylint: disable=broad-except
-                msg = str(e)
-                credentials_are_valid = False
-
-            if credentials_are_valid is False:
+            check = _checked_api_key(exchangeobj)
+            if check.valid is False:
                 exchangeobj.reset_to_db_credentials()
-                return False, f'New credentials are invalid. {msg}'
+                return False, f'New credentials are invalid. {check.message}', check.cause
 
         # Then edit extra properties if needed
         if isinstance(exchangeobj, ExchangeWithExtras):
@@ -207,7 +224,7 @@ class ExchangeManager:
             })
             if success is False:
                 exchangeobj.reset_to_db_credentials()
-                return False, f'Failed to edit exchange extras. {msg}'
+                return False, f'Failed to edit exchange extras. {msg}', FailureCause.INVALID_INPUT
 
         try:
             with self.database.user_write() as cursor:
@@ -229,13 +246,13 @@ class ExchangeManager:
             exchangeobj.reset_to_db_credentials()  # DB is already rolled back at this point
             if isinstance(exchangeobj, ExchangeWithExtras):
                 exchangeobj.reset_to_db_extras()
-            return False, f"Couldn't update exchange properties in the DB. {e!s}"
+            return False, f"Couldn't update exchange properties in the DB. {e!s}", FailureCause.CONFLICT  # noqa: E501
 
         # Finally edit the name of the exchange object
         if new_name is not None:
             exchangeobj.name = new_name
 
-        return True, ''
+        return True, '', None
 
     def delete_exchange(self, identifier: str) -> tuple[bool, str]:
         """Deletes an exchange connection from both connected_exchanges and the DB"""
@@ -293,19 +310,19 @@ class ExchangeManager:
             kraken_account_type: KrakenAccountType | None = None,
             binance_history_start_ts: Timestamp | None = None,
             **kwargs: Any,
-    ) -> tuple[ConnectionIdentifier | None, str]:
+    ) -> tuple[ConnectionIdentifier | None, str, FailureCause | None]:
         """
         Setup a new exchange connection with an api key, an api secret and register it in
         both connected_exchanges and the DB. Returns the identifier of the new connection,
-        or None and the reason it failed.
+        or None with the reason and the cause of the failure.
 
         For some exchanges there is more attributes to add
         """
         if connector not in SUPPORTED_EXCHANGES:  # also checked via marshmallow
-            return None, f'Attempted to register unsupported exchange {name}'
+            return None, f'Attempted to register unsupported exchange {name}', FailureCause.UNSUPPORTED  # noqa: E501
 
         if self.get_exchange_by_name(connector=connector, name=name) is not None:
-            return None, f'{connector!s} exchange {name} is already registered'
+            return None, f'{connector!s} exchange {name} is already registered', FailureCause.CONFLICT  # noqa: E501
 
         exchange: ExchangeInterface = self.initialize_exchange(
             connector=connector,
@@ -316,24 +333,19 @@ class ExchangeManager:
             database=database,
             **kwargs,
         )
-        try:
-            result, message = exchange.validate_api_key()
-        except Exception as e:  # pylint: disable=broad-except
-            result = False
-            message = str(e)
-
-        if not result:
+        check = _checked_api_key(exchange)
+        if not check.valid:
             log.error(
                 'Failed to validate API key for %s exchange %s due to %s',
-                connector, name, message,
+                connector, name, check.message,
             )
-            return None, message
+            return None, check.message, check.cause
 
         with self.registry_lock:
             # re-check under the lock: a concurrent setup of the same exchange may
             # have registered it while this one validated the credentials remotely
             if self.get_exchange_by_name(connector=connector, name=name) is not None:
-                return None, f'{connector!s} exchange {name} is already registered'
+                return None, f'{connector!s} exchange {name} is already registered', FailureCause.CONFLICT  # noqa: E501
             # persist under the same lock as the registry append: delete_exchange
             # serializes on it too, so a concurrent delete cannot slip between the
             # two and leave orphaned credentials in the DB that would resurrect
@@ -359,7 +371,7 @@ class ExchangeManager:
             ):
                 exchange.reset_to_db_extras()
             self.connected_exchanges[connector].append(exchange)
-        return exchange.connection_identifier, ''
+        return exchange.connection_identifier, '', None
 
     def initialize_exchange(
             self,

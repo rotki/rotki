@@ -14,9 +14,10 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import RemoteError, cause_for_status, credential_check_cause_of
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -222,13 +223,13 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
 
         return response_data
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """Validates that the CoinEx API key can access account information."""
         try:
             self._api_query(endpoint='/assets/spot/balance')
         except RemoteError as e:
-            return False, str(e)
-        return True, ''
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
+        return ApiKeyCheck(True)
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -238,7 +239,11 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
             balances = self._api_query(endpoint='/assets/spot/balance')['data']
         except RemoteError as e:
             log.error('Failed to query CoinEx balances due to %s', e)
-            return None, f'Failed to query CoinEx balances due to a remote error: {e!s}'
+            return ExchangeQueryBalances(
+                None,
+                f'Failed to query CoinEx balances due to a remote error: {e!s}',
+                e.cause,
+            )
 
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for balance in balances:
@@ -268,7 +273,7 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
 
             amounts[asset] += amount
 
-        return dict(self.balances_from_amounts(amounts)), ''
+        return ExchangeQueryBalances(dict(self.balances_from_amounts(amounts)), '')
 
     def _get_markets(self) -> dict[str, CoinexMarket]:
         """Get CoinEx spot markets keyed by market name.

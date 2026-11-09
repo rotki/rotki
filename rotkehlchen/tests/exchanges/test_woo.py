@@ -505,3 +505,34 @@ def test_deserialize_asset_movement_withdrawal(mock_woo: Woo) -> None:
             'transaction_id': '4DPkJEmE3RnmDLZnM65NtFZ6L5J2R8Lwy2C1sVq7iwcPfTkjJhN5Uuh2GFsT6m13UHkeQiKjznLKK5SqK1kfTfZa',  # noqa: E501
         },
     )]
+
+
+def test_unreachable_is_a_failed_query_not_an_exception(mock_woo):
+    with patch.object(
+        mock_woo.session,
+        'request',
+        side_effect=requests.exceptions.ConnectionError,
+    ):
+        balances, _, balances_cause = mock_woo.query_balances()
+        valid, _, check_cause = mock_woo.validate_api_key()
+
+    assert balances is None
+    assert balances_cause == FailureCause.NETWORK
+    assert valid is False
+    assert check_cause == FailureCause.NETWORK
+
+
+def test_query_balances_missing_holding_is_bad_data(mock_woo):
+    with patch.object(mock_woo, '_api_query', return_value={'data': {}}):
+        balances, _, cause = mock_woo.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.BAD_DATA
+
+
+def test_rejected_key_code_is_auth_whatever_the_status(mock_woo):
+    response = requests.Response()
+    response.status_code = 400
+    response._content = b'{"success": false, "code": -1002, "message": "invalid"}'
+    with patch.object(mock_woo.session, 'request', return_value=response):
+        assert mock_woo.query_balances().cause == FailureCause.AUTH

@@ -35,6 +35,7 @@ from rotkehlchen.errors.misc import (
     cause_for_credential_check,
     cause_for_undecodable_body,
     remote_error_for_status,
+    required_cause,
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.binance import BinancePermissionError
@@ -121,6 +122,24 @@ def test_alternatives_cause_prefers_what_a_retry_can_heal(
         expected_cause: FailureCause,
 ) -> None:
     assert alternatives_cause(causes) == expected_cause
+
+
+@pytest.mark.parametrize(('causes', 'expected_cause'), [
+    ({FailureCause.AUTH}, FailureCause.AUTH),
+    ({FailureCause.NETWORK, FailureCause.AUTH}, FailureCause.AUTH),
+    ({FailureCause.RATE_LIMITED, FailureCause.AUTH}, FailureCause.AUTH),
+    ({FailureCause.NETWORK, FailureCause.RATE_LIMITED}, FailureCause.RATE_LIMITED),
+    ({FailureCause.NETWORK}, FailureCause.NETWORK),
+    (
+        {FailureCause.NETWORK, FailureCause.AUTH, FailureCause.BAD_DATA},
+        FailureCause.REMOTE_REJECTED,
+    ),
+])
+def test_required_cause_keeps_what_a_retry_cannot_heal(
+        causes: set[FailureCause],
+        expected_cause: FailureCause,
+) -> None:
+    assert required_cause(causes) == expected_cause
 
 
 @pytest.mark.parametrize(('error', 'expected_cause'), [

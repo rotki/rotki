@@ -26,9 +26,16 @@ from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import InputError, RemoteError, cause_for_status
+from rotkehlchen.errors.misc import (
+    InputError,
+    RemoteError,
+    alternatives_cause,
+    cause_for_status,
+    credential_check_cause_of,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     ExchangeWithExtras,
@@ -315,27 +322,36 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             location=LOCATION_BINANCE,
         )
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         try:
             # We know account endpoint returns a dict
             self.api_query_dict('api', 'account')
         except RemoteError as e:
             error = str(e)
             if 'API-key format invalid' in error:
-                return False, 'Provided API Key is in invalid Format'
-            if 'Signature for this request is not valid' in error:
-                return False, 'Provided API Secret is malformed'
-            if 'Invalid API-key, IP, or permissions for action' in error:
-                return False, 'API Key does not match the given secret'
-            if 'Timestamp for this request was' in error:
-                return False, (
-                    f'Local system clock is not in sync with {self.name} server. '
-                    f"Try syncing your system's clock"
+                return ApiKeyCheck(
+                    False,
+                    'Provided API Key is in invalid Format',
+                    FailureCause.AUTH,
                 )
-            # else reraise
-            raise
+            if 'Signature for this request is not valid' in error:
+                return ApiKeyCheck(False, 'Provided API Secret is malformed', FailureCause.AUTH)
+            if 'Invalid API-key, IP, or permissions for action' in error:
+                return ApiKeyCheck(
+                    False,
+                    'API Key does not match the given secret',
+                    FailureCause.AUTH,
+                )
+            if 'Timestamp for this request was' in error:
+                return ApiKeyCheck(
+                    False,
+                    f'Local system clock is not in sync with {self.name} server. '
+                    f"Try syncing your system's clock",
+                    FailureCause.REMOTE_REJECTED,  # the clock needs fixing, not the key
+                )
+            return ApiKeyCheck(False, error, credential_check_cause_of(e))
 
-        return True, ''
+        return ApiKeyCheck(True)
 
     def api_query(
             self,
@@ -570,14 +586,18 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     def _query_spot_balances(
             self,
             balances: defaultdict[AssetWithOracles, FVal],
+            wallet_failures: list[RemoteError],
     ) -> defaultdict[AssetWithOracles, FVal]:
+        """A key may be restricted from this wallet, so a failure to query it is only added
+        to wallet_failures. May raise RemoteError for an invalid response."""
         try:
             account_data = self.api_query_dict(api_type='api', method='account')
-        except (RemoteError, BinancePermissionError) as e:
+        except RemoteError as e:
             log.warning(
                 f'Failed to query {self.name} spot wallet balances.'
                 f'Skipping query. Response details: {e!s}',
             )
+            wallet_failures.append(e)
             return balances
 
         if (binance_balances := account_data.get('balances', None)) is None:
@@ -591,11 +611,13 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     def _query_funding_balances(
             self,
             balances: defaultdict[AssetWithOracles, FVal],
+            wallet_failures: list[RemoteError],
     ) -> defaultdict[AssetWithOracles, FVal]:
         """Query the balances of funding wallet in binance.
         Docs: https://binance-docs.github.io/apidocs/spot/en/#funding-wallet-user_data
 
-        May Raise RemoteError due to api_query or invalid response"""
+        A key may be restricted from this wallet, so a failure to query it is only added
+        to wallet_failures."""
         try:
             if len(funding_balances := self.api_query_list(
                 api_type='sapi',
@@ -604,11 +626,12 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 request_options_key='data',
             )) == 0:
                 return balances
-        except (RemoteError, BinancePermissionError) as e:
+        except RemoteError as e:
             log.warning(
                 f'Failed to query {self.name} funding wallet balances.'
                 f'Skipping query. Response details: {e!s}',
             )
+            wallet_failures.append(e)
             return balances
 
         return self._add_balances(balances=balances, new_balances=funding_balances)
@@ -1070,8 +1093,15 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         try:
             self.first_connection()
             amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
-            amounts = self._query_spot_balances(amounts)
-            amounts = self._query_funding_balances(amounts)
+            wallet_failures: list[RemoteError] = []
+            amounts = self._query_spot_balances(amounts, wallet_failures)
+            amounts = self._query_funding_balances(amounts, wallet_failures)
+            if len(wallet_failures) == 2:  # neither answered, so it's not a restricted key
+                raise RemoteError(
+                    ' '.join(str(x) for x in wallet_failures),
+                    cause=alternatives_cause({x.cause for x in wallet_failures}),
+                )
+
             if self.location != LOCATION_BINANCEUS:
                 for method in (
                         self._query_lending_balances,
@@ -1094,14 +1124,14 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 msg,
                 NetworkFailure(record=UserMessageRecord.BALANCE, error=str(e)),
             )
-            return None, msg
+            return ExchangeQueryBalances(None, msg, e.cause)
 
         returned_balances = self.balances_from_amounts(amounts)
         log.debug(
             f'{self.name} balance query result',
             balances=returned_balances,
         )
-        return dict(returned_balances), ''
+        return ExchangeQueryBalances(dict(returned_balances), '')
 
     def _set_pair_query_progress(
             self,

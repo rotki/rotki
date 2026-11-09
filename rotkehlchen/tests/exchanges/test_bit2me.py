@@ -374,7 +374,7 @@ def test_bit2me_query_balances(bit2me):
         return MockResponse(200, BIT2ME_BALANCES_RESPONSE)
 
     with patch.object(bit2me.session, 'request', side_effect=mock_api_return):
-        balances, msg = bit2me.query_balances()
+        balances, msg, _ = bit2me.query_balances()
 
     assert msg == ''
     # Should have 3 balances (EUR, BTC, ETH) - DOGE has zero balance and is skipped
@@ -402,7 +402,7 @@ def test_bit2me_query_balances_unknown_asset(bit2me):
         return MockResponse(200, response)
 
     with patch.object(bit2me.session, 'request', side_effect=mock_api_return):
-        balances, msg = bit2me.query_balances()
+        balances, msg, _ = bit2me.query_balances()
 
     assert msg == ''
     # Should still have EUR and ETH, but not the unknown asset
@@ -703,3 +703,23 @@ def test_bit2me_query_airdrops(bit2me):
     # Check notes mention airdrop from Bit2Me
     assert 'Airdrop from Bit2Me' in airdrop.notes
     assert '0.00016907' in airdrop.notes
+
+
+def test_query_balances_invalid_json_cause_follows_the_status(bit2me):
+    with patch.object(bit2me, '_api_query', return_value=MockResponse(200, 'not json')):
+        balances, _, cause = bit2me.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.BAD_DATA
+
+
+def test_validate_api_key_refusal_is_auth(bit2me):
+    with patch.object(
+        bit2me,
+        '_api_query',
+        side_effect=RemoteError('refused', cause=FailureCause.REMOTE_REJECTED),
+    ):
+        valid, _, cause = bit2me.validate_api_key()
+
+    assert valid is False
+    assert cause == FailureCause.AUTH

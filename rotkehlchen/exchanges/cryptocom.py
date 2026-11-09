@@ -14,9 +14,10 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import RemoteError, cause_for_status, credential_check_cause_of
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -79,6 +80,8 @@ API_REQUEST_RETRY_AFTER_SECONDS: Final = 60
 
 # API result constants
 API_SUCCESS_CODE: Final = 0
+API_KEY_REJECTED_CODES: Final = {40101, 40103}  # UNAUTHORIZED, IP_ILLEGAL
+API_RATE_LIMITED_CODE: Final = 42901
 
 DEPOSIT_WITHDRAWAL_PAGE_SIZE: Final = 200  # max allowed by api
 DEPOSIT_ARRIVED_STATUS: Final = '1'
@@ -231,6 +234,15 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
 
         return CryptocomResponse(code=code, result=result, message=message)
 
+    @staticmethod
+    def _cause_of_response_code(code: int) -> FailureCause:
+        """The cause of a failure the response's code reports"""
+        if code in API_KEY_REJECTED_CODES:
+            return FailureCause.AUTH
+        if code == API_RATE_LIMITED_CODE:
+            return FailureCause.RATE_LIMITED
+        return FailureCause.REMOTE_REJECTED
+
     def _deserialize_asset_movement(
             self,
             raw_result: dict[str, Any],
@@ -327,7 +339,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
                 asset_identifier=e.identifier,
                 details='balance query',
             )
-        except DeserializationError as e:
+        except (DeserializationError, KeyError) as e:
             self.add_classified_error(
                 f'Error processing {self.name} {instrument_name} balance result due to inability '
                 f'to deserialize asset amount due to {e!s}. Skipping balance result.',
@@ -342,11 +354,18 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
         """Return the account exchange balances on Crypto.com"""
         self.first_connection()
 
-        response = self._api_query('private/user-balance')
-        result = self._process_response(response)
+        try:
+            result = self._process_response(self._api_query('private/user-balance'))
+        except RemoteError as e:
+            log.error('%s balances query failed due to %s', self.name, e)
+            return ExchangeQueryBalances(None, str(e), e.cause)
 
         if result.code != API_SUCCESS_CODE:
-            return None, f'{self.name} balance query failed: {result.message}'
+            return ExchangeQueryBalances(
+                None,
+                f'{self.name} balance query failed: {result.message}',
+                self._cause_of_response_code(result.code),
+            )
 
         assets_balance: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
 
@@ -356,7 +375,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             balance_data = []
 
         for balance_entry in balance_data:
-            if len(position_balances := balance_entry['position_balances']) > 0:
+            if len(position_balances := balance_entry.get('position_balances', [])) > 0:
                 for position_entry in position_balances:
                     assets_balance = self.deserialize_balance(
                         new_balance_data=position_entry,
@@ -370,7 +389,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
                     existing_balances=assets_balance,
                 )
 
-        return dict(self.balances_from_amounts(assets_balance)), ''
+        return ExchangeQueryBalances(dict(self.balances_from_amounts(assets_balance)), '')
 
     def _query_deposits_withdrawals(
             self,
@@ -587,18 +606,22 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
         )
         return end_ts
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """Validates that the Crypto.com API key is good for usage in rotki"""
         try:
             response = self._api_query('private/user-balance')
             result = self._process_response(response)
 
             if result.code != API_SUCCESS_CODE:
-                return False, f'Crypto.com API key validation failed: {result.message}'
+                return ApiKeyCheck(
+                    False,
+                    f'Crypto.com API key validation failed: {result.message}',
+                    self._cause_of_response_code(result.code),
+                )
         except RemoteError as e:
-            return False, str(e)
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
         else:
-            return True, ''
+            return ApiKeyCheck(True)
 
     def query_online_margin_history(
             self,

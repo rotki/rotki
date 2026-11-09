@@ -18,9 +18,15 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import (
+    RemoteError,
+    cause_for_status,
+    cause_for_undecodable_body,
+    credential_check_cause_of,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -130,14 +136,14 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         if not self.first_connection_made:
             self.first_connection_made = True
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """Validate Bit2me API credentials by querying a minimal private endpoint."""
         try:
             self._api_query('balances')
         except RemoteError as e:
-            return False, str(e)
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
 
-        return True, ''
+        return ApiKeyCheck(True)
 
     def query_online_margin_history(
             self,
@@ -238,14 +244,18 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         except RemoteError as e:
             msg = f'Bit2me API request failed. {e!s}'
             log.error(msg)
-            return None, msg
+            return ExchangeQueryBalances(None, msg, e.cause)
 
         try:
             response_data = jsonloads_list(response.text)
         except JSONDecodeError as e:
             msg = f'Bit2me returned invalid JSON response. {e!s}'
             log.error(msg)
-            return None, msg
+            return ExchangeQueryBalances(
+                None,
+                msg,
+                cause_for_undecodable_body(response.status_code),
+            )
 
         # The pocket endpoint returns a list of pockets. A currency can have more than one
         # pocket (e.g. "BTC 1", "BTC 2"), so balances are accumulated per asset.
@@ -312,7 +322,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                 )
                 continue
 
-        return dict(assets_balance), ''
+        return ExchangeQueryBalances(dict(assets_balance), '')
 
     def _query_transactions(
             self,

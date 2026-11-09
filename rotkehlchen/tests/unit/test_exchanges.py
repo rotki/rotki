@@ -6,7 +6,9 @@ from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.connections.types import new_connection_identifier
 from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.exchanges.binance import Binance
+from rotkehlchen.exchanges.exchange import ApiKeyCheck
 from rotkehlchen.locations.constants import (
     LOCATION_BINANCE,
     LOCATION_BITPANDA,
@@ -148,16 +150,16 @@ def test_change_credentials(rotkehlchen_api_server: APIServer) -> None:
 
     def mock_kucoin_validate_api_key(kucoin):
         if kucoin.api_passphrase in (TEST_CREDENTIALS_1.passphrase, TEST_CREDENTIALS_3.passphrase):
-            return True, ''
+            return ApiKeyCheck(True)
 
-        return False, 'Invalid passphrase'  # For TEST_KUCOIN_PASSPHRASE_2
+        return ApiKeyCheck(False, 'Invalid passphrase', FailureCause.AUTH)  # For TEST_KUCOIN_PASSPHRASE_2  # noqa: E501
 
     def get_current_credentials(kucoin) -> ExchangeAuthCredentials:
         return ExchangeAuthCredentials(kucoin.api_key, kucoin.secret, kucoin.api_passphrase)
 
     with patch('rotkehlchen.exchanges.kucoin.Kucoin.validate_api_key', mock_kucoin_validate_api_key):  # noqa: E501
         # Setup with correct credentials
-        identifier, _ = rotki.setup_exchange(
+        identifier, _, _ = rotki.setup_exchange(
             name='KuCoin',
             connector=LOCATION_KUCOIN,
             api_key=ApiKey('api-key-1'),
@@ -169,7 +171,7 @@ def test_change_credentials(rotkehlchen_api_server: APIServer) -> None:
         assert _saved_credentials(rotki.data.db, identifier) == get_current_credentials(kucoin) == TEST_CREDENTIALS_1  # noqa: E501
 
         # Try to change credentials to incorrect ones
-        success, _ = rotki.exchange_manager.edit_exchange(
+        success, _, _ = rotki.exchange_manager.edit_exchange(
             identifier=identifier,
             new_name=None,
             api_key=TEST_CREDENTIALS_2.api_key,
@@ -185,7 +187,7 @@ def test_change_credentials(rotkehlchen_api_server: APIServer) -> None:
         assert _saved_credentials(rotki.data.db, identifier) == get_current_credentials(kucoin) == TEST_CREDENTIALS_1, 'Credentials should not have changed'  # noqa: E501
 
         # Change credentials to correct ones
-        success, _ = rotki.exchange_manager.edit_exchange(
+        success, _, _ = rotki.exchange_manager.edit_exchange(
             identifier=identifier,
             new_name=None,
             api_key=TEST_CREDENTIALS_3.api_key,
@@ -223,10 +225,10 @@ def test_delete_cannot_interleave_with_setup_persistence(
             return original_add_exchange(*args, **kwargs)
 
     with (
-        patch('rotkehlchen.exchanges.kucoin.Kucoin.validate_api_key', return_value=(True, '')),
+        patch('rotkehlchen.exchanges.kucoin.Kucoin.validate_api_key', return_value=ApiKeyCheck(True)),  # noqa: E501
         patch.object(rotki.data.db, 'add_exchange', side_effect=add_exchange_racing_a_delete),
     ):
-        identifier, msg = rotki.setup_exchange(
+        identifier, msg, _ = rotki.setup_exchange(
             name='KuCoin',
             connector=LOCATION_KUCOIN,
             api_key=ApiKey('api-key-1'),
@@ -247,7 +249,7 @@ def test_delete_cannot_interleave_with_setup_persistence(
 def test_binance_selected_pairs_persist_after_restart(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     expected_trade_pairs = ['ETHBTC', 'BTCUSDT', 'NEOBTC']
-    with patch('rotkehlchen.exchanges.binance.Binance.validate_api_key', return_value=(True, '')):
+    with patch('rotkehlchen.exchanges.binance.Binance.validate_api_key', return_value=ApiKeyCheck(True)):  # noqa: E501
         rotki.setup_exchange(
             name='binance 1',
             connector=LOCATION_BINANCE,

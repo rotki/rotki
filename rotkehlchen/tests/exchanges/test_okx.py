@@ -1,4 +1,5 @@
 import warnings as test_warnings
+from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -7,6 +8,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.exchanges.okx import Okx, OkxEndpoint
 from rotkehlchen.fval import FVal
@@ -182,7 +184,7 @@ def test_okx_query_balances(mock_okx: Okx):
         )
 
     with patch.object(mock_okx.session, 'request', side_effect=mock_okx_balances):
-        balances, msg = mock_okx.query_balances()
+        balances, msg, _ = mock_okx.query_balances()
 
     assert msg == ''
     assert balances is not None
@@ -1042,3 +1044,42 @@ def test_okx_withdrawals_pagination(mock_okx: Okx) -> None:
     assert sum(
         movement.event_subtype == HistoryEventSubType.SPEND for movement in asset_movements
     ) == mock_okx.MAX_RESULTS + 1
+
+
+@pytest.mark.parametrize(('status', 'expected_balances', 'expected_check'), [
+    (HTTPStatus.UNAUTHORIZED, FailureCause.AUTH, FailureCause.AUTH),
+    (HTTPStatus.FORBIDDEN, FailureCause.REMOTE_REJECTED, FailureCause.AUTH),
+    (HTTPStatus.TOO_MANY_REQUESTS, FailureCause.RATE_LIMITED, FailureCause.RATE_LIMITED),
+])
+def test_failed_status_cause(mock_okx: Okx, status, expected_balances, expected_check) -> None:
+    response = MockResponse(status, '{"code": "50113", "data": [], "msg": "failed"}')
+    with patch.object(mock_okx.session, 'request', return_value=response):
+        balances, _, balances_cause = mock_okx.query_balances()
+        valid, _, check_cause = mock_okx.validate_api_key()
+
+    assert balances is None
+    assert balances_cause == expected_balances
+    assert valid is False
+    assert check_cause == expected_check
+
+
+def test_unexpected_success_body_causes(mock_okx: Okx) -> None:
+    response = MockResponse(HTTPStatus.OK, '{"code": "1", "data": [], "msg": "failed"}')
+    with patch.object(mock_okx.session, 'request', return_value=response):
+        balances, _, balances_cause = mock_okx.query_balances()
+        valid, _, check_cause = mock_okx.validate_api_key()
+
+    assert balances is None
+    assert balances_cause == FailureCause.REMOTE_REJECTED
+    assert valid is False
+    assert check_cause == FailureCause.AUTH
+
+
+def test_funding_body_error_is_not_read_as_an_empty_funding_wallet(mock_okx: Okx) -> None:
+    trading = MockResponse(HTTPStatus.OK, '{"code": "0", "data": [{"details": []}]}')
+    funding = MockResponse(HTTPStatus.OK, '{"code": "1", "data": [], "msg": "failed"}')
+    with patch.object(mock_okx.session, 'request', side_effect=[trading, funding]):
+        balances, _, cause = mock_okx.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.REMOTE_REJECTED

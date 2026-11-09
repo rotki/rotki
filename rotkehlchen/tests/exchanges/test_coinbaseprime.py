@@ -1,4 +1,5 @@
 import uuid
+from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
@@ -8,6 +9,7 @@ from rotkehlchen.constants.assets import A_ENS, A_USDC
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.exchanges.coinbaseprime import (
     Coinbaseprime,
     _process_deposit_withdrawal,
@@ -108,7 +110,7 @@ def test_coinbase_query_balances(function_scope_coinbaseprime: Coinbaseprime):
         patch.object(coinbase, '_get_portfolio_ids', new=lambda *args, **kwargs: ['fake_id']),
         patch.object(coinbase.db.msg_aggregator, 'add_message') as mock_msg_aggregator,
     ):
-        balances, msg = coinbase.query_balances()
+        balances, msg, _ = coinbase.query_balances()
 
     assert msg == ''
     assert len(balances) == 3
@@ -619,3 +621,31 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
     with function_scope_coinbaseprime.db.conn.read_ctx() as cursor:
         cursor.execute('SELECT start_ts, end_ts FROM used_query_ranges')
         assert cursor.fetchall() == [(0, ts_now())]
+
+
+def test_rejected_key_is_auth(function_scope_coinbaseprime: Coinbaseprime) -> None:
+    coinbase = function_scope_coinbaseprime
+    response = MockResponse(HTTPStatus.UNAUTHORIZED, '{"message": "invalid signature"}')
+    with patch.object(coinbase.session, 'get', return_value=response):
+        balances, _, balances_cause = coinbase.query_balances()
+        valid, _, check_cause = coinbase.validate_api_key()
+
+    assert balances is None
+    assert balances_cause == FailureCause.AUTH
+    assert valid is False
+    assert check_cause == FailureCause.AUTH
+
+
+def test_query_balances_missing_balances_is_bad_data(
+        function_scope_coinbaseprime: Coinbaseprime,
+) -> None:
+    coinbase = function_scope_coinbaseprime
+    with patch.object(
+        coinbase,
+        '_api_query',
+        side_effect=[{'portfolios': [{'id': 'portfolio'}]}, {}],
+    ):
+        balances, _, cause = coinbase.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.BAD_DATA

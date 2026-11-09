@@ -20,7 +20,8 @@ from rotkehlchen.constants.assets import A_EUR, A_USD
 from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.exchanges.exchange import HistoryEventQueue
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.exchanges.exchange import ApiKeyCheck, HistoryEventQueue
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.bank_transaction import BankTransactionEvent
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
@@ -97,18 +98,19 @@ def test_validate_api_key(kit: BankConnectorKit, database, function_scope_messag
     connector = kit.create(database, function_scope_messages_aggregator)
     transport = kit.create_transport()
     with patch_bank_transport(connector, transport):
-        assert connector.validate_api_key() == (True, '')
+        assert connector.validate_api_key() == ApiKeyCheck(True)
         transport.force(401, '{"errors":[{"code":"unauthorized"}]}')
-        result, message = connector.validate_api_key()
+        result, message, cause = connector.validate_api_key()
     assert result is False
     assert 'rejected' in message
+    assert cause == FailureCause.AUTH
 
 
 @KITS
 def test_query_balances(kit: BankConnectorKit, database, function_scope_messages_aggregator, inquirer):  # pylint: disable=unused-argument  # noqa: E501
     connector = kit.create(database, function_scope_messages_aggregator)
     with patch_bank_transport(connector, kit.create_transport()):
-        balances, message = connector.query_balances()
+        balances, message, _ = connector.query_balances()
     assert message == ''
     assert balances is not None
     assert {asset: balance.amount for asset, balance in balances.items()} == kit.expected_balances
@@ -127,7 +129,7 @@ def test_account_balances_add_up_to_the_bank_balances(database, function_scope_m
         BankAccount(identifier='e', name='Empty', asset=A_EUR.resolve_to_asset_with_oracles(), balance=ZERO),  # noqa: E501
     ]):
         accounts = connector.query_account_balances()
-        balances, _ = connector.query_balances()
+        balances, _, _ = connector.query_balances()
 
     assert isinstance(accounts, list) and balances is not None
     assert [(x['identifier'], x['name'], x['iban'], x['asset'], x['amount']) for x in (x.serialize() for x in accounts)] == [  # noqa: E501
@@ -276,7 +278,7 @@ def test_error_mapping(kit: BankConnectorKit, database, function_scope_messages_
 
         # the exchange pipeline surfaces a bank error as a failed query, not a crash
         transport.force(500, 'boom')
-        balances, message = connector.query_balances()
+        balances, message, _ = connector.query_balances()
         assert balances is None
         assert 'Failed to query' in message
 

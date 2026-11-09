@@ -18,9 +18,15 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import (
+    RemoteError,
+    cause_for_status,
+    cause_of,
+    credential_check_cause_of,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -157,7 +163,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
 
         return changed
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """Validates that the Gemini API key is good for usage in rotki
 
         Makes sure that the following permissions are given to the key:
@@ -171,15 +177,14 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
         try:
             roles = self._private_api_query(endpoint='roles')
         except GeminiPermissionError:
-            return False, msg
+            return ApiKeyCheck(False, msg, FailureCause.AUTH)
         except RemoteError as e:
-            error = str(e)
-            return False, error
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
 
         if roles.get('isAuditor', False) is False:
-            return False, msg
+            return ApiKeyCheck(False, msg, FailureCause.AUTH)
 
-        return True, ''
+        return ApiKeyCheck(True)
 
     @property
     def symbols(self) -> list[str]:
@@ -340,7 +345,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
         except (GeminiPermissionError, RemoteError) as e:
             msg = f'Gemini API request failed. {e!s}'
             log.error(msg)
-            return None, msg
+            return ExchangeQueryBalances(None, msg, cause_of(e, FailureCause.AUTH))
 
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for entry in balances:
@@ -373,7 +378,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
                 log.error('Error processing a gemini balance', error=msg)
                 continue
 
-        return dict(self.balances_from_amounts(amounts)), ''
+        return ExchangeQueryBalances(dict(self.balances_from_amounts(amounts)), '')
 
     def _get_paginated_query(
             self,

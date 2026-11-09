@@ -16,9 +16,10 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import RemoteError, cause_for_status, credential_check_cause_of
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -243,7 +244,7 @@ class Bitvavo(ExchangeInterface, SignatureGeneratorMixin):
 
         return response_data
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """Validates that the Bitvavo API key can read both endpoints the balance query needs.
 
         query_balances() fails when either of them fails, so a key that can read only one
@@ -253,8 +254,8 @@ class Bitvavo(ExchangeInterface, SignatureGeneratorMixin):
             self._api_query(endpoint='/balance')
             self._api_query(endpoint='/stakingBalance')
         except RemoteError as e:
-            return False, str(e)
-        return True, ''
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
+        return ApiKeyCheck(True)
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -275,12 +276,16 @@ class Bitvavo(ExchangeInterface, SignatureGeneratorMixin):
             staked = self._api_query(endpoint='/stakingBalance')
         except RemoteError as e:
             log.error('Failed to query Bitvavo balances due to %s', e)
-            return None, f'Failed to query Bitvavo balances due to a remote error: {e!s}'
+            return ExchangeQueryBalances(
+                None,
+                f'Failed to query Bitvavo balances due to a remote error: {e!s}',
+                e.cause,
+            )
 
         if not isinstance(balances, list) or not isinstance(staked, list):
             msg = f'Bitvavo balance query returned unexpected data: {balances} {staked}'
             log.error(msg)
-            return None, msg
+            return ExchangeQueryBalances(None, msg, FailureCause.BAD_DATA)
 
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for balance, amount_keys in chain(
@@ -315,7 +320,7 @@ class Bitvavo(ExchangeInterface, SignatureGeneratorMixin):
 
             amounts[asset] += amount
 
-        return dict(self.balances_from_amounts(amounts)), ''
+        return ExchangeQueryBalances(dict(self.balances_from_amounts(amounts)), '')
 
     @staticmethod
     def _ledger_fee(entry: dict[str, Any]) -> AssetAmount | None:

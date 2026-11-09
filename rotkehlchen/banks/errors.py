@@ -20,8 +20,8 @@ class BankAuthExpired(BankError):
     """The stored credentials or session no longer authenticate. The user has to re-run the
     connector's auth flow (for a static secret: enter a new key)."""
 
-    def __init__(self, message: str) -> None:
-        super().__init__(message, cause=FailureCause.AUTH)
+    def __init__(self, message: str, cause: FailureCause = FailureCause.AUTH) -> None:
+        super().__init__(message, cause=cause)
 
 
 class BankNameTaken(BankAuthExpired):

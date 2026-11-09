@@ -19,9 +19,16 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import (
+    RemoteError,
+    cause_for_credential_check,
+    cause_for_status,
+    cause_for_undecodable_body,
+    credential_check_cause_of,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -81,6 +88,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE = 400002
+# The known error codes that mean the key itself was rejected
+API_KEY_REJECTED_ERROR_CODES: Final = {400003, 400004, 400005, 400007}
 # More understandable explanation for API key-related errors than the default `reason`
 API_KEY_ERROR_CODE_ACTION = {
     API_SYSTEM_CLOCK_NOT_SYNCED_ERROR_CODE: 'Invalid timestamp. Is your system clock synced?',
@@ -477,7 +486,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             accounts_data = response_dict['data']
         except KeyError as e:
             msg = 'Kucoin balances JSON response is missing data key'
-            log.error(msg, response_dict)
+            log.error('%s: %s', msg, response_dict)
             raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
 
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
@@ -638,7 +647,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             self,
             response: Response,
             case: Literal[KucoinCase.API_KEY],
-    ) -> tuple[bool, str]:
+    ) -> ApiKeyCheck:
         ...
 
     @overload
@@ -676,7 +685,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                 KucoinCase.DEPOSITS,
                 KucoinCase.WITHDRAWALS,
             ],
-    ) -> list | (tuple[bool, str] | ExchangeQueryBalances):
+    ) -> list | ApiKeyCheck | ExchangeQueryBalances:
         """Process unsuccessful responses
 
         May raise RemoteError
@@ -687,8 +696,14 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             msg = f'Kucoin {case} returned an invalid JSON response: {response.text}.'
             log.error(msg)
 
-            if case in (KucoinCase.API_KEY, KucoinCase.BALANCES):
-                return False, msg
+            if case == KucoinCase.API_KEY:
+                return ApiKeyCheck(False, msg, cause_for_credential_check(response.status_code))
+            if case == KucoinCase.BALANCES:
+                return ExchangeQueryBalances(
+                    None,
+                    msg,
+                    cause_for_undecodable_body(response.status_code),
+                )
             if case in PAGINATED_CASES:
                 self.add_classified_error(
                     f'Got remote error while querying Kucoin {case}: {msg}',
@@ -718,8 +733,24 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             )
             log.error(msg)
 
-        if case in (KucoinCase.BALANCES, KucoinCase.API_KEY):
-            return False, msg
+        body_cause: FailureCause | None = None
+        if error_code in API_KEY_REJECTED_ERROR_CODES:
+            body_cause = FailureCause.AUTH
+        elif error_code in API_KEY_ERROR_CODE_ACTION:  # the clock or the account, not the key
+            body_cause = FailureCause.REMOTE_REJECTED
+
+        if case == KucoinCase.API_KEY:
+            return ApiKeyCheck(
+                False,
+                msg,
+                body_cause or cause_for_credential_check(response.status_code),
+            )
+        if case == KucoinCase.BALANCES:
+            return ExchangeQueryBalances(
+                None,
+                msg,
+                body_cause or cause_for_status(response.status_code),
+            )
         if case in PAGINATED_CASES:
             self.add_classified_error(
                 f'Got remote error while querying Kucoin {case}: {msg}',
@@ -735,26 +766,29 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
     @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> ExchangeQueryBalances:
-        """Return the account balances
-
-        May raise RemoteError
-        """
-        accounts_response = self._api_query(KucoinCase.BALANCES)
-        if accounts_response.status_code != HTTPStatus.OK:
-            result, msg = self._process_unsuccessful_response(
-                response=accounts_response,
-                case=KucoinCase.BALANCES,
-            )
-            return result, msg
-
+        """Return the account balances"""
         try:
-            response_dict = jsonloads_dict(accounts_response.text)
-        except JSONDecodeError as e:
-            msg = f'Kucoin balances returned an invalid JSON response: {accounts_response.text}.'
-            log.error(msg)
-            raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
+            accounts_response = self._api_query(KucoinCase.BALANCES)
+            if accounts_response.status_code != HTTPStatus.OK:
+                return self._process_unsuccessful_response(
+                    response=accounts_response,
+                    case=KucoinCase.BALANCES,
+                )
 
-        return self._deserialize_accounts_balances(response_dict), ''
+            try:
+                response_dict = jsonloads_dict(accounts_response.text)
+            except JSONDecodeError:
+                msg = (
+                    f'Kucoin balances returned an invalid JSON response: '
+                    f'{accounts_response.text}.'
+                )
+                log.error(msg)
+                return ExchangeQueryBalances(None, msg, FailureCause.BAD_DATA)
+
+            return ExchangeQueryBalances(self._deserialize_accounts_balances(response_dict), '')
+        except RemoteError as e:
+            log.error('Kucoin balances query failed due to %s', e)
+            return ExchangeQueryBalances(None, str(e), e.cause)
 
     def query_online_history_events(
             self,
@@ -810,21 +844,19 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
         )
         return actual_end_ts
 
-    def validate_api_key(self) -> tuple[bool, str]:
-        """Validates that the KuCoin API key is good for usage in rotki
+    def validate_api_key(self) -> ApiKeyCheck:
+        """Validates that the KuCoin API key is good for usage in rotki"""
+        try:
+            response = self._api_query(KucoinCase.BALANCES)
+            if response.status_code != HTTPStatus.OK:
+                return self._process_unsuccessful_response(
+                    response=response,
+                    case=KucoinCase.API_KEY,
+                )
+        except RemoteError as e:
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
 
-        May raise RemoteError
-        """
-        response = self._api_query(KucoinCase.BALANCES)
-
-        if response.status_code != HTTPStatus.OK:
-            result, msg = self._process_unsuccessful_response(
-                response=response,
-                case=KucoinCase.API_KEY,
-            )
-            return result, msg
-
-        return True, ''
+        return ApiKeyCheck(True)
 
     def query_online_margin_history(
             self,

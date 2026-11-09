@@ -129,7 +129,7 @@ def test_api_query_errors(
 
 def test_validate_api_key(bitvavo_exchange: Bitvavo) -> None:
     with patch.object(bitvavo_exchange, '_api_query', return_value=[]) as api_query:
-        assert bitvavo_exchange.validate_api_key() == (True, '')
+        assert bitvavo_exchange.validate_api_key() == (True, '', None)
 
     assert api_query.call_args_list == [
         call(endpoint='/balance'),
@@ -144,10 +144,11 @@ def test_validate_api_key(bitvavo_exchange: Bitvavo) -> None:
             cause=FailureCause.AUTH,
         ),
     ):
-        valid, msg = bitvavo_exchange.validate_api_key()
+        valid, msg, cause = bitvavo_exchange.validate_api_key()
 
     assert valid is False
     assert 'error code 305' in msg
+    assert cause == FailureCause.AUTH
 
 
 def test_validate_api_key_needs_the_staking_balance(bitvavo_exchange: Bitvavo) -> None:
@@ -163,10 +164,11 @@ def test_validate_api_key_needs_the_staking_balance(bitvavo_exchange: Bitvavo) -
         return []
 
     with patch.object(bitvavo_exchange, '_api_query', side_effect=mock_api_query):
-        valid, msg = bitvavo_exchange.validate_api_key()
+        valid, msg, cause = bitvavo_exchange.validate_api_key()
 
     assert valid is False
     assert 'error code 311' in msg
+    assert cause == FailureCause.AUTH
 
 
 def test_edit_exchange_credentials_updates_key_header(bitvavo_exchange: Bitvavo) -> None:
@@ -216,10 +218,11 @@ def test_query_balances_unexpected_data(bitvavo_exchange: Bitvavo) -> None:
         '_api_query',
         side_effect=lambda endpoint: responses[endpoint],
     ):
-        balances, msg = bitvavo_exchange.query_balances()
+        balances, msg, cause = bitvavo_exchange.query_balances()
 
     assert balances is None
     assert 'unexpected data' in msg
+    assert cause == FailureCause.BAD_DATA
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
@@ -239,7 +242,7 @@ def test_query_balances_skips_malformed_entries(bitvavo_exchange: Bitvavo) -> No
         '_api_query',
         side_effect=lambda endpoint: responses[endpoint],
     ):
-        balances, msg = bitvavo_exchange.query_balances()
+        balances, msg, _ = bitvavo_exchange.query_balances()
 
     assert msg == ''
     assert balances == {A_BTC: Balance(amount=FVal('1'), value=FVal('1.5'))}
@@ -278,7 +281,7 @@ def test_query_balances(bitvavo_exchange: Bitvavo) -> None:
         '_api_query',
         side_effect=lambda endpoint: responses[endpoint],
     ) as api_query:
-        balances, msg = bitvavo_exchange.query_balances()
+        balances, msg, _ = bitvavo_exchange.query_balances()
 
     assert api_query.call_args_list == [
         call(endpoint='/balance'),
@@ -303,22 +306,24 @@ def test_query_balances_staking_query_fails(bitvavo_exchange: Bitvavo) -> None:
         return [{'symbol': 'BTC', 'available': '1', 'inOrder': '0'}]
 
     with patch.object(bitvavo_exchange, '_api_query', side_effect=mock_api_query):
-        balances, msg = bitvavo_exchange.query_balances()
+        balances, msg, cause = bitvavo_exchange.query_balances()
 
     assert balances is None
     assert 'staking endpoint down' in msg
+    assert cause == FailureCause.NETWORK
 
 
 def test_query_balances_remote_error(bitvavo_exchange: Bitvavo) -> None:
     with patch.object(
             bitvavo_exchange,
             '_api_query',
-            side_effect=RemoteError('boom', cause=FailureCause.NETWORK),
+            side_effect=RemoteError('boom', cause=FailureCause.RATE_LIMITED),
     ):
-        balances, msg = bitvavo_exchange.query_balances()
+        balances, msg, cause = bitvavo_exchange.query_balances()
 
     assert balances is None
     assert msg == 'Failed to query Bitvavo balances due to a remote error: boom'
+    assert cause == FailureCause.RATE_LIMITED
 
 
 @pytest.mark.parametrize(('value', 'expected'), [

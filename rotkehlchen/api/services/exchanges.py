@@ -7,7 +7,7 @@ from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.result import ApiResult, FailResult, OkResult
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError, alternatives_cause, cause_of
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.utils.misc import combine_dicts, ts_now
 
@@ -60,7 +60,7 @@ class ExchangesService:
             gate_location: GateLocation | None,
     ) -> ApiResult:
         """Returns the identifier of the new connection"""
-        identifier, msg = self.rotkehlchen.setup_exchange(
+        identifier, msg, cause = self.rotkehlchen.setup_exchange(
             name=name,
             connector=connector,
             api_key=api_key,
@@ -75,7 +75,7 @@ class ExchangesService:
             gate_location=gate_location,
         )
         if identifier is None:
-            return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+            return FailResult(msg, HTTPStatus.CONFLICT, cause or FailureCause.INTERNAL)
         return OkResult({'identifier': identifier}, message=msg)
 
     def get_binance_history_start_timestamp(self) -> Timestamp:
@@ -103,7 +103,7 @@ class ExchangesService:
             okx_location: OkxLocation | None,
             gate_location: GateLocation | None,
     ) -> ApiResult:
-        edited, msg = self.rotkehlchen.exchange_manager.edit_exchange(
+        edited, msg, cause = self.rotkehlchen.exchange_manager.edit_exchange(
             identifier=identifier,
             new_name=new_name,
             api_key=api_key,
@@ -117,7 +117,7 @@ class ExchangesService:
             gate_location=gate_location,
         )
         if not edited:
-            return FailResult(msg, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+            return FailResult(msg, HTTPStatus.CONFLICT, cause or FailureCause.INTERNAL)
         return OkResult(True, message=msg)
 
     def remove_exchange(self, identifier: str) -> ApiResult:
@@ -206,21 +206,41 @@ class ExchangesService:
 
         per_account: dict[str, dict[str, dict[AssetWithOracles, Balance]]] = {}
         totals: dict[str, dict[AssetWithOracles, Balance]] = {}
-        failed_accounts: dict[str, dict[str, str]] = {}
+        failed_accounts: dict[str, dict[str, dict[str, str]]] = {}
+        failure_causes: set[FailureCause] = set()
         errors: list[str] = []
         for exchange in exchanges:
-            balances, msg = exchange.query_balances(ignore_cache=ignore_cache)
+            try:
+                balances, msg, cause = exchange.query_balances(ignore_cache=ignore_cache)
+            except (RemoteError, KeyError, DeserializationError) as e:
+                balances, msg = None, f'{exchange.name} balance query failed: {e!s}'
+                cause = cause_of(e, FailureCause.BAD_DATA)
+
             location_str = str(exchange.data_location)
             if balances is None:
-                failed_accounts.setdefault(location_str, {})[exchange.connection_identifier] = msg
+                failure_causes.add(cause := cause or FailureCause.INTERNAL)
+                failed_accounts.setdefault(location_str, {})[exchange.connection_identifier] = {
+                    'message': msg,
+                    'cause': cause,
+                }
                 errors.append(msg)
                 continue
 
             per_account.setdefault(location_str, {})[exchange.connection_identifier] = balances
             totals[location_str] = combine_dicts(totals.get(location_str, {}), balances)
 
+        if len(failure_causes) == 0 and len(per_account) == 0:
+            return FailResult(
+                'No exchange is connected',
+                HTTPStatus.CONFLICT,
+                FailureCause.NOT_FOUND,
+            )
         if len(per_account) == 0:
-            return FailResult(' '.join(errors), HTTPStatus.CONFLICT, FailureCause.NETWORK)
+            return FailResult(
+                ' '.join(errors),
+                HTTPStatus.CONFLICT,
+                alternatives_cause(failure_causes),  # a retry queries every account again
+            )
 
         result: dict[str, Any] = {
             'per_account': per_account,

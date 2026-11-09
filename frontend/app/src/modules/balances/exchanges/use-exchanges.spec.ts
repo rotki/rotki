@@ -108,7 +108,7 @@ describe('useExchanges', () => {
       set(exchangeBalances, { kraken: { BTC: { amount: bigNumberify(2), value: bigNumberify(100000) } } });
       store.exchangeAccountBalances = { kraken: { 'kraken-main': { BTC: { amount: bigNumberify(2), value: bigNumberify(100000) } } } };
       runTaskMock.mockResolvedValue(ok({
-        failedAccounts: { kraken: { 'kraken-main': 'API request failed' } },
+        failedAccounts: { kraken: { 'kraken-main': { cause: 'network', message: 'API request failed' } } },
         perAccount: { kraken: { other: { BTC: { amount: '1', value: '50000' } } } },
         totals: { kraken: { BTC: { amount: '1', value: '50000' } } },
       }));
@@ -124,7 +124,7 @@ describe('useExchanges', () => {
 
     it('should store healthy connection balances on a fresh login despite another connection failing', async () => {
       runTaskMock.mockResolvedValue(ok({
-        failedAccounts: { kraken: { expired: 'Invalid key' } },
+        failedAccounts: { kraken: { expired: { cause: 'auth', message: 'Invalid key' } } },
         perAccount: { kraken: { healthy: { BTC: { amount: '1', value: '50000' } } } },
         totals: { kraken: { BTC: { amount: '1', value: '50000' } } },
       }));
@@ -143,7 +143,7 @@ describe('useExchanges', () => {
         createTestExchange('kraken', 'b'),
       ]);
       runTaskMock.mockResolvedValue(ok({
-        failedAccounts: { kraken: { 'kraken-a': 'first failed', 'kraken-b': 'second failed' } },
+        failedAccounts: { kraken: { 'kraken-a': { cause: 'network', message: 'first failed' }, 'kraken-b': { cause: 'auth', message: 'second failed' } } },
         perAccount: {},
         totals: {},
       }));
@@ -158,7 +158,7 @@ describe('useExchanges', () => {
 
     it('should store the balances when only another location failed', async () => {
       runTaskMock.mockResolvedValue(ok({
-        failedAccounts: { binance: { 'binance-main': 'API request failed' } },
+        failedAccounts: { binance: { 'binance-main': { cause: 'network', message: 'API request failed' } } },
         perAccount: {},
         totals: { kraken: { BTC: { amount: '1', value: '50000' } } },
       }));

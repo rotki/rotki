@@ -24,7 +24,7 @@ from rotkehlchen.exchanges.bitstamp import (
     USER_TRANSACTION_SORTING_MODE,
     Bitstamp,
 )
-from rotkehlchen.exchanges.exchange import HistoryEventQueue
+from rotkehlchen.exchanges.exchange import ExchangeQueryBalances, HistoryEventQueue
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
@@ -93,9 +93,10 @@ def test_validate_api_key_invalid_json(mock_bitstamp):
         return MockResponse(HTTPStatus.FORBIDDEN, '{"key"}')
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-        result, msg = mock_bitstamp.validate_api_key()
+        result, msg, cause = mock_bitstamp.validate_api_key()
         assert result is False
         assert msg == 'Bitstamp returned invalid JSON response: {"key"}.'
+        assert cause == FailureCause.AUTH
 
 
 def test_validate_api_key_err_auth_nonce(mock_bitstamp):
@@ -107,13 +108,15 @@ def test_validate_api_key_err_auth_nonce(mock_bitstamp):
         )
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-        result, msg = mock_bitstamp.query_balances()
-        assert result is False
+        result, msg, cause = mock_bitstamp.query_balances()
+        assert result is None
         assert msg == API_ERR_AUTH_NONCE_MESSAGE
+        assert cause == FailureCause.REMOTE_REJECTED
 
-        result, msg = mock_bitstamp.validate_api_key()
+        result, msg, cause = mock_bitstamp.validate_api_key()
         assert result is False
         assert msg == API_ERR_AUTH_NONCE_MESSAGE
+        assert cause == FailureCause.REMOTE_REJECTED
 
         with pytest.raises(RemoteError, match=API_ERR_AUTH_NONCE_MESSAGE):
             mock_bitstamp.query_online_history_events(0, 1)
@@ -138,10 +141,15 @@ def test_validate_api_key_api_key_error_code(
         )
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-        result, msg = mock_bitstamp.validate_api_key()
+        result, msg, cause = mock_bitstamp.validate_api_key()
 
     assert result is False
     assert msg == API_KEY_ERROR_CODE_ACTION[code]
+    assert cause == (
+        FailureCause.REMOTE_REJECTED
+        if code in (API_ERR_AUTH_NONCE_CODE, 'API0006')
+        else FailureCause.AUTH
+    )
 
 
 def test_validate_api_key_success(mock_bitstamp):
@@ -152,20 +160,23 @@ def test_validate_api_key_success(mock_bitstamp):
         return MockResponse(HTTPStatus.OK, '')
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-        result, msg = mock_bitstamp.validate_api_key()
+        result, msg, _ = mock_bitstamp.validate_api_key()
 
     assert result is True
     assert msg == ''
 
 
 def test_query_balances_invalid_json(mock_bitstamp):
-    """Test an invalid JSON response raises RemoteError.
+    """Test an invalid JSON response is a failed query caused by bad data.
     """
     def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, '{"key"}')
 
-    with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response), pytest.raises(RemoteError):  # noqa: E501
-        mock_bitstamp.query_balances()
+    with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
+        balances, _, cause = mock_bitstamp.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.BAD_DATA
 
 
 @pytest.mark.parametrize(('response', 'has_reason'), [
@@ -185,11 +196,12 @@ def test_query_balances_non_related_error_code(
         return MockResponse(HTTPStatus.FORBIDDEN, response)
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-        result, msg = mock_bitstamp.query_balances()
+        result, msg, cause = mock_bitstamp.query_balances()
 
-    assert result is False
+    assert result is None
     exp_reason = 'has reason' if has_reason else 'has text'
     assert exp_reason in msg
+    assert cause == FailureCause.REMOTE_REJECTED
 
 
 def test_query_balances_skips_not_balance_entry(mock_bitstamp):
@@ -199,7 +211,7 @@ def test_query_balances_skips_not_balance_entry(mock_bitstamp):
         return MockResponse(HTTPStatus.OK, '{"link_available": "1.00000000"}')
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-        assert mock_bitstamp.query_balances() == ({}, '')
+        assert mock_bitstamp.query_balances() == ExchangeQueryBalances({}, '')
 
 
 def test_query_balances_skipped_not_asset_entry(mock_bitstamp):
@@ -209,7 +221,7 @@ def test_query_balances_skipped_not_asset_entry(mock_bitstamp):
         return MockResponse(HTTPStatus.OK, '{"bbbrrrlink_balance": "1.00000000"}')
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-        assert mock_bitstamp.query_balances() == ({}, '')
+        assert mock_bitstamp.query_balances() == ExchangeQueryBalances({}, '')
 
 
 def test_query_balances_includes_unpriceable_entry(mock_bitstamp):
@@ -224,7 +236,7 @@ def test_query_balances_includes_unpriceable_entry(mock_bitstamp):
         ),
         patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response),
     ):
-        assert mock_bitstamp.query_balances() == (
+        assert mock_bitstamp.query_balances() == ExchangeQueryBalances(
             {A_LINK.resolve_to_asset_with_oracles(): Balance(amount=ONE, value=ZERO)},
             '',
         )
@@ -257,7 +269,7 @@ def test_query_balances_asset_balance(mock_bitstamp, inquirer):  # pylint: disab
         return MockResponse(HTTPStatus.OK, balances_data)
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
-        asset_balance, msg = mock_bitstamp.query_balances()
+        asset_balance, msg, _ = mock_bitstamp.query_balances()
         assert asset_balance == {
             A_ETH: Balance(
                 amount=FVal('32'),
@@ -1407,3 +1419,18 @@ def test_api_query_request_headers_checks(mock_bitstamp):
     assert third_headers['X-Auth-Nonce'] == 'hijklm'
     assert third_headers['X-Auth-Timestamp'] == '1606996800000'
     assert 'Content-Type' not in third_headers
+
+
+def test_unreachable_is_a_failed_query_not_an_exception(mock_bitstamp):
+    with patch.object(
+        mock_bitstamp.session,
+        'request',
+        side_effect=requests.exceptions.ConnectionError,
+    ):
+        balances, _, balances_cause = mock_bitstamp.query_balances()
+        valid, _, check_cause = mock_bitstamp.validate_api_key()
+
+    assert balances is None
+    assert balances_cause == FailureCause.NETWORK
+    assert valid is False
+    assert check_cause == FailureCause.NETWORK

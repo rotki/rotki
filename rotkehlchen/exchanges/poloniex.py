@@ -18,9 +18,15 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status, cause_for_undecodable_body
+from rotkehlchen.errors.misc import (
+    RemoteError,
+    cause_for_status,
+    cause_for_undecodable_body,
+    credential_check_cause_of,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -165,16 +171,19 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
 
         return changed
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         try:
             self.return_fee_info()
         except RemoteError as e:
             error = str(e)
             if 'Invalid API key' in error:
-                return False, 'Provided API Key or secret is invalid'
-            # else reraise
-            raise
-        return True, ''
+                return ApiKeyCheck(
+                    False,
+                    'Provided API Key or secret is invalid',
+                    FailureCause.AUTH,
+                )
+            return ApiKeyCheck(False, error, credential_check_cause_of(e))
+        return ApiKeyCheck(True)
 
     def api_query_dict(self, command: str, req: dict | None = None) -> dict:
         result = self._api_query(command, req)
@@ -422,7 +431,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                 f'to {e}'
             )
             log.error(msg)
-            return None, msg
+            return ExchangeQueryBalances(None, msg, e.cause)
 
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for account_info in resp:
@@ -477,7 +486,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
 
                     amounts[asset] += available + on_orders
 
-        return dict(self.balances_from_amounts(amounts)), ''
+        return ExchangeQueryBalances(dict(self.balances_from_amounts(amounts)), '')
 
     def _deserialize_trade(
             self,

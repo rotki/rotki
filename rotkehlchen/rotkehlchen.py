@@ -167,6 +167,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.connections.types import ConnectionIdentifier
     from rotkehlchen.db.drivers.sqlite import DBConnection, DBCursor
+    from rotkehlchen.errors.cause import FailureCause
     from rotkehlchen.exchanges.gate import GateLocation
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
@@ -1316,7 +1317,7 @@ class Rotkehlchen:
         exchange_balances: dict[AssetWithOracles, Balance] | None
         for exchange, task in exchange_tasks:
             # result_of reraises whatever the query died with, as the serial call used to
-            exchange_balances, error_msg = result_of(task)
+            exchange_balances, error_msg, _ = result_of(task)
             # If we got an error, disregard that exchange but make sure we don't save data
             if not isinstance(exchange_balances, dict):
                 problem_free = False
@@ -1650,11 +1651,11 @@ class Rotkehlchen:
             binance_history_start_ts: Timestamp | None = None,
             okx_location: OkxLocation | None = None,
             gate_location: GateLocation | None = None,
-    ) -> tuple[ConnectionIdentifier | None, str]:
+    ) -> tuple[ConnectionIdentifier | None, str, FailureCause | None]:
         """
         Setup a new exchange with an api key and an api secret and optionally a passphrase.
         The manager registers it and saves it in the DB atomically w.r.t. concurrent deletes.
-        Returns the new connection's identifier or None and the reason it failed.
+        Returns the new connection's identifier or None with the reason and cause of the failure.
         """
         return self.exchange_manager.setup_exchange(
             name=name,

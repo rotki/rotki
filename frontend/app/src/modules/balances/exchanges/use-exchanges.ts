@@ -71,7 +71,7 @@ export function useExchanges(): UseExchangesReturn {
         ),
         (result): Result<void, TaskError> => {
           const { failedAccounts, perAccount, totals } = ExchangeBalancesResponse.parse(result);
-          const failures = Object.entries(failedAccounts?.[location] ?? {}).map(([identifier, message]) => {
+          const failures = Object.entries(failedAccounts?.[location] ?? {}).map(([identifier, { message }]) => {
             const connection = get(connectedExchanges).find(exchange => exchange.identifier === identifier);
             return `${connection?.name ?? identifier}: ${message}`;
           });

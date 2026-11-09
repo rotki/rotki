@@ -8,6 +8,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BEST, A_ETH, A_EUR, A_USDT
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -135,7 +136,7 @@ def test_balances(mock_bitpanda, inquirer):
         raise AssertionError(f'Unexpected url {url} in bitpanda test')
 
     with patch.object(mock_bitpanda.session, 'get', side_effect=mock_bitpanda_query):
-        balances, msg = mock_bitpanda.query_balances()
+        balances, msg, _ = mock_bitpanda.query_balances()
 
     warnings = consume_warnings(mock_bitpanda.msg_aggregator)
     errors = consume_errors(mock_bitpanda.msg_aggregator)
@@ -360,3 +361,18 @@ def test_asset_movements(database, mock_bitpanda):
         },
     )]
     assert expected_movements == movements
+
+
+def test_failures_report_the_cause(mock_bitpanda):
+    with patch.object(
+        mock_bitpanda,
+        '_api_query',
+        side_effect=RemoteError('refused', cause=FailureCause.REMOTE_REJECTED),
+    ):
+        balances, _, cause = mock_bitpanda.query_balances()
+        valid, _, check_cause = mock_bitpanda.validate_api_key()
+
+    assert balances is None
+    assert cause == FailureCause.REMOTE_REJECTED
+    assert valid is False
+    assert check_cause == FailureCause.AUTH

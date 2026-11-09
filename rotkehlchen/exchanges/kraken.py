@@ -37,9 +37,15 @@ from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import (
+    RemoteError,
+    cause_for_status,
+    credential_check_cause_of,
+    required_cause,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     ExchangeWithExtras,
@@ -209,6 +215,9 @@ def _remove_canceling_ledger_legs(event_set: list[tuple[int, HistoryEvent]]) -> 
                 break
 
 
+KRAKEN_KEY_REJECTED_ERRORS: Final = ('EAPI:Invalid key', 'EGeneral:Permission denied')
+
+
 def _check_and_get_response(
         response: Response,
         method: KrakenApiMethod,
@@ -247,7 +256,10 @@ def _check_and_get_response(
             return 'Rate limited exceeded'
 
         # else
-        raise RemoteError(error, cause=FailureCause.REMOTE_REJECTED)
+        raise RemoteError(
+            error,
+            cause=FailureCause.AUTH if error in KRAKEN_KEY_REJECTED_ERRORS else FailureCause.REMOTE_REJECTED,  # noqa: E501
+        )
 
     return decoded_json
 
@@ -335,7 +347,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         return True, ''
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """Validates that the Kraken API Key is good for usage in Rotkehlchen
 
         Makes sure that the following permission are given to the key:
@@ -343,57 +355,64 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         - Ability to query open/closed trades
         - Ability to query ledgers
         """
-        valid, msg = self._validate_single_api_key_action('Balance')
-        if not valid:
-            return False, msg
-        valid, msg = self._validate_single_api_key_action(
+        if not (check := self._validate_single_api_key_action('Balance')).valid:
+            return check
+        if not (check := self._validate_single_api_key_action(
             method_str='TradesHistory',
             req={'start': 0, 'end': 0},
-        )
-        if not valid:
-            return False, msg
-        valid, msg = self._validate_single_api_key_action(
+        )).valid:
+            return check
+        if not (check := self._validate_single_api_key_action(
             method_str='Ledgers',
             req={'start': 0, 'end': 0, 'type': 'deposit'},
-        )
-        if not valid:
-            return False, msg
+        )).valid:
+            return check
 
-        if self._has_futures_keys():
-            valid, msg = self._validate_single_api_key_action('accounts')
-            if not valid:
-                return False, msg
+        if (
+            self._has_futures_keys() and
+            not (check := self._validate_single_api_key_action('accounts')).valid
+        ):
+            return check
 
-        return True, ''
+        return ApiKeyCheck(True)
 
     def _validate_single_api_key_action(
             self,
             method_str: Literal['Balance', 'TradesHistory', 'Ledgers', 'accounts'],
             req: dict[str, Any] | None = None,
-    ) -> tuple[bool, str]:
+    ) -> ApiKeyCheck:
         try:
             self.api_query(method_str, req)
         except (RemoteError, ValueError) as e:
             error = str(e)
             if 'Incorrect padding' in error:
-                return False, 'Provided API Key or secret is invalid'
+                return ApiKeyCheck(
+                    False,
+                    'Provided API Key or secret is invalid',
+                    FailureCause.AUTH,
+                )
             if 'EAPI:Invalid key' in error:
-                return False, 'Provided API Key is invalid'
+                return ApiKeyCheck(False, 'Provided API Key is invalid', FailureCause.AUTH)
             if 'EGeneral:Permission denied' in error:
                 msg = (
                     'Provided API Key does not have appropriate permissions. Make '
                     'sure that the "Query Funds", "Query Open/Closed Order and Trades"'
                     'and "Query Ledger Entries" actions are allowed for your Kraken API Key.'
                 )
-                return False, msg
+                return ApiKeyCheck(False, msg, FailureCause.AUTH)
 
             # else
-            log.error(f'Kraken API key validation error: {e!s}')
+            log.error('Kraken API key validation error: %s', e)
             msg = (
                 'Unknown error at Kraken API key validation. Perhaps API Key/Secret combination invalid?'  # noqa: E501
             )
-            return False, msg
-        return True, ''
+            return ApiKeyCheck(
+                False,
+                msg,
+                # a ValueError comes from decoding the secret
+                credential_check_cause_of(e) if isinstance(e, RemoteError) else FailureCause.AUTH,
+            )
+        return ApiKeyCheck(True)
 
     def first_connection(self) -> None:
         self.first_connection_made = True
@@ -566,27 +585,32 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> ExchangeQueryBalances:
-        returned_balances: dict | None
-        spot_balances, spot_msg = self.query_balances_method('Balance')
+        spot_balances, spot_msg, spot_cause = self.query_balances_method('Balance')
         if spot_balances is not None:
             spot_balances, spot_msg = self.deserialize_kraken_balance(spot_balances)
 
         if not self._has_futures_keys():
             log.debug('Kraken Futures keys are not set, returning only spot balances')
-            return spot_balances, spot_msg
+            return ExchangeQueryBalances(spot_balances, spot_msg, spot_cause)
 
-        futures_balances, futures_msg = self.query_futures_balances()
-        if spot_balances is not None and futures_balances is not None:
-            returned_balances = combine_dicts(futures_balances, spot_balances)
-        else:
-            returned_balances = spot_balances or futures_balances
+        futures_balances, futures_msg, futures_cause = self.query_futures_balances()
+        if spot_balances is None or futures_balances is None:  # half would understate it
+            return ExchangeQueryBalances(
+                None,
+                spot_msg + futures_msg,
+                required_cause({x for x in (spot_cause, futures_cause) if x is not None}),
+            )
 
-        return returned_balances, spot_msg + futures_msg
+        return ExchangeQueryBalances(
+            combine_dicts(futures_balances, spot_balances),
+            spot_msg + futures_msg,
+        )
 
     def query_balances_method(
             self,
             method: Literal['Balance', 'TradesHistory', 'Ledgers', 'accounts'],
-    ) -> tuple[dict | None, str]:
+    ) -> tuple[dict | None, str, FailureCause | None]:
+        """The raw balances of the given method, or None with the reason and cause it failed"""
         try:
             kraken_balances = self.api_query(method, req={})
         except RemoteError as e:
@@ -599,9 +623,9 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     f'to {e}'
                 )
                 log.error(msg)
-                return None, msg
+                return None, msg, e.cause
 
-        return kraken_balances, ''
+        return kraken_balances, '', None
 
     def deserialize_kraken_balance(self, kraken_balances: dict) -> tuple[dict, str]:
         kfee_amount = ZERO
@@ -1688,12 +1712,12 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         self._manage_call_counter(method)
         return _check_and_get_response(response, method)
 
-    def query_futures_balances(self, **kwargs: Any) -> tuple[dict | None, str]:
+    def query_futures_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         log.debug(f'querying futures balances for {self.location} with kwargs {kwargs}...')
-        raw_balances, msg = self.query_balances_method('accounts')
+        raw_balances, msg, cause = self.query_balances_method('accounts')
         log.debug(f'got Kraken Futures raw balances = {raw_balances}')
         if raw_balances is None:
-            return raw_balances, msg
+            return ExchangeQueryBalances(None, msg, cause)
 
         try:
             accounts: dict = raw_balances['accounts']
@@ -1702,7 +1726,11 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             flex: dict = accounts['flex']
             flex_currencies: dict = flex['currencies']
         except KeyError as e:
-            return None, f'Error parsing Kraken Futures response: {e!s}'
+            return ExchangeQueryBalances(
+                None,
+                f'Error parsing Kraken Futures response: {e!s}',
+                FailureCause.BAD_DATA,
+            )
 
         cash_balances_deserialized, msg = self.deserialize_kraken_balance(
             {k.upper(): v for k, v in cash_balances.items()},
@@ -1726,7 +1754,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         log.debug(f'done querying futures balances for {self.location}')
         log.debug(f'total Kraken Futures balances = {total_futures_balances}')
-        return total_futures_balances, ''
+        return ExchangeQueryBalances(total_futures_balances, '')
 
     @staticmethod
     def _parse_single_collateral_futures_margin(

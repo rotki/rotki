@@ -4,7 +4,7 @@ from collections import defaultdict
 from functools import partial
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, overload
 from urllib.parse import urlencode
 
 import requests
@@ -18,9 +18,16 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import (
+    RemoteError,
+    cause_for_credential_check,
+    cause_for_status,
+    cause_for_undecodable_body,
+    credential_check_cause_of,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -82,6 +89,8 @@ API_ERR_AUTH_NONCE_CODE = 'API0017'
 API_ERR_AUTH_NONCE_MESSAGE = (
     'Bitstamp nonce too low error. Is the local system clock in synced?'
 )
+# Known error codes that the key itself is not to blame for
+API_NON_CREDENTIAL_ERROR_CODES: Final = {API_ERR_AUTH_NONCE_CODE, 'API0006'}
 # More understandable explanation for API key-related errors than the default `reason`
 API_KEY_ERROR_CODE_ACTION = {
     'API0001': 'Check your API key value.',
@@ -180,19 +189,21 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
         contain the exact amount of an asset the account is holding (available
         amount + orders amount, per asset).
         """
-        response = self._api_query('balance')
+        try:
+            response = self._api_query('balance')
+        except RemoteError as e:
+            log.error('Bitstamp balances query failed due to %s', e)
+            return ExchangeQueryBalances(None, str(e), e.cause)
+
         if response.status_code != HTTPStatus.OK:
-            result, msg = self._process_unsuccessful_response(
-                response=response,
-                case='balances',
-            )
-            return result, msg
+            return self._process_unsuccessful_response(response=response, case='balances')
+
         try:
             response_dict = jsonloads_dict(response.text)
-        except JSONDecodeError as e:
+        except JSONDecodeError:
             msg = f'Bitstamp returned invalid JSON response: {response.text}.'
             log.error(msg)
-            raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
+            return ExchangeQueryBalances(None, msg, FailureCause.BAD_DATA)
 
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for entry, raw_amount in response_dict.items():
@@ -225,7 +236,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 continue
             amounts[asset] += amount
 
-        return dict(self.balances_from_amounts(amounts)), ''
+        return ExchangeQueryBalances(dict(self.balances_from_amounts(amounts)), '')
 
     def _get_since_id_option(
             self,
@@ -533,23 +544,22 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
         )
         return end_ts
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """Validates that the Bitstamp API key is good for usage in rotki
 
         Makes sure that the following permissions are given to the key:
         - Account balance
         - User transactions
         """
-        response = self._api_query('balance')
+        try:
+            response = self._api_query('balance')
+        except RemoteError as e:
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
 
         if response.status_code != HTTPStatus.OK:
-            result, msg = self._process_unsuccessful_response(
-                response=response,
-                case='validate_api_key',
-            )
-            return result, msg
+            return self._process_unsuccessful_response(response=response, case='validate_api_key')
 
-        return True, ''
+        return ApiKeyCheck(True)
 
     def _api_query(
             self,
@@ -951,7 +961,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             self,
             response: Response,
             case: Literal['validate_api_key'],
-    ) -> tuple[bool, str]:
+    ) -> ApiKeyCheck:
         ...
 
     @overload
@@ -974,7 +984,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             self,
             response: Response,
             case: Literal['validate_api_key', 'balances', 'trades', 'asset_movements', 'crypto-transactions'],  # noqa: E501
-    ) -> str | tuple[bool, str] | ExchangeQueryBalances:
+    ) -> str | ApiKeyCheck | ExchangeQueryBalances:
         """This function processes not successful responses for the following
         cases listed in `case`.
         """
@@ -985,8 +995,14 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             msg = f'Bitstamp returned invalid JSON response: {response.text}.'
             log.error(msg)
 
-            if case in {'validate_api_key', 'balances'}:
-                return False, msg
+            if case == 'validate_api_key':
+                return ApiKeyCheck(False, msg, cause_for_credential_check(response.status_code))
+            if case == 'balances':
+                return ExchangeQueryBalances(
+                    None,
+                    msg,
+                    cause_for_undecodable_body(response.status_code),
+                )
             if case in {'trades', 'asset_movements', 'crypto-transactions'}:
                 return f'Got remote error while querying Bitstamp {case_pretty}: {msg}'
 
@@ -1003,8 +1019,24 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             )
             log.error(msg)
 
-        if case in {'validate_api_key', 'balances'}:
-            return False, msg
+        body_cause: FailureCause | None = None
+        if error_code in API_NON_CREDENTIAL_ERROR_CODES:
+            body_cause = FailureCause.REMOTE_REJECTED
+        elif error_code in API_KEY_ERROR_CODE_ACTION:
+            body_cause = FailureCause.AUTH
+
+        if case == 'validate_api_key':
+            return ApiKeyCheck(
+                False,
+                msg,
+                body_cause or cause_for_credential_check(response.status_code),
+            )
+        if case == 'balances':
+            return ExchangeQueryBalances(
+                None,
+                msg,
+                body_cause or cause_for_status(response.status_code),
+            )
         if case in {'trades', 'asset_movements', 'crypto-transactions'}:
             return f'Got remote error while querying Bitstamp {case_pretty}: {msg}'
 

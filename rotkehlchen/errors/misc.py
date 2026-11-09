@@ -161,6 +161,12 @@ def cause_for_credential_check(status_code: int) -> FailureCause:
     return FailureCause.AUTH if cause == FailureCause.REMOTE_REJECTED else cause
 
 
+def credential_check_cause_of(error: RemoteError) -> FailureCause:
+    """The cause of a request that only checks credentials failing with this error. As with
+    cause_for_credential_check, the remote refusing it means they were rejected."""
+    return FailureCause.AUTH if error.cause == FailureCause.REMOTE_REJECTED else error.cause
+
+
 def remote_error_for_status(status_code: int, message: str) -> RemoteError:
     """Build the error for a failed HTTP response. Server errors and request timeouts
     (408) are expected to clear up by themselves, so they are recoverable."""
@@ -188,6 +194,16 @@ def alternatives_cause(causes: Collection[FailureCause]) -> FailureCause:
         if transient_cause in causes:
             return transient_cause
     return combined_cause((set(causes) - {FailureCause.UNSUPPORTED}) or causes)
+
+
+def required_cause(causes: Collection[FailureCause]) -> FailureCause:
+    """The cause of a query that needs every part of it to answer. A retry helps only if
+    every failed part may heal by itself, so a cause that will not heal wins and the user
+    is told what to fix."""
+    transient_causes = (FailureCause.RATE_LIMITED, FailureCause.NETWORK)
+    if lasting_causes := set(causes) - set(transient_causes):
+        return combined_cause(lasting_causes)
+    return next(x for x in transient_causes if x in causes)
 
 
 class APIKeyNotAvailable(RemoteError):

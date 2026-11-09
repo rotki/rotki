@@ -4,6 +4,7 @@ import pytest
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.bitcoinde import (
     Bitcoinde,
@@ -62,7 +63,7 @@ def test_bitcoinde_query_balances_unknown_asset(function_scope_bitcoinde):
 
     with patch.object(bitcoinde.session, 'get', side_effect=mock_unknown_asset_return):
         # Test that after querying the assets only ETH and BTC are there
-        balances, msg = bitcoinde.query_balances()
+        balances, msg, _ = bitcoinde.query_balances()
 
     assert msg == ''
     assert len(balances) == 5
@@ -163,3 +164,23 @@ def test_bitcoinde_invalid_trading_pair():
 
     with pytest.raises(DeserializationError):
         _ = bitcoinde_pair_to_world('invalidpair')
+
+
+def test_rejected_key_is_auth(function_scope_bitcoinde):
+    response = MockResponse(401, '{"errors": [{"code": 3}]}')
+    with patch.object(function_scope_bitcoinde.session, 'get', return_value=response):
+        balances, _, balances_cause = function_scope_bitcoinde.query_balances()
+        valid, _, check_cause = function_scope_bitcoinde.validate_api_key()
+
+    assert balances is None
+    assert balances_cause == FailureCause.AUTH
+    assert valid is False
+    assert check_cause == FailureCause.AUTH
+
+
+def test_query_balances_missing_balances_is_bad_data(function_scope_bitcoinde):
+    with patch.object(function_scope_bitcoinde, '_api_query', return_value={'data': {}}):
+        balances, _, cause = function_scope_bitcoinde.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.BAD_DATA

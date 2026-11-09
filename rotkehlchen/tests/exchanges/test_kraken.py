@@ -48,6 +48,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.exchanges.exchange import ExchangeQueryBalances
 from rotkehlchen.exchanges.kraken import Kraken
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import create_asset_movement_with_fee
@@ -306,7 +307,7 @@ def test_coverage_of_kraken_balances():
 
 
 def test_querying_balances(kraken):
-    result, error_or_empty = kraken.query_balances()
+    result, error_or_empty, _ = kraken.query_balances()
     assert error_or_empty == ''
     assert isinstance(result, dict)
     for asset, entry in result.items():
@@ -548,7 +549,7 @@ def test_kraken_query_balances_unknown_asset(kraken):
     """Test that if a kraken balance query returns unknown asset no exception
     is raised and a message is generated"""
     kraken.random_balance_data = False
-    balances, msg = kraken.query_balances()
+    balances, msg, _ = kraken.query_balances()
 
     assert msg == ''
     assert len(balances) == 2
@@ -1653,7 +1654,7 @@ def test_empty_kraken_balance_response():
         return MockResponse(200, '{"error":[]}')
 
     with patch.object(kraken.session, 'post', wraps=mock_post):
-        result, msg = kraken.query_balances()
+        result, msg, _ = kraken.query_balances()
         assert msg == ''
         assert result == {}
 
@@ -2109,7 +2110,7 @@ def test_margin_trading_events(rotkehlchen_api_server_with_exchanges: APIServer)
 
 def test_kraken_validate_key(kraken):
     """Test that validate api key works for a correct api key"""
-    result, msg = kraken._validate_single_api_key_action('accounts')
+    result, msg, _ = kraken._validate_single_api_key_action('accounts')
     assert result is True
     assert msg == ''
 
@@ -2124,7 +2125,7 @@ def test_kraken_futures_wrong_formatting_on_secret(kraken):
 def test_querying_futures_balances(kraken):
     """Test that querying futures balances works. Uses a mocked futures response"""
     kraken.set_futures_api_key('QjqM', b'Wqdz')
-    balances, _ = kraken.query_balances()
+    balances, _, _ = kraken.query_balances()
     assert isinstance(balances, dict)
     for asset, entry in balances.items():
         assert isinstance(asset, Asset)
@@ -2140,6 +2141,41 @@ def test_querying_futures_balances(kraken):
     assert balances[A_XRP].amount == FVal('4427.7371164')
     assert balances[A_USDC.identifier].amount == FVal('5000.65008452')
     assert balances[A_USDT.identifier].amount == FVal('5003.96313881')
+
+
+@pytest.mark.parametrize(('spot', 'futures', 'expected_cause'), [
+    (
+        (None, 'spot down.', FailureCause.NETWORK),
+        ExchangeQueryBalances({}, ''),
+        FailureCause.NETWORK,
+    ),
+    (
+        ({}, '', None),
+        ExchangeQueryBalances(None, 'futures refused.', FailureCause.AUTH),
+        FailureCause.AUTH,
+    ),
+    (
+        (None, 'spot down.', FailureCause.NETWORK),
+        ExchangeQueryBalances(None, 'futures refused.', FailureCause.AUTH),
+        FailureCause.AUTH,
+    ),
+])
+def test_query_balances_fails_when_either_side_of_the_account_fails(
+        kraken,
+        spot,
+        futures,
+        expected_cause,
+):
+    """Half an account as a success would understate the holdings"""
+    with (
+        patch.object(kraken, '_has_futures_keys', return_value=True),
+        patch.object(kraken, 'query_balances_method', return_value=spot),
+        patch.object(kraken, 'query_futures_balances', return_value=futures),
+    ):
+        balances, _, cause = kraken.query_balances(ignore_cache=True)
+
+    assert balances is None
+    assert cause == expected_cause
 
 
 def test_parse_single_collateral_futures_margin(kraken):
@@ -2412,3 +2448,42 @@ def test_kraken_futures_history_uses_independent_query_range(kraken: Kraken) -> 
     futures_query.assert_called_once()
     with kraken.db.conn.read_ctx() as cursor:
         assert kraken.db.get_used_query_range(cursor, futures_range_name) == (Timestamp(0), end_ts)
+
+
+@pytest.mark.parametrize(('error', 'expected_balances', 'expected_check'), [
+    ('EAPI:Invalid key', FailureCause.AUTH, FailureCause.AUTH),
+    ('EGeneral:Permission denied', FailureCause.AUTH, FailureCause.AUTH),
+    ('EGeneral:Internal error', FailureCause.REMOTE_REJECTED, FailureCause.AUTH),
+])
+def test_rejected_query_causes(error, expected_balances, expected_check):
+    kraken = Kraken('kraken1', 'a', b'YW55IGNhcm5hbCBwbGVhc3VyZS4=', object(), object())
+    response = MockResponse(200, json.dumps({'error': [error]}))
+    with patch.object(kraken.session, 'post', return_value=response):
+        balances, _, balances_cause = kraken.query_balances()
+        valid, _, check_cause = kraken.validate_api_key()
+
+    assert balances is None
+    assert balances_cause == expected_balances
+    assert valid is False
+    assert check_cause == expected_check
+
+
+def test_key_check_unreachable_is_network():
+    kraken = Kraken('kraken1', 'a', b'YW55IGNhcm5hbCBwbGVhc3VyZS4=', object(), object())
+    with patch.object(kraken.session, 'post', side_effect=requests.exceptions.ConnectionError):
+        balances, _, balances_cause = kraken.query_balances()
+        valid, _, check_cause = kraken.validate_api_key()
+
+    assert balances is None
+    assert balances_cause == FailureCause.NETWORK
+    assert valid is False
+    assert check_cause == FailureCause.NETWORK
+
+
+def test_secret_that_cannot_be_decoded_is_auth():
+    kraken = Kraken('kraken1', 'a', b'YW55IGNhcm5hbCBwbGVhc3VyZS4=', object(), object())
+    with patch.object(kraken, 'api_query', side_effect=ValueError('Incorrect padding')):
+        valid, _, cause = kraken.validate_api_key()
+
+    assert valid is False
+    assert cause == FailureCause.AUTH

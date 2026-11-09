@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import MagicMock, call, patch
 
 import pytest
+import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import BITFINEX_EXCHANGE_TEST_ASSETS, asset_from_bitfinex
@@ -13,6 +14,7 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_GLM, A_LINK, A_USD, A_USDT, A_WBTC
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.bitfinex import (
     API_ERR_AUTH_NONCE_CODE,
@@ -229,13 +231,15 @@ def test_api_key_err_auth_nonce(mock_bitfinex: Bitfinex) -> None:
 
     mock_bitfinex.first_connection_made = True
     with patch.object(mock_bitfinex, '_api_query', side_effect=mock_api_query_response):
-        result, msg = mock_bitfinex.query_balances()
-        assert result is False
+        result, msg, cause = mock_bitfinex.query_balances()
+        assert result is None
         assert msg == API_ERR_AUTH_NONCE_MESSAGE
+        assert cause == FailureCause.REMOTE_REJECTED
 
-        result, msg = mock_bitfinex.validate_api_key()
+        result, msg, cause = mock_bitfinex.validate_api_key()
         assert result is False
         assert msg == API_ERR_AUTH_NONCE_MESSAGE
+        assert cause == FailureCause.REMOTE_REJECTED
 
         events, _ = mock_bitfinex.query_online_history_events(Timestamp(0), Timestamp(1))
         assert events == []
@@ -255,10 +259,11 @@ def test_validate_api_key_invalid_key(mock_bitfinex):
         )
 
     with patch.object(mock_bitfinex, '_api_query', side_effect=mock_api_query_response):
-        result, msg = mock_bitfinex.validate_api_key()
+        result, msg, cause = mock_bitfinex.validate_api_key()
 
         assert result is False
         assert msg == API_KEY_ERROR_MESSAGE
+        assert cause == FailureCause.AUTH
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
@@ -312,7 +317,7 @@ def test_query_balances_asset_balance(
         attribute='_api_query',
         side_effect=mock_api_query_response,
     ):
-        asset_balance, msg = mock_bitfinex.query_balances()
+        asset_balance, msg, _ = mock_bitfinex.query_balances()
 
         assert asset_balance == {
             A_EUR: Balance(
@@ -1786,3 +1791,36 @@ def test_partial_query_online_history_events(mock_bitfinex: Bitfinex) -> None:
         assert len(events) == 8  # withdrawal/fee from one movement, and spend/receive/fee from two trades.  # noqa: E501
         assert actual_end_ts == ts_ms_to_sec(events[-1].timestamp)
         assert actual_end_ts != end_ts  # There were errors and only part of the range was queried.
+
+
+def test_unreachable_is_a_failed_query_not_an_exception(mock_bitfinex):
+    mock_bitfinex.first_connection_made = True
+    with patch.object(
+        mock_bitfinex.session,
+        'request',
+        side_effect=requests.exceptions.ConnectionError,
+    ):
+        balances, _, balances_cause = mock_bitfinex.query_balances()
+        valid, _, check_cause = mock_bitfinex.validate_api_key()
+
+    assert balances is None
+    assert balances_cause == FailureCause.NETWORK
+    assert valid is False
+    assert check_cause == FailureCause.NETWORK
+
+
+def test_query_balances_cause_follows_the_status(mock_bitfinex):
+    mock_bitfinex.first_connection_made = True
+    with patch.object(
+        mock_bitfinex,
+        '_api_query',
+        return_value=MockResponse(HTTPStatus.TOO_MANY_REQUESTS, '["error", 11010, "ratelimit"]'),
+    ):
+        assert mock_bitfinex.query_balances().cause == FailureCause.RATE_LIMITED
+
+    with patch.object(
+        mock_bitfinex,
+        '_api_query',
+        return_value=MockResponse(HTTPStatus.OK, '{"not": "a list"}'),
+    ):
+        assert mock_bitfinex.query_balances(ignore_cache=True).cause == FailureCause.BAD_DATA

@@ -2928,7 +2928,12 @@ Querying the balances of exchanges
                   }
               },
               "failed_accounts": {
-                  "binance": {"c3a1b2d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d": "Binance API request failed"}
+                  "binance": {
+                      "c3a1b2d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d": {
+                          "message": "Binance API request failed",
+                          "cause": "network"
+                      }
+                  }
               }
           },
           "message": "Binance API request failed"
@@ -2936,11 +2941,11 @@ Querying the balances of exchanges
 
    :resjson object per_account: The balances of each connection, keyed by location and then by the connection's ``identifier`` from ``GET /exchanges``. Each balance is keyed by asset identifier and has the ``amount`` held and its ``value``. All holdings of a connection are always returned, even when ``value_threshold`` is set, so the value of the account is not understated.
    :resjson object totals: The balances of each location, adding up its connections. The threshold is applied to the added up value, so an asset below the threshold in every connection can still be above it here.
-   :resjson object failed_accounts: Only present when some connections could not be queried. Maps each location to its failed connections and their error. They are not part of ``per_account`` and ``totals``. The response ``message`` also describes the failures.
+   :resjson object failed_accounts: Only present when some connections could not be queried. Maps each location to its failed connections, each with the ``message`` saying what failed and the ``cause`` saying why, using the same values as a failed response's ``cause``. They are not part of ``per_account`` and ``totals``. The response ``message`` also describes the failures.
    :statuscode 200: Balances successfully queried, for at least one connection.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 401: User is not logged in.
-   :statuscode 409: No connection could be queried. Check error message for details.
+   :statuscode 409: No connection could be queried, or none exists. Check error message and ``cause`` for details.
    :statuscode 500: Internal rotki error
 
 
