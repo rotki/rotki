@@ -13,7 +13,14 @@ from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.history.data_issues.bucket_checks import BucketReason, BucketStatus
 from rotkehlchen.history.data_issues.constants import IssueState
-from rotkehlchen.locations.constants import LOCATION_BITCOIN, LOCATION_ETHEREUM, LOCATION_OPTIMISM
+from rotkehlchen.locations.constants import (
+    LOCATION_BANKS,
+    LOCATION_BITCOIN,
+    LOCATION_ETHEREUM,
+    LOCATION_EXTERNAL,
+    LOCATION_LOOPRING,
+    LOCATION_OPTIMISM,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -48,6 +55,7 @@ pytestmark = [
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 def _report(server: APIServer, **params: object) -> dict:
@@ -434,6 +442,36 @@ def test_non_evm_bucket_is_not_compared(rotkehlchen_api_server: APIServer) -> No
     assert bucket['status'] == BucketStatus.NOT_COMPARED
     assert BucketReason.NON_EVM_CHAIN in bucket['reasons']
     assert bucket['derived_balance'] == '1'  # a metric exists; only comparison is unsupported
+
+
+@pytest.mark.parametrize('location', [LOCATION_EXTERNAL, LOCATION_BANKS, LOCATION_LOOPRING])
+@pytest.mark.parametrize('stale', [False, True])
+def test_unsupported_location_is_not_compared(
+        rotkehlchen_api_server: APIServer,
+        location: LocationIdentifier,
+        stale: bool,
+) -> None:
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    add_balance_bucket(
+        database=database,
+        address=(label := 'imported account'),
+        amount='1',
+        ts=(timestamp := ts_now() - 3_600),
+        location=location,
+    )
+    if stale:
+        set_stale_marker(database, timestamp)
+
+    summary = _report(rotkehlchen_api_server)
+    assert summary['totals'][BucketStatus.NOT_COMPARED] == 1
+    assert summary['totals'][BucketStatus.PENDING] == 0
+    assert _account(summary, location, label)['counts'][BucketStatus.NOT_COMPARED] == 1
+    bucket = _report(
+        rotkehlchen_api_server, location=location, location_label=label,
+    )['accounts'][0]['buckets'][0]
+    assert bucket['status'] == BucketStatus.NOT_COMPARED
+    assert 'unsupported_location' in bucket['reasons']
+    assert bucket['derived_balance'] == '1'
 
 
 def test_tracked_account_without_buckets_is_still_listed(

@@ -60,6 +60,7 @@ const REASON_LABEL: Record<string, MessageKey> = {
   result_expired: msg.$t('data_issues.reconciliation.reason.result_expired'),
   unknown_not_compared: msg.$t('data_issues.reconciliation.reason.unknown_not_compared'),
   unknown_pending: msg.$t('data_issues.reconciliation.reason.unknown_pending'),
+  unsupported_location: msg.$t('data_issues.reconciliation.reason.unsupported_location'),
 };
 
 const PENDING_REASON_PRIORITY = [
@@ -81,6 +82,7 @@ const NOT_COMPARED_REASON_PRIORITY = [
   'protocol_bucket',
   'queries_disabled',
   'rebasing',
+  'unsupported_location',
 ] as const;
 
 function mismatchLabel(bucket: ReconciliationBucket): MessageKey {

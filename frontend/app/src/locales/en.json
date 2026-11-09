@@ -3164,7 +3164,8 @@
         "rebasing": "Rebasing token: its balance changes without events, so it is not compared.",
         "result_expired": "The last comparison is out of date. Run Check now.",
         "unknown_not_compared": "This balance is not checked.",
-        "unknown_pending": "This balance cannot be compared yet."
+        "unknown_pending": "This balance cannot be compared yet.",
+        "unsupported_location": "Balances at this location are not supported for comparison."
       },
       "recalculating": {
         "processing": "History processing is running. Balances cannot be compared until it finishes.",

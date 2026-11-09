@@ -352,6 +352,8 @@ def _unsupported_reasons(
     """
     if location in ALL_SUPPORTED_EXCHANGES:
         return (BucketReason.EXCHANGE,)
+    if location not in BLOCKCHAIN_LOCATIONS:
+        return (BucketReason.UNSUPPORTED_LOCATION,)
     if protocol is not None:
         return (BucketReason.PROTOCOL_BUCKET,)
 

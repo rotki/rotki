@@ -122,6 +122,7 @@ class BucketReason(StrEnum):
     PROTOCOL_BUCKET = 'protocol_bucket'
     QUERIES_DISABLED = 'queries_disabled'
     REBASING = 'rebasing'
+    UNSUPPORTED_LOCATION = 'unsupported_location'
     # why there is no usable observation
     ASSET_COVERAGE_MISSING = 'asset_coverage_missing'
     OBSERVATION_MISSING = 'observation_missing'
