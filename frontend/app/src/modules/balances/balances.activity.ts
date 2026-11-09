@@ -4,15 +4,16 @@ import { defineActivity } from '@/modules/task-center/core/activity-descriptor';
 import { BALANCES_LANE, DETECT_LANE_PREFIX, EXCHANGE_LANE, familyLane } from '@/modules/task-center/core/orchestrator/spec';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 
-/** One chain's balance refresh, and whether it detects tokens first. */
-export interface ChainBalancesSubject {
-  readonly chain: string;
-  /** Narrows the query to these addresses. Ignored with `detect`, which no caller combines it with. */
-  readonly addresses?: readonly string[];
-  readonly detect?: boolean;
-  /** Narrows detection to these addresses. Ignored without `detect`. */
-  readonly detectAddresses?: readonly string[];
-}
+/**
+ * One chain's balance refresh: of some or all of its addresses, or detecting tokens first.
+ *
+ * @remarks
+ * Two shapes because the id carries one or the other. A subject with both would lose its addresses
+ * from the id, and so join a detecting job whose account set may predate them.
+ */
+export type ChainBalancesSubject =
+  | { readonly chain: string; readonly addresses?: readonly string[]; readonly detect?: false; readonly detectAddresses?: undefined }
+  | { readonly chain: string; readonly addresses?: undefined; readonly detect: true; readonly detectAddresses?: readonly string[] };
 
 /** A refresh over several chains, as the umbrella their jobs run under. */
 export interface BalancesRunSubject {

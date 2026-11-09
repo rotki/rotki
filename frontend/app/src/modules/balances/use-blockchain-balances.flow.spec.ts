@@ -185,6 +185,15 @@ describe('same-chain refreshes through the real native task', () => {
     expect(queries()).toStrictEqual([`eth:${NEW_ADDRESS}`]);
   });
 
+  it('should not compile a refresh that names addresses and detects', () => {
+    const { refreshBlockchainBalances } = useBlockchainBalances();
+    finishEverything = true;
+    // @ts-expect-error the job's id could not carry both, so a new address could go unqueried
+    refreshes.push(refreshBlockchainBalances({ addresses: [NEW_ADDRESS], blockchain: Blockchain.ETH }, 'background', { detect: true }));
+
+    expect(refreshes).toHaveLength(1);
+  });
+
   it('should still join a running refresh of the same addresses, in any order', async () => {
     refresh([NEW_ADDRESS, OTHER_ADDRESS]);
     await expectQueries([`eth:${NEW_ADDRESS}+${OTHER_ADDRESS}`]);
