@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import ConnectionLogs from '@/modules/wallet/bridge/ConnectionLogs.vue';
 import ElectronConnectionStatus from '@/modules/wallet/bridge/ElectronConnectionStatus.vue';
@@ -21,6 +22,7 @@ defineOptions({
 const showTakeoverMessage = ref<boolean>(false);
 
 const { t } = useI18n({ useScope: 'global' });
+const route = useRoute();
 
 const { addLog, logs } = useBridgeLogging();
 
@@ -73,6 +75,14 @@ watch(isElectronConnected, (newValue, oldValue) => {
 onBeforeMount(() => {
   setConnected(true);
   connectToElectron();
+  if (import.meta.env.DEV && route.query.mockWallets) {
+    startPromise(import('@/modules/wallet/bridge/dev-mock-wallets').then(({ installMockWallets }) => {
+      installMockWallets({
+        count: Number(route.query.mockWallets),
+        rejects: route.query.mockWalletsReject !== undefined,
+      });
+    }));
+  }
 });
 </script>
 
