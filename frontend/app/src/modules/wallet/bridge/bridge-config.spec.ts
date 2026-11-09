@@ -15,6 +15,7 @@ describe('bridge-config', () => {
   it('should expose the websocket client configuration constants', () => {
     expect(CLIENT_CONFIG).toStrictEqual({
       DEFAULT_BASE_PORT: 40011,
+      HANDSHAKE_TIMEOUT: 5000,
       MAX_RETRIES: 5,
       RETRY_DELAY: 500,
     });

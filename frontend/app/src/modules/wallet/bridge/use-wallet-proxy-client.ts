@@ -60,6 +60,7 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
   /** Bumped whenever a socket is superseded; callbacks from an older generation are ignored. */
   let generation = 0;
   let retryTimeout: ReturnType<typeof setTimeout> | undefined;
+  let handshakeTimeout: ReturnType<typeof setTimeout> | undefined;
 
   const isConnected = computed<boolean>(() => get(state).phase === BridgeConnectionPhase.connected);
   const isConnecting = computed<boolean>(() => get(state).phase === BridgeConnectionPhase.connecting);
@@ -159,6 +160,7 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
 
   /** Abandons the current socket, if any, so none of its late callbacks can change state. */
   function supersedeSocket(): void {
+    clearTimeout(handshakeTimeout);
     generation++;
     const previous = socket;
     socket = undefined;
@@ -193,6 +195,7 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
   }
 
   function handleClose(): void {
+    clearTimeout(handshakeTimeout);
     socket = undefined;
     const current = get(state);
     logger.info('WebSocket disconnected');
@@ -213,6 +216,21 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
     set(lastError, errorMessage);
   }
 
+  /**
+   * Fails an attempt whose handshake never finished.
+   *
+   * @remarks
+   * Not every failure produces an event: a port answered by something that accepts the upgrade and
+   * never replies leaves the socket opening forever, with the connect button disabled.
+   */
+  function handleHandshakeTimeout(attempt: number): void {
+    const errorMessage = `WebSocket connection timed out (attempt ${attempt + 1}/${CLIENT_CONFIG.MAX_RETRIES})`;
+    logger.error(errorMessage);
+    set(lastError, errorMessage);
+    supersedeSocket();
+    scheduleRetry(attempt);
+  }
+
   function openSocket(attempt: number): void {
     supersedeSocket();
     cancelRetry();
@@ -225,10 +243,12 @@ export function useWalletProxyClient(): WalletProxyClientComposable {
       logger.info(`Attempting to connect to WebSocket: ${wsUrl}`);
       const websocket = new WebSocket(wsUrl);
       socket = websocket;
+      handshakeTimeout = setTimeout(handleHandshakeTimeout, CLIENT_CONFIG.HANDSHAKE_TIMEOUT, attempt);
 
       websocket.onopen = (): void => {
         if (!isCurrent())
           return;
+        clearTimeout(handshakeTimeout);
         set(state, { phase: BridgeConnectionPhase.connected });
         set(lastError, undefined);
         logger.info('WebSocket connected to rotki app');
