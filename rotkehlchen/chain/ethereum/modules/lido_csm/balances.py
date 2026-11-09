@@ -100,7 +100,7 @@ class LidoCsmBalances(ProtocolWithBalance):
         )) == ZERO:
             log.error('Failed to fetch stETH price; reporting values as zero.')
 
-        rewards_tree = None
+        rewards_tree, rewards_failed = None, False
         try:
             rewards_tree = self._metrics_fetcher.get_rewards_tree()
         except RemoteError as e:
@@ -119,8 +119,9 @@ class LidoCsmBalances(ProtocolWithBalance):
                 )
                 continue
 
-            # Fetch pending rewards (stETH) using the metrics fetcher
-            rewards_steth = ZERO
+            # Fetch pending rewards (stETH) using the metrics fetcher. If they can't be fetched
+            # fall back to the last stored value, if any, instead of reporting them as zero.
+            rewards_steth: FVal | None = None
             if rewards_tree is not None:
                 try:
                     rewards_steth = self._metrics_fetcher.get_pending_rewards(
@@ -134,12 +135,23 @@ class LidoCsmBalances(ProtocolWithBalance):
                         e,
                     )
 
-            if (total_steth := bond_steth + rewards_steth) == ZERO:
+            if rewards_steth is None:
+                rewards_failed = True
+                rewards_steth = entry.metrics.rewards_steth if entry.metrics is not None else None
+
+            if (total_steth := bond_steth + (rewards_steth or ZERO)) == ZERO:
                 continue
 
             balances[entry.address].assets[A_STETH][self.counterparty] += Balance(
                 amount=total_steth,
                 value=total_steth * steth_price,
+            )
+
+        if rewards_failed:
+            self.evm_inquirer.database.msg_aggregator.add_warning(
+                'Could not fetch the Lido CSM rewards from any IPFS gateway. The pending '
+                'rewards shown are the last known values, or missing if there are none. You can '
+                'set your own IPFS gateway in the settings.',
             )
 
         return balances

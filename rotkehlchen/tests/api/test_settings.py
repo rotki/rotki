@@ -252,6 +252,8 @@ def test_set_settings(rotkehlchen_api_server: APIServer) -> None:
             value = [ExternalService.ETHERSCAN.serialize()]
         elif setting == 'mcp_privacy_mode':
             value = 'strict'
+        elif setting == 'ipfs_gateway':
+            value = 'https://my.ipfs.node'
         else:
             raise AssertionError(f'Unexpected setting {setting} encountered')
 
@@ -352,6 +354,7 @@ def test_default_evm_indexers_orders(rotkehlchen_api_server: APIServer) -> None:
     ('dot_rpc_endpoint', 'http://polkadot.example:9934'),
     ('beacon_rpc_endpoint', 'http://lighthouse.mynode.com:6969'),
     ('btc_mempool_api', 'http://localhost:4080'),
+    ('ipfs_gateway', 'https://my.ipfs.node/ipfs/'),
 ])
 def test_unset_rpc_endpoint(
         rotkehlchen_api_server: APIServer,
@@ -412,6 +415,7 @@ def test_unset_rpc_endpoint(
     'dot_rpc_endpoint',
     'beacon_rpc_endpoint',
     'btc_mempool_api',
+    'ipfs_gateway',
 ])
 def test_empty_rpc_endpoint_in_db_treated_as_default(
         rotkehlchen_api_server: APIServer,
@@ -433,6 +437,18 @@ def test_empty_rpc_endpoint_in_db_treated_as_default(
         settings = rotki.data.db.get_settings(cursor)
 
     assert getattr(settings, rpc_setting) == default_value
+
+
+def test_invalid_ipfs_gateway(rotkehlchen_api_server: APIServer) -> None:
+    """The custom ipfs gateway has to be an http(s) url"""
+    assert_error_response(
+        response=requests.put(
+            api_url_for(rotkehlchen_api_server, 'settingsresource'),
+            json={'settings': {'ipfs_gateway': 'ipfs://not-a-gateway'}},
+        ),
+        contained_in_msg='must be an http(s) url',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
 
 
 def test_disable_taxfree_after_period(rotkehlchen_api_server: APIServer) -> None:

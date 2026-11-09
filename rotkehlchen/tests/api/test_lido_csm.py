@@ -1,3 +1,4 @@
+from dataclasses import replace
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -7,6 +8,7 @@ import requests
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.lido_csm.constants import LidoCsmOperatorType
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmNodeOperatorStats
+from rotkehlchen.constants import ONE
 from rotkehlchen.db.lido_csm import DBLidoCsm
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
@@ -222,3 +224,36 @@ def test_refresh_metrics_endpoint_warns_on_failure(rotkehlchen_api_server) -> No
     payload = response.json()
     assert payload['result'][0]['metrics'] is None
     assert '7' in payload['message']
+
+
+def test_refresh_metrics_keeps_stored_rewards_when_rewards_unavailable(
+        rotkehlchen_api_server,
+) -> None:
+    """If the rewards can't be fetched the stored value is kept and reported, not replaced
+    by zero, and the user is told about it."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBLidoCsm(rotki.data.db)
+    address = make_evm_address()
+    _register_eth_account(rotki, address)
+    db.add_node_operator(address=address, node_operator_id=7)
+    stats = LidoCsmNodeOperatorStats(
+        operator_type=LidoCsmOperatorType.PERMISSIONLESS,
+        current_bond=ONE,
+        required_bond=FVal(2),
+        claimable_bond=FVal('0.5'),
+        total_deposited_validators=42,
+        rewards_steth=FVal('0.3'),
+    )
+    db.set_metrics(node_operator_id=7, metrics=stats)
+
+    with patch(
+        'rotkehlchen.api.rest.LidoCsmMetricsFetcher.get_operator_stats',
+        return_value=replace(stats, rewards_steth=None),
+    ):
+        response = requests.post(api_url_for(rotkehlchen_api_server, 'lidocsmmetricsresource'))
+
+    assert response.status_code == HTTPStatus.BAD_GATEWAY
+    payload = response.json()
+    assert payload['result'][0]['metrics']['rewards']['pending'] == '0.3'
+    assert 'IPFS gateway' in payload['message']
+    assert db.get_node_operators()[0].metrics == stats

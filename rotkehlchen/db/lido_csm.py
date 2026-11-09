@@ -65,7 +65,7 @@ class DBLidoCsm:
             total_deposited_validators=int(total_deposited_validators)
             if total_deposited_validators is not None
             else 0,
-            rewards_steth=deserialize_fval_or_zero(rewards_pending),
+            rewards_steth=None if rewards_pending is None else deserialize_fval_or_zero(rewards_pending),  # noqa: E501
         )
 
     @staticmethod
@@ -149,7 +149,8 @@ class DBLidoCsm:
             node_operator_id: int,
             metrics: LidoCsmNodeOperatorStats,
     ) -> None:
-        """Persist metrics for a tracked operator.
+        """Persist metrics for a tracked operator. If the rewards could not be fetched
+        (rewards_steth is None) the previously stored rewards value is kept.
 
         May raise:
             InputError: if the node operator id is unknown.
@@ -170,7 +171,7 @@ class DBLidoCsm:
             str(metrics.required_bond),
             str(metrics.claimable_bond),
             metrics.total_deposited_validators,
-            str(metrics.rewards_steth),
+            None if metrics.rewards_steth is None else str(metrics.rewards_steth),
             ts_now(),
         )
         with self.db.user_write() as write_cursor:
@@ -192,7 +193,7 @@ class DBLidoCsm:
                     bond_required=excluded.bond_required,
                     bond_claimable=excluded.bond_claimable,
                     total_deposited_validators=excluded.total_deposited_validators,
-                    rewards_pending=excluded.rewards_pending,
+                    rewards_pending=COALESCE(excluded.rewards_pending, rewards_pending),
                     updated_ts=excluded.updated_ts
                 """,
                 payload,

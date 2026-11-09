@@ -10,6 +10,7 @@ import CsvExportDelimiterSetting from '@/modules/settings/general/CsvExportDelim
 import DateDisplayFormatSetting from '@/modules/settings/general/DateDisplayFormatSetting.vue';
 import DateInputFormatSetting from '@/modules/settings/general/DateInputFormatSetting.vue';
 import DisplayDateInLocaltimeSetting from '@/modules/settings/general/DisplayDateInLocaltimeSetting.vue';
+import IpfsGatewaySetting from '@/modules/settings/general/IpfsGatewaySetting.vue';
 import UsageAnalyticsSetting from '@/modules/settings/general/UsageAnalyticsSetting.vue';
 import VersionUpdateFrequencySetting from '@/modules/settings/general/VersionUpdateFrequencySetting.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
@@ -66,6 +67,12 @@ const autoDetectTokensOnLogin = useSetting('autoDetectTokensOnLogin');
     <SettingsItem setting-key="dateDisplayFormat">
       <DateDisplayFormatSetting />
       <DateInputFormatSetting />
+    </SettingsItem>
+    <SettingsItem setting-key="ipfsGateway">
+      <template #subtitle>
+        {{ t('general_settings.ipfs_gateway.subtitle') }}
+      </template>
+      <IpfsGatewaySetting />
     </SettingsItem>
   </SettingCategory>
 </template>
