@@ -61,6 +61,47 @@ describe('useNotificationDispatcher', () => {
     expect(get(data)).toHaveLength(1);
   });
 
+  describe('a repeated failure', () => {
+    const FAILURE = NotificationKind.FAILURE;
+    const failure = { kind: FAILURE, message: 'backend unreachable', severity: Severity.ERROR, title: 'Periodic query' };
+
+    it('should keep one row, moved up and dated to the latest attempt', () => {
+      const { notify } = useNotificationDispatcher();
+      const { data } = storeToRefs(useNotificationsStore());
+
+      notify(failure);
+      const [{ date: first, id }] = get(data);
+      vi.advanceTimersByTime(15_000);
+      notify({ ...failure, message: 'something else' });
+      vi.advanceTimersByTime(15_000);
+      notify(failure);
+
+      expect(get(data)).toHaveLength(2);
+      expect(get(data)[0]).toMatchObject({ id, message: 'backend unreachable' });
+      expect(get(data)[0].date.getTime()).toBe(first.getTime() + 30_000);
+    });
+
+    it('should keep separate rows for the same words under another title', () => {
+      const { notify } = useNotificationDispatcher();
+      const { data } = storeToRefs(useNotificationsStore());
+
+      notify(failure);
+      notify({ ...failure, title: 'History query' });
+
+      expect(get(data)).toHaveLength(2);
+    });
+
+    it('should not fold a result that repeats a failure\'s words', () => {
+      const { notify } = useNotificationDispatcher();
+      const { data } = storeToRefs(useNotificationsStore());
+
+      notify(failure);
+      notify({ ...failure, kind: RESULT });
+
+      expect(get(data)).toHaveLength(2);
+    });
+  });
+
   it('should handle group notifications with cooldown', () => {
     const { notify } = useNotificationDispatcher();
     const store = useNotificationsStore();
