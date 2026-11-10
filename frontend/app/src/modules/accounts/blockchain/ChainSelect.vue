@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="T extends string | string[]">
+<script setup lang="ts">
 import type { RuiAutoComplete } from '@rotki/ui-library';
 import type { ChainInfo } from '@/modules/core/api/types/chains';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
@@ -19,7 +19,7 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const model = defineModel<T extends Array<infer U> ? U[] : T | undefined>({ required: true });
+const model = defineModel<string | undefined>({ required: true });
 
 const {
   dense = false,

@@ -96,11 +96,11 @@ defineExpose({
       />
     </template>
     <AssetSelect
-      v-model="form.state.asset"
+      :model-value="form.state.asset"
       data-testid="counterparty-asset"
       :label="t('asset_management.cex_mapping.recognized_as')"
       :error-messages="form.errors('asset')"
-      @update:model-value="form.touch('asset')"
+      @update:model-value="form.state.asset = $event ?? ''; form.touch('asset')"
     />
   </div>
 </template>

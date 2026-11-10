@@ -119,12 +119,12 @@ defineExpose({
   >
     <div class="flex gap-2">
       <ChainSelect
-        v-model="form.state.blockchain"
+        :model-value="form.state.blockchain"
         class="max-w-80"
         data-testid="tx-blockchain"
         :items="chainOptions"
         :error-messages="form.errors('blockchain')"
-        @update:model-value="form.touch('blockchain')"
+        @update:model-value="form.state.blockchain = $event ?? ''; form.touch('blockchain')"
       />
       <BlockchainAccountSelector
         v-model="accounts"

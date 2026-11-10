@@ -124,7 +124,7 @@ defineExpose({
 
     <HistoryEventTypeForm
       v-model:event-type="state.eventType"
-      v-model:event-subtype="state.eventSubtype"
+      :event-subtype="state.eventSubtype"
       :counterparty="isPlain ? undefined : state.counterparty"
       :location="isPlain ? state.location : undefined"
       :entry-type="isPlain ? HistoryEventEntryType.HISTORY_EVENT : state.kind"
@@ -136,6 +136,7 @@ defineExpose({
       :dirty="stateUpdated"
       class="mb-4"
       @touch="touchEventType()"
+      @update:event-subtype="state.eventSubtype = $event ?? ''"
     />
 
     <HistoryEventAssetPriceForm
@@ -152,9 +153,9 @@ defineExpose({
     />
     <HistoryEventAssetPriceForm
       v-else
-      v-model:asset="state.asset"
       v-model:amount="state.amount"
       v-model:price-intent="state.priceIntent"
+      :asset="state.asset"
       :location="state.location"
       :error-messages="{
         amount: form.errors('amount'),
@@ -163,6 +164,7 @@ defineExpose({
       :timestamp="state.timestamp"
       :no-price-fields="!isPlain && isInformationalEvent"
       @blur="form.touch($event)"
+      @update:asset="state.asset = $event ?? ''"
     />
 
     <RuiDivider class="mb-6 mt-2" />
@@ -199,11 +201,12 @@ defineExpose({
 
     <CounterpartyInput
       v-if="!isPlain"
-      v-model="state.counterparty"
+      :model-value="state.counterparty"
       :label="t('common.counterparty')"
       data-testid="counterparty"
       :error-messages="form.errors('counterparty')"
       @blur="form.touch('counterparty')"
+      @update:model-value="state.counterparty = $event ?? ''"
     />
 
     <RuiDivider class="mb-6 mt-2" />

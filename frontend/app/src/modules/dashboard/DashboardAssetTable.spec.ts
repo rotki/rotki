@@ -38,11 +38,11 @@ vi.mock('@/modules/assets/prices/use-price-utils', async () => {
 const RuiDataTableStub = defineComponent({
   props: {
     empty: { default: undefined, type: Object },
-    hideDefaultFooter: { default: false, type: Boolean },
+    hidePagination: { default: false, type: Boolean },
     rows: { default: () => [], type: Array },
   },
   setup(props, { slots }): () => VNode {
-    return () => h('div', { 'data-pager': props.hideDefaultFooter ? 'hidden' : 'shown' }, [
+    return () => h('div', { 'data-pager': props.hidePagination ? 'hidden' : 'shown' }, [
       ...props.rows.map(row => h('div', slots['item.value']?.({ row }))),
       h('div', slots['body.append']?.({})),
       ...(props.rows.length === 0 ? [h('div', { 'data-testid': 'empty' }, props.empty?.description)] : []),

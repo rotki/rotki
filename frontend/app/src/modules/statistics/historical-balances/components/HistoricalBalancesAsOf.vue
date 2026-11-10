@@ -20,11 +20,14 @@ const { t } = useI18n({ useScope: 'global' });
 
 /**
  * The picker works in unix seconds and shows the as-of time the day stands for, so it never reads
- * as the day's start. The page only keeps the day, so any time picked is dropped.
+ * as the day's start. The page only keeps the day, so any time picked is dropped, and clearing the
+ * picker keeps the current day, since a balance needs a date to be read as of.
  */
-const pickerValue = computed<number>({
+const pickerValue = computed<number | undefined>({
   get: () => asOfTimestamp(get(day), dayjs().unix()),
-  set: (value: number) => {
+  set: (value: number | undefined) => {
+    if (value === undefined)
+      return;
     set(day, toDateKey(value));
   },
 });

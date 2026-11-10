@@ -157,9 +157,9 @@ defineExpose({
     <RuiDivider class="mb-6 mt-2" />
 
     <HistoryEventAssetPriceForm
-      v-model:asset="state.asset"
       v-model:amount="state.amount"
       v-model:price-intent="state.priceIntent"
+      :asset="state.asset"
       :location="state.location"
       :error-messages="{
         amount: form.errors('amount'),
@@ -167,6 +167,7 @@ defineExpose({
       }"
       :timestamp="state.timestamp"
       @blur="form.touch($event)"
+      @update:asset="state.asset = $event ?? ''"
     />
 
     <RuiDivider class="mb-6 mt-2" />
@@ -245,13 +246,14 @@ defineExpose({
       />
 
       <ChainSelect
-        v-model="state.blockchain"
+        :model-value="state.blockchain"
         data-testid="blockchain-id"
         color="primary"
         custom-value
         :label="t('common.blockchain')"
         :error-messages="form.errors('blockchain')"
         @blur="form.touch('blockchain')"
+        @update:model-value="state.blockchain = $event ?? ''"
       />
     </EventDetailsSection>
   </div>

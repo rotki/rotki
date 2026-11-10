@@ -21,12 +21,21 @@ const emit = defineEmits<{
 
 const input = useTemplateRef<InstanceType<typeof BtcAddressInput>>('input');
 
-const xpub = computed<XpubPayload>({
+/**
+ * The xpub the input has typed so far.
+ *
+ * @remarks
+ * The input reports `undefined` while its field is empty. The account payload has no empty state,
+ * so that keeps the last complete xpub, and the input's own required rule blocks the save.
+ */
+const xpub = computed<XpubPayload | undefined>({
   get() {
     const model = get(modelValue);
     return model.data.xpub;
   },
-  set(xpub: XpubPayload) {
+  set(xpub: XpubPayload | undefined) {
+    if (!xpub)
+      return;
     const model = get(modelValue);
     set(modelValue, {
       ...model,

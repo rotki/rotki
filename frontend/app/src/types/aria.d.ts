@@ -1,4 +1,4 @@
-export {};
+import type { AriaAttributes } from 'vue';
 
 declare module '@vue/runtime-dom' {
   /**
@@ -11,4 +11,16 @@ declare module '@vue/runtime-dom' {
   interface AriaAttributes {
     'aria-description'?: string;
   }
+}
+
+declare module 'vue' {
+  /**
+   * Lets any component take ARIA attributes, which fall through to its root element.
+   *
+   * @remarks
+   * With `strictTemplates` an attribute a component does not declare is a type error. A third-party
+   * component such as `VChart` declares none, yet labelling its root is the only way to name it.
+   * `data-*` attributes get the same allowance through `dataAttributes` in `tsconfig.app.json`.
+   */
+  interface ComponentCustomProps extends AriaAttributes {}
 }

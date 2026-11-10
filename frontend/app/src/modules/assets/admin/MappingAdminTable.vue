@@ -1,7 +1,7 @@
-<script setup lang="ts" generic="T extends { asset: string }, K extends string">
+<script setup lang="ts" generic="T extends { asset: string }">
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/modules/core/common/collection';
-import type { MatchedKeyword } from '@/modules/core/table/filtering';
+import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
@@ -21,7 +21,7 @@ import RowActions from '@/modules/shell/components/RowActions.vue';
  */
 const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
 
-const filtersModel = defineModel<MatchedKeyword<K>>('filters', { required: true });
+const filtersModel = defineModel<MatchedKeywordWithBehaviour<string>>('filters', { required: true });
 
 const { collection, deleteConfirm, sourceKey, sourceLabel, symbolKey, subtitle } = defineProps<{
   collection: Collection<T>;

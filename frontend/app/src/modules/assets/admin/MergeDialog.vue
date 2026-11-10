@@ -150,8 +150,8 @@ watch(display, (isDisplayed) => {
           <RuiIcon name="lu-arrow-down" />
         </div>
         <AssetSelect
-          v-model="form.state.targetIdentifier"
           v-model:asset="target"
+          :model-value="form.state.targetIdentifier"
           :error-messages="form.errors('targetIdentifier')"
           :label="t('merge_dialog.target.label')"
           :disabled="submitting"
@@ -159,7 +159,7 @@ watch(display, (isDisplayed) => {
           :hint="target ? t('merge_dialog.target_hint', { identifier: target.identifier }) : ''"
           data-testid="merge-target"
           @focus="clearErrors()"
-          @update:model-value="form.touch('targetIdentifier')"
+          @update:model-value="form.state.targetIdentifier = $event ?? ''; form.touch('targetIdentifier')"
         />
 
         <RuiAlert

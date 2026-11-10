@@ -19,6 +19,14 @@ const start = defineModel<number | undefined>('start', {
 
 const end = defineModel<number>('end', { required: true });
 
+/** A cleared end date reads as up to now, the latest date the picker allows. */
+const pickedEnd = computed<number | undefined>({
+  get: () => get(end),
+  set: (value: number | undefined) => {
+    set(end, value ?? dayjs().unix());
+  },
+});
+
 const { t } = useI18n({ useScope: 'global' });
 
 const ALL_TIME = 'all';
@@ -89,7 +97,7 @@ const preset = computed<string | number | undefined>({
     </RuiButtonGroup>
     <DateTimeRangePicker
       v-model:start="start"
-      v-model:end="end"
+      v-model:end="pickedEnd"
       class="flex-1 max-w-3xl"
       dense
       allow-empty

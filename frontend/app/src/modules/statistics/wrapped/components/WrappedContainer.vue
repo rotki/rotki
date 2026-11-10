@@ -76,8 +76,9 @@ watch(loading, (isLoading) => {
 <template>
   <div class="flex flex-col gap-4">
     <WrappedDateFilter
-      v-model:start="start"
       v-model:end="end"
+      :start="start"
+      @update:start="start = $event ?? 0"
     />
 
     <WrappedAlerts

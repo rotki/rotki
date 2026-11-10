@@ -18,9 +18,9 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const modelValue = defineModel<string[] | string>({
+const modelValue = defineModel<string>({
   required: true,
-  set: (val: string[] | string | undefined) => val ?? '',
+  set: (val: string | undefined) => val ?? '',
 });
 
 const { options } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete, Props>>();

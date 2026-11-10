@@ -59,7 +59,7 @@ defineExpose({
     <section class="flex flex-col gap-3">
       <HistoryEventTypeForm
         v-model:event-type="form.state.eventType"
-        v-model:event-subtype="form.state.eventSubtype"
+        :event-subtype="form.state.eventSubtype"
         :counterparty="form.state.counterparty"
         :error-messages="{
           eventType: form.errors('eventType'),
@@ -68,13 +68,15 @@ defineExpose({
         :disabled="isEventSpecificRule"
         disable-warning
         @touch="touchEventType()"
+        @update:event-subtype="form.state.eventSubtype = $event ?? ''"
       />
       <CounterpartyInput
-        v-model="form.state.counterparty"
+        :model-value="form.state.counterparty"
         :label="t('common.counterparty')"
         :disabled="isEventSpecificRule"
         :error-messages="form.errors('counterparty')"
         @blur="form.touch('counterparty')"
+        @update:model-value="form.state.counterparty = $event ?? ''"
       />
     </section>
 

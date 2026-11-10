@@ -85,9 +85,10 @@ const { pending, request, status } = useCacheClear<PurgeableImageCache>(
       />
       <AssetSelect
         v-if="source === PurgeableImageCache.ASSET_ICONS"
-        v-model="assetToClear"
+        :model-value="assetToClear"
         :label="t('data_management.purge_images_cache.label.asset_to_clear')"
         :hint="t('data_management.purge_images_cache.hint')"
+        @update:model-value="assetToClear = $event ?? ''"
       />
       <RuiAutoComplete
         v-else
