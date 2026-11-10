@@ -524,7 +524,8 @@ def test_query_pnl_report_events_pagination_filtering(
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('have_decoders', [[True]])
 def test_history_debug_export(rotkehlchen_api_server: APIServer) -> None:
-    """Check that the format of the data exported matches the expected type."""
+    """Check that the format of the data exported matches the expected type, and that the
+    access token in the IPFS gateway's query is not exported."""
     tx_id = '10' + str(make_evm_tx_hash())  # add a random tx id to the ignore list to ensure that at least one kind of event is ignored and is not empty  # noqa: E501
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     with rotki.data.db.user_write() as write_cursor:
@@ -533,6 +534,10 @@ def test_history_debug_export(rotkehlchen_api_server: APIServer) -> None:
             identifiers=[tx_id],
         )
 
+    assert_proper_sync_response_with_result(requests.put(
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
+        json={'settings': {'ipfs_gateway': 'https://my.node/ipfs?token=secret'}},
+    ))
     expected_keys = ('events', 'settings', 'ignored_events_ids', 'pnl_settings')
     now = ts_now()
     response = requests.post(
@@ -549,6 +554,7 @@ def test_history_debug_export(rotkehlchen_api_server: APIServer) -> None:
     assert tuple(result.keys()) == expected_keys
     assert result['pnl_settings'] == {'from_timestamp': Timestamp(0), 'to_timestamp': now}
     assert result['ignored_events_ids'] == [tx_id]
+    assert result['settings']['ipfs_gateway'] == 'https://my.node/ipfs'
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])

@@ -43,6 +43,7 @@ from rotkehlchen.errors.misc import (
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
+from rotkehlchen.externalapis.ipfs import redact_ipfs_gateway_url
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -189,9 +190,12 @@ class HistoryService:
             settings = self.rotkehlchen.get_settings(cursor)
             cache = self.rotkehlchen.data.db.get_cache_for_api(cursor)
             ignored_ids = self.rotkehlchen.data.db.get_ignored_action_ids(cursor)
+        serialized_settings = settings.serialize() | cache
+        # The gateway's query may hold an access token, and users attach this to bug reports
+        serialized_settings['ipfs_gateway'] = redact_ipfs_gateway_url(settings.ipfs_gateway)
         debug_info = {
             'events': [entry.serialize_for_debug_import() for entry in events],
-            'settings': settings.serialize() | cache,
+            'settings': serialized_settings,
             'ignored_events_ids': list(ignored_ids),
             'pnl_settings': {
                 'from_timestamp': int(from_timestamp),

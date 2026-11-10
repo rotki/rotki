@@ -2052,16 +2052,22 @@ class RestAPI:
         status_code = HTTPStatus.OK
         message = ''
         try:
-            metrics = LidoCsmMetricsFetcher(
+            metrics_fetcher = LidoCsmMetricsFetcher(
                 evm_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
-            ).get_operator_stats(node_operator_id)
+            )
+            metrics = metrics_fetcher.get_operator_stats(
+                node_operator_id=node_operator_id,
+                rewards_tree=metrics_fetcher.get_rewards_tree_or_none(),
+            )
             DBLidoCsm(self.rotkehlchen.data.db).set_metrics(
                 node_operator_id=node_operator_id,
                 metrics=metrics,
             )
         except RemoteError as e:
             log.error(
-                f'Failed to fetch Lido CSM metrics for new operator {node_operator_id}: {e}',
+                'Failed to fetch Lido CSM metrics for new operator %s: %s',
+                node_operator_id,
+                e,
             )
             status_code = HTTPStatus.BAD_GATEWAY
             message = f'Failed to fetch metrics for node operator {node_operator_id}'
@@ -2097,32 +2103,51 @@ class RestAPI:
         )
 
     def refresh_lido_csm_metrics(self) -> Response:
-        """Recompute metrics for a given node operator id,
-        or for all tracked operators if omitted."""
+        """Recompute and store the metrics of all tracked node operators.
+
+        The IPFS rewards tree holds the rewards of every operator, so it is fetched once
+        and shared, instead of once per operator.
+        """
         metrics_fetcher = LidoCsmMetricsFetcher(
             evm_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
         )
-
         result = []
         failed_ids: list[int] = []
         unknown_rewards_ids: list[int] = []
-        for entry in DBLidoCsm(self.rotkehlchen.data.db).get_node_operators():
+        tree_query_failed, rewards_tree = False, None
+        if len(entries := DBLidoCsm(self.rotkehlchen.data.db).get_node_operators()) != 0:
             try:
-                metrics = metrics_fetcher.get_operator_stats(entry.node_operator_id)
-                metrics_payload = metrics.serialize()
-                if metrics.rewards_steth is None:
-                    unknown_rewards_ids.append(entry.node_operator_id)
-                    # report the stored value, which set_metrics keeps, and not null
-                    if entry.metrics is not None and entry.metrics.rewards_steth is not None:
-                        metrics_payload['rewards']['pending'] = str(entry.metrics.rewards_steth)
-                DBLidoCsm(self.rotkehlchen.data.db).set_metrics(
-                    node_operator_id=entry.node_operator_id,
-                    metrics=metrics,
-                )
-            except RemoteError as e:
-                log.error(f'Failed to refresh Lido CSM metrics for {entry}: {e}')
-                metrics_payload = None
+                rewards_tree = metrics_fetcher.get_rewards_tree_or_none()
+            except RemoteError as e:  # the on-chain cid query failed, not IPFS
+                log.error('Failed to query the Lido CSM rewards tree cid: %s', e)
+                tree_query_failed = True
+
+        for entry in entries:
+            metrics_payload = None
+            if tree_query_failed:
                 failed_ids.append(entry.node_operator_id)
+            else:
+                try:
+                    metrics = metrics_fetcher.get_operator_stats(
+                        node_operator_id=entry.node_operator_id,
+                        rewards_tree=rewards_tree,
+                    )
+                except RemoteError as e:
+                    log.error('Failed to refresh Lido CSM metrics for %s: %s', entry, e)
+                    failed_ids.append(entry.node_operator_id)
+                else:
+                    metrics_payload = metrics.serialize()
+                    if metrics.rewards_steth is None:
+                        unknown_rewards_ids.append(entry.node_operator_id)
+                        # report the stored value, which set_metrics keeps, and not null
+                        if entry.metrics is not None and entry.metrics.rewards_steth is not None:
+                            metrics_payload['rewards']['pending'] = str(
+                                entry.metrics.rewards_steth,
+                            )
+                    DBLidoCsm(self.rotkehlchen.data.db).set_metrics(
+                        node_operator_id=entry.node_operator_id,
+                        metrics=metrics,
+                    )
 
             result.append({
                 'address': entry.address,
