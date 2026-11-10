@@ -8,7 +8,10 @@ from rotkehlchen.history.data_issues.constants import (
     IssueSeverity,
     IssueState,
 )
-from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.manager import (
+    MAX_REMEDIATION_ATTEMPTS,
+    DataIssuesManager,
+)
 from rotkehlchen.history.data_issues.types import DataIssueFilters
 from rotkehlchen.locations.constants import (
     LOCATION_ETHEREUM,
@@ -180,6 +183,33 @@ def test_only_latest_attempt_keeps_comparison(database: DBHandler, use_update_st
         'transactions' not in attempt
         for attempt in manager.get_issue(issue_id).auto_remediation_attempts
     )
+
+
+def test_append_auto_remediation_attempt_caps_history(database: DBHandler) -> None:
+    manager = DataIssuesManager(database)
+    issue_id = _write_negative_balance_issue(manager)
+    attempts = [{'step': step} for step in range(MAX_REMEDIATION_ATTEMPTS + 5)]
+
+    for attempt in attempts:
+        issue = manager.append_auto_remediation_attempt(issue_id, attempt=attempt)
+
+    assert issue.auto_remediation_attempts == attempts[-MAX_REMEDIATION_ATTEMPTS:]
+    assert manager.get_issue(issue_id).auto_remediation_attempts == (
+        attempts[-MAX_REMEDIATION_ATTEMPTS:]
+    )
+
+
+def test_update_state_caps_remediation_history(database: DBHandler) -> None:
+    manager = DataIssuesManager(database)
+    issue_id = _write_negative_balance_issue(manager)
+    attempts = [{'step': step} for step in range(MAX_REMEDIATION_ATTEMPTS + 5)]
+
+    issue = manager.update_state(issue_id, IssueState.AUTO_REMEDIATING, attempt=attempts[0])
+    for step, attempt in enumerate(attempts[1:], start=1):
+        state = IssueState.UNRESOLVED if step % 2 == 1 else IssueState.AUTO_REMEDIATING
+        issue = manager.update_state(issue_id, state, attempt=attempt)
+
+    assert issue.auto_remediation_attempts == attempts[-MAX_REMEDIATION_ATTEMPTS:]
 
 
 def test_retry_auto_remediation(database: DBHandler) -> None:

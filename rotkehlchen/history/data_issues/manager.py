@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 
 from rotkehlchen.db.filtering import DataIssuesFilterQuery
 from rotkehlchen.db.utils import get_query_chunks
@@ -75,6 +75,27 @@ INSERT OR IGNORE INTO data_issues (
     created_at
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
+
+
+MAX_REMEDIATION_ATTEMPTS: Final = 20
+"""How many remediation attempts a data issue keeps. They are a diagnostic timeline, not an
+audit log, and unbounded growth would bloat every read of the issue."""
+
+
+def _with_remediation_attempt(
+        attempts: list[Any],
+        attempt: Mapping[str, Any],
+) -> list[Any]:
+    """Return `attempts` plus `attempt`, capped to the most recent MAX_REMEDIATION_ATTEMPTS.
+
+    Only the newest attempt keeps its full payload; older ones drop the bulky transaction
+    comparison.
+    """
+    return [
+        *({key: value for key, value in old.items() if key != 'transactions'}
+          for old in attempts),
+        attempt,
+    ][-MAX_REMEDIATION_ATTEMPTS:]
 
 
 def _row_to_data_issue(
@@ -521,11 +542,7 @@ class DataIssuesManager:
 
         attempts = issue.auto_remediation_attempts
         if attempt is not None:
-            attempts = [
-                *({key: value for key, value in old.items() if key != 'transactions'}
-                  for old in attempts),
-                attempt,
-            ]
+            attempts = _with_remediation_attempt(attempts, attempt)
 
         payload = issue.payload
         if resolution is not None:
@@ -565,11 +582,10 @@ class DataIssuesManager:
                 'WHERE id = ? '
                 f'RETURNING {DATA_ISSUE_COLUMNS}',
                 (
-                    json.dumps([
-                        *({key: value for key, value in old.items() if key != 'transactions'}
-                          for old in issue.auto_remediation_attempts),
-                        attempt,
-                    ], separators=(',', ':')),
+                    json.dumps(
+                        _with_remediation_attempt(issue.auto_remediation_attempts, attempt),
+                        separators=(',', ':'),
+                    ),
                     json.dumps(payload, separators=(',', ':')),
                     issue_id,
                 ),
