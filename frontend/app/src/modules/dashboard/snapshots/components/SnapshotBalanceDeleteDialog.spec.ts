@@ -206,6 +206,20 @@ describe('modules/dashboard/snapshots/components/SnapshotBalanceDeleteDialog', (
       expect(wrapper.emitted('confirm')).toEqual([[{ index: 0, location: 'kraken', markSpam: true }]]);
     });
 
+    it('should name an asset without a resolved symbol by its identifier and skip the other-rows note for a lone row', async () => {
+      const other = 'eip155:1/erc20:0x6982508145454Ce325dDbE47a25d4ec3d2311933';
+      spamEligibility.mockReturnValue(SnapshotSpamEligibility.ELIGIBLE);
+      wrapper = createWrapper({
+        balancesSnapshot: [{ amount: bigNumberify(1), assetIdentifier: other, category: BalanceType.ASSET, timestamp: TS, usdValue: bigNumberify(100) }],
+        locationDataSnapshot: createSnapshot().locationDataSnapshot,
+      });
+      wrapper.vm.open(0);
+      await nextTick();
+
+      expect(wrapper.find('[data-testid=snapshot-balances-delete-spam-warning]').text()).toContain(other);
+      expect(wrapper.find('[data-testid=snapshot-balances-delete-spam-other-rows]').exists()).toBe(false);
+    });
+
     it('should show the spam action disabled with a reason for an asset in a manual balance', async () => {
       await openFor(SnapshotSpamEligibility.MANUAL_BALANCE);
 
