@@ -4985,6 +4985,7 @@
       },
       "inactive": {
         "expired_message": "Your premium subscription is expired. Go to rotki website to renew your subscription.",
+        "manage_devices": "Manage devices",
         "network_problem_message": "We couldn't verify your premium subscription due to network problems.",
         "title": "Premium features deactivated"
       }
