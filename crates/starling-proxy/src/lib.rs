@@ -21,7 +21,7 @@
 //! static SPA is gzip/brotli-compressed and served with cache + security headers.
 
 use std::io;
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -50,6 +50,7 @@ use axum::{
 
 use hyper_util::client::legacy::{connect::HttpConnector, Client};
 use hyper_util::rt::{TokioExecutor, TokioIo, TokioTimer};
+use socket2::{Domain, Protocol, Socket, Type};
 use tokio::net::TcpListener;
 use tokio::sync::Semaphore;
 use tower::ServiceExt as _;
@@ -78,6 +79,10 @@ const MCP_BACKEND_PROOF_HEADER: &str = "x-rotki-mcp-proof";
 /// request/response: some rotki API calls (history rebuilds, exports) run for
 /// minutes by design, and a completion timeout here would kill them.
 const HEADER_READ_TIMEOUT: Duration = Duration::from_secs(30);
+
+/// Listen backlog of the dual-stack listener, the one std (and so
+/// `TcpListener::bind`) uses for every other address.
+const LISTEN_BACKLOG: i32 = 128;
 
 /// Bounded pause after a failed `accept()`. Errors like `EMFILE`/`ENFILE` (file
 /// descriptor exhaustion) persist until descriptors free up, so retrying
@@ -210,12 +215,32 @@ pub(crate) struct ProxyState {
 /// (e.g. port already taken, or no privilege for port 80) is surfaced as a fatal
 /// startup error rather than a detached task panic.
 ///
-/// Docker binds all interfaces (`0.0.0.0`), this *is* the published port. The
-/// backends stay on loopback (Work item 8); only this listener is external.
-/// Embedded binds `127.0.0.1` only: it fronts the loopback backends so the
-/// renderer speaks a single local origin, never reachable off-host.
-pub async fn bind(host: std::net::IpAddr, port: u16) -> io::Result<TcpListener> {
-    TcpListener::bind((host, port)).await
+/// Docker binds all IPv4 interfaces (`0.0.0.0`) unless configured otherwise,
+/// this *is* the published port. The backends stay on loopback (Work item 8);
+/// only this listener is external. Embedded binds `127.0.0.1` only: it fronts
+/// the loopback backends so the renderer speaks a single local origin, never
+/// reachable off-host.
+///
+/// `::` is bound dual-stack: `IPV6_V6ONLY` is cleared explicitly rather than
+/// left to the host default (`net.ipv6.bindv6only`, which some distributions
+/// and BSDs set), so IPv4 clients keep connecting, seen as IPv4-mapped IPv6
+/// peers that [`serve`] maps back to IPv4. Any other address is bound as is.
+pub async fn bind(host: IpAddr, port: u16) -> io::Result<TcpListener> {
+    let addr = SocketAddr::new(host, port);
+    if !(host.is_ipv6() && host.is_unspecified()) {
+        return TcpListener::bind(addr).await;
+    }
+    let socket = Socket::new(Domain::IPV6, Type::STREAM, Some(Protocol::TCP))?;
+    socket.set_only_v6(false)?;
+    // What `TcpListener::bind` does for the other addresses: SO_REUSEADDR off
+    // Windows (where it would allow taking over a port in use), then std's
+    // backlog.
+    #[cfg(not(windows))]
+    socket.set_reuse_address(true)?;
+    socket.bind(&addr.into())?;
+    socket.listen(LISTEN_BACKLOG)?;
+    socket.set_nonblocking(true)?;
+    TcpListener::from_std(socket.into())
 }
 
 /// Serve the SPA + proxy on an already-bound listener until `shutdown` resolves.
@@ -291,6 +316,10 @@ where
             },
         };
 
+        // A dual-stack listener reports IPv4 clients as `::ffff:a.b.c.d`. Map
+        // them back so the trusted-hop, loopback and access-log checks and the
+        // forwarded headers see the same address an IPv4 listener would.
+        let peer = canonical_peer(peer);
         let io = TokioIo::new(stream);
         let app = app.clone();
         // hyper hands us `Request<Incoming>`; map the body to axum's `Body`,
@@ -659,6 +688,11 @@ fn peer_addr(req: &Request) -> Option<SocketAddr> {
     req.extensions()
         .get::<ConnectInfo<SocketAddr>>()
         .map(|ConnectInfo(addr)| *addr)
+}
+
+/// `peer` with an IPv4-mapped IPv6 address replaced by the IPv4 address.
+fn canonical_peer(peer: SocketAddr) -> SocketAddr {
+    SocketAddr::new(peer.ip().to_canonical(), peer.port())
 }
 
 /// The original request's path+query (defaults to `/` if absent).
@@ -1952,6 +1986,105 @@ mod tests {
         ws.send(Message::Binary(b"hello".to_vec())).await.unwrap();
         let reply = ws.next().await.unwrap().unwrap();
         assert_eq!(&reply.into_data()[..], b"hello");
+    }
+
+    /// A stub upstream that echoes back the `X-Real-IP` it was handed, the
+    /// address the proxy attributes the request to.
+    async fn spawn_real_ip_report_upstream() -> u16 {
+        let listener = TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
+            .await
+            .unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let app = Router::new().fallback(any(|req: Request| async move {
+            req.headers()
+                .get("x-real-ip")
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("<absent>")
+                .to_string()
+        }));
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+        port
+    }
+
+    /// Send a bare `GET` over a fresh connection to `addr` and return the body.
+    async fn raw_get_body(addr: SocketAddr, path: &str) -> String {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+        let mut stream = tokio::net::TcpStream::connect(addr).await.unwrap();
+        stream
+            .write_all(
+                format!("GET {path} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
+                    .as_bytes(),
+            )
+            .await
+            .unwrap();
+        let mut response = String::new();
+        stream.read_to_string(&mut response).await.unwrap();
+        let (head, body) = response.split_once("\r\n\r\n").unwrap();
+        assert!(
+            head.starts_with("HTTP/1.1 200"),
+            "unexpected response: {head}"
+        );
+        body.to_string()
+    }
+
+    /// `::` must take IPv4 clients too whatever the host's `bindv6only` says, and
+    /// those clients must reach the backends, the trusted-hop checks and the
+    /// access log as IPv4. Driven through the real `bind` + `serve`, since the
+    /// mapping happens in the accept loop.
+    ///
+    /// Negative control: binding `::` with `TcpListener::bind` loses the IPv4
+    /// client on hosts with `bindv6only=1`, and dropping `canonical_peer` makes
+    /// it arrive as `::ffff:127.0.0.1`.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn dual_stack_listener_serves_ipv4_clients_as_ipv4() {
+        let upstream_port = spawn_real_ip_report_upstream().await;
+        let proxy_listener = bind(IpAddr::V6(std::net::Ipv6Addr::UNSPECIFIED), 0)
+            .await
+            .unwrap();
+        let proxy_port = proxy_listener.local_addr().unwrap().port();
+        let config = ProxyConfig {
+            port: proxy_port,
+            core_port: upstream_port,
+            api_upstream_port: None,
+            colibri_port: upstream_port,
+            mcp_port: upstream_port,
+            mcp_enabled: true,
+            frontend_dir: Some(unique_temp_dir()),
+            max_body_bytes: 50 * 1024 * 1024,
+            access_log: Default::default(),
+            health: None,
+            control: None,
+        };
+        tokio::spawn(async move {
+            serve(proxy_listener, config, std::future::pending::<()>())
+                .await
+                .unwrap();
+        });
+
+        let ipv4 = SocketAddr::new(std::net::Ipv4Addr::LOCALHOST.into(), proxy_port);
+        assert_eq!(raw_get_body(ipv4, "/api/1/ping").await, "127.0.0.1");
+        let ipv6 = SocketAddr::new(std::net::Ipv6Addr::LOCALHOST.into(), proxy_port);
+        assert_eq!(raw_get_body(ipv6, "/api/1/ping").await, "::1");
+    }
+
+    #[test]
+    fn canonical_peer_maps_only_ipv4_mapped_addresses() {
+        let parse = |addr: &str| addr.parse::<SocketAddr>().unwrap();
+        assert_eq!(
+            canonical_peer(parse("[::ffff:172.18.0.5]:5555")),
+            parse("172.18.0.5:5555"),
+        );
+        assert_eq!(
+            canonical_peer(parse("[fd00::5]:5555")),
+            parse("[fd00::5]:5555")
+        );
+        assert_eq!(
+            canonical_peer(parse("127.0.0.1:5555")),
+            parse("127.0.0.1:5555")
+        );
     }
 
     /// A client that opens a connection and dribbles a request head without ever
