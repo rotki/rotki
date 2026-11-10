@@ -4,7 +4,7 @@ import type { AccountDataRow } from './types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/modules/core/common/collection';
-import { getAccountAddress, getAccountLabel } from '@/modules/accounts/account-utils';
+import { getAccountAddress, getAccountLabel, isAddressAccount } from '@/modules/accounts/account-utils';
 import AccountChains from '@/modules/accounts/AccountChains.vue';
 import AccountTopTokens from '@/modules/accounts/AccountTopTokens.vue';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
@@ -126,6 +126,7 @@ function headerCategory(group: Partial<AccountDataRow<T>>): string {
         v-model:chain-filter="chainFilter"
         :address="getAccountAddress(row)"
         :row="row"
+        :skippable="isAddressAccount(row)"
       />
     </template>
     <template #item.tags="{ row }">

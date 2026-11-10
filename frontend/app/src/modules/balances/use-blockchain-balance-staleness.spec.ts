@@ -17,9 +17,12 @@ vi.mock('@/modules/settings/general/disabled-chain-queries/use-disabled-chains',
   useDisabledChains: (): {
     isAddressExcluded: (chain: string, address: string) => boolean;
     isChainExcluded: (chain: string) => boolean;
+    isEveryAddressExcluded: (chain: string, addresses: string[]) => boolean;
   } => ({
     isAddressExcluded: (_chain: string, address: string): boolean => rules.excludedAddresses.value.includes(address),
     isChainExcluded: (chain: string): boolean => rules.disabledChains.value.includes(chain),
+    isEveryAddressExcluded: (_chain: string, addresses: string[]): boolean =>
+      addresses.length > 0 && addresses.every(address => rules.excludedAddresses.value.includes(address)),
   }),
 }));
 

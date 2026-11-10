@@ -2,6 +2,8 @@ import type { BlockchainBalancePayload } from '@/modules/balances/types/blockcha
 import type { ActivityId } from '@/modules/task-center/core/types';
 import { err, type Result } from 'plainfp/result';
 import { msg } from '@/message-key';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { balancesRunActivity, chainBalancesActivity } from '@/modules/balances/balances.activity';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { RefreshMode } from '@/modules/balances/types/refresh-mode';
@@ -86,7 +88,21 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
   const { runActivityBatch } = useActivityBatch();
   const { submitTask, supersedeTask } = useNativeTask();
   const refreshState = useBalanceRefreshState();
-  const { isAddressExcluded, isChainExcluded } = useDisabledChains();
+  const { isAddressExcluded, isChainExcluded, isEveryAddressExcluded } = useDisabledChains();
+  const { getAccounts } = useBlockchainAccountsStore();
+
+  /**
+   * Whether every account tracked on `chain` is skipped one by one, so a query of the whole chain
+   * would ask the backend for nothing.
+   *
+   * @remarks
+   * The backend already leaves skipped addresses out of a whole-chain query; answering here spares
+   * the task round trip and settles the chain as skipped rather than refreshed. A chain without
+   * accounts is not this case: it is skipped later, for having no accounts, and its balances are
+   * cleared. These keep theirs.
+   */
+  const isEveryAccountExcluded = (chain: string): boolean =>
+    isEveryAddressExcluded(chain, getAccounts(chain).map(getAccountAddress));
 
   /**
    * Whether a *network* refresh is already running for this chain.
@@ -181,8 +197,8 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
           if (mode === RefreshMode.PERIODIC && (busyAtSubmit || isChainRefreshing(chain)))
             return err(Skipped({ message: t('actions.balances.blockchain.skipped.busy') }));
 
-          const everyNamedAddressExcluded = chainAddresses?.length === 0;
-          if (isChainExcluded(chain) || everyNamedAddressExcluded)
+          const nothingAllowed = chainAddresses === undefined ? isEveryAccountExcluded(chain) : chainAddresses.length === 0;
+          if (isChainExcluded(chain) || nothingAllowed)
             return err(Skipped({ message: t('actions.balances.blockchain.skipped.disabled') }));
 
           if (detect)

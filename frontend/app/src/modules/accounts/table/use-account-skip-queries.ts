@@ -29,6 +29,8 @@ export interface UseAccountSkipQueriesReturn {
   /** No chain in scope can carry a per-address rule, so the row has nothing to offer. */
   locked: ComputedRef<boolean>;
   pending: Readonly<Ref<boolean>>;
+  /** What acting on `chain` would do, or why nothing can be done about it. */
+  labelFor: (chain: string) => string;
   /** Skip every chain the row can act on, or resume them all when they are already skipped. */
   toggleAll: () => Promise<void>;
   toggleChain: (chain: string) => Promise<void>;
@@ -79,7 +81,17 @@ export function useAccountSkipQueries(
     return skipped === actionable.length ? SkipState.ALL : SkipState.PARTIAL;
   });
 
+  /**
+   * Runs one write at a time, dropping a request made while the last one is still saving.
+   *
+   * @remarks
+   * The guard is here rather than in a disabled control: a disabled control drops focus to the
+   * page, and a menu around it then never sees an Escape.
+   */
   const run = async (write: () => Promise<ActionStatus>): Promise<void> => {
+    if (get(pending))
+      return;
+
     set(pending, true);
     const result = await write();
     set(pending, false);
@@ -91,8 +103,19 @@ export function useAccountSkipQueries(
 
   const toggleChain = async (chain: string): Promise<void> => run(async () => toggle(toValue(address), [chain]));
 
+  const labelFor = (chain: string): string => {
+    const item = get(items).find(entry => entry.chain === chain);
+    if (item === undefined || item.wholeChain)
+      return t('account_balances.skip_queries.entire_chain');
+
+    return item.skipped
+      ? t('account_balances.skip_queries.resume', { chains: item.name })
+      : t('account_balances.skip_queries.skip', { chains: item.name });
+  };
+
   return {
     items,
+    labelFor,
     locked,
     pending: readonly(pending),
     state,

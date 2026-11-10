@@ -48,7 +48,7 @@ export function useCategoryChainRefresh(category: MaybeRefOrGetter<string>): Use
   const { refreshTimestamps } = storeToRefs(useBlockchainRefreshTimestampsStore());
   const { chainIds } = useAccountCategoryHelper(category);
   const { getChainName } = useSupportedChains();
-  const { isAddressExcluded } = useDisabledChains();
+  const { isEveryAddressExcluded } = useDisabledChains();
 
   const chains = computed<ChainRefreshState[]>(() => {
     const tracked = get(accounts);
@@ -59,7 +59,7 @@ export function useCategoryChainRefresh(category: MaybeRefOrGetter<string>): Use
       .map(chain => ({
         chain,
         name: getChainName(chain),
-        skipped: tracked[chain].every(account => isAddressExcluded(chain, getAccountAddress(account))),
+        skipped: isEveryAddressExcluded(chain, tracked[chain].map(getAccountAddress)),
         timestamp: timestamps[chain],
       }))
       .sort(byStaleness);

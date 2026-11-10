@@ -116,4 +116,21 @@ describe('useDisabledChains', () => {
       expect(composable.filterAccounts(sample)).toHaveLength(2);
     });
   });
+
+  describe('isEveryAddressExcluded', () => {
+    it('should be true when each address has its own rule', () => {
+      setDisabled({ eth: [ETH_ADDRESS, OTHER_ETH_ADDRESS] });
+      expect(composable.isEveryAddressExcluded('eth', [ETH_ADDRESS, OTHER_ETH_ADDRESS])).toBe(true);
+    });
+
+    it('should be false while one address is still queried', () => {
+      setDisabled({ eth: [ETH_ADDRESS] });
+      expect(composable.isEveryAddressExcluded('eth', [ETH_ADDRESS, OTHER_ETH_ADDRESS])).toBe(false);
+    });
+
+    it('should be false for no addresses, which leaves nothing to call excluded', () => {
+      setDisabled({ eth: [] });
+      expect(composable.isEveryAddressExcluded('eth', [])).toBe(false);
+    });
+  });
 });

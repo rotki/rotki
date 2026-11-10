@@ -19,7 +19,7 @@ interface UseBlockchainBalanceStalenessReturn {
  */
 export function useBlockchainBalanceStaleness(chain?: MaybeRefOrGetter<string | undefined>): UseBlockchainBalanceStalenessReturn {
   const { refreshTimestamps } = storeToRefs(useBlockchainRefreshTimestampsStore());
-  const { isAddressExcluded, isChainExcluded } = useDisabledChains();
+  const { isChainExcluded, isEveryAddressExcluded } = useDisabledChains();
   const { getAccounts } = useBlockchainAccountsStore();
 
   /**
@@ -33,7 +33,7 @@ export function useBlockchainBalanceStaleness(chain?: MaybeRefOrGetter<string | 
       return true;
 
     const accounts = getAccounts(toChainKey(key)).filter(account => !isXpubAccount(account));
-    return accounts.length > 0 && accounts.every(account => isAddressExcluded(key, getAccountAddress(account)));
+    return isEveryAddressExcluded(key, accounts.map(getAccountAddress));
   };
 
   const lastRefreshTimestamp = computed<number | undefined>(() => {
