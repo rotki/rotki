@@ -50,11 +50,17 @@ class BaseRemediationStrategy(ABC):
 
     @abstractmethod
     def applies_to(self, issue: DataIssue) -> bool:
-        """Return whether this strategy can attempt to remediate the issue."""
+        """Return whether this strategy can attempt to remediate the issue.
+
+        Runs outside the time budget and cannot be cancelled, so it must decide from
+        the issue's own fields only: no database or network access. Anything that needs
+        loading belongs in `attempt`, which reports an issue it turns out to have nothing
+        to do for with `record_attempt=False`.
+        """
 
     @abstractmethod
     def attempt(self, issue: DataIssue) -> RemediationOutcome:
-        """Try to remediate the issue and return the outcome."""
+        """Try to remediate the issue within the time budget and return the outcome."""
 
 
 class RemediationPipeline:
@@ -109,15 +115,25 @@ class RemediationPipeline:
         return result_of(task)
 
     def run(self, issue: DataIssue) -> None:
+        """Try the applicable strategies in order until one resolves the issue.
+
+        A resolving attempt and the `RESOLVED` state are written in one update. Otherwise
+        a crash between the two would leave a successful final attempt on an unresolved
+        issue, which is never retried.
+
+        An issue for which no strategy recorded an attempt returns to the state it had
+        before the run, so it is picked up again by the next one.
+        """
         if issue.state in {IssueState.RESOLVED, IssueState.DISMISSED}:
             return
         strategies = tuple(strategy for strategy in self.strategies if strategy.applies_to(issue))
         if len(strategies) == 0:
-            # TODO: Persist the exhausted/no-applicable outcome instead of leaving the issue open.
             return
-        if issue.state in {IssueState.OPEN, IssueState.UNRESOLVED}:
+        state_before_run = IssueState(issue.state)
+        if state_before_run in {IssueState.OPEN, IssueState.UNRESOLVED}:
             issue = self.manager.update_state(issue.id, IssueState.AUTO_REMEDIATING)
 
+        attempt_recorded, retryable = False, False
         try:
             for strategy in strategies:
                 try:
@@ -144,13 +160,12 @@ class RemediationPipeline:
                     if outcome.notes != '':
                         attempt['notes'] = outcome.notes
                         attempt['reason'] = outcome.notes
-                if outcome.record_attempt:
-                    log.debug('Data issue remediation attempt: %s', attempt)
-                    self.manager.append_auto_remediation_attempt(issue.id, attempt)
                 if outcome.resolved:
+                    log.debug('Data issue remediation attempt: %s', attempt)
                     self.manager.update_state(
                         issue_id=issue.id,
                         state=IssueState.RESOLVED,
+                        attempt=attempt if outcome.record_attempt else None,
                         resolution={
                             'attribution': outcome.attribution,
                             'notes': outcome.notes,
@@ -158,8 +173,23 @@ class RemediationPipeline:
                         },
                     )
                     return
+                if outcome.record_attempt:
+                    log.debug('Data issue remediation attempt: %s', attempt)
+                    self.manager.append_auto_remediation_attempt(issue.id, attempt)
+                    attempt_recorded = True
 
                 sleep(0)
+            retryable = attempt_recorded is False
+        except TaskCancelledError:
+            retryable = attempt_recorded is False
+            raise
         finally:
             if self.manager.get_issue(issue.id).state == IssueState.AUTO_REMEDIATING:
-                self.manager.update_state(issue.id, IssueState.UNRESOLVED)
+                self.manager.update_state(
+                    issue_id=issue.id,
+                    state=(
+                        state_before_run
+                        if retryable and state_before_run == IssueState.OPEN
+                        else IssueState.UNRESOLVED
+                    ),
+                )

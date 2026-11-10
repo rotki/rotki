@@ -148,9 +148,12 @@ def test_state_transitions(database: DBHandler) -> None:
     assert issue.state == IssueState.UNRESOLVED
     issue = manager.update_state(issue_id, IssueState.AUTO_REMEDIATING)
     assert issue.state == IssueState.AUTO_REMEDIATING
+    # a run that attempted nothing hands the issue back to open
+    issue = manager.update_state(issue_id, IssueState.OPEN)
+    assert issue.state == IssueState.OPEN
 
     with pytest.raises(InputError):
-        manager.update_state(issue_id, IssueState.OPEN)
+        manager.update_state(issue_id, IssueState.UNRESOLVED)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -456,3 +459,40 @@ def test_resolve_unmatched_bridge_issues_except_keeps_unmatched_and_dismissed(
     assert manager.get_issue(ids[1]).state == IssueState.OPEN
     assert manager.get_issue(ids[2]).state == IssueState.RESOLVED
     assert manager.get_issue(ids[3]).state == IssueState.DISMISSED
+
+
+def _tracked_transfer_candidate(event_identifier: int) -> tuple:
+    return (
+        event_identifier,
+        1,
+        '0x' + '11' * 32,
+        event_identifier,
+        LOCATION_ETHEREUM,
+        '0x0000000000000000000000000000000000000001',
+        'ETH',
+        1000,
+    )
+
+
+def test_batch_tracked_transfer_write_keeps_resolution_semantics(database: DBHandler) -> None:
+    manager = DataIssuesManager(database)
+    manager.write_tracked_address_transfer_issues([_tracked_transfer_candidate(1)])
+    issue_id = manager.list_issues()[0].id
+
+    # an unchanged candidate is not rewritten and does not reopen a manual resolution
+    manager.resolve_manually(issue_id, note='expected')
+    manager.write_tracked_address_transfer_issues([_tracked_transfer_candidate(1)])
+    assert manager.get_issue(issue_id).state == IssueState.RESOLVED
+
+    # an automatically resolved issue reopens when its candidate is seen again
+    manager.write_tracked_address_transfer_issues([_tracked_transfer_candidate(2)])
+    second_id = next(issue.id for issue in manager.list_issues() if issue.id != issue_id)
+    manager.update_state(second_id, IssueState.AUTO_REMEDIATING)
+    manager.update_state(second_id, IssueState.RESOLVED)
+    manager.write_tracked_address_transfer_issues([_tracked_transfer_candidate(2)])
+    assert manager.get_issue(second_id).state == IssueState.OPEN
+
+    # a dismissed issue is never revived
+    manager.dismiss(second_id)
+    manager.write_tracked_address_transfer_issues([_tracked_transfer_candidate(2)])
+    assert manager.get_issue(second_id).state == IssueState.DISMISSED

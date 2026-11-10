@@ -809,22 +809,34 @@ Sent during historical balance processing to track progress. This runs as a peri
 - ``processed``: Number of events processed so far
 
 
-Data Issue Remediation Running
+Data Issue Remediation
 =================================
 
-Sent when the periodic data-issue remediation job starts.
+Sent when the periodic data-issue remediation job starts and when it ends.
 
 ::
 
     {
         "type": "progress_updates",
         "data": {
-            "subtype": "data_issue_remediation"
+            "subtype": "data_issue_remediation",
+            "phase": "running"
+        }
+    }
+
+::
+
+    {
+        "type": "progress_updates",
+        "data": {
+            "subtype": "data_issue_remediation",
+            "phase": "completed"
         }
     }
 
 
 - ``subtype``: Set to ``data_issue_remediation`` to indicate that automatic data-issue remediation is running.
+- ``phase``: ``running`` once when the job starts, and ``completed`` once when it ends. ``completed`` is also sent when the run fails or is cancelled.
 
 
 Negative Balance Detected

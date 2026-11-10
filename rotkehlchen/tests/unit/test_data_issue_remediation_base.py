@@ -217,6 +217,48 @@ def test_pipeline_leaves_inapplicable_issue_unchanged(database: DBHandler) -> No
     assert calls == []
 
 
+def test_pipeline_restores_open_issue_when_no_attempt_is_recorded(database: DBHandler) -> None:
+    """An attempt that finds nothing to do must not consume the issue's open state."""
+    calls: list[str] = []
+    manager = DataIssuesManager(database)
+    issue = _make_issue(database)
+    RemediationPipeline(manager, (
+        StubStrategy(
+            'nothing_to_do',
+            RemediationOutcome(False, 'not_applicable', '', record_attempt=False),
+            calls,
+        ),
+    )).run(issue)
+
+    issue = manager.get_issue(issue.id)
+    assert calls == ['nothing_to_do']
+    assert issue.state == IssueState.OPEN
+    assert issue.auto_remediation_attempts == []
+
+
+def test_pipeline_persists_successful_attempt_and_resolution_together(
+        database: DBHandler,
+) -> None:
+    """A crash between the attempt and the state must not strand a successful attempt."""
+    manager = DataIssuesManager(database)
+    issue = _make_issue(database)
+    with (
+        patch.object(manager, 'append_auto_remediation_attempt') as append_attempt,
+        patch.object(manager, 'update_state', wraps=manager.update_state) as update_state,
+    ):
+        RemediationPipeline(manager, (
+            StubStrategy('fixes', RemediationOutcome(True, 'system', 'Fixed'), []),
+        )).run(issue)
+
+    append_attempt.assert_not_called()
+    assert (resolving := update_state.call_args_list[-1].kwargs)['state'] == IssueState.RESOLVED
+    assert resolving['attempt']['success'] is True
+    assert resolving['resolution']['strategy'] == 'fixes'
+    issue = manager.get_issue(issue.id)
+    assert issue.state == IssueState.RESOLVED
+    assert [attempt['strategy'] for attempt in issue.auto_remediation_attempts] == ['fixes']
+
+
 @pytest.mark.parametrize('error_factory', [
     lambda: RemoteError('receipt unavailable', cause=FailureCause.NETWORK),
     lambda: DeserializationError('receipt unavailable'),
@@ -252,7 +294,7 @@ def test_pipeline_records_operational_failure_and_continues(
 
 
 def test_pipeline_propagates_cancellation_without_running_fallback(database: DBHandler) -> None:
-    """Propagate cancellation without running the fallback or recording a normal failure."""
+    """Propagate cancellation without running the fallback, leaving the issue retryable."""
     calls: list[str] = []
     manager = DataIssuesManager(database)
     issue = _make_issue(database)
@@ -268,7 +310,7 @@ def test_pipeline_propagates_cancellation_without_running_fallback(database: DBH
 
     assert calls == []
     issue = manager.get_issue(issue.id)
-    assert issue.state == IssueState.UNRESOLVED
+    assert issue.state == IssueState.OPEN
     assert issue.auto_remediation_attempts == []
 
 

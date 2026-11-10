@@ -1,5 +1,6 @@
 import json
 import logging
+from collections import defaultdict
 from typing import TYPE_CHECKING, Any, cast
 
 from rotkehlchen.db.filtering import DataIssuesFilterQuery
@@ -25,13 +26,19 @@ from rotkehlchen.history.data_issues.types import (
     TrackedAddressTransferIssuePayload,
     UnmatchedBridgeIssuePayload,
 )
+from rotkehlchen.history.events.structures.types import (
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
 
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -308,6 +315,318 @@ class DataIssuesManager:
             stored_ts_end == ts_end and
             stored_payload == payload
         )
+
+    def write_tracked_address_transfer_issues(
+            self,
+            candidates: Sequence[tuple[int, int, str, int, str, str, str, int]],
+    ) -> None:
+        """Write a batch of tracked-address-transfer candidates idempotently.
+
+        Each candidate is ``(event_identifier, chain_id, tx_hash, sequence_index, location,
+        location_label, asset, timestamp)``. Rows that already exist in exactly the state
+        the candidate describes are left untouched, so a repeated scan of an unchanged
+        history performs no writes to the issues table.
+        """
+        if len(candidates) == 0:
+            return
+
+        existing: dict[tuple[str, str, str, str, int], tuple[Any, ...]] = {}
+        with self.db.conn.read_ctx() as cursor:
+            for chunk, placeholders in get_query_chunks([row[0] for row in candidates]):
+                for row in cursor.execute(
+                    'SELECT id, location, location_label, protocol, asset, event_identifier, '
+                    'state, ts_start, ts_end, payload_json FROM data_issues '
+                    f'WHERE kind = ? AND event_identifier IN ({placeholders})',
+                    [IssueKind.TRACKED_ADDRESS_TRANSFER, *chunk],
+                ):
+                    existing[row[1], row[2], row[3], row[4], row[5]] = row
+
+        created_at = ts_now()
+        inserts: list[tuple[Any, ...]] = []
+        updates: list[tuple[Any, ...]] = []
+        reopens: list[tuple[Any, ...]] = []
+        for event_identifier, chain_id, tx_hash, sequence_index, location, label, asset, ts in candidates:  # noqa: E501
+            payload = {
+                'event_identifier': event_identifier,
+                'chain_id': chain_id,
+                'tx_hash': tx_hash,
+                'sequence_index': sequence_index,
+            }
+            payload_json = json.dumps(payload, separators=(',', ':'))
+            stored = existing.get((location, label, '', asset, event_identifier))
+            if stored is None:
+                inserts.append((
+                    IssueKind.TRACKED_ADDRESS_TRANSFER,
+                    location,
+                    label,
+                    '',
+                    asset,
+                    event_identifier,
+                    ts,
+                    ts,
+                    ISSUE_KIND_SEVERITY[IssueKind.TRACKED_ADDRESS_TRANSFER],
+                    IssueState.OPEN,
+                    '[]',
+                    payload_json,
+                    created_at,
+                ))
+                continue
+
+            issue_id, _, _, _, _, _, state, ts_start, ts_end, stored_json = stored
+            if state == IssueState.DISMISSED:
+                continue
+            stored_payload = dict(json.loads(stored_json))
+            resolution = stored_payload.pop('resolution', None)
+            unchanged = ts_start == ts and ts_end == ts and stored_payload == payload
+            if unchanged and (
+                state != IssueState.RESOLVED or
+                (isinstance(resolution, dict) and resolution.get('manual') is True)
+            ):
+                continue  # unchanged, and a manual resolution is final
+
+            if state == IssueState.RESOLVED:
+                _validate_state_transition(state, IssueState.OPEN)
+                reopens.append((
+                    IssueState.OPEN,
+                    ts,
+                    ts,
+                    payload_json,
+                    _resolved_at_for(IssueState.OPEN),
+                    issue_id,
+                ))
+            else:
+                updates.append((ts, ts, payload_json, issue_id))
+
+        if len(inserts) == 0 and len(updates) == 0 and len(reopens) == 0:
+            return  # an unchanged batch must not even open a write transaction
+
+        with self.db.user_write() as write_cursor:
+            if len(inserts) != 0:
+                write_cursor.executemany(DATA_ISSUE_INSERT_QUERY, inserts)
+            if len(updates) != 0:
+                write_cursor.executemany(
+                    'UPDATE data_issues SET ts_start = ?, ts_end = ?, payload_json = ? '
+                    'WHERE id = ?',
+                    updates,
+                )
+            if len(reopens) != 0:
+                write_cursor.executemany(
+                    'UPDATE data_issues SET state = ?, ts_start = ?, ts_end = ?, '
+                    'payload_json = ?, resolved_at = ? WHERE id = ?',
+                    reopens,
+                )
+
+    def repoint_tracked_address_transfer_issues(
+            self,
+            repoints: Mapping[int, int],
+    ) -> None:
+        """Point tracked-address-transfer issues at their replacement event rows.
+
+        ``repoints`` maps issue id to the identifier of the event that replaced the one the
+        issue was originally keyed by (same transaction and sequence index). A repoint that
+        would collide with an issue already keyed by the replacement is not applied: the
+        dangling duplicate is resolved by the system instead, so exactly one row keeps the
+        natural key.
+        """
+        if len(repoints) == 0:
+            return
+
+        with self.db.user_write() as write_cursor:
+            self._repoint_tracked_address_transfer_issues(
+                write_cursor=write_cursor,
+                repoints=repoints,
+            )
+
+    def _repoint_tracked_address_transfer_issues(
+            self,
+            write_cursor: DBCursor,
+            repoints: Mapping[int, int],
+    ) -> None:
+        for issue_id, new_event_identifier in repoints.items():
+            row = write_cursor.execute(
+                'SELECT location, location_label, protocol, asset, state '
+                'FROM data_issues WHERE id = ?',
+                (issue_id,),
+            ).fetchone()
+            if row is None:
+                continue
+            location, label, protocol, asset, state = row
+            if write_cursor.execute(
+                'SELECT 1 FROM data_issues WHERE kind = ? AND location = ? '
+                'AND location_label = ? AND protocol = ? AND asset = ? '
+                'AND event_identifier = ? AND id != ?',
+                (
+                    IssueKind.TRACKED_ADDRESS_TRANSFER,
+                    location,
+                    label,
+                    protocol,
+                    asset,
+                    new_event_identifier,
+                    issue_id,
+                ),
+            ).fetchone() is not None:
+                if state not in {IssueState.RESOLVED, IssueState.DISMISSED}:
+                    write_cursor.execute(
+                        'UPDATE data_issues SET state = ?, resolved_at = ?, '
+                        "payload_json = json_set(payload_json, '$.resolution', json(?)) "
+                        'WHERE id = ?',
+                        (
+                            IssueState.RESOLVED,
+                            _resolved_at_for(IssueState.RESOLVED),
+                            json.dumps({'reason': 'duplicate_of_replacement_event'}),
+                            issue_id,
+                        ),
+                    )
+                continue
+
+            write_cursor.execute(
+                "UPDATE data_issues SET event_identifier = ?, payload_json = "
+                "json_set(payload_json, '$.event_identifier', ?) WHERE id = ?",
+                (new_event_identifier, new_event_identifier, issue_id),
+            )
+
+    def reconcile_dangling_tracked_address_transfer_issues(self) -> None:
+        """Reconcile tracked-address-transfer issues whose event row no longer exists.
+
+        Forced redecoding deletes the original history event, which can also happen outside a
+        remediation run (the user redecodes a transaction manually), so a stored
+        ``event_identifier`` may dangle. Each dangling issue is matched to the event now
+        occupying the same transaction and sequence index:
+
+        - no such event and the transaction is gone, or the event is now a proper transfer:
+          the issue is resolved by the system.
+        - another event occupies the slot: the issue is repointed to it, so the next discovery
+          does not create a duplicate for the replacement and the related-event link keeps
+          working.
+        """
+        with self.db.conn.read_ctx() as cursor:
+            dangling = cursor.execute(
+                'SELECT data_issues.id, data_issues.location, data_issues.location_label, '
+                'data_issues.protocol, data_issues.asset, data_issues.state, '
+                'data_issues.payload_json FROM data_issues LEFT JOIN history_events '
+                'ON data_issues.event_identifier = history_events.identifier '
+                'WHERE data_issues.kind = ? AND data_issues.event_identifier IS NOT NULL '
+                'AND history_events.identifier IS NULL',
+                (IssueKind.TRACKED_ADDRESS_TRANSFER,),
+            ).fetchall()
+
+        dangling_by_transaction: defaultdict[tuple[int, str], list[tuple[Any, ...]]] = defaultdict(list)  # noqa: E501
+        for issue_id, location, label, protocol, asset, state, payload_json in dangling:
+            payload = json.loads(payload_json)
+            if (
+                isinstance(payload.get('chain_id'), int) is False or
+                isinstance(payload.get('tx_hash'), str) is False or
+                isinstance(payload.get('sequence_index'), int) is False
+            ):
+                continue  # written before the stable identity was stored, nothing to match
+
+            dangling_by_transaction[payload['chain_id'], payload['tx_hash']].append((
+                issue_id, location, label, protocol, asset, state, payload['sequence_index'],
+            ))
+
+        if len(dangling_by_transaction) == 0:
+            return
+
+        repoints: dict[int, int] = {}
+        resolutions: list[tuple[int, str]] = []
+        with self.db.conn.read_ctx() as cursor:
+            for (chain_id, tx_hash), issues in dangling_by_transaction.items():
+                location = issues[0][1]
+                events_by_sequence = {
+                    row[0]: row[1:]
+                    for row in cursor.execute(
+                        'SELECT history_events.sequence_index, history_events.identifier, '
+                        'history_events.type, history_events.subtype '
+                        'FROM history_events JOIN chain_events_info '
+                        'ON chain_events_info.identifier = history_events.identifier '
+                        'WHERE chain_events_info.tx_ref = ? AND history_events.location = ?',
+                        (deserialize_evm_tx_hash(tx_hash), location),
+                    )
+                }
+                transaction_exists = cursor.execute(
+                    'SELECT 1 FROM evm_transactions WHERE tx_hash = ? AND chain_id = ?',
+                    (deserialize_evm_tx_hash(tx_hash), chain_id),
+                ).fetchone() is not None
+
+                for issue_id, _, _, _, _, state, sequence_index in issues:
+                    if state in {IssueState.RESOLVED, IssueState.DISMISSED}:
+                        if (replacement := events_by_sequence.get(sequence_index)) is not None:
+                            repoints[issue_id] = replacement[0]
+                        continue  # a final issue only needs its link kept working
+
+                    if transaction_exists is False:
+                        resolutions.append((issue_id, json.dumps({
+                            'reason': 'transaction_no_longer_exists',
+                        })))
+                        continue
+
+                    if (replacement := events_by_sequence.get(sequence_index)) is None:
+                        continue  # the event may still come back from a later redecode
+
+                    repoints[issue_id] = replacement[0]
+                    if (
+                        replacement[1] == HistoryEventType.TRANSFER.serialize() and
+                        replacement[2] == HistoryEventSubType.NONE.serialize()
+                    ):
+                        resolutions.append((issue_id, json.dumps({
+                            'reason': 'replacement_event_is_proper_transfer',
+                        })))
+
+        if len(repoints) == 0 and len(resolutions) == 0:
+            return
+
+        resolved_at = _resolved_at_for(IssueState.RESOLVED)
+        sources_clause, sources = _source_states_clause(IssueState.RESOLVED)
+        with self.db.user_write() as write_cursor:
+            self._repoint_tracked_address_transfer_issues(
+                write_cursor=write_cursor,
+                repoints=repoints,
+            )
+            for issue_id, resolution in resolutions:
+                write_cursor.execute(
+                    'UPDATE data_issues SET state = ?, resolved_at = ?, '
+                    "payload_json = json_set(payload_json, '$.resolution', json(?)) "
+                    f'WHERE id = ? AND {sources_clause}',
+                    (
+                        IssueState.RESOLVED,
+                        resolved_at,
+                        resolution,
+                        issue_id,
+                        *sources,
+                    ),
+                )
+
+    def resolve_reprocessed_negative_balance_issues(self) -> None:
+        """Resolve negative-balance issues whose bucket is no longer stopped.
+
+        A negative-balance issue is written exactly when the pass records a stop for its
+        bucket, so the issue no longer describes the derived balances only once the bucket
+        has no stop at all. Reading the stops that the completed pass settled (they include
+        the ones before its ``from_ts``, which block the bucket just the same) is exact for
+        both scoped and full passes, unlike comparing the issue event with the events the
+        pass happened to evaluate. Manually resolved and dismissed issues are never touched.
+        """
+        resolved_at = _resolved_at_for(IssueState.RESOLVED)
+        sources_clause, sources = _source_states_clause(IssueState.RESOLVED)
+        with self.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'UPDATE data_issues SET state = ?, resolved_at = ?, '
+                "payload_json = json_set(payload_json, '$.resolution', json(?)) "
+                'WHERE kind = ? AND event_identifier IS NOT NULL AND NOT EXISTS ('
+                'SELECT 1 FROM bucket_processing_stops s '
+                'WHERE s.location = data_issues.location '
+                'AND s.location_label = data_issues.location_label '
+                'AND s.protocol = data_issues.protocol '
+                'AND s.asset = data_issues.asset) AND '
+                f'{sources_clause}',
+                (
+                    IssueState.RESOLVED,
+                    resolved_at,
+                    json.dumps({'reason': 'bucket_no_longer_blocked'}),
+                    IssueKind.NEGATIVE_BALANCE,
+                    *sources,
+                ),
+            )
 
     def resolve_superseded_negative_balance_issues(self, assets: frozenset[str]) -> None:
         """Resolve negative-balance issues for assets now handled as rebasing tokens."""

@@ -222,6 +222,7 @@ const HistoricalBalanceProcessingDataWithSubtype = HistoricalBalanceProcessingDa
 });
 
 const DataIssueRemediationDataWithSubtype = z.object({
+  phase: z.enum(['running', 'completed']),
   subtype: z.literal(SocketMessageProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
 });
 
