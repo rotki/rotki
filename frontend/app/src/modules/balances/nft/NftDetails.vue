@@ -61,7 +61,7 @@ const fallbackData = computed(() => {
         :options="{ placement: 'top' }"
         :disabled="shouldRender"
         :open-delay="400"
-        class="w-full"
+        class="shrink-0"
         :class-names="{ tooltip: 'max-w-40' }"
       >
         <template #activator>
@@ -110,7 +110,7 @@ const fallbackData = computed(() => {
         </template>
       </ConfirmPopover>
 
-      <div class="ml-3 overflow-hidden flex-fill">
+      <div class="ml-3 overflow-hidden flex-1 min-w-0">
         <template v-if="isNftDetailLoading">
           <RuiSkeletonLoader class="mt-1 mb-1.5 w-30" />
           <RuiSkeletonLoader class="mt-1 w-20" />
