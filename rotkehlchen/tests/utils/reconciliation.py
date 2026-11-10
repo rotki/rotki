@@ -35,9 +35,8 @@ from rotkehlchen.types import (
     EventMetricKey,
     SupportedBlockchain,
     Timestamp,
-    TimestampMS,
 )
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -69,13 +68,17 @@ def _add_event(
         asset: Asset,
         amount: FVal,
 ) -> int:
-    """Add an event at the given location, of the concrete type its location accepts."""
+    """Add an event at the given location, of the concrete type its location accepts.
+
+    `ts` is in seconds, like every timestamp these helpers take; events are stored in ms.
+    """
+    timestamp_ms = ts_sec_to_ms(Timestamp(ts))
     with database.user_write() as write_cursor:
         event = (
             EvmEvent(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
-                timestamp=TimestampMS(ts),
+                timestamp=timestamp_ms,
                 location=location,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
@@ -85,7 +88,7 @@ def _add_event(
             ) if location in EVM_LOCATIONS else HistoryEvent(
                 group_identifier=str(make_evm_tx_hash()),
                 sequence_index=0,
-                timestamp=TimestampMS(ts),
+                timestamp=timestamp_ms,
                 location=location,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
@@ -129,7 +132,7 @@ def add_balance_bucket(
             (
                 event_id, location, address, protocol,
                 EventMetricKey.BALANCE.serialize(), amount,
-                asset.identifier, ts, ts,
+                asset.identifier, (timestamp_ms := ts_sec_to_ms(Timestamp(ts))), timestamp_ms,
             ),
         )
         if apply_stale_marker:
@@ -258,7 +261,7 @@ def add_stop(
                     asset=asset.identifier,
                 ),
                 event_identifier,
-                TimestampMS(event_timestamp),
+                ts_sec_to_ms(Timestamp(event_timestamp)),
                 derived_balance_before_event,
                 negative_amount,
             ),
@@ -400,6 +403,7 @@ def seed_reconciliation_scenarios(
         'account': address,
         'asset': A_ETH.identifier,
         'event_identifier': stop_event,
+        'event_ts': event_ts,
         'issue_id': issue_id,
     }
 
@@ -464,7 +468,7 @@ def set_stale_marker(database: DBHandler, from_ts: int) -> None:
         database.set_static_cache(
             write_cursor=write_cursor,
             name=DBCacheStatic.STALE_BALANCES_FROM_TS,
-            value=Timestamp(from_ts),
+            value=str(ts_sec_to_ms(Timestamp(from_ts))),  # an event timestamp, so in ms
         )
 
 

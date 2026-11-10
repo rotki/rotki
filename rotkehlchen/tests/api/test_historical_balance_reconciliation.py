@@ -45,7 +45,7 @@ from rotkehlchen.tests.utils.reconciliation import (
     track_blockchain_account,
 )
 from rotkehlchen.types import SupportedBlockchain
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 pytestmark = [
     pytest.mark.accounting_update,
@@ -229,6 +229,7 @@ def test_blocked_bucket_with_no_metric_keeps_dismissed_issue(
     assert bucket['observed_balance'] is None
     assert bucket['check'] is None
     assert bucket['stop']['event_identifier'] == seeded['blocked']['event_identifier']
+    assert bucket['stop']['event_timestamp'] == ts_sec_to_ms(seeded['blocked']['event_ts'])
     assert bucket['stop']['derived_balance_before_event'] == '1'
     assert bucket['stop']['negative_amount'] == '-2'
     with database.conn.read_ctx() as cursor:
