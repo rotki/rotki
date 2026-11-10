@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { Snapshot } from '@/modules/dashboard/snapshots';
-import type { BalanceMutation, LocationAttribution } from '@/modules/dashboard/snapshots/utils/snapshot-math';
+import type { BalanceDeletion } from '@/modules/dashboard/snapshots/composables/use-snapshot-draft';
+import type { BalanceMutation } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { toSentenceCase } from '@rotki/common';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
@@ -37,7 +38,7 @@ const { locked = false, snapshot, timestamp } = defineProps<{
 const emit = defineEmits<{
   'add': [mutation: BalanceMutation];
   'edit': [payload: { index: number; mutation: BalanceMutation }];
-  'delete': [payload: { index: number; location: LocationAttribution }];
+  'delete': [payload: BalanceDeletion];
   'bulk-delete': [indices: number[]];
 }>();
 
@@ -155,7 +156,7 @@ function bulkDeleteZeroValue(): void {
     emit('bulk-delete', indices);
 }
 
-function onDelete(payload: { index: number; location: LocationAttribution }): void {
+function onDelete(payload: BalanceDeletion): void {
   emit('delete', payload);
 }
 </script>

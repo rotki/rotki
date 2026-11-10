@@ -2769,6 +2769,7 @@
           "empty": "No changes yet",
           "net_worth": "Net worth",
           "removed": "Removed",
+          "spam": "Mark as spam",
           "title": "Unsaved changes"
         },
         "fx_override": {
@@ -2831,6 +2832,7 @@
         "not_found": "Snapshot not found",
         "save": {
           "failure": "Failed to save snapshot",
+          "spam_failure": "The snapshot was saved, but its assets could not be marked as spam: {message}. Save again to retry.",
           "success": "Snapshot saved successfully"
         },
         "split": {
@@ -2903,6 +2905,18 @@
               "location": "The location field cannot be empty",
               "location_insufficient": "This location doesn't hold enough value to cover the change",
               "value": "The value field cannot be empty"
+            },
+            "spam": {
+              "action": "Delete and mark as spam",
+              "effects": {
+                "hidden": "It is hidden in every snapshot.",
+                "net_worth": "The net worth graph drops its value from older snapshots as well.",
+                "not_queried": "rotki stops querying its balance, so it will not appear in future snapshots.",
+                "on_save": "The mark is applied when you save the snapshot."
+              },
+              "manual_balance": "This asset is used in a manual balance, so it cannot be marked as spam.",
+              "other_rows": "{count} other row of this asset stays in this snapshot and is hidden as spam once saved. | {count} other rows of this asset stay in this snapshot and are hidden as spam once saved.",
+              "title": "Marking {symbol} as spam:"
             },
             "token": "Token"
           },

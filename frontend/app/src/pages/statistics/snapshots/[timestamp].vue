@@ -3,6 +3,7 @@ import type { Snapshot } from '@/modules/dashboard/snapshots';
 import { type BigNumber, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { msg } from '@/message-key';
+import { useSpamAsset } from '@/modules/assets/use-spam-asset';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { useConfirm } from '@/modules/core/common/use-confirm';
@@ -54,6 +55,7 @@ const { fetchSnapshot, persist, remove } = useSnapshotStore();
  */
 const { refresh: refreshNetValue, rows } = useSnapshotList();
 const { ask } = useConfirm();
+const { markAssetsAsSpam } = useSpamAsset();
 
 const {
   addBalance,
@@ -130,14 +132,19 @@ async function save(): Promise<void> {
   set(saving, true);
   set(actionError, undefined);
   try {
-    const success = await commit(snapshot => persist(get(timestamp), snapshot));
-    if (success) {
-      set(saveSuccess, true);
-      await refreshNetValue();
-    }
-    else {
+    const result = await commit(
+      snapshot => persist(get(timestamp), snapshot),
+      async assets => markAssetsAsSpam(assets, { silent: true }),
+    );
+    if (!result.saved) {
       set(actionError, t('dashboard.snapshot.detail.save.failure'));
+      return;
     }
+    if (result.spamError === undefined)
+      set(saveSuccess, true);
+    else
+      set(actionError, t('dashboard.snapshot.detail.save.spam_failure', { message: result.spamError }));
+    await refreshNetValue();
   }
   catch (error: unknown) {
     set(actionError, getErrorMessage(error));
@@ -322,7 +329,7 @@ useEventListener(window, 'beforeunload', warnBeforeUnload);
         :locked="!!mismatch"
         @add="addBalance($event)"
         @edit="editBalance($event.index, $event.mutation)"
-        @delete="deleteBalance($event.index, $event.location)"
+        @delete="deleteBalance($event.index, $event.location, $event.markSpam)"
         @bulk-delete="bulkDelete($event)"
       />
     </div>

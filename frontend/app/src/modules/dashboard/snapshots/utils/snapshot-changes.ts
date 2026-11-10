@@ -31,6 +31,12 @@ export type SnapshotChange =
   | { kind: 'location-changed'; location: string; before: BigNumber; after: BigNumber }
   | { kind: 'total-changed'; before: BigNumber; after: BigNumber };
 
+/**
+ * An unsaved change in the snapshot editor: a structural difference, or an asset the draft marks
+ * as spam once the snapshot is saved, listed beside the row removal that queued it.
+ */
+export type SnapshotDraftChange = SnapshotChange | { kind: 'spam-marked'; asset: string };
+
 /** Identity of a balance row: a snapshot holds one row per asset+category. */
 function balanceKey(balance: BalanceSnapshot): string {
   return `${balance.category} ${balance.assetIdentifier}`;

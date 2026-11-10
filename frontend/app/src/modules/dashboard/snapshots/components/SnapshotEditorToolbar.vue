@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SnapshotChange } from '@/modules/dashboard/snapshots/utils/snapshot-math';
+import type { SnapshotDraftChange } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import SnapshotChangesList from '@/modules/dashboard/snapshots/components/SnapshotChangesList.vue';
 import ConfirmMenu from '@/modules/shell/components/ConfirmMenu.vue';
@@ -16,7 +16,7 @@ const {
   /** Snapshot timestamp, in seconds. */
   timestamp: number;
   /** The structured change list; dirtiness and the count derive from it. */
-  changes: SnapshotChange[];
+  changes: SnapshotDraftChange[];
   canUndo?: boolean;
   saving?: boolean;
   hasPrev?: boolean;

@@ -1,4 +1,4 @@
-import type { SnapshotChange } from '@/modules/dashboard/snapshots/utils/snapshot-math';
+import type { SnapshotDraftChange } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { bigNumberify } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
@@ -8,7 +8,7 @@ import SnapshotChangesList from '@/modules/dashboard/snapshots/components/Snapsh
 
 const TIMESTAMP = 1_600_000_000;
 
-function mountList(changes: SnapshotChange[]): VueWrapper {
+function mountList(changes: SnapshotDraftChange[]): VueWrapper {
   return mount(SnapshotChangesList, {
     global: {
       provide: libraryDefaults,
@@ -37,5 +37,13 @@ describe('snapshotChangesList', () => {
     ]);
     expect(wrapper.find('[data-testid=snapshot-changes-list]').exists()).toBe(true);
     expect(wrapper.findAll('li')).toHaveLength(3);
+  });
+
+  it('should label a pending spam mark with the asset it marks', () => {
+    const wrapper = mountList([{ asset: 'eip155:1/erc20:0xfcaF0e4498E78d65526a507360F755178b804Ba8', kind: 'spam-marked' }]);
+
+    const row = wrapper.find('li');
+    expect(row.text()).toContain('dashboard.snapshot.detail.changes.spam');
+    expect(row.findComponent({ name: 'AssetDetails' }).attributes('asset')).toBe('eip155:1/erc20:0xfcaF0e4498E78d65526a507360F755178b804Ba8');
   });
 });

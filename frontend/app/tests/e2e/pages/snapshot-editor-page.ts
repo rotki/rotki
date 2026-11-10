@@ -210,6 +210,16 @@ export class SnapshotEditorPage {
     await this.page.locator('[data-testid=confirm-dialog]').waitFor({ state: 'hidden' });
   }
 
+  /** Deletes a balance row through the delete dialog's "mark as spam" action, on its preselected location. */
+  async deleteBalanceRowAsSpam(asset: string): Promise<void> {
+    await this.balanceDeleteButton(asset).click();
+    const dialog = this.page.locator('[data-testid=confirm-dialog]');
+    await dialog.waitFor({ state: 'visible' });
+    await expect(dialog.locator('[data-testid=snapshot-balances-delete-spam-warning]')).toContainText(asset);
+    await dialog.locator('[data-testid=button-alternative]').click();
+    await dialog.waitFor({ state: 'hidden' });
+  }
+
   async discard(): Promise<void> {
     await this.page.locator('[data-testid=snapshot-discard]').click();
     await this.dirtyBadge.waitFor({ state: 'hidden' });

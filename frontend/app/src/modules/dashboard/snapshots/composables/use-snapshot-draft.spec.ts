@@ -1,6 +1,7 @@
+import type { ActionStatus } from '@/modules/core/common/action';
 import type { BalanceSnapshot, LocationDataSnapshot, Snapshot } from '@/modules/dashboard/snapshots';
 import { bigNumberify } from '@rotki/common';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { nextTick, ref } from 'vue';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { useSnapshotDraft } from '@/modules/dashboard/snapshots/composables/use-snapshot-draft';
@@ -14,6 +15,10 @@ function balance(assetIdentifier: string, usdValue: number, category: BalanceTyp
 
 function location(name: string, usdValue: number): LocationDataSnapshot {
   return { location: name, timestamp: TS, usdValue: bigNumberify(usdValue) };
+}
+
+function markSpamWith(status: ActionStatus = { success: true }): Mock<(assets: string[]) => Promise<ActionStatus>> {
+  return vi.fn(async (_assets: string[]): Promise<ActionStatus> => status);
 }
 
 function snapshot(): Snapshot {
@@ -166,9 +171,9 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-draft', () => {
     const saveFn = vi.fn().mockResolvedValue(true);
 
     editBalance(0, { balance: balance('BTC', 200), location: 'kraken' });
-    const result = await commit(saveFn);
+    const result = await commit(saveFn, markSpamWith());
 
-    expect(result).toBe(true);
+    expect(result).toEqual({ saved: true });
     expect(saveFn).toHaveBeenCalledOnce();
     expect(get(isDirty)).toBe(false);
     expect(get(dirtyCount)).toBe(0);
@@ -180,9 +185,9 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-draft', () => {
     const saveFn = vi.fn().mockResolvedValue(false);
 
     editBalance(0, { balance: balance('BTC', 200), location: 'kraken' });
-    const result = await commit(saveFn);
+    const result = await commit(saveFn, markSpamWith());
 
-    expect(result).toBe(false);
+    expect(result).toEqual({ saved: false });
     expect(get(isDirty)).toBe(true);
     expect(get(canUndo)).toBe(true);
     expect(get(draft)?.balancesSnapshot[0].usdValue.toNumber()).toBe(200);
@@ -223,7 +228,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-draft', () => {
     const { commit, isDirty } = useSnapshotDraft(snap);
     const saveFn = vi.fn().mockResolvedValue(true);
 
-    await commit(saveFn);
+    await commit(saveFn, markSpamWith());
 
     expect(getTotalValue(saveFn.mock.calls[0][0].locationDataSnapshot).toNumber()).toBe(150);
     expect(get(isDirty)).toBe(false);
@@ -322,5 +327,115 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-draft', () => {
 
     expect(get(isDirty)).toBe(false);
     expect(get(draft)?.balancesSnapshot[0].assetIdentifier).toBe('SOL');
+  });
+
+  describe('pending spam marks', () => {
+    it('should list the asset of a row deleted as spam beside the row removal', () => {
+      const { changes, deleteBalance, draft } = useSnapshotDraft(snapshot());
+
+      deleteBalance(1, 'ledger', true);
+
+      expect(get(draft)?.balancesSnapshot.map(item => item.assetIdentifier)).toEqual(['BTC']);
+      expect(get(changes)).toContainEqual({ asset: 'ETH', kind: 'spam-marked' });
+      expect(get(changes).some(change => change.kind === 'balance-removed')).toBe(true);
+    });
+
+    it('should not queue a mark for a plain delete', () => {
+      const { changes, deleteBalance } = useSnapshotDraft(snapshot());
+
+      deleteBalance(1, 'ledger');
+
+      expect(get(changes).some(change => change.kind === 'spam-marked')).toBe(false);
+    });
+
+    it('should queue an asset once when two of its rows are deleted as spam', () => {
+      const base: Snapshot = {
+        balancesSnapshot: [balance('BTC', 100), balance('ETH', 50), balance('ETH', 0, BalanceType.LIABILITY)],
+        locationDataSnapshot: [location('kraken', 100), location('ledger', 50), location('total', 150)],
+      };
+      const { changes, deleteBalance } = useSnapshotDraft(base);
+
+      deleteBalance(2, 'ledger', true);
+      deleteBalance(1, 'ledger', true);
+
+      expect(get(changes).filter(change => change.kind === 'spam-marked')).toEqual([{ asset: 'ETH', kind: 'spam-marked' }]);
+    });
+
+    it('should restore the row and drop its mark when the delete is undone', () => {
+      const { changes, deleteBalance, draft, isDirty, undo } = useSnapshotDraft(snapshot());
+
+      deleteBalance(1, 'ledger', true);
+      undo();
+
+      expect(get(draft)?.balancesSnapshot).toHaveLength(2);
+      expect(get(changes)).toEqual([]);
+      expect(get(isDirty)).toBe(false);
+    });
+
+    it('should drop every pending mark on discard', () => {
+      const { changes, deleteBalance, discard } = useSnapshotDraft(snapshot());
+
+      deleteBalance(1, 'ledger', true);
+      deleteBalance(0, 'kraken', true);
+      discard();
+
+      expect(get(changes)).toEqual([]);
+    });
+
+    it('should mark the pending assets in one batch after the save lands', async () => {
+      const { changes, commit, deleteBalance, isDirty } = useSnapshotDraft(snapshot());
+      const saveFn = vi.fn<(snapshot: Snapshot) => Promise<boolean>>().mockResolvedValue(true);
+      const markSpam = markSpamWith();
+
+      deleteBalance(1, 'ledger', true);
+      deleteBalance(0, 'kraken', true);
+      const result = await commit(saveFn, markSpam);
+
+      expect(result).toEqual({ saved: true });
+      expect(markSpam).toHaveBeenCalledExactlyOnceWith(['ETH', 'BTC']);
+      expect(saveFn.mock.invocationCallOrder[0]).toBeLessThan(markSpam.mock.invocationCallOrder[0]);
+      expect(get(changes)).toEqual([]);
+      expect(get(isDirty)).toBe(false);
+    });
+
+    it('should mark nothing when the save fails', async () => {
+      const { changes, commit, deleteBalance } = useSnapshotDraft(snapshot());
+      const markSpam = markSpamWith();
+
+      deleteBalance(1, 'ledger', true);
+      const result = await commit(vi.fn().mockResolvedValue(false), markSpam);
+
+      expect(result).toEqual({ saved: false });
+      expect(markSpam).not.toHaveBeenCalled();
+      expect(get(changes)).toContainEqual({ asset: 'ETH', kind: 'spam-marked' });
+    });
+
+    it('should keep the snapshot saved and the marks pending when marking fails', async () => {
+      const { canUndo, changes, commit, deleteBalance, isDirty, original } = useSnapshotDraft(snapshot());
+
+      deleteBalance(1, 'ledger', true);
+      const result = await commit(vi.fn().mockResolvedValue(true), markSpamWith({ message: 'backend down', success: false }));
+
+      expect(result).toEqual({ saved: true, spamError: 'backend down' });
+      expect(get(original)?.balancesSnapshot.map(item => item.assetIdentifier)).toEqual(['BTC']);
+      expect(get(changes)).toEqual([{ asset: 'ETH', kind: 'spam-marked' }]);
+      expect(get(isDirty)).toBe(true);
+      expect(get(canUndo)).toBe(false);
+    });
+
+    it('should retry the pending marks on the next commit without rewriting the saved snapshot', async () => {
+      const { changes, commit, deleteBalance } = useSnapshotDraft(snapshot());
+      const saveFn = vi.fn<(snapshot: Snapshot) => Promise<boolean>>().mockResolvedValue(true);
+
+      deleteBalance(1, 'ledger', true);
+      await commit(saveFn, markSpamWith({ message: 'backend down', success: false }));
+      const markSpam = markSpamWith();
+      const result = await commit(saveFn, markSpam);
+
+      expect(result).toEqual({ saved: true });
+      expect(saveFn).toHaveBeenCalledOnce();
+      expect(markSpam).toHaveBeenCalledExactlyOnceWith(['ETH']);
+      expect(get(changes)).toEqual([]);
+    });
   });
 });

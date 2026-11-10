@@ -3,6 +3,7 @@ import { DialogType, themes } from '@/modules/core/common/dialogs';
 
 const {
   alternativeAction = null,
+  alternativeDisabledReason = null,
   confirmType = DialogType.INFO,
   disabled = false,
   display,
@@ -21,6 +22,8 @@ const {
   secondaryAction?: string | null;
   /** A third button for a different outcome than confirming; backing out never takes it. */
   alternativeAction?: string | null;
+  /** Disables the alternative alone, shown as its tooltip. `disabled` still disables both actions. */
+  alternativeDisabledReason?: string | null;
   confirmType?: DialogType;
   disabled?: boolean;
   singleAction?: boolean;
@@ -91,16 +94,24 @@ const secondaryText = computed<string>(() => secondaryAction || t('common.action
         >
           {{ secondaryText }}
         </RuiButton>
-        <RuiButton
+        <RuiTooltip
           v-if="alternativeAction"
-          variant="outlined"
-          :color="color"
-          :disabled="disabled"
-          data-testid="button-alternative"
-          @click="emit('alternative')"
+          :disabled="!alternativeDisabledReason"
+          :open-delay="200"
+          :text="alternativeDisabledReason"
         >
-          {{ alternativeAction }}
-        </RuiButton>
+          <template #activator>
+            <RuiButton
+              variant="outlined"
+              :color="color"
+              :disabled="disabled || !!alternativeDisabledReason"
+              data-testid="button-alternative"
+              @click="emit('alternative')"
+            >
+              {{ alternativeAction }}
+            </RuiButton>
+          </template>
+        </RuiTooltip>
         <RuiButton
           :color="color"
           :disabled="disabled"

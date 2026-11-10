@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import type { SnapshotChange } from '@/modules/dashboard/snapshots/utils/snapshot-math';
+import type { SnapshotDraftChange } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { createReusableTemplate, useVirtualList } from '@vueuse/core';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { isNft } from '@/modules/assets/nft-utils';
@@ -9,7 +9,7 @@ import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 
 const { changes } = defineProps<{
   /** The ordered structural diff between the saved snapshot and the draft. */
-  changes: SnapshotChange[];
+  changes: SnapshotDraftChange[];
   /** Snapshot timestamp (seconds) for historic FX display. */
   timestamp: number;
 }>();
@@ -38,10 +38,11 @@ const STATIC_LIMIT = 100;
 const ADDED = { color: 'text-rui-success', icon: 'lu-plus' };
 const REMOVED = { color: 'text-rui-error', icon: 'lu-minus' };
 const CHANGED = { color: 'text-rui-warning', icon: 'lu-pencil' };
+const SPAM = { color: 'text-rui-error', icon: 'lu-ban' };
 
 const [DefineRow, ReuseRow] = createReusableTemplate<{ item: ChangeItem }>();
 
-function describe(change: SnapshotChange): ChangeItem {
+function describe(change: SnapshotDraftChange): ChangeItem {
   switch (change.kind) {
     case 'balance-added':
       return { ...ADDED, asset: change.after.assetIdentifier, label: t('dashboard.snapshot.detail.changes.added') };
@@ -55,6 +56,8 @@ function describe(change: SnapshotChange): ChangeItem {
       return { ...REMOVED, label: t('dashboard.snapshot.detail.changes.removed'), location: change.location };
     case 'location-changed':
       return { ...CHANGED, label: t('dashboard.snapshot.detail.changes.changed'), location: change.location };
+    case 'spam-marked':
+      return { ...SPAM, asset: change.asset, label: t('dashboard.snapshot.detail.changes.spam') };
     case 'total-changed':
       return { ...CHANGED, after: change.after, before: change.before, label: t('dashboard.snapshot.detail.changes.net_worth') };
   }
@@ -72,7 +75,7 @@ const { containerProps, list, wrapperProps } = useVirtualList(items, { itemHeigh
       class="flex items-center gap-3 text-body-2"
       :style="{ height: `${ITEM_HEIGHT}px` }"
     >
-      <div class="flex items-center gap-1.5 text-rui-text-secondary whitespace-nowrap w-28 shrink-0">
+      <div class="flex items-center gap-1.5 text-rui-text-secondary whitespace-nowrap w-32 shrink-0">
         <RuiIcon
           :name="item.icon"
           :class="item.color"

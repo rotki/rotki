@@ -7,8 +7,13 @@ import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balan
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
+interface MarkAssetsAsSpamOptions {
+  /** Skip the error notification, for a caller that shows the failure itself. */
+  silent?: boolean;
+}
+
 interface UseSpamAssetReturn {
-  markAssetsAsSpam: (tokens: string[]) => Promise<ActionStatus>;
+  markAssetsAsSpam: (tokens: string[], options?: MarkAssetsAsSpamOptions) => Promise<ActionStatus>;
   removeAssetFromSpamList: (token: string) => Promise<ActionStatus>;
 }
 
@@ -26,7 +31,7 @@ export function useSpamAsset(): UseSpamAssetReturn {
 
   const { getAssetField } = useAssetInfoRetrieval();
   const { manualBalancesAssets } = useManualBalanceData();
-  const markAssetsAsSpam = async (tokens: string[]): Promise<ActionStatus> => {
+  const markAssetsAsSpam = async (tokens: string[], { silent = false }: MarkAssetsAsSpamOptions = {}): Promise<ActionStatus> => {
     try {
       const includedInManualBalances: string[] = [];
       const notIncludedInManualBalances: string[] = [];
@@ -59,12 +64,14 @@ export function useSpamAsset(): UseSpamAssetReturn {
     }
     catch (error: unknown) {
       const message = getErrorMessage(error);
-      notifyError(
-        t('ignore.spam.failed.mark_title'),
-        t('ignore.spam.failed.mark_message', {
-          message,
-        }),
-      );
+      if (!silent) {
+        notifyError(
+          t('ignore.spam.failed.mark_title'),
+          t('ignore.spam.failed.mark_message', {
+            message,
+          }),
+        );
+      }
       return { message, success: false };
     }
   };

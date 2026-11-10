@@ -40,6 +40,15 @@ export async function apiMarkSpam(request: APIRequestContext, tokens: string[]):
     throw new Error(`Failed to mark ${tokens.join(', ')} as spam: ${response.status()} ${await response.text()}`);
 }
 
+/** The user's ignored assets, which include every asset marked as spam. */
+export async function apiGetIgnoredAssets(request: APIRequestContext): Promise<string[]> {
+  const response = await request.get(`${backendUrl}/api/1/assets/ignored`);
+  if (!response.ok())
+    throw new Error(`Failed to fetch the ignored assets: ${response.status()} ${await response.text()}`);
+  const body: { result: string[] } = await response.json();
+  return body.result;
+}
+
 /** The net-value series the dashboard graph plots, keyed by snapshot timestamp (USD). */
 export async function apiGetNetValue(request: APIRequestContext): Promise<Map<number, number>> {
   const response = await request.get(`${backendUrl}/api/1/statistics/netvalue`);
