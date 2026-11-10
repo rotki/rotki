@@ -14,7 +14,6 @@ import {
   type DataIssue,
   NegativeBalancePayload,
   RebasingTokenPayload,
-  TrackedAddressTransferPayload,
   UnmatchedBridgePayload,
 } from '@/modules/history/data-issues/schemas';
 
@@ -92,19 +91,6 @@ function describeBalanceMismatch(issue: DataIssue): IssueDescription | undefined
   };
 }
 
-function describeTrackedAddressTransfer(issue: DataIssue): IssueDescription | undefined {
-  const parsed = TrackedAddressTransferPayload.safeParse(issue.payload);
-  if (!parsed.success)
-    return undefined;
-  return {
-    amounts: {},
-    asset: issue.asset ?? undefined,
-    eventIdentifier: parsed.data.eventIdentifier,
-    messageKey: msg.$t('data_issues.description.tracked_address_transfer'),
-    shortMessageKey: msg.$t('data_issues.description_short.tracked_address_transfer'),
-  };
-}
-
 function describeRebasingToken(issue: DataIssue): IssueDescription | undefined {
   const parsed = RebasingTokenPayload.safeParse(issue.payload);
   if (!parsed.success)
@@ -165,7 +151,6 @@ function describeUnmatchedBridge(issue: DataIssue): IssueDescription | undefined
 const KIND_DESCRIBERS: Partial<Record<IssueKind, (issue: DataIssue) => IssueDescription | undefined>> = {
   [IssueKind.CURRENT_BALANCE_MISMATCH]: describeBalanceMismatch,
   [IssueKind.NEGATIVE_BALANCE]: describeNegativeBalance,
-  [IssueKind.TRACKED_ADDRESS_TRANSFER]: describeTrackedAddressTransfer,
   [IssueKind.REBASING_TOKEN]: describeRebasingToken,
   [IssueKind.UNMATCHED_BRIDGE]: describeUnmatchedBridge,
 };
@@ -226,7 +211,7 @@ export function relatedEventRoute(
     return { name, query: { openMatchBridgesDialog: 'true' } };
   }
 
-  if (kind === IssueKind.NEGATIVE_BALANCE || kind === IssueKind.REBASING_TOKEN || kind === IssueKind.TRACKED_ADDRESS_TRANSFER) {
+  if (kind === IssueKind.NEGATIVE_BALANCE || kind === IssueKind.REBASING_TOKEN) {
     query.highlightedNegativeBalanceEvent = eventIdentifier.toString();
     if (groupIdentifier)
       query.targetGroupIdentifier = groupIdentifier;

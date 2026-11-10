@@ -610,7 +610,6 @@ def process_historical_balances(
             from_ts=from_ts,
             stopped_buckets={},
         )
-        DataIssuesManager(database).resolve_reprocessed_negative_balance_issues()
         msg_aggregator.add_message(
             message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
             data={},
@@ -701,7 +700,6 @@ def process_historical_balances(
         from_ts=from_ts,
         stopped_buckets=run_state.stops,
     )
-    issues_manager.resolve_reprocessed_negative_balance_issues()
     msg_aggregator.add_message(
         message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
         data={},

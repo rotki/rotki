@@ -1,4 +1,3 @@
-import json
 import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Final, cast
@@ -16,8 +15,6 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import InputError, RemoteError
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
@@ -32,26 +29,19 @@ from rotkehlchen.history.data_issues.types import (
     RedecodeComparisonResult,
     TransactionDecodingComparison,
 )
-from rotkehlchen.history.events.structures.types import (
-    EventDirection,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.locations.chains import (
     EVM_LOCATIONS,
-    location_from_chain,
     location_to_chain_id,
 )
 from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.tasks.historical_balances import Bucket, process_historical_balances
+from rotkehlchen.tasks.historical_balances import Bucket
 from rotkehlchen.types import (
-    CHAINS_WITH_TRANSACTIONS_TYPE,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     ChainID,
     EVMTxHash,
     TimestampMS,
-    deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 
@@ -66,336 +56,9 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 REDECODE_CUSTOMIZED_TRANSACTIONS: Final = 'redecode_customized_transactions'
-DISCOVERY_BATCH_SIZE: Final = 500
 
 type BucketEffect = tuple[TimestampMS, EventDirection, FVal]
 type PreviewCache = dict[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash], list[EvmEvent]]
-type TrackedTransferIdentity = tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, int]
-type DecodedTransaction = tuple[
-    dict[int, EvmEvent],  # the events before the redecode, by sequence index
-    dict[int, EvmEvent],  # the events after the redecode, by sequence index
-    bool,  # whether the transaction is customized, and so was not redecoded
-]
-
-_CHAIN_LOCATIONS: Final = tuple(
-    (
-        location,
-        ChainID(location_to_chain_id(location)).to_blockchain().value,
-        location_to_chain_id(location),
-    )
-    for location in EVM_LOCATIONS
-)
-
-TRACKED_ADDRESS_TRANSFER_CANDIDATES_QUERY: Final = (
-    'WITH evm_chain_locations(location, blockchain, chain_id) AS ('
-    f'VALUES {",".join("(?, ?, ?)" for _ in _CHAIN_LOCATIONS)}) '
-    'SELECT H.identifier, C.tx_ref, L.chain_id, H.timestamp, H.location, '
-    'H.location_label, H.asset, H.sequence_index FROM evm_chain_locations L '
-    'JOIN blockchain_accounts S ON S.blockchain = L.blockchain '
-    'CROSS JOIN history_events H INDEXED BY idx_history_events_location_label '
-    'ON H.location = L.location AND H.location_label = S.account '
-    'JOIN chain_events_info C ON C.identifier = H.identifier '
-    'JOIN blockchain_accounts R ON R.blockchain = L.blockchain AND R.account = C.address '
-    'JOIN evm_transactions T ON T.tx_hash = C.tx_ref AND T.chain_id = L.chain_id '
-    'WHERE H.identifier > ? AND H.type IN (?, ?) AND H.subtype = ? AND NOT EXISTS('
-    'SELECT 1 FROM history_events H2 JOIN history_events_mappings M '
-    'ON M.parent_identifier = H2.identifier '
-    'WHERE H2.group_identifier = H.group_identifier '
-    'AND M.name = ? AND M.value = ?) '
-    'ORDER BY H.identifier LIMIT ?'
-)
-
-
-def _tracked_address_transfer_candidates_bindings(
-        after_identifier: int,
-        limit: int,
-) -> tuple[Any, ...]:
-    return (
-        *(value for chain_location in _CHAIN_LOCATIONS for value in chain_location),
-        after_identifier,
-        HistoryEventType.SPEND.serialize(),
-        HistoryEventType.RECEIVE.serialize(),
-        HistoryEventSubType.NONE.serialize(),
-        HISTORY_MAPPING_KEY_STATE,
-        HistoryMappingState.CUSTOMIZED.serialize_for_db(),
-        limit,
-    )
-
-
-def _tracked_transfer_identity(payload: dict[str, Any]) -> TrackedTransferIdentity | None:
-    """The stable identity of the transfer an issue was discovered from."""
-    chain_id = payload.get('chain_id')
-    tx_hash = payload.get('tx_hash')
-    sequence_index = payload.get('sequence_index')
-    if not (
-        isinstance(chain_id, int) and
-        isinstance(tx_hash, str) and
-        isinstance(sequence_index, int)
-    ):
-        return None
-
-    return (
-        cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', ChainID(chain_id)),
-        deserialize_evm_tx_hash(tx_hash),
-        sequence_index,
-    )
-
-
-def _transaction_events_signature(
-        events: dict[int, EvmEvent],
-) -> tuple[tuple[Any, ...], ...]:
-    """Every field of a transaction's events that a redecode could change."""
-    return tuple(
-        (
-            sequence_index,
-            event.identifier,
-            event.event_type,
-            event.event_subtype,
-            event.asset.identifier,
-            event.amount,
-            event.location_label,
-            event.address,
-            event.notes,
-        ) for sequence_index, event in sorted(events.items())
-    )
-
-
-def _write_tracked_address_transfer_issues(
-        database: DBHandler,
-        issues_manager: DataIssuesManager,
-) -> None:
-    """Write issues for plain transfers whose sender and receiver are tracked.
-
-    Discovery is paged by event identifier so a large history is streamed in bounded
-    batches, and every batch is written in one transaction by the manager. Rows that the
-    scan describes exactly as they are stored are not rewritten. Issues whose event was
-    replaced by a redecode that ran elsewhere are reconciled first, so the scan neither
-    duplicates them nor leaves them dangling.
-    """
-    issues_manager.reconcile_dangling_tracked_address_transfer_issues()
-    after_identifier = 0
-    while True:
-        with database.conn.read_ctx() as cursor:
-            candidates = cursor.execute(
-                TRACKED_ADDRESS_TRANSFER_CANDIDATES_QUERY,
-                _tracked_address_transfer_candidates_bindings(
-                    after_identifier=after_identifier,
-                    limit=DISCOVERY_BATCH_SIZE,
-                ),
-            ).fetchall()
-        if len(candidates) == 0:
-            return
-
-        issues_manager.write_tracked_address_transfer_issues([
-            (
-                event_identifier,
-                chain_id,
-                str(deserialize_evm_tx_hash(tx_ref)),
-                sequence_index,
-                location,
-                label or '',
-                asset,
-                timestamp,
-            ) for (
-                event_identifier,
-                tx_ref,
-                chain_id,
-                timestamp,
-                location,
-                label,
-                asset,
-                sequence_index,
-            ) in candidates
-        ])
-        after_identifier = candidates[-1][0]
-        checkpoint()
-
-
-class TrackedAddressTransferStrategy(BaseRemediationStrategy):
-    """Redecode a plain transfer after both counterparties become tracked.
-
-    Force-redecoding replaces every event of a transaction, while these issues are scoped to
-    a single event. The strategy therefore redecodes a transaction at most once per run and
-    verifies every sibling issue against that single redecode, at its own sequence index.
-
-    A transaction holding a customized event is never redecoded: its events are the user's
-    data, and the strategy must not delete or reclassify them. The guard is evaluated again
-    right before the redecode, even though discovery already skips customized transactions,
-    because the user may customize the event after its issue was created.
-    """
-
-    name: Final = 'redecode_tracked_address_transfer'
-
-    def __init__(self, database: DBHandler, chains_aggregator: ChainsAggregator) -> None:
-        self.database = database
-        self.chains_aggregator = chains_aggregator
-        # (chain id, tx hash) -> snapshot or the failure to re-raise, so siblings share it
-        self._decoded_transactions: dict[
-            tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash],
-            DecodedTransaction | Exception,
-        ] = {}
-        self.redecoded_transactions: list[
-            tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash]
-        ] = []
-        self.earliest_redecoded_ts: TimestampMS | None = None
-
-    def applies_to(self, issue: DataIssue) -> bool:
-        return (
-            issue.kind == IssueKind.TRACKED_ADDRESS_TRANSFER and
-            LocationIdentifier(issue.location) in EVM_LOCATIONS
-        )
-
-    def _load_transaction_events(
-            self,
-            chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
-            tx_hash: EVMTxHash,
-    ) -> tuple[dict[int, EvmEvent], dict[int, list[HistoryMappingState]]]:
-        location = location_from_chain(
-            cast('CHAINS_WITH_TRANSACTIONS_TYPE', chain_id.to_blockchain()),
-        )
-        checkpoint()
-        with self.database.conn.read_ctx() as cursor:
-            events = DBHistoryEvents(self.database).get_history_events_internal(
-                cursor=cursor,
-                filter_query=EvmEventFilterQuery.make(
-                    location=location,
-                    tx_hashes=[tx_hash],
-                ),
-            )
-            mapping_states = DBHistoryEvents.get_event_mapping_states(
-                cursor=cursor,
-                location=location,
-                entry_identifiers=[
-                    event.identifier for event in events if event.identifier is not None
-                ],
-            )
-
-        return (
-            {event.sequence_index: event for event in events},
-            mapping_states,
-        )
-
-    def _repoint_siblings(
-            self,
-            chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
-            tx_hash: EVMTxHash,
-            after: dict[int, EvmEvent],
-    ) -> None:
-        """Move every issue of the transaction to the event that replaced its own row."""
-        with self.database.conn.read_ctx() as cursor:
-            rows = cursor.execute(
-                'SELECT id, payload_json FROM data_issues WHERE kind = ? AND '
-                "json_extract(payload_json, '$.chain_id') = ? AND "
-                "json_extract(payload_json, '$.tx_hash') = ? AND event_identifier IS NOT NULL",
-                (IssueKind.TRACKED_ADDRESS_TRANSFER, chain_id.serialize_for_db(), str(tx_hash)),
-            ).fetchall()
-
-        repoints: dict[int, int] = {}
-        for issue_id, payload_json in rows:
-            payload = json.loads(payload_json)
-            if (
-                (replacement := after.get(payload.get('sequence_index'))) is None or
-                replacement.identifier is None or
-                replacement.identifier == payload.get('event_identifier')
-            ):
-                continue
-            repoints[issue_id] = replacement.identifier
-
-        DataIssuesManager(self.database).repoint_tracked_address_transfer_issues(repoints)
-
-    def _get_decoded_transaction(
-            self,
-            issue: DataIssue,
-            chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
-            tx_hash: EVMTxHash,
-    ) -> DecodedTransaction:
-        key = (chain_id, tx_hash)
-        if (cached := self._decoded_transactions.get(key)) is not None:
-            if isinstance(cached, Exception):
-                raise cached
-            return cached
-
-        before, mapping_states = self._load_transaction_events(chain_id=chain_id, tx_hash=tx_hash)
-        if any(
-            HistoryMappingState.CUSTOMIZED in states for states in mapping_states.values()
-        ):
-            # Never redecoding a customized transaction is what protects the user's edits.
-            snapshot: DecodedTransaction = (before, before, True)
-            self._decoded_transactions[key] = snapshot
-            return snapshot
-
-        decoder = self.chains_aggregator.get_evm_manager(chain_id).transactions_decoder
-        try:
-            decoder.decode_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])
-        except (RemoteError, DeserializationError, InputError) as e:
-            self._decoded_transactions[key] = e
-            raise
-
-        after, _ = self._load_transaction_events(chain_id=chain_id, tx_hash=tx_hash)
-        self._decoded_transactions[key] = (before, after, False)
-        if _transaction_events_signature(before) == _transaction_events_signature(after):
-            return before, after, False  # the redecode replaced nothing
-
-        self.redecoded_transactions.append(key)
-        if self.earliest_redecoded_ts is None or issue.ts_start < self.earliest_redecoded_ts:
-            self.earliest_redecoded_ts = TimestampMS(issue.ts_start)
-        self._repoint_siblings(chain_id=chain_id, tx_hash=tx_hash, after=after)
-        return before, after, False
-
-    def attempt(self, issue: DataIssue) -> RemediationOutcome:
-        if (identity := _tracked_transfer_identity(issue.payload)) is None:
-            return RemediationOutcome(
-                resolved=False,
-                attribution='not_applicable',
-                notes='The issue has no transaction identity to verify its transfer against',
-                record_attempt=False,
-            )
-        chain_id, tx_hash, sequence_index = identity
-        before, after, customized = self._get_decoded_transaction(
-            issue=issue,
-            chain_id=chain_id,
-            tx_hash=tx_hash,
-        )
-        if customized:
-            return RemediationOutcome(
-                resolved=False,
-                attribution='not_applicable',
-                notes='The transaction holds customized events and is left untouched',
-                record_attempt=False,
-            )
-        if (original := before.get(sequence_index)) is None:
-            return RemediationOutcome(
-                resolved=False,
-                attribution='not_applicable',
-                notes='The original transfer event is no longer available',
-                record_attempt=False,
-            )
-
-        expected_sender: str | None
-        expected_receiver: str | None
-        if original.event_type == HistoryEventType.RECEIVE:
-            expected_sender, expected_receiver = original.address, original.location_label
-        else:
-            expected_sender, expected_receiver = original.location_label, original.address
-
-        replacement = after.get(sequence_index)
-        resolved = (
-            replacement is not None and
-            replacement.event_type == HistoryEventType.TRANSFER and
-            replacement.event_subtype == HistoryEventSubType.NONE and
-            replacement.asset == original.asset and
-            replacement.amount == original.amount and
-            replacement.location_label == expected_sender and
-            replacement.address == expected_receiver
-        )
-        return RemediationOutcome(
-            resolved=resolved,
-            attribution='system',
-            notes=(
-                'Verified the internal transfer at its sequence index after redecoding'
-                if resolved else 'Redecoding did not produce the expected internal transfer'
-            ),
-        )
 
 
 def _get_bucket_effects(
@@ -715,64 +378,29 @@ def _send_remediation_phase(database: DBHandler, phase: str) -> None:
     )
 
 
-def _reprocess_affected_balances(
-        database: DBHandler,
-        chains_aggregator: ChainsAggregator,
-        earliest_redecoded_ts: TimestampMS | None,
-) -> None:
-    """Rerun the production historical-balance engine for the window a redecode changed.
-
-    The forced redecode already marked the balances stale through the event delete/add path,
-    so this only widens the run to that marker instead of duplicating it. The engine's own
-    resolution path then settles negative-balance issues whose failing condition no longer
-    holds.
-    """
-    with database.conn.read_ctx() as cursor:
-        stale_from_ts = database.get_static_cache(
-            cursor=cursor,
-            name=DBCacheStatic.STALE_BALANCES_FROM_TS,
-        )
-    process_historical_balances(
-        database=database,
-        msg_aggregator=database.msg_aggregator,
-        from_ts=(
-            TimestampMS(int(stale_from_ts)) if stale_from_ts is not None
-            else earliest_redecoded_ts
-        ),
-        chains_aggregator=chains_aggregator,
-    )
-
-
 def run_data_issue_remediation(
         database: DBHandler,
         chains_aggregator: ChainsAggregator,
 ) -> None:
-    """Run registered remediation strategies for applicable data issues.
+    """Run the diagnostic remediation pipeline for negative-balance data issues.
 
     Current balance mismatches are deliberately not handled. Re-decoding can't add the history
     they usually lack, so they are left to the user's on-demand divergence search.
 
-    Data-changing remediation is limited to redecoding tracked-address transfers. A
-    transaction holding a customized event is never touched, and the customized-transaction
-    strategy is diagnostic only.
+    Remediation is diagnostic only: a transaction holding a customized event is never touched,
+    and the customized-transaction strategy previews decoder output without persisting it.
     """
     _send_remediation_phase(database, PHASE_RUNNING)
     try:
         issues_manager = DataIssuesManager(database)
-        _write_tracked_address_transfer_issues(
-            database=database,
-            issues_manager=issues_manager,
-        )
-        transfer_strategy = TrackedAddressTransferStrategy(database, chains_aggregator)
         pipeline = RemediationPipeline(
             manager=issues_manager,
             strategies=(
-                transfer_strategy,
                 RedecodeCustomizedTransactionsStrategy(database, chains_aggregator),
             ),
         )
         for issue in issues_manager.list_issues(DataIssuesFilterQuery.make(
-            kinds=[IssueKind.NEGATIVE_BALANCE, IssueKind.TRACKED_ADDRESS_TRANSFER],
+            kinds=[IssueKind.NEGATIVE_BALANCE],
             states=[IssueState.OPEN, IssueState.UNRESOLVED],
         )):
             if issue.state != IssueState.OPEN and _last_attempt_failed(issue) is False:
@@ -780,13 +408,6 @@ def run_data_issue_remediation(
 
             pipeline.run(issue)
             checkpoint()
-
-        if len(transfer_strategy.redecoded_transactions) != 0:
-            _reprocess_affected_balances(
-                database=database,
-                chains_aggregator=chains_aggregator,
-                earliest_redecoded_ts=transfer_strategy.earliest_redecoded_ts,
-            )
 
         with database.user_write() as write_cursor:
             database.set_static_cache(

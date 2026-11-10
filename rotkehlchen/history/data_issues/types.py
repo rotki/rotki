@@ -47,21 +47,6 @@ class NegativeBalanceIssuePayload(BaseIssuePayload):
     reason: NotRequired[Literal['untracked_exchange']]
 
 
-class TrackedAddressTransferIssuePayload(BaseIssuePayload):
-    """Payload for a plain transfer whose two counterparties are both tracked.
-
-    ``event_identifier`` is the row that was decoded as a plain transfer, but it is not a
-    stable identity: force-redecoding a transaction deletes and re-adds its events, so the
-    original row disappears. ``chain_id``, ``tx_hash`` and ``sequence_index`` identify the
-    event inside its transaction and survive that replacement, which lets the issue be
-    repointed to the new row and lets sibling issues share a single redecode.
-    """
-    event_identifier: int
-    chain_id: int
-    tx_hash: str
-    sequence_index: int
-
-
 class CurrentBalanceMismatchIssuePayload(BaseIssuePayload):
     """Payload for a bucket-scoped issue comparing derived and live chain balances."""
     derived_balance: str
@@ -94,7 +79,6 @@ class UnmatchedBridgeIssuePayload(BaseIssuePayload):
 
 type DataIssuePayload = (
     NegativeBalanceIssuePayload |
-    TrackedAddressTransferIssuePayload |
     CurrentBalanceMismatchIssuePayload |
     RebasingTokenIssuePayload |
     UnmatchedBridgeIssuePayload
