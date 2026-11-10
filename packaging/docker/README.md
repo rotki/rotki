@@ -68,15 +68,22 @@ docker run -p 8080:80 \
 - `::` listens on every interface for IPv6 **and** IPv4 clients, for example in
   a dual-stack Kubernetes cluster. starling sets the socket to dual-stack itself,
   so IPv4 keeps working whatever `net.ipv6.bindv6only` is set to. The
-  container needs IPv6 for this: where it is disabled, starling fails to start
-  with a bind error, so keep the default there.
+  container needs an IPv6-capable kernel for this: on one booted with
+  `ipv6.disable=1`, starling fails to start with a bind error, so keep the
+  default there. Disabling IPv6 per interface (for example with
+  `--sysctl net.ipv6.conf.all.disable_ipv6=1`) does not stop `::` from binding.
 - A single address, IPv4 or IPv6 (such as the pod address), listens on that
   address only.
+
+With `--network host`, `::` also listens on the host's IPv6 addresses, so make
+sure firewall rules cover IPv6 and not only IPv4.
 
 An IPv4 client of a dual-stack listener is logged, matched against
 `ROTKI_TRUSTED_PROXIES` and forwarded to the backends as its IPv4 address
 (`127.0.0.1`, not `::ffff:127.0.0.1`), the same as with the default listener.
-The built-in health check follows the address, see [Health](#health).
+Set the address with `ROTKI_HTTP_HOST` rather than `--host`: the image's health
+check only sees the environment variable, so with `--host` on the command line it
+would still probe `localhost`. See [Health](#health).
 
 ### Hardened run
 
@@ -178,7 +185,9 @@ The probe checks two things on starling's own listener, and both must pass:
 
 It needs no `curl`, and resolves `ROTKI_HTTP_PORT` and `ROTKI_HTTP_HOST` the
 same way the server does, so a custom port or address keeps the two in agreement
-automatically. A server on every interface (`0.0.0.0` or `::`) is probed on
+automatically. This only holds for the environment variables: a `--port` or
+`--host` added to the container command is not seen by the built-in health check.
+A server on every interface (`0.0.0.0` or `::`) is probed on
 `localhost`, one on a single address on that address. `--url` overrides all of
 this with a single target of your choosing.
 
