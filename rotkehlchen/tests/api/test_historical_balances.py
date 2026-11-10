@@ -1114,12 +1114,11 @@ def test_get_historical_asset_balance_without_premium(rotkehlchen_api_server: AP
 
 
 @pytest.mark.parametrize('have_decoders', [True])
-def test_current_historical_balances_without_premium(
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_current_historical_balances_stale_flag(
         rotkehlchen_api_server: APIServer,
 ) -> None:
-    """Current history-derived balances are a core feature, available to any logged-in user.
-
-    The response also reports whether processed balances are stale so the frontend can warn
+    """The response reports whether processed balances are stale so the frontend can warn
     when recent event edits have not been folded into the derived balances yet.
     """
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
