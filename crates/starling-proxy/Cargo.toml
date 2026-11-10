@@ -37,6 +37,9 @@ hyper-util = { version = "=0.1.21", features = [
     "http1",
     "tokio",
 ] }
+# Binding `::` dual-stack needs IPV6_V6ONLY cleared before bind, which tokio's
+# TcpSocket does not expose.
+socket2 = "=0.6.5"
 
 [dev-dependencies]
 serde_json.workspace = true

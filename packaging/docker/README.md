@@ -52,6 +52,32 @@ ISO 8601 timestamps with fractional seconds, no ANSI colors, and `[core]`,
 Starling diagnostics remain on stderr; Docker collects both streams. HTTP access
 logs retain the NCSA combined format described below.
 
+### IPv6 and dual-stack
+
+starling listens on every IPv4 interface (`0.0.0.0`) by default, which works on
+any Docker host, with IPv6 enabled or not. Set `ROTKI_HTTP_HOST` to listen on
+another address:
+
+```bash
+docker run -p 8080:80 \
+  -v ~/.rotki/data:/data \
+  -e ROTKI_HTTP_HOST=:: \
+  rotki/rotki
+```
+
+- `::` listens on every interface for IPv6 **and** IPv4 clients, for example in
+  a dual-stack Kubernetes cluster. starling sets the socket to dual-stack itself,
+  so IPv4 keeps working whatever `net.ipv6.bindv6only` is set to. The
+  container needs IPv6 for this: where it is disabled, starling fails to start
+  with a bind error, so keep the default there.
+- A single address, IPv4 or IPv6 (such as the pod address), listens on that
+  address only.
+
+An IPv4 client of a dual-stack listener is logged, matched against
+`ROTKI_TRUSTED_PROXIES` and forwarded to the backends as its IPv4 address
+(`127.0.0.1`, not `::ffff:127.0.0.1`), the same as with the default listener.
+The built-in health check follows the address, see [Health](#health).
+
 ### Hardened run
 
 None of these can be baked into the image, they are runtime flags:
@@ -107,6 +133,7 @@ Every resolved value is logged at startup with the layer it came from, so
 | Variable | Default | Meaning |
 |---|---|---|
 | `ROTKI_HTTP_PORT` | `80` | Port starling serves on *inside* the container |
+| `ROTKI_HTTP_HOST` | `0.0.0.0` | Address starling listens on *inside* the container: `::` for IPv6 and IPv4 (see [IPv6 and dual-stack](#ipv6-and-dual-stack)) |
 | `LOGTARGET` | `file` | Backend log destination: `file` or `stdout` (JSON key: `logtarget`) |
 | `LOGLEVEL` | `critical` | Backend log level |
 | `LOGFROMOTHERMODULES` | `false` | Include third-party library logs |
@@ -149,9 +176,11 @@ The probe checks two things on starling's own listener, and both must pass:
 - `/api/1/ping`, through the proxy to core, so a pass also means the external
   listener is actually routing.
 
-It needs no `curl`, and resolves `ROTKI_HTTP_PORT` the same way the server does,
-so a custom port keeps the two in agreement automatically. `--url` overrides both
-with a single target of your choosing.
+It needs no `curl`, and resolves `ROTKI_HTTP_PORT` and `ROTKI_HTTP_HOST` the
+same way the server does, so a custom port or address keeps the two in agreement
+automatically. A server on every interface (`0.0.0.0` or `::`) is probed on
+`localhost`, one on a single address on that address. `--url` overrides all of
+this with a single target of your choosing.
 
 `/health` is also reachable directly, unauthenticated, for an external monitor:
 

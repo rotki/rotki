@@ -24,6 +24,7 @@
 //! entrypoint.py, which logged and continued. An absent file is fine.
 
 use std::fmt;
+use std::net::{IpAddr, Ipv4Addr};
 use std::path::Path;
 
 use serde::Deserialize;
@@ -40,6 +41,13 @@ pub const DEFAULT_HTTP_PORT: u16 = 80;
 
 /// Env var that overrides the external port without rewriting the CMD.
 const HTTP_PORT_ENV: &str = "ROTKI_HTTP_PORT";
+
+/// Default address the external HTTP server binds: every IPv4 interface, which
+/// can be bound whether or not the container has IPv6.
+pub const DEFAULT_HTTP_HOST: IpAddr = IpAddr::V4(Ipv4Addr::UNSPECIFIED);
+
+/// Env var that overrides the address the external HTTP server binds.
+const HTTP_HOST_ENV: &str = "ROTKI_HTTP_HOST";
 
 /// Backend log destination, configured only in Docker mode.
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq)]
@@ -209,6 +217,30 @@ pub fn resolve_port(cli: Option<u16>, layered: bool) -> Result<u16, String> {
     Ok(port)
 }
 
+/// Resolve the address the external HTTP server binds, with the precedence of
+/// the port: **env (`ROTKI_HTTP_HOST`) > CLI (`--host`) > default `0.0.0.0`**.
+/// `::` accepts IPv6 and IPv4 clients alike (see `starling_proxy::bind`). env is
+/// only read in docker mode; a malformed value is a hard error.
+pub fn resolve_host(cli: Option<IpAddr>, layered: bool) -> Result<IpAddr, String> {
+    let env = if layered {
+        env_ip(HTTP_HOST_ENV)?
+    } else {
+        None
+    };
+    let (host, source) = if let Some(host) = env {
+        (host, Source::Env)
+    } else if let Some(host) = cli {
+        (host, Source::Cli)
+    } else {
+        (DEFAULT_HTTP_HOST, Source::Default)
+    };
+    // Same as the port: embedded never binds this address, so do not log it.
+    if layered {
+        info!(value = %host, source = %source, "resolved http host");
+    }
+    Ok(host)
+}
+
 /// Fold the layers per field (**file > env > default**) and log each resolved
 /// value with its source.
 pub fn resolve(env: EnvConfig, file: FileConfig) -> Tunables {
@@ -258,7 +290,8 @@ pub fn resolve(env: EnvConfig, file: FileConfig) -> Tunables {
 /// Which layer a resolved value came from (for the startup log).
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Source {
-    /// Only `--port` still has a CLI tier: it is a launch fact, not a tunable.
+    /// Only `--port` and `--host` still have a CLI tier: they are launch facts,
+    /// not tunables.
     Cli,
     Env,
     File,
@@ -309,6 +342,14 @@ fn env_u16(name: &str) -> Result<Option<u16>, String> {
     }
 }
 
+fn env_ip(name: &str) -> Result<Option<IpAddr>, String> {
+    match std::env::var(name) {
+        Ok(raw) => parse_ip(name, &raw),
+        Err(std::env::VarError::NotPresent) => Ok(None),
+        Err(std::env::VarError::NotUnicode(_)) => Err(format!("{name} is not valid UTF-8")),
+    }
+}
+
 fn env_bool(name: &str) -> Result<Option<bool>, String> {
     match std::env::var(name) {
         Ok(raw) => parse_bool(name, &raw),
@@ -339,6 +380,18 @@ fn parse_u16(name: &str, raw: &str) -> Result<Option<u16>, String> {
         .parse::<u16>()
         .map(Some)
         .map_err(|err| format!("invalid {name}={raw:?}: expected a port in 0..=65535 ({err})"))
+}
+
+/// Parse an IP address env value: blank ⇒ unset, junk ⇒ hard error. A literal
+/// address only, without brackets, since it is bound rather than resolved.
+fn parse_ip(name: &str, raw: &str) -> Result<Option<IpAddr>, String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Ok(None);
+    }
+    trimmed.parse::<IpAddr>().map(Some).map_err(|err| {
+        format!("invalid {name}={raw:?}: expected an IP address such as 0.0.0.0 or :: ({err})")
+    })
 }
 
 /// Parse a boolean env value: blank ⇒ unset, junk ⇒ hard error.
@@ -519,6 +572,36 @@ mod tests {
         // branches deterministically (no global env mutation).
         assert_eq!(resolve_port(Some(8080), false).unwrap(), 8080);
         assert_eq!(resolve_port(None, false).unwrap(), DEFAULT_HTTP_PORT);
+    }
+
+    #[test]
+    fn host_resolution_cli_then_default() {
+        // layered=false ⇒ env is not read, as for the port.
+        let ipv6_any = IpAddr::V6(std::net::Ipv6Addr::UNSPECIFIED);
+        assert_eq!(resolve_host(Some(ipv6_any), false).unwrap(), ipv6_any);
+        assert_eq!(resolve_host(None, false).unwrap(), DEFAULT_HTTP_HOST);
+        assert_eq!(DEFAULT_HTTP_HOST.to_string(), "0.0.0.0");
+    }
+
+    #[test]
+    fn host_parsing_blank_unset_junk_error() {
+        assert_eq!(parse_ip("ROTKI_HTTP_HOST", "").unwrap(), None);
+        assert_eq!(parse_ip("ROTKI_HTTP_HOST", "  ").unwrap(), None);
+        assert_eq!(
+            parse_ip("ROTKI_HTTP_HOST", " :: ").unwrap(),
+            Some("::".parse().unwrap()),
+        );
+        assert_eq!(
+            parse_ip("ROTKI_HTTP_HOST", "0.0.0.0").unwrap(),
+            Some(DEFAULT_HTTP_HOST),
+        );
+        assert_eq!(
+            parse_ip("ROTKI_HTTP_HOST", "fd00::5").unwrap(),
+            Some("fd00::5".parse().unwrap()),
+        );
+        assert!(parse_ip("ROTKI_HTTP_HOST", "[::]").is_err());
+        assert!(parse_ip("ROTKI_HTTP_HOST", "localhost").is_err());
+        assert!(parse_ip("ROTKI_HTTP_HOST", "0.0.0.0:80").is_err());
     }
 
     #[test]

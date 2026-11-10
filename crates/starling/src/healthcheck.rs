@@ -16,10 +16,13 @@
 //!
 //! Neither subsumes the other, hence both. The port is resolved the same way the
 //! server resolves it (`ROTKI_HTTP_PORT` env > `--port` > 80) so
-//! `-e ROTKI_HTTP_PORT=8080` keeps the probe and the server in agreement. Both
-//! are overridable: `--url` wins outright and probes that one URL alone, else
-//! `--port`.
+//! `-e ROTKI_HTTP_PORT=8080` keeps the probe and the server in agreement, and so
+//! is the bind address (`ROTKI_HTTP_HOST` env > `--host` > 0.0.0.0): a server on
+//! every interface is probed on `localhost`, one bound to a single address on
+//! that address, the only one it listens on. All are overridable:
+//! `--url` wins outright and probes that one URL alone, else `--port`/`--host`.
 
+use std::net::IpAddr;
 use std::time::Duration;
 
 use starling_core::http_ping;
@@ -32,17 +35,25 @@ const TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Resolve the probe URLs, `GET` each, and exit `0` only if every one answered
 /// `200`.
-pub async fn run(url: Option<String>, port: Option<u16>) -> std::process::ExitCode {
+pub async fn run(
+    url: Option<String>,
+    port: Option<u16>,
+    host: Option<IpAddr>,
+) -> std::process::ExitCode {
     let urls = match url {
         // An explicit `--url` is the operator saying exactly what to probe; do
         // not silently add a second request to a target they did not name.
         Some(url) => vec![url],
         None => {
-            // Resolve the port like the server (env > --port > 80) so the probe
-            // hits the same listener even when ROTKI_HTTP_PORT overrides the CMD.
-            match config::resolve_port(port, true) {
-                Ok(port) => default_urls(port),
-                Err(err) => {
+            // Resolve the port and address like the server (env > CLI > default)
+            // so the probe hits the same listener even when ROTKI_HTTP_PORT or
+            // ROTKI_HTTP_HOST overrides the CMD.
+            match (
+                config::resolve_host(host, true),
+                config::resolve_port(port, true),
+            ) {
+                (Ok(host), Ok(port)) => default_urls(host, port),
+                (Err(err), _) | (_, Err(err)) => {
                     error!(%err, "invalid configuration");
                     return std::process::ExitCode::FAILURE;
                 }
@@ -75,10 +86,19 @@ async fn first_failure(urls: &[String]) -> Option<&String> {
 
 /// The default probe URLs on starling's own listener: supervisor health first
 /// (it fails earliest during bring-up), then the full chain through to core.
-fn default_urls(port: u16) -> Vec<String> {
+///
+/// A listener on every interface (`0.0.0.0` or `::`) is probed on `localhost`,
+/// whose addresses are tried in turn until one connects. A listener on one
+/// address is only reachable there.
+fn default_urls(host: IpAddr, port: u16) -> Vec<String> {
+    let authority = match host {
+        _ if host.is_unspecified() => format!("localhost:{port}"),
+        IpAddr::V4(v4) => format!("{v4}:{port}"),
+        IpAddr::V6(v6) => format!("[{v6}]:{port}"),
+    };
     vec![
-        format!("http://localhost:{port}/health"),
-        format!("http://localhost:{port}/api/1/ping"),
+        format!("http://{authority}/health"),
+        format!("http://{authority}/api/1/ping"),
     ]
 }
 
@@ -95,25 +115,63 @@ mod tests {
 
     /// One of the default URLs, for the probe tests that only need a target.
     fn health_url(port: u16) -> String {
-        default_urls(port).swap_remove(0)
+        default_urls(config::DEFAULT_HTTP_HOST, port).swap_remove(0)
     }
 
     #[test]
     fn default_urls_cover_the_supervisor_and_the_full_chain() {
         assert_eq!(
-            default_urls(80),
+            default_urls(config::DEFAULT_HTTP_HOST, 80),
             [
                 "http://localhost:80/health",
                 "http://localhost:80/api/1/ping"
             ]
         );
         assert_eq!(
-            default_urls(8080),
+            default_urls(config::DEFAULT_HTTP_HOST, 8080),
             [
                 "http://localhost:8080/health",
                 "http://localhost:8080/api/1/ping"
             ]
         );
+    }
+
+    #[test]
+    fn default_urls_follow_the_bind_address() {
+        let urls = |host: &str| default_urls(host.parse().unwrap(), 8080);
+        // Every interface, dual-stack included: loopback reaches it.
+        assert_eq!(
+            urls("::"),
+            [
+                "http://localhost:8080/health",
+                "http://localhost:8080/api/1/ping"
+            ]
+        );
+        // One address: only that one listens.
+        assert_eq!(
+            urls("10.0.0.5"),
+            [
+                "http://10.0.0.5:8080/health",
+                "http://10.0.0.5:8080/api/1/ping"
+            ]
+        );
+        assert_eq!(
+            urls("fd00::5"),
+            [
+                "http://[fd00::5]:8080/health",
+                "http://[fd00::5]:8080/api/1/ping"
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn probe_reaches_a_server_bound_to_one_ipv6_address() {
+        let listener = TcpListener::bind("[::1]:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let url = default_urls("::1".parse().unwrap(), port).swap_remove(0);
+        let server = tokio::spawn(serve_one(listener, b"HTTP/1.1 200 OK\r\n\r\n"));
+        assert!(probe(&url).await);
+        server.await.unwrap();
     }
 
     async fn serve_one(listener: TcpListener, response: &'static [u8]) {

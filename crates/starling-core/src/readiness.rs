@@ -70,8 +70,14 @@ async fn http_ping_inner(url: &str) -> bool {
         return false;
     };
 
+    // An IPv6 literal takes its brackets back in the Host header.
+    let authority = if host.contains(':') {
+        format!("[{host}]:{port}")
+    } else {
+        format!("{host}:{port}")
+    };
     let request = format!(
-        "GET {path} HTTP/1.1\r\nHost: {host}:{port}\r\n\
+        "GET {path} HTTP/1.1\r\nHost: {authority}\r\n\
          User-Agent: {PROBE_USER_AGENT}\r\nConnection: close\r\n\r\n",
     );
     if stream.write_all(request.as_bytes()).await.is_err() {
@@ -91,8 +97,10 @@ async fn port_open(host: &str, port: u16) -> bool {
     TcpStream::connect((host, port)).await.is_ok()
 }
 
-/// Parse `http://host[:port]/path` into `(host, port, path)`.
-/// Only plain `http` is needed, the probe target is always the local backend.
+/// Parse `http://host[:port]/path` into `(host, port, path)`. An IPv6 host is
+/// written in brackets (`http://[::1]:80/`) and returned without them, ready to
+/// connect to. Only plain `http` is needed, the probe target is always the
+/// local backend.
 fn parse_http_url(url: &str) -> Option<(String, u16, String)> {
     let rest = url.strip_prefix("http://")?;
     let (authority, path) = match rest.find('/') {
@@ -100,9 +108,18 @@ fn parse_http_url(url: &str) -> Option<(String, u16, String)> {
         None => (rest, "/"),
     };
 
-    let (host, port) = match authority.rsplit_once(':') {
-        Some((h, p)) => (h.to_string(), p.parse().ok()?),
-        None => (authority.to_string(), 80u16),
+    let (host, port) = if let Some(bracketed) = authority.strip_prefix('[') {
+        let (host, after) = bracketed.split_once(']')?;
+        let port = match after {
+            "" => 80u16,
+            _ => after.strip_prefix(':')?.parse().ok()?,
+        };
+        (host.to_string(), port)
+    } else {
+        match authority.rsplit_once(':') {
+            Some((h, p)) => (h.to_string(), p.parse().ok()?),
+            None => (authority.to_string(), 80u16),
+        }
     };
 
     if host.is_empty() {
@@ -131,6 +148,22 @@ mod tests {
         assert_eq!(host, "127.0.0.1");
         assert_eq!(port, 80);
         assert_eq!(path, "/");
+    }
+
+    #[test]
+    fn parses_bracketed_ipv6_host() {
+        let (host, port, path) = parse_http_url("http://[fd00::5]:8080/health").unwrap();
+        assert_eq!(host, "fd00::5");
+        assert_eq!(port, 8080);
+        assert_eq!(path, "/health");
+        let (host, port, path) = parse_http_url("http://[::1]").unwrap();
+        assert_eq!(host, "::1");
+        assert_eq!(port, 80);
+        assert_eq!(path, "/");
+        assert!(parse_http_url("http://[::1]:x/").is_none());
+        assert!(parse_http_url("http://[::1]8080/").is_none());
+        assert!(parse_http_url("http://[::1/").is_none());
+        assert!(parse_http_url("http://[]:80/").is_none());
     }
 
     #[test]
@@ -197,6 +230,31 @@ mod tests {
         let url = format!("http://127.0.0.1:{}/api/1/ping", addr.port());
         assert!(http_ping(&url, Duration::from_secs(2)).await);
         handle.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn http_ping_reaches_an_ipv6_literal_with_a_bracketed_host_header() {
+        let listener = TcpListener::bind("[::1]:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let handle = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut request = [0u8; 256];
+            let n = socket.read(&mut request).await.unwrap();
+            socket
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n")
+                .await
+                .unwrap();
+            let _ = socket.shutdown().await;
+            String::from_utf8_lossy(&request[..n]).into_owned()
+        });
+
+        let url = format!("http://[::1]:{port}/health");
+        assert!(http_ping(&url, Duration::from_secs(2)).await);
+        let request = handle.await.unwrap();
+        assert!(
+            request.contains(&format!("\r\nHost: [::1]:{port}\r\n")),
+            "unexpected request: {request}",
+        );
     }
 
     #[tokio::test]

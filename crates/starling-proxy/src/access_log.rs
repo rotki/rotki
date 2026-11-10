@@ -136,6 +136,10 @@ pub fn is_trusted_hop(ip: IpAddr, trusted: &[Cidr]) -> bool {
 /// not a trusted hop, the closest thing to the true origin that the trusted
 /// chain actually vouches for. Falls back to `X-Real-IP` (single-valued, set by
 /// the immediate hop) and finally to the peer.
+///
+/// Forwarded addresses are taken in canonical form, so a hop on a dual-stack
+/// listener that records an IPv4 client as `::ffff:a.b.c.d` is judged and logged
+/// as that IPv4 address, like the peer itself (see `serve`).
 pub fn client_ip(
     peer: Option<SocketAddr>,
     headers: &HeaderMap,
@@ -156,6 +160,7 @@ pub fn client_ip(
                 // past this point; stop rather than skip over it.
                 break;
             };
+            let ip = ip.to_canonical();
             if !is_trusted_hop(ip, trusted) {
                 return Some(ip);
             }
@@ -164,7 +169,7 @@ pub fn client_ip(
 
     if let Some(real) = headers.get("x-real-ip").and_then(|v| v.to_str().ok()) {
         if let Ok(ip) = real.trim().parse::<IpAddr>() {
-            return Some(ip);
+            return Some(ip.to_canonical());
         }
     }
 
@@ -457,6 +462,25 @@ mod tests {
             client_ip(peer("198.51.100.7:5555"), &hdrs, &trusted),
             Some("203.0.113.9".parse::<IpAddr>().unwrap()),
         );
+    }
+
+    #[test]
+    fn mapped_forwarded_addresses_are_judged_as_ipv4() {
+        // A hop on a dual-stack listener records IPv4 clients IPv4-mapped. The
+        // trusted hop it names is skipped like 10.0.0.9, and the client logged
+        // as plain IPv4.
+        let got = client_ip(
+            peer("172.18.0.5:5555"),
+            &headers(&[("x-forwarded-for", "::ffff:203.0.113.9, ::ffff:10.0.0.9")]),
+            &[],
+        );
+        assert_eq!(got, Some("203.0.113.9".parse::<IpAddr>().unwrap()));
+        let got = client_ip(
+            peer("172.18.0.5:5555"),
+            &headers(&[("x-real-ip", "::ffff:203.0.113.9")]),
+            &[],
+        );
+        assert_eq!(got, Some("203.0.113.9".parse::<IpAddr>().unwrap()));
     }
 
     #[test]

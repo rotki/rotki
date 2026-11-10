@@ -109,9 +109,10 @@ enum Command {
     /// Probe the running supervisor and exit 0 if healthy, 1 otherwise.
     ///
     /// Defaults to `http://localhost:<port>/api/1/ping` through starling's own
-    /// proxy (a full-chain check), with the port resolved like the server
-    /// (`ROTKI_HTTP_PORT` > `--port` > 80). This is what Docker's `HEALTHCHECK`
-    /// invokes, which is why the image needs no `curl`.
+    /// proxy (a full-chain check), with the port and the bind address resolved
+    /// like the server (`ROTKI_HTTP_PORT` > `--port` > 80, `ROTKI_HTTP_HOST` >
+    /// `--host` > 0.0.0.0). This is what Docker's `HEALTHCHECK` invokes, which
+    /// is why the image needs no `curl`.
     Healthcheck {
         /// Probe this URL verbatim instead of the resolved default.
         #[arg(long)]
@@ -120,6 +121,10 @@ enum Command {
         /// Override the proxy port the default probe URL targets.
         #[arg(long)]
         port: Option<u16>,
+
+        /// Override the bind address the default probe URL is derived from.
+        #[arg(long)]
+        host: Option<IpAddr>,
     },
 
     /// Send a control command to a running supervisor over its Unix socket
@@ -279,6 +284,14 @@ struct Cli {
     #[arg(long)]
     port: Option<u16>,
 
+    /// Address the in-process HTTP server binds (docker mode), alongside
+    /// `--port`. The `ROTKI_HTTP_HOST` env overrides this; unset everywhere
+    /// defaults to `0.0.0.0`, every IPv4 interface. `::` binds every interface
+    /// dual-stack, for IPv4 and IPv6 clients alike; a specific address binds
+    /// only that one.
+    #[arg(long)]
+    host: Option<IpAddr>,
+
     /// Loopback port for the in-process reverse proxy in embedded mode. When set,
     /// starling binds the proxy on `127.0.0.1:<port>` and the renderer talks to
     /// this single origin instead of hitting core and colibri directly. Unset
@@ -334,7 +347,8 @@ struct Cli {
 /// Decide whether the in-process HTTP server (SPA + reverse proxy) runs, and on
 /// which interface it binds:
 ///   - **docker**: always, it replaces nginx and *is* the published port, bound
-///     on all interfaces (`0.0.0.0`) on the resolved external port.
+///     on the resolved address (all IPv4 interfaces, `0.0.0.0`, by default) and
+///     external port.
 ///   - **embedded**: only when `--proxy-port` is given, bound on loopback
 ///     (`127.0.0.1`) so the renderer can talk to a single origin. Unset keeps the
 ///     pre-proxy two-URL path alive as a fallback.
@@ -342,11 +356,12 @@ struct Cli {
 /// `None` means no proxy is started.
 fn proxy_bind_addr(
     mode: Mode,
+    docker_http_host: IpAddr,
     docker_http_port: u16,
     embedded_proxy_port: Option<u16>,
 ) -> Option<(IpAddr, u16)> {
     match mode {
-        Mode::Docker => Some((IpAddr::V4(Ipv4Addr::UNSPECIFIED), docker_http_port)),
+        Mode::Docker => Some((docker_http_host, docker_http_port)),
         Mode::Embedded => embedded_proxy_port.map(|port| (IpAddr::V4(Ipv4Addr::LOCALHOST), port)),
     }
 }
@@ -422,8 +437,8 @@ async fn main() -> std::process::ExitCode {
 
     // Short-lived subcommands run and exit without touching the supervisor.
     match &cli.command {
-        Some(Command::Healthcheck { url, port }) => {
-            return healthcheck::run(url.clone(), *port).await;
+        Some(Command::Healthcheck { url, port, host }) => {
+            return healthcheck::run(url.clone(), *port, *host).await;
         }
         #[cfg(unix)]
         Some(Command::Ctl { method, socket }) => {
@@ -541,15 +556,25 @@ async fn main() -> std::process::ExitCode {
             return std::process::ExitCode::FAILURE;
         }
     };
-    let proxy_target = proxy_bind_addr(cli.mode, http_port, cli.proxy_port);
+    // External proxy address (docker only): ROTKI_HTTP_HOST env > --host > 0.0.0.0.
+    let http_host = match config::resolve_host(cli.host, docker) {
+        Ok(host) => host,
+        Err(err) => {
+            error!(%err, "invalid configuration");
+            return std::process::ExitCode::FAILURE;
+        }
+    };
+    let proxy_target = proxy_bind_addr(cli.mode, http_host, http_port, cli.proxy_port);
 
     // Some flags belong to only one mode; ignoring the others silently sends
     // anyone who passed them hunting through the source for why nothing happened,
-    // so name them instead. `--port`, `--frontend-dir`, `--trusted-proxy` and
-    // privilege separation are docker-only; `--proxy-port` is embedded-only.
+    // so name them instead. `--port`, `--host`, `--frontend-dir`,
+    // `--trusted-proxy` and privilege separation are docker-only; `--proxy-port`
+    // is embedded-only.
     if !docker {
         let ignored: Vec<&str> = [
             ("--port", cli.port.is_some()),
+            ("--host", cli.host.is_some()),
             ("--frontend-dir", cli.frontend_dir.is_some()),
             ("--trusted-proxy", !cli.trusted_proxies.is_empty()),
         ]
@@ -1251,6 +1276,7 @@ async fn shutdown_signal() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::net::Ipv6Addr;
 
     #[test]
     fn trusted_proxies_accept_env_and_cli_lists() {
@@ -1338,28 +1364,54 @@ mod tests {
     }
 
     #[test]
-    fn docker_binds_all_interfaces_on_the_external_port() {
+    fn docker_binds_the_resolved_address_on_the_external_port() {
+        let any_v4 = IpAddr::V4(Ipv4Addr::UNSPECIFIED);
         assert_eq!(
-            proxy_bind_addr(Mode::Docker, 80, None),
-            Some((IpAddr::V4(Ipv4Addr::UNSPECIFIED), 80)),
+            proxy_bind_addr(Mode::Docker, any_v4, 80, None),
+            Some((any_v4, 80)),
         );
         // The embedded proxy port is irrelevant in docker mode.
         assert_eq!(
-            proxy_bind_addr(Mode::Docker, 8080, Some(41234)),
-            Some((IpAddr::V4(Ipv4Addr::UNSPECIFIED), 8080)),
+            proxy_bind_addr(Mode::Docker, any_v4, 8080, Some(41234)),
+            Some((any_v4, 8080)),
+        );
+        let any_v6 = IpAddr::V6(Ipv6Addr::UNSPECIFIED);
+        assert_eq!(
+            proxy_bind_addr(Mode::Docker, any_v6, 80, None),
+            Some((any_v6, 80)),
         );
     }
 
     #[test]
     fn embedded_binds_loopback_only_when_a_proxy_port_is_given() {
+        // The docker bind address never reaches the embedded proxy.
+        let any_v6 = IpAddr::V6(Ipv6Addr::UNSPECIFIED);
         assert_eq!(
-            proxy_bind_addr(Mode::Embedded, 80, Some(41234)),
+            proxy_bind_addr(Mode::Embedded, any_v6, 80, Some(41234)),
             Some((IpAddr::V4(Ipv4Addr::LOCALHOST), 41234)),
         );
     }
 
     #[test]
     fn embedded_without_a_proxy_port_starts_no_proxy() {
-        assert_eq!(proxy_bind_addr(Mode::Embedded, 80, None), None);
+        assert_eq!(
+            proxy_bind_addr(Mode::Embedded, IpAddr::V4(Ipv4Addr::UNSPECIFIED), 80, None),
+            None,
+        );
+    }
+
+    #[test]
+    fn host_accepts_ipv4_and_ipv6_addresses() {
+        let host = |args: &[&str]| Cli::try_parse_from(args).unwrap().host;
+        assert_eq!(host(&["starling"]), None);
+        assert_eq!(
+            host(&["starling", "--host", "::"]),
+            Some(IpAddr::V6(Ipv6Addr::UNSPECIFIED)),
+        );
+        assert_eq!(
+            host(&["starling", "--host", "0.0.0.0"]),
+            Some(IpAddr::V4(Ipv4Addr::UNSPECIFIED)),
+        );
+        assert!(Cli::try_parse_from(["starling", "--host", "localhost"]).is_err());
     }
 }
