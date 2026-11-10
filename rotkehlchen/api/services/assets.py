@@ -73,6 +73,7 @@ from rotkehlchen.errors.misc import (
     combined_cause,
 )
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
+from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
 from rotkehlchen.globaldb.cache import (
     globaldb_delete_general_cache_values,
@@ -544,12 +545,22 @@ class AssetsService:
                 ), FailResult) or len(nft_query.result) == 0:
                     continue  # an NFT without a known price is left out, the rest still priced
                 nft_price_data = nft_query.result[0]
+                # `price` is in the main currency, so convert from the asset it was stored in
+                price = Price(FVal(nft_price_data['price_in_asset']))
+                if (price_asset := Asset(nft_price_data['price_asset'])) != target_asset:
+                    if (rate := Inquirer.find_price(
+                        from_asset=price_asset,
+                        to_asset=target_asset,
+                        ignore_cache=ignore_cache,
+                    )) == ZERO_PRICE:
+                        continue
+                    price = Price(price * rate)
                 oracle = (
                     CurrentPriceOracle.MANUALCURRENT
                     if nft_price_data['manually_input'] is True
                     else CurrentPriceOracle.BLOCKCHAIN
                 )
-                assets_price[asset] = [Price(nft_price_data['price']), oracle.value]
+                assets_price[asset] = [price, oracle.value]
             else:
                 non_nft_assets.append(asset)
 

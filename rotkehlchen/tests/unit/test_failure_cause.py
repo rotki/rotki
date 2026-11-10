@@ -19,6 +19,7 @@ from rotkehlchen.banks.errors import (
     BankSchemaDrift,
 )
 from rotkehlchen.chain.evm.decoding.balancer.utils import query_balancer_api
+from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
@@ -235,7 +236,7 @@ def test_nft_current_price_reads_its_own_entry_and_leaves_out_a_module_failure()
     with patch.object(service, '_eth_module_query', return_value=failure):
         result = service.get_current_assets_price(
             assets=[nft],
-            target_asset=MagicMock(),
+            target_asset=A_USD,
             ignore_cache=False,
         )
     assert isinstance(result, OkResult)
@@ -244,16 +245,33 @@ def test_nft_current_price_reads_its_own_entry_and_leaves_out_a_module_failure()
     with patch.object(service, '_eth_module_query', return_value=OkResult([{
         'asset': nft.identifier,
         'manually_input': True,
-        'price': FVal('12.5'),
+        'price_asset': A_USD.identifier,
+        'price_in_asset': '100',
+        'price': FVal('90'),  # the main currency value, never the answer
     }])) as module_query:
         result = service.get_current_assets_price(
             assets=[nft],
-            target_asset=MagicMock(),
+            target_asset=A_USD,
             ignore_cache=False,
         )
+        assert module_query.call_args.kwargs['from_asset'] == nft
+        assert isinstance(result, OkResult)
+        assert result.result['assets'] == {
+            nft: [Price(FVal('100')), CurrentPriceOracle.MANUALCURRENT.value],
+        }
 
-    assert module_query.call_args.kwargs['from_asset'] == nft
-    assert isinstance(result, OkResult)
-    assert result.result['assets'] == {
-        nft: [Price(FVal('12.5')), CurrentPriceOracle.MANUALCURRENT.value],
-    }
+        with patch(
+            'rotkehlchen.api.services.assets.Inquirer.find_price',
+            return_value=Price(FVal('0.00001')),
+        ) as find_price:
+            result = service.get_current_assets_price(
+                assets=[nft],
+                target_asset=A_BTC,
+                ignore_cache=False,
+            )
+        assert find_price.call_args.kwargs['from_asset'] == A_USD
+        assert find_price.call_args.kwargs['to_asset'] == A_BTC
+        assert isinstance(result, OkResult)
+        assert result.result['assets'] == {
+            nft: [Price(FVal('0.001')), CurrentPriceOracle.MANUALCURRENT.value],
+        }
