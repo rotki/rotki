@@ -1,4 +1,5 @@
 from dataclasses import replace
+from threading import Event
 from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock, Mock, patch
 
@@ -22,7 +23,10 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
-from rotkehlchen.history.data_issues.remediation.base import RemediationOutcome
+from rotkehlchen.history.data_issues.remediation.base import (
+    RemediationOutcome,
+    RemediationWorkerStuckError,
+)
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.locations.constants import (
@@ -201,6 +205,51 @@ def test_remediation_sends_completed_websocket_update_on_failure(database: DBHan
             'phase': 'completed',
         },
     )
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_stuck_worker_ends_run_and_sends_completed(database: DBHandler) -> None:
+    """A worker ignoring cancellation must end the scheduled run, not keep it alive."""
+    issue_id, _tx_hash = _add_negative_balance_issue(database=database, customized=True)
+    release = Event()
+    try:
+        with (
+            patch(
+                'rotkehlchen.history.data_issues.remediation.base.CANCELLATION_GRACE_PERIOD',
+                0.05,
+            ),
+            patch(
+                'rotkehlchen.tasks.data_issues.RedecodeCustomizedTransactionsStrategy.timeout',
+                0.2,
+            ),
+            patch(
+                'rotkehlchen.tasks.data_issues.RedecodeCustomizedTransactionsStrategy.attempt',
+                side_effect=lambda issue: release.wait(10),
+            ),
+            pytest.raises(RemediationWorkerStuckError, match='redecode_customized_transactions'),
+        ):
+            run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+    finally:
+        release.set()
+
+    notifier = cast('MockRotkiNotifier', database.msg_aggregator.rotki_notifier)
+    assert notifier.pop_message() == MockedWsMessage(
+        message_type=WSMessageType.PROGRESS_UPDATES,
+        data={
+            'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
+            'phase': 'running',
+        },
+    )
+    assert notifier.pop_message() == MockedWsMessage(
+        message_type=WSMessageType.PROGRESS_UPDATES,
+        data={
+            'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
+            'phase': 'completed',
+        },
+    )
+    issue = DataIssuesManager(database).get_issue(issue_id)
+    assert issue.state == IssueState.OPEN
+    assert issue.auto_remediation_attempts == []
 
 
 @pytest.mark.parametrize('state', [IssueState.RESOLVED, IssueState.DISMISSED])
@@ -448,15 +497,21 @@ def test_redecode_comparison_ignores_sequence_index_changes(database: DBHandler)
     assert attempt['changed_transaction_count'] == 0
 
 
-def test_normal_transaction_is_not_redecoded_for_negative_balance(database: DBHandler) -> None:
+def test_normal_transaction_records_not_applicable_attempt(database: DBHandler) -> None:
     issue_id, _tx_hash = _add_negative_balance_issue(database=database, customized=False)
     with patch('rotkehlchen.tasks.data_issues._preview_transaction') as preview:
         run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
 
     preview.assert_not_called()
     issue = DataIssuesManager(database).get_issue(issue_id)
-    assert issue.state == IssueState.OPEN
-    assert issue.auto_remediation_attempts == []
+    assert issue.state == IssueState.UNRESOLVED
+    assert issue.auto_remediation_attempts == [{
+        'attribution': 'not_applicable',
+        'strategy': 'redecode_customized_transactions',
+        'timestamp': issue.auto_remediation_attempts[0]['timestamp'],
+        'success': False,
+        'reason': 'The issue account has no customized transaction to compare',
+    }]
 
 
 def test_earlier_customized_transaction_in_negative_bucket_is_compared(
@@ -593,8 +648,10 @@ def test_customized_transaction_for_unrelated_account_is_not_compared(
 
     preview.assert_not_called()
     issue = DataIssuesManager(database).get_issue(issue_id)
-    assert issue.state == IssueState.OPEN
-    assert issue.auto_remediation_attempts == []
+    assert issue.state == IssueState.UNRESOLVED
+    assert [attempt['attribution'] for attempt in issue.auto_remediation_attempts] == [
+        'not_applicable',
+    ]
 
 
 def test_failed_redecode_comparison_preserves_saved_events(database: DBHandler) -> None:
@@ -824,3 +881,44 @@ def test_timed_out_remediation_is_retried(database: DBHandler) -> None:
     assert issue.state == IssueState.UNRESOLVED
     assert len(issue.auto_remediation_attempts) == 2
     assert issue.auto_remediation_attempts[-1]['attribution'] == 'system'
+
+
+def test_not_applicable_attempt_is_recorded_once_and_retried(database: DBHandler) -> None:
+    """An account with nothing to compare records why once, and is examined again next run."""
+    issue_id, _tx_hash = _add_negative_balance_issue(database=database, customized=False)
+    manager = DataIssuesManager(database)
+    with patch('rotkehlchen.tasks.data_issues._preview_transaction') as preview:
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+        issue = manager.get_issue(issue_id)
+        assert issue.state == IssueState.UNRESOLVED
+        assert issue.auto_remediation_attempts == [{
+            'attribution': 'not_applicable',
+            'strategy': 'redecode_customized_transactions',
+            'timestamp': issue.auto_remediation_attempts[0]['timestamp'],
+            'success': False,
+            'reason': 'The issue account has no customized transaction to compare',
+        }]
+
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+    preview.assert_not_called()
+    # still retried, so it is picked up once the user customizes a transaction, but the
+    # unchanged explanation is not appended again
+    assert manager.get_issue(issue_id).state == IssueState.UNRESOLVED
+    assert len(manager.get_issue(issue_id).auto_remediation_attempts) == 1
+
+
+def test_unresolved_issue_without_attempts_is_retried(database: DBHandler) -> None:
+    """An unresolved issue parked with no attempt at all must still be examined again."""
+    issue_id, _tx_hash = _add_negative_balance_issue(database=database, customized=False)
+    manager = DataIssuesManager(database)
+    manager.update_state(issue_id, IssueState.AUTO_REMEDIATING)
+    manager.update_state(issue_id, IssueState.UNRESOLVED)
+
+    run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+    issue = manager.get_issue(issue_id)
+    assert issue.state == IssueState.UNRESOLVED
+    assert [attempt['attribution'] for attempt in issue.auto_remediation_attempts] == [
+        'not_applicable',
+    ]
