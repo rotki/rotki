@@ -109,7 +109,7 @@ from rotkehlchen.constants.misc import (
     GLOBALDIR_NAME,
     HTTP_STATUS_INTERNAL_DB_ERROR,
 )
-from rotkehlchen.db.cache import IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX
+from rotkehlchen.db.cache import IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX, DBCacheStatic
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     LINKABLE_ACCOUNTING_PROPERTIES,
@@ -4196,7 +4196,12 @@ class RestAPI:
             self.rotkehlchen.data.db,
         ).get_balances(filter_query=filter_query, group_by_account=group_by_account)
 
-        result: dict[str, Any] = {'processing_required': processing_required}
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            stale = self.rotkehlchen.data.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.STALE_BALANCES_FROM_TS,
+            ) is not None
+        result: dict[str, Any] = {'processing_required': processing_required, 'stale': stale}
         if balances is None:
             if group_by_account is True and processing_required is False:
                 return FailResult(

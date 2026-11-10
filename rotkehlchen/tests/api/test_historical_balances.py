@@ -537,6 +537,7 @@ def test_get_historical_balance_with_filters(
     ))
     assert result == {
         'processing_required': False,
+        'stale': False,
         'entries': [{
             'location': 'base',
             'location_label': addr1,
@@ -1110,6 +1111,61 @@ def test_get_historical_asset_balance_without_premium(rotkehlchen_api_server: AP
         contained_in_msg='does not have a premium subscription',
         status_code=HTTPStatus.FORBIDDEN,
     )
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+def test_current_historical_balances_without_premium(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Current history-derived balances are a core feature, available to any logged-in user.
+
+    The response also reports whether processed balances are stale so the frontend can warn
+    when recent event edits have not been folded into the derived balances yet.
+    """
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with db.user_write() as write_cursor:
+        DBHistoryEvents(database=db).add_history_events(
+            write_cursor=write_cursor,
+            history=[HistoryEvent(
+                group_identifier='btc_receive_1',
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(START_TS),
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                location=LOCATION_BLOCKCHAIN,
+                asset=A_BTC,
+                amount=FVal('2'),
+                notes='Receive BTC',
+            )],
+        )
+    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
+
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'currenthistoricalbalanceresource'),
+        json={},
+    ))
+    assert result['processing_required'] is False
+    assert result['stale'] is False
+    assert result['entries'] == [{
+        'location': LOCATION_BLOCKCHAIN,
+        'location_label': None,
+        'protocol': None,
+        'asset': A_BTC.identifier,
+        'amount': '2',
+    }]
+
+    # Editing an event marks the derived balances stale until processing runs again.
+    with db.user_write() as write_cursor:
+        db.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.STALE_BALANCES_FROM_TS,
+            value=str(ts_sec_to_ms(START_TS)),
+        )
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'currenthistoricalbalanceresource'),
+        json={},
+    ))
+    assert result['stale'] is True
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
