@@ -27,6 +27,11 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 DEFAULT_REMEDIATION_TIMEOUT: Final = 30
+CANCELLATION_GRACE_PERIOD: Final = 10
+
+
+class RemediationWorkerStuckError(RuntimeError):
+    """A cancelled remediation worker is still running after the cancellation grace period."""
 
 
 @dataclass(frozen=True)
@@ -43,6 +48,8 @@ class BaseRemediationStrategy(ABC):
 
     The timeout is a cooperative budget: attempts must use cancellation-aware waits
     and checkpoints between units of work. Blocking I/O must have its own timeout.
+    A worker that does not stop within CANCELLATION_GRACE_PERIOD of its cancellation
+    is abandoned with a logged error and the whole remediation run aborts.
     """
 
     name: str
@@ -55,7 +62,7 @@ class BaseRemediationStrategy(ABC):
         Runs outside the time budget and cannot be cancelled, so it must decide from
         the issue's own fields only: no database or network access. Anything that needs
         loading belongs in `attempt`, which reports an issue it turns out to have nothing
-        to do for with `record_attempt=False`.
+        to do for as `not_applicable`.
         """
 
     @abstractmethod
@@ -63,8 +70,43 @@ class BaseRemediationStrategy(ABC):
         """Try to remediate the issue within the time budget and return the outcome."""
 
 
+def _join_after_cancellation(task: Task, strategy: BaseRemediationStrategy) -> None:
+    """Wait for a cancelled worker for at most CANCELLATION_GRACE_PERIOD, then give up loudly.
+
+    Cancellation is cooperative, so a worker blocked in network or database I/O never
+    reaches a checkpoint and may outlive its budget. Waiting on it must still be bounded:
+    otherwise one hung strategy freezes the remediation run and every later scheduled one.
+
+    Deliberately never calls checkpoint(): control must not return to the caller, and so
+    to another strategy, while this worker may still be committing.
+    """
+    cancellation_requested_at = monotonic()
+    deadline = cancellation_requested_at + CANCELLATION_GRACE_PERIOD
+    while task.dead is False and (remaining := deadline - monotonic()) > 0:
+        task.join(min(remaining, 0.1))
+
+    if task.dead is False:
+        elapsed = monotonic() - cancellation_requested_at
+        log.error(
+            'Remediation strategy %s is still running %.1fs after cancellation, past the '
+            '%ss grace period. Abandoning it; the remediation run cannot continue.',
+            strategy.name,
+            elapsed,
+            CANCELLATION_GRACE_PERIOD,
+        )
+        raise RemediationWorkerStuckError(
+            f'Remediation strategy {strategy.name} did not stop within '
+            f'{CANCELLATION_GRACE_PERIOD}s of its cancellation',
+        )
+
+
 class RemediationPipeline:
-    """Run remediation strategies for a data issue in declared order."""
+    """Run remediation strategies for a data issue in declared order.
+
+    Each strategy gets a cooperative time budget plus a bounded cancellation grace period.
+    A worker that still runs after that grace is logged as an error and abandoned by
+    raising `RemediationWorkerStuckError`, which aborts the run.
+    """
 
     def __init__(
             self,
@@ -79,10 +121,13 @@ class RemediationPipeline:
             strategy: BaseRemediationStrategy,
             issue: DataIssue,
     ) -> RemediationOutcome:
-        """Cancel on budget expiry and join before allowing another strategy to mutate data.
+        """Run the strategy under its time budget, cancelling it when it expires.
 
-        Cancellation finishes at the next checkpoint, so in-flight blocking I/O can
-        extend elapsed time beyond the budget. Never abandon a mutating worker.
+        Cancellation is cooperative and only lands at the worker's next checkpoint, so
+        in-flight blocking I/O can outlive the budget. The worker is then awaited for a
+        bounded grace period and, if it is still alive, `RemediationWorkerStuckError` is
+        raised instead of waiting forever. A mutating worker is therefore never abandoned
+        silently, and no other strategy starts while one may still be committing.
         """
         token = CancellationToken()
         task = Task(
@@ -98,12 +143,12 @@ class RemediationPipeline:
                 checkpoint()
         except TaskCancelledError:
             task.request_cancellation('Data issue remediation was cancelled')
-            task.join()
+            _join_after_cancellation(task, strategy)
             raise
 
         if task.dead is False:
             task.request_cancellation(f'Strategy exceeded {strategy.timeout}s time budget')
-            task.join()
+            _join_after_cancellation(task, strategy)
             if not isinstance(task.exception, TaskCancelledError):
                 return result_of(task)
             return RemediationOutcome(
@@ -155,10 +200,8 @@ class RemediationPipeline:
                     **outcome.attempt_data,
                 }
                 if len(outcome.attempt_data) == 0:
-                    attempt['resolved'] = outcome.resolved
                     attempt['success'] = outcome.resolved
                     if outcome.notes != '':
-                        attempt['notes'] = outcome.notes
                         attempt['reason'] = outcome.notes
                 if outcome.resolved:
                     log.debug('Data issue remediation attempt: %s', attempt)
@@ -180,7 +223,8 @@ class RemediationPipeline:
 
                 sleep(0)
             retryable = attempt_recorded is False
-        except TaskCancelledError:
+        except (TaskCancelledError, RemediationWorkerStuckError):
+            # Neither case records an attempt, so the issue must stay retryable.
             retryable = attempt_recorded is False
             raise
         finally:

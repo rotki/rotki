@@ -349,7 +349,10 @@ class RedecodeCustomizedTransactionsStrategy(BaseRemediationStrategy):
                 resolved=False,
                 attribution='not_applicable',
                 notes='The issue account has no customized transaction to compare',
-                record_attempt=False,
+                record_attempt=(
+                    len(issue.auto_remediation_attempts) == 0 or
+                    issue.auto_remediation_attempts[-1].get('attribution') != 'not_applicable'
+                ),
             )
 
         return _check_issue(
@@ -420,17 +423,22 @@ def run_data_issue_remediation(
 
 
 def _last_attempt_failed(issue: DataIssue) -> bool:
-    """Retry operational failures, timeouts, and failed comparisons on the next scheduled run."""
+    """Retry operational failures, timeouts, failed comparisons and attempts that know
+    they cannot make progress, on the next scheduled run.
+
+    An unresolved issue with no attempt at all is retried too: nothing else would ever
+    advance it.
+    """
+    if issue.state != IssueState.UNRESOLVED:
+        return False
+    if len(issue.auto_remediation_attempts) == 0:
+        return True
+
+    attempt = issue.auto_remediation_attempts[-1]
     return (
-        issue.state == IssueState.UNRESOLVED and
-        len(issue.auto_remediation_attempts) != 0 and
+        attempt.get('attribution') in {'timeout', 'strategy_failed', 'not_applicable'} or
         (
-            (attempt := issue.auto_remediation_attempts[-1]).get('attribution') in {
-                'timeout', 'strategy_failed',
-            } or
-            (
-                attempt.get('strategy') == REDECODE_CUSTOMIZED_TRANSACTIONS and
-                attempt.get('result') == 'redecoding_failed'
-            )
+            attempt.get('strategy') == REDECODE_CUSTOMIZED_TRANSACTIONS and
+            attempt.get('result') == 'redecoding_failed'
         )
     )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 from functools import partial
 from time import monotonic, sleep
 from typing import TYPE_CHECKING
@@ -18,6 +19,7 @@ from rotkehlchen.history.data_issues.remediation.base import (
     BaseRemediationStrategy,
     RemediationOutcome,
     RemediationPipeline,
+    RemediationWorkerStuckError,
 )
 from rotkehlchen.locations.constants import LOCATION_ETHEREUM
 
@@ -77,6 +79,26 @@ class CompletingOnCancellationStrategy(StubStrategy):
         while token.cancelled is False:
             assert monotonic() < deadline, 'Pipeline did not request cancellation'
             sleep(0.001)
+        return self.outcome
+
+
+class StuckStrategy(StubStrategy):
+    """Blocks on an event, which unlike cancellable_sleep never observes cancellation."""
+
+    def __init__(
+            self,
+            name: str,
+            outcome: RemediationOutcome,
+            calls: list[str],
+            release: threading.Event,
+            timeout: float = 30,
+    ) -> None:
+        super().__init__(name, outcome, calls, timeout=timeout)
+        self.release = release
+
+    def attempt(self, issue: DataIssue) -> RemediationOutcome:
+        self.calls.append(self.name)
+        self.release.wait(10)
         return self.outcome
 
 
@@ -140,6 +162,7 @@ def test_pipeline_runs_strategies_in_order_until_success(database: DBHandler) ->
 
 
 def test_pipeline_cancels_strategy_when_its_budget_expires(database: DBHandler) -> None:
+    """A worker that stops cooperatively records a timeout and lets the fallback run."""
     calls: list[str] = []
     manager = DataIssuesManager(database)
     issue = _make_issue(database)
@@ -154,6 +177,49 @@ def test_pipeline_cancels_strategy_when_its_budget_expires(database: DBHandler) 
     assert calls == ['slow', 'fallback']
     assert issue.state == IssueState.RESOLVED
     assert issue.auto_remediation_attempts[0]['attribution'] == 'timeout'
+
+
+def test_pipeline_fails_when_worker_outlives_the_cancellation_grace(
+        database: DBHandler,
+        caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A worker blocked in non-cancellable I/O must end the run, not hang it forever."""
+    calls: list[str] = []
+    manager = DataIssuesManager(database)
+    issue = _make_issue(database)
+    release = threading.Event()
+    caplog.set_level(logging.ERROR, logger='rotkehlchen.history.data_issues.remediation.base')
+
+    with (
+        patch(
+            'rotkehlchen.history.data_issues.remediation.base.CANCELLATION_GRACE_PERIOD',
+            0.05,
+        ),
+        pytest.raises(RemediationWorkerStuckError, match='stuck'),
+    ):
+        RemediationPipeline(manager, (
+            StuckStrategy(
+                'stuck',
+                RemediationOutcome(True, 'system', ''),
+                calls,
+                release=release,
+                timeout=0.2,
+            ),
+            StubStrategy('fallback', RemediationOutcome(True, 'system', ''), calls),
+        )).run(issue)
+
+    try:
+        assert calls == ['stuck']
+        issue = manager.get_issue(issue.id)
+        assert issue.state == IssueState.OPEN
+        assert issue.auto_remediation_attempts == []
+        messages = [
+            record.getMessage() for record in caplog.records
+            if record.levelno == logging.ERROR
+        ]
+        assert any('stuck' in message and 'grace period' in message for message in messages)
+    finally:
+        release.set()
 
 
 def test_pipeline_marks_issue_unresolved_when_strategy_fails(database: DBHandler) -> None:
