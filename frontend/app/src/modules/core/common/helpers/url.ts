@@ -86,6 +86,16 @@ function getBeaconchainRegisterUrl(): ExternalUrl {
   };
 }
 
+function getSochainRegisterUrl(): ExternalUrl {
+  return {
+    external: externalLinks.sochainApiKey,
+    route: {
+      name: '/api-keys/external/',
+      query: { service: 'sochain' },
+    },
+  };
+}
+
 /**
  * The registration URL of an external service, paired with the local page that explains it.
  *
@@ -103,6 +113,8 @@ export function getServiceRegisterUrl(service: string): ExternalUrl | undefined 
       return getHeliusRegisterUrl();
     case 'beaconchain':
       return getBeaconchainRegisterUrl();
+    case 'sochain':
+      return getSochainRegisterUrl();
     default:
       logger.warn(`Unsupported service: '${service}'`);
       return undefined;
