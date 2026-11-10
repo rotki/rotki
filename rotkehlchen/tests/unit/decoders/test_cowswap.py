@@ -1467,3 +1467,53 @@ def test_cowswap_polygon_swap_native(polygon_pos_inquirer, polygon_pos_accounts)
         counterparty=CPT_COWSWAP,
         address=GPV2_SETTLEMENT_ADDRESS,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x006a3aD7251db5D12992B62cce26252ac58492Dd']])
+def test_identical_trade_of_untracked_owner(ethereum_inquirer, ethereum_accounts):
+    """Regression test for https://github.com/rotki/rotki/issues/13642
+
+    The settlement has two Trade logs with the same tokens and amounts. One belongs to
+    an untracked owner and should not produce a second (phantom) fee event."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8a38c607d7961110712a498b29d08921a6274bae02628dd966001106fed7362c')),  # noqa: E501
+    )
+    assert events == [EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1792173719000)),
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDT,
+        amount=(spend_amount := FVal('2997.955758')),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Swap {spend_amount} USDT in a cowswap limit order',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:1/erc20:0xa45cd7ac9865b9539166ebaf2aBc362Df4736580'),
+        amount=(receive_amount := FVal('43.490924675680358324')),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} TQQQon as the result of a cowswap limit order',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USDT,
+        amount=(fee_amount := FVal('2.044242')),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} USDT as a cowswap fee',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    )]
