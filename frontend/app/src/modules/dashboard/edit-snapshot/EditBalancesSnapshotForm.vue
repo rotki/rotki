@@ -91,34 +91,36 @@ defineExpose({
 
 <template>
   <div class="flex flex-col gap-2">
-    <BalanceTypeInput
-      v-model="form.state.category"
-      data-testid="category"
-      :label="t('common.category')"
-      :error-messages="form.errors('category')"
-      @update:model-value="form.touch('category')"
-    />
-    <div class="flex flex-col gap-1 pb-5">
-      <div class="text-sm font-medium text-rui-text">
-        {{ t('common.type') }}
-      </div>
-      <div>
-        <RuiRadioGroup
-          v-model="assetType"
-          color="primary"
-          inline
-          details="hidden"
-          :disabled="edit"
-        >
-          <RuiRadio
-            :label="t('dashboard.snapshot.edit.dialog.balances.token')"
-            value="token"
-          />
-          <RuiRadio
-            :label="t('dashboard.snapshot.edit.dialog.balances.nft')"
-            value="nft"
-          />
-        </RuiRadioGroup>
+    <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
+      <BalanceTypeInput
+        v-model="form.state.category"
+        data-testid="category"
+        :label="t('common.category')"
+        :error-messages="form.errors('category')"
+        @update:model-value="form.touch('category')"
+      />
+      <div class="flex flex-col gap-1 pb-5">
+        <div class="text-sm font-medium text-rui-text">
+          {{ t('common.type') }}
+        </div>
+        <div>
+          <RuiRadioGroup
+            v-model="assetType"
+            color="primary"
+            inline
+            details="hidden"
+            :disabled="edit"
+          >
+            <RuiRadio
+              :label="t('dashboard.snapshot.edit.dialog.balances.token')"
+              value="token"
+            />
+            <RuiRadio
+              :label="t('dashboard.snapshot.edit.dialog.balances.nft')"
+              value="nft"
+            />
+          </RuiRadioGroup>
+        </div>
       </div>
     </div>
 
