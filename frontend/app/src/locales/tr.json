@@ -1710,7 +1710,6 @@
       "tooltip": "Banka bağlantısını düzenle"
     },
     "errors": {
-      "remove_message": "{name} adlı banka bağlantısı kaldırılamadı: {error}",
       "remove_title": "Banka bağlantısını kaldırma",
       "setup_message": "{bank} bağlantısı kurulamadı: {error}"
     },
@@ -4910,7 +4909,6 @@
       "message": "Bu eylem tüm etkin bildirimleri temizleyecek. Devam etmek istiyor musunuz?",
       "title": "Etkin bildirimleri temizle"
     },
-    "message_overflow": "Alınan bildirimlerin toplam sayısı 200 sınırını aştı. Eski bildirimler kaldırıldı.",
     "silent": {
       "off": "Bildirim açılır pencerelerini sessize al",
       "on": "Açılır pencereler sessize alındı. Yeniden izin vermek için tıklayın"

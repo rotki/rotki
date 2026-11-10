@@ -1,4 +1,4 @@
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { type ActivityModel, type ActivityOverall, assembleActivityModel } from './core/model';
 import {
   type Activity,
@@ -20,12 +20,12 @@ interface UseTaskCenterReturn {
   overall: ComputedRef<ActivityOverall>;
   isActive: ComputedRef<boolean>;
   /** Reactive liveness + freshness for a kind (or specific id) — replaces `useSectionStatus`. */
-  useWorkStatus: (kind: ActivityKind, ...parts: (string | number)[]) => ComputedRef<WorkStatus>;
+  useWorkStatus: (kind: ActivityKind, ...parts: MaybeRefOrGetter<string | number>[]) => ComputedRef<WorkStatus>;
   /**
    * Reactive liveness + freshness aggregated over every activity whose id extends `kind:parts` —
    * the coarse read for producers that submit one activity per request.
    */
-  useWorkStatusPrefix: (kind: ActivityKind, ...parts: (string | number)[]) => ComputedRef<WorkStatus>;
+  useWorkStatusPrefix: (kind: ActivityKind, ...parts: MaybeRefOrGetter<string | number>[]) => ComputedRef<WorkStatus>;
   /** Liveness only — see `useIsActive` on the orchestrator shell. */
   useIsActive: (kind: ActivityKind, ...parts: (string | number)[]) => ComputedRef<boolean>;
   /** Liveness only, aggregated over a prefix. */

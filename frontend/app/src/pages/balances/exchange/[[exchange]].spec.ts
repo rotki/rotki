@@ -14,6 +14,7 @@ const refreshSelectedExchangeBalances = vi.fn(async (): Promise<void> => {});
 
 interface PageState {
   balances: AssetBalanceWithPrice[];
+  failed: boolean;
   loading: boolean;
   used: string[];
   view: 'balances' | 'savings';
@@ -21,6 +22,7 @@ interface PageState {
 
 const pageState = vi.hoisted((): PageState => ({
   balances: [],
+  failed: false,
   loading: false,
   used: [],
   view: 'balances',
@@ -63,7 +65,7 @@ const AssetBalancesStub = defineComponent({
     search: { default: '', type: String },
     display: { default: undefined, type: Object },
   },
-  template: '<div data-testid="asset-balances" />',
+  template: '<div data-testid="asset-balances"><slot name="empty" /></div>',
 });
 
 vi.mock('@/pages/balances/exchange/use-exchange-balances-page', async () => {
@@ -74,6 +76,7 @@ vi.mock('@/pages/balances/exchange/use-exchange-balances-page', async () => {
       balances: computed(() => pageState.balances),
       exchangeBalance: () => bigNumberify(100),
       isExchangeLoading: computed(() => pageState.loading),
+      lastRefreshFailed: computed(() => pageState.failed),
       modelView: shallowRef(pageState.view),
       navigateToExchangeSetup,
       refreshExchangeBalances,
@@ -111,6 +114,7 @@ describe('pages/balances/exchange/[[exchange]]', () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     pageState.balances = [];
+    pageState.failed = false;
     pageState.loading = false;
     pageState.used = [];
     pageState.view = 'balances';
@@ -157,6 +161,19 @@ describe('pages/balances/exchange/[[exchange]]', () => {
       const cards = wrapper.findComponent(CardsStub);
       expect(cards.props('exchanges')).toEqual(['kraken', 'binance']);
       expect(cards.props('selected')).toBeUndefined();
+    });
+
+    it('should say an empty table follows a failed refresh, not an empty exchange', () => {
+      pageState.failed = true;
+      wrapper = mountPage('kraken');
+
+      expect(wrapper.find('[data-testid=exchange-balances-refresh-failed]').exists()).toBe(true);
+    });
+
+    it('should keep the plain empty table after a refresh that worked', () => {
+      wrapper = mountPage('kraken');
+
+      expect(wrapper.find('[data-testid=exchange-balances-refresh-failed]').exists()).toBe(false);
     });
 
     it('should list every exchange balances with their locations on the all view', () => {

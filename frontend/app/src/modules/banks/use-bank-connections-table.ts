@@ -1,6 +1,7 @@
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
 import type { BankConnection, BankConnectionIdentity } from '@/modules/banks/types';
+import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import { type BigNumber, Zero } from '@rotki/common';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -8,6 +9,7 @@ import { connectionKey } from '@/modules/banks/bank-balances';
 import { exchangeAssetSum } from '@/modules/core/common/data/calculation';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useRowHighlight } from '@/modules/core/table/use-row-highlight';
+import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 
 interface UseBankConnectionsTableReturn {
   cols: ComputedRef<DataTableColumn<BankConnection>[]>;
@@ -25,10 +27,21 @@ interface UseBankConnectionsTableReturn {
    * A connection that has not reported a balance yet holds zero.
    */
   balanceOf: (connection: BankConnectionIdentity) => BigNumber;
+  /** Removes a connection the user already confirmed. */
+  removeRow: (row: BankConnection) => Promise<void>;
+  /** Why the last removal failed, named above the table until the next one starts. */
+  removeFailure: Readonly<Ref<NamedFailure | undefined>>;
 }
 
-/** The table on the Accounts banks page: its columns, sort, row highlight and each connection's balance. */
-export function useBankConnectionsTable(): UseBankConnectionsTableReturn {
+/**
+ * The table on the Accounts banks page: its columns, sort, row highlight, each connection's balance
+ * and removing a row.
+ *
+ * @param removeBank - removes a connection, throwing when the backend refuses
+ */
+export function useBankConnectionsTable(
+  removeBank: (row: BankConnection) => Promise<boolean>,
+): UseBankConnectionsTableReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { bankBalances } = storeToRefs(useBalancesStore());
   const { isAssetIgnored } = useAssetsStore();
@@ -88,12 +101,19 @@ export function useBankConnectionsTable(): UseBankConnectionsTableReturn {
     }
   }
 
+  const { deleteRow: removeRow, failure: removeFailure } = useTableRowDeletion<BankConnection>({
+    deleteItem: removeBank,
+    failureTitle: () => t('bank_settings.errors.remove_title'),
+  });
+
   return {
     balanceOf,
     cols,
     highlight,
     isSyncing,
     modelSort,
+    removeFailure,
+    removeRow,
     rowClass,
     whileSyncing,
   };

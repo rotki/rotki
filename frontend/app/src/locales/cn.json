@@ -1691,7 +1691,6 @@
       "tooltip": "编辑银行连接"
     },
     "errors": {
-      "remove_message": "无法移除银行连接 {name}：{error}",
       "remove_title": "移除银行连接",
       "setup_message": "无法设置 {bank} 连接：{error}"
     },
@@ -4788,7 +4787,6 @@
       "message": "此操作将清除所有当前通知。是否继续？",
       "title": "清除当前通知"
     },
-    "message_overflow": "收到的通知总数已超过 200 条上限，较早的通知已被移除。",
     "silent": {
       "off": "静默通知弹窗",
       "on": "弹窗已静默，点击重新允许"

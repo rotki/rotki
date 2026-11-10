@@ -6,7 +6,7 @@ import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-con
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import { uniqueStrings } from '@/modules/core/common/data/data';
-import { ActivityKind } from '@/modules/task-center/core/types';
+import { ActivityKind, ActivityStatus } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 /** The two exchanges that also hold savings balances, which refresh alongside the main ones. */
@@ -23,6 +23,8 @@ interface UseExchangeBalancesPageReturn {
   balances: ComputedRef<AssetBalanceWithPrice[]>;
   exchangeBalance: (exchange: string) => BigNumber;
   isExchangeLoading: ComputedRef<boolean>;
+  /** Whether the last refresh of what the page shows failed, so an empty table is no proof of an empty exchange. */
+  lastRefreshFailed: ComputedRef<boolean>;
   modelView: Ref<ExchangeView>;
   navigateToExchangeSetup: (location?: string) => void;
   refreshExchangeBalances: () => Promise<void>;
@@ -44,7 +46,7 @@ function sum(balances: AssetBalanceWithPrice[]): BigNumber {
 export function useExchangeBalancesPage(exchange: MaybeRefOrGetter<string | undefined>): UseExchangeBalancesPageReturn {
   const router = useRouter();
 
-  const { useIsActive } = useTaskCenter();
+  const { useIsActive, useWorkStatus, useWorkStatusPrefix } = useTaskCenter();
   const { getExchangeBalances } = useAggregatedBalances();
   const { refreshExchangeSavings } = useBinanceSavings();
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
@@ -53,6 +55,13 @@ export function useExchangeBalancesPage(exchange: MaybeRefOrGetter<string | unde
   const modelView = shallowRef<ExchangeView>('balances');
 
   const isExchangeLoading = useIsActive(ActivityKind.EXCHANGE_BALANCES);
+
+  const allRefreshes = useWorkStatusPrefix(ActivityKind.EXCHANGE_BALANCES);
+  const selectedRefresh = useWorkStatus(ActivityKind.EXCHANGE_BALANCES, () => toValue(exchange) ?? '');
+
+  const lastRefreshFailed = computed<boolean>(() =>
+    get(toValue(exchange) ? selectedRefresh : allRefreshes).lastOutcome === ActivityStatus.FAILED,
+  );
 
   function exchangeBalance(exchange: string): BigNumber {
     return sum(getExchangeBalances(exchange));
@@ -111,6 +120,7 @@ export function useExchangeBalancesPage(exchange: MaybeRefOrGetter<string | unde
     balances,
     exchangeBalance,
     isExchangeLoading,
+    lastRefreshFailed,
     modelView,
     navigateToExchangeSetup,
     refreshExchangeBalances,

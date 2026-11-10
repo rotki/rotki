@@ -2022,7 +2022,6 @@
       "tooltip": "Edit the bank connection"
     },
     "errors": {
-      "remove_message": "Could not remove the bank connection {name}: {error}",
       "remove_title": "Bank connection removal",
       "setup_message": "Could not set up the {bank} connection: {error}",
       "start_over_message": "Could not drop the pending authentication of {name}: {error}",
@@ -3585,6 +3584,8 @@
     },
     "empty_table": {
       "description": "The last query found nothing here. Refresh to query the exchange again.",
+      "failed_description": "The last refresh failed, so these balances are unknown rather than empty. The task dock says why; refresh to try again.",
+      "failed_title": "Last refresh failed",
       "title": "No balances on this exchange"
     },
     "received_interest": "Received Interest",
@@ -5721,7 +5722,6 @@
       "description": "Sync results, alerts and errors show up here as they happen.",
       "title": "You're all caught up"
     },
-    "message_overflow": "The total amount of notifications received has exceeded the limit of 200. Older notifications have been removed.",
     "mute": "Mute",
     "muted": "Muted ({count})",
     "problems": "Problems ({count})",
@@ -5882,6 +5882,7 @@
     "collapse": "Collapse",
     "dismiss": "Dismiss",
     "expand": "Expand",
+    "fix": "Fix",
     "retry": "Retry",
     "status": {
       "cancelled": "Cancelled",

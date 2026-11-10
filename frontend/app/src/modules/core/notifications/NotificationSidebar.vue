@@ -25,7 +25,6 @@ const {
   historyDays,
   initialAppear,
   isEmpty,
-  messageOverflow,
   modelAskingToClear,
   modelMutedOpen,
   modelProblemsOpen,
@@ -242,25 +241,6 @@ const clearQuestion = computed<ConfirmQuestion>(() => ({
             />
           </template>
         </section>
-
-        <div
-          v-if="messageOverflow"
-          class="flex bg-rui-warning/10 rounded-md border p-2 gap-4"
-        >
-          <div class="flex flex-col justify-center items-center">
-            <div class="rounded-full p-2 bg-rui-warning">
-              <RuiIcon
-                size="20"
-                class="text-white"
-                name="lu-siren"
-              />
-            </div>
-          </div>
-
-          <div class="text-rui-text-secondary text-body-2 break-words">
-            {{ t('notification_sidebar.message_overflow') }}
-          </div>
-        </div>
       </div>
       <div
         v-if="modelAskingToClear"
