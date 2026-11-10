@@ -19,7 +19,8 @@ from rotkehlchen.banks.errors import (
     BankSchemaDrift,
 )
 from rotkehlchen.chain.evm.decoding.balancer.utils import query_balancer_api
-from rotkehlchen.constants.assets import A_BTC, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_EUR, A_USD
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
@@ -275,3 +276,29 @@ def test_nft_current_price_reads_its_own_entry_and_leaves_out_a_module_failure()
         assert result.result['assets'] == {
             nft: [Price(FVal('0.001')), CurrentPriceOracle.MANUALCURRENT.value],
         }
+
+    with (
+        patch.object(service, '_eth_module_query', return_value=OkResult([{
+            'asset': nft.identifier,
+            'manually_input': False,
+            'price_asset': A_EUR.identifier,
+            'price_in_asset': '50',
+            'price': FVal('55'),  # the main currency value, never the answer
+        }])),
+        patch(
+            'rotkehlchen.api.services.assets.Inquirer.find_price',
+            side_effect=lambda from_asset, to_asset, ignore_cache: {
+                (A_EUR, A_USD): Price(FVal('1.2')),
+            }.get((from_asset, to_asset), ZERO_PRICE),
+        ) as find_price,
+    ):
+        for target_asset, expected in ((A_EUR, {nft: [Price(FVal('50')), CurrentPriceOracle.BLOCKCHAIN.value]}), (A_USD, {nft: [Price(FVal('60')), CurrentPriceOracle.BLOCKCHAIN.value]}), (A_BTC, {})):  # noqa: E501
+            result = service.get_current_assets_price(
+                assets=[nft],
+                target_asset=target_asset,
+                ignore_cache=False,
+            )
+            assert isinstance(result, OkResult)
+            assert result.result['assets'] == expected, target_asset
+
+    assert find_price.call_count == 2  # EUR needs no rate, a BTC rate is not known
