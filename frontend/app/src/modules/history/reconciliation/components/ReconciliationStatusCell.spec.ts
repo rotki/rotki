@@ -114,8 +114,9 @@ describe('reconciliation status cell', () => {
     });
   });
 
-  it('should link a stop whose event was deleted without a group or paging target', () => {
+  it('should not offer a view-event link for a stop whose event was deleted, as there is no group to page to', () => {
     const wrapper = mountCell(bucket({
+      issueId: 7,
       status: 'blocked',
       stop: {
         derivedBalanceBeforeEvent: bigNumberify('0.5'),
@@ -126,13 +127,32 @@ describe('reconciliation status cell', () => {
       },
     }));
 
-    expect(wrapper.findComponent({ name: 'RouterLink' }).props('to')).toEqual({
-      name: '/history/events/',
-      query: {
-        asset: 'ETH',
-        highlightedNegativeBalanceEvent: '1234',
+    expect(wrapper.find('[data-testid="reconciliation-open-issue"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="reconciliation-view-event"]').exists()).toBe(false);
+  });
+
+  it('should show only the comparison time for a row with a saved comparison', () => {
+    const wrapper = mountCell(bucket({
+      check: {
+        comparedAt: 1_700_000_100,
+        delta: bigNumberify('0'),
+        derivedBalance: bigNumberify('1'),
+        observedAt: 1_700_000_000,
+        observedBalance: bigNumberify('1'),
       },
-    });
+      status: 'reconciled',
+    }));
+
+    const keypaths = wrapper.findAll('i18n-t-stub').map(element => element.attributes('keypath'));
+    expect(keypaths).toContain('data_issues.reconciliation.compared_at');
+    expect(keypaths).not.toContain('data_issues.reconciliation.observed_at');
+  });
+
+  it('should show the observation time for a row without a saved comparison', () => {
+    const wrapper = mountCell(bucket({ observedAt: 1_700_000_000, status: 'pending' }));
+
+    const keypaths = wrapper.findAll('i18n-t-stub').map(element => element.attributes('keypath'));
+    expect(keypaths).toContain('data_issues.reconciliation.observed_at');
   });
 
   it('should render the status icon as well as the label', () => {

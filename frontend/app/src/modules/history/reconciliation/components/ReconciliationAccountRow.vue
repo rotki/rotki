@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ReconciliationAccount } from '@/modules/history/reconciliation/schemas';
 import { useLocations } from '@/modules/core/common/use-locations';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { ACCOUNT_SUMMARY_LABEL } from '@/modules/history/reconciliation/messages';
 import { type AccountSummary, accountSummaryFor, type ReconciliationView } from '@/modules/history/reconciliation/use-reconciliation-rows';
 import HashLink from '@/modules/shell/components/HashLink.vue';
@@ -22,9 +23,21 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 const { useLocationData } = useLocations();
 
-const locationName = computed<string>(() => get(useLocationData(() => account.location))?.name ?? account.location);
-const needsAttention = computed<boolean>(() => account.counts.mismatch + account.counts.blocked > 0);
+const { matchChain } = useSupportedChains();
+const locationData = useLocationData(() => account.location);
+
+/** Only a blockchain account's label is an address; an exchange or import label is a plain name. */
+const isChainAccount = computed<boolean>(() => matchChain(account.location) !== undefined);
+
+const locationName = computed<string>(() => get(locationData)?.name ?? account.location);
 const summary = computed<AccountSummary>(() => accountSummaryFor(account, view));
+
+/** Red for a mismatch, amber for stopped processing only, matching the headline and the bar. */
+const attentionDotClass = computed<string | undefined>(() => {
+  if (account.counts.mismatch > 0)
+    return 'bg-rui-error';
+  return account.counts.blocked > 0 ? 'bg-rui-warning' : undefined;
+});
 
 /**
  * The account's one-line counts, oldest idea first: what needs work, then what matches and what
@@ -69,17 +82,25 @@ const summaryParts = computed<string[]>(() => {
         <RuiIcon :name="isOpen ? 'lu-chevron-down' : 'lu-chevron-right'" />
       </RuiButton>
       <span
-        v-if="needsAttention"
-        class="size-2 rounded-full bg-rui-error shrink-0"
+        v-if="attentionDotClass"
+        class="size-2 rounded-full shrink-0"
+        :class="attentionDotClass"
         data-testid="reconciliation-account-attention"
       />
       <span class="font-medium">{{ locationName }}</span>
       <HashLink
-        v-if="account.locationLabel"
+        v-if="account.locationLabel && isChainAccount"
         :text="account.locationLabel"
         :location="account.location"
         reveal-actions
       />
+      <span
+        v-else-if="account.locationLabel"
+        class="text-rui-text-secondary"
+        data-testid="reconciliation-account-label"
+      >
+        {{ account.locationLabel }}
+      </span>
       <span
         v-else
         class="text-rui-text-secondary text-sm"

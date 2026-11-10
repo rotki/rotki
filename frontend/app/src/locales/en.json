@@ -3189,9 +3189,7 @@
       "table": {
         "difference": "Difference",
         "empty_all": "This account has no balances for this view.",
-        "empty_all_title": "No balances",
         "empty_attention": "No balance mismatches or blocked processing were found. Show all balances to see what was checked.",
-        "empty_attention_title": "Nothing needs attention",
         "empty_placeholder": "Nothing to show for this view.",
         "error": "Could not load this account's balances.",
         "from_history": "From history",
@@ -3199,6 +3197,10 @@
         "loading": "Loading balances…",
         "on_chain": "On chain",
         "status": "Status"
+      },
+      "unavailable": {
+        "description": "The rotki backend is running without the accounting update, so it cannot compare balances. Start it with the accounting update enabled to use this page.",
+        "title": "Balance reconciliation is not available"
       },
       "view": {
         "all": "All balances · {count}",

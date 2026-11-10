@@ -2,6 +2,7 @@ import type { BucketStatus, ReconciliationAccount, ReconciliationBucket, Reconci
 import { get } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createStatusError } from '@/modules/core/api/response-handlers';
 import { useBucketReconciliation } from '@/modules/history/reconciliation/use-bucket-reconciliation';
 import { useBucketReconciliationStore } from '@/modules/history/reconciliation/use-bucket-reconciliation-store';
 import { reconciliationAccountKey } from '@/modules/history/reconciliation/use-reconciliation-rows';
@@ -114,6 +115,34 @@ describe('useBucketReconciliation', () => {
     expect(get(totals).reconciled).toBe(4);
   });
 
+  it('should mark the report unavailable, not failed, when the backend runs without the accounting update', async () => {
+    fetchSummary
+      .mockResolvedValueOnce(response({ totals: counts({ mismatch: 1 }) }))
+      .mockRejectedValueOnce(createStatusError(404, 'Historical balance reconciliation is disabled', {
+        cause: 'not_found',
+        message: 'Historical balance reconciliation is disabled',
+        result: null,
+      }));
+    const { attention, refreshSummary, summaryFailed, summaryUnavailable } = useBucketReconciliation();
+
+    await refreshSummary();
+    await refreshSummary();
+
+    expect(get(summaryUnavailable)).toBe(true);
+    expect(get(summaryFailed)).toBe(false);
+    expect(get(attention)).toBe(0);
+  });
+
+  it('should treat a failure with another cause as a failed refresh', async () => {
+    fetchSummary.mockRejectedValueOnce(createStatusError(500, 'boom', { cause: 'internal', message: 'boom', result: null }));
+    const { refreshSummary, summaryFailed, summaryUnavailable } = useBucketReconciliation();
+
+    await refreshSummary();
+
+    expect(get(summaryFailed)).toBe(true);
+    expect(get(summaryUnavailable)).toBe(false);
+  });
+
   it('should fetch an account once per status filter and reuse it afterwards', async () => {
     fetchAccount.mockResolvedValue(account({ buckets: [], pagination: { limit: 50, offset: 0, total: 0 } }));
     const { ensureAccount } = useBucketReconciliation();
@@ -141,6 +170,32 @@ describe('useBucketReconciliation', () => {
     await ensureAccount(account({ location: 'aave', locationLabel: null }));
 
     expect(fetchAccount.mock.calls[0][0]).toMatchObject({ location: 'aave', locationLabel: '' });
+  });
+
+  it('should mark the report unavailable when an account request finds the backend without the accounting update', async () => {
+    fetchSummary.mockResolvedValueOnce(response({ accounts: [account()], totals: counts({ mismatch: 1 }) }));
+    fetchAccount.mockRejectedValueOnce(createStatusError(404, 'Historical balance reconciliation is disabled', {
+      cause: 'not_found',
+      message: 'Historical balance reconciliation is disabled',
+      result: null,
+    }));
+    const { ensureAccount, refreshSummary, summaryUnavailable } = useBucketReconciliation();
+
+    await refreshSummary();
+    await ensureAccount(account());
+
+    expect(get(summaryUnavailable)).toBe(true);
+    expect(useBucketReconciliationStore().accountState(reconciliationAccountKey('ethereum', '0xA'))).toBeUndefined();
+  });
+
+  it('should keep any other account failure on the account row', async () => {
+    fetchAccount.mockRejectedValueOnce(new Error('boom'));
+    const { ensureAccount, summaryUnavailable } = useBucketReconciliation();
+
+    await ensureAccount(account());
+
+    expect(get(summaryUnavailable)).toBe(false);
+    expect(useBucketReconciliationStore().accountState(reconciliationAccountKey('ethereum', '0xA'))?.error).toBe('boom');
   });
 
   it('should not let a slow old account response overwrite a retry', async () => {

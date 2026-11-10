@@ -10,9 +10,6 @@ import ReconciliationStatusCell from '@/modules/history/reconciliation/component
 import {
   accountKeyOf,
   amountsFor,
-  displayStatus,
-  displayStatusColor,
-  displayStatusIcon,
   type ReconciliationView,
   sortBuckets,
 } from '@/modules/history/reconciliation/use-reconciliation-rows';
@@ -167,14 +164,9 @@ function amountsOf(row: BucketRow): ReturnType<typeof amountsFor> {
   return amountsFor(row.bucket);
 }
 
-const empty = computed<{ description: string; label: string }>(() => ({
-  description: view === 'attention'
-    ? t('data_issues.reconciliation.table.empty_attention')
-    : t('data_issues.reconciliation.table.empty_all'),
-  label: view === 'attention'
-    ? t('data_issues.reconciliation.table.empty_attention_title')
-    : t('data_issues.reconciliation.table.empty_all_title'),
-}));
+const emptyDescription = computed<string>(() => (view === 'attention'
+  ? t('data_issues.reconciliation.table.empty_attention')
+  : t('data_issues.reconciliation.table.empty_all')));
 </script>
 
 <template>
@@ -209,12 +201,6 @@ const empty = computed<{ description: string; label: string }>(() => ({
         v-if="row.kind === 'bucket'"
         class="flex items-center gap-2 min-w-0"
       >
-        <RuiIcon
-          :name="displayStatusIcon(displayStatus(row.bucket.status))"
-          size="16"
-          class="shrink-0"
-          :class="displayStatusColor(displayStatus(row.bucket.status))"
-        />
         <AssetDetails :asset="row.bucket.asset" />
         <span
           v-if="row.bucket.protocol"
@@ -274,6 +260,7 @@ const empty = computed<{ description: string; label: string }>(() => ({
       <ReconciliationAmount
         v-if="row.kind === 'bucket' && row.bucket.status === 'mismatch'"
         :amount="amountsOf(row).delta"
+        :asset="row.bucket.asset"
         class="font-medium text-rui-error"
         signed
       />
@@ -296,7 +283,7 @@ const empty = computed<{ description: string; label: string }>(() => ({
 
     <template #no-data>
       <div class="py-4 text-rui-text-secondary text-sm">
-        {{ empty.description }}
+        {{ emptyDescription }}
       </div>
     </template>
   </RuiDataTable>

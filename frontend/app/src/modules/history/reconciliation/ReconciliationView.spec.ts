@@ -6,6 +6,8 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRouter } from 'vue-router';
+import { createStatusError } from '@/modules/core/api/response-handlers';
+import { useDataIssuesAutoReload } from '@/modules/history/data-issues/use-data-issues-auto-reload';
 import ReconciliationView from '@/modules/history/reconciliation/ReconciliationView.vue';
 import { useBucketReconciliationStore } from '@/modules/history/reconciliation/use-bucket-reconciliation-store';
 import { createRuiPlugin } from '@/plugins/rui';
@@ -124,5 +126,73 @@ describe('reconciliation view freshness', () => {
 
     expect(wrapper.get('[data-testid="reconciliation-table"]').text()).toContain('Kraken 1');
     expect(wrapper.find('[data-testid="reconciliation-nothing-attention"]').exists()).toBe(false);
+  });
+});
+
+describe('reconciliation view against a backend without the accounting update', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    await useRouter().replace({ query: {} });
+  });
+
+  it('should explain that the report is unavailable instead of offering a retry or a check', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    fetchSummary.mockRejectedValue(createStatusError(404, 'Historical balance reconciliation is disabled', {
+      cause: 'not_found',
+      message: 'Historical balance reconciliation is disabled',
+      result: null,
+    }));
+
+    const wrapper = mount(ReconciliationView, {
+      global: {
+        plugins: [pinia],
+        stubs: {
+          DataIssuesTabs: true,
+          TablePageLayout: { template: '<main><slot /></main>' },
+        },
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="reconciliation-unavailable"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="reconciliation-summary-error"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="reconciliation-check-now"]').exists()).toBe(false);
+  });
+});
+
+describe('reconciliation view default', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    fetchAccount.mockResolvedValue(undefined);
+    await useRouter().replace({ query: {} });
+  });
+
+  it('should stay on needs attention when a refresh clears the last mismatch', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const mismatch: StatusCounts = { blocked: 0, mismatch: 1, notCompared: 0, pending: 0, reconciled: 0 };
+    fetchSummary
+      .mockResolvedValueOnce({ ...report(false), accounts: [{ ...report(false).accounts[0], counts: mismatch }], totals: mismatch })
+      .mockResolvedValue(report(false));
+
+    const wrapper = mount(ReconciliationView, {
+      global: {
+        plugins: [pinia, createRuiPlugin({})],
+        stubs: {
+          DataIssuesTabs: true,
+          ReconciliationTable: true,
+          TablePageLayout: { template: '<main><slot /></main>' },
+        },
+      },
+    });
+    await flushPromises();
+    expect(wrapper.find('[data-testid="reconciliation-nothing-attention"]').exists()).toBe(false);
+
+    const [[reload]] = vi.mocked(useDataIssuesAutoReload).mock.calls;
+    await reload();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="reconciliation-nothing-attention"]').exists()).toBe(true);
   });
 });

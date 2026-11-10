@@ -121,13 +121,6 @@ export function statusFilterFor(view: ReconciliationView): BucketStatus[] | unde
   return view === 'attention' ? ['mismatch', 'blocked'] : undefined;
 }
 
-/**
- * The accounts the current view lists, most urgent first.
- *
- * @remarks
- * An account with nothing needing attention is absent from the Needs-attention view entirely, not
- * rendered with an empty list. Its counts still sit in the footer.
- */
 /** Mismatches come before stopped processing, then accounts with nothing needing attention. */
 function accountUrgency(account: ReconciliationAccount): number {
   if (account.counts.mismatch > 0)
@@ -135,6 +128,13 @@ function accountUrgency(account: ReconciliationAccount): number {
   return account.counts.blocked > 0 ? 1 : 2;
 }
 
+/**
+ * The accounts the current view lists, most urgent first.
+ *
+ * @remarks
+ * An account with nothing needing attention is absent from the Needs-attention view entirely, not
+ * rendered with an empty list. Its counts still sit in the footer.
+ */
 export function visibleAccounts(accounts: ReconciliationAccount[], view: ReconciliationView): ReconciliationAccount[] {
   const rows = accounts.filter(account => view === 'all'
     || account.counts.mismatch + account.counts.blocked > 0);

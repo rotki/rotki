@@ -38,22 +38,29 @@ const statusColor = computed<string>(() => displayStatusColor(get(status)));
 const explanationKey = computed<MessageKey>(() => reasonLabel(bucket));
 
 const comparedAt = computed<number | null>(() => get(amounts).comparedAt);
+/** Shown only without a saved comparison: a comparison's observation is as old as the comparison. */
 const observedAt = computed<number | null>(() => get(amounts).observedAt);
 
-/** The event route is kept even when the issue link is missing or dismissed. */
+/**
+ * The stopping event in the events view, kept even when the issue link is missing or dismissed.
+ *
+ * @remarks
+ * The events view pages to an event only through its group, so a stop whose event was deleted
+ * (null group) gets no link rather than one that lands on an unfiltered list.
+ */
 const eventRoute = computed<RouteLocationRaw | undefined>(() => {
   const { stop } = bucket;
-  if (stop === null)
+  if (!stop?.groupIdentifier)
     return undefined;
 
-  const query: Record<string, string> = {
-    highlightedNegativeBalanceEvent: String(stop.eventIdentifier),
-    asset: bucket.asset,
+  return {
+    name: '/history/events/',
+    query: {
+      asset: bucket.asset,
+      highlightedNegativeBalanceEvent: String(stop.eventIdentifier),
+      targetGroupIdentifier: stop.groupIdentifier,
+    },
   };
-  if (stop.groupIdentifier)
-    query.targetGroupIdentifier = stop.groupIdentifier;
-
-  return { name: '/history/events/', query };
 });
 
 /**
@@ -125,7 +132,7 @@ function openIssue(): void {
       </i18n-t>
     </div>
     <div
-      v-if="observedAt !== null"
+      v-else-if="observedAt !== null"
       class="text-xs text-rui-text-disabled"
     >
       <i18n-t
@@ -166,10 +173,16 @@ function openIssue(): void {
       <RouterLink
         v-if="eventRoute"
         :to="eventRoute"
-        class="text-sm text-rui-primary hover:underline"
         data-testid="reconciliation-view-event"
       >
-        {{ t('data_issues.reconciliation.action.view_event') }}
+        <RuiButton
+          size="sm"
+          variant="text"
+          color="primary"
+          tabindex="-1"
+        >
+          {{ t('data_issues.reconciliation.action.view_event') }}
+        </RuiButton>
       </RouterLink>
       <span
         v-if="bucket.status === 'mismatch' && bucket.issueId === null"

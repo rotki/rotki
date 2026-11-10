@@ -14,7 +14,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <RuiTooltip
-    v-if="disabledReason"
+    :disabled="!disabledReason"
     :open-delay="300"
   >
     <template #activator>
@@ -35,17 +35,4 @@ const { t } = useI18n({ useScope: 'global' });
     </template>
     {{ disabledReason }}
   </RuiTooltip>
-  <RuiButton
-    v-else
-    color="primary"
-    :loading="detecting"
-    :disabled="disabled"
-    data-testid="reconciliation-check-now"
-    @click="emit('check')"
-  >
-    <template #prepend>
-      <RuiIcon name="lu-scale" />
-    </template>
-    {{ t('data_issues.reconciliation.check.action') }}
-  </RuiButton>
 </template>

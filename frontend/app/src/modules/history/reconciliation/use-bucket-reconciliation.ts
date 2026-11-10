@@ -5,7 +5,9 @@ import type {
   ReconciliationBucket,
   StatusCounts,
 } from '@/modules/history/reconciliation/schemas';
+import { FailureCause } from '@/modules/core/api/failure-cause';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
+import { failureCauseOf } from '@/modules/core/api/request-result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import {
   ACCOUNT_PAGE_SIZE,
@@ -47,6 +49,7 @@ interface UseBucketReconciliationReturn {
   retryAccount: (account: ReconciliationAccount, statuses?: BucketStatus[]) => Promise<void>;
   summaryFailed: Ref<boolean>;
   summaryLoading: Ref<boolean>;
+  summaryUnavailable: Ref<boolean>;
   totals: Ref<StatusCounts>;
 }
 
@@ -60,7 +63,7 @@ interface UseBucketReconciliationReturn {
 export function useBucketReconciliation(): UseBucketReconciliationReturn {
   const api = useBucketReconciliationApi();
   const store = useBucketReconciliationStore();
-  const { attention, summaryFailed, summaryLoading, totals } = storeToRefs(store);
+  const { attention, summaryFailed, summaryLoading, summaryUnavailable, totals } = storeToRefs(store);
   const accounts = computed<ReconciliationAccount[]>(() => get(store.summary)?.accounts ?? []);
 
   async function refreshSummary(): Promise<void> {
@@ -75,7 +78,10 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
     catch (error: unknown) {
       if (request !== summaryRequestSeq || isRequestCancellation(error))
         return;
-      store.markSummaryFailed();
+      if (failureCauseOf(error) === FailureCause.NOT_FOUND)
+        store.markSummaryUnavailable();
+      else
+        store.markSummaryFailed();
     }
     finally {
       if (request === summaryRequestSeq)
@@ -194,7 +200,11 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
         store.setAccountState(key, loadedAccountState(base, response, !!options.append, offset));
     }
     catch (error: unknown) {
-      if (isLatestAccountRequest(key, request) && !isRequestCancellation(error))
+      if (!isLatestAccountRequest(key, request) || isRequestCancellation(error))
+        return;
+      if (failureCauseOf(error) === FailureCause.NOT_FOUND)
+        store.markSummaryUnavailable();
+      else
         store.setAccountState(key, failedAccountState(base, error));
     }
   }
@@ -254,6 +264,7 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
     retryAccount,
     summaryFailed,
     summaryLoading,
+    summaryUnavailable,
     totals,
   };
 }

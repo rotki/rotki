@@ -40,6 +40,14 @@ export const useBucketReconciliationStore = defineStore('history/reconciliation'
   const summaryLoading = ref<boolean>(false);
   /** The last refresh failed; the previous summary, if any, is still what is shown. */
   const summaryFailed = ref<boolean>(false);
+  /**
+   * The backend does not serve the report, because it runs without the accounting update.
+   *
+   * @remarks
+   * The frontend flag is fixed when the app is built and the backend flag is read when the backend
+   * starts, so a build can show this page against a backend that refuses it. A retry cannot help.
+   */
+  const summaryUnavailable = ref<boolean>(false);
   const accounts = ref<Record<string, AccountDetailState>>({});
 
   const totals = computed<StatusCounts>(() => get(summary)?.totals ?? EMPTY_STATUS_COUNTS);
@@ -50,6 +58,7 @@ export const useBucketReconciliationStore = defineStore('history/reconciliation'
     set(summary, response);
     set(summaryLoaded, true);
     set(summaryFailed, false);
+    set(summaryUnavailable, false);
   }
 
   function setSummaryLoading(loading: boolean): void {
@@ -58,6 +67,12 @@ export const useBucketReconciliationStore = defineStore('history/reconciliation'
 
   function markSummaryFailed(): void {
     set(summaryFailed, true);
+  }
+
+  function markSummaryUnavailable(): void {
+    set(summary, undefined);
+    set(summaryUnavailable, true);
+    set(accounts, {});
   }
 
   function accountState(key: string): AccountDetailState | undefined {
@@ -79,6 +94,7 @@ export const useBucketReconciliationStore = defineStore('history/reconciliation'
     set(summaryLoaded, false);
     set(summaryLoading, false);
     set(summaryFailed, false);
+    set(summaryUnavailable, false);
     set(accounts, {});
   }
 
@@ -87,6 +103,7 @@ export const useBucketReconciliationStore = defineStore('history/reconciliation'
     accounts,
     attention,
     markSummaryFailed,
+    markSummaryUnavailable,
     removeAccountState,
     reset,
     setAccountState,
@@ -96,6 +113,7 @@ export const useBucketReconciliationStore = defineStore('history/reconciliation'
     summaryFailed,
     summaryLoaded,
     summaryLoading,
+    summaryUnavailable,
     totals,
   };
 });

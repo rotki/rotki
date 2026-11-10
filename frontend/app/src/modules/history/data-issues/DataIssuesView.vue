@@ -314,19 +314,11 @@ onMounted(async () => {
     <RuiAlert
       v-if="deepLinkError"
       type="warning"
+      closeable
       data-testid="data-issues-deep-link-error"
+      @close="clearIssueQuery()"
     >
-      <div class="flex flex-wrap items-center gap-3">
-        <span>{{ deepLinkError }}</span>
-        <RuiButton
-          size="sm"
-          variant="text"
-          color="primary"
-          @click="clearIssueQuery()"
-        >
-          {{ t('common.actions.close') }}
-        </RuiButton>
-      </div>
+      {{ deepLinkError }}
     </RuiAlert>
 
     <NoDataScreen

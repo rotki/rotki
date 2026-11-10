@@ -9,14 +9,20 @@ const { t } = useI18n({ useScope: 'global' });
 const currentRoute = useRouter().currentRoute;
 
 const { actionableCount, refreshSummary: refreshIssuesSummary } = useDataIssuesSummary();
-const { attention, refreshSummary, summaryFailed } = useBucketReconciliation();
+const { attention, refreshSummary, summaryFailed, summaryUnavailable, totals } = useBucketReconciliation();
 
 /**
  * The badge counts the work waiting on each tab: open/unresolved issues on the left, mismatch and
  * blocked balances on the right. The two numbers count different things and are not expected to
  * match.
  */
-const reconciliationCount = computed<number>(() => (get(summaryFailed) ? 0 : get(attention)));
+const reconciliationCount = computed<number>(() =>
+  (get(summaryFailed) || get(summaryUnavailable) ? 0 : get(attention)));
+
+/** Red while a balance mismatches, amber when only stopped processing is waiting. */
+const reconciliationBadgeClass = computed<string>(() => (get(totals).mismatch > 0
+  ? 'bg-rui-error/10 text-rui-error'
+  : 'bg-rui-warning/10 text-rui-warning'));
 
 function tabLink(tab: 'issues' | 'reconciliation'): RouteLocationRaw {
   return {
@@ -70,7 +76,8 @@ onMounted(() => {
         {{ t('data_issues.tabs.reconciliation') }}
         <span
           v-if="reconciliationCount > 0"
-          class="rounded-full bg-rui-error/10 px-1.5 text-xs font-medium text-rui-error tabular-nums"
+          class="rounded-full px-1.5 text-xs font-medium tabular-nums"
+          :class="reconciliationBadgeClass"
           data-testid="data-issues-tab-reconciliation-count"
         >
           {{ reconciliationCount }}
