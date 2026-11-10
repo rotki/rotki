@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`13513` When premium is turned off because the plan's device limit is reached, rotki now points to where you can remove devices you no longer use, both on login and in the notification shown while running.
 * :bug:`-` Morpho Blue collateral, lending positions and debt are now shown on every supported chain and include accrued interest. Previously, Morpho Blue balances were only queried on Base and were reconstructed from historical principal amounts.
 * :bug:`-` Transactions involving a token whose contract fails every details query, such as some spam tokens, are now decoded again instead of staying undecoded forever.
 * :bug:`13418` Logging out now waits for a running premium database restore to finish instead of risking interruption while the local database is being replaced.

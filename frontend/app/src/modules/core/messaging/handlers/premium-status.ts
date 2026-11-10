@@ -1,12 +1,34 @@
 import type { MessageHandler } from '../interfaces';
 import type { PremiumStatusUpdateData } from '../types/shared-types';
-import { NotificationCategory, Severity } from '@rotki/common';
+import { type NotificationAction, NotificationCategory, Severity } from '@rotki/common';
+import { externalLinks } from '@shared/external-links';
 import { createStateWithNotificationHandler } from '@/modules/core/messaging/utils';
 import { usePremium } from '@/modules/premium/use-premium';
+import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
+/** Builds the notification action that opens the docs on managing premium devices. */
+export function createManageDevicesAction(
+  t: ReturnType<typeof useI18n>['t'],
+  openUrl: (url: string) => Promise<void>,
+): NotificationAction {
+  return {
+    action: async () => openUrl(externalLinks.premiumDevices),
+    icon: 'lu-external-link',
+    label: t('notification_messages.premium.inactive.manage_devices'),
+    persist: true,
+  };
+}
+
+/**
+ * Handles premium status changes pushed by the backend's periodic premium check.
+ *
+ * @remarks
+ * The backend sends a `reason` only when the device limit of the premium plan was reached, so a
+ * deactivation carrying one also offers a link to managing the registered devices.
+ */
 export function createPremiumStatusHandler(t: ReturnType<typeof useI18n>['t']): MessageHandler<PremiumStatusUpdateData> {
-  // Capture premium ref at handler creation time (in setup context)
   const premium = usePremium();
+  const { openUrl } = useInterop();
 
   return createStateWithNotificationHandler<PremiumStatusUpdateData, boolean>(
     (data) => {
@@ -27,6 +49,7 @@ export function createPremiumStatusHandler(t: ReturnType<typeof useI18n>['t']): 
       }
       else if (!isPremiumActive && wasPremium) {
         return {
+          ...(reason ? { action: createManageDevicesAction(t, openUrl) } : {}),
           category: NotificationCategory.DEFAULT,
           display: true,
           message: reason ?? (expired

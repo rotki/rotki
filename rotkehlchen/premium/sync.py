@@ -675,9 +675,12 @@ class PremiumSyncManager(LockableQueryMixIn):
                     db=self.data.db,
                 )
             except (PremiumAuthenticationError, PremiumPermissionError, RemoteError) as e:
-                message = (
-                    f'Could not authenticate with the rotkehlchen server with '
-                    f'the API keys found in the Database. {e}'
+                message = self.maybe_add_device_limit_link(
+                    exception=e,
+                    msg=(
+                        f'Could not authenticate with the rotkehlchen server with '
+                        f'the API keys found in the Database. {e}'
+                    ),
                 )
                 log.error(message)
                 raise PremiumAuthenticationError(message) from e
