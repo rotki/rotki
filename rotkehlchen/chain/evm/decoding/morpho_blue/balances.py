@@ -1,9 +1,8 @@
 import logging
 from collections import defaultdict
-from json import JSONDecodeError
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Final, NamedTuple
 
-import requests
+from eth_utils import is_hexstr
 
 from rotkehlchen.accounting.structures.balance import BalanceSheet
 from rotkehlchen.assets.utils import get_or_create_evm_token, token_normalized_value
@@ -12,12 +11,10 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.morpho_blue.constants import (
     CPT_MORPHO_BLUE,
-    MORPHO_API_BASE_URL,
     MORPHO_BLUE_ABI,
     MORPHO_BLUE_ADDRESSES,
     MORPHO_IRM_ABI,
 )
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -32,10 +29,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-MARKET_ID = 'market_id'
-WAD = 10**18
-VIRTUAL_ASSETS = 1
-VIRTUAL_SHARES = 10**6
+MARKET_ID: Final = 'market_id'
+WAD: Final = 10**18
+VIRTUAL_ASSETS: Final = 1
+VIRTUAL_SHARES: Final = 10**6
 
 
 class MarketState(NamedTuple):
@@ -77,11 +74,11 @@ def _accrue_market_state(
 ) -> MarketState:
     """Return Morpho's expected market state after accruing interest at block_timestamp."""
     if (
-            (elapsed := block_timestamp - state.last_update) <= 0 or
-            state.total_borrow_assets == 0 or
-            borrow_rate == 0
+            (elapsed := block_timestamp - state.last_update) <= 0
     ):
         return state
+    if state.total_borrow_assets == 0 or borrow_rate == 0:
+        return state._replace(last_update=block_timestamp)
 
     first_term = borrow_rate * elapsed
     second_term = first_term * first_term // (2 * WAD)
@@ -101,7 +98,7 @@ def _accrue_market_state(
         total_supply_shares=total_supply_shares,
         total_borrow_assets=state.total_borrow_assets + interest,
         total_borrow_shares=state.total_borrow_shares,
-        last_update=state.last_update,
+        last_update=block_timestamp,
         fee=state.fee,
     )
 
@@ -127,57 +124,6 @@ class MorphoBlueBalances(ProtocolWithBalance):
         )
         self.irm_contract = EvmContract(address=ZERO_ADDRESS, abi=MORPHO_IRM_ABI)
 
-    def _query_api_market_ids(self, address: ChecksumEvmAddress) -> set[str]:
-        """Discover active markets when the local decoded history has none.
-
-        This fallback makes first-time imports and accounts with incomplete explorer history work.
-        It is deliberately not called for addresses whose markets were found locally.
-        """
-        market_ids: set[str] = set()
-        cursor = None
-        while True:
-            params = {
-                'active_only': 'true',
-                'chain_ids': str(self.evm_inquirer.chain_id.value),
-                'limit': '100',
-            }
-            if cursor is not None:
-                params['cursor'] = cursor
-
-            try:
-                response = requests.get(
-                    url=f'{MORPHO_API_BASE_URL}/users/{address}/positions',
-                    params=params,
-                    timeout=CachedSettings().get_timeout_tuple(),
-                )
-                response.raise_for_status()
-                payload = response.json()
-                entries = payload['data']
-                cursor = payload.get('cursor')
-            except (requests.RequestException, JSONDecodeError, KeyError, TypeError) as e:
-                log.error(
-                    'Failed to discover Morpho Blue markets for %s on %s due to %s',
-                    address,
-                    self.evm_inquirer.chain_name,
-                    e,
-                )
-                break
-
-            for entry in entries:
-                if (
-                        isinstance(entry, dict) and
-                        entry.get('chain_id') == self.evm_inquirer.chain_id.value and
-                        isinstance(market_id := entry.get('market_id'), str) and
-                        market_id.startswith('0x') and
-                        len(market_id) == 66
-                ):
-                    market_ids.add(market_id)
-
-            if cursor is None:
-                break
-
-        return market_ids
-
     def _get_address_markets(
             self,
             addresses: list[ChecksumEvmAddress],
@@ -195,13 +141,18 @@ class MorphoBlueBalances(ProtocolWithBalance):
             for event in events:
                 if (
                         event.extra_data is not None and
-                        isinstance(market_id := event.extra_data.get(MARKET_ID), str)
+                        isinstance(market_id := event.extra_data.get(MARKET_ID), str) and
+                        len(market_id) == 66 and
+                        is_hexstr(market_id)
                 ):
                     address_to_markets[address].add(market_id)
-
-        for address in addresses:
-            if len(address_to_markets[address]) == 0:
-                address_to_markets[address].update(self._query_api_market_ids(address=address))
+                else:
+                    log.error(
+                        'Skipping Morpho Blue event %s during balance query due to missing %s '
+                        'in extra data',
+                        event.identifier,
+                        MARKET_ID,
+                    )
 
         return {address: markets for address, markets in address_to_markets.items() if markets}
 
@@ -250,32 +201,36 @@ class MorphoBlueBalances(ProtocolWithBalance):
             log.error('Failed to query Morpho Blue positions due to %s', e)
             return None
 
-        market_params = {
-            market_id: MarketParams(*self.morpho_contract.decode(
-                result=outputs[idx],
-                method_name='idToMarketParams',
-                arguments=[market_id],
-            ))
-            for idx, market_id in enumerate(market_ids)
-        }
-        state_offset = len(market_ids)
-        market_states = {
-            market_id: MarketState(*self.morpho_contract.decode(
-                result=outputs[state_offset + idx],
-                method_name='market',
-                arguments=[market_id],
-            ))
-            for idx, market_id in enumerate(market_ids)
-        }
-        position_offset = state_offset * 2
-        positions = {
-            pair: Position(*self.morpho_contract.decode(
-                result=outputs[position_offset + idx],
-                method_name='position',
-                arguments=[pair[1], pair[0]],
-            ))
-            for idx, pair in enumerate(address_market_pairs)
-        }
+        try:
+            market_params = {
+                market_id: MarketParams(*self.morpho_contract.decode(
+                    result=outputs[idx],
+                    method_name='idToMarketParams',
+                    arguments=[market_id],
+                ))
+                for idx, market_id in enumerate(market_ids)
+            }
+            state_offset = len(market_ids)
+            market_states = {
+                market_id: MarketState(*self.morpho_contract.decode(
+                    result=outputs[state_offset + idx],
+                    method_name='market',
+                    arguments=[market_id],
+                ))
+                for idx, market_id in enumerate(market_ids)
+            }
+            position_offset = state_offset * 2
+            positions = {
+                pair: Position(*self.morpho_contract.decode(
+                    result=outputs[position_offset + idx],
+                    method_name='position',
+                    arguments=[pair[1], pair[0]],
+                ))
+                for idx, pair in enumerate(address_market_pairs)
+            }
+        except DeserializationError as e:
+            log.error('Failed to decode Morpho Blue positions due to %s', e)
+            return None
 
         accruing_markets = [
             market_id for market_id in market_ids
@@ -314,25 +269,35 @@ class MorphoBlueBalances(ProtocolWithBalance):
                 )
                 continue
 
-            market_states[market_id] = _accrue_market_state(
-                state=market_states[market_id],
-                borrow_rate=self.irm_contract.decode(
+            try:
+                borrow_rate = self.irm_contract.decode(
                     result=rate_outputs[idx][1],
                     method_name='borrowRateView',
                     arguments=[market_params[market_id], market_states[market_id]],
-                )[0],
+                )[0]
+            except DeserializationError as e:
+                log.error('Failed to decode Morpho Blue borrow rate for market %s due to %s', market_id, e)  # noqa: E501
+                continue
+
+            market_states[market_id] = _accrue_market_state(
+                state=market_states[market_id],
+                borrow_rate=borrow_rate,
                 block_timestamp=block_timestamp,
             )
 
         return market_params, market_states, positions
 
-    def _get_token(self, address: ChecksumEvmAddress) -> EvmToken:
-        return get_or_create_evm_token(
-            userdb=self.evm_inquirer.database,
-            evm_address=address,
-            chain_id=self.evm_inquirer.chain_id,
-            evm_inquirer=self.evm_inquirer,
-        )
+    def _get_token(self, address: ChecksumEvmAddress) -> EvmToken | None:
+        try:
+            return get_or_create_evm_token(
+                userdb=self.evm_inquirer.database,
+                evm_address=address,
+                chain_id=self.evm_inquirer.chain_id,
+                evm_inquirer=self.evm_inquirer,
+            )
+        except (DeserializationError, NotERC20Conformant, NotERC721Conformant) as e:
+            log.error('Failed to resolve Morpho Blue token %s due to %s', address, e)
+            return None
 
     def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         balances: BalancesSheetType = defaultdict(BalanceSheet)
@@ -346,56 +311,57 @@ class MorphoBlueBalances(ProtocolWithBalance):
         assets = []
         liabilities = []
         tokens: dict[ChecksumEvmAddress, EvmToken] = {}
-        try:
-            for (address, market_id), position in positions.items():
-                params, state = market_params[market_id], market_states[market_id]
-                if position.collateral != 0:
-                    if (collateral_token := tokens.get(params.collateral_token)) is None:
-                        tokens[params.collateral_token] = collateral_token = self._get_token(
-                            address=params.collateral_token,
-                        )
+        failed_tokens: set[ChecksumEvmAddress] = set()
+        for (address, market_id), position in positions.items():
+            params, state = market_params[market_id], market_states[market_id]
+            if position.collateral != 0 and params.collateral_token not in failed_tokens:
+                if (collateral_token := tokens.get(params.collateral_token)) is None:
+                    if (collateral_token := self._get_token(params.collateral_token)) is None:
+                        failed_tokens.add(params.collateral_token)
+                    else:
+                        tokens[params.collateral_token] = collateral_token
+                if collateral_token is not None:
                     assets.append((
                         address,
                         collateral_token,
                         token_normalized_value(position.collateral, collateral_token),
                     ))
-                if position.supply_shares != 0:
-                    if (loan_token := tokens.get(params.loan_token)) is None:
-                        tokens[params.loan_token] = loan_token = self._get_token(
-                            address=params.loan_token,
-                        )
-                    assets.append((
-                        address,
-                        loan_token,
-                        token_normalized_value(
-                            _assets_down(
-                                shares=position.supply_shares,
-                                total_assets=state.total_supply_assets,
-                                total_shares=state.total_supply_shares,
-                            ),
-                            loan_token,
+            loan_token = tokens.get(params.loan_token)
+            if (
+                    (position.supply_shares != 0 or position.borrow_shares != 0) and
+                    params.loan_token not in failed_tokens and
+                    loan_token is None
+            ):
+                if (loan_token := self._get_token(params.loan_token)) is None:
+                    failed_tokens.add(params.loan_token)
+                else:
+                    tokens[params.loan_token] = loan_token
+            if position.supply_shares != 0 and loan_token is not None:
+                assets.append((
+                    address,
+                    loan_token,
+                    token_normalized_value(
+                        _assets_down(
+                            shares=position.supply_shares,
+                            total_assets=state.total_supply_assets,
+                            total_shares=state.total_supply_shares,
                         ),
-                    ))
-                if position.borrow_shares != 0:
-                    if (loan_token := tokens.get(params.loan_token)) is None:
-                        tokens[params.loan_token] = loan_token = self._get_token(
-                            address=params.loan_token,
-                        )
-                    liabilities.append((
-                        address,
                         loan_token,
-                        token_normalized_value(
-                            _assets_up(
-                                shares=position.borrow_shares,
-                                total_assets=state.total_borrow_assets,
-                                total_shares=state.total_borrow_shares,
-                            ),
-                            loan_token,
+                    ),
+                ))
+            if position.borrow_shares != 0 and loan_token is not None:
+                liabilities.append((
+                    address,
+                    loan_token,
+                    token_normalized_value(
+                        _assets_up(
+                            shares=position.borrow_shares,
+                            total_assets=state.total_borrow_assets,
+                            total_shares=state.total_borrow_shares,
                         ),
-                    ))
-        except (DeserializationError, NotERC20Conformant, NotERC721Conformant) as e:
-            log.error('Failed to resolve tokens for Morpho Blue positions due to %s', e)
-            return balances
+                        loan_token,
+                    ),
+                ))
 
         self._add_priced_balances(balances=balances, amounts=assets)
         self._add_priced_balances(

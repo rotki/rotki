@@ -22,8 +22,7 @@ MORPHO_BLUE_ADDRESSES: Final = {
     ChainID.MONAD: string_to_evm_address('0xD5D960E8C380B724a48AC59E2DfF1b2CB4a1eAee'),
     ChainID.OPTIMISM: string_to_evm_address('0xce95AfbB8EA029495c66020883F87aaE8864AF92'),
 }
-MORPHO_API_BASE_URL: Final = 'https://api.morpho.org/v0/blue'
-MORPHO_BLUE_ABI: ABI = [
+MORPHO_BLUE_ABI: Final[ABI] = [
     {
         'inputs': [
             {'name': 'id', 'type': 'bytes32'},
@@ -66,7 +65,7 @@ MORPHO_BLUE_ABI: ABI = [
         'type': 'function',
     },
 ]
-MORPHO_IRM_ABI: ABI = [{
+MORPHO_IRM_ABI: Final[ABI] = [{
     'inputs': [
         {
             'components': [

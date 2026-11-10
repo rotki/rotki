@@ -74,8 +74,10 @@ from rotkehlchen.chain.evm.decoding.giveth.constants import CPT_GIVETH
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.morpho_blue.balances import (
+    MarketParams,
     MarketState,
     MorphoBlueBalances,
+    Position,
     _accrue_market_state,
 )
 from rotkehlchen.chain.evm.decoding.morpho_blue.constants import (
@@ -1719,7 +1721,7 @@ def test_morpho_blue_interest_accrual() -> None:
         total_supply_shares=3020081,
         total_borrow_assets=1105166,
         total_borrow_shares=1500000,
-        last_update=1000,
+        last_update=2000,
         fee=10**17,
     )
 
@@ -1727,6 +1729,67 @@ def test_morpho_blue_interest_accrual() -> None:
 def test_morpho_blue_registered_on_supported_chains() -> None:
     for chain_id in MORPHO_BLUE_ADDRESSES:
         assert MorphoBlueBalances in CHAIN_TO_BALANCE_PROTOCOLS[chain_id]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+def test_morpho_blue_token_failure_keeps_other_balances(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
+    """A malformed token in one side of a market must not hide its other balances."""
+    morpho_balances = MorphoBlueBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=ethereum_transaction_decoder,
+    )
+    usdc = A_USDC.resolve_to_evm_token()
+    bad_token_address = make_evm_address()
+    market_id = 'market'
+    with (
+        patch.object(
+            morpho_balances,
+            '_get_address_markets',
+            return_value={(user_address := ethereum_accounts[0]): {market_id}},
+        ),
+        patch.object(
+            morpho_balances,
+            '_query_contract_data',
+            return_value=(
+                {market_id: MarketParams(
+                    loan_token=usdc.evm_address,
+                    collateral_token=bad_token_address,
+                    oracle=make_evm_address(),
+                    irm=make_evm_address(),
+                    lltv=0,
+                )},
+                {market_id: MarketState(
+                    total_supply_assets=10**6,
+                    total_supply_shares=10**6,
+                    total_borrow_assets=0,
+                    total_borrow_shares=0,
+                    last_update=0,
+                    fee=0,
+                )},
+                {(user_address, market_id): Position(
+                    supply_shares=10**6,
+                    borrow_shares=0,
+                    collateral=1,
+                )},
+            ),
+        ),
+        patch.object(
+            morpho_balances,
+            '_get_token',
+            side_effect=lambda address: None if address == bad_token_address else usdc,
+        ),
+    ):
+        balances = morpho_balances.query_balances(addresses=ethereum_accounts)
+
+    assert balances[user_address].assets[usdc][CPT_MORPHO_BLUE] == Balance(
+        amount=FVal('0.5'),
+        value=FVal('0.5') * CURRENT_PRICE_MOCK,
+    )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1738,11 +1801,35 @@ def test_morpho_blue_ethereum_balances(
         inquirer: Inquirer,  # pylint: disable=unused-argument
 ) -> None:
     """Regression test for an Ethereum loop. Amounts deliberately remain time-independent."""
+    collateral = Asset('eip155:1/erc20:0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0')
+    with ethereum_inquirer.database.conn.write_ctx() as write_cursor:
+        DBHistoryEvents(ethereum_inquirer.database).add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(0),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                asset=collateral,
+                amount=ONE,
+                location_label=(user_address := ethereum_accounts[0]),
+                counterparty=CPT_MORPHO_BLUE,
+                address=MORPHO_BLUE_ADDRESSES[ChainID.ETHEREUM],
+                extra_data={
+                    'market_id': (
+                        '0xb374528d44b6ab6e0cecc87e0481f45d'
+                        '892f38baec90c1d318851969ec14ea5f'
+                    ),
+                },
+            ),
+        )
+
     user_balance = MorphoBlueBalances(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=ethereum_transaction_decoder,
-    ).query_balances(addresses=ethereum_accounts)[ethereum_accounts[0]]
-    collateral = Asset('eip155:1/erc20:0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0')
+    ).query_balances(addresses=ethereum_accounts)[user_address]
     borrowed = Asset('eip155:1/erc20:0xdC035D45d973E3EC169d2276DDab16f1e407384F')
     assert user_balance.assets[collateral][CPT_MORPHO_BLUE].amount > ZERO
     assert user_balance.liabilities[borrowed][CPT_MORPHO_BLUE].amount > ZERO
