@@ -131,6 +131,31 @@ describe('reconciliation status cell', () => {
     expect(wrapper.find('[data-testid="reconciliation-view-event"]').exists()).toBe(false);
   });
 
+  it('should explain a blocked row by its stop, without the observation time that does not unblock it', () => {
+    const wrapper = mountCell(bucket({
+      issueId: 7,
+      observedAt: 1_700_000_000,
+      status: 'blocked',
+      stop: {
+        derivedBalanceBeforeEvent: bigNumberify('1'),
+        eventIdentifier: 1234,
+        eventTimestamp: 1_700_000_000_000,
+        groupIdentifier: 'group',
+        negativeAmount: bigNumberify('-2'),
+      },
+    }));
+
+    const keypaths = wrapper.findAll('i18n-t-stub').map(element => element.attributes('keypath'));
+    expect(keypaths).toContain('data_issues.reconciliation.reason.blocked');
+    expect(keypaths).not.toContain('data_issues.reconciliation.observed_at');
+  });
+
+  it('should explain a blocked row without stop details in a sentence that needs none', () => {
+    const wrapper = mountCell(bucket({ status: 'blocked' }));
+
+    expect(wrapper.text()).toContain('data_issues.reconciliation.reason.blocked_without_stop');
+  });
+
   it('should show only the comparison time for a row with a saved comparison', () => {
     const wrapper = mountCell(bucket({
       check: {

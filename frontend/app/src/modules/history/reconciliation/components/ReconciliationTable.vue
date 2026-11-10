@@ -2,7 +2,9 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { ReconciliationAccount, ReconciliationBucket } from '@/modules/history/reconciliation/schemas';
 import type { AccountDetailState } from '@/modules/history/reconciliation/use-bucket-reconciliation-store';
+import { toHumanReadable } from '@rotki/common';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
 import { MAX_ACCOUNT_BUCKETS } from '@/modules/history/reconciliation/api/use-bucket-reconciliation-api';
 import ReconciliationAccountRow from '@/modules/history/reconciliation/components/ReconciliationAccountRow.vue';
 import ReconciliationAmount from '@/modules/history/reconciliation/components/ReconciliationAmount.vue';
@@ -58,6 +60,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const { getBaseCounterpartyData } = useHistoryEventCounterpartyMappings();
 
 /** Account keys the user opened. Rows are fetched only when an account lands here. */
 const expandedKeys = ref<string[]>([]);
@@ -153,12 +156,17 @@ function onCollapsedUpdate(collapsed: Row[]): void {
 }
 
 const cols = computed<DataTableColumn<Row>[]>(() => [
-  { class: 'min-w-48', key: 'asset', label: t('common.asset') },
-  { align: 'end', class: 'text-no-wrap', key: 'fromHistory', label: t('data_issues.reconciliation.table.from_history') },
-  { align: 'end', class: 'text-no-wrap', key: 'onChain', label: t('data_issues.reconciliation.table.on_chain') },
-  { align: 'end', class: 'text-no-wrap', key: 'difference', label: t('data_issues.reconciliation.table.difference') },
-  { class: 'min-w-72 w-96', key: 'status', label: t('data_issues.reconciliation.table.status') },
+  { class: 'min-w-40 w-[22%]', key: 'asset', label: t('common.asset') },
+  { align: 'end', class: 'text-no-wrap w-[11%]', key: 'fromHistory', label: t('data_issues.reconciliation.table.from_history') },
+  { align: 'end', class: 'text-no-wrap w-[11%]', key: 'onChain', label: t('data_issues.reconciliation.table.on_chain') },
+  { align: 'end', class: 'text-no-wrap w-[10%]', key: 'difference', label: t('data_issues.reconciliation.table.difference') },
+  { class: 'min-w-80 w-[46%]', key: 'status', label: t('data_issues.reconciliation.table.status') },
 ]);
+
+/** The protocol's display name, at the size of the line it sits in rather than the badge's own. */
+function protocolLabel(protocol: string): string {
+  return getBaseCounterpartyData(protocol)?.label ?? toHumanReadable(protocol, 'capitalize');
+}
 
 function amountsOf(row: BucketRow): ReturnType<typeof amountsFor> {
   return amountsFor(row.bucket);
@@ -177,6 +185,8 @@ const emptyDescription = computed<string>(() => (view === 'attention'
     group="accountKey"
     :collapsed="collapsedRows"
     row-attr="key"
+    item-class="bg-rui-grey-50 dark:bg-white/[0.03]"
+    outlined
     dense
     hide-pagination
     data-testid="reconciliation-table"
@@ -199,15 +209,21 @@ const emptyDescription = computed<string>(() => (view === 'attention'
     <template #item.asset="{ row }">
       <div
         v-if="row.kind === 'bucket'"
-        class="flex items-center gap-2 min-w-0"
+        class="flex flex-col gap-1 min-w-0 py-1"
       >
         <AssetDetails :asset="row.bucket.asset" />
-        <span
+        <div
           v-if="row.bucket.protocol"
-          class="text-rui-text-secondary flex items-center min-w-0"
+          class="flex items-center gap-1.5 pl-13 -mt-1 text-xs text-rui-text-secondary whitespace-nowrap"
+          data-testid="reconciliation-bucket-protocol"
         >
-          <CounterpartyDisplay :counterparty="row.bucket.protocol" />
-        </span>
+          <CounterpartyDisplay
+            :counterparty="row.bucket.protocol"
+            size="14px"
+            icon
+          />
+          <span>{{ t('data_issues.reconciliation.table.protocol_position', { protocol: protocolLabel(row.bucket.protocol) }) }}</span>
+        </div>
       </div>
       <template v-else-if="row.kind === 'more'">
         <RuiButton
@@ -265,7 +281,7 @@ const emptyDescription = computed<string>(() => (view === 'attention'
         signed
       />
       <span
-        v-else
+        v-else-if="row.kind === 'bucket'"
         class="text-rui-text-disabled"
       >
         {{ t('data_issues.reconciliation.no_value') }}

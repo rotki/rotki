@@ -69,71 +69,78 @@ const summaryParts = computed<string[]>(() => {
 <template>
   <td
     :colspan="colspan"
-    class="py-2 px-2"
+    class="py-1.5 px-2 bg-white dark:bg-rui-grey-900"
     data-testid="reconciliation-account-row"
   >
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="flex items-start gap-2">
       <RuiButton
         icon
         variant="text"
         size="sm"
+        class="shrink-0"
         :aria-expanded="isOpen"
         data-testid="reconciliation-account-toggle"
         @click="emit('toggle')"
       >
         <RuiIcon :name="isOpen ? 'lu-chevron-down' : 'lu-chevron-right'" />
       </RuiButton>
-      <span
-        v-if="attentionDotClass"
-        class="size-2 rounded-full shrink-0"
-        :class="attentionDotClass"
-        data-testid="reconciliation-account-attention"
-      />
-      <span class="font-medium">{{ locationName }}</span>
-      <HashLink
-        v-if="account.locationLabel && isChainAccount"
-        :text="account.locationLabel"
-        :location="account.location"
-        reveal-actions
-      />
-      <span
-        v-else-if="account.locationLabel"
-        class="text-rui-text-secondary"
-        data-testid="reconciliation-account-label"
-      >
-        {{ account.locationLabel }}
-      </span>
-      <span
-        v-else
-        class="text-rui-text-secondary text-sm"
-      >
-        {{ t('data_issues.reconciliation.no_account_label') }}
-      </span>
-    </div>
-
-    <div class="flex flex-wrap items-center gap-2 pl-10 text-sm text-rui-text-secondary">
-      <template v-if="loading">
-        <RuiIcon
-          name="lu-loader-circle"
-          size="14"
-          class="animate-spin"
+      <span class="flex w-2 h-7 shrink-0 items-center">
+        <span
+          v-if="attentionDotClass"
+          class="size-2 rounded-full"
+          :class="attentionDotClass"
+          data-testid="reconciliation-account-attention"
         />
-        <span>{{ t('data_issues.reconciliation.loading_balances') }}</span>
-      </template>
-      <FailureStrip
-        v-else-if="error !== undefined"
-        class="grow"
-        :title="t('data_issues.reconciliation.failure.account')"
-        :failure="error"
-        data-testid="reconciliation-account-failure"
-        @retry="emit('retry')"
-      />
-      <span
-        v-else
-        data-testid="reconciliation-account-summary"
-      >
-        {{ summaryParts.join(' · ') }}
       </span>
+      <div class="flex flex-col min-w-0 grow">
+        <div class="flex flex-wrap items-center gap-x-2 min-h-7 text-sm">
+          <span class="font-semibold text-rui-text">{{ locationName }}</span>
+          <HashLink
+            v-if="account.locationLabel && isChainAccount"
+            :text="account.locationLabel"
+            :location="account.location"
+            reveal-actions
+          />
+          <span
+            v-else-if="account.locationLabel"
+            class="text-rui-text-secondary"
+            data-testid="reconciliation-account-label"
+          >
+            {{ account.locationLabel }}
+          </span>
+          <span
+            v-else
+            class="text-rui-text-secondary"
+          >
+            {{ t('data_issues.reconciliation.no_account_label') }}
+          </span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 text-xs leading-5 text-rui-text-secondary">
+          <template v-if="loading">
+            <RuiIcon
+              name="lu-loader-circle"
+              size="14"
+              class="animate-spin"
+            />
+            <span>{{ t('data_issues.reconciliation.loading_balances') }}</span>
+          </template>
+          <FailureStrip
+            v-else-if="error !== undefined"
+            class="grow"
+            :title="t('data_issues.reconciliation.failure.account')"
+            :failure="error"
+            data-testid="reconciliation-account-failure"
+            @retry="emit('retry')"
+          />
+          <span
+            v-else
+            data-testid="reconciliation-account-summary"
+          >
+            {{ summaryParts.join(' · ') }}
+          </span>
+        </div>
+      </div>
     </div>
   </td>
 </template>

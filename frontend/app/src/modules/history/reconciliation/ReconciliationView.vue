@@ -64,7 +64,7 @@ const {
 
       <div
         v-else-if="summaryLoading && !summary"
-        class="rounded-rui-card border border-default p-4"
+        class="rounded-rui-card border border-default bg-white dark:bg-rui-grey-900 p-4"
         data-testid="reconciliation-loading"
       >
         <RuiProgress

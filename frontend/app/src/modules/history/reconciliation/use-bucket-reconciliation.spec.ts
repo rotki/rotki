@@ -191,6 +191,39 @@ describe('useBucketReconciliation', () => {
     expect(useBucketReconciliationStore().accountState(reconciliationAccountKey('ethereum', '0xA'))).toBeUndefined();
   });
 
+  it('should ask for the summary again when an account\'s counts no longer match it', async () => {
+    fetchSummary
+      .mockResolvedValueOnce(response({ accounts: [account({ counts: counts({ mismatch: 1 }) })], totals: counts({ mismatch: 1 }) }))
+      .mockResolvedValueOnce(response({ accounts: [account({ counts: counts({ pending: 1 }) })], totals: counts({ pending: 1 }) }));
+    fetchAccount.mockResolvedValue(account({
+      buckets: [],
+      counts: counts({ pending: 1 }),
+      pagination: { limit: 50, offset: 0, total: 0 },
+    }));
+    const { attention, ensureAccount, refreshSummary } = useBucketReconciliation();
+
+    await refreshSummary();
+    await ensureAccount(account({ counts: counts({ mismatch: 1 }) }), ['mismatch', 'blocked']);
+
+    expect(fetchSummary).toHaveBeenCalledTimes(2);
+    expect(get(attention)).toBe(0);
+  });
+
+  it('should not ask for the summary again when an account agrees with it', async () => {
+    fetchSummary.mockResolvedValueOnce(response({ accounts: [account({ counts: counts({ mismatch: 1 }) })], totals: counts({ mismatch: 1 }) }));
+    fetchAccount.mockResolvedValue(account({
+      buckets: [],
+      counts: counts({ mismatch: 1 }),
+      pagination: { limit: 50, offset: 0, total: 0 },
+    }));
+    const { ensureAccount, refreshSummary } = useBucketReconciliation();
+
+    await refreshSummary();
+    await ensureAccount(account({ counts: counts({ mismatch: 1 }) }));
+
+    expect(fetchSummary).toHaveBeenCalledOnce();
+  });
+
   it('should keep any other account failure whole on the account row', async () => {
     const failure = new Error('boom');
     fetchAccount.mockRejectedValueOnce(failure);

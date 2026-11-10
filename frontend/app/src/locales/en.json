@@ -3147,7 +3147,8 @@
       "observed_at": "On-chain balance observed {time}",
       "reason": {
         "asset_coverage_missing": "The balance query does not cover this asset yet.",
-        "blocked": "History goes negative on {date}, so nothing after it can be compared. Fix that issue first.",
+        "blocked": "Balance drops to {amount} on {date}, so later balances can't be compared. An earlier incoming event is usually missing.",
+        "blocked_without_stop": "Balance processing stopped for this asset, so later balances can't be compared.",
         "derived_history_stale": "Your history changed since the last comparison, so it has to be compared again.",
         "derived_snapshot_changed": "The balance derived from your history changed since the last comparison.",
         "exchange": "Exchange balances are not compared with on-chain queries.",
@@ -3200,6 +3201,7 @@
         "load_more": "Load more balances ({shown} of {total})",
         "loading": "Loading balances…",
         "on_chain": "On chain",
+        "protocol_position": "{protocol} position",
         "status": "Status"
       },
       "unavailable": {

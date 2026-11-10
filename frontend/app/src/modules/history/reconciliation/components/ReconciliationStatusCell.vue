@@ -2,6 +2,7 @@
 import type { RouteLocationRaw } from 'vue-router';
 import type { MessageKey } from '@/message-key';
 import type { ReconciliationBucket } from '@/modules/history/reconciliation/schemas';
+import ReconciliationAmount from '@/modules/history/reconciliation/components/ReconciliationAmount.vue';
 import { reasonLabel, STATUS_LABEL } from '@/modules/history/reconciliation/messages';
 import {
   amountsFor,
@@ -38,7 +39,10 @@ const statusColor = computed<string>(() => displayStatusColor(get(status)));
 const explanationKey = computed<MessageKey>(() => reasonLabel(bucket));
 
 const comparedAt = computed<number | null>(() => get(amounts).comparedAt);
-/** Shown only without a saved comparison: a comparison's observation is as old as the comparison. */
+/**
+ * Shown only for a row with neither a saved comparison nor a stop: a comparison's own time already
+ * dates it, and a blocked row waits on its history, not on a fresher observation.
+ */
 const observedAt = computed<number | null>(() => get(amounts).observedAt);
 
 /**
@@ -100,17 +104,26 @@ function openIssue(): void {
       <span>{{ statusLabel }}</span>
     </div>
 
-    <p class="text-xs text-rui-text-secondary !m-0 max-w-md">
+    <p class="text-xs text-rui-text-secondary !m-0">
       <i18n-t
         v-if="bucket.status === 'blocked' && bucket.stop"
         keypath="data_issues.reconciliation.reason.blocked"
         scope="global"
         tag="span"
+        data-testid="reconciliation-blocked-reason"
       >
+        <template #amount>
+          <ReconciliationAmount
+            :amount="bucket.stop.negativeAmount"
+            :asset="bucket.asset"
+            class="font-medium"
+          />
+        </template>
         <template #date>
           <DateDisplay
             :timestamp="bucket.stop.eventTimestamp"
             milliseconds
+            no-time
           />
         </template>
       </i18n-t>
@@ -132,7 +145,7 @@ function openIssue(): void {
       </i18n-t>
     </div>
     <div
-      v-else-if="observedAt !== null"
+      v-else-if="observedAt !== null && bucket.status !== 'blocked'"
       class="text-xs text-rui-text-disabled"
     >
       <i18n-t
@@ -148,7 +161,7 @@ function openIssue(): void {
 
     <div
       v-if="attention || canMarkSpam"
-      class="flex flex-wrap items-center gap-2 mt-0.5"
+      class="flex flex-wrap items-center gap-1 mt-1 -ml-2"
     >
       <RuiButton
         v-if="bucket.issueId !== null"

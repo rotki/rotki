@@ -29,6 +29,8 @@ import { accountKeyOf } from '@/modules/history/reconciliation/use-reconciliatio
  * an older answer is dropped instead of overwriting newer data.
  */
 let summaryRequestSeq = 0;
+
+const STATUS_KEYS = ['reconciled', 'mismatch', 'blocked', 'pending', 'notCompared'] as const satisfies readonly (keyof StatusCounts)[];
 const accountRequestSeq = new Map<string, number>();
 
 function nextAccountRequest(key: string): number {
@@ -182,6 +184,21 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
     };
   }
 
+  /**
+   * Whether an account's fresh counts disagree with the summary on screen.
+   *
+   * @remarks
+   * A balance query or a check can land between the summary request and the account request. The
+   * header would then promise rows ("1 mismatch") that the account no longer has, so the summary is
+   * asked again rather than left contradicting the rows under it.
+   */
+  function summaryCountsDiffer(key: string, counts: StatusCounts): boolean {
+    const listed = get(accounts).find(account => accountKeyOf(account) === key);
+    if (!listed)
+      return false;
+    return STATUS_KEYS.some(status => listed.counts[status] !== counts[status]);
+  }
+
   function isLatestAccountRequest(key: string, request: number): boolean {
     return request === (accountRequestSeq.get(key) ?? 0);
   }
@@ -219,16 +236,39 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
         status: statuses,
       });
       if (isLatestAccountRequest(key, request))
-        store.setAccountState(key, loadedAccountState(base, response, !!options.append, offset));
+        await applyAccountResponse(key, loadedAccountState(base, response, !!options.append, offset), response);
     }
     catch (error: unknown) {
-      if (!isLatestAccountRequest(key, request) || isRequestCancellation(error))
-        return;
-      if (failureCauseOf(error) === FailureCause.NOT_FOUND)
-        store.markSummaryUnavailable();
-      else
-        store.setAccountState(key, failedAccountState(base, error));
+      if (isLatestAccountRequest(key, request))
+        applyAccountFailure(key, base, error);
     }
+  }
+
+  /** Shows the rows, then refreshes the summary if the account moved since it was read. */
+  async function applyAccountResponse(
+    key: string,
+    state: AccountDetailState,
+    response: ReconciliationAccount | undefined,
+  ): Promise<void> {
+    store.setAccountState(key, state);
+    if (response && summaryCountsDiffer(key, response.counts))
+      await refreshSummary();
+  }
+
+  /**
+   * Names an account's failure on its row, or the whole report as unavailable.
+   *
+   * @remarks
+   * A cancellation names nothing. A not-found cause means the backend runs without the accounting
+   * update, which no single row can recover from.
+   */
+  function applyAccountFailure(key: string, base: AccountDetailState, error: unknown): void {
+    if (isRequestCancellation(error))
+      return;
+    if (failureCauseOf(error) === FailureCause.NOT_FOUND)
+      store.markSummaryUnavailable();
+    else
+      store.setAccountState(key, failedAccountState(base, error));
   }
 
   async function ensureAccount(account: ReconciliationAccount, statuses?: BucketStatus[]): Promise<void> {

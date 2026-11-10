@@ -39,7 +39,7 @@ export const SUBLINE_LABEL: Record<'blocked' | 'matches' | 'not_checked', Messag
 
 const REASON_LABEL: Record<string, MessageKey> = {
   asset_coverage_missing: msg.$t('data_issues.reconciliation.reason.asset_coverage_missing'),
-  blocked: msg.$t('data_issues.reconciliation.reason.blocked'),
+  blocked_without_stop: msg.$t('data_issues.reconciliation.reason.blocked_without_stop'),
   derived_history_stale: msg.$t('data_issues.reconciliation.reason.derived_history_stale'),
   derived_snapshot_changed: msg.$t('data_issues.reconciliation.reason.derived_snapshot_changed'),
   exchange: msg.$t('data_issues.reconciliation.reason.exchange'),
@@ -108,7 +108,7 @@ export function reasonLabel(bucket: ReconciliationBucket): MessageKey {
     return REASON_LABEL.matches;
 
   if (bucket.status === 'blocked')
-    return REASON_LABEL.blocked;
+    return REASON_LABEL.blocked_without_stop;
 
   if (bucket.status === 'mismatch')
     return mismatchLabel(bucket);

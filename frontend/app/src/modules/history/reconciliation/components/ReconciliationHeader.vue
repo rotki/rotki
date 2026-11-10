@@ -69,7 +69,7 @@ const disabledReason = computed<string | undefined>(() => {
 
 <template>
   <div
-    class="rounded-rui-card border border-default p-4 flex flex-col gap-3"
+    class="rounded-rui-card border border-default bg-white dark:bg-rui-grey-900 p-4 flex flex-col gap-3"
     data-testid="reconciliation-header"
   >
     <div class="flex flex-wrap items-start gap-4">
