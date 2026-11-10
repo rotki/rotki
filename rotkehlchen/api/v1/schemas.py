@@ -115,7 +115,12 @@ from rotkehlchen.exchanges.gate import GateLocation
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.okx import OkxLocation
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.data_issues.bucket_checks import BucketStatus
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
+from rotkehlchen.history.data_issues.reconciliation import (
+    DEFAULT_PAGE_SIZE as DEFAULT_RECONCILIATION_PAGE_SIZE,
+    MAX_PAGE_SIZE as MAX_RECONCILIATION_PAGE_SIZE,
+)
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     AssetMovementExtraData,
@@ -5003,6 +5008,24 @@ class DataIssuesFilterSchema(DBPaginationSchema):
 
 class DataIssueManualResolveSchema(Schema):
     note = EmptyAsNoneStringField(load_default=None)
+
+
+class HistoricalBalanceReconciliationSchema(DBPaginationSchema):
+    """Filters for the reconciliation report.
+
+    location/location_label scope the accounts; both together also return that account's bucket
+    rows. status filters those rows only, never the summary totals or the per-account counts.
+    """
+    location = LocationField(load_default=None)
+    # Unlike the other filters this one keeps an empty string: it is the explicit scope of the
+    # account whose label is missing, not an absent filter.
+    location_label = fields.String(load_default=None, allow_none=True)
+    status = DelimitedOrNormalList(
+        StrEnumField(enum_class=BucketStatus),
+        load_default=None,
+    )
+    limit = fields.Integer(load_default=DEFAULT_RECONCILIATION_PAGE_SIZE, validate=validate.Range(min=1, max=MAX_RECONCILIATION_PAGE_SIZE))  # noqa: E501
+    offset = fields.Integer(load_default=0, validate=validate.Range(min=0))
 
 
 class HistoricalBalanceFilterValidationSchemaMixin(Schema):

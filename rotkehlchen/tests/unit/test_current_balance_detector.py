@@ -1,17 +1,19 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.concurrency import TaskCancelledError
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
+from rotkehlchen.db.evmtx import evm_tx_query_range_prefixes
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.detectors.current_balance import (
@@ -20,14 +22,26 @@ from rotkehlchen.history.data_issues.detectors.current_balance import (
     run_current_balance_detection,
 )
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.observations import (
+    ObservationSource,
+    record_wallet_observations,
+)
 from rotkehlchen.history.data_issues.types import DataIssueFilters
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.chains import location_from_chain
 from rotkehlchen.locations.constants import LOCATION_ETHEREUM, LOCATION_HYPERLIQUID
 from rotkehlchen.tasks.historical_balances import HYPERCORE_BUCKET_PROTOCOL
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import EventMetricKey, SupportedBlockchain, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    CHAINS_WITH_TRANSACTIONS_TYPE,
+    SUPPORTED_EVM_CHAINS_TYPE,
+    EventMetricKey,
+    SupportedBlockchain,
+    Timestamp,
+    TimestampMS,
+)
 from rotkehlchen.utils.misc import ts_now
 
 pytestmark = [
@@ -95,19 +109,19 @@ def _cache_balance(
         balance: str,
         label: str = DEFAULT_BALANCE_LABEL,
         refreshed_at: int | None = None,
-        blockchain: SupportedBlockchain = SupportedBlockchain.ETHEREUM,
+        blockchain: SUPPORTED_EVM_CHAINS_TYPE = SupportedBlockchain.ETHEREUM,
         asset: Asset = A_ETH,
 ) -> None:
     """Cache the balance the chain was last seen to hold, as a balance refresh would."""
     sheet = BalanceSheet()
     sheet.assets[asset][label] = Balance(amount=FVal(balance))
+    refresh_ts = ts_now() if refreshed_at is None else Timestamp(refreshed_at)
     with database.user_write() as write_cursor:
         database.set_blockchain_balances_cache(
             write_cursor=write_cursor,
             blockchain=blockchain,
             balances={address: sheet},
         )
-        refresh_ts = ts_now() if refreshed_at is None else Timestamp(refreshed_at)
         database.set_dynamic_cache(
             write_cursor=write_cursor,
             name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
@@ -121,14 +135,43 @@ def _cache_balance(
             blockchain=blockchain.serialize(),
             address=address,
         )
+        # A successful balance query also records asset-specific coverage and its sync ranges.
+        try:
+            protocol = EvmToken(asset.identifier).protocol
+        except (UnknownAsset, WrongAssetType):
+            protocol = None
+        if label in (DEFAULT_BALANCE_LABEL, protocol):
+            record_wallet_observations(
+                write_cursor=write_cursor,
+                blockchain=blockchain,
+                address=address,
+                amounts={asset.identifier: FVal(balance)},
+                observed_at=refresh_ts,
+                source=ObservationSource.BALANCE_QUERY,
+            )
+        for prefix in evm_tx_query_range_prefixes(blockchain):
+            database.update_used_query_range(
+                write_cursor=write_cursor,
+                name=f'{prefix}_{address}',
+                start_ts=Timestamp(0),
+                end_ts=refresh_ts,
+            )
 
 
 def _make_detector(
         database: DBHandler,
         observed: str,
-        blockchain: SupportedBlockchain = SupportedBlockchain.ETHEREUM,
+        blockchain: SUPPORTED_EVM_CHAINS_TYPE = SupportedBlockchain.ETHEREUM,
 ) -> CurrentBalanceMismatchDetector:
-    for address in (TEST_ADDR1, TEST_ADDR2):
+    with database.conn.read_ctx() as cursor:
+        addresses = [
+            row[0] for row in cursor.execute(
+                'SELECT DISTINCT location_label FROM event_metrics '
+                'WHERE location = ? AND location_label IS NOT NULL',
+                (location_from_chain(cast('CHAINS_WITH_TRANSACTIONS_TYPE', blockchain)),),
+            )
+        ]
+    for address in addresses:  # no dummy address gets an observation, which now means holdings
         _cache_balance(database, address, observed, blockchain=blockchain)
 
     return CurrentBalanceMismatchDetector(database=database, tolerance=TOLERANCE)
@@ -260,6 +303,7 @@ def test_nothing_cached_neither_opens_nor_resolves(database: DBHandler) -> None:
     detector.run()
     with database.user_write() as write_cursor:
         database.delete_blockchain_balances_cache(write_cursor=write_cursor)
+        write_cursor.execute('DELETE FROM wallet_balance_observations')
 
     assert detector.run() == 0
     assert _get_issues(database)[0].state == IssueState.OPEN
@@ -276,8 +320,10 @@ def test_refresh_of_another_address_does_not_make_the_cache_current(database: DB
     _add_balance(database, TEST_ADDR1, '5', ts=10_000_000)
     _cache_balance(database, TEST_ADDR1, '3', refreshed_at=9_999)
     _cache_balance(database, TEST_ADDR2, '3', refreshed_at=20_000)
-    assert CurrentBalanceMismatchDetector(database=database, tolerance=TOLERANCE).run() == 0
-    assert _get_issues(database) == []
+    # addr1 stays pending (its history is newer than its observation), while addr2 is an
+    # observed-only holding: no history at all, and the query saw 3.
+    assert CurrentBalanceMismatchDetector(database=database, tolerance=TOLERANCE).run() == 1
+    assert [issue.location_label for issue in _get_issues(database)] == [TEST_ADDR2]
 
 
 def test_only_the_wallet_label_of_the_cache_is_compared(database: DBHandler) -> None:

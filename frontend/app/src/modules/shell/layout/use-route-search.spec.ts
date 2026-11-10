@@ -62,7 +62,7 @@ describe('modules::shell::use-route-search', () => {
     vi.stubEnv('VITE_ACCOUNTING_UPDATE', '');
     set(routes, [
       route('/history/events/', { labelKey: 'events', parent: '/history/' }),
-      route('/history/data-issues/', { labelKey: 'data-issues', parent: '/history/' }),
+      route('/history/data-issues/[[tab]]', { labelKey: 'data-issues', parent: '/history/' }),
     ]);
 
     const { searchEntries } = useRouteSearch();
@@ -74,7 +74,7 @@ describe('modules::shell::use-route-search', () => {
     vi.stubEnv('VITE_ACCOUNTING_UPDATE', 'true');
     set(routes, [
       route('/history/events/', { labelKey: 'events', parent: '/history/' }),
-      route('/history/data-issues/', { labelKey: 'data-issues', parent: '/history/' }),
+      route('/history/data-issues/[[tab]]', { labelKey: 'data-issues', parent: '/history/' }),
     ]);
 
     const { searchEntries } = useRouteSearch();

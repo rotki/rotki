@@ -21,6 +21,10 @@ from rotkehlchen.errors.misc import NotFoundError, RemoteError, RequestTooLargeE
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.observations import (
+    ObservationSource,
+    record_wallet_observations,
+)
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -30,7 +34,7 @@ from rotkehlchen.types import (
     Timestamp,
     TokenKind,
 )
-from rotkehlchen.utils.misc import combine_dicts, get_chunks
+from rotkehlchen.utils.misc import combine_dicts, get_chunks, ts_now
 
 from .constants import ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT, ZERO_ADDRESS
 from .contracts import EvmContract
@@ -319,12 +323,21 @@ class EvmTokens(ABC):  # noqa: B024
                     f'token balance for {address} and balance {normalized_balance}',
                 )
                 balances[EvmToken(token.identifier)] += normalized_balance
-        except ValueError:
+        except ValueError as e:
+            # A shorter response than the queried token list is a partial result, not an empty
+            # balance. It must not be treated as successful coverage: the omitted tokens would
+            # otherwise look like certified zeros, so fail this chunk and let the caller mark
+            # the whole address as failed.
             log.error(
                 f'{self.evm_inquirer.chain_name} tokensBalance returned different length '
                 f'of results({len(result)}) to amount of tokens ({len(tokens)}).'
                 f'{result=}.{tokens=}',
             )
+            raise RemoteError(
+                f'{self.evm_inquirer.chain_name} tokensBalance returned {len(result)} results '
+                f'for {len(tokens)} tokens',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
         return balances
 
@@ -484,6 +497,7 @@ class EvmTokens(ABC):  # noqa: B024
         This avoids destructive cache overwrites (e.g. replacing previously cached tokens with
         an empty/partial list after a failed detection query).
         """
+        observed_at = ts_now()  # before the queries, so the observation never postdates them
         erc20_tokens, erc721_tokens = GlobalDBHandler.get_token_detection_data(
             chain_id=self.evm_inquirer.chain_id,
             exceptions=self._get_token_exceptions(),
@@ -506,6 +520,8 @@ class EvmTokens(ABC):  # noqa: B024
                 blockchain=self.evm_inquirer.blockchain,
                 balances_per_address=detected_erc20_balances,
                 failed_detection_addresses=failed_detection_addresses,
+                queried_assets=tuple(token.identifier for token in erc20_tokens),
+                observed_at=observed_at,
             )
             self.db.delete_balances_cache_if_chain_disabled(
                 write_cursor=write_cursor,
@@ -684,6 +700,7 @@ class EvmTokens(ABC):  # noqa: B024
         - BadFunctionCallOutput if a local node is used and the contract for the
           token has no code. That means the chain is not synced
         """
+        observed_at = ts_now()  # before the queries, so the observation never postdates them
         addresses_to_balances: dict[ChecksumEvmAddress, dict[EvmToken, FVal]] = defaultdict(dict)
         all_tokens: set[EvmToken] = set()
         addresses_to_tokens: dict[ChecksumEvmAddress, list[EvmToken]] = {}
@@ -803,6 +820,25 @@ class EvmTokens(ABC):  # noqa: B024
                         addresses_to_balances[address][token] = balance
 
                     tokens_with_balance.add(token)
+
+        # Publish the queried token scope only now that every multicall chunk succeeded. The
+        # queried list is the actual input of this query, so a token missing from the balances
+        # was queried and found zero; a failed chunk would have raised above and written nothing.
+        with self.db.user_write() as write_cursor:
+            for address, queried_tokens in addresses_to_tokens.items():
+                amounts = {token.identifier: ZERO for token in queried_tokens}
+                amounts.update({
+                    token.identifier: balance
+                    for token, balance in addresses_to_balances.get(address, {}).items()
+                })
+                record_wallet_observations(
+                    write_cursor=write_cursor,
+                    blockchain=self.evm_inquirer.blockchain,
+                    address=address,
+                    amounts=amounts,
+                    observed_at=observed_at,
+                    source=ObservationSource.BALANCE_QUERY,
+                )
 
         token_price = cast('dict[EvmToken, Price]', Inquirer.find_main_currency_prices(list(tokens_with_balance)))  # noqa: E501
         # the NFT's manual price only fills in for a token without a price of its own, so that

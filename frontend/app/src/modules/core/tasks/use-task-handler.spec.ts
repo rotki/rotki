@@ -121,6 +121,18 @@ describe('useTaskHandler', () => {
       expect(zero.value).toBe(0);
     });
 
+    it('should preserve a completed conflict status when the backend returns no result', async () => {
+      const outcome = await settle<boolean>(
+        { cause: 'conflict', message: 'still processing', result: null, statusCode: 409 },
+      );
+
+      assert(isErr(outcome));
+      assert(hasTag(outcome.error, 'TaskFailed'));
+      assert(outcome.error.cause instanceof Error);
+      expect(outcome.error.cause).toMatchObject({ status: 409 });
+      expect(outcome.error.failureCause).toBe('conflict');
+    });
+
     it('should keep a 409 result for a task that opts in, as asset updates hand back conflicts', async () => {
       const update = await settle<string[]>(
         { cause: 'conflict', message: 'Found conflicts', result: ['conflict'], statusCode: 409 },

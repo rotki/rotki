@@ -1012,7 +1012,25 @@ CREATE TABLE IF NOT EXISTS bucket_balance_checks (
     latest_event_identifier INTEGER,
     observed_at INTEGER NOT NULL,
     compared_at INTEGER NOT NULL,
+    observation_id INTEGER,
     PRIMARY KEY (location, location_label, asset)
+) WITHOUT ROWID;
+"""
+
+# Asset-specific observations written by the successful balance queries. A row exists only for
+# an asset a query covered, and its amount can be zero: that is a certified zero. A missing row
+# is unknown coverage, never zero. observation_id comes from a monotonic counter so replacing a
+# row gives the new observation a greater identity even when both happened in the same second.
+DB_CREATE_WALLET_BALANCE_OBSERVATIONS = """
+CREATE TABLE IF NOT EXISTS wallet_balance_observations (
+    blockchain TEXT NOT NULL,
+    address TEXT NOT NULL,
+    asset TEXT NOT NULL,
+    amount TEXT NOT NULL,
+    observed_at INTEGER NOT NULL,
+    source TEXT NOT NULL,
+    observation_id INTEGER NOT NULL,
+    PRIMARY KEY (blockchain, address, asset)
 ) WITHOUT ROWID;
 """
 
@@ -1043,6 +1061,9 @@ CREATE TABLE IF NOT EXISTS event_metrics (
 # idx_history_events_type: Before: 12995ms, After: 7ms
 # idx_history_events_subtype: Before: 12937ms, After: 2ms
 # idx_history_events_ignored: Before: 14723ms, After: 5184ms
+# `event_identifier` is nullable because some issues are scoped to an event while others are
+# scoped to a bucket. SQLite treats NULL values as distinct in normal UNIQUE constraints, so
+# partial unique indexes are required to enforce one natural key row for both scopes.
 DB_CREATE_INDEXES = """
 CREATE INDEX IF NOT EXISTS idx_locations_parent ON locations(parent_identifier);
 CREATE UNIQUE INDEX IF NOT EXISTS unique_locations_sibling_name ON locations(parent_identifier, name COLLATE NOCASE);
@@ -1082,9 +1103,6 @@ CREATE INDEX IF NOT EXISTS idx_event_metrics_balances_latest ON event_metrics(me
 CREATE INDEX IF NOT EXISTS idx_data_issues_state ON data_issues(state);
 CREATE INDEX IF NOT EXISTS idx_data_issues_kind_state ON data_issues(kind, state);
 CREATE INDEX IF NOT EXISTS idx_data_issues_location_label_asset ON data_issues(location, location_label, asset);
--- `event_identifier` is nullable because some issues are scoped to an event while others are
--- scoped to a bucket. SQLite treats NULL values as distinct in normal UNIQUE constraints, so
--- partial unique indexes are required to enforce one natural key row for both scopes.
 CREATE UNIQUE INDEX IF NOT EXISTS unique_data_issues_event_scope ON data_issues(kind, location, location_label, protocol, asset, event_identifier) WHERE event_identifier IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS unique_data_issues_bucket_scope ON data_issues(kind, location, location_label, protocol, asset) WHERE event_identifier IS NULL;
 """  # noqa: E501
@@ -1173,6 +1191,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_EVENT_METRICS}
 {DB_CREATE_BUCKET_PROCESSING_STOPS}
 {DB_CREATE_BUCKET_BALANCE_CHECKS}
+{DB_CREATE_WALLET_BALANCE_OBSERVATIONS}
 {DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;

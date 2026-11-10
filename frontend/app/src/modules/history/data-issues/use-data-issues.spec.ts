@@ -8,6 +8,7 @@ import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-iss
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
 
 const listIssues = vi.fn();
+const getIssue = vi.fn();
 const dismissIssue = vi.fn();
 const resolveIssueManually = vi.fn();
 const retryAutoRemediation = vi.fn();
@@ -15,6 +16,7 @@ const retryAutoRemediation = vi.fn();
 vi.mock('@/modules/history/data-issues/api/use-data-issues-api', () => ({
   useDataIssuesApi: (): Record<string, unknown> => ({
     dismissIssue,
+    getIssue,
     resolveIssueManually,
     retryAutoRemediation,
     listIssues,
@@ -126,5 +128,26 @@ describe('useDataIssues', () => {
 
     expect(retryAutoRemediation).toHaveBeenCalledWith(9);
     expect(result).toStrictEqual(err(error));
+  });
+
+  it('should fetch one issue independently of list filters', async () => {
+    const issue = createIssue({ id: 42 });
+    getIssue.mockResolvedValue({ ok: true, value: issue });
+    const { fetchIssue } = useDataIssues();
+
+    const result = await fetchIssue(42);
+
+    expect(getIssue).toHaveBeenCalledWith(42);
+    expect(result.issue).toStrictEqual(issue);
+  });
+
+  it('should return the read error for a missing issue', async () => {
+    getIssue.mockResolvedValue({ error: { message: 'issue 42 not found', type: 'not-found' }, ok: false });
+    const { fetchIssue } = useDataIssues();
+
+    const result = await fetchIssue(42);
+
+    expect(result.issue).toBeUndefined();
+    expect(result.error).toBe('issue 42 not found');
   });
 });

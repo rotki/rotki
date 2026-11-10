@@ -1,5 +1,6 @@
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createStatusError } from '@/modules/core/api/response-handlers';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useDataIssuesDetection } from '@/modules/history/data-issues/use-data-issues-detection';
 
@@ -42,37 +43,60 @@ describe('useDataIssuesDetection', () => {
     expect(detecting.value).toBe(false);
   });
 
-  it('should keep the backend message for the page and skip the reload when the detection could not run', async () => {
+  it('should return a success result after a successful check', async () => {
+    runTaskMock.mockResolvedValue(ok(true));
+    const { detect } = useDataIssuesDetection(reload);
+
+    const result = await detect();
+
+    expect(result).toEqual({ conflict: false, success: true });
+  });
+
+  it('should show the backend message and skip the reload when the detection could not run', async () => {
     runTaskMock.mockResolvedValue(err(TaskFailed({ cause: new Error('still processing'), message: 'still processing' })));
     const { detect, detectFailure, detecting } = useDataIssuesDetection(reload);
 
-    await detect();
+    const result = await detect();
 
     expect(get(detectFailure)).toEqual({ failure: 'still processing', title: 'data_issues.detect.error' });
     expect(reload).not.toHaveBeenCalled();
-    expect(get(detecting)).toBe(false);
+    expect(detecting.value).toBe(false);
+    expect(result).toEqual({ conflict: false, message: 'still processing', success: false });
+  });
+
+  it('should return a 409 as a conflict, name it on the page, and skip the reload', async () => {
+    triggerTaskMock.mockRejectedValueOnce(createStatusError(409, 'still processing'));
+    const { detect, detectFailure, detecting } = useDataIssuesDetection(reload);
+
+    const result = await detect();
+
+    expect(result).toEqual({ conflict: true, message: expect.stringContaining('still processing'), success: false });
+    expect(get(detectFailure)?.failure).toContain('still processing');
+    expect(reload).not.toHaveBeenCalled();
+    expect(detecting.value).toBe(false);
   });
 
   it('should name nothing and still reload when the detection was cancelled', async () => {
     runTaskMock.mockResolvedValue(err(Cancelled({ message: 'cancelled' })));
     const { detect, detectFailure } = useDataIssuesDetection(reload);
 
-    await detect();
+    const result = await detect();
 
     expect(get(detectFailure)).toBeUndefined();
+    expect(result).toEqual({ conflict: false, success: true });
     expect(reload).toHaveBeenCalledOnce();
   });
 
-  it('should name a reload that throws under the same title', async () => {
+  it('should name a reload that throws under the same title and report it', async () => {
     runTaskMock.mockResolvedValue(ok(true));
     const error = new Error('reload failed');
     reload.mockRejectedValue(error);
-    const { detect, detectFailure, detecting } = useDataIssuesDetection(reload);
+    const { detect, detectFailure } = useDataIssuesDetection(reload);
 
-    await detect();
+    const result = await detect();
 
     expect(get(detectFailure)).toEqual({ failure: error, title: 'data_issues.detect.error' });
-    expect(get(detecting)).toBe(false);
+    expect(result).toEqual({ conflict: false, message: 'reload failed', success: false });
   });
 
   it('should drop the failure when the next detection starts', async () => {
@@ -83,7 +107,7 @@ describe('useDataIssuesDetection', () => {
     await detect();
     await detect();
 
-    expect(detectFailure.value).toBeUndefined();
+    expect(get(detectFailure)).toBeUndefined();
     expect(reload).toHaveBeenCalledOnce();
   });
 });

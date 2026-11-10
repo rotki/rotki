@@ -281,11 +281,11 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/history/data-issues/': RouteRecordInfo<
-      '/history/data-issues/',
-      '/history/data-issues',
-      Record<never, never>,
-      Record<never, never>,
+    '/history/data-issues/[[tab]]': RouteRecordInfo<
+      '/history/data-issues/[[tab]]',
+      '/history/data-issues/:tab?',
+      { tab?: ParamValueZeroOrOne<true> },
+      { tab?: ParamValueZeroOrOne<false> },
       | never
     >,
     '/history/events/': RouteRecordInfo<
@@ -869,13 +869,13 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
-    'src/pages/history/data-issues/index.vue': {
+    'src/pages/history/data-issues/[[tab]].vue': {
       routes:
-        | '/history/data-issues/'
+        | '/history/data-issues/[[tab]]'
       views:
         | never
       pathParamNames:
-        | never
+        | 'tab'
     }
     'src/pages/history/events/index.vue': {
       routes:

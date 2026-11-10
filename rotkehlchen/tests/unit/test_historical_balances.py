@@ -33,7 +33,11 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.data_issues.bucket_state import BucketStop, get_bucket_stops
+from rotkehlchen.history.data_issues.bucket_state import (
+    BucketStop,
+    get_bucket_stops,
+    invalidate_swapped_asset_identities,
+)
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -1921,6 +1925,22 @@ def test_swapped_for_asset_tracked_under_new_identifier(
             (glm.identifier, glm.identifier, '110'),  # receive 50 GLM -> 60 + 50 = 110
         ]
 
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'CREATE TEMP TRIGGER prevent_metric_rebuild BEFORE INSERT ON event_metrics '
+            "BEGIN SELECT RAISE(ABORT, 'Incremental pass rewrote historical metrics'); END",
+        )
+
+    for _ in range(2):
+        with database.user_write() as write_cursor:
+            assert invalidate_swapped_asset_identities(write_cursor) is False
+
+        assert process_historical_balances(
+            database,
+            messages_aggregator,
+            from_ts=TimestampMS(4000),
+        ) is True
+
 
 def test_rebasing_token_deficit_uses_archive_balance_and_resolves_issue(
         database: DBHandler,
@@ -2234,9 +2254,13 @@ def test_negative_rebasing_token_without_archive_node_writes_specific_issue(
         node_inquirer.get_historical_token_balance.assert_called_once()
         assert spend_id is not None
         with database.conn.read_ctx() as cursor:
+            group_identifier = cursor.execute(
+                'SELECT group_identifier FROM history_events WHERE identifier = ?',
+                (spend_id,),
+            ).fetchone()[0]
             assert get_bucket_stops(cursor) == {(
                 LOCATION_ETHEREUM, TEST_ADDR1, '', A_DAI.identifier,
-            ): BucketStop(spend_id, TimestampMS(2000), FVal(10), FVal(-1))}
+            ): BucketStop(spend_id, TimestampMS(2000), FVal(10), FVal(-1), group_identifier)}
 
         DataIssuesManager(database).retry_auto_remediation(issue.id)
         process_historical_balances(
@@ -2404,9 +2428,13 @@ def test_rebasing_reconciliation_reports_only_first_failure(
         assert node_inquirer.get_historical_token_balance.call_count == 2
         assert (stop_id := event_ids[1]) is not None
         with database.conn.read_ctx() as cursor:
+            group_identifier = cursor.execute(
+                'SELECT group_identifier FROM history_events WHERE identifier = ?',
+                (stop_id,),
+            ).fetchone()[0]
             assert get_bucket_stops(cursor) == {(
                 LOCATION_ETHEREUM, TEST_ADDR1, '', A_DAI.identifier,
-            ): BucketStop(stop_id, TimestampMS(2000), FVal(10), FVal(-1))}
+            ): BucketStop(stop_id, TimestampMS(2000), FVal(10), FVal(-1), group_identifier)}
     finally:
         GlobalDBHandler.set_asset_flag(A_DAI.identifier, AssetFlag.REBASING, enabled=False)
 

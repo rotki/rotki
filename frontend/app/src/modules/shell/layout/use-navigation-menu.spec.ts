@@ -167,7 +167,7 @@ describe('modules::shell::use-navigation-menu', () => {
       return [
         route('/history/', { labelKey: 'history', order: 40, section: 1, drawer: 'history' }),
         route('/history/events/', { labelKey: 'events', order: 10, parent: '/history/', drawer: 'history-events' }),
-        route('/history/data-issues/', { labelKey: 'data-issues', order: 20, parent: '/history/', drawer: 'history-data-issues' }),
+        route('/history/data-issues/[[tab]]', { labelKey: 'data-issues', order: 20, parent: '/history/', drawer: 'history-data-issues' }),
       ];
     }
 

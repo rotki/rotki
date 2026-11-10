@@ -162,11 +162,17 @@ def _first_event_negative(database: DBHandler) -> int:
 def test_first_event_negative_is_stopped_without_metrics(database: DBHandler) -> None:
     event_id = _first_event_negative(database)
     assert _metric_count(database, TEST_ADDR1) == 0
+    with database.conn.read_ctx() as cursor:
+        group_identifier = cursor.execute(
+            'SELECT group_identifier FROM history_events WHERE identifier = ?',
+            (event_id,),
+        ).fetchone()[0]
     assert _stops(database) == {_bucket_key(): BucketStop(
         event_identifier=event_id,
         event_timestamp=TimestampMS(1000),
         derived_balance_before_event=FVal(0),
         negative_amount=FVal(-1),
+        group_identifier=group_identifier,
     )}
 
 
@@ -404,15 +410,15 @@ def test_in_flight_comparison_cannot_write_after_a_lifecycle_change(
     """The change lands after the detector read its inputs and before it opens the write."""
     _add_balance(database, TEST_ADDR1, '5')
     detector = _make_detector(database, '3')
-    real = current_balance.read_cached_wallet_balances
+    real = current_balance.wallet_evidence_for_bucket
 
-    def read_then_change(**kwargs: Any) -> dict:
+    def read_then_change(**kwargs: Any) -> Any:
         result = real(**kwargs)
         if kwargs['address'] == TEST_ADDR1:
             mutation(database)
         return result
 
-    with patch.object(current_balance, 'read_cached_wallet_balances', read_then_change):
+    with patch.object(current_balance, 'wallet_evidence_for_bucket', read_then_change):
         assert detector.run() == 0
     assert _checks(database) == {}
     assert _get_issues(database) == []
@@ -423,14 +429,14 @@ def test_in_flight_comparison_cannot_write_after_a_lifecycle_change(
 def test_in_flight_comparison_cannot_write_after_a_new_observation(database: DBHandler) -> None:
     _add_balance(database, TEST_ADDR1, '5')
     detector = _make_detector(database, '3')
-    real = current_balance.read_cached_wallet_balances
+    real = current_balance.wallet_evidence_for_bucket
 
-    def read_then_refresh(**kwargs: Any) -> dict:
+    def read_then_refresh(**kwargs: Any) -> Any:
         result = real(**kwargs)
         _cache_balance(database, TEST_ADDR1, '5', refreshed_at=ts_now() + 100)
         return result
 
-    with patch.object(current_balance, 'read_cached_wallet_balances', read_then_refresh):
+    with patch.object(current_balance, 'wallet_evidence_for_bucket', read_then_refresh):
         assert detector.run() == 0
     assert _get_issues(database) == []
 

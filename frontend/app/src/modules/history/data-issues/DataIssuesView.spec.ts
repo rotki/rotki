@@ -1,4 +1,5 @@
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import type { DetectionResult } from '@/modules/history/data-issues/use-data-issues-detection';
 import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
@@ -59,7 +60,7 @@ vi.mock('@/modules/history/use-history-data-fetching', () => ({
 }));
 
 const spies = vi.hoisted(() => ({
-  detect: vi.fn<() => Promise<void>>(),
+  detect: vi.fn<() => Promise<DetectionResult>>(),
   dismiss: vi.fn<(id: number) => Promise<unknown>>(),
 }));
 
@@ -67,6 +68,7 @@ vi.mock('@/modules/history/data-issues/use-data-issues', () => ({
   useDataIssues: (): Record<string, unknown> => ({
     dismiss: spies.dismiss,
     fetchData: vi.fn(),
+    fetchIssue: vi.fn(),
     resolveManually: vi.fn(),
     retry: vi.fn(),
   }),
@@ -98,6 +100,7 @@ async function createWrapper(): Promise<VueWrapper<InstanceType<typeof DataIssue
       stubs: {
         DataIssueDetailDrawer: true,
         DataIssuesTable: true,
+        DataIssuesTabs: true,
         DataIssueSummaryBar: true,
         NoDataScreen: true,
         PillFilterBar: true,
@@ -203,6 +206,7 @@ describe('data-issues view failures', () => {
     state.isLoading = false;
     state.rows = [];
     state.summaryFailed = false;
+    spies.detect.mockResolvedValue({ conflict: false, success: true });
   });
 
   it('should name a failed balance check on the page, with a retry that checks again', async () => {

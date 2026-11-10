@@ -2,6 +2,7 @@ import { checkIfDevelopment } from '@shared/utils';
 import { err, ok, type Result } from 'plainfp/result';
 import { FailureCause, parseFailureCause } from '@/modules/core/api/failure-cause';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
+import { createStatusError } from '@/modules/core/api/response-handlers';
 import { HTTPStatus } from '@/modules/core/api/types/http';
 import { logger } from '@/modules/core/common/logging/logging';
 import { onSessionEnd } from '@/modules/core/session/session-lifecycle';
@@ -45,7 +46,15 @@ function readFailedOutcome<R>(
   if (options.conflictIsResult === true && statusCode === HTTPStatus.CONFLICT)
     return ok(result);
 
-  return err(TaskFailed({ failureCause, message }));
+  return failedOutcome({ message, result, statusCode }, failureCause);
+}
+
+/** Preserve a completed task's HTTP failure status for consumers that distinguish conflicts. */
+function failedOutcome({ message, statusCode }: TaskActionResult<unknown>, failureCause?: FailureCause): Result<never, TaskError> {
+  const cause = statusCode !== undefined && statusCode >= HTTPStatus.BAD_REQUEST
+    ? createStatusError(statusCode, message)
+    : undefined;
+  return err(TaskFailed({ cause, failureCause, message }));
 }
 
 function useTaskHandlerInternal(): {
@@ -123,7 +132,7 @@ function useTaskHandlerInternal(): {
           resolve(err(Cancelled({ message: 'Request cancelled' })));
         }
         else if (message) {
-          resolve(err(TaskFailed({ message })));
+          resolve(failedOutcome(outcome));
         }
         else {
           resolve(err(BackendCancelled({ message: `Backend cancelled ${describeTask()}` })));
