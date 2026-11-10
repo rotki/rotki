@@ -155,7 +155,14 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
             if tx_log.topics[0] != TRADE_SIGNATURE:
                 continue
 
-            owner_address = bytes_to_address(tx_log.topics[1])
+            # Skip trades of other users batched in the same settlement. Native asset orders
+            # are owned by the eth flow contract, so those are matched by the receive event.
+            if (
+                (owner_address := bytes_to_address(tx_log.topics[1])) not in self.native_asset_flow_addresses and  # noqa: E501
+                not self.base.is_tracked(owner_address)
+            ):
+                continue
+
             from_token_address = bytes_to_address(tx_log.data[:32])
             to_token_address = bytes_to_address(tx_log.data[32:64])
             raw_from_amount = int.from_bytes(tx_log.data[64:96])
