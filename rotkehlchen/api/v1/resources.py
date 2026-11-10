@@ -4096,7 +4096,7 @@ class CurrentHistoricalBalanceResource(BaseMethodView):
             known_counterparties={cpt.identifier for cpt in self.rest_api.rotkehlchen.chains_aggregator.get_all_counterparties()},  # noqa: E501
         )
 
-    @require_premium_user(active_check=False)
+    @require_loggedin_user()
     @resource_parser.use_kwargs(make_post_schema, location='json')
     def post(
             self,
