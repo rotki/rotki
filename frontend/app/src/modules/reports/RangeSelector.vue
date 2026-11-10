@@ -11,7 +11,7 @@ import DateTimeRangePicker from '@/modules/shell/components/inputs/DateTimeRange
 
 interface ReportRange {
   start: number | undefined;
-  end: number;
+  end: number | undefined;
 }
 
 const modelValue = defineModel<ReportRange>({ required: true });

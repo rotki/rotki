@@ -60,11 +60,12 @@ defineExpose({
         :label="t('common.price')"
       />
       <AssetSelect
-        v-model="priceAsset"
+        :model-value="priceAsset"
         :disabled="fetchingPrice || !isCustomPrice || pending"
         :loading="fetchingPrice"
         :hint="t('manual_balances_form.fields.price_asset_hint')"
         :label="t('manual_balances_form.fields.price_asset')"
+        @update:model-value="priceAsset = $event ?? ''"
       />
     </div>
     <div

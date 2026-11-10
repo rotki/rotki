@@ -23,6 +23,9 @@ export type { ChangeSource };
 
 export { routeWhen, useTableEmptyState };
 
+/** What a table sorts by: a grouped row sorts by the fields of the entries it groups. */
+type SortEntry<TItem> = TItem extends Array<infer U extends NonNullable<unknown>> ? U : TItem;
+
 interface TableSortOptions<TItem extends NonNullable<unknown>> {
   /** The sorting a table starts at, and returns to when the URL carries none. */
   default?: DataTableSortData<TItem>;
@@ -65,7 +68,7 @@ interface UseServerTableOptions<
   /** External parameter sources merged into the request payload and/or URL. */
   params?: ParamSource[];
   /** Default sort column and fallback column applied when none is persisted. */
-  sort?: TableSortOptions<TItem>;
+  sort?: TableSortOptions<SortEntry<TItem>>;
   /** Absent means no persistence at all. */
   persist?: PersistFilterSetting;
   /** Request-level behaviour: cancellation tag and fetch debounce. */
@@ -84,7 +87,7 @@ interface UseServerTableReturn<
   error: UseTableDataReturn<TItem>['error'];
   collection: Ref<Collection<TItem>>;
   filter: WritableComputedRef<TFilter>;
-  sort: WritableComputedRef<DataTableSortData<TItem>>;
+  sort: WritableComputedRef<DataTableSortData<SortEntry<TItem>>>;
   pagination: WritableComputedRef<TablePaginationData>;
   setPage: (page: number, source?: ChangeSource) => void;
   setFilter: (newFilter: TFilter, source?: ChangeSource) => void;
@@ -126,11 +129,11 @@ export function useServerTable<
     return declared ? routeSchemaFromFields(declared) : undefined;
   });
 
-  const commitSort = (sorting: DataTableSortData<TItem>): void => dispatch({ sorting, type: 'sort-set' });
+  const commitSort = (sorting: DataTableSortData<SortEntry<TItem>>): void => dispatch({ sorting, type: 'sort-set' });
   const commitPage = (page: number, source: ChangeSource = 'user'): void => dispatch({ page, source, type: 'page-set' });
   const commitLimit = (limit: number): void => dispatch({ limit, type: 'limit-set' });
 
-  const { defaultSorting, internalSorting, sort } = useTableSorting<TItem>(
+  const { defaultSorting, internalSorting, sort } = useTableSorting<SortEntry<TItem>>(
     defaultSortBy,
     commitSort,
     fallbackColumn,
@@ -185,7 +188,7 @@ export function useServerTable<
     },
   });
 
-  const { getQuery, writeUrlState } = useUrlStateSync<TItem, TFilter>({
+  const { getQuery, writeUrlState } = useUrlStateSync<SortEntry<TItem>, TFilter>({
     captureTransientValues,
     defaultSorting,
     fallbackColumn,
@@ -219,8 +222,8 @@ export function useServerTable<
    * request-param page reset (8b) and collapses a filter change plus its page reset into
    * one atomic state update (one fetch, no cascade).
    */
-  function dispatch(event: TableEvent<TFilter, TItem>): void {
-    const before: TableState<TFilter, TItem> = {
+  function dispatch(event: TableEvent<TFilter, SortEntry<TItem>>): void {
+    const before: TableState<TFilter, SortEntry<TItem>> = {
       filter: get(filters),
       limit: get(internalPagination).limit,
       page: get(internalPagination).page,

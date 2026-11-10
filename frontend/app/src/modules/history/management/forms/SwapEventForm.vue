@@ -145,11 +145,12 @@ defineExpose({
         <RuiDivider class="mb-6 mt-2" />
 
         <CounterpartyInput
-          v-model="state.counterparty"
+          :model-value="state.counterparty"
           :label="t('common.counterparty')"
           data-testid="counterparty"
           :error-messages="form.errors('counterparty')"
           @blur="form.touch('counterparty')"
+          @update:model-value="state.counterparty = $event ?? ''"
         />
 
         <RuiTextField

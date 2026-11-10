@@ -44,7 +44,7 @@ const hidePagination = computed<boolean>(() => fitsEveryLimit(buckets.length));
       :cols="cols"
       :rows="rows"
       row-attr="id"
-      :hide-default-footer="hidePagination"
+      :hide-pagination="hidePagination"
       dense
       outlined
       data-testid="historical-balances-buckets"

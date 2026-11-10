@@ -113,7 +113,7 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
       row-attr="id"
       sticky-header
       dense
-      :hide-default-footer="hidePagination"
+      :hide-pagination="hidePagination"
       class="rounded-t-none!"
       :class="{ 'border-t border-default': !hidePagination }"
     >

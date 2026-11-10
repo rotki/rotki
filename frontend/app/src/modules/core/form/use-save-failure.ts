@@ -1,12 +1,12 @@
 import type { Ref } from 'vue';
-import { ApiValidationError } from '@/modules/core/api/types/errors';
+import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { toServerErrors } from '@/modules/core/form/server-errors';
 
 interface UseSaveFailureReturn {
   /** Why the save failed where no field is to blame; shown above the form, which keeps its input. */
   failure: Readonly<Ref<unknown>>;
   /** Errors the backend reported against fields, bound to the form's `error-messages`. */
-  modelFieldErrors: Ref<Record<string, string[]>>;
+  modelFieldErrors: Ref<ValidationErrors>;
   /** Files a rejected save under the fields it names, or as the failure when it names none. */
   capture: (error: unknown, payload: Record<string, unknown>) => void;
   clear: () => void;
@@ -22,7 +22,7 @@ interface UseSaveFailureReturn {
  */
 export function useSaveFailure(): UseSaveFailureReturn {
   const failure = shallowRef<unknown>();
-  const modelFieldErrors = ref<Record<string, string[]>>({});
+  const modelFieldErrors = ref<ValidationErrors>({});
 
   function clear(): void {
     set(failure, undefined);

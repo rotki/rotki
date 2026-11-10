@@ -88,18 +88,18 @@ defineExpose({
     <template v-else>
       <div class="grid md:grid-cols-2 gap-x-4 gap-y-1">
         <AssetSelect
-          v-model="form.state.fromAsset"
+          :model-value="form.state.fromAsset"
           :label="t('price_form.from_asset')"
           :error-messages="form.errors('fromAsset')"
           data-testid="historic-price-from-asset"
-          @update:model-value="form.touch('fromAsset')"
+          @update:model-value="form.state.fromAsset = $event ?? ''; form.touch('fromAsset')"
         />
         <AssetSelect
-          v-model="form.state.toAsset"
+          :model-value="form.state.toAsset"
           :label="t('price_form.to_asset')"
           :error-messages="form.errors('toAsset')"
           data-testid="historic-price-to-asset"
-          @update:model-value="form.touch('toAsset')"
+          @update:model-value="form.state.toAsset = $event ?? ''; form.touch('toAsset')"
         />
       </div>
       <DateTimePicker

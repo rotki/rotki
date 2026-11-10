@@ -6,7 +6,7 @@ import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
 import type { Filters } from '@/modules/history/events/history-event-filter-keys';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { HistoryEventRow } from '@/modules/history/events/schemas';
+import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import { isEqual } from 'es-toolkit';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import { TableId } from '@/modules/core/table/use-remember-table-sorting';
@@ -78,7 +78,7 @@ interface UseHistoryEventsFiltersReturn {
   requestPayload: ComputedRef<HistoryEventRequestPayload>;
   pagination: WritableComputedRef<TablePaginationData>;
   setPage: (page: number, source?: ChangeSource) => void;
-  sort: WritableComputedRef<DataTableSortData<HistoryEventRow>>;
+  sort: WritableComputedRef<DataTableSortData<HistoryEventEntry>>;
   setFilter: (newFilter: Filters) => void;
   usedLocationLabels: ComputedRef<string[]>;
 }

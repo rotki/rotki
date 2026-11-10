@@ -5,6 +5,9 @@ import type { RuiDateTimePickerProps } from '@rotki/ui-library/components';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import dayjs, { type ManipulateType } from 'dayjs';
 
+/** The picker's model is a number, so a `Date` shape is not on offer. */
+type EpochPickerProps = Omit<RuiDateTimePickerProps, 'type'> & { type?: 'epoch' | 'epoch-ms' };
+
 interface QuickOption {
   label: string;
   unit: ManipulateType;
@@ -29,7 +32,7 @@ const {
   required,
   successMessages,
   type,
-} = defineProps<RuiDateTimePickerProps & /* @vue-ignore */ ForwardedProps<typeof RuiDateTimePicker, RuiDateTimePickerProps>>();
+} = defineProps<EpochPickerProps & /* @vue-ignore */ ForwardedProps<typeof RuiDateTimePicker, RuiDateTimePickerProps>>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -44,6 +47,12 @@ const quickOptions = computed<QuickOption[]>(() => [
 
 const useMilliseconds = computed<boolean>(() => accuracy === 'millisecond');
 
+/** The picker only reports no date when `allowEmpty` lets it be cleared; the model keeps its date then. */
+function pick(value: number | undefined): void {
+  if (value !== undefined)
+    set(modelValue, value);
+}
+
 function applyQuickOption(option: QuickOption): void {
   const currentValue = get(modelValue);
   const currentDate = get(useMilliseconds) ? dayjs(currentValue) : dayjs.unix(currentValue);
@@ -54,7 +63,7 @@ function applyQuickOption(option: QuickOption): void {
 
 <template>
   <RuiDateTimePicker
-    v-model="modelValue"
+    :model-value="modelValue"
     :accuracy="accuracy"
     :allow-empty="allowEmpty"
     :dense="dense"
@@ -70,6 +79,7 @@ function applyQuickOption(option: QuickOption): void {
     :required="required"
     :success-messages="successMessages"
     :type="type"
+    @update:model-value="pick($event)"
   >
     <template #menu-content>
       <div class="border-t border-default flex flex-col pt-2">

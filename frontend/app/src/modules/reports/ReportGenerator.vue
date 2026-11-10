@@ -30,14 +30,14 @@ const {
   hasExchangesWithoutMarkets: hasBinanceWithoutMarkets,
 } = useBinanceMarketCheck(connectedExchanges);
 
-const range = ref<{ start: number | undefined; end: number }>({ end: 0, start: undefined });
+const range = ref<{ start: number | undefined; end: number | undefined }>({ end: 0, start: undefined });
 const valid = ref<boolean>(false);
 
 const canGenerate = computed<boolean>(() => get(valid) && !get(processing) && !get(isOutOfSync) && !get(hasBinanceWithoutMarkets));
 
 function toReportPeriod(): ProfitLossReportPeriod {
   const { end, start } = get(range);
-  return { end, start: start ?? 0 };
+  return { end: end ?? 0, start: start ?? 0 };
 }
 
 function generate(): void {
@@ -124,7 +124,7 @@ onMounted(async () => {
         />
         <div class="flex items-center gap-4 min-w-0">
           <span
-            v-if="range.start !== undefined && range.end > 0"
+            v-if="range.start !== undefined && !!range.end"
             class="text-sm text-rui-text-secondary truncate"
             data-testid="report-range-summary"
           >

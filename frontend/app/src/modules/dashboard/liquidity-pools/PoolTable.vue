@@ -134,7 +134,7 @@ watch(currencySymbol, async () => {
       v-model:sort="sort"
       dense
       :items-per-page="PAGE_SIZE"
-      :hide-default-footer="hidePagination"
+      :hide-pagination="hidePagination"
       class="rounded-t-none!"
       :class="{ 'border-t border-default': !hidePagination }"
       :cols="tableHeaders"

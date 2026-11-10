@@ -53,17 +53,17 @@ const {
       />
       <ChainSelect
         v-if="modelSource === Purgeable.TRANSACTIONS"
-        v-model="modelChain"
+        :model-value="modelChain"
         clearable
         :items="chainsSelection"
         :label="t('purge_selector.chain_to_clear.label')"
         :hint="t('purge_selector.chain_to_clear.hint')"
+        @update:model-value="modelChain = $event ?? ''"
       />
       <LocationSelector
         v-else-if="modelSource === Purgeable.CSV_IMPORTS"
         v-model="modelCsvImportLocation"
         clearable
-        persistent-hint
         :items="csvImportLocations"
         :label="t('purge_selector.csv_import_location_to_clear.label')"
         :hint="t('purge_selector.csv_import_location_to_clear.hint')"
@@ -99,10 +99,11 @@ const {
       />
       <DefiModuleSelector
         v-else-if="modelSource === Purgeable.DEFI_MODULES"
-        v-model="modelModule"
+        :model-value="modelModule"
         :items="purgeableModules"
         :label="t('purge_selector.defi_module_to_clear.label')"
         :hint="t('purge_selector.defi_module_to_clear.hint')"
+        @update:model-value="modelModule = $event ?? ''"
       />
 
       <ActionStatusIndicator

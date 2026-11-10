@@ -25,7 +25,7 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
 const RangeSelector = (await import('@/modules/reports/RangeSelector.vue')).default;
 
 interface Range {
-  end: number;
+  end: number | undefined;
   start: number | undefined;
 }
 

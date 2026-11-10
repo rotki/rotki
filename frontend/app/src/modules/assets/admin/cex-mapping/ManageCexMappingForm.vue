@@ -145,10 +145,10 @@ defineExpose({
       />
     </template>
     <AssetSelect
-      v-model="form.state.asset"
+      :model-value="form.state.asset"
       :label="t('asset_management.cex_mapping.recognized_as')"
       :error-messages="form.errors('asset')"
-      @update:model-value="form.touch('asset')"
+      @update:model-value="form.state.asset = $event ?? ''; form.touch('asset')"
     />
     <RuiAlert
       v-if="mappingAlertInfo"

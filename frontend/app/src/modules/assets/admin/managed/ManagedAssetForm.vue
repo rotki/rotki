@@ -368,19 +368,21 @@ defineExpose({
                   @update:model-value="form.touch('protocol')"
                 />
                 <AssetSelect
-                  v-model="form.state.swappedFor"
+                  :model-value="form.state.swappedFor"
                   clearable
                   :label="t('asset_form.labels.swapped_for')"
                   :error-messages="form.errors('swappedFor')"
                   :disabled="loading"
+                  @update:model-value="form.state.swappedFor = $event ?? ''"
                 />
                 <AssetSelect
                   v-if="!isEvmToken && form.state.assetType"
-                  v-model="form.state.forked"
+                  :model-value="form.state.forked"
                   clearable
                   :label="t('asset_form.labels.forked')"
                   :error-messages="form.errors('forked')"
                   :disabled="loading"
+                  @update:model-value="form.state.forked = $event ?? ''"
                 />
                 <RuiSwitch
                   v-if="isEvmToken && !isNft"

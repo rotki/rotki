@@ -266,12 +266,13 @@ function redetectTokens(): void {
             </RuiButton>
           </div>
           <ChainSelect
-            v-model="internalChain"
+            :model-value="internalChain"
             class="w-56 shrink-0"
             details="hidden"
             dense
             label-placement="hidden"
             :items="chainOptions"
+            @update:model-value="internalChain = $event ?? ''"
           />
         </div>
         <div class="h-7 flex items-center justify-between gap-2 text-xs text-rui-text-secondary">

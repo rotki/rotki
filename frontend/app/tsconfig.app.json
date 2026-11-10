@@ -15,6 +15,8 @@
     "noEmit": false
   },
   "vueCompilerOptions": {
+    "strictTemplates": true,
+    "dataAttributes": ["data-*"],
     "plugins": [
       {
         "name": "vue-router/volar/sfc-typed-router",

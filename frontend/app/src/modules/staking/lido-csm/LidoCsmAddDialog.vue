@@ -4,6 +4,7 @@ import { Blockchain } from '@rotki/common';
 import { z, type ZodType } from 'zod';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import { requiredField } from '@/modules/core/form/fields';
+import { toServerErrors } from '@/modules/core/form/server-errors';
 import { useForm } from '@/modules/core/form/use-form';
 import { useSaveFailure } from '@/modules/core/form/use-save-failure';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
@@ -103,7 +104,7 @@ async function submitForm(): Promise<void> {
   clear();
   const result = await form.submit();
   if (result.outcome === 'error')
-    showFieldErrors(get(modelFieldErrors));
+    showFieldErrors(toServerErrors(get(modelFieldErrors)));
   if (result.outcome !== 'success')
     return;
 
