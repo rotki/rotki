@@ -9,7 +9,7 @@
   "author": "Rotki Solutions GmbH <info@rotki.com>",
   "main": "dist/main.js",
   "scripts": {
-    "build": "run-p typecheck \"build:app {@}\" --",
+    "build": "run-s \"build:app {@}\" typecheck --",
     "build:app": "tsx scripts/build.ts",
     "check:bundle": "tsx scripts/check-bundle.ts",
     "build:preview": "pnpm run build:app && vite preview",
