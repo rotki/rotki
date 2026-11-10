@@ -7,9 +7,11 @@ import requests
 from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.rest import _premium_failure_cause
-from rotkehlchen.api.result import FailResult
+from rotkehlchen.api.result import FailResult, OkResult
+from rotkehlchen.api.services.assets import AssetsService
 from rotkehlchen.api.services.exchanges import ExchangesService
 from rotkehlchen.api.websockets.typedefs import UserMessageKey
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.banks.errors import (
     BankAuthExpired,
     BankNameTaken,
@@ -17,6 +19,8 @@ from rotkehlchen.banks.errors import (
     BankSchemaDrift,
 )
 from rotkehlchen.chain.evm.decoding.balancer.utils import query_balancer_api
+from rotkehlchen.constants.assets import A_BTC, A_EUR, A_USD
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
@@ -39,7 +43,9 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.binance import BinancePermissionError
-from rotkehlchen.types import Timestamp
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import CurrentPriceOracle
+from rotkehlchen.types import Price, Timestamp
 
 
 def test_failure_cause_wire_values() -> None:
@@ -222,3 +228,77 @@ def test_balancer_malformed_json_is_bad_data() -> None:
         query_balancer_api(query='query', variables={})
 
     assert excinfo.value.cause == FailureCause.BAD_DATA
+
+
+def test_nft_current_price_reads_its_own_entry_and_leaves_out_a_module_failure() -> None:
+    nft = MagicMock(asset_type=AssetType.NFT, identifier='_nft_0xabc_1')
+    service = AssetsService(MagicMock())
+    failure = FailResult('nfts module off', HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+    with patch.object(service, '_eth_module_query', return_value=failure):
+        result = service.get_current_assets_price(
+            assets=[nft],
+            target_asset=A_USD,
+            ignore_cache=False,
+        )
+    assert isinstance(result, OkResult)
+    assert result.result['assets'] == {}
+
+    with patch.object(service, '_eth_module_query', return_value=OkResult([{
+        'asset': nft.identifier,
+        'manually_input': True,
+        'price_asset': A_USD.identifier,
+        'price_in_asset': '100',
+        'price': FVal('90'),  # the main currency value, never the answer
+    }])) as module_query:
+        result = service.get_current_assets_price(
+            assets=[nft],
+            target_asset=A_USD,
+            ignore_cache=False,
+        )
+        assert module_query.call_args.kwargs['from_asset'] == nft
+        assert isinstance(result, OkResult)
+        assert result.result['assets'] == {
+            nft: [Price(FVal('100')), CurrentPriceOracle.MANUALCURRENT.value],
+        }
+
+        with patch(
+            'rotkehlchen.api.services.assets.Inquirer.find_price',
+            return_value=Price(FVal('0.00001')),
+        ) as find_price:
+            result = service.get_current_assets_price(
+                assets=[nft],
+                target_asset=A_BTC,
+                ignore_cache=False,
+            )
+        assert find_price.call_args.kwargs['from_asset'] == A_USD
+        assert find_price.call_args.kwargs['to_asset'] == A_BTC
+        assert isinstance(result, OkResult)
+        assert result.result['assets'] == {
+            nft: [Price(FVal('0.001')), CurrentPriceOracle.MANUALCURRENT.value],
+        }
+
+    with (
+        patch.object(service, '_eth_module_query', return_value=OkResult([{
+            'asset': nft.identifier,
+            'manually_input': False,
+            'price_asset': A_EUR.identifier,
+            'price_in_asset': '50',
+            'price': FVal('55'),  # the main currency value, never the answer
+        }])),
+        patch(
+            'rotkehlchen.api.services.assets.Inquirer.find_price',
+            side_effect=lambda from_asset, to_asset, ignore_cache: {
+                (A_EUR, A_USD): Price(FVal('1.2')),
+            }.get((from_asset, to_asset), ZERO_PRICE),
+        ) as find_price,
+    ):
+        for target_asset, expected in ((A_EUR, {nft: [Price(FVal('50')), CurrentPriceOracle.BLOCKCHAIN.value]}), (A_USD, {nft: [Price(FVal('60')), CurrentPriceOracle.BLOCKCHAIN.value]}), (A_BTC, {})):  # noqa: E501
+            result = service.get_current_assets_price(
+                assets=[nft],
+                target_asset=target_asset,
+                ignore_cache=False,
+            )
+            assert isinstance(result, OkResult)
+            assert result.result['assets'] == expected, target_asset
+
+    assert find_price.call_count == 2  # EUR needs no rate, a BTC rate is not known

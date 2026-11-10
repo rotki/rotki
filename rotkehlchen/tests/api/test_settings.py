@@ -22,6 +22,8 @@ from rotkehlchen.db.settings import (
     DBSettings,
     ModifiableDBSettings,
 )
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -258,12 +260,12 @@ def test_set_settings(rotkehlchen_api_server: APIServer) -> None:
 
     mock_web3 = patch('rotkehlchen.chain.ethereum.node_inquirer.Web3', MockWeb3)
     ksm_connect_node = patch(
-        'rotkehlchen.chain.substrate.manager.SubstrateManager._connect_node',
-        return_value=(True, ''),
+        'rotkehlchen.chain.substrate.manager.SubstrateManager._connect_node_or_raise',
+        return_value=None,
     )
     btc_connect_node = patch(
         'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
-        return_value=(True, ''),
+        return_value=None,
     )
     with mock_web3, ksm_connect_node, btc_connect_node:
         response = requests.put(
@@ -326,6 +328,26 @@ def test_set_rpc_endpoint_fail_not_set_others(
     assert result[rpc_setting] != rpc_endpoint
 
 
+def test_set_mempool_api_failure_keeps_its_cause(rotkehlchen_api_server: APIServer) -> None:
+    """A node that refused the connection says why, rather than every failure reading as a
+    conflict in the settings."""
+    with patch(
+        'rotkehlchen.chain.bitcoin.btc.manager.query_blockstream_like_blockheight',
+        side_effect=RemoteError('slow down', cause=FailureCause.RATE_LIMITED),
+    ):
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'settingsresource'),
+            json={'settings': {'btc_mempool_api': 'https://mempool.example'}},
+        )
+
+    assert_error_response(
+        response=response,
+        contained_in_msg='failed to connect to https://mempool.example/api',
+        status_code=HTTPStatus.CONFLICT,
+    )
+    assert response.json()['cause'] == FailureCause.RATE_LIMITED
+
+
 def test_default_evm_indexers_orders(rotkehlchen_api_server: APIServer) -> None:
     settings = assert_proper_response_with_result(
         response=requests.get(settings_url := api_url_for(rotkehlchen_api_server, 'settingsresource')),  # noqa: E501
@@ -365,12 +387,12 @@ def test_unset_rpc_endpoint(
     default_value = getattr(DBSettings(), rpc_setting)
 
     ksm_connect_node = patch(
-        'rotkehlchen.chain.substrate.manager.SubstrateManager._connect_node',
-        return_value=(True, ''),
+        'rotkehlchen.chain.substrate.manager.SubstrateManager._connect_node_or_raise',
+        return_value=None,
     )
     btc_connect_node = patch(
         'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
-        return_value=(True, ''),
+        return_value=None,
     )
     beacon_set_endpoint = patch(
         'rotkehlchen.chain.ethereum.modules.eth2.beacon.BeaconInquirer.set_rpc_endpoint',

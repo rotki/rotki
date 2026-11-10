@@ -282,7 +282,12 @@ class TokenQueryFailed(NotERC20Conformant, NotERC721Conformant):
 
     It is a subclass of the non conformant errors so that callers that only care about not
     getting the token keep working, while the ones that need to retry can tell it apart.
+    `cause` is the failed query's, or NETWORK while an earlier failure's cooldown runs.
     """
+
+    def __init__(self, message: str, cause: FailureCause = FailureCause.NETWORK) -> None:
+        super().__init__(message)
+        self.cause = cause
 
 
 class NotSPLConformant(Exception):

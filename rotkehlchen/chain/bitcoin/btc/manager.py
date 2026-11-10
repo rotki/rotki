@@ -500,7 +500,7 @@ class BitcoinManager(BitcoinCommonManager):
             # this api returns every TxIO of the transaction, so the counts stay unset.
         )
 
-    def set_custom_mempool_api(self, endpoint: str) -> tuple[bool, str]:
+    def set_custom_mempool_api(self, endpoint: str) -> None:
         """
         Sets the API Callbacks to be used with a custom Mempool API instance if
         fetching the blocheight from the custom API is successful.
@@ -509,15 +509,11 @@ class BitcoinManager(BitcoinCommonManager):
         if endpoint == '':  # i.e. we are deleting the custom endpoint
             log.debug(f'{self.blockchain} removing own node at endpoint: {endpoint}')
             self.api_callbacks = self.get_default_api_callbacks()
-            return True, ''
-        else:
-            endpoint = self._custom_mempool_api_url(endpoint)
-            is_connected, msg = self._connect_node(endpoint)
-            if is_connected:
-                self.api_callbacks = [self.get_custom_mempool_api_callback(endpoint)]
-                return True, ''
+            return
 
-        return is_connected, msg
+        endpoint = self._custom_mempool_api_url(endpoint)
+        self._connect_node(endpoint)
+        self.api_callbacks = [self.get_custom_mempool_api_callback(endpoint)]
 
     @staticmethod
     def _custom_mempool_api_url(endpoint: str) -> str:
@@ -527,23 +523,21 @@ class BitcoinManager(BitcoinCommonManager):
         """
         return urllib.parse.urljoin(endpoint, '/api')
 
-    def _connect_node(self, endpoint: str) -> tuple[bool, str]:
+    def _connect_node(self, endpoint: str) -> None:
         """Attempt to connect to a node, check its blockheight
 
         May raise:
-        - RemoteError: connecting to a node fails at any of the steps executed.
+        - RemoteError: connecting to the node failed, with the cause of that failure
         """
         try:
             last_block = query_blockstream_like_blockheight(endpoint)
         except RemoteError as e:
-            message = (
-                f'{self.blockchain} failed to connect to {endpoint} due to {e!s}.'
-            )
-            return False, message
+            raise RemoteError(
+                f'{self.blockchain} failed to connect to {endpoint} due to {e!s}.',
+                cause=e.cause,
+            ) from e
 
-        message = f'{self.blockchain} connected to {endpoint} at blockheight {last_block}'
-        log.info(message)
-        return True, message
+        log.info('%s connected to %s at blockheight %s', self.blockchain, endpoint, last_block)
 
     @staticmethod
     def deserialize_tx_io_from_blockcypher(

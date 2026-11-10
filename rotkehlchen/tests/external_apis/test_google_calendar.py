@@ -3,6 +3,7 @@ import json
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+import requests
 from google.auth.exceptions import RefreshError
 from googleapiclient.errors import HttpError
 
@@ -10,6 +11,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.calendar import CalendarEntry
 from rotkehlchen.errors.api import AuthenticationError
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
 from rotkehlchen.types import SupportedBlockchain, Timestamp
@@ -582,3 +584,15 @@ def test_verify_token_scopes_missing_scope(google_calendar_api):
         pytest.raises(RemoteError, match='missing required scope'),
     ):
         google_calendar_api._verify_token_scopes('token_without_scope')
+
+
+def test_validate_access_token_names_an_undecodable_body(google_calendar_api):
+    response = Mock(status_code=200, text='<html>')
+    response.json.side_effect = requests.exceptions.JSONDecodeError('bad', '<html>', 0)
+    with (
+        patch('rotkehlchen.externalapis.google_calendar.requests.get', return_value=response),
+        pytest.raises(RemoteError, match='undecodable user info') as excinfo,
+    ):
+        google_calendar_api._validate_access_token('token')
+
+    assert excinfo.value.cause == FailureCause.BAD_DATA

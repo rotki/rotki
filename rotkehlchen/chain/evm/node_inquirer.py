@@ -114,7 +114,7 @@ if TYPE_CHECKING:
     from eth_typing.abi import ABI
     from web3.types import BlockIdentifier, FilterParams
 
-    from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+    from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
     from rotkehlchen.chain.ethereum.types import LogIterationCallback
     from rotkehlchen.chain.gnosis.transactions import GnosisWithdrawalsQueryParameters
     from rotkehlchen.db.dbhandler import DBHandler
@@ -426,6 +426,17 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         save_query is set to False when testing the capabilities of a node, in that case we don't
         want to save any value in the db.
         """
+        if web3 is None:
+            try:
+                return self.query_historical_native_balance(
+                    address=address,
+                    block_number=block_number,
+                    queried_timestamp=queried_timestamp,
+                    save_query=save_query,
+                )
+            except RemoteError:
+                return None
+
         with self.database.conn.read_ctx() as cursor:  # first try to hit cache
             if (cached_balance := self.database.get_historical_balance_cache(
                 cursor=cursor,
@@ -436,35 +447,20 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             )) is not None:
                 return cached_balance
 
-        archive_call_order = self.get_archive_call_order()
-        if web3 is None and len(archive_call_order) == 0:
+        try:
+            result = self._get_balance(
+                node_web3=web3,
+                address=address,
+                block_identifier=block_number,
+            )
+        except (
+                requests.RequestException,
+                BlockchainQueryError,
+                KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Happened with mycrypto's node  # noqa: E501
+                Web3Exception,
+                ValueError,  # can still happen in web3py v6 for missing trieerror. Essentially historical balance call  # noqa: E501
+        ):
             return None
-
-        if web3 is None:
-            try:
-                result = self._query(
-                    method=self._get_balance,
-                    call_order=archive_call_order,
-                    address=address,
-                    block_identifier=block_number,
-                )
-            except RemoteError:
-                return None
-        else:
-            try:
-                result = self._get_balance(
-                    node_web3=web3,
-                    address=address,
-                    block_identifier=block_number,
-                )
-            except (
-                    requests.RequestException,
-                    BlockchainQueryError,
-                    KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Happened with mycrypto's node  # noqa: E501
-                    Web3Exception,
-                    ValueError,  # can still happen in web3py v6 for missing trieerror. Essentially historical balance call  # noqa: E501
-            ):
-                return None
 
         try:
             balance = from_wei(FVal(result))
@@ -472,18 +468,74 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             return None
 
         if save_query:
-            with self.database.user_write() as write_cursor:
-                self.database.set_historical_balance_cache(
-                    write_cursor=write_cursor,
-                    blockchain=self.blockchain,
-                    address=address,
-                    asset=self.native_token,
-                    amount=balance,
-                    timestamp=queried_timestamp,
-                    block_number=block_number,
-                )
+            self._cache_historical_balance(address, self.native_token, balance, queried_timestamp, block_number)  # noqa: E501
 
         return balance
+
+    def query_historical_native_balance(
+            self,
+            address: ChecksumEvmAddress,
+            block_number: int,
+            queried_timestamp: Timestamp,
+            save_query: bool = True,
+    ) -> FVal:
+        """Query the historical native token balance at a block from the archive nodes.
+
+        May raise:
+        - RemoteError if there is no archive node, or with the cause the nodes failed for
+        """
+        with self.database.conn.read_ctx() as cursor:
+            if (cached_balance := self.database.get_historical_balance_cache(
+                cursor=cursor,
+                blockchain=self.blockchain,
+                address=address,
+                asset=self.native_token,
+                block_number=block_number,
+            )) is not None:
+                return cached_balance
+
+        if len(archive_call_order := self.get_archive_call_order()) == 0:
+            raise RemoteError(
+                f'No archive node available for {self.blockchain} to query historical balance',
+                cause=FailureCause.UNSUPPORTED,
+            )
+
+        result = self._query(
+            method=self._get_balance,
+            call_order=archive_call_order,
+            address=address,
+            block_identifier=block_number,
+        )
+        try:
+            balance = from_wei(FVal(result))
+        except ValueError as e:
+            raise RemoteError(
+                f'The archive nodes returned a balance that is not a number: {result}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
+
+        if save_query:
+            self._cache_historical_balance(address, self.native_token, balance, queried_timestamp, block_number)  # noqa: E501
+        return balance
+
+    def _cache_historical_balance(
+            self,
+            address: ChecksumEvmAddress,
+            asset: Asset,
+            balance: FVal,
+            queried_timestamp: Timestamp,
+            block_number: int,
+    ) -> None:
+        with self.database.user_write() as write_cursor:
+            self.database.set_historical_balance_cache(
+                write_cursor=write_cursor,
+                blockchain=self.blockchain,
+                address=address,
+                asset=asset,
+                amount=balance,
+                timestamp=queried_timestamp,
+                block_number=block_number,
+            )
 
     def get_historical_token_balance(
             self,
@@ -497,6 +549,34 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         Returns None if query fails (e.g., no archive node available, contract doesn't exist
         at that block, etc.).
         """
+        try:
+            return self.query_historical_token_balance(
+                address=address,
+                token=token,
+                block_number=block_number,
+                queried_timestamp=queried_timestamp,
+            )
+        except RemoteError as e:
+            log.error(
+                'Failed to query historical token balance for %s token %s at block %s: %s',
+                address, token.evm_address, block_number, e,
+            )
+            return None
+
+    def query_historical_token_balance(
+            self,
+            address: ChecksumEvmAddress,
+            token: EvmToken,
+            block_number: int,
+            queried_timestamp: Timestamp | None = None,
+    ) -> FVal:
+        """Query historical ERC20 token balance at a specific block from the archive nodes.
+
+        May raise:
+        - RemoteError if there is no archive node, with REMOTE_REJECTED if the contract call
+        reverted (such as a token not deployed yet at that block), or with the cause the
+        nodes failed for
+        """
         with self.database.conn.read_ctx() as cursor:
             if (cached_balance := self.database.get_historical_balance_cache(
                 cursor=cursor,
@@ -508,7 +588,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 return cached_balance
 
         if len(archive_call_order := self.get_archive_call_order()) == 0:
-            return None
+            raise RemoteError(
+                f'No archive node available for {self.blockchain} to query historical balance',
+                cause=FailureCause.UNSUPPORTED,
+            )
 
         try:
             raw_balance = self.call_contract(
@@ -519,29 +602,15 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 block_identifier=block_number,
                 call_order=archive_call_order,
             )
-        except (RemoteError, BlockchainQueryError) as e:
-            log.error(
-                f'Failed to query historical token balance for {address} '
-                f'token {token.evm_address} at block {block_number}: {e!s}',
-            )
-            return None
+        except BlockchainQueryError as e:
+            raise RemoteError(str(e), cause=FailureCause.REMOTE_REJECTED) from e
 
         balance = token_normalized_value_decimals(
             token_amount=raw_balance,
             token_decimals=token.decimals,
         )
         if queried_timestamp is not None:
-            with self.database.user_write() as write_cursor:
-                self.database.set_historical_balance_cache(
-                    write_cursor=write_cursor,
-                    blockchain=self.blockchain,
-                    address=address,
-                    asset=token,
-                    amount=balance,
-                    timestamp=queried_timestamp,
-                    block_number=block_number,
-                )
-
+            self._cache_historical_balance(address, token, balance, queried_timestamp, block_number)  # noqa: E501
         return balance
 
     def has_archive_node(self) -> bool:
@@ -1565,7 +1634,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         except RemoteError as e:
             self.token_query_failures.add(address, ts_now())
             record_token_query_failure(address)
-            raise TokenQueryFailed(f'Failed to query token {address} due to {e!s}') from e
+            raise TokenQueryFailed(
+                f'Failed to query token {address} due to {e!s}',
+                cause=e.cause,
+            ) from e
 
         self.token_query_failures.remove(address)
         return output

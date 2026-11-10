@@ -7,13 +7,15 @@ import requests
 
 from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -95,3 +97,40 @@ def test_get_onchain_historical_balance(
         asset_id=A_DAI.identifier,
         expected_amount=result[A_DAI],
     )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS]])
+def test_onchain_historical_balance_failure_keeps_its_cause(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """A rate limited archive node says so, rather than every failure reading as network,
+    and a balanceOf call that reverts reads as the node refusing it."""
+    node_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer  # noqa: E501
+    with (
+        patch.object(node_inquirer, 'has_archive_node', return_value=True),
+        patch.object(node_inquirer, 'get_blocknumber_by_time', return_value=11565019),
+        patch.object(node_inquirer, 'query_historical_native_balance', side_effect=RemoteError(
+            'slow down',
+            cause=FailureCause.RATE_LIMITED,
+        )),
+    ):
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'onchainhistoricalbalanceresource'),
+            json={'timestamp': HISTORICAL_TS, 'evm_chain': 'ethereum', 'address': ethereum_accounts[0], 'asset': A_ETH.identifier},  # noqa: E501
+        )
+    assert_error_response(response=response, contained_in_msg='slow down', status_code=HTTPStatus.CONFLICT)  # noqa: E501
+    assert response.json()['cause'] == FailureCause.RATE_LIMITED
+
+    with (
+        patch.object(node_inquirer, 'get_archive_call_order', return_value=[object()]),
+        patch.object(node_inquirer, 'call_contract', side_effect=BlockchainQueryError('reverted')),
+        pytest.raises(RemoteError) as raised,
+    ):
+        node_inquirer.query_historical_token_balance(
+            address=ethereum_accounts[0],
+            token=A_DAI.resolve_to_evm_token(),
+            block_number=1,
+        )
+    assert raised.value.cause == FailureCause.REMOTE_REJECTED

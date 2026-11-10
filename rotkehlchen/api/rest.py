@@ -4413,26 +4413,26 @@ class RestAPI:
                 e.cause,
             )
 
-        if asset == evm_manager.node_inquirer.native_token:
-            balance = evm_manager.node_inquirer.get_historical_native_balance(
-                address=address,
-                block_number=block_number,
-                queried_timestamp=timestamp,
-            )
-        else:
-            balance = evm_manager.node_inquirer.get_historical_token_balance(
-                token=asset.resolve_to_evm_token(),
-                address=address,
-                block_number=block_number,
-                queried_timestamp=timestamp,
-            )
-
-        if balance is None:
+        try:
+            if asset == evm_manager.node_inquirer.native_token:
+                balance = evm_manager.node_inquirer.query_historical_native_balance(
+                    address=address,
+                    block_number=block_number,
+                    queried_timestamp=timestamp,
+                )
+            else:
+                balance = evm_manager.node_inquirer.query_historical_token_balance(
+                    token=asset.resolve_to_evm_token(),
+                    address=address,
+                    block_number=block_number,
+                    queried_timestamp=timestamp,
+                )
+        except RemoteError as e:
             return FailResult(
                 f'Failed to query historical balance for {asset.identifier} at block {block_number}. '  # noqa: E501
-                f'The token may not have been deployed at this block or may not be ERC20 compatible.',  # noqa: E501
+                f'The token may not have been deployed at this block or may not be ERC20 compatible. {e!s}',  # noqa: E501
                 HTTPStatus.CONFLICT,
-                FailureCause.NETWORK,
+                e.cause,
             )
 
         return OkResult({asset.identifier: str(balance)})

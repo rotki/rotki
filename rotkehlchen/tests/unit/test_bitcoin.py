@@ -596,13 +596,12 @@ def test_local_bitcoin_mempool_api(
     endpoint = 'https://localhost:4080'
     btc_connect_node = patch(
         'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
-        return_value=(True, ''),
+        return_value=None,
     )
     with btc_connect_node as btc_connect:
-        is_connected, _msg = bitcoin_manager.set_custom_mempool_api(endpoint)
+        bitcoin_manager.set_custom_mempool_api(endpoint)
         btc_connect.assert_called_once_with('https://localhost:4080/api')
 
-    assert is_connected
     custom_api_callbacks: list[BtcApiCallback] = bitcoin_manager.api_callbacks
     assert len(custom_api_callbacks) == 1
     custom_api_callback = custom_api_callbacks[0]

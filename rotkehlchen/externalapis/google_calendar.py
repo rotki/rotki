@@ -471,11 +471,26 @@ class GoogleCalendarAPI:
                 'user_email': email_address,
             }
 
+    @staticmethod
+    def _decoded_body(response: requests.Response, what: str) -> dict[str, Any]:
+        """The JSON body of a successful Google response.
+
+        May raise:
+        - RemoteError if the body is not JSON, which no retry or other key would change
+        """
+        try:
+            return response.json()
+        except requests.exceptions.JSONDecodeError as e:
+            raise RemoteError(
+                f'Google returned undecodable {what}: {response.text}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
+
     def _validate_access_token(self, access_token: str) -> dict[str, Any]:
         """Validate access token and return user info.
 
         May raise:
-        - RemoteError if the access token is invalid
+        - RemoteError if the access token is invalid or the answer is not JSON
         """
         headers = {'Authorization': f'Bearer {access_token}'}
         response = requests.get(
@@ -490,7 +505,7 @@ class GoogleCalendarAPI:
                 cause=cause_for_credential_check(response.status_code),
             )
 
-        user_info = response.json()
+        user_info = self._decoded_body(response, 'user info')
         log.info(f'Access token validated for user: {user_info.get("email", "unknown")}')
         return user_info
 
@@ -498,7 +513,7 @@ class GoogleCalendarAPI:
         """Verify that the token has required scopes.
 
         May raise:
-        - RemoteError if the token is missing required scopes
+        - RemoteError if the token is missing required scopes or the answer is not JSON
         """
         response = requests.get(
             f'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={access_token}',
@@ -509,7 +524,7 @@ class GoogleCalendarAPI:
             log.warning(f'Could not verify token scopes: {response.status_code}')
             return
 
-        token_info = response.json()
+        token_info = self._decoded_body(response, 'token info')
         actual_scopes = token_info.get('scope', '').split(' ')
         log.debug(f'Token has scopes: {actual_scopes}')
 
