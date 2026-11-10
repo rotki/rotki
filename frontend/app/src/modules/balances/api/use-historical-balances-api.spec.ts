@@ -67,6 +67,50 @@ describe('composables/api/balances/historical-balances', () => {
     });
   });
 
+  describe('fetchCurrentHistoricalBalances', () => {
+    it('should request current balances with an empty body and parse the stale flag', async () => {
+      let capturedBody: DefaultBodyType = null;
+      server.use(
+        http.post(`${backendUrl}/api/1/balances/historical/current`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({
+            message: '',
+            result: {
+              entries: [
+                { amount: '1.5', asset: 'ETH', location: 'ethereum', location_label: '0xABC', protocol: null },
+              ],
+              processing_required: false,
+              stale: true,
+            },
+          });
+        }),
+      );
+
+      const { fetchCurrentHistoricalBalances } = await getApi();
+      const result = await fetchCurrentHistoricalBalances();
+
+      expect(capturedBody).toEqual({});
+      expect(result.stale).toBe(true);
+      expect(result.processingRequired).toBe(false);
+      expect(result.entries[0].amount.toString()).toBe('1.5');
+    });
+
+    it('should read a 404 as a history-free empty state', async () => {
+      server.use(
+        http.post(`${backendUrl}/api/1/balances/historical/current`, () =>
+          HttpResponse.json({ message: 'No historical data found', result: null }, { status: 404 })),
+      );
+
+      const { fetchCurrentHistoricalBalances } = await getApi();
+
+      await expect(fetchCurrentHistoricalBalances()).resolves.toEqual({
+        entries: [],
+        processingRequired: false,
+        stale: false,
+      });
+    });
+  });
+
   describe('findHistoricalBalanceDivergence', () => {
     it('should request the divergence search as an async task with required fields', async () => {
       let capturedBody: DefaultBodyType = null;

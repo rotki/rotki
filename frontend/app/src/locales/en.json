@@ -1914,6 +1914,21 @@
   "backend_settings_button": {
     "tooltip": "Change the backend settings. Changing the settings will restart the rotki backend"
   },
+  "balance_display_mode": {
+    "attention": "Discrepancies",
+    "attention_tooltip": "The balances queried from the chain or exchange differ from the balances derived from your history events.",
+    "comparison_from_history": "From history",
+    "comparison_queried": "Queried",
+    "difference": "Difference",
+    "history": "From history",
+    "history_tooltip": "From history: balances computed by replaying your history events.",
+    "label": "Balance display mode",
+    "process_now": "Process now",
+    "queried": "Queried",
+    "queried_tooltip": "Queried: balances as currently reported by the blockchain or exchange.",
+    "reconciliation": "Balance reconciliation",
+    "stale_notice": "History-derived balances are behind recent events. Re-run processing to bring them up to date."
+  },
   "balance_divergence": {
     "action": "Find divergence",
     "apart": {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import BalanceDisplayModeSwitch from '@/modules/balances/components/BalanceDisplayModeSwitch.vue';
 import ChainsUpdatedCaption from '@/modules/dashboard/components/ChainsUpdatedCaption.vue';
 import DashboardRefresh from '@/modules/dashboard/components/DashboardRefresh.vue';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
@@ -46,6 +47,10 @@ const balanceClass = computed<string>(() => {
         {{ t('overall_balances.total_balance') }}
       </div>
       <DashboardRefresh />
+      <BalanceDisplayModeSwitch
+        class="ml-auto"
+        compact
+      />
     </div>
     <div
       class="font-medium"

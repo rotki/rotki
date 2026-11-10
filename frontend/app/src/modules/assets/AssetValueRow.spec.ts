@@ -1,5 +1,6 @@
 import { bigNumberify } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AssetValueRow from '@/modules/assets/AssetValueRow.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
@@ -25,6 +26,17 @@ vi.mock('@/modules/balances/use-aggregated-balances', () => ({
       price: bigNumberify(2),
       value: bigNumberify(2),
     })),
+  }),
+}));
+
+const comparison = vi.hoisted(() => ({ hasDiscrepancy: false, show: false }));
+
+vi.mock('@/modules/balances/use-balance-display-comparison', () => ({
+  useBalanceDisplayComparison: (): object => ({
+    comparisonAmount: computed(() => bigNumberify(3)),
+    delta: computed(() => bigNumberify(-2)),
+    hasDiscrepancy: computed(() => comparison.hasDiscrepancy),
+    show: computed(() => comparison.show),
   }),
 }));
 
@@ -66,6 +78,9 @@ function createWrapper(): VueWrapper<InstanceType<typeof AssetValueRow>> {
 
 describe('assetValueRow', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
+    comparison.show = false;
+    comparison.hasDiscrepancy = false;
     spies.deletePrice.mockResolvedValue(undefined);
   });
 
@@ -86,5 +101,28 @@ describe('assetValueRow', () => {
     await flushPromises();
 
     expect(spies.deletePrice).toHaveBeenCalledExactlyOnceWith({ fromAsset: 'ETH' });
+  });
+
+  it('should show no comparison line when the comparison is unavailable', () => {
+    comparison.show = false;
+
+    expect(createWrapper().find('[data-testid="asset-comparison"]').exists()).toBe(false);
+  });
+
+  it('should show the other mode\'s amount and no difference when the modes agree', () => {
+    comparison.show = true;
+    comparison.hasDiscrepancy = false;
+    const wrapper = createWrapper();
+
+    expect(wrapper.get('[data-testid="asset-comparison"]').text()).toContain('balance_display_mode.comparison_from_history');
+    expect(wrapper.find('[data-testid="asset-comparison-delta"]').exists()).toBe(false);
+  });
+
+  it('should show the signed difference with a reconciliation link when the modes diverge', () => {
+    comparison.show = true;
+    comparison.hasDiscrepancy = true;
+    const wrapper = createWrapper();
+
+    expect(wrapper.get('[data-testid="asset-comparison-delta"]').text()).toContain('balance_display_mode.difference');
   });
 });

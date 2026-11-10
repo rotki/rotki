@@ -5,6 +5,7 @@ import AssetExternalLinks from '@/modules/assets/AssetExternalLinks.vue';
 import AssetLocations from '@/modules/assets/AssetLocations.vue';
 import AssetValueRow from '@/modules/assets/AssetValueRow.vue';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
+import BalanceDisplayModeSwitch from '@/modules/balances/components/BalanceDisplayModeSwitch.vue';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
@@ -110,6 +111,7 @@ const chainName = computed<string | undefined>(() => {
         </div>
       </div>
       <div class="flex items-center gap-3">
+        <BalanceDisplayModeSwitch />
         <div
           v-if="!isCustomAsset"
           class="flex items-center gap-2"

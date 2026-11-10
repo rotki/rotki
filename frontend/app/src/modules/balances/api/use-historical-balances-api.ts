@@ -4,6 +4,7 @@ import { HTTPStatus } from '@/modules/core/api/types/http';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 import { useTaskApi } from '@/modules/core/tasks/use-task-api';
 import {
+  CurrentHistoricalBalancesResponse,
   type HistoricalBalanceDivergencePayload,
   HistoricalBalancesAtEventsResponse,
   type HistoricalBalanceSeriesPayload,
@@ -11,6 +12,7 @@ import {
 } from '@/modules/history/balances/types';
 
 interface UseHistoricalBalancesApiReturn {
+  fetchCurrentHistoricalBalances: () => Promise<CurrentHistoricalBalancesResponse>;
   fetchHistoricalBalances: (timestamp: number) => Promise<HistoricalBalancesResponse>;
   fetchHistoricalBalancesAtEvents: (eventIdentifiers: number[]) => Promise<HistoricalBalancesAtEventsResponse>;
   findHistoricalBalanceDivergence: (payload: HistoricalBalanceDivergencePayload) => Promise<PendingTask>;
@@ -20,6 +22,26 @@ interface UseHistoricalBalancesApiReturn {
 
 export function useHistoricalBalancesApi(): UseHistoricalBalancesApiReturn {
   const { triggerTask } = useTaskApi();
+
+  /**
+   * Current balances derived from processed history events, one entry per bucket.
+   *
+   * @remarks
+   * The backend fixes the timestamp to now and groups by account, so no arguments are sent. A
+   * 404 means there is no history at all yet, which is a valid empty state rather than a failure.
+   * Alongside `processingRequired`, the response reports `stale` when recent event edits have not
+   * been folded into the derived balances yet.
+   */
+  async function fetchCurrentHistoricalBalances(): Promise<CurrentHistoricalBalancesResponse> {
+    try {
+      return CurrentHistoricalBalancesResponse.parse(await api.post('/balances/historical/current', {}));
+    }
+    catch (error: unknown) {
+      if (error instanceof FetchError && error.status === HTTPStatus.NOT_FOUND)
+        return { entries: [], processingRequired: false, stale: false };
+      throw error;
+    }
+  }
 
   /**
    * Every account's balance of every asset at `timestamp`, one entry per bucket.
@@ -66,6 +88,7 @@ export function useHistoricalBalancesApi(): UseHistoricalBalancesApiReturn {
     triggerTask('historical_balance_processing');
 
   return {
+    fetchCurrentHistoricalBalances,
     fetchHistoricalBalances,
     fetchHistoricalBalancesAtEvents,
     findHistoricalBalanceDivergence,

@@ -44,6 +44,12 @@ export const HistoricalBalancesResponse = z.object({
 
 export type HistoricalBalancesResponse = z.infer<typeof HistoricalBalancesResponse>;
 
+export const CurrentHistoricalBalancesResponse = HistoricalBalancesResponse.extend({
+  stale: z.boolean().default(false),
+});
+
+export type CurrentHistoricalBalancesResponse = z.infer<typeof CurrentHistoricalBalancesResponse>;
+
 const HistoricalBalanceSeriesEntry = z.object({
   location: z.string(),
   locationLabel: z.string(),
