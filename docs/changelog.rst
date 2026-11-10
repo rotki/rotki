@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`12578` The backend now keeps answering health checks and reporting finished tasks while many slow requests are running at once, for example several sessions of a docker deployment or scripts using the API. Before, it could look dead until those requests finished.
 * :feature:`13287` Deleting a token balance from a balance snapshot can now also mark the token as spam, so it is not queried again and does not come back in the next snapshot. The mark is applied when the snapshot is saved, and undoing the delete or discarding the changes drops it.
 * :feature:`13451` A SoChain API key can now be added under API Keys > External Services, to raise the limits of Dogecoin balance queries. It is optional.
 * :feature:`12596` Bitvavo is now a supported exchange. Add a Read-only API key under API Keys -> Exchanges to track your balances, including assets locked in Fixed Staking, and your history of trades, conversions, deposits, withdrawals, staking rewards and other payouts. Bitvavo history entries of a type rotki does not handle yet are kept as informational events that can be edited.
