@@ -814,6 +814,10 @@ Data Issue Remediation
 
 Sent when the periodic data-issue remediation job starts and when it ends.
 
+The current strategy previews customized transactions associated with negative balances
+and records diagnostic comparisons without changing the saved events. Completion refreshes
+the issues inbox; it does not imply that an issue was resolved.
+
 ::
 
     {
