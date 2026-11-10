@@ -50,7 +50,9 @@ pub struct Cidr {
 
 impl Cidr {
     /// Parse `10.0.0.0/8` / `fd00::/8`. A bare address is accepted and treated
-    /// as a full-length prefix (a single host).
+    /// as a full-length prefix (a single host). An IPv4-mapped block such as
+    /// `::ffff:10.0.0.0/104` is stored as its IPv4 form (`10.0.0.0/8`), since
+    /// peers are canonicalised the same way before they are matched.
     pub fn parse(spec: &str) -> Result<Self, String> {
         let (addr, prefix) = match spec.split_once('/') {
             Some((addr, len)) => (addr, Some(len)),
@@ -70,6 +72,15 @@ impl Cidr {
         };
         if prefix_len > max {
             return Err(format!("prefix length in {spec:?} exceeds /{max}"));
+        }
+        if let IpAddr::V6(v6) = base {
+            // Only a block entirely inside ::ffff:0:0/96 maps onto IPv4.
+            if let (Some(v4), Some(v4_len)) = (v6.to_ipv4_mapped(), prefix_len.checked_sub(96)) {
+                return Ok(Self {
+                    base: IpAddr::V4(v4),
+                    prefix_len: v4_len,
+                });
+            }
         }
         Ok(Self { base, prefix_len })
     }
@@ -538,6 +549,17 @@ mod tests {
         assert!(Cidr::parse("fd00::/8")
             .unwrap()
             .contains("fd00::1".parse().unwrap()));
+
+        // IPv4-mapped blocks match the canonical IPv4 peer.
+        let cidr = Cidr::parse("::ffff:10.0.0.0/104").unwrap();
+        assert!(cidr.contains("10.1.2.3".parse().unwrap()));
+        assert!(!cidr.contains("11.0.0.1".parse().unwrap()));
+        assert!(Cidr::parse("::ffff:203.0.113.9")
+            .unwrap()
+            .contains("203.0.113.9".parse().unwrap()));
+        assert!(!Cidr::parse("::ffff:203.0.113.9")
+            .unwrap()
+            .contains("203.0.113.10".parse().unwrap()));
 
         assert!(Cidr::parse("10.0.0.0/33").is_err());
         assert!(Cidr::parse("not-an-ip/8").is_err());
