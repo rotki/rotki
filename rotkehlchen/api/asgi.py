@@ -16,6 +16,7 @@ serving modes.
 """
 import asyncio
 import logging
+import re
 from contextlib import suppress
 from http.cookies import SimpleCookie
 from typing import TYPE_CHECKING, Final, cast
@@ -44,10 +45,18 @@ log = RotkehlchenLogsAdapter(logger)
 # saturated by slow synchronous endpoints even /ping waits. Workers blocked on
 # DB or remote IO have released the GIL, so a generous pool is cheap and moves
 # that cliff far out; uvicorn's limit_concurrency (see api/server.py) makes
-# hitting it fail fast with 503s instead of queueing unboundedly. A dedicated
-# worker lane so that /ping, /tasks and /messages can never starve is
-# https://github.com/rotki/rotki/issues/12578
+# hitting it fail fast with 503s instead of queueing unboundedly. The liveness
+# endpoints have a lane of their own so that they cannot starve, see below.
 WSGI_BRIDGE_WORKERS = 64
+
+# Workers of the liveness lane: a second bridge, with its own executor, serving
+# only the endpoints the frontend and health checks poll to tell whether the
+# backend is alive and to collect the outcome of async tasks. They are all quick
+# in-memory reads, so a small pool keeps them answering while slow synchronous
+# requests hold every worker of the main pool.
+LIVENESS_LANE_WORKERS: Final = 4
+# /tasks/trigger and /tasks/scheduler are not polled and stay on the main pool
+LIVENESS_LANE_PATHS: Final = re.compile(r'/api/1/(?:ping|messages|tasks(?:/\d+)?)')
 
 # Cap on a client's pending-message queue. Since send() became an enqueue,
 # producers never block, so a client that stops reading (frozen renderer,
@@ -273,10 +282,16 @@ def create_asgi_app(
         rest_api: RestAPI,
 ) -> ASGIApp:
     """Compose the rotki ASGI app: /ws and /ws/ go to the native websocket handler,
-    everything else to the Flask REST app through the WSGI bridge"""
+    everything else to the Flask REST app through a WSGI bridge. The liveness
+    endpoints (LIVENESS_LANE_PATHS) get a bridge of their own, the rest share
+    the main one."""
     wsgi_app = WSGIMiddleware(
         flask_app,  # type: ignore[arg-type]  # Flask is a WSGI callable, mypy can't see it
         workers=WSGI_BRIDGE_WORKERS,
+    )
+    liveness_wsgi_app = WSGIMiddleware(
+        flask_app,  # type: ignore[arg-type]  # Flask is a WSGI callable, mypy can't see it
+        workers=LIVENESS_LANE_WORKERS,
     )
 
     async def rotki_asgi_app(
@@ -300,6 +315,8 @@ def create_asgi_app(
                 send=send,
                 claims=claims,
             )
+        elif LIVENESS_LANE_PATHS.fullmatch(scope['path']) is not None:
+            await liveness_wsgi_app(scope, receive, send)
         else:
             await wsgi_app(scope, receive, send)
 
