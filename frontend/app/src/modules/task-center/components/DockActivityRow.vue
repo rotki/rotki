@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import type { RouteLocationRaw } from 'vue-router';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
+import { fixRouteOf } from '@/modules/task-center/activity-fix-route';
 import { type ActivityOutcome, activityOutcome } from '@/modules/task-center/activity-outcome';
 import { type ActivitySubject, activitySubject } from '@/modules/task-center/activity-subject';
 import DockActivityDetail from '@/modules/task-center/components/DockActivityDetail.vue';
@@ -114,6 +116,9 @@ const isFailed = computed<boolean>(() => get(status) === ActivityStatus.FAILED);
 /** Only an activity that failed itself can be run again; a parent reporting a child's failure retries through that child. */
 const retryable = computed<boolean>(() => activity.status === ActivityStatus.FAILED && offersRetry(activity));
 
+/** Where to fix a failure only a changed key can fix, offered in place of the retry such a failure has no use for. */
+const fixRoute = computed<RouteLocationRaw | undefined>(() => (activity.status === ActivityStatus.FAILED ? fixRouteOf(activity) : undefined));
+
 const outcome = computed<ActivityOutcome>(() => activityOutcome(get(status)));
 
 /** The status word, plus the producer's reason when there is one, so the mark says what the colour means. */
@@ -175,7 +180,7 @@ const confirmingStop = ref<boolean>(false);
 
 const cancellable = computed<boolean>(() => activity.cancellable && !isTerminalStatus(activity.status));
 
-const hasButtons = computed<boolean>(() => get(cancellable) || get(retryable) || dismissible);
+const hasButtons = computed<boolean>(() => get(cancellable) || get(retryable) || !!get(fixRoute) || dismissible);
 
 /** A settled child with nothing but its name is one line, so it takes less room than a row that has more to say. */
 const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity.status) && !get(reasonLine) && !get(rowSteps));
@@ -405,6 +410,19 @@ watch(cancellable, (canCancel) => {
       >
         {{ t('pending_task.retry') }}
       </RuiButton>
+      <RouterLink
+        v-if="fixRoute"
+        :to="fixRoute"
+        data-testid="fix-activity"
+      >
+        <RuiButton
+          variant="text"
+          color="primary"
+          size="sm"
+        >
+          {{ t('pending_task.fix') }}
+        </RuiButton>
+      </RouterLink>
       <RuiTooltip
         v-if="dismissible"
         :options="{ placement: 'top' }"

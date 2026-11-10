@@ -1,12 +1,10 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { RepullingEthStakingPayload, RepullingExchangeEventsPayload, RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
 import type { AccountType } from '@/modules/history/events/tx/RepullingTransactionForm.vue';
 import dayjs from 'dayjs';
-import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { type RepullingTransactionResult, useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';
 import { useRepullingTransactionForm } from '@/modules/history/events/tx/use-repulling-transaction-form';
@@ -71,7 +69,8 @@ function createDefaultEthStakingData(): RepullingEthStakingPayload {
  *
  * @remarks
  * The dialog closes the moment a submission starts rather than when it finishes, because a repull
- * runs as a background task and there is nothing further to watch in the dialog.
+ * runs as a background task and there is nothing further to watch in the dialog. A failed repull is
+ * a value its task reports in the dock, so a submission has no error of its own to show.
  *
  * @returns the form's bindings; only {@link UseRepullingTransactionSubmissionReturn.submit} calls
  * the backend
@@ -86,8 +85,6 @@ export function useRepullingTransactionSubmission(
   const modelAccountType = shallowRef<AccountType>('blockchain');
   const modelErrorMessages = ref<ValidationErrors>({});
 
-  const { t } = useI18n({ useScope: 'global' });
-  const { notifyError } = useNotifications();
   const { repullingEthStakingEvents, repullingExchangeEvents, repullingTransactions } = useHistoryTransactions();
   const { createDefaultFormData, shouldShowConfirmation } = useRepullingTransactionForm();
   const { resetUndecodedTransactionsStatus } = useDecodingStatusStore();
@@ -99,28 +96,6 @@ export function useRepullingTransactionSubmission(
     set(modelFormData, createDefaultFormData());
     set(modelEthStakingData, createDefaultEthStakingData());
     set(modelAccountType, 'blockchain');
-  }
-
-  /**
-   * Reports a submission that threw.
-   *
-   * @remarks
-   * The dialog closed when the submission started, so a plain failure goes to a toast. Field errors
-   * go to the form, which shows them when the dialog is opened again with what was typed.
-   */
-  async function handleSubmissionError(error: unknown, data: RepullingTransactionPayload): Promise<void> {
-    let message: string | ValidationErrors = getErrorMessage(error);
-
-    if (error instanceof ApiValidationError)
-      message = error.getValidationErrors(data);
-
-    if (typeof message === 'string') {
-      notifyError(t('actions.repulling_transaction.task.title'), message);
-    }
-    else {
-      set(modelErrorMessages, message);
-      await toValue(form)?.validate();
-    }
   }
 
   async function handleExchangeSubmission(data: RepullingTransactionPayload): Promise<void> {
@@ -172,9 +147,6 @@ export function useRepullingTransactionSubmission(
         await handleBlockchainSubmission(data);
 
       resetForm();
-    }
-    catch (error: unknown) {
-      await handleSubmissionError(error, data);
     }
     finally {
       set(submitting, false);

@@ -32,6 +32,7 @@ const {
   balances,
   exchangeBalance,
   isExchangeLoading,
+  lastRefreshFailed,
   modelView,
   navigateToExchangeSetup,
   refreshExchangeBalances,
@@ -120,6 +121,14 @@ const binance = computed<'binance' | 'binanceus' | undefined>(() => (isBinance(e
         >
           <template #empty>
             <TableEmptyNotice
+              v-if="lastRefreshFailed"
+              icon="lu-circle-alert"
+              :title="t('exchange_balances.empty_table.failed_title')"
+              :description="t('exchange_balances.empty_table.failed_description')"
+              data-testid="exchange-balances-refresh-failed"
+            />
+            <TableEmptyNotice
+              v-else
               icon="lu-coins-exchange"
               :title="t('exchange_balances.empty_table.title')"
               :description="t('exchange_balances.empty_table.description')"

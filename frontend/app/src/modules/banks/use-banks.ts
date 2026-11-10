@@ -49,6 +49,7 @@ interface UseBanksReturn {
    * TAN the bank rejected or let expire, which the connection then reports as expired.
    */
   answerBankAuthentication: (connection: ConnectionRef, response?: string) => ResultAsync<BankSetupResult, BankSetupError>;
+  /** Removes a connection; a failed removal throws, for the table it was deleted from to name. */
   removeBank: (connection: ConnectionRef) => Promise<boolean>;
   /**
    * Drops the challenge a connection waits on and syncs it again, so the bank sends a fresh one.
@@ -211,11 +212,9 @@ export function useBanks(): UseBanksReturn {
       return success;
     }
     catch (error: unknown) {
-      notifyError(
-        t('bank_settings.errors.remove_title'),
-        t('bank_settings.errors.remove_message', { error: getErrorMessage(error), name: store.connectionName(connection.identifier) }),
-      );
-      return false;
+      if (isRequestCancellation(error))
+        return false;
+      throw error;
     }
   };
 

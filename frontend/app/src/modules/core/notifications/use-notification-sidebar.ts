@@ -56,8 +56,6 @@ interface UseNotificationSidebarReturn {
    * rather than a column of placeholders; while scrolling it tracks the top of the list instead.
    */
   initialAppear: Readonly<Ref<boolean>>;
-  /** Whether notifications were dropped because the store was full. */
-  messageOverflow: Readonly<Ref<boolean>>;
   /** Dismisses a single notification. */
   remove: (id: number) => void;
   /**
@@ -97,7 +95,7 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
   const modelAskingToClear = shallowRef<boolean>(false);
 
   const notificationStore = useNotificationsStore();
-  const { messageOverflow, newestFirst: allNotifications } = storeToRefs(notificationStore);
+  const { newestFirst: allNotifications } = storeToRefs(notificationStore);
   const { markAllRead, remove } = notificationStore;
   const problemsStore = useBackendProblemsStore();
   const { problems: allProblems } = storeToRefs(problemsStore);
@@ -201,7 +199,6 @@ export function useNotificationSidebar(options: UseNotificationSidebarOptions): 
     historyDays,
     initialAppear: readonly(initialAppear),
     isEmpty,
-    messageOverflow,
     modelAskingToClear,
     modelMutedOpen,
     modelProblemsOpen,

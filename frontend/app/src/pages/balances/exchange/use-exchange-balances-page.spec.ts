@@ -8,6 +8,7 @@ import { isBinance, useExchangeBalancesPage } from './use-exchange-balances-page
 const {
   connected,
   exchangeBalances,
+  outcomes,
   pushMock,
   refreshConnectedExchangeBalances,
   refreshExchangeBalance,
@@ -17,10 +18,12 @@ const {
   const connected: { current: { location: string }[] } = { current: [] };
   const exchangeBalances: { current: Record<string, AssetBalanceWithPrice[]> } = { current: {} };
   const routeRef: { current?: Ref<{ query: Record<string, string> }> } = {};
+  const outcomes: { all?: string; byLocation: Record<string, string> } = { byLocation: {} };
 
   return {
     connected,
     exchangeBalances,
+    outcomes,
     pushMock: vi.fn(async (): Promise<void> => {}),
     refreshConnectedExchangeBalances: vi.fn(async (): Promise<void> => {}),
     refreshExchangeBalance: vi.fn(async (): Promise<void> => {}),
@@ -70,10 +73,15 @@ vi.mock('@/modules/balances/use-balance-refresh', () => ({
 }));
 
 vi.mock('@/modules/task-center/use-task-center', async () => {
-  const { computed: computedFn } = await import('vue');
+  const { computed: computedFn, toValue: toValueFn } = await import('vue');
+
+  type Outcome = ComputedRef<{ lastOutcome?: string }>;
   return {
-    useTaskCenter: (): { useIsActive: () => ComputedRef<boolean> } => ({
+    useTaskCenter: (): Record<string, unknown> => ({
       useIsActive: (): ComputedRef<boolean> => computedFn(() => false),
+      useWorkStatus: (_kind: string, location: () => string): Outcome =>
+        computedFn(() => ({ lastOutcome: outcomes.byLocation[toValueFn(location)] })),
+      useWorkStatusPrefix: (): Outcome => computedFn(() => ({ lastOutcome: outcomes.all })),
     }),
   };
 });
@@ -114,7 +122,26 @@ describe('pages/balances/exchange/useExchangeBalancesPage', () => {
     vi.clearAllMocks();
     connected.current = [];
     exchangeBalances.current = {};
+    outcomes.all = undefined;
+    outcomes.byLocation = {};
     routeRef.current = ref({ query: {} });
+  });
+
+  describe('the last refresh', () => {
+    it('should read the failure of the exchange in view, not another one', () => {
+      outcomes.byLocation = { binance: 'complete', kraken: 'failed' };
+
+      expect(get(setup('kraken').lastRefreshFailed)).toBe(true);
+      expect(get(setup('binance').lastRefreshFailed)).toBe(false);
+    });
+
+    it('should read the latest outcome over every exchange when none is in view', () => {
+      outcomes.all = 'failed';
+      expect(get(setup().lastRefreshFailed)).toBe(true);
+
+      outcomes.all = 'complete';
+      expect(get(setup().lastRefreshFailed)).toBe(false);
+    });
   });
 
   it('should refresh the savings balances on mount', async () => {

@@ -10,7 +10,6 @@ function take(notifications: NotificationData[], n: number = NOTIFICATION_MAX_SI
 
 export const useNotificationsStore = defineStore('notifications', () => {
   const data = shallowRef<NotificationData[]>([]);
-  const messageOverflow = ref<boolean>(false);
   const cooldown = useNotificationCooldown();
 
   let nextId = 1;
@@ -49,7 +48,6 @@ export const useNotificationsStore = defineStore('notifications', () => {
       notifications.splice(index, 1);
 
     set(data, notifications);
-    set(messageOverflow, false);
   }
 
   function removeMatching(predicate: (notification: NotificationData) => boolean): void {
@@ -97,9 +95,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
    */
   function trimmedCopy(): NotificationData[] {
     const notifications = [...get(data)];
-    const trimmed = take(notifications, NOTIFICATION_MAX_SIZE - 1);
-    set(messageOverflow, notifications.length > trimmed.length);
-    return trimmed;
+    return take(notifications, NOTIFICATION_MAX_SIZE - 1);
   }
 
   return {
@@ -110,7 +106,6 @@ export const useNotificationsStore = defineStore('notifications', () => {
     getNextId,
     hasUnread,
     markAllRead,
-    messageOverflow,
     newestFirst,
     queue,
     remove,

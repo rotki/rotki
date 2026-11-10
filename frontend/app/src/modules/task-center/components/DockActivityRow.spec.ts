@@ -1,5 +1,5 @@
 import { I18nTStub } from '@test/stubs/I18nT';
-import { mount, type VueWrapper } from '@vue/test-utils';
+import { mount, RouterLinkStub, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { msg } from '@/message-key';
@@ -443,6 +443,26 @@ describe('dockActivityRow', () => {
       const wrapper = createWrapper({ activity: activity({ failureCause: 'auth', rerunnable: true, status: ActivityStatus.FAILED }) });
 
       expect(wrapper.find('[data-testid=retry-activity]').exists()).toBe(false);
+    });
+
+    it('should link a rejected key to the page that edits it', () => {
+      const wrapper = createWrapper({
+        activity: activity({ failureCause: 'auth', kind: ActivityKind.EXCHANGE_BALANCES, status: ActivityStatus.FAILED }),
+      });
+
+      expect(wrapper.findComponent(RouterLinkStub).props('to')).toEqual({ name: '/accounts/exchanges/' });
+    });
+
+    it('should offer no fix link for a failure a new key would not fix, or one still running', () => {
+      const network = createWrapper({
+        activity: activity({ failureCause: 'network', kind: ActivityKind.EXCHANGE_BALANCES, status: ActivityStatus.FAILED }),
+      });
+      const running = createWrapper({
+        activity: activity({ failureCause: 'auth', kind: ActivityKind.EXCHANGE_BALANCES, status: ActivityStatus.RUNNING }),
+      });
+
+      expect(network.find('[data-testid=fix-activity]').exists()).toBe(false);
+      expect(running.find('[data-testid=fix-activity]').exists()).toBe(false);
     });
 
     it('should offer retry on a transient failure', () => {

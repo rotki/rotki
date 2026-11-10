@@ -5,7 +5,6 @@ import { createTestExchange } from '@test/utils/create-data';
 import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, ref } from 'vue';
-import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { type RepullingFormHandle, useRepullingTransactionSubmission } from './use-repulling-transaction-submission';
 
 const {
@@ -13,7 +12,6 @@ const {
   repullingEthStakingEvents,
   repullingExchangeEvents,
   repullingTransactions,
-  notifyError,
   resetUndecodedTransactionsStatus,
   shouldShowConfirmation,
 } = vi.hoisted(() => ({
@@ -21,7 +19,6 @@ const {
   repullingEthStakingEvents: vi.fn(),
   repullingExchangeEvents: vi.fn(),
   repullingTransactions: vi.fn(),
-  notifyError: vi.fn<(title: string, message: string) => void>(),
   resetUndecodedTransactionsStatus: vi.fn(),
   shouldShowConfirmation: vi.fn(),
 }));
@@ -43,10 +40,6 @@ vi.mock('@/modules/history/events/tx/use-repulling-transaction-form', () => ({
 
 vi.mock('@/modules/history/use-decoding-status-store', () => ({
   useDecodingStatusStore: (): Record<string, unknown> => ({ resetUndecodedTransactionsStatus }),
-}));
-
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: (): Record<string, unknown> => ({ notifyError }),
 }));
 
 vi.mock('@/modules/core/common/logging/logging', () => ({
@@ -314,50 +307,6 @@ describe('modules/history/events/tx/useRepullingTransactionSubmission', () => {
     });
 
     it('should stop showing progress once the repull is requested', async () => {
-      const { submit, submitting } = submission();
-
-      await submit();
-
-      expect(get(submitting)).toBe(false);
-    });
-  });
-
-  describe('when the repull is rejected', () => {
-    it('should report a plain failure in a toast, the dialog having closed', async () => {
-      repullingTransactions.mockRejectedValue(new Error('backend down'));
-      const { submit } = submission();
-
-      await submit();
-
-      expect(notifyError).toHaveBeenCalledExactlyOnceWith('actions.repulling_transaction.task.title', 'backend down');
-    });
-
-    it('should keep the form filled in, so the user can correct it', async () => {
-      repullingTransactions.mockRejectedValue(new Error('backend down'));
-      const { modelFormData, submit } = submission();
-      set(modelFormData, { address: '0xabc', chain: 'ethereum', fromTimestamp: 1, toTimestamp: 2 });
-
-      await submit();
-
-      expect(get(modelFormData).address).toBe('0xabc');
-    });
-
-    it('should route field errors back into the form and re-validate it', async () => {
-      repullingTransactions.mockRejectedValue(
-        new ApiValidationError(JSON.stringify({ address: ['not an address'] })),
-      );
-      const form = formHandle();
-      const { modelErrorMessages, submit } = submission(form);
-
-      await submit();
-
-      expect(get(modelErrorMessages)).toEqual({ address: ['not an address'] });
-      expect(form.validate).toHaveBeenCalledTimes(2);
-      expect(notifyError).not.toHaveBeenCalled();
-    });
-
-    it('should stop showing progress', async () => {
-      repullingTransactions.mockRejectedValue(new Error('backend down'));
       const { submit, submitting } = submission();
 
       await submit();

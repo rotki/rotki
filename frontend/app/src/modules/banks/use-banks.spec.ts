@@ -290,11 +290,10 @@ describe('useBanks', () => {
     expect(queryBankBalances).not.toHaveBeenCalled();
   });
 
-  it('should notify instead of throwing when removal fails', async () => {
+  it('should throw a refused removal for the table to name, without a notification', async () => {
     removeBank.mockRejectedValue(new Error('gone'));
-    const banks = useBanks();
-    expect(await banks.removeBank(connection)).toBe(false);
-    expect(notifyError).toHaveBeenCalledOnce();
+    await expect(useBanks().removeBank(connection)).rejects.toThrow('gone');
+    expect(notifyError).not.toHaveBeenCalled();
   });
 
   it('should drop a removed connection\'s balances at once, keeping the others', async () => {

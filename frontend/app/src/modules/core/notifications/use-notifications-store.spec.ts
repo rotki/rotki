@@ -96,7 +96,7 @@ describe('useNotificationsStore', () => {
 
   it('should cap at 200 notifications', () => {
     const store = useNotificationsStore();
-    const { data, messageOverflow } = storeToRefs(store);
+    const { data } = storeToRefs(store);
 
     const batch: NotificationData[] = [];
     for (let i = 0; i < 205; i++) {
@@ -114,7 +114,6 @@ describe('useNotificationsStore', () => {
     const withRoomForOneMore = 199;
     const copy = store.trimmedCopy();
     expect(copy).toHaveLength(withRoomForOneMore);
-    expect(get(messageOverflow)).toBe(true);
   });
 
   it('should filter queue for displayed notifications', () => {

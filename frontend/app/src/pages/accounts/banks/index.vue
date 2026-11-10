@@ -41,7 +41,7 @@ const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute('/accounts/banks/');
 
-const { balanceOf, cols, highlight, isSyncing, modelSort: sort, rowClass, whileSyncing } = useBankConnectionsTable();
+const { balanceOf, cols, highlight, isSyncing, modelSort: sort, removeFailure, removeRow, rowClass, whileSyncing } = useBankConnectionsTable(removeBank);
 
 function addBank(connector?: string): void {
   set(bank, createNewBank(get(manifests), connector));
@@ -90,7 +90,7 @@ async function sync(row: BankConnection): Promise<void> {
   await whileSyncing(row, async () => syncBanks({ identifier: row.identifier }));
 }
 
-/** What a row's delete button asks; a failed removal is reported by `removeBank` itself. */
+/** What a row's delete button asks; a failed removal is named above the table. */
 function removeConfirm(row: BankConnection): RowDeleteQuestion {
   return {
     message: t('bank_settings.confirmation.message', { bank: row.displayName, name: row.name }),
@@ -149,6 +149,14 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
       :failure="manifestsError"
       data-testid="bank-manifests-error"
       @retry="refreshSupportedBanks()"
+    />
+
+    <FailureStrip
+      v-if="removeFailure"
+      class="mb-4"
+      :title="removeFailure.title"
+      :failure="removeFailure.failure"
+      data-testid="bank-remove-error"
     />
 
     <BankBalancesEmpty
@@ -232,7 +240,7 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
             @authenticate="authenticate(row)"
             @sync="sync(row)"
             @edit="editBank(row)"
-            @delete="removeBank(row)"
+            @delete="removeRow(row)"
           />
         </template>
       </RuiDataTable>
