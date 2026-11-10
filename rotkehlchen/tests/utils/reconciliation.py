@@ -413,9 +413,9 @@ def seed_reconciliation_scenarios(
         address=address,
         amount='3',
         ts=event_ts,
-        protocol='aave_v3',
+        protocol='aave-v3',
     )
-    seeded['protocol'] = {'account': address, 'asset': A_ETH.identifier, 'protocol': 'aave_v3'}
+    seeded['protocol'] = {'account': address, 'asset': A_ETH.identifier, 'protocol': 'aave-v3'}
 
     # Exchange bucket: informational, never compared with a wallet observation.
     add_balance_bucket(

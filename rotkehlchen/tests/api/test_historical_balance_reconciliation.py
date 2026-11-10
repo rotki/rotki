@@ -159,7 +159,7 @@ def test_summary_counts_and_scoped_detail(rotkehlchen_api_server: APIServer) -> 
     )
     assert mismatch['asset'] in {seeded['mismatch']['asset'], A_ETH.identifier}
     assert mismatch['check']['delta'] == seeded['mismatch']['delta']
-    protocol = _bucket(account, A_ETH.identifier, 'aave_v3')
+    protocol = _bucket(account, A_ETH.identifier, 'aave-v3')
     assert protocol['status'] == BucketStatus.NOT_COMPARED
     assert protocol['reasons'] == ['protocol_bucket', 'never_compared']
     assert protocol['observed_balance'] is None
@@ -520,7 +520,7 @@ def test_null_label_account_is_expandable(rotkehlchen_api_server: APIServer) -> 
         address=None,
         amount='3',
         ts=ts_now() - 3_600,
-        protocol='aave_v3',
+        protocol='aave-v3',
     )
 
     summary = _report(rotkehlchen_api_server)
@@ -540,7 +540,7 @@ def test_null_label_account_is_expandable(rotkehlchen_api_server: APIServer) -> 
     assert len(scoped['accounts']) == 1
     assert scoped['accounts'][0]['location_label'] is None
     assert scoped['accounts'][0]['pagination'] == {'limit': 50, 'offset': 0, 'total': 1}
-    assert scoped['accounts'][0]['buckets'][0]['protocol'] == 'aave_v3'
+    assert scoped['accounts'][0]['buckets'][0]['protocol'] == 'aave-v3'
 
     # Without a location the empty label is not an account scope, so no buckets are returned.
     unscoped = _report(rotkehlchen_api_server, location_label='')
@@ -615,14 +615,14 @@ def test_negative_issues_link_only_their_own_bucket(rotkehlchen_api_server: APIS
         address=TEST_ADDR1,
         event_identifier=stop_event,
         event_timestamp=now - 3_000,
-        protocol='aave_v3',
+        protocol='aave-v3',
     )
     wallet_issue = add_negative_balance_issue(database, TEST_ADDR1, stop_event)
     protocol_issue = add_negative_balance_issue(
         database=database,
         address=TEST_ADDR1,
         event_identifier=stop_event,
-        protocol='aave_v3',
+        protocol='aave-v3',
     )
     # A stop without any issue keeps its blocked row and stays unlinked.
     orphan_event = add_empty_event(database, TEST_ADDR2, now - 3_000)
@@ -638,8 +638,8 @@ def test_negative_issues_link_only_their_own_bucket(rotkehlchen_api_server: APIS
     )['accounts'][0]
     assert _bucket(account, A_ETH.identifier)['status'] == BucketStatus.BLOCKED
     assert _bucket(account, A_ETH.identifier)['issue_id'] == wallet_issue
-    assert _bucket(account, A_ETH.identifier, 'aave_v3')['status'] == BucketStatus.BLOCKED
-    assert _bucket(account, A_ETH.identifier, 'aave_v3')['issue_id'] == protocol_issue
+    assert _bucket(account, A_ETH.identifier, 'aave-v3')['status'] == BucketStatus.BLOCKED
+    assert _bucket(account, A_ETH.identifier, 'aave-v3')['issue_id'] == protocol_issue
     orphan = _report(
         rotkehlchen_api_server, location=LOCATION_ETHEREUM, location_label=TEST_ADDR2,
     )['accounts'][0]['buckets'][0]
