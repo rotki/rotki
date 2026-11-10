@@ -1,5 +1,6 @@
 import re
 import threading
+import time
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 from unittest.mock import patch
@@ -8,10 +9,12 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.dogecoin.validation import is_valid_dogecoin_address
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_DOGE
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.dogechain import DOGECHAIN_BASE_URL, DOGECHAIN_RATE_LIMIT_RPS
 from rotkehlchen.externalapis.sochain import (
@@ -21,6 +24,7 @@ from rotkehlchen.externalapis.sochain import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
 from rotkehlchen.tests.utils.dogecoin import (
     DOGE_ADDRESS_1,
     DOGE_ADDRESS_2,
@@ -28,13 +32,17 @@ from rotkehlchen.tests.utils.dogecoin import (
     mock_balances_by_url,
     rate_limited_response,
     sochain_balance_response,
+    sochain_key_refused_response,
 )
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import BTCAddress
+from rotkehlchen.types import ApiKey, BTCAddress, ExternalService, ExternalServiceApiCredentials
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.dogecoin.manager import DogecoinManager
+    from rotkehlchen.externalapis.sochain import SoChain
 
 # what SoChain and Dogechain answer, in the same envelope, for an address they can't look up
 SOCHAIN_INVALID_ADDRESS = MockResponse(
@@ -390,3 +398,163 @@ def test_query_balances_fails_when_all_apis_fail(dogecoin_manager: DogecoinManag
     assert 'asked to retry after 8460 seconds' in str(exc_info.value)
     assert 'Dogechain error is: "Dogechain API request' in str(exc_info.value)
     assert 'failed with HTTP status code 502: retry shortly' in str(exc_info.value)
+
+
+def _set_sochain_key(sochain: SoChain, api_key: str) -> None:
+    with sochain.db.user_write() as write_cursor:
+        sochain.db.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(
+                service=ExternalService.SOCHAIN,
+                api_key=ApiKey(api_key),
+            )],
+        )
+    sochain.on_api_key_changed()
+
+
+def _mock_refused_key(account_info: MockResponse | Exception) -> Callable[..., MockResponse]:
+    """A replacement of SoChain's session get that refuses every query but account_info"""
+    def mock_get(url: str, **_kwargs: object) -> MockResponse:
+        if not url.endswith('/account_info'):
+            return sochain_key_refused_response()
+        if isinstance(account_info, Exception):
+            raise account_info
+        return account_info
+
+    return mock_get
+
+
+ACCOUNT_INFO_OK = MockResponse(status_code=HTTPStatus.OK, text='{"plan":{"name":"free"}}')
+
+
+def test_sochain_sends_the_api_key_if_there_is_one(dogecoin_manager: DogecoinManager) -> None:
+    sochain = dogecoin_manager.sochain
+    with patch.object(sochain.session, 'get', return_value=sochain_balance_response('5.5')) as get_mock:  # noqa: E501
+        assert sochain.get_balance(DOGE_ADDRESS_1) == FVal('5.5')
+        assert get_mock.call_args.kwargs['headers'] is None
+
+        _set_sochain_key(sochain, 'the-key')
+        assert sochain.get_balance(DOGE_ADDRESS_1) == FVal('5.5')
+        assert get_mock.call_args.kwargs['headers'] == {'API-KEY': 'the-key'}
+
+
+def test_sochain_is_not_asked_past_its_allowance(dogecoin_manager: DogecoinManager) -> None:
+    """Test that when account_info still accepts a refused key, Dogechain answers and SoChain
+    is not asked again until the allowance resets at 00:00 UTC, or the key changes"""
+    sochain = dogecoin_manager.sochain
+    _set_sochain_key(sochain, 'the-key')
+    sochain.db.msg_aggregator.rotki_notifier = (notifier := MockRotkiNotifier())  # type: ignore[assignment]
+    with (
+        patch.object(sochain.session, 'get', side_effect=_mock_refused_key(ACCOUNT_INFO_OK)) as sochain_mock,  # noqa: E501
+        patch.object(dogecoin_manager.dogechain.session, 'get', side_effect=mock_balances_by_url(
+            balances={DOGE_ADDRESS_1: '5.5'},
+            response_fn=dogechain_address_response,
+        )),
+        patch('rotkehlchen.externalapis.sochain.ts_now', return_value=DAY_IN_SECONDS * 20 - 3600),
+    ):
+        assert dogecoin_manager._query_amounts([DOGE_ADDRESS_1]) == {DOGE_ADDRESS_1: FVal('5.5')}
+        assert [x.kwargs['url'] for x in sochain_mock.call_args_list] == [
+            f'{SOCHAIN_BASE_URL}/balance/DOGE/{DOGE_ADDRESS_1}',
+            f'{SOCHAIN_BASE_URL}/account_info',
+        ]
+        assert sochain.unavailable_until - time.monotonic() == pytest.approx(3600, abs=5)
+        assert notifier.pop_message() is None  # nothing is wrong with the key
+
+        sochain_mock.reset_mock()
+        assert dogecoin_manager._query_amounts([DOGE_ADDRESS_1]) == {DOGE_ADDRESS_1: FVal('5.5')}
+        assert sochain_mock.call_count == 0
+
+        _set_sochain_key(sochain, 'a-new-key')
+        assert sochain.unavailable_until == 0
+        assert dogecoin_manager._query_amounts([DOGE_ADDRESS_1]) == {DOGE_ADDRESS_1: FVal('5.5')}
+        assert sochain_mock.call_args_list[0].kwargs['headers'] == {'API-KEY': 'a-new-key'}
+
+
+def test_sochain_reports_a_key_that_does_not_work_once(dogecoin_manager: DogecoinManager) -> None:
+    """Test that when account_info refuses the key too, the user is told once per key, and
+    that balances keep coming from Dogechain"""
+    sochain = dogecoin_manager.sochain
+    _set_sochain_key(sochain, 'the-key')
+    sochain.db.msg_aggregator.rotki_notifier = (notifier := MockRotkiNotifier())  # type: ignore[assignment]
+    with (
+        patch.object(sochain.session, 'get', side_effect=_mock_refused_key(sochain_key_refused_response())) as sochain_mock,  # noqa: E501
+        patch.object(dogecoin_manager.dogechain.session, 'get', side_effect=mock_balances_by_url(
+            balances={DOGE_ADDRESS_1: '5.5'},
+            response_fn=dogechain_address_response,
+        )),
+    ):
+        assert dogecoin_manager._query_amounts([DOGE_ADDRESS_1]) == {DOGE_ADDRESS_1: FVal('5.5')}
+        assert (message := notifier.pop_message()) is not None
+        assert message.message_type == WSMessageType.MISSING_API_KEY
+        assert message.data == {
+            'service': ExternalService.SOCHAIN.serialize(),
+            'location': 'dogecoin',
+            'reason': 'key_not_usable',
+        }
+        assert sochain.unavailable_until == 0
+
+        sochain_mock.reset_mock()
+        assert dogecoin_manager._query_amounts([DOGE_ADDRESS_1]) == {DOGE_ADDRESS_1: FVal('5.5')}
+        assert notifier.pop_message() is None
+        assert [x.kwargs['url'] for x in sochain_mock.call_args_list] == [
+            f'{SOCHAIN_BASE_URL}/balance/DOGE/{DOGE_ADDRESS_1}',
+        ]
+
+        _set_sochain_key(sochain, 'another-bad-key')
+        assert dogecoin_manager._query_amounts([DOGE_ADDRESS_1]) == {DOGE_ADDRESS_1: FVal('5.5')}
+        assert notifier.pop_message() is not None
+
+
+@pytest.mark.parametrize('account_info', [
+    requests.exceptions.ConnectionError('no route'),
+    MockResponse(status_code=HTTPStatus.SERVICE_UNAVAILABLE, text='busy'),
+])
+def test_sochain_draws_no_conclusion_if_account_info_fails(
+        dogecoin_manager: DogecoinManager,
+        account_info: MockResponse | Exception,
+) -> None:
+    sochain = dogecoin_manager.sochain
+    _set_sochain_key(sochain, 'the-key')
+    sochain.db.msg_aggregator.rotki_notifier = (notifier := MockRotkiNotifier())  # type: ignore[assignment]
+    with (
+        patch.object(sochain.session, 'get', side_effect=_mock_refused_key(account_info)),
+        pytest.raises(RemoteError) as exc_info,
+    ):
+        sochain.get_balance(DOGE_ADDRESS_1)
+
+    assert exc_info.value.error_code == HTTPStatus.UNAUTHORIZED
+    assert sochain.unavailable_until == 0
+    assert notifier.pop_message() is None
+
+
+def test_sochain_does_not_blame_a_key_changed_in_flight(dogecoin_manager: DogecoinManager) -> None:
+    """Test that a 401 for the previous key says nothing about the one saved meanwhile,
+    both if the key changed before the 401 is looked into and while it is"""
+    sochain = dogecoin_manager.sochain
+    _set_sochain_key(sochain, 'the-key')
+    sochain.db.msg_aggregator.rotki_notifier = (notifier := MockRotkiNotifier())  # type: ignore[assignment]
+
+    def change_key_on_balance_query(url: str, **_kwargs: object) -> MockResponse:
+        assert url.endswith(DOGE_ADDRESS_1), 'the check of the old key should not be made'
+        _set_sochain_key(sochain, 'a-new-key')
+        return sochain_key_refused_response()
+
+    with (
+        patch.object(sochain.session, 'get', side_effect=change_key_on_balance_query),
+        pytest.raises(RemoteError),
+    ):
+        sochain.get_balance(DOGE_ADDRESS_1)
+
+    def change_key_on_account_info(url: str, **_kwargs: object) -> MockResponse:
+        if url.endswith('/account_info'):
+            _set_sochain_key(sochain, 'the-newest-key')
+        return sochain_key_refused_response()
+
+    with (
+        patch.object(sochain.session, 'get', side_effect=change_key_on_account_info),
+        pytest.raises(RemoteError),
+    ):
+        sochain.get_balance(DOGE_ADDRESS_1)
+
+    assert sochain.unavailable_until == 0
+    assert notifier.pop_message() is None

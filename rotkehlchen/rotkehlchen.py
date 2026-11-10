@@ -647,7 +647,7 @@ class Rotkehlchen:
             ),
             bitcoin_manager=BitcoinManager(database=self.data.db),
             bitcoin_cash_manager=BitcoinCashManager(database=self.data.db),
-            dogecoin_manager=DogecoinManager(),
+            dogecoin_manager=DogecoinManager(database=self.data.db),
             solana_manager=SolanaManager(
                 node_inquirer=SolanaInquirer(
                     task_supervisor=self.task_supervisor,

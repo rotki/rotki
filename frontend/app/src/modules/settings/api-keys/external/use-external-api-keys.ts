@@ -6,13 +6,17 @@ import { isRequestCancellation } from '@/modules/core/api/request-queue/is-reque
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useExternalServicesApi } from '@/modules/settings/api/use-external-services-api';
-import { NoIndexersCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
+import { NoIndexersCause, type RaisedCondition, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
 /** The chain-row causes a service's key restores. */
 const KEY_CAUSES_BY_SERVICE = new Map<string, NoIndexersCause[]>([
   ['blockscout', [NoIndexersCause.BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY]],
   ['etherscan', [NoIndexersCause.BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY, NoIndexersCause.PAID_ETHERSCAN_KEY]],
 ]);
+
+function isRefusedKeyRow(condition: RaisedCondition, name: string): boolean {
+  return condition.kind === RaisedConditionKind.MISSING_API_KEY && condition.keyRejected === true && condition.service === name;
+}
 
 function getName(name: ExternalServiceName, _chain?: string): string {
   return name;
@@ -118,7 +122,12 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
     const causes = KEY_CAUSES_BY_SERVICE.get(name);
     clearRaisedConditions(condition =>
       (condition.kind === RaisedConditionKind.NO_AVAILABLE_INDEXERS && causes?.includes(condition.cause) === true)
-      || (condition.kind === RaisedConditionKind.MISSING_API_KEY && condition.keyRejected === true && condition.service === name));
+      || isRefusedKeyRow(condition, name));
+  }
+
+  /** A key that is gone can no longer be refused, so its row goes with it. */
+  function resolveRefusedKeyRow(name: string): void {
+    clearRaisedConditions(condition => isRefusedKeyRow(condition, name));
   }
 
   async function save(payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void): Promise<void> {
@@ -157,6 +166,7 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
     set(loading, true);
     try {
       set(keys, await deleteExternalServices(name));
+      resolveRefusedKeyRow(name);
     }
     catch (error: unknown) {
       setStatus(name, {

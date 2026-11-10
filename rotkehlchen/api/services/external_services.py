@@ -106,6 +106,8 @@ class ExternalServicesService:
             self.rotkehlchen.defillama.on_api_key_changed()
         elif service == ExternalService.BIRDEYE:
             self.rotkehlchen.birdeye.on_api_key_changed()
+        elif service == ExternalService.SOCHAIN:
+            self.rotkehlchen.chains_aggregator.dogecoin.sochain.on_api_key_changed()
 
     def add_services(
             self,

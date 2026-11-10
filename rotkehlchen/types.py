@@ -127,6 +127,7 @@ class ExternalService(SerializableEnumNameMixin):
     ROUTESCAN = auto()
     JUPITER = auto()
     BIRDEYE = auto()
+    SOCHAIN = auto()
 
     def premium_only(self) -> bool:
         return self == ExternalService.GNOSIS_PAY

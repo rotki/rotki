@@ -18,13 +18,14 @@ from rotkehlchen.types import BTCAddress, SupportedBlockchain
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.fval import FVal
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 # How many balance requests run at the same time. SoChain answers up to two at a time
-# from one IP address without an API key.
+# from one IP address without an API key, and from one account on its free plan.
 MAX_PARALLEL_QUERIES: Final = 2
 
 
@@ -32,9 +33,9 @@ class DogecoinManager(ChainManager[BTCAddress]):
     """Tracks the DOGE balances of dogecoin addresses. They are queried from SoChain, and
     from Dogechain if SoChain fails, the way the bitcoin managers go through their APIs."""
 
-    def __init__(self) -> None:
+    def __init__(self, database: DBHandler) -> None:
         self.asset = A_DOGE
-        self.sochain = SoChain(network='DOGE')
+        self.sochain = SoChain(network='DOGE', database=database)
         self.dogechain = Dogechain()
 
     @staticmethod
