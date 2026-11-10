@@ -1,3 +1,4 @@
+import socket
 from unittest.mock import patch
 
 import pytest
@@ -7,6 +8,7 @@ from rotkehlchen.externalapis.ipfs import (
     DEFAULT_IPFS_GATEWAYS,
     IPFSGateway,
     normalize_ipfs_gateway_url,
+    redact_ipfs_gateway_url,
 )
 
 
@@ -57,6 +59,7 @@ def test_ipfs_gateway_all_gateways_fail():
     ('https://my.node/some/path/ipfs/', 'https://my.node/some/path/ipfs/'),
     ('https://my.node?token=secret', 'https://my.node/ipfs/?token=secret'),
     ('https://my.node/ipfs?a=1&b=2', 'https://my.node/ipfs/?a=1&b=2'),
+    ('https://my.node?token=s%20e%2Fc', 'https://my.node/ipfs/?token=s%20e%2Fc'),
 ])
 def test_normalize_ipfs_gateway_url(url: str, expected: str):
     assert normalize_ipfs_gateway_url(url) == expected
@@ -70,13 +73,28 @@ def test_normalize_ipfs_gateway_url(url: str, expected: str):
     'https://:secret@my.node',
     'https://my.node#secret',
     'https://my.node/ipfs;secret',
+    # queries that requests would send in another form than the one redacted from errors
+    'https://my.node?token=sec ret"x',
+    'https://my.node?token=secr%2ft',
+    'https://my.node?token=secr%74',
+    'https://my.node?token=secrét',
 ])
 def test_normalize_ipfs_gateway_url_rejects_invalid(url: str):
-    """Non http(s) urls, credentials, fragments and path params are refused without being echoed"""
+    """Non http(s) urls, credentials, fragments, path params and queries that are not
+    in canonical percent-encoded form are refused without being echoed"""
     with pytest.raises(ValueError, match='IPFS gateway') as exc_info:
         normalize_ipfs_gateway_url(url)
 
-    assert 'secret' not in str(exc_info.value)
+    assert 'secr' not in str(exc_info.value)
+
+
+@pytest.mark.parametrize(('url', 'expected'), [
+    ('', ''),
+    ('https://my.node/ipfs/', 'https://my.node/ipfs/'),
+    (' https://my.node/ipfs?token=secret ', 'https://my.node/ipfs'),
+])
+def test_redact_ipfs_gateway_url(url: str, expected: str):
+    assert redact_ipfs_gateway_url(url) == expected
 
 
 def test_ipfs_gateway_query_is_sent_but_never_logged():
@@ -98,3 +116,24 @@ def test_ipfs_gateway_query_is_sent_but_never_logged():
     assert 'secret' not in str(exc_info.value)
     assert 'secret' not in str(mock_log.warning.call_args_list)
     assert 'https://my.node/ipfs/' in str(exc_info.value)
+
+
+def test_ipfs_gateway_query_redacted_from_real_connection_error():
+    """The connection error of requests holds the url as sent, which must match the query
+    that is redacted. Uses a closed local port so the request fails without the network."""
+    with socket.socket() as sock:
+        sock.bind(('127.0.0.1', 0))
+        port = sock.getsockname()[1]
+
+    with (
+        patch('rotkehlchen.externalapis.ipfs.DEFAULT_IPFS_GATEWAYS', ()),
+        patch('rotkehlchen.externalapis.ipfs.log') as mock_log,
+        pytest.raises(IPFSRemoteError) as exc_info,
+    ):
+        IPFSGateway(
+            custom_gateway=f'http://127.0.0.1:{port}/ipfs?token=zqx%20jkw%22vq',
+        ).query_json('bafyCID')
+
+    assert '/ipfs/bafyCID?<redacted>' in (error := str(exc_info.value))  # the url as sent
+    assert 'zqx' not in error
+    assert 'zqx' not in str(mock_log.warning.call_args_list)

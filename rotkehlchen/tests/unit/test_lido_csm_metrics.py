@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
 
 import pytest
@@ -28,9 +28,11 @@ class DummyContract:
 
 
 @pytest.mark.parametrize('failure', [
-    None, 'treeCid', 'distributedShares', 'getPooledEthByShares', 'ipfs',
+    None, 'distributedShares', 'getPooledEthByShares', 'ipfs',
 ])
 def test_lido_csm_metrics_fetcher_converts_values(failure: str | None) -> None:
+    """The given rewards tree is used for the rewards, None (IPFS failed) makes them
+    unknown, and an on-chain failure fails the whole stats"""
     accounting_contract = DummyContract({
         'getBondCurveId': 0,
         'getBondSummaryShares': (10**18, 2 * 10**18),
@@ -43,7 +45,6 @@ def test_lido_csm_metrics_fetcher_converts_values(failure: str | None) -> None:
         'getPooledEthByShares': lambda shares: shares,
     })
     fee_distributor_contract = DummyContract({
-        'treeCid': 'bafkreiXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
         'distributedShares': 2 * 10**17,
     })
 
@@ -54,7 +55,7 @@ def test_lido_csm_metrics_fetcher_converts_values(failure: str | None) -> None:
     fetcher.module_contract = module_contract  # type: ignore[assignment]
     fetcher.steth_contract = steth_contract  # type: ignore[assignment]
     fetcher.fee_distributor_contract = fee_distributor_contract  # type: ignore[assignment]
-    if failure in {'treeCid', 'distributedShares'}:
+    if failure == 'distributedShares':
         fee_distributor_contract.responses[failure] = RemoteError(f'{failure} failed')
     elif failure == 'getPooledEthByShares':
         def fail_pending_conversion(shares: int) -> int:
@@ -64,23 +65,13 @@ def test_lido_csm_metrics_fetcher_converts_values(failure: str | None) -> None:
 
         steth_contract.responses[failure] = fail_pending_conversion
 
-    def fake_fetch_ipfs_json(cid: str) -> dict[str, Any]:
-        if failure == 'ipfs':
-            raise IPFSRemoteError('All gateways failed')
-        return {
-            'values': [
-                {'value': [7, 5 * 10**17]},  # for node operator id 7
-            ],
-        }
-
-    fetcher._fetch_ipfs_json = fake_fetch_ipfs_json  # type: ignore[method-assign]
-
+    rewards_tree = None if failure == 'ipfs' else {7: 5 * 10**17}
     if failure is not None and failure != 'ipfs':
         with pytest.raises(RemoteError, match=f'{failure} failed'):
-            fetcher.get_operator_stats(7)
+            fetcher.get_operator_stats(7, rewards_tree=rewards_tree)
         return
 
-    stats = fetcher.get_operator_stats(7)
+    stats = fetcher.get_operator_stats(7, rewards_tree=rewards_tree)
 
     assert stats.operator_type == LidoCsmOperatorType.PERMISSIONLESS
     assert stats.current_bond == FVal('1')
@@ -94,6 +85,32 @@ def test_lido_csm_metrics_fetcher_converts_values(failure: str | None) -> None:
     # rewards pending: cumulative(0.5e18) - distributed(0.2e18) = 0.3e18 => 0.3 stETH
     assert serialized['rewards']['pending'] == (None if failure == 'ipfs' else '0.3')
     assert serialized['keys']['total_deposited'] == 42
+
+
+def test_lido_csm_rewards_tree_or_none() -> None:
+    """An IPFS failure means unknown rewards (None), but the on-chain cid query failing
+    is an RPC failure that is raised, so it isn't reported as an IPFS problem"""
+    fetcher = _make_rewards_fetcher()
+    with patch.object(
+        fetcher,
+        '_fetch_ipfs_json',
+        return_value={'values': [{'value': [7, 5 * 10**17]}]},
+    ):
+        assert fetcher.get_rewards_tree_or_none() == {7: 5 * 10**17}
+
+    with patch.object(fetcher, '_fetch_ipfs_json', side_effect=IPFSRemoteError('429')):
+        assert fetcher.get_rewards_tree_or_none() is None
+
+    fetcher.fee_distributor_contract = DummyContract({  # type: ignore[assignment]
+        'treeCid': RemoteError('treeCid failed'),
+    })
+    with (
+        patch.object(fetcher, '_fetch_ipfs_json') as fetch_ipfs,
+        pytest.raises(RemoteError, match='treeCid failed'),
+    ):
+        fetcher.get_rewards_tree_or_none()
+
+    assert fetch_ipfs.call_count == 0
 
 
 def _make_rewards_fetcher(distributed_shares: int = 0) -> LidoCsmMetricsFetcher:

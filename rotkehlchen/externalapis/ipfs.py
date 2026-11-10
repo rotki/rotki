@@ -2,6 +2,8 @@ import logging
 from typing import Any, Final
 from urllib.parse import urlparse, urlunparse
 
+import requests
+
 from rotkehlchen.errors.misc import IPFSRemoteError, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.network import query_file
@@ -25,12 +27,14 @@ def normalize_ipfs_gateway_url(url: str) -> str:
     """Normalize a user provided gateway to a path style base url ending in `/ipfs/`.
 
     Accepts `https://host`, `https://host/ipfs` or `https://host/ipfs/`, optionally with a
-    query string such as `?token=...` which is sent along with every request. The error
-    messages never include the url since it may hold a secret.
+    query string such as `?token=...` which is sent along with every request. The query
+    must already be in the percent-encoded form requests sends, so that the query in the
+    url's errors is the one redacted from them. The error messages never include the url
+    since it may hold a secret.
 
     May raise:
         ValueError: if the url contains userinfo credentials, parameters or a fragment,
-        or is not an http(s) url.
+        is not an http(s) url or its query is not percent-encoded.
     """
     parsed = urlparse(url.strip())
     if parsed.username is not None or parsed.password is not None:
@@ -44,7 +48,24 @@ def normalize_ipfs_gateway_url(url: str) -> str:
 
     if not (path := parsed.path.rstrip('/')).endswith('/ipfs'):
         path += '/ipfs'
-    return urlunparse(parsed._replace(path=f'{path}/'))
+    normalized = urlunparse(parsed._replace(path=f'{path}/'))
+    try:
+        (prepared := requests.PreparedRequest()).prepare_url(url=normalized, params=None)
+    except requests.exceptions.RequestException as e:
+        raise ValueError('IPFS gateway URL is not a valid url') from e
+
+    if prepared.url is None or urlparse(prepared.url).query != parsed.query:
+        raise ValueError(
+            'IPFS gateway URL query must be in canonical percent-encoded form, '
+            'e.g. %20 for a space and %2F instead of %2f',
+        )
+
+    return normalized
+
+
+def redact_ipfs_gateway_url(url: str) -> str:
+    """Return the gateway url without its query string, which may hold an access token."""
+    return urlunparse(urlparse(url.strip())._replace(query=''))
 
 
 class IPFSGateway:
@@ -65,7 +86,8 @@ class IPFSGateway:
         that serves it.
 
         The query string of a gateway may hold an access token, so it never reaches the
-        logs or the raised error.
+        logs or the raised error. normalize_ipfs_gateway_url guarantees that the query is
+        sent as written, so it is also the form that appears in the request's errors.
 
         May raise:
             IPFSRemoteError: if every gateway failed. The error lists the reason for each.
@@ -77,7 +99,7 @@ class IPFSGateway:
             try:
                 return query_file(url, is_json=True)
             except RemoteError as e:
-                shown = urlunparse(parsed._replace(query=''))
+                shown = redact_ipfs_gateway_url(gateway)
                 reason = str(e).replace(parsed.query, '<redacted>') if parsed.query else str(e)
                 log.warning('IPFS gateway %s failed to serve %s: %s', shown, cid, reason)
                 failures.append(f'{shown}: {reason}')

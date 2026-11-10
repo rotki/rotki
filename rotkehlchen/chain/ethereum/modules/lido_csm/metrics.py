@@ -146,6 +146,19 @@ class LidoCsmMetricsFetcher:
 
         return rewards_tree
 
+    def get_rewards_tree_or_none(self) -> dict[int, int] | None:
+        """Like get_rewards_tree, but returns None if the document can't be retrieved from
+        IPFS, so that callers report the rewards as unknown instead of failing.
+
+        May raise:
+            RemoteError: if the tree's cid can't be read.
+        """
+        try:
+            return self.get_rewards_tree()
+        except IPFSRemoteError as e:
+            log.error('Failed to fetch the Lido CSM rewards tree: %s', e)
+            return None
+
     def get_pending_rewards(self, node_operator_id: int, rewards_tree: dict[int, int]) -> FVal:
         """Compute the pending rewards of a node operator, in stETH, from the result of
         get_rewards_tree. The tree has every operator's entry, so it can be reused for many.
@@ -161,8 +174,16 @@ class LidoCsmMetricsFetcher:
         pending_shares = max(rewards_tree.get(node_operator_id, 0) - int(distributed), 0)
         return self._convert_shares_to_steth(pending_shares)
 
-    def get_operator_stats(self, node_operator_id: int) -> LidoCsmNodeOperatorStats:
+    def get_operator_stats(
+            self,
+            node_operator_id: int,
+            rewards_tree: dict[int, int] | None,
+    ) -> LidoCsmNodeOperatorStats:
         """Gather and normalize bond/reward stats for a node operator.
+
+        The rewards tree is the result of get_rewards_tree_or_none, fetched once by the
+        caller and shared by every operator. None means it could not be retrieved from
+        IPFS, and then the rewards are reported as None (unknown) instead of zero.
 
         May raise:
             RemoteError: if any contract call fails.
@@ -197,11 +218,7 @@ class LidoCsmMetricsFetcher:
         )
 
         rewards_steth: FVal | None = None  # None: rewards could not be fetched, not zero
-        try:
-            rewards_tree = self.get_rewards_tree()
-        except IPFSRemoteError as e:
-            log.error('Failed to fetch Lido CSM rewards for %s: %s', node_operator_id, e)
-        else:
+        if rewards_tree is not None:
             rewards_steth = self.get_pending_rewards(
                 node_operator_id=node_operator_id,
                 rewards_tree=rewards_tree,
