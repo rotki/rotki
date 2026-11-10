@@ -407,7 +407,7 @@ class TransactionDecoder[
             self,
             transaction: T_Transaction,
             tx_ref: T_TxHash,
-            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            location: LocationIdentifier,
             delete_customized: bool,
             write_buffer: list[tuple[list[T_Event], str, int]],
     ) -> None:

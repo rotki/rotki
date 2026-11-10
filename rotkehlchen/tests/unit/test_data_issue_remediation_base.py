@@ -9,6 +9,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from rotkehlchen.concurrency import Task, TaskCancelledError, cancellable_sleep, current_token
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
@@ -18,8 +19,11 @@ from rotkehlchen.history.data_issues.remediation.base import (
     RemediationOutcome,
     RemediationPipeline,
 )
+from rotkehlchen.locations.constants import LOCATION_ETHEREUM
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.data_issues.types import DataIssue
@@ -97,7 +101,7 @@ def _make_issue(database: DBHandler) -> DataIssue:
     manager = DataIssuesManager(database)
     issue_id = manager.write_issue(
         kind=IssueKind.NEGATIVE_BALANCE,
-        location='f',
+        location=LOCATION_ETHEREUM,
         location_label='0xaccount',
         protocol=None,
         asset='ETH',
@@ -213,11 +217,15 @@ def test_pipeline_leaves_inapplicable_issue_unchanged(database: DBHandler) -> No
     assert calls == []
 
 
-@pytest.mark.parametrize('error_type', [RemoteError, DeserializationError, InputError])
+@pytest.mark.parametrize('error_factory', [
+    lambda: RemoteError('receipt unavailable', cause=FailureCause.NETWORK),
+    lambda: DeserializationError('receipt unavailable'),
+    lambda: InputError('receipt unavailable'),
+])
 @pytest.mark.parametrize('fallback', [False, True])
 def test_pipeline_records_operational_failure_and_continues(
         database: DBHandler,
-        error_type: type[Exception],
+        error_factory: Callable[[], Exception],
         fallback: bool,
 ) -> None:
     """Record operational errors and either run the fallback or leave the issue unresolved."""
@@ -229,7 +237,7 @@ def test_pipeline_records_operational_failure_and_continues(
     if fallback:
         strategies += (StubStrategy('fallback', RemediationOutcome(True, 'system', ''), calls),)
 
-    with patch.object(failing, 'attempt', side_effect=error_type('receipt unavailable')):
+    with patch.object(failing, 'attempt', side_effect=error_factory()):
         RemediationPipeline(manager, strategies).run(issue)
 
     issue = manager.get_issue(issue.id)
