@@ -29,7 +29,7 @@ interface UseReconciliationViewReturn {
   isNeverCompared: ComputedRef<boolean>;
   lastComparedAt: ComputedRef<number | null>;
   summary: Readonly<Ref<ReconciliationResponse | undefined>>;
-  summaryFailed: Readonly<Ref<boolean>>;
+  summaryFailure: Readonly<Ref<unknown>>;
   summaryLoading: Readonly<Ref<boolean>>;
   summaryUnavailable: Readonly<Ref<boolean>>;
   totals: ReturnType<typeof useBucketReconciliation>['totals'];
@@ -66,7 +66,7 @@ export function useReconciliationView(): UseReconciliationViewReturn {
   const { accounts: details, summary } = storeToRefs(store);
 
   const reconciliation = useBucketReconciliation();
-  const { accounts, attention, summaryFailed, summaryLoading, summaryUnavailable, totals } = reconciliation;
+  const { accounts, attention, summaryFailure, summaryLoading, summaryUnavailable, totals } = reconciliation;
 
   const { getAssetField } = useAssetInfoRetrieval();
   const { markAssetsAsSpam } = useSpamAsset();
@@ -192,7 +192,7 @@ export function useReconciliationView(): UseReconciliationViewReturn {
     retryAccount,
     selectView,
     summary,
-    summaryFailed,
+    summaryFailure,
     summaryLoading,
     summaryUnavailable,
     totals,

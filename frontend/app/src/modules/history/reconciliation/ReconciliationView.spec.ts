@@ -3,6 +3,7 @@ import type { UseBucketReconciliationApiReturn } from '@/modules/history/reconci
 import type { ReconciliationAccount, ReconciliationResponse, StatusCounts } from '@/modules/history/reconciliation/schemas';
 import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import { flushPromises, mount } from '@vue/test-utils';
+import { FetchError } from 'ofetch';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRouter } from 'vue-router';
@@ -158,6 +159,60 @@ describe('reconciliation view against a backend without the accounting update', 
     expect(wrapper.find('[data-testid="reconciliation-unavailable"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="reconciliation-summary-error"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="reconciliation-check-now"]').exists()).toBe(false);
+  });
+});
+
+describe('reconciliation view load failure', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    await useRouter().replace({ query: {} });
+  });
+
+  function mountView(): ReturnType<typeof mount> {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    return mount(ReconciliationView, {
+      global: {
+        plugins: [pinia],
+        stubs: {
+          DataIssuesTabs: true,
+          ReconciliationTable: true,
+          TablePageLayout: { template: '<main><slot /></main>' },
+        },
+      },
+    });
+  }
+
+  it('should name the backend\'s reason and offer no retry for an internal error', async () => {
+    fetchSummary.mockRejectedValue(createStatusError(500, 'database is locked', {
+      cause: 'internal',
+      message: 'database is locked',
+      result: null,
+    }));
+
+    const wrapper = mountView();
+    await flushPromises();
+
+    const strip = wrapper.get('[data-testid="reconciliation-summary-error"]');
+    expect(strip.text()).toContain('data_issues.reconciliation.failure.load');
+    expect(strip.text()).toContain('database is locked');
+    expect(strip.find('[data-testid="failure-strip-retry"]').exists()).toBe(false);
+  });
+
+  it('should say the backend is unreachable and offer a retry that loads again', async () => {
+    fetchSummary.mockRejectedValueOnce(new FetchError('[GET] "http://127.0.0.1/api": <no response>'));
+    fetchSummary.mockResolvedValue(report(false));
+
+    const wrapper = mountView();
+    await flushPromises();
+
+    const strip = wrapper.get('[data-testid="reconciliation-summary-error"]');
+    expect(strip.text()).toContain('common.backend_unreachable');
+    await strip.get('[data-testid="failure-strip-retry"]').trigger('click');
+    await flushPromises();
+
+    expect(fetchSummary).toHaveBeenCalledTimes(2);
+    expect(wrapper.find('[data-testid="reconciliation-summary-error"]').exists()).toBe(false);
   });
 });
 

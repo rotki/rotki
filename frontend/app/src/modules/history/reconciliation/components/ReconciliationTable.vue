@@ -94,7 +94,7 @@ function rowsForAccount(account: ReconciliationAccount): Row[] {
     return [placeholder(account, 'empty')];
   if (!detail || (detail.loading && detail.buckets.length === 0))
     return [placeholder(account, 'loading')];
-  if (detail.error && detail.buckets.length === 0)
+  if (detail.error !== undefined && detail.buckets.length === 0)
     return [placeholder(account, 'error')];
   if (detail.buckets.length === 0)
     return [placeholder(account, 'empty')];

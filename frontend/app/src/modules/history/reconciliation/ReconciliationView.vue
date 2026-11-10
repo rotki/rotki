@@ -6,6 +6,7 @@ import ReconciliationStatusBar from '@/modules/history/reconciliation/components
 import ReconciliationTable from '@/modules/history/reconciliation/components/ReconciliationTable.vue';
 import { totalBuckets } from '@/modules/history/reconciliation/use-reconciliation-rows';
 import { useReconciliationView } from '@/modules/history/reconciliation/use-reconciliation-view';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
@@ -31,7 +32,7 @@ const {
   retryAccount,
   selectView,
   summary,
-  summaryFailed,
+  summaryFailure,
   summaryLoading,
   summaryUnavailable,
   totals,
@@ -73,15 +74,13 @@ const {
         />
       </div>
 
-      <RuiAlert
-        v-else-if="summaryFailed && !summary"
-        type="error"
-        :action-text="t('common.actions.retry')"
+      <FailureStrip
+        v-else-if="summaryFailure !== undefined && !summary"
+        :title="t('data_issues.reconciliation.failure.load')"
+        :failure="summaryFailure"
         data-testid="reconciliation-summary-error"
-        @action="refreshSummary()"
-      >
-        {{ t('data_issues.reconciliation.load_error') }}
-      </RuiAlert>
+        @retry="refreshSummary()"
+      />
 
       <NoDataScreen
         v-else-if="hasNoAccounts"
@@ -109,15 +108,13 @@ const {
       </NoDataScreen>
 
       <template v-else-if="summary">
-        <RuiAlert
-          v-if="summaryFailed"
-          type="warning"
-          :action-text="t('common.actions.retry')"
+        <FailureStrip
+          v-if="summaryFailure !== undefined"
+          :title="t('data_issues.reconciliation.failure.refresh')"
+          :failure="summaryFailure"
           data-testid="reconciliation-summary-stale"
-          @action="refreshSummary()"
-        >
-          {{ t('data_issues.reconciliation.load_error_stale') }}
-        </RuiAlert>
+          @retry="refreshSummary()"
+        />
 
         <div
           class="flex flex-col gap-4"

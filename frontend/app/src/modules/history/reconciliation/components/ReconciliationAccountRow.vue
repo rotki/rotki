@@ -4,6 +4,7 @@ import { useLocations } from '@/modules/core/common/use-locations';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { ACCOUNT_SUMMARY_LABEL } from '@/modules/history/reconciliation/messages';
 import { type AccountSummary, accountSummaryFor, type ReconciliationView } from '@/modules/history/reconciliation/use-reconciliation-rows';
+import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const { account, view, isOpen, loading = false, error, colspan } = defineProps<{
@@ -11,7 +12,8 @@ const { account, view, isOpen, loading = false, error, colspan } = defineProps<{
   view: ReconciliationView;
   isOpen: boolean;
   loading?: boolean;
-  error?: string;
+  /** What the account's last fetch threw; the strip words it and decides on a retry. */
+  error?: unknown;
   colspan: number;
 }>();
 
@@ -118,18 +120,14 @@ const summaryParts = computed<string[]>(() => {
         />
         <span>{{ t('data_issues.reconciliation.loading_balances') }}</span>
       </template>
-      <template v-else-if="error">
-        <span class="text-rui-error">{{ error }}</span>
-        <RuiButton
-          size="sm"
-          variant="text"
-          color="primary"
-          data-testid="reconciliation-account-retry"
-          @click="emit('retry')"
-        >
-          {{ t('common.actions.retry') }}
-        </RuiButton>
-      </template>
+      <FailureStrip
+        v-else-if="error !== undefined"
+        class="grow"
+        :title="t('data_issues.reconciliation.failure.account')"
+        :failure="error"
+        data-testid="reconciliation-account-failure"
+        @retry="emit('retry')"
+      />
       <span
         v-else
         data-testid="reconciliation-account-summary"

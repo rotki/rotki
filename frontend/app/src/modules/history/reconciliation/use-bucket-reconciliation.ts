@@ -5,10 +5,10 @@ import type {
   ReconciliationBucket,
   StatusCounts,
 } from '@/modules/history/reconciliation/schemas';
+import { ZodError } from 'zod';
 import { FailureCause } from '@/modules/core/api/failure-cause';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { failureCauseOf } from '@/modules/core/api/request-result';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import {
   ACCOUNT_PAGE_SIZE,
   MAX_ACCOUNT_BUCKETS,
@@ -48,6 +48,8 @@ interface UseBucketReconciliationReturn {
   reloadAccounts: (statuses?: BucketStatus[]) => Promise<void>;
   retryAccount: (account: ReconciliationAccount, statuses?: BucketStatus[]) => Promise<void>;
   summaryFailed: Ref<boolean>;
+  /** Why the last refresh failed, for a `FailureStrip` to word; undefined after a success. */
+  summaryFailure: Ref<unknown>;
   summaryLoading: Ref<boolean>;
   summaryUnavailable: Ref<boolean>;
   totals: Ref<StatusCounts>;
@@ -64,7 +66,27 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
   const api = useBucketReconciliationApi();
   const store = useBucketReconciliationStore();
   const { attention, summaryFailed, summaryLoading, summaryUnavailable, totals } = storeToRefs(store);
+  const { summaryFailure } = storeToRefs(store);
   const accounts = computed<ReconciliationAccount[]>(() => get(store.summary)?.accounts ?? []);
+
+  const { t } = useI18n({ useScope: 'global' });
+
+  /**
+   * The failure as the page should name it.
+   *
+   * @remarks
+   * A response that does not parse means the backend and this build disagree on the format. Zod's
+   * own message is a dump of paths, so it is worded instead, and marked unsupported because asking
+   * again returns the same answer. Every other failure is kept as thrown: it carries the backend's
+   * message and cause, which decide the wording and whether a retry is offered.
+   */
+  function namedFailure(error: unknown): unknown {
+    if (!(error instanceof ZodError))
+      return error;
+    return Object.assign(new Error(t('data_issues.reconciliation.failure.unexpected_response')), {
+      failureCause: FailureCause.UNSUPPORTED,
+    });
+  }
 
   async function refreshSummary(): Promise<void> {
     const request = ++summaryRequestSeq;
@@ -81,7 +103,7 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
       if (failureCauseOf(error) === FailureCause.NOT_FOUND)
         store.markSummaryUnavailable();
       else
-        store.markSummaryFailed();
+        store.markSummaryFailed(namedFailure(error));
     }
     finally {
       if (request === summaryRequestSeq)
@@ -154,7 +176,7 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
   function failedAccountState(detail: AccountDetailState, error: unknown): AccountDetailState {
     return {
       ...detail,
-      error: getErrorMessage(error),
+      error: namedFailure(error),
       loaded: false,
       loading: false,
     };
@@ -263,6 +285,7 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
     reloadAccounts,
     retryAccount,
     summaryFailed,
+    summaryFailure,
     summaryLoading,
     summaryUnavailable,
     totals,

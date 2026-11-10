@@ -23,7 +23,8 @@ export interface AccountDetailState {
   statusKey: string;
   loaded: boolean;
   loading: boolean;
-  error?: string;
+  /** What the last fetch threw, kept whole so the row can word it and decide on a retry. */
+  error?: unknown;
 }
 
 /**
@@ -38,8 +39,11 @@ export const useBucketReconciliationStore = defineStore('history/reconciliation'
   const summary = ref<ReconciliationResponse>();
   const summaryLoaded = ref<boolean>(false);
   const summaryLoading = ref<boolean>(false);
-  /** The last refresh failed; the previous summary, if any, is still what is shown. */
-  const summaryFailed = ref<boolean>(false);
+  /**
+   * Why the last refresh failed, kept whole so the page can name the cause and decide on a retry.
+   * The previous summary, if any, is still what is shown.
+   */
+  const summaryFailure = shallowRef<unknown>();
   /**
    * The backend does not serve the report, because it runs without the accounting update.
    *
@@ -54,10 +58,12 @@ export const useBucketReconciliationStore = defineStore('history/reconciliation'
 
   const attention = computed<number>(() => attentionCount(get(totals)));
 
+  const summaryFailed = computed<boolean>(() => get(summaryFailure) !== undefined);
+
   function setSummary(response: ReconciliationResponse): void {
     set(summary, response);
     set(summaryLoaded, true);
-    set(summaryFailed, false);
+    set(summaryFailure, undefined);
     set(summaryUnavailable, false);
   }
 
@@ -65,8 +71,8 @@ export const useBucketReconciliationStore = defineStore('history/reconciliation'
     set(summaryLoading, loading);
   }
 
-  function markSummaryFailed(): void {
-    set(summaryFailed, true);
+  function markSummaryFailed(failure: unknown): void {
+    set(summaryFailure, failure);
   }
 
   function markSummaryUnavailable(): void {
@@ -93,7 +99,7 @@ export const useBucketReconciliationStore = defineStore('history/reconciliation'
     set(summary, undefined);
     set(summaryLoaded, false);
     set(summaryLoading, false);
-    set(summaryFailed, false);
+    set(summaryFailure, undefined);
     set(summaryUnavailable, false);
     set(accounts, {});
   }
@@ -111,6 +117,7 @@ export const useBucketReconciliationStore = defineStore('history/reconciliation'
     setSummaryLoading,
     summary,
     summaryFailed,
+    summaryFailure,
     summaryLoaded,
     summaryLoading,
     summaryUnavailable,

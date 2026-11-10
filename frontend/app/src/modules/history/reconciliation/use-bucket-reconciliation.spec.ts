@@ -2,7 +2,10 @@ import type { BucketStatus, ReconciliationAccount, ReconciliationBucket, Reconci
 import { get } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ZodError } from 'zod';
+import { isRetryableFailure } from '@/modules/core/api/request-result';
 import { createStatusError } from '@/modules/core/api/response-handlers';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useBucketReconciliation } from '@/modules/history/reconciliation/use-bucket-reconciliation';
 import { useBucketReconciliationStore } from '@/modules/history/reconciliation/use-bucket-reconciliation-store';
 import { reconciliationAccountKey } from '@/modules/history/reconciliation/use-reconciliation-rows';
@@ -188,14 +191,36 @@ describe('useBucketReconciliation', () => {
     expect(useBucketReconciliationStore().accountState(reconciliationAccountKey('ethereum', '0xA'))).toBeUndefined();
   });
 
-  it('should keep any other account failure on the account row', async () => {
-    fetchAccount.mockRejectedValueOnce(new Error('boom'));
+  it('should keep any other account failure whole on the account row', async () => {
+    const failure = new Error('boom');
+    fetchAccount.mockRejectedValueOnce(failure);
     const { ensureAccount, summaryUnavailable } = useBucketReconciliation();
 
     await ensureAccount(account());
 
     expect(get(summaryUnavailable)).toBe(false);
-    expect(useBucketReconciliationStore().accountState(reconciliationAccountKey('ethereum', '0xA'))?.error).toBe('boom');
+    expect(useBucketReconciliationStore().accountState(reconciliationAccountKey('ethereum', '0xA'))?.error).toBe(failure);
+  });
+
+  it('should keep the backend failure whole, so its message and cause reach the page', async () => {
+    const failure = createStatusError(500, 'boom', { cause: 'internal', message: 'boom', result: null });
+    fetchSummary.mockRejectedValueOnce(failure);
+    const { refreshSummary, summaryFailure } = useBucketReconciliation();
+
+    await refreshSummary();
+
+    expect(get(summaryFailure)).toBe(failure);
+  });
+
+  it('should word a response that does not parse and offer no retry, since asking again returns the same answer', async () => {
+    fetchSummary.mockRejectedValueOnce(new ZodError([]));
+    const { refreshSummary, summaryFailure } = useBucketReconciliation();
+
+    await refreshSummary();
+
+    const failure = get(summaryFailure);
+    expect(getErrorMessage(failure)).toBe('data_issues.reconciliation.failure.unexpected_response');
+    expect(isRetryableFailure(failure)).toBe(false);
   });
 
   it('should not let a slow old account response overwrite a retry', async () => {
