@@ -177,6 +177,28 @@ def test_token_creation_with_missing_details(
     assert _without_decimals() == ({evm_address_to_identifier(address, ChainID.ETHEREUM)} if marked else set())  # noqa: E501
 
 
+def test_failed_token_query_keeps_its_cause(
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+) -> None:
+    """A rate limited node says so, rather than every failed token query reading as network."""
+    with (
+        patch.object(ethereum_inquirer, 'multicall_2', side_effect=RemoteError(
+            'slow down',
+            cause=FailureCause.RATE_LIMITED,
+        )),
+        pytest.raises(TokenQueryFailed) as raised,
+    ):
+        get_or_create_evm_token(
+            userdb=database,
+            evm_address=_address(2),
+            chain_id=ChainID.ETHEREUM,
+            evm_inquirer=ethereum_inquirer,
+        )
+
+    assert raised.value.cause == FailureCause.RATE_LIMITED
+
+
 def test_which_tokens_are_retried(database: DBHandler) -> None:
     """Placeholders of normal erc20 tokens on chains with accounts are queried, also the ones
     with a NULL name that older versions saved. An answered query is final: the details found

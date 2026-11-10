@@ -425,14 +425,17 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def __del__(self) -> None:
         del self.ethereum
 
-    def set_ksm_rpc_endpoint(self, endpoint: str) -> tuple[bool, str]:
-        return self.kusama.set_rpc_endpoint(endpoint)
+    def set_ksm_rpc_endpoint(self, endpoint: str) -> None:
+        """May raise RemoteError if the node at the endpoint could not be connected to"""
+        self.kusama.set_rpc_endpoint(endpoint)
 
-    def set_dot_rpc_endpoint(self, endpoint: str) -> tuple[bool, str]:
-        return self.polkadot.set_rpc_endpoint(endpoint)
+    def set_dot_rpc_endpoint(self, endpoint: str) -> None:
+        """May raise RemoteError if the node at the endpoint could not be connected to"""
+        self.polkadot.set_rpc_endpoint(endpoint)
 
-    def set_btc_mempool_api(self, endpoint: str) -> tuple[bool, str]:
-        return self.bitcoin.set_custom_mempool_api(endpoint)
+    def set_btc_mempool_api(self, endpoint: str) -> None:
+        """May raise RemoteError if the mempool instance could not be connected to"""
+        self.bitcoin.set_custom_mempool_api(endpoint)
 
     def activate_premium_status(self, premium: Premium) -> None:
         self.premium = premium

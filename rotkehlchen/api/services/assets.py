@@ -536,11 +536,14 @@ class AssetsService:
         non_nft_assets = []
         for asset in assets:
             if asset.asset_type == AssetType.NFT:
-                nft_price_data = self._eth_module_query(
+                if isinstance(nft_query := self._eth_module_query(
                     module_name='nfts',
                     method='get_nfts_with_price',
                     query_specific_balances_before=None,
-                ).result
+                    from_asset=asset,
+                ), FailResult) or len(nft_query.result) == 0:
+                    continue  # an NFT without a known price is left out, the rest still priced
+                nft_price_data = nft_query.result[0]
                 oracle = (
                     CurrentPriceOracle.MANUALCURRENT
                     if nft_price_data['manually_input'] is True
@@ -724,7 +727,7 @@ class AssetsService:
         try:
             info = evm_manager.node_inquirer.get_erc20_contract_info(address=address)
         except TokenQueryFailed as e:
-            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, FailureCause.NETWORK)
+            return FailResult(str(e), HTTPStatus.BAD_GATEWAY, e.cause)
         except (BadFunctionCallOutput, NotERC20Conformant):
             return FailResult(
                 f'{chain_id!s} address {address} seems to not be a deployed contract '

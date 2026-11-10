@@ -7,9 +7,11 @@ import requests
 from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.rest import _premium_failure_cause
-from rotkehlchen.api.result import FailResult
+from rotkehlchen.api.result import FailResult, OkResult
+from rotkehlchen.api.services.assets import AssetsService
 from rotkehlchen.api.services.exchanges import ExchangesService
 from rotkehlchen.api.websockets.typedefs import UserMessageKey
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.banks.errors import (
     BankAuthExpired,
     BankNameTaken,
@@ -39,7 +41,9 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.binance import BinancePermissionError
-from rotkehlchen.types import Timestamp
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import CurrentPriceOracle
+from rotkehlchen.types import Price, Timestamp
 
 
 def test_failure_cause_wire_values() -> None:
@@ -222,3 +226,34 @@ def test_balancer_malformed_json_is_bad_data() -> None:
         query_balancer_api(query='query', variables={})
 
     assert excinfo.value.cause == FailureCause.BAD_DATA
+
+
+def test_nft_current_price_reads_its_own_entry_and_leaves_out_a_module_failure() -> None:
+    nft = MagicMock(asset_type=AssetType.NFT, identifier='_nft_0xabc_1')
+    service = AssetsService(MagicMock())
+    failure = FailResult('nfts module off', HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+    with patch.object(service, '_eth_module_query', return_value=failure):
+        result = service.get_current_assets_price(
+            assets=[nft],
+            target_asset=MagicMock(),
+            ignore_cache=False,
+        )
+    assert isinstance(result, OkResult)
+    assert result.result['assets'] == {}
+
+    with patch.object(service, '_eth_module_query', return_value=OkResult([{
+        'asset': nft.identifier,
+        'manually_input': True,
+        'price': FVal('12.5'),
+    }])) as module_query:
+        result = service.get_current_assets_price(
+            assets=[nft],
+            target_asset=MagicMock(),
+            ignore_cache=False,
+        )
+
+    assert module_query.call_args.kwargs['from_asset'] == nft
+    assert isinstance(result, OkResult)
+    assert result.result['assets'] == {
+        nft: [Price(FVal('12.5')), CurrentPriceOracle.MANUALCURRENT.value],
+    }

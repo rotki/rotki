@@ -2771,9 +2771,9 @@ def test_custom_mempool_api_queries_transactions(
     """A custom mempool endpoint serves transactions too, not only balances."""
     with patch(
         'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
-        return_value=(True, ''),
+        return_value=None,
     ):
-        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.set_custom_mempool_api('https://mempool.example')
 
     assert len(bitcoin_manager.api_callbacks) == 1
     assert bitcoin_manager.api_callbacks[0].transactions_fn is not None
@@ -2850,7 +2850,7 @@ def test_checkpoint_does_not_advance_past_unfetched_blocks(
     with (
         patch(
             'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
-            return_value=(True, ''),
+            return_value=None,
         ),
         _mock_esplora_pages({
             f'/address/{address_a}/txs': [tx_a],
@@ -2859,7 +2859,7 @@ def test_checkpoint_does_not_advance_past_unfetched_blocks(
             f'/address/{address_b}/txs?after_txid={tx_b["txid"]}': [],
         }),
     ):
-        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.set_custom_mempool_api('https://mempool.example')
         bitcoin_manager.query_transactions(
             from_timestamp=Timestamp(0),
             to_timestamp=ts_now(),
@@ -2892,7 +2892,7 @@ def test_checkpoint_does_not_advance_past_unfetched_blocks(
     with (
         patch(
             'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
-            return_value=(True, ''),
+            return_value=None,
         ),
         _mock_esplora_pages({
             f'/address/{address_a}/txs': [tx_a2],
@@ -2960,12 +2960,12 @@ def test_checkpoint_rolls_back_when_saving_fails(
     with (
         patch(
             'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
-            return_value=(True, ''),
+            return_value=None,
         ),
         _mock_esplora_pages(pages),
         patch.object(bitcoin_manager, '_save_transactions', side_effect=RuntimeError('boom')),
     ):
-        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.set_custom_mempool_api('https://mempool.example')
         with pytest.raises(RuntimeError, match='boom'):
             bitcoin_manager.query_transactions(
                 from_timestamp=Timestamp(0),
@@ -2990,11 +2990,11 @@ def test_checkpoint_rolls_back_when_saving_fails(
     with (
         patch(
             'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
-            return_value=(True, ''),
+            return_value=None,
         ),
         _mock_esplora_pages(pages),
     ):
-        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.set_custom_mempool_api('https://mempool.example')
         bitcoin_manager.query_transactions(
             from_timestamp=Timestamp(0),
             to_timestamp=ts_now(),
@@ -3049,12 +3049,12 @@ def test_migrated_address_failed_decode_keeps_checkpoint(
     with (
         patch(
             'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
-            return_value=(True, ''),
+            return_value=None,
         ),
         _mock_esplora_pages(pages),
         patch.object(bitcoin_manager, 'decode_transactions', side_effect=RuntimeError('boom')),
     ):
-        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.set_custom_mempool_api('https://mempool.example')
         with pytest.raises(RuntimeError, match='boom'):
             bitcoin_manager.query_transactions(
                 from_timestamp=Timestamp(0),
@@ -3080,7 +3080,7 @@ def test_migrated_address_failed_decode_keeps_checkpoint(
     with (
         patch(
             'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
-            return_value=(True, ''),
+            return_value=None,
         ),
         _mock_esplora_pages({f'/address/{address}/txs': []}),
         patch(
@@ -3088,7 +3088,7 @@ def test_migrated_address_failed_decode_keeps_checkpoint(
             wraps=query_mempool_address_transactions,
         ) as mock_mempool_query,
     ):
-        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.set_custom_mempool_api('https://mempool.example')
         bitcoin_manager.query_transactions(
             from_timestamp=Timestamp(0),
             to_timestamp=ts_now(),
@@ -3136,13 +3136,13 @@ def test_failed_initial_redecode_is_retried(
         fee=1_000,
     )
     with (
-        patch.object(BitcoinManager, '_connect_node', return_value=(True, '')),
+        patch.object(BitcoinManager, '_connect_node', return_value=None),
         _mock_esplora_pages({
             f'/address/{tracked}/txs': [tx],
             f'/address/{tracked}/txs?after_txid={tx["txid"]}': [],
         }),
     ):
-        assert bitcoin_manager.set_custom_mempool_api('https://mempool.example') == (True, '')
+        bitcoin_manager.set_custom_mempool_api('https://mempool.example')
         bitcoin_manager.query_transactions(
             from_timestamp=Timestamp(0),
             to_timestamp=ts_now(),

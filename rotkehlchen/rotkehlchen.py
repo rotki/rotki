@@ -1534,23 +1534,21 @@ class Rotkehlchen:
             GlobalDBHandler.add_historical_prices(historical_prices)
 
     def set_settings(self, settings: ModifiableDBSettings) -> tuple[bool, str]:
-        """Tries to set new settings. Returns True in success or False with message if error"""
+        """Tries to set new settings. Returns True in success or False with message if error
+
+        May raise:
+        - RemoteError if a node or service the settings point at could not be connected to
+        """
         # TODO: https://github.com/orgs/rotki/projects/11?pane=issue&itemId=52425560
         # For those rpc endpoints improve the logic and make it similar to EVM rpc endpoints
         if settings.ksm_rpc_endpoint is not None:
-            result, msg = self.chains_aggregator.set_ksm_rpc_endpoint(settings.ksm_rpc_endpoint)
-            if not result:
-                return False, msg
+            self.chains_aggregator.set_ksm_rpc_endpoint(settings.ksm_rpc_endpoint)
 
         if settings.dot_rpc_endpoint is not None:
-            result, msg = self.chains_aggregator.set_dot_rpc_endpoint(settings.dot_rpc_endpoint)
-            if not result:
-                return False, msg
+            self.chains_aggregator.set_dot_rpc_endpoint(settings.dot_rpc_endpoint)
 
         if settings.btc_mempool_api is not None:
-            result, msg = self.chains_aggregator.set_btc_mempool_api(settings.btc_mempool_api)
-            if not result:
-                return False, msg
+            self.chains_aggregator.set_btc_mempool_api(settings.btc_mempool_api)
 
         if settings.beacon_rpc_endpoint is not None and (eth2 := self.chains_aggregator.get_module('eth2')) is not None:  # noqa: E501
             try:

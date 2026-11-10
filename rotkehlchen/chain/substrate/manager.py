@@ -256,20 +256,24 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
 
         return last_block
 
-    def _connect_node(
-            self,
-            node: NodeName,
-            endpoint: str,
-    ) -> tuple[bool, str]:
+    def _connect_node(self, node: NodeName, endpoint: str) -> None:
+        """Attempt to connect to a node in the background, logging a failure instead of
+        raising it, since nobody waits on a connection made at start."""
+        try:
+            self._connect_node_or_raise(node=node, endpoint=endpoint)
+        except RemoteError as e:
+            log.warning(str(e))
+
+    def _connect_node_or_raise(self, node: NodeName, endpoint: str) -> None:
         """Attempt to connect to a node, check its status and store its
         attributes (e.g. interface, weight) in the available nodes map.
 
         May raise:
-        - RemoteError: connecting to a node fails at any of the steps executed.
+        - RemoteError: connecting to the node failed, with the cause of that failure
         """
         if node in self.available_node_attributes_map:
-            message = f'{self.chain} already connected to {node} node at endpoint: {endpoint}.'
-            return True, message
+            log.debug('%s already connected to %s at %s', self.chain, node, endpoint)
+            return
 
         try:
             node_interface = self._get_node_interface(endpoint)
@@ -277,11 +281,11 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
             last_block = self._check_node_synchronization(node_interface)
             self._set_chain_properties(node_interface)
         except RemoteError as e:
-            message = (
+            raise RemoteError(
                 f'{self.chain} failed to connect to {node} at endpoint {endpoint}, '
-                f'due to {e!s}.'
-            )
-            return False, message
+                f'due to {e!s}.',
+                cause=e.cause,
+            ) from e
 
         log.info(f'{self.chain} connected to {node} node at endpoint: {node_interface.url}.')
         node_attributes = NodeNameAttributes(
@@ -290,7 +294,6 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
         )
         self.available_node_attributes_map[node] = node_attributes
         self._set_available_nodes_call_order()
-        return True, ''
 
     @staticmethod
     def _format_own_rpc_endpoint(endpoint: str) -> str:
@@ -667,9 +670,12 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
         """
         return self._get_last_block(node_interface)
 
-    def set_rpc_endpoint(self, endpoint: str) -> tuple[bool, str]:
+    def set_rpc_endpoint(self, endpoint: str) -> None:
         """Attempt to set the RPC endpoint for the user's own node.
         If connection at endpoint is successful it will set `own_rpc_endpoint`.
+
+        May raise:
+        - RemoteError: the node at the endpoint could not be connected to
         """
         own_node: KusamaNodeName | PolkadotNodeName
         if self.chain == SupportedBlockchain.KUSAMA:
@@ -681,16 +687,13 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
             self.available_node_attributes_map.pop(own_node, None)
             self._set_available_nodes_call_order()
             self.own_rpc_endpoint = ''
-            return True, ''
+            return
 
-        result, message = self._connect_node(
+        self._connect_node_or_raise(
             node=own_node,
             endpoint=self._format_own_rpc_endpoint(endpoint),
         )
-        if result is True:
-            self.own_rpc_endpoint = endpoint
-
-        return result, message
+        self.own_rpc_endpoint = endpoint
 
 
 def wait_until_a_node_is_available(
