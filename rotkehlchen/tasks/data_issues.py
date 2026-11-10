@@ -72,9 +72,9 @@ def _write_tracked_address_transfer_issues(
     """Write issues for plain transfers whose sender and receiver are tracked."""
     chain_locations = tuple(
         (
-            location.serialize_for_db(),
-            ChainID(location.to_chain_id()).to_blockchain().value,
-            location.to_chain_id(),
+            location,
+            ChainID(location_to_chain_id(location)).to_blockchain().value,
+            location_to_chain_id(location),
         )
         for location in EVM_LOCATIONS
     )
@@ -140,10 +140,10 @@ class TrackedAddressTransferStrategy(BaseRemediationStrategy):
         if issue.kind != IssueKind.TRACKED_ADDRESS_TRANSFER:
             return None
 
-        location = Location.deserialize_from_db(issue.location)
+        location = LocationIdentifier(issue.location)
         if location not in EVM_LOCATIONS:
             return None
-        chain_id = cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', ChainID(location.to_chain_id()))
+        chain_id = cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', ChainID(location_to_chain_id(location)))  # noqa: E501
 
         with self.database.conn.read_ctx() as cursor:
             row = cursor.execute(

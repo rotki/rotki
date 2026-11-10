@@ -926,7 +926,11 @@ def test_remediation_continues_to_next_issue_after_decoder_failure(
     chains_aggregator = MagicMock()
     decoder = chains_aggregator.get_evm_manager.return_value.transactions_decoder
     decode = decoder.decode_transaction_hashes
-    decode.side_effect = [RemoteError('receipt unavailable'), None, None]
+    decode.side_effect = [
+        RemoteError('receipt unavailable', cause=FailureCause.NETWORK),
+        None,
+        None,
+    ]
 
     run_data_issue_remediation(database=database, chains_aggregator=chains_aggregator)
 
