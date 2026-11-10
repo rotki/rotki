@@ -112,6 +112,12 @@ vi.mock('@/modules/history/data-issues/use-data-issues-summary', () => ({
   }),
 }));
 
+const remediationCompleted = ref(0);
+
+vi.mock('@/modules/history/data-issues/use-data-issue-remediation-store', () => ({
+  useDataIssueRemediationStore: (): object => ({ remediationCompleted }),
+}));
+
 vi.mock('@/modules/history/events/tx/use-undecoded-transactions-count', () => ({
   useUndecodedTransactionsCount: (): object => ({
     decodeMissing: state.decodeMissing,
@@ -140,6 +146,8 @@ describe('useHistoryEventIssues', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    // The remediation watcher calls `startPromise`, so the mock has to hand back a promise.
+    state.refreshDataIssuesSummary.mockResolvedValue(undefined);
     useHistoryEventIssues = await loadComposable();
     set(state.autoFixCount, 0);
     set(state.autoFixGroupIds, []);
@@ -157,6 +165,7 @@ describe('useHistoryEventIssues', () => {
     set(state.matchingAllowed, true);
     set(state.postProcessing, false);
     set(state.processing, false);
+    set(remediationCompleted, 0);
     set(state.trackedEntitiesLoading, false);
     set(state.tracksNothing, false);
     set(state.undecodedCount, 0);
@@ -467,6 +476,16 @@ describe('useHistoryEventIssues', () => {
       await refreshAll();
 
       expect(state.refreshDataIssuesSummary).toHaveBeenCalledOnce();
+    });
+
+    it('should refresh the inbox summary when a remediation run completes', async () => {
+      useHistoryEventIssues();
+
+      set(remediationCompleted, 1);
+      await nextTick();
+
+      // Not `once`: every earlier mount in this file left its own watcher on the shared ref.
+      expect(state.refreshDataIssuesSummary).toHaveBeenCalled();
     });
   });
 });

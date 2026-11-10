@@ -184,7 +184,7 @@ describe('data-issues transforms', () => {
       expect(result.asset).toBe('ETH');
     });
 
-    it('should describe a customized transfer between tracked addresses', () => {
+    it('should describe a transfer between tracked addresses', () => {
       const issue = createIssue({
         kind: IssueKind.TRACKED_ADDRESS_TRANSFER,
         payload: { eventIdentifier: 12 },

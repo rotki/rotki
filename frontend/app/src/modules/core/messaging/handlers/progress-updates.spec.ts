@@ -6,6 +6,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createProgressUpdateHandler } from '@/modules/core/messaging/handlers/progress-updates';
 import { SocketMessageProgressUpdateSubType } from '@/modules/core/messaging/types/base';
+import { useDataIssueRemediationStore } from '@/modules/history/data-issues/use-data-issue-remediation-store';
 import { decodeActivity, decodeActivityId } from '@/modules/history/events/tx/decode.activity';
 import { protocolCacheActivity } from '@/modules/history/protocol-cache.activity';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
@@ -264,6 +265,33 @@ describe('createProgressUpdateHandler', () => {
       ActivityPart.HISTORIC,
       ActivityPart.BATCH,
     );
+  });
+
+  describe('data issue remediation', () => {
+    function phaseData(phase: 'running' | 'completed'): ProgressUpdateResultData {
+      return createMock<ProgressUpdateResultData>({
+        phase,
+        subtype: SocketMessageProgressUpdateSubType.DATA_ISSUE_REMEDIATION,
+      });
+    }
+
+    it('should not bump the completion signal when remediation starts', async () => {
+      const handler = createProgressUpdateHandler(mockT);
+
+      await handler.handle(phaseData('running'));
+
+      expect(get(useDataIssueRemediationStore().remediationCompleted)).toBe(0);
+    });
+
+    it('should bump the completion signal when remediation finishes', async () => {
+      const handler = createProgressUpdateHandler(mockT);
+      const store = useDataIssueRemediationStore();
+
+      await handler.handle(phaseData('running'));
+      await handler.handle(phaseData('completed'));
+
+      expect(get(store.remediationCompleted)).toBe(1);
+    });
   });
 
   it('should route historical balance processing updates', async () => {

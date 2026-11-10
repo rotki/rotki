@@ -37,6 +37,7 @@ ALLOWED_STATE_TRANSITIONS: Final[dict[IssueState, frozenset[IssueState]]] = {
         IssueState.DISMISSED,
     }),
     IssueState.AUTO_REMEDIATING: frozenset({
+        IssueState.OPEN,  # a remediation run that attempted nothing hands the issue back
         IssueState.RESOLVED,
         IssueState.UNRESOLVED,
         IssueState.DISMISSED,

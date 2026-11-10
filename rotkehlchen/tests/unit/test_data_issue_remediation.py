@@ -8,6 +8,7 @@ from freezegun import freeze_time
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.concurrency import TaskCancelledError
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.cache import DBCacheStatic
@@ -25,20 +26,29 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.remediation.base import RemediationOutcome
+from rotkehlchen.history.data_issues.types import DataIssueFilters
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.locations.constants import (
     LOCATION_ETHEREUM,
 )
-from rotkehlchen.tasks.data_issues import run_data_issue_remediation
+from rotkehlchen.tasks.data_issues import (
+    DISCOVERY_BATCH_SIZE,
+    TRACKED_ADDRESS_TRANSFER_CANDIDATES_QUERY,
+    _tracked_address_transfer_candidates_bindings,
+    _write_tracked_address_transfer_issues,
+    run_data_issue_remediation,
+)
+from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.tests.fixtures.messages import MockedWsMessage, MockRotkiNotifier
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
-from rotkehlchen.tests.utils.factories import make_evm_tx_hash
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.messages import consume_errors
 from rotkehlchen.types import (
     ChainID,
     ChecksumAddress,
     EvmTransaction,
+    EVMTxHash,
     Timestamp,
     TimestampMS,
 )
@@ -49,7 +59,6 @@ if TYPE_CHECKING:
     from rotkehlchen.concurrency import Task
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.tasks.manager import TaskManager
-    from rotkehlchen.types import EVMTxHash
 
 pytestmark = [
     pytest.mark.accounting_update,
@@ -64,10 +73,11 @@ def _make_event(
         event_type: HistoryEventType = HistoryEventType.SPEND,
         location_label: str = TEST_ADDR1,
         address: ChecksumAddress | None = None,
+        sequence_index: int = 0,
 ) -> EvmEvent:
     return EvmEvent(
         tx_ref=tx_hash,
-        sequence_index=0,
+        sequence_index=sequence_index,
         timestamp=TimestampMS(timestamp),
         location=LOCATION_ETHEREUM,
         event_type=event_type,
@@ -177,15 +187,404 @@ def _wait_for_background_task(tasks: list[Task] | None) -> None:
     task.get()
 
 
+def _replace_transaction_events(
+        database: DBHandler,
+        tx_hash: EVMTxHash,
+        events: list[EvmEvent],
+) -> None:
+    """Emulate a forced redecode: drop the transaction events and add the decoded ones.
+
+    A throwaway event is inserted first so the replacements get identifiers distinct from
+    the deleted rows, the way a redecode of a busy history does.
+    """
+    with database.user_write() as write_cursor:
+        dbevents = DBHistoryEvents(database)
+        throwaway_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_make_event(
+                tx_hash=make_evm_tx_hash(),
+                amount='1',
+                location_label=make_evm_address(),
+            ),
+        )
+        dbevents.delete_events_by_tx_ref(
+            write_cursor=write_cursor,
+            tx_refs=[tx_hash],
+            location=LOCATION_ETHEREUM,
+            customized_handling='preserve_transactions',
+        )
+        for event in events:
+            dbevents.add_history_event(write_cursor=write_cursor, event=event)
+        if throwaway_id is not None:
+            dbevents.delete_events_and_track(
+                write_cursor=write_cursor,
+                where_clause='WHERE identifier = ?',
+                where_bindings=(throwaway_id,),
+            )
+
+
+def _add_transaction_with_events(
+        database: DBHandler,
+        events: list[EvmEvent],
+        timestamp: int = 1,
+) -> EVMTxHash:
+    tx_hash = events[0].tx_ref
+    assert (relevant_address := events[0].location_label) is not None
+    with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[_make_transaction(tx_hash, timestamp=timestamp)],
+            relevant_address=string_to_evm_address(relevant_address),
+        )
+        for event in events:
+            DBHistoryEvents(database).add_history_event(
+                write_cursor=write_cursor,
+                event=event,
+            )
+
+    return tx_hash
+
+
+def _mock_decoder(database: DBHandler, decoded_events: list[EvmEvent]) -> MagicMock:
+    """A decoder mock whose forced redecode replaces the transaction events."""
+    decoder = MagicMock()
+
+    def _decode_transaction_hashes(
+            ignore_cache: bool,
+            tx_hashes: list[EVMTxHash],
+    ) -> None:
+        assert ignore_cache is True
+        assert len(tx_hashes) == 1
+        _replace_transaction_events(
+            database=database,
+            tx_hash=tx_hashes[0],
+            events=decoded_events,
+        )
+
+    decoder.decode_transaction_hashes.side_effect = _decode_transaction_hashes
+    return decoder
+
+
+def _mock_chains_aggregator(decoder: MagicMock) -> MagicMock:
+    chains_aggregator = MagicMock()
+    chains_aggregator.get_evm_manager.return_value.transactions_decoder = decoder
+    return chains_aggregator
+
+
+def _tracked_transfer_issues(database: DBHandler) -> list:
+    return DataIssuesManager(database).list_issues(DataIssueFilters(
+        kind=IssueKind.TRACKED_ADDRESS_TRANSFER,
+    ))
+
+
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
-def test_remediation_sends_running_websocket_update(database: DBHandler) -> None:
+def test_remediation_sends_phase_websocket_updates(database: DBHandler) -> None:
     run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
 
     notifier = cast('MockRotkiNotifier', database.msg_aggregator.rotki_notifier)
     assert notifier.pop_message() == MockedWsMessage(
         message_type=WSMessageType.PROGRESS_UPDATES,
-        data={'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION)},
+        data={
+            'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
+            'phase': 'running',
+        },
     )
+    assert notifier.pop_message() == MockedWsMessage(
+        message_type=WSMessageType.PROGRESS_UPDATES,
+        data={
+            'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
+            'phase': 'completed',
+        },
+    )
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_remediation_sends_completed_websocket_update_on_failure(database: DBHandler) -> None:
+    with (
+        patch.object(
+            DataIssuesManager,
+            'reconcile_dangling_tracked_address_transfer_issues',
+            side_effect=RuntimeError('boom'),
+        ),
+        pytest.raises(RuntimeError),
+    ):
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+    notifier = cast('MockRotkiNotifier', database.msg_aggregator.rotki_notifier)
+    assert notifier.pop_message() == MockedWsMessage(
+        message_type=WSMessageType.PROGRESS_UPDATES,
+        data={
+            'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
+            'phase': 'running',
+        },
+    )
+    assert notifier.pop_message() == MockedWsMessage(
+        message_type=WSMessageType.PROGRESS_UPDATES,
+        data={
+            'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
+            'phase': 'completed',
+        },
+    )
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_one_redecode_verifies_all_sibling_issues(database: DBHandler) -> None:
+    """Two events of one transaction are verified against a single forced redecode."""
+    tx_hash = make_evm_tx_hash()
+    _add_transaction_with_events(database, [
+        _make_event(
+            tx_hash=tx_hash,
+            amount='1',
+            address=TEST_ADDR2,
+            sequence_index=1,
+        ),
+        _make_event(
+            tx_hash=tx_hash,
+            amount='2',
+            address=TEST_ADDR2,
+            sequence_index=2,
+        ),
+    ])
+    decoder = _mock_decoder(database, [
+        _make_event(
+            tx_hash=tx_hash,
+            amount='1',
+            address=TEST_ADDR2,
+            event_type=HistoryEventType.TRANSFER,
+            sequence_index=1,
+        ),
+        _make_event(
+            tx_hash=tx_hash,
+            amount='2',
+            address=TEST_ADDR2,
+            event_type=HistoryEventType.TRANSFER,
+            sequence_index=2,
+        ),
+    ])
+
+    run_data_issue_remediation(
+        database=database,
+        chains_aggregator=_mock_chains_aggregator(decoder),
+    )
+
+    assert decoder.decode_transaction_hashes.call_count == 1
+    issues = _tracked_transfer_issues(database)
+    assert len(issues) == 2
+    assert all(issue.state == IssueState.RESOLVED for issue in issues)
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_redecode_verifies_the_candidate_at_its_sequence_index(database: DBHandler) -> None:
+    """A duplicate identical transfer elsewhere in the transaction must not resolve an issue."""
+    tx_hash = make_evm_tx_hash()
+    _add_transaction_with_events(database, [
+        _make_event(tx_hash=tx_hash, amount='1', address=TEST_ADDR2, sequence_index=1),
+        _make_event(tx_hash=tx_hash, amount='1', address=TEST_ADDR2, sequence_index=2),
+    ])
+    decoder = _mock_decoder(database, [
+        _make_event(
+            tx_hash=tx_hash,
+            amount='1',
+            address=TEST_ADDR2,
+            event_type=HistoryEventType.TRANSFER,
+            sequence_index=1,
+        ),
+        _make_event(tx_hash=tx_hash, amount='1', address=TEST_ADDR2, sequence_index=2),
+    ])
+
+    run_data_issue_remediation(
+        database=database,
+        chains_aggregator=_mock_chains_aggregator(decoder),
+    )
+
+    assert decoder.decode_transaction_hashes.call_count == 1
+    issues = _tracked_transfer_issues(database)
+    by_sequence = {
+        issue.payload['sequence_index']: issue.state for issue in issues
+    }
+    assert by_sequence == {
+        1: IssueState.RESOLVED,
+        2: IssueState.UNRESOLVED,
+    }
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_unsuccessful_redecode_migrates_issue_to_the_replacement_event(
+        database: DBHandler,
+) -> None:
+    """The issue follows its replacement event, so a later scan does not duplicate it."""
+    _event_id, tx_hash = _add_plain_tracked_address_transfer(database, customized=False)
+    decoder = _mock_decoder(database, [
+        _make_event(tx_hash=tx_hash, amount='1', address=TEST_ADDR2),
+    ])
+
+    run_data_issue_remediation(
+        database=database,
+        chains_aggregator=_mock_chains_aggregator(decoder),
+    )
+
+    issues = _tracked_transfer_issues(database)
+    assert len(issues) == 1
+    issue = issues[0]
+    assert issue.state == IssueState.UNRESOLVED
+    with database.conn.read_ctx() as cursor:
+        replacement_id = cursor.execute(
+            'SELECT H.identifier FROM history_events H '
+            'JOIN chain_events_info C ON C.identifier = H.identifier WHERE C.tx_ref = ?',
+            (tx_hash,),
+        ).fetchone()[0]
+    assert issue.payload['event_identifier'] == replacement_id
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_unsuccessful_redecode_does_not_create_a_duplicate_issue(database: DBHandler) -> None:
+    _event_id, tx_hash = _add_plain_tracked_address_transfer(database, customized=False)
+    decoder = _mock_decoder(database, [
+        _make_event(tx_hash=tx_hash, amount='1', address=TEST_ADDR2),
+    ])
+    chains_aggregator = _mock_chains_aggregator(decoder)
+
+    run_data_issue_remediation(database=database, chains_aggregator=chains_aggregator)
+    issues = _tracked_transfer_issues(database)
+    assert len(issues) == 1
+    issue = issues[0]
+
+    run_data_issue_remediation(database=database, chains_aggregator=chains_aggregator)
+
+    issues = _tracked_transfer_issues(database)
+    assert len(issues) == 1
+    assert issues[0].id == issue.id
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_resolved_issue_related_event_link_survives_redecode(database: DBHandler) -> None:
+    _event_id, tx_hash = _add_plain_tracked_address_transfer(database, customized=False)
+    decoder = _mock_decoder(database, [
+        _make_event(
+            tx_hash=tx_hash,
+            amount='1',
+            address=TEST_ADDR2,
+            event_type=HistoryEventType.TRANSFER,
+        ),
+    ])
+
+    run_data_issue_remediation(
+        database=database,
+        chains_aggregator=_mock_chains_aggregator(decoder),
+    )
+
+    issue = _tracked_transfer_issues(database)[0]
+    assert issue.state == IssueState.RESOLVED
+    with database.conn.read_ctx() as cursor:
+        replacement_id, group_identifier = cursor.execute(
+            'SELECT H.identifier, H.group_identifier FROM history_events H '
+            'JOIN chain_events_info C ON C.identifier = H.identifier WHERE C.tx_ref = ?',
+            (tx_hash,),
+        ).fetchone()
+    assert issue.payload['event_identifier'] == replacement_id
+    assert issue.group_identifier == group_identifier
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+@pytest.mark.parametrize(('replacement_type', 'expected_state'), [
+    (HistoryEventType.TRANSFER, IssueState.RESOLVED),
+    (HistoryEventType.SPEND, IssueState.OPEN),
+])
+def test_discovery_reconciles_event_redecoded_elsewhere(
+        database: DBHandler,
+        replacement_type: HistoryEventType,
+        expected_state: IssueState,
+) -> None:
+    """An issue whose event was replaced outside remediation is re-pointed or resolved."""
+    event_id, tx_hash = _add_plain_tracked_address_transfer(database, customized=False)
+    manager = DataIssuesManager(database)
+    _write_tracked_address_transfer_issues(database=database, issues_manager=manager)
+    original_issues = _tracked_transfer_issues(database)
+    assert len(original_issues) == 1
+    original_issue_id = original_issues[0].id
+
+    _replace_transaction_events(database, tx_hash, [_make_event(
+        tx_hash=tx_hash,
+        amount='1',
+        address=TEST_ADDR2,
+        event_type=replacement_type,
+    )])
+    _write_tracked_address_transfer_issues(database=database, issues_manager=manager)
+
+    issues = _tracked_transfer_issues(database)
+    assert len(issues) == 1  # the original row is reconciled, not duplicated
+    issue = issues[0]
+    assert issue.id == original_issue_id
+    assert issue.state == expected_state
+    with database.conn.read_ctx() as cursor:
+        replacement_id = cursor.execute(
+            'SELECT H.identifier FROM history_events H '
+            'JOIN chain_events_info C ON C.identifier = H.identifier WHERE C.tx_ref = ?',
+            (tx_hash,),
+        ).fetchone()[0]
+    assert event_id != replacement_id
+    assert issue.payload['event_identifier'] == replacement_id
+    assert manager.get_issue(issue.id).group_identifier is not None
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_discovery_resolves_issue_when_transaction_is_gone(database: DBHandler) -> None:
+    _event_id, tx_hash = _add_plain_tracked_address_transfer(database, customized=False)
+    manager = DataIssuesManager(database)
+    _write_tracked_address_transfer_issues(database=database, issues_manager=manager)
+
+    with database.user_write() as write_cursor:
+        write_cursor.execute('DELETE FROM evm_transactions WHERE tx_hash = ?', (tx_hash,))
+        write_cursor.execute(
+            'DELETE FROM history_events WHERE identifier IN ('
+            'SELECT identifier FROM chain_events_info WHERE tx_ref = ?)',
+            (tx_hash,),
+        )
+    _write_tracked_address_transfer_issues(database=database, issues_manager=manager)
+
+    issue = _tracked_transfer_issues(database)[0]
+    assert issue.state == IssueState.RESOLVED
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_customized_transaction_is_never_redecoded(database: DBHandler) -> None:
+    """A customized transaction keeps its events byte-identical and stays for the user."""
+    event_id, tx_hash = _add_plain_tracked_address_transfer(database, customized=False)
+    manager = DataIssuesManager(database)
+    issue_id = manager.write_issue(
+        kind=IssueKind.TRACKED_ADDRESS_TRANSFER,
+        location=LOCATION_ETHEREUM,
+        location_label=TEST_ADDR1,
+        protocol=None,
+        asset=A_ETH.identifier,
+        payload={
+            'event_identifier': event_id,
+            'chain_id': ChainID.ETHEREUM.serialize_for_db(),
+            'tx_hash': str(tx_hash),
+            'sequence_index': 0,
+        },
+        ts_start=1_000,
+        ts_end=1_000,
+    )
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO history_events_mappings(parent_identifier, name, value) '
+            'VALUES (?, ?, ?)',
+            (event_id, HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED.serialize_for_db()),  # noqa: E501
+        )
+    saved_rows = _get_saved_event_rows(database)
+    decoder = _mock_decoder(database, [])
+
+    run_data_issue_remediation(
+        database=database,
+        chains_aggregator=_mock_chains_aggregator(decoder),
+    )
+
+    decoder.decode_transaction_hashes.assert_not_called()
+    assert _get_saved_event_rows(database) == saved_rows
+    issue = manager.get_issue(issue_id)
+    assert issue.state == IssueState.OPEN
+    assert issue.auto_remediation_attempts == []
 
 
 @pytest.mark.parametrize('state', [IssueState.RESOLVED, IssueState.DISMISSED])
@@ -245,6 +644,11 @@ def test_remediation_verifies_saved_internal_transfer(
             'UPDATE evm_transactions SET value = ? WHERE tx_hash = ?',
             (str(decoded_amount * 10**18), tx_hash),
         )
+        # a decode of this transaction keeps the transfer at sequence index 1, after gas
+        write_cursor.execute(
+            'UPDATE history_events SET sequence_index = 1 WHERE identifier = ?',
+            (event_id,),
+        )
         if event_type == HistoryEventType.RECEIVE:
             write_cursor.execute(
                 'UPDATE history_events SET type = ?, location_label = ? WHERE identifier = ?',
@@ -268,7 +672,7 @@ def test_remediation_verifies_saved_internal_transfer(
 
     run_data_issue_remediation(database=database, chains_aggregator=chains_aggregator)
 
-    issues = DataIssuesManager(database).list_issues()
+    issues = _tracked_transfer_issues(database)
     assert len(issues) == 1
     assert issues[0].state == (
         IssueState.RESOLVED if decoded_amount == 1 else IssueState.UNRESOLVED
@@ -348,17 +752,15 @@ def test_remediation_redecodes_transfer_on_its_event_chain_only(database: DBHand
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
-def test_remediation_reports_customized_tracked_address_transfer(database: DBHandler) -> None:
-    event_id, _tx_hash = _add_plain_tracked_address_transfer(database, customized=True)
+def test_remediation_skips_customized_tracked_address_transfer(database: DBHandler) -> None:
+    """A customized transaction is not discovered, and is never redecoded."""
+    _event_id, _tx_hash = _add_plain_tracked_address_transfer(database, customized=True)
     chains_aggregator = MagicMock()
 
     run_data_issue_remediation(database=database, chains_aggregator=chains_aggregator)
 
     chains_aggregator.get_evm_manager.assert_not_called()
-    issues = DataIssuesManager(database).list_issues()
-    assert len(issues) == 1
-    assert issues[0].kind == IssueKind.TRACKED_ADDRESS_TRANSFER
-    assert issues[0].payload == {'event_identifier': event_id}
+    assert _tracked_transfer_issues(database) == []
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
@@ -987,3 +1389,221 @@ def test_timed_out_remediation_is_retried(database: DBHandler, kind: IssueKind) 
     assert issue.state == IssueState.UNRESOLVED
     assert len(issue.auto_remediation_attempts) == 2
     assert issue.auto_remediation_attempts[-1]['attribution'] == 'system'
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_discovery_large_history_writes_nothing_on_second_run(database: DBHandler) -> None:
+    """A second scan of an unchanged history performs zero writes to the issues table."""
+    manager = DataIssuesManager(database)
+    transactions: list[EvmTransaction] = []
+    events: list[EvmEvent] = []
+    for _ in range(700):
+        tx_hash = make_evm_tx_hash()
+        transactions.append(_make_transaction(tx_hash))
+        events.extend(
+            _make_event(
+                tx_hash=tx_hash,
+                amount='1',
+                address=TEST_ADDR2,
+                sequence_index=sequence_index,
+            ) for sequence_index in range(3)
+        )
+    with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=transactions,
+            relevant_address=TEST_ADDR1,
+        )
+        dbevents = DBHistoryEvents(database)
+        for event in events:
+            dbevents.add_history_event(write_cursor=write_cursor, event=event)
+
+    _write_tracked_address_transfer_issues(database=database, issues_manager=manager)
+    assert len(_tracked_transfer_issues(database)) == len(events)
+    with database.conn.read_ctx() as cursor:
+        stored_rows = cursor.execute('SELECT * FROM data_issues ORDER BY id').fetchall()
+
+    total_changes = database.conn.total_changes
+    _write_tracked_address_transfer_issues(database=database, issues_manager=manager)
+
+    assert database.conn.total_changes == total_changes
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT * FROM data_issues ORDER BY id').fetchall() == stored_rows
+
+
+def test_discovery_query_uses_the_history_events_index(database: DBHandler) -> None:
+    with database.conn.read_ctx() as cursor:
+        plan = cursor.execute(
+            f'EXPLAIN QUERY PLAN {TRACKED_ADDRESS_TRANSFER_CANDIDATES_QUERY}',
+            _tracked_address_transfer_candidates_bindings(
+                after_identifier=0,
+                limit=DISCOVERY_BATCH_SIZE,
+            ),
+        ).fetchall()
+
+    details = [row[3] for row in plan]
+    assert not any(detail in {'SCAN H', 'SCAN history_events'} for detail in details)
+    assert any('idx_history_events_location_label' in detail for detail in details)
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_negative_balance_from_misdecoded_transfer_is_resolved(database: DBHandler) -> None:
+    """Reprocessing after the redecode settles a negative balance the misdecode caused."""
+    receive_tx, transfer_tx, spend_tx = (
+        make_evm_tx_hash(), make_evm_tx_hash(), make_evm_tx_hash(),
+    )
+    dbtx, dbevents = DBEvmTx(database), DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        dbtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[
+                _make_transaction(receive_tx, timestamp=1),
+                _make_transaction(transfer_tx, timestamp=2),
+                _make_transaction(spend_tx, timestamp=3),
+            ],
+            relevant_address=TEST_ADDR1,
+        )
+        dbevents.add_history_event(write_cursor=write_cursor, event=_make_event(
+            tx_hash=receive_tx,
+            amount='5',
+            timestamp=1_000,
+            event_type=HistoryEventType.RECEIVE,
+        ))
+        dbevents.add_history_event(write_cursor=write_cursor, event=_make_event(
+            tx_hash=transfer_tx,
+            amount='5',
+            timestamp=2_000,
+            address=TEST_ADDR2,
+        ))
+        dbevents.add_history_event(write_cursor=write_cursor, event=_make_event(
+            tx_hash=spend_tx,
+            amount='3',
+            timestamp=3_000,
+            location_label=TEST_ADDR2,
+            address=make_evm_address(),
+        ))
+
+    assert process_historical_balances(
+        database=database,
+        msg_aggregator=database.msg_aggregator,
+        chains_aggregator=MagicMock(),
+    ) is True
+    manager = DataIssuesManager(database)
+    negative_issues = manager.list_issues(DataIssueFilters(kind=IssueKind.NEGATIVE_BALANCE))
+    assert len(negative_issues) == 1
+    assert negative_issues[0].state == IssueState.OPEN
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor, DBCacheStatic.STALE_BALANCES_FROM_TS,
+        ) is None
+    decoder = _mock_decoder(database, [_make_event(
+        tx_hash=transfer_tx,
+        amount='5',
+        timestamp=2_000,
+        event_type=HistoryEventType.TRANSFER,
+        address=TEST_ADDR2,
+    )])
+    run_data_issue_remediation(
+        database=database,
+        chains_aggregator=_mock_chains_aggregator(decoder),
+    )
+
+    assert manager.get_issue(negative_issues[0].id).state == IssueState.RESOLVED
+    assert _tracked_transfer_issues(database)[0].state == IssueState.RESOLVED
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_negative_balance_issue_behind_an_earlier_stop_is_not_resolved(
+        database: DBHandler,
+) -> None:
+    """A bucket blocked before the pass never re-evaluates its later event's issue."""
+    earlier_tx, later_tx = make_evm_tx_hash(), make_evm_tx_hash()
+    dbtx, dbevents = DBEvmTx(database), DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        dbtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[
+                _make_transaction(earlier_tx, timestamp=1),
+                _make_transaction(later_tx, timestamp=2),
+            ],
+            relevant_address=TEST_ADDR2,
+        )
+        dbevents.add_history_event(write_cursor=write_cursor, event=_make_event(
+            tx_hash=earlier_tx,
+            amount='3',
+            timestamp=1_000,
+            location_label=TEST_ADDR2,
+            address=make_evm_address(),
+        ))
+        later_event_id = dbevents.add_history_event(write_cursor=write_cursor, event=_make_event(
+            tx_hash=later_tx,
+            amount='1',
+            timestamp=2_000,
+            event_type=HistoryEventType.RECEIVE,
+            location_label=TEST_ADDR2,
+        ))
+    assert later_event_id is not None
+    assert process_historical_balances(
+        database=database,
+        msg_aggregator=database.msg_aggregator,
+        chains_aggregator=MagicMock(),
+    ) is True
+    manager = DataIssuesManager(database)
+    earlier_issue = manager.list_issues(DataIssueFilters(kind=IssueKind.NEGATIVE_BALANCE))[0]
+    later_issue_id = manager.write_issue(
+        kind=IssueKind.NEGATIVE_BALANCE,
+        location=LOCATION_ETHEREUM,
+        location_label=TEST_ADDR2,
+        protocol=None,
+        asset=A_ETH.identifier,
+        payload={
+            'event_identifier': later_event_id,
+            'in_memory_negative_amount': '-2',
+            'derived_balance_before_event': '-3',
+        },
+        ts_start=2_000,
+        ts_end=2_000,
+    )
+
+    # rerun from the later event: the retained stop leaves the bucket blocked
+    assert process_historical_balances(
+        database=database,
+        msg_aggregator=database.msg_aggregator,
+        from_ts=TimestampMS(2_000),
+        chains_aggregator=MagicMock(),
+    ) is True
+
+    assert manager.get_issue(earlier_issue.id).state == IssueState.OPEN
+    assert manager.get_issue(later_issue_id).state == IssueState.OPEN
+
+
+def test_dismissed_negative_balance_issue_is_untouched_by_reprocessing(
+        database: DBHandler,
+) -> None:
+    manager = DataIssuesManager(database)
+    issue_id = manager.write_issue(
+        kind=IssueKind.NEGATIVE_BALANCE,
+        location=LOCATION_ETHEREUM,
+        location_label=TEST_ADDR1,
+        protocol=None,
+        asset=A_ETH.identifier,
+        payload={
+            'event_identifier': 999,
+            'in_memory_negative_amount': '-1',
+            'derived_balance_before_event': '0',
+        },
+        ts_start=1_000,
+        ts_end=1_000,
+    )
+    manager.dismiss(issue_id)
+
+    assert process_historical_balances(
+        database=database,
+        msg_aggregator=database.msg_aggregator,
+        chains_aggregator=MagicMock(),
+    ) is True
+
+    issue = manager.get_issue(issue_id)
+    assert issue.state == IssueState.DISMISSED
+    assert issue.resolved_at is None
