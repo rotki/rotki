@@ -26,15 +26,19 @@ pub fn embed(file_description: &str, original_filename: &str) {
             .expect("the crate is inside the cargo workspace");
         let icon = workspace_root.join("frontend/app/public/assets/images/rotki.ico");
         println!("cargo:rerun-if-changed={}", icon.display());
+        let version = build_version();
+        let release = release_parts(&version);
         // A file rather than `set_manifest`, which pads every line with
         // spaces and so puts one before the XML declaration.
         let manifest_path =
             std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap()).join("app.manifest");
         std::fs::write(
             &manifest_path,
-            manifest(file_description, original_filename),
+            manifest(file_description, original_filename, release),
         )
         .expect("failed to write the Windows manifest");
+        let [major, minor, patch] = release.map(u64::from);
+        let numeric_version = major << 48 | minor << 32 | patch << 16;
 
         let mut resource = winresource::WindowsResource::new();
         resource
@@ -46,7 +50,11 @@ pub fn embed(file_description: &str, original_filename: &str) {
             .set("FileDescription", file_description)
             .set("InternalName", original_filename)
             .set("OriginalFilename", original_filename)
-            .set("LegalCopyright", "Copyright © Rotki Solutions GmbH");
+            .set("LegalCopyright", "Copyright © Rotki Solutions GmbH")
+            .set("FileVersion", &version)
+            .set("ProductVersion", &version)
+            .set_version_info(winresource::VersionInfo::FILEVERSION, numeric_version)
+            .set_version_info(winresource::VersionInfo::PRODUCTVERSION, numeric_version);
         resource
             .compile()
             .expect("failed to embed the Windows resource");
@@ -56,13 +64,37 @@ pub fn embed(file_description: &str, original_filename: &str) {
     let _ = (file_description, original_filename);
 }
 
+/// The version the binary is built as: `ROTKI_VERSION`, which the packaging
+/// script sets to the setuptools_scm version (`1.44.2.dev2+g88731bd66f` on a
+/// nightly), or the crate version for a plain `cargo` build. The same choice
+/// colibri and starling make for `--version`.
+#[cfg(windows)]
+fn build_version() -> String {
+    println!("cargo:rerun-if-env-changed=ROTKI_VERSION");
+    std::env::var("ROTKI_VERSION").unwrap_or_else(|_| std::env::var("CARGO_PKG_VERSION").unwrap())
+}
+
+/// The `major.minor.patch` release part of `version`, as `rotkehlchen.spec`
+/// takes it: the numeric version fields have no room for a dev or local suffix.
+#[cfg(windows)]
+fn release_parts(version: &str) -> [u16; 3] {
+    let parts: Vec<u16> = version
+        .split(|c: char| !c.is_ascii_digit())
+        .take(3)
+        .map(|part| part.parse().ok())
+        .collect::<Option<_>>()
+        .unwrap_or_default();
+    parts
+        .try_into()
+        .unwrap_or_else(|_| panic!("version {version} does not start with major.minor.patch"))
+}
+
 /// rustc embeds no manifest of its own. This one only declares what the
 /// binary already does: runs as the invoking user, on Windows 10 and later.
 #[cfg(windows)]
-fn manifest(file_description: &str, original_filename: &str) -> String {
+fn manifest(file_description: &str, original_filename: &str, release: [u16; 3]) -> String {
     let name = original_filename.trim_end_matches(".exe");
-    let version = |part: &str| std::env::var(format!("CARGO_PKG_VERSION_{part}")).unwrap();
-    let (major, minor, patch) = (version("MAJOR"), version("MINOR"), version("PATCH"));
+    let [major, minor, patch] = release;
     format!(
         r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">

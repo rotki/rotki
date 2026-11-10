@@ -169,7 +169,7 @@ impl CtlMethod {
 #[derive(Parser)]
 #[command(
     name = "starling",
-    version,
+    version = starling_core::build_version(),
     about = "rotki backend lifecycle supervisor"
 )]
 struct Cli {
