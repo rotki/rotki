@@ -544,7 +544,7 @@ def test_query_balances(mock_kucoin, inquirer):  # pylint: disable=unused-argume
         return MockResponse(HTTPStatus.OK, balances_response)
 
     with patch.object(target=mock_kucoin, attribute='_api_query', side_effect=mock_query):
-        assets_balance, msg = mock_kucoin.query_balances()
+        assets_balance, msg, _ = mock_kucoin.query_balances()
 
     assert assets_balance == {
         A_USDT: Balance(
@@ -1122,3 +1122,43 @@ def test_query_asset_movements(
         )
 
     assert asset_movements == expected_asset_movements
+
+
+def test_unreachable_is_a_failed_query_not_an_exception(mock_kucoin):
+    with patch.object(mock_kucoin.session, 'get', side_effect=requests.exceptions.ConnectionError):
+        balances, _, balances_cause = mock_kucoin.query_balances()
+        valid, _, check_cause = mock_kucoin.validate_api_key()
+
+    assert balances is None
+    assert balances_cause == FailureCause.NETWORK
+    assert valid is False
+    assert check_cause == FailureCause.NETWORK
+
+
+@pytest.mark.parametrize(('status', 'code', 'expected_balances', 'expected_check'), [
+    (HTTPStatus.UNAUTHORIZED, 400003, FailureCause.AUTH, FailureCause.AUTH),
+    (HTTPStatus.BAD_REQUEST, 400002, FailureCause.REMOTE_REJECTED, FailureCause.REMOTE_REJECTED),
+    (HTTPStatus.BAD_REQUEST, 999999, FailureCause.REMOTE_REJECTED, FailureCause.AUTH),
+    (HTTPStatus.BAD_GATEWAY, 999999, FailureCause.NETWORK, FailureCause.NETWORK),
+])
+def test_failed_response_cause(mock_kucoin, status, code, expected_balances, expected_check):
+    with patch.object(
+        mock_kucoin,
+        '_api_query',
+        return_value=MockResponse(status, f'{{"code": "{code}", "msg": "failed"}}'),
+    ):
+        balances, _, balances_cause = mock_kucoin.query_balances()
+        valid, _, check_cause = mock_kucoin.validate_api_key()
+
+    assert balances is None
+    assert balances_cause == expected_balances
+    assert valid is False
+    assert check_cause == expected_check
+
+
+def test_query_balances_invalid_json_is_bad_data(mock_kucoin):
+    with patch.object(mock_kucoin, '_api_query', return_value=MockResponse(HTTPStatus.OK, '{')):
+        balances, _, cause = mock_kucoin.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.BAD_DATA

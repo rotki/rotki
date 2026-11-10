@@ -449,3 +449,26 @@ def test_paginated_query_stops_without_cursor_on_full_page(bybit_exchange: Bybit
 
     assert len(result) == 50
     assert call_count == 1
+
+
+def test_query_balances_failures_report_the_cause(bybit_exchange: Bybit):
+    bybit_exchange.first_connection_made = True
+    with patch.object(
+        bybit_exchange,
+        '_api_query',
+        side_effect=RemoteError('refused', cause=FailureCause.REMOTE_REJECTED),
+    ):
+        balances, _, cause = bybit_exchange.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.REMOTE_REJECTED
+
+    with patch.object(
+        bybit_exchange,
+        '_api_query',
+        return_value={'list': [{'coin': [{'coin': 'BTC', 'walletBalance': 'nope'}]}]},
+    ):
+        balances, _, cause = bybit_exchange.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.BAD_DATA

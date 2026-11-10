@@ -13,9 +13,15 @@ from rotkehlchen.assets.converters import asset_from_bitcoinde
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status, cause_for_undecodable_body
+from rotkehlchen.errors.misc import (
+    RemoteError,
+    cause_for_status,
+    cause_for_undecodable_body,
+    credential_check_cause_of,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -156,7 +162,7 @@ class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
                 cause=cause_for_undecodable_body(response.status_code),
             ) from exc
 
-        if response.status_code not in {200, 401}:
+        if response.status_code != 200:
             if isinstance(json_ret, dict) and 'errors' in json_ret:
                 for error in json_ret['errors']:
                     if error.get('field') == 'X-API-KEY' and error.get('code') == 1:
@@ -184,7 +190,7 @@ class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
 
         return json_ret
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """
         Validates that the Bitcoin.de API key is good for usage in rotki
         """
@@ -192,9 +198,9 @@ class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
         try:
             self._api_query('get', 'account')
         except RemoteError as e:
-            return False, str(e)
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
         else:
-            return True, ''
+            return ApiKeyCheck(True)
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
@@ -206,10 +212,17 @@ class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
                 f'to {e}'
             )
             log.error(msg)
-            return None, msg
+            return ExchangeQueryBalances(None, msg, e.cause)
 
         log.debug(f'Bitcoin.de account response: {resp_info}')
-        for currency, balance in resp_info['data']['balances'].items():
+        try:
+            raw_balances = resp_info['data']['balances']
+        except KeyError as e:
+            msg = f'Bitcoin.de balance response is missing the key {e}'
+            log.error(msg)
+            return ExchangeQueryBalances(None, msg, FailureCause.BAD_DATA)
+
+        for currency, balance in raw_balances.items():
             try:
                 asset = asset_from_bitcoinde(currency)
             except UnknownAsset as e:
@@ -220,7 +233,7 @@ class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
                 continue
             try:
                 amount = deserialize_fval(balance['total_amount'])
-            except DeserializationError as e:
+            except (DeserializationError, KeyError) as e:
                 self.add_classified_error(
                     f'Error processing Bitcoin.de {asset} balance entry due to inability to '
                     f'deserialize the amount due to {e!s}. Skipping balance entry',
@@ -230,7 +243,7 @@ class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
 
             amounts[asset] += amount
 
-        return dict(self.balances_from_amounts(amounts)), ''
+        return ExchangeQueryBalances(dict(self.balances_from_amounts(amounts)), '')
 
     def _deserialize_trade(self, raw_trade: dict) -> list[SwapEvent]:
         """Convert bitcoin.de raw trade data to a list of SwapEvents.

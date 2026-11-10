@@ -16,9 +16,10 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import RemoteError, cause_for_status, credential_check_cause_of
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeQueryBalances,
     ExchangeWithoutApiSecret,
 )
@@ -150,13 +151,17 @@ class Bitpanda(ExchangeWithoutApiSecret):
 
         return changed
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """Validates that the Bitpanda API key is good for usage in rotki"""
         try:
             self._api_query('wallets')
         except RemoteError as e:
-            return False, f'Error validating Bitpanda API Key due to {e!s}'
-        return True, ''
+            return ApiKeyCheck(
+                False,
+                f'Error validating Bitpanda API Key due to {e!s}',
+                credential_check_cause_of(e),
+            )
+        return ApiKeyCheck(True)
 
     def _deserialize_wallettx(
             self,
@@ -483,8 +488,11 @@ class Bitpanda(ExchangeWithoutApiSecret):
             wallets, _, _ = self._api_query('wallets')
             fiat_wallets, _, _ = self._api_query('fiatwallets')
         except RemoteError as e:
-            msg = f'Failed to query Bitpanda balances. {e!s}'
-            return None, msg
+            return ExchangeQueryBalances(
+                None,
+                f'Failed to query Bitpanda balances. {e!s}',
+                e.cause,
+            )
 
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         wallets_len = len(wallets)
@@ -525,7 +533,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
 
             amounts[asset] += amount
 
-        return dict(self.balances_from_amounts(amounts)), ''
+        return ExchangeQueryBalances(dict(self.balances_from_amounts(amounts)), '')
 
     def query_online_history_events(
             self,

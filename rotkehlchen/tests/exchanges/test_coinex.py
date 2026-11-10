@@ -148,7 +148,7 @@ def test_query_balances(coinex_exchange: Coinex) -> None:
         {'ccy': 'USDT', 'available': '2', 'frozen': '0'},
         {'ccy': 'ETH', 'available': '0', 'frozen': '0'},
     ], 'message': 'OK'}):
-        balances, msg = coinex_exchange.query_balances()
+        balances, msg, _ = coinex_exchange.query_balances()
 
     assert msg == ''
     assert balances == {
@@ -486,3 +486,18 @@ def test_paginated_query_follows_has_next(coinex_exchange: Coinex) -> None:
             unique_id=f'deposit-{deposit_id}',
         ) for deposit_id in (1, 2)
     ]
+
+
+def test_failures_report_the_cause(coinex_exchange: Coinex) -> None:
+    with patch.object(
+        coinex_exchange,
+        '_api_query',
+        side_effect=RemoteError('refused', cause=FailureCause.REMOTE_REJECTED),
+    ):
+        balances, _, cause = coinex_exchange.query_balances()
+        valid, _, check_cause = coinex_exchange.validate_api_key()
+
+    assert balances is None
+    assert cause == FailureCause.REMOTE_REJECTED
+    assert valid is False
+    assert check_cause == FailureCause.AUTH

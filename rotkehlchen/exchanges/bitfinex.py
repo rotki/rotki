@@ -21,9 +21,16 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import (
+    RemoteError,
+    cause_for_credential_check,
+    cause_for_status,
+    cause_for_undecodable_body,
+    credential_check_cause_of,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -719,7 +726,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             self,
             response: Response,
             case: Literal['validate_api_key'],
-    ) -> tuple[bool, str]:
+    ) -> ApiKeyCheck:
         ...
 
     @overload
@@ -742,7 +749,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             self,
             response: Response,
             case: Literal['validate_api_key', 'balances', 'trades', 'asset_movements'],
-    ) -> tuple[list, bool] | (tuple[bool, str] | ExchangeQueryBalances):
+    ) -> tuple[list, bool] | ApiKeyCheck | ExchangeQueryBalances:
         """This function processes not successful responses for the cases listed
         in `case`.
         """
@@ -752,8 +759,14 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             msg = f'{self.name} {case} returned an invalid JSON response: {response.text}.'
             log.error(msg)
 
-            if case in {'validate_api_key', 'balances'}:
-                return False, msg
+            if case == 'validate_api_key':
+                return ApiKeyCheck(False, msg, cause_for_credential_check(response.status_code))
+            if case == 'balances':
+                return ExchangeQueryBalances(
+                    None,
+                    msg,
+                    cause_for_undecodable_body(response.status_code),
+                )
             if case in {'trades', 'asset_movements'}:
                 self.add_classified_error(
                     f'Got remote error while querying {self.name} {case}: {msg}',
@@ -778,8 +791,25 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             )
             log.error(message)
 
-        if case in {'validate_api_key', 'balances'}:
-            return False, message
+        # Bitfinex sends both of these as a 500, so the status says nothing about them
+        body_cause: FailureCause | None = None
+        if error_data.error_code == API_ERR_AUTH_NONCE_CODE:
+            body_cause = FailureCause.REMOTE_REJECTED  # the clock needs fixing, not the key
+        elif error_data.error_code == API_KEY_ERROR_CODE:
+            body_cause = FailureCause.AUTH
+
+        if case == 'validate_api_key':
+            return ApiKeyCheck(
+                False,
+                message,
+                body_cause or cause_for_credential_check(response.status_code),
+            )
+        if case == 'balances':
+            return ExchangeQueryBalances(
+                None,
+                message,
+                body_cause or cause_for_status(response.status_code),
+            )
         if case in {'trades', 'asset_movements'}:
             self.add_classified_error(
                 f'Got remote error while querying {self.name} {case}: {message}',
@@ -856,21 +886,22 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
         Endpoint documentation:
         https://docs.bitfinex.com/reference#rest-auth-wallets
         """
-        self.first_connection()
+        try:
+            self.first_connection()
+            response = self._api_query('wallets')
+        except RemoteError as e:
+            log.error('%s balances query failed due to %s', self.name, e)
+            return ExchangeQueryBalances(None, str(e), e.cause)
 
-        response = self._api_query('wallets')
         if response.status_code != HTTPStatus.OK:
-            result, msg = self._process_unsuccessful_response(
-                response=response,
-                case='balances',
-            )
-            return result, msg
+            return self._process_unsuccessful_response(response=response, case='balances')
+
         try:
             response_list = jsonloads_list(response.text)
-        except JSONDecodeError as e:
+        except JSONDecodeError:
             msg = f'{self.name} returned invalid JSON response: {response.text}.'
             log.error(msg)
-            raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
+            return ExchangeQueryBalances(None, msg, FailureCause.BAD_DATA)
 
         # Wallet items indices
         currency_index = 1
@@ -917,7 +948,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
 
             amounts[asset] += amount
 
-        return dict(self.balances_from_amounts(amounts)), ''
+        return ExchangeQueryBalances(dict(self.balances_from_amounts(amounts)), '')
 
     def query_online_history_events(
             self,
@@ -983,23 +1014,22 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
         )
         return actual_end_ts
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """Validates that the Bitfinex API key is good for usage in rotki.
 
         Makes sure that the following permissions are given to the key:
         - Account History: get historical balances entries and trade information.
         - Wallets: get wallet balances and addresses.
         """
-        response = self._api_query('wallets')
+        try:
+            response = self._api_query('wallets')
+        except RemoteError as e:
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
 
         if response.status_code != HTTPStatus.OK:
-            result, msg = self._process_unsuccessful_response(
-                response=response,
-                case='validate_api_key',
-            )
-            return result, msg
+            return self._process_unsuccessful_response(response=response, case='validate_api_key')
 
-        return True, ''
+        return ApiKeyCheck(True)
 
     def query_online_margin_history(
             self,

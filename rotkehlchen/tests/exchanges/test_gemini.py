@@ -13,6 +13,7 @@ from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_GUSD, A_LINK, A_
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.exchanges.gemini import gemini_symbol_to_base_quote
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -52,7 +53,7 @@ def test_gemini_validate_key(sandbox_gemini):
 
     Uses the Gemini sandbox
     """
-    result, msg = sandbox_gemini.validate_api_key()
+    result, msg, _ = sandbox_gemini.validate_api_key()
     assert result is True
     assert msg == ''
 
@@ -64,10 +65,12 @@ def test_gemini_wrong_secret(sandbox_gemini):
 
     Uses the Gemini sandbox
     """
-    result, _ = sandbox_gemini.validate_api_key()
+    result, _, check_cause = sandbox_gemini.validate_api_key()
     assert not result
-    balances, msg = sandbox_gemini.query_balances()
+    assert check_cause == FailureCause.AUTH
+    balances, msg, balances_cause = sandbox_gemini.query_balances()
     assert balances is None
+    assert balances_cause == FailureCause.AUTH
     assert 'Invalid API Key or API secret' in msg
 
 
@@ -78,9 +81,9 @@ def test_gemini_wrong_key(sandbox_gemini):
 
     Uses the Gemini sandbox
     """
-    result, _ = sandbox_gemini.validate_api_key()
+    result, _, _ = sandbox_gemini.validate_api_key()
     assert not result
-    balances, msg = sandbox_gemini.query_balances()
+    balances, msg, _ = sandbox_gemini.query_balances()
     assert balances is None
     assert 'Invalid API Key or API secret' in msg
 
@@ -116,7 +119,7 @@ def test_gemini_all_symbols_are_known(sandbox_gemini):
 @pytest.mark.parametrize('gemini_sandbox_api_secret', [SANDBOX_GEMINI_WP_API_SECRET])
 def test_gemini_wrong_key_permissions(sandbox_gemini):
     """Test that using a gemini key that does not have the auditor permission is detected"""
-    result, _ = sandbox_gemini.validate_api_key()
+    result, _, _ = sandbox_gemini.validate_api_key()
     assert not result
 
 
@@ -127,7 +130,7 @@ def test_gemini_query_balances(sandbox_gemini):
 
     Uses the Gemini sandbox
     """
-    balances, msg = sandbox_gemini.query_balances()
+    balances, msg, _ = sandbox_gemini.query_balances()
     assert msg == ''
     assert len(balances) == 6
 
@@ -423,3 +426,17 @@ def test_gemini_symbol_to_base_quote():
         gemini_symbol_to_base_quote('zzzusd')
     with pytest.raises(UnknownAsset):
         gemini_symbol_to_base_quote('linkzzz')
+
+
+def test_permission_error_is_auth_without_the_sandbox(sandbox_gemini):
+    with patch.object(sandbox_gemini, '_query_continuously', return_value=MockResponse(
+        HTTPStatus.FORBIDDEN,
+        '{}',
+    )):
+        balances, _, balances_cause = sandbox_gemini.query_balances()
+        valid, _, check_cause = sandbox_gemini.validate_api_key()
+
+    assert balances is None
+    assert balances_cause == FailureCause.AUTH
+    assert valid is False
+    assert check_cause == FailureCause.AUTH

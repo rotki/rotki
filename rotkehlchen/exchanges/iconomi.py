@@ -16,9 +16,15 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AUST
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status, cause_for_undecodable_body
+from rotkehlchen.errors.misc import (
+    RemoteError,
+    cause_for_status,
+    cause_for_undecodable_body,
+    credential_check_cause_of,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -161,17 +167,19 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
 
         return json_ret
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """
         Validates that the ICONOMI API key is good for usage in rotki
         """
 
         try:
             self._api_query('get', 'user/balance')
-        except RemoteError:
-            return False, 'Provided API Key is invalid'
+        except RemoteError as e:
+            if (cause := credential_check_cause_of(e)) == FailureCause.AUTH:
+                return ApiKeyCheck(False, 'Provided API Key is invalid', cause)
+            return ApiKeyCheck(False, str(e), cause)
         else:
-            return True, ''
+            return ApiKeyCheck(True)
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
@@ -183,15 +191,27 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
                 f'to {e}'
             )
             log.error(msg)
-            return None, msg
+            return ExchangeQueryBalances(None, msg, e.cause)
 
-        if resp_info['currency'] != 'USD':
-            raise RemoteError(
+        try:
+            currency, asset_list, daa_list = (
+                resp_info['currency'],
+                resp_info['assetList'],
+                resp_info['daaList'],
+            )
+        except KeyError as e:
+            msg = f'ICONOMI balance response is missing the key {e}'
+            log.error(msg)
+            return ExchangeQueryBalances(None, msg, FailureCause.BAD_DATA)
+
+        if currency != 'USD':
+            return ExchangeQueryBalances(
+                None,
                 'Iconomi API did not return values in USD',
-                cause=FailureCause.BAD_DATA,
+                FailureCause.BAD_DATA,
             )
 
-        for balance_info in resp_info['assetList']:
+        for balance_info in asset_list:
             ticker = balance_info['ticker']
             try:
                 asset = asset_from_iconomi(ticker)
@@ -216,7 +236,7 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
                 )
                 continue
 
-        for balance_info in resp_info['daaList']:
+        for balance_info in daa_list:
             ticker = balance_info['ticker']
 
             if ticker == 'AUSTS':
@@ -261,7 +281,7 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
                     Unsupported(feature=UserMessageFeature.EXCHANGE_STRATEGY),
                 )
 
-        return dict(self.balances_from_amounts(amounts)), ''
+        return ExchangeQueryBalances(dict(self.balances_from_amounts(amounts)), '')
 
     def query_online_history_events(
             self,

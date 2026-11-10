@@ -3,6 +3,7 @@ import logging
 from collections import defaultdict
 from enum import Enum
 from functools import partial
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode, urljoin
 
@@ -16,9 +17,15 @@ from rotkehlchen.db.constants import OKX_LOCATION_KEY
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_undecodable_body
+from rotkehlchen.errors.misc import (
+    RemoteError,
+    cause_for_status,
+    cause_for_undecodable_body,
+    credential_check_cause_of,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     ExchangeWithExtras,
@@ -67,6 +74,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+OKX_SUCCESS_CODE: Final = '0'
 
 
 class OkxEndpoint(Enum):
@@ -212,6 +221,13 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 cause=cause_for_undecodable_body(response.status_code),
             ) from e
 
+        if response.status_code != HTTPStatus.OK:
+            raise RemoteError(
+                f'{self.name} API request at {url} responded with error '
+                f'status code: {response.status_code} and text: {response.text}',
+                cause=cause_for_status(response.status_code),
+            )
+
         return json_response
 
     def _api_query_list(
@@ -226,6 +242,12 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         - RemoteError if the API returns an unexpected response
         """
         response = self._api_query(endpoint=endpoint, options=options)
+        if response.get('code', OKX_SUCCESS_CODE) != OKX_SUCCESS_CODE:
+            raise RemoteError(
+                f'{self.name} API request failed: {response}',
+                cause=FailureCause.REMOTE_REJECTED,
+            )
+
         data = response.get('data')
         if data is None or not isinstance(data, list):
             raise RemoteError(
@@ -274,11 +296,15 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         return all_items
 
-    def validate_api_key(self) -> tuple[bool, str]:
-        response = self._api_query(endpoint=OkxEndpoint.TRADING_BALANCE)
-        if response.get('code') != '0':
-            return False, 'Error validating API credentials'
-        return True, ''
+    def validate_api_key(self) -> ApiKeyCheck:
+        try:
+            response = self._api_query(endpoint=OkxEndpoint.TRADING_BALANCE)
+        except RemoteError as e:
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
+
+        if response.get('code') != OKX_SUCCESS_CODE:
+            return ApiKeyCheck(False, 'Error validating API credentials', FailureCause.AUTH)
+        return ApiKeyCheck(True)
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """
@@ -288,24 +314,25 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         currencies_data: list[dict] = []
         try:
             data = self._api_query_list(endpoint=OkxEndpoint.TRADING_BALANCE)
+            funding_data = self._api_query_list(endpoint=OkxEndpoint.FUNDING_BALANCE)
         except RemoteError as e:
             msg = str(e)
-            log.error(f'{self.name} Api request failed due to {msg}')
-            return None, msg
+            log.error('%s Api request failed due to %s', self.name, msg)
+            return ExchangeQueryBalances(None, msg, e.cause)
 
         if not (len(data) == 1 and isinstance(data[0], dict)):
             msg = 'trading balance response does not contain dict data[0]'
-            log.error(f'{self.name} API request failed due to {msg}')
-            return None, msg
+            log.error('%s API request failed due to %s', self.name, msg)
+            return ExchangeQueryBalances(None, msg, FailureCause.BAD_DATA)
 
         try:
             currencies_data.extend(data[0]['details'])
         except KeyError as e:
             msg = f'Missing key: {e!s}'
-            log.error(f'{self.name} API request failed due to {msg}')
-            return None, msg
+            log.error('%s API request failed due to %s', self.name, msg)
+            return ExchangeQueryBalances(None, msg, FailureCause.BAD_DATA)
 
-        currencies_data.extend(self._api_query_list(endpoint=OkxEndpoint.FUNDING_BALANCE))
+        currencies_data.extend(funding_data)
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for currency_data in currencies_data:
             try:
@@ -329,7 +356,7 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
             amounts[asset] += amount
 
-        return dict(self.balances_from_amounts(amounts)), ''
+        return ExchangeQueryBalances(dict(self.balances_from_amounts(amounts)), '')
 
     def query_online_margin_history(
             self,

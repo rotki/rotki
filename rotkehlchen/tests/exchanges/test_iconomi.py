@@ -6,6 +6,7 @@ import pytest
 from rotkehlchen.assets.converters import asset_from_iconomi
 from rotkehlchen.constants.assets import A_ETH, A_EUR, A_REP
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
@@ -45,7 +46,7 @@ def test_iconomi_query_balances_unknown_asset(function_scope_iconomi, caplog):
 
     with patch.object(iconomi.session, 'get', side_effect=mock_unknown_asset_return):
         # Test that after querying the assets only ETH and BTC are there
-        balances, msg = iconomi.query_balances()
+        balances, msg, _ = iconomi.query_balances()
 
     assert msg == ''
     assert len(balances) == 3
@@ -151,3 +152,15 @@ def test_iconomi_assets_are_known(
                 f'Found unknown asset {e.identifier} in ICONOMI. '
                 f'Support for it has to be added',
             ))
+
+
+@pytest.mark.parametrize('response', [
+    {'currency': 'EUR', 'assetList': [], 'daaList': []},
+    {'currency': 'USD'},
+])
+def test_query_balances_unexpected_response_is_bad_data(function_scope_iconomi, response):
+    with patch.object(function_scope_iconomi, '_api_query', return_value=response):
+        balances, _, cause = function_scope_iconomi.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.BAD_DATA

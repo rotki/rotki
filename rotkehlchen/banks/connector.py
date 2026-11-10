@@ -32,8 +32,8 @@ from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.errors.misc import RemoteError, credential_check_cause_of
+from rotkehlchen.exchanges.exchange import ApiKeyCheck, ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.locations.constants import LOCATION_BANKS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -261,14 +261,14 @@ class BankConnector(ExchangeInterface, ABC):
                 cause=e.cause,
             ) from e
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         try:
             self.verify_credentials()
         except BankMFARequired:
             raise
         except RemoteError as e:
-            return False, str(e)
-        return True, ''
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
+        return ApiKeyCheck(True)
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -301,8 +301,8 @@ class BankConnector(ExchangeInterface, ABC):
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """The balances of all accounts together, per asset. Cached with the accounts."""
         if isinstance(accounts := self.query_account_balances(**kwargs), RemoteError):
-            return None, str(accounts)
-        return sum_account_balances(accounts), ''
+            return ExchangeQueryBalances(None, str(accounts), accounts.cause)
+        return ExchangeQueryBalances(sum_account_balances(accounts), '')
 
     def _sync_account(
             self,

@@ -26,9 +26,10 @@ from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import RemoteError, cause_for_status, cause_of
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -244,19 +245,23 @@ class Coinbase(ExchangeInterface):
 
         return jwt_token
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """Validates that the Coinbase API key is good for usage in rotki.
         Checks that the API key format is correct and the secret is properly formatted.
         """
         self.key_type = CoinbaseKeyType.detect_type(self.api_key, self.secret)
         if self.key_type is None:
-            return False, f'Invalid API key format: {self.api_key}'
+            return ApiKeyCheck(
+                False,
+                f'Invalid API key format: {self.api_key}',
+                FailureCause.AUTH,
+            )
 
         is_valid, error_msg = self.key_type.validate_secret(self.secret)
         if not is_valid:
-            return False, error_msg
+            return ApiKeyCheck(False, error_msg, FailureCause.AUTH)
 
-        return True, ''
+        return ApiKeyCheck(True)
 
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
         changed = super().edit_exchange_credentials(credentials)
@@ -536,14 +541,18 @@ class Coinbase(ExchangeInterface):
     def query_balances(self) -> ExchangeQueryBalances:
         try:
             resp = self._api_query('accounts')
-        except RemoteError as e:
+        except (RemoteError, CoinbasePermissionError) as e:
             msg_prefix = 'Coinbase API request failed.'
             msg = (
                 'Coinbase API request failed. Could not reach coinbase due '
                 f'to {e}'
             )
             log.error(f'{msg_prefix} Could not reach coinbase due to {e}')
-            return None, f'{msg_prefix} Check logs for more details'
+            return ExchangeQueryBalances(
+                None,
+                f'{msg_prefix} Check logs for more details',
+                cause_of(e, FailureCause.AUTH),
+            )
 
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for account in resp:
@@ -582,7 +591,7 @@ class Coinbase(ExchangeInterface):
                 )
                 continue
 
-        return dict(self.balances_from_amounts(amounts)), ''
+        return ExchangeQueryBalances(dict(self.balances_from_amounts(amounts)), '')
 
     @protect_with_lock()
     def _query_transactions(

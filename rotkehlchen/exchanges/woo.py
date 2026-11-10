@@ -14,9 +14,15 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status, cause_for_undecodable_body
+from rotkehlchen.errors.misc import (
+    RemoteError,
+    cause_for_status,
+    cause_for_undecodable_body,
+    credential_check_cause_of,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -69,6 +75,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+API_KEY_REJECTED_ERROR_CODES: Final = {'-1001', '-1002'}
 API_KEY_ERROR_CODE_ACTION: dict = {
     '-1000': 'An unknown error occurred while processing the request.',
     '-1001': 'The api key or secret is in wrong format.',
@@ -129,17 +136,19 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
     def query_balances(self) -> ExchangeQueryBalances:
         """
         Return the account balances on Woo.
-
-        May raise:
-        - Remote Error
         """
-        response = self._api_query('v3/balances')
+        try:
+            response = self._api_query('v3/balances')
+        except RemoteError as e:
+            log.error('Woo balances query failed due to %s', e)
+            return ExchangeQueryBalances(None, str(e), e.cause)
+
         try:
             balances = response['data']['holding']
         except KeyError as e:
             msg = f'Woo balances JSON response is missing the key {e}'
-            log.error(msg, response)
-            raise RemoteError(msg, cause=FailureCause.BAD_DATA) from e
+            log.error('%s: %s', msg, response)
+            return ExchangeQueryBalances(None, msg, FailureCause.BAD_DATA)
 
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for entry in balances:
@@ -164,7 +173,7 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
 
             amounts[asset] += amount
 
-        return dict(self.balances_from_amounts(amounts)), ''
+        return ExchangeQueryBalances(dict(self.balances_from_amounts(amounts)), '')
 
     def _deserialize_trade(self, trade: dict[str, Any]) -> list[SwapEvent]:
         """
@@ -257,13 +266,13 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
         event_queue.events.extend(events)
         return actual_end_ts
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """Validates that the Woo API key is good for usage in rotki"""
         try:
             self._api_query('v1/client/trades', options={'limit': 1})
         except RemoteError as e:
-            return False, str(e)
-        return True, ''
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
+        return ApiKeyCheck(True)
 
     def _api_query(
             self,
@@ -320,7 +329,11 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
             )
             raise RemoteError(
                 API_KEY_ERROR_CODE_ACTION.get(response_dict.get('code'), msg),
-                cause=cause_for_status(response.status_code),
+                cause=(
+                    FailureCause.AUTH
+                    if str(response_dict.get('code')) in API_KEY_REJECTED_ERROR_CODES
+                    else cause_for_status(response.status_code)
+                ),
             )
 
         return response_dict

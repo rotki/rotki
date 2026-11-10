@@ -36,6 +36,7 @@ from rotkehlchen.db.utils import LocationData
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.binance import Binance
+from rotkehlchen.exchanges.exchange import ExchangeQueryBalances
 from rotkehlchen.exchanges.poloniex import Poloniex
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -617,9 +618,9 @@ def test_query_all_balances_queries_sources_concurrently(
     assert len(exchanges := list(rotki.exchange_manager.iterate_exchanges())) == 2
     barrier = threading.Barrier(parties=len(exchanges) + 1, timeout=CONCURRENT_QUERY_TIMEOUT)
 
-    def blocking_exchange_query(**kwargs: Any) -> tuple[dict, str]:
+    def blocking_exchange_query(**kwargs: Any) -> ExchangeQueryBalances:
         barrier.wait()
-        return {}, ''
+        return ExchangeQueryBalances({}, '')
 
     def blocking_chain_query(**kwargs: Any) -> BlockchainBalancesUpdate:
         barrier.wait()

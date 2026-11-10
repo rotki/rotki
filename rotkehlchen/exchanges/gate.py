@@ -23,9 +23,10 @@ from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import RemoteError, cause_for_status, credential_check_cause_of
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     ExchangeWithExtras,
@@ -224,14 +225,14 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         return json_ret
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """Validates that the Gate API key is good for usage in rotki"""
         try:
             self._api_query(path='/spot/accounts')
         except RemoteError as e:
-            return False, str(e)
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
         else:
-            return True, ''
+            return ApiKeyCheck(True)
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """Query balances at Gate"""
@@ -240,11 +241,15 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         except RemoteError as e:
             msg = f'Gate request failed. Could not reach the exchange due to {e!s}'
             log.error(msg)
-            return None, msg
+            return ExchangeQueryBalances(None, msg, e.cause)
 
         if not isinstance(response, list):
             log.error('Gate spot accounts response is not a list: %s', response)
-            return None, 'Unexpected response format from Gate'
+            return ExchangeQueryBalances(
+                None,
+                'Unexpected response format from Gate',
+                FailureCause.BAD_DATA,
+            )
 
         returned_balances: dict[AssetWithOracles, Balance] = {}
         for entry in response:
@@ -286,7 +291,7 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 value=amount * price,
             )
 
-        return returned_balances, ''
+        return ExchangeQueryBalances(returned_balances, '')
 
     def _query_trades(
             self,

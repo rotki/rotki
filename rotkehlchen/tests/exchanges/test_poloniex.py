@@ -11,6 +11,8 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.exchanges.poloniex import Poloniex, trade_from_poloniex
@@ -413,7 +415,7 @@ def test_poloniex_query_balances_unknown_asset(poloniex):
 
     with patch.object(poloniex.session, 'get', side_effect=mock_unknown_asset_return):
         # Test that after querying the assets only ETH and BTC are there
-        balances, msg = poloniex.query_balances()
+        balances, msg, _ = poloniex.query_balances()
 
     assert msg == ''
     assert len(balances) == 2
@@ -618,3 +620,28 @@ def test_poloniex_deposits_withdrawal_unexpected_data(poloniex):
     {"deposits": [{"currency": "FAC", "timestamp": 1478994442,
     "amount": "100.5", "depositNumber": 1, "txid": "0xfoo", "address": "0xboo"}], "withdrawals": []}"""  # noqa: E501
     check_permutations_of_input_invalid_data(input_deposits)
+
+
+@pytest.mark.parametrize(('error', 'cause', 'expected_cause'), [
+    ('Invalid API key', FailureCause.REMOTE_REJECTED, FailureCause.AUTH),
+    ('Refused', FailureCause.REMOTE_REJECTED, FailureCause.AUTH),
+    ('Down', FailureCause.NETWORK, FailureCause.NETWORK),
+])
+def test_validate_api_key_causes(poloniex, error, cause, expected_cause):
+    with patch.object(poloniex, 'return_fee_info', side_effect=RemoteError(error, cause=cause)):
+        valid, _, check_cause = poloniex.validate_api_key()
+
+    assert valid is False
+    assert check_cause == expected_cause
+
+
+def test_query_balances_failure_keeps_the_remote_cause(poloniex):
+    with patch.object(
+        poloniex,
+        'api_query_list',
+        side_effect=RemoteError('Refused', cause=FailureCause.RATE_LIMITED),
+    ):
+        balances, _, cause = poloniex.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.RATE_LIMITED

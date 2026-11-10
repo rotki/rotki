@@ -40,6 +40,8 @@ Failure Causes
 * **Changed Response**: every failed API response now carries ``cause`` next to ``result`` and ``message``, saying why it failed: ``network``, ``rate_limited``, ``auth``, ``remote_rejected``, ``bad_data``, ``invalid_input``, ``not_found``, ``conflict``, ``forbidden``, ``unsupported``, ``local_db``, ``internal`` or ``cancelled``. Status codes are unchanged. Successful responses carry no ``cause``.
 * **Changed Response**: a finished async task's outcome carries the same ``cause``, and its entry now always includes ``status_code``. A cancelled task finishes with the ``cancelled`` cause instead of an empty message.
 * **Changed Response**: request validation errors (400) now go through the same response object, so they carry ``cause``: ``invalid_input``. The exception is a remote failing while a request is validated, such as resolving an ENS name or checking an oracle identifier, which answers the same ``400`` with the remote's cause.
+* **Changed Response**: each entry of ``failed_accounts`` in the exchange balances response is now an object with ``message`` and ``cause`` instead of a message string. A ``409`` from that endpoint carries the failed connections' cause, or ``not_found`` with a message when no exchange is connected.
+* **Changed Response**: a failed exchange setup or edit now carries the true ``cause``, such as ``auth`` for a rejected key or ``network`` for an unreachable exchange, instead of always ``conflict``. Status codes are unchanged.
 * **Changed Response**: a failed eth2 validator request over the staking limit no longer carries a top level ``limit_info`` key. The ``message`` states the same numbers.
 
 Classified User Messages

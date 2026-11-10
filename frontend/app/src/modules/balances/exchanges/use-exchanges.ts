@@ -10,6 +10,7 @@ import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-con
 import { ExchangeBalancesResponse } from '@/modules/balances/types/balances';
 import { type EditExchange, Exchange, type ExchangeData, type ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { FailureCause, isRetryableCause, parseFailureCause } from '@/modules/core/api/failure-cause';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { balanceSum } from '@/modules/core/common/data/calculation';
 import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
@@ -32,6 +33,18 @@ interface UseExchangesReturn {
    */
   removeExchange: (exchange: Exchange) => Promise<boolean>;
   setupExchange: (exchange: ExchangeFormData) => Promise<void>;
+}
+
+/**
+ * The cause a location's failed connections report together.
+ *
+ * @remarks
+ * A rerun queries every connection of the location, so a retry is worth offering as soon as one of
+ * them could heal, even beside one that needs a new key.
+ */
+function locationFailureCause(causes: string[]): FailureCause {
+  const parsed = causes.map(parseFailureCause);
+  return parsed.find(isRetryableCause) ?? parsed[0] ?? FailureCause.UNKNOWN;
 }
 
 export function useExchanges(): UseExchangesReturn {
@@ -71,7 +84,8 @@ export function useExchanges(): UseExchangesReturn {
         ),
         (result): Result<void, TaskError> => {
           const { failedAccounts, perAccount, totals } = ExchangeBalancesResponse.parse(result);
-          const failures = Object.entries(failedAccounts?.[location] ?? {}).map(([identifier, message]) => {
+          const failedConnections = Object.entries(failedAccounts?.[location] ?? {});
+          const failures = failedConnections.map(([identifier, { message }]) => {
             const connection = get(connectedExchanges).find(exchange => exchange.identifier === identifier);
             return `${connection?.name ?? identifier}: ${message}`;
           });
@@ -81,8 +95,12 @@ export function useExchanges(): UseExchangesReturn {
               ? { ...get(exchangeAccountBalances)[location], ...perAccount[location] }
               : perAccount[location] ?? {},
           });
-          if (failures.length > 0)
-            return err(TaskFailed({ message: failures.join(' ') }));
+          if (failures.length > 0) {
+            return err(TaskFailed({
+              failureCause: locationFailureCause(failedConnections.map(([, { cause }]) => cause)),
+              message: failures.join(' '),
+            }));
+          }
 
           set(exchangeBalances, {
             ...get(exchangeBalances),

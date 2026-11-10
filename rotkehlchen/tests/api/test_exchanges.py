@@ -16,6 +16,7 @@ from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import BINANCE_HISTORY_START_TS_KEY, KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import HISTORY_BASE_ENTRY_FIELDS, DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.binance import Binance
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
@@ -29,7 +30,7 @@ from rotkehlchen.exchanges.constants import (
     SUPPORTED_EXCHANGES,
 )
 from rotkehlchen.exchanges.data_structures import BinancePair
-from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.exchange import ApiKeyCheck, ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.kraken import DEFAULT_KRAKEN_ACCOUNT_TYPE, Kraken, KrakenAccountType
 from rotkehlchen.exchanges.kucoin import (
     API_KEY_ERROR_CODE_ACTION as KUCOIN_API_KEY_ERROR_CODE,
@@ -123,7 +124,7 @@ def mock_validate_api_key_success(location: LocationIdentifier) -> _patch:
         name = 'binance'
     return patch(
         f'rotkehlchen.exchanges.{name}.{name.capitalize()}.validate_api_key',
-        return_value=(True, ''),
+        return_value=ApiKeyCheck(True),
     )
 
 
@@ -725,13 +726,13 @@ def test_exchange_balances_of_two_accounts_on_one_location(
     """Test that each account of a location is returned and that totals adds up their assets"""
     main, trading = _connect_coinbase_accounts(rotkehlchen_api_server.rest_api.rotkehlchen, 2)
     with (
-        patch.object(main, 'query_balances', return_value=({
-            A_BTC: Balance(amount=FVal('0.5'), value=FVal('30000')),
-            A_ETH: Balance(amount=ONE, value=FVal('3000')),
+        patch.object(main, 'query_balances', return_value=ExchangeQueryBalances({
+            A_BTC.resolve_to_asset_with_oracles(): Balance(amount=FVal('0.5'), value=FVal('30000')),  # noqa: E501
+            A_ETH.resolve_to_asset_with_oracles(): Balance(amount=ONE, value=FVal('3000')),
         }, '')),
-        patch.object(trading, 'query_balances', return_value=({
-            A_BTC: Balance(amount=FVal('0.25'), value=FVal('15000')),
-            A_USDT: Balance(amount=FVal('100'), value=FVal('100')),
+        patch.object(trading, 'query_balances', return_value=ExchangeQueryBalances({
+            A_BTC.resolve_to_asset_with_oracles(): Balance(amount=FVal('0.25'), value=FVal('15000')),  # noqa: E501
+            A_USDT.resolve_to_asset_with_oracles(): Balance(amount=FVal('100'), value=FVal('100')),
         }, '')),
     ):
         response = requests.get(api_url_for(rotkehlchen_api_server, endpoint, **url_args))
@@ -769,14 +770,14 @@ def test_exchange_balances_value_threshold_applies_to_totals(
     """
     main, trading = _connect_coinbase_accounts(rotkehlchen_api_server.rest_api.rotkehlchen, 2)
     main_balances = {
-        A_BTC: Balance(amount=ONE, value=FVal('6')),
-        A_ETH: Balance(amount=ONE, value=FVal('20')),
-        A_USDT: Balance(amount=ONE, value=FVal('9')),
+        A_BTC.resolve_to_asset_with_oracles(): Balance(amount=ONE, value=FVal('6')),
+        A_ETH.resolve_to_asset_with_oracles(): Balance(amount=ONE, value=FVal('20')),
+        A_USDT.resolve_to_asset_with_oracles(): Balance(amount=ONE, value=FVal('9')),
     }
-    trading_balances = {A_BTC: Balance(amount=ONE, value=FVal('6'))}
+    trading_balances = {A_BTC.resolve_to_asset_with_oracles(): Balance(amount=ONE, value=FVal('6'))}  # noqa: E501
     with (
-        patch.object(main, 'query_balances', return_value=(main_balances, '')),
-        patch.object(trading, 'query_balances', return_value=(trading_balances, '')),
+        patch.object(main, 'query_balances', return_value=ExchangeQueryBalances(main_balances, '')),  # noqa: E501
+        patch.object(trading, 'query_balances', return_value=ExchangeQueryBalances(trading_balances, '')),  # noqa: E501
     ):
         response = requests.get(
             api_url_for(rotkehlchen_api_server, endpoint, **url_args),
@@ -822,10 +823,10 @@ def test_exchange_balances_with_one_failing_account(
     """Test that the other accounts of a location still report when one of them fails"""
     main, trading = _connect_coinbase_accounts(rotkehlchen_api_server.rest_api.rotkehlchen, 2)
     with (
-        patch.object(main, 'query_balances', return_value=({
-            A_BTC: Balance(amount=ONE, value=FVal('60000')),
+        patch.object(main, 'query_balances', return_value=ExchangeQueryBalances({
+            A_BTC.resolve_to_asset_with_oracles(): Balance(amount=ONE, value=FVal('60000')),
         }, '')),
-        patch.object(trading, 'query_balances', return_value=(None, 'Invalid key')),
+        patch.object(trading, 'query_balances', return_value=ExchangeQueryBalances(None, 'Invalid key', FailureCause.AUTH)),  # noqa: E501
     ):
         response = requests.get(api_url_for(rotkehlchen_api_server, endpoint, **url_args))
 
@@ -836,7 +837,10 @@ def test_exchange_balances_with_one_failing_account(
                 main.connection_identifier: {A_BTC.identifier: {'amount': '1', 'value': '60000'}},
             }},
             'totals': {'coinbase': {A_BTC.identifier: {'amount': '1', 'value': '60000'}}},
-            'failed_accounts': {'coinbase': {trading.connection_identifier: 'Invalid key'}},
+            'failed_accounts': {'coinbase': {trading.connection_identifier: {
+                'message': 'Invalid key',
+                'cause': 'auth',
+            }}},
         },
         'message': 'Invalid key',
     }
@@ -852,8 +856,8 @@ def test_exchange_balances_with_every_account_failing(
     """Test that the query fails, with every reason, when no account could be queried"""
     main, trading = _connect_coinbase_accounts(rotkehlchen_api_server.rest_api.rotkehlchen, 2)
     with (
-        patch.object(main, 'query_balances', return_value=(None, 'Invalid key.')),
-        patch.object(trading, 'query_balances', return_value=(None, 'Rate limited.')),
+        patch.object(main, 'query_balances', return_value=ExchangeQueryBalances(None, 'Invalid key.', FailureCause.AUTH)),  # noqa: E501
+        patch.object(trading, 'query_balances', return_value=ExchangeQueryBalances(None, 'Rate limited.', FailureCause.RATE_LIMITED)),  # noqa: E501
     ):
         response = requests.get(api_url_for(rotkehlchen_api_server, endpoint, **url_args))
 
@@ -862,6 +866,107 @@ def test_exchange_balances_with_every_account_failing(
         contained_in_msg='Invalid key. Rate limited.',
         status_code=HTTPStatus.CONFLICT,
     )
+    # a retry queries both accounts again, and one of them can heal by itself
+    assert response.json()['cause'] == FailureCause.RATE_LIMITED
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_exchange_balances_failing_alike_keep_their_cause(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    main, trading = _connect_coinbase_accounts(rotkehlchen_api_server.rest_api.rotkehlchen, 2)
+    failed = ExchangeQueryBalances(None, 'Unreachable.', FailureCause.NETWORK)
+    with (
+        patch.object(main, 'query_balances', return_value=failed),
+        patch.object(trading, 'query_balances', return_value=failed),
+    ):
+        response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangebalancesresource'))
+
+    assert_error_response(response=response, status_code=HTTPStatus.CONFLICT)
+    assert response.json()['cause'] == FailureCause.NETWORK
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_exchange_dying_on_a_bad_response_keeps_the_other_accounts(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    main, trading = _connect_coinbase_accounts(rotkehlchen_api_server.rest_api.rotkehlchen, 2)
+    with (
+        patch.object(main, 'query_balances', return_value=ExchangeQueryBalances({
+            A_BTC.resolve_to_asset_with_oracles(): Balance(amount=ONE, value=FVal('60000')),
+        }, '')),
+        patch.object(trading, 'query_balances', side_effect=KeyError('ticker')),
+    ):
+        response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangebalancesresource'))
+
+    assert_proper_response(response)
+    result = response.json()['result']
+    assert list(result['per_account']['coinbase']) == [main.connection_identifier]
+    failure = result['failed_accounts']['coinbase'][trading.connection_identifier]
+    assert failure['cause'] == FailureCause.BAD_DATA
+    assert 'ticker' in failure['message']
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_exchange_balances_with_no_exchange_connected(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangebalancesresource'))
+
+    assert_error_response(
+        response=response,
+        contained_in_msg='No exchange is connected',
+        status_code=HTTPStatus.CONFLICT,
+    )
+    assert response.json()['cause'] == FailureCause.NOT_FOUND
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('check_cause', [FailureCause.AUTH, FailureCause.NETWORK])
+def test_setup_and_edit_answer_why_the_key_check_failed(
+        rotkehlchen_api_server: APIServer,
+        check_cause: FailureCause,
+) -> None:
+    url = api_url_for(rotkehlchen_api_server, 'exchangesresource')
+    new_connection = {
+        'connector': 'kraken',
+        'name': 'my_kraken',
+        'api_key': 'ddddd',
+        'api_secret': 'ZmZmZmZmZg==',
+    }
+    check = ApiKeyCheck(False, 'Refused', check_cause)
+    with patch('rotkehlchen.exchanges.kraken.Kraken.validate_api_key', return_value=check):
+        response = requests.put(url, json=new_connection)
+    assert_error_response(response=response, status_code=HTTPStatus.CONFLICT)
+    assert response.json()['cause'] == check_cause
+
+    with patch('rotkehlchen.exchanges.kraken.Kraken.validate_api_key', return_value=ApiKeyCheck(True)):  # noqa: E501
+        identifier = assert_proper_sync_response_with_result(requests.put(url, json=new_connection))['identifier']  # noqa: E501
+    with patch('rotkehlchen.exchanges.kraken.Kraken.validate_api_key', return_value=check):
+        response = requests.patch(url, json={'identifier': identifier, 'api_key': 'eeeee'})
+    assert_error_response(response=response, status_code=HTTPStatus.CONFLICT)
+    assert response.json()['cause'] == check_cause
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_setup_and_edit_failures_outside_the_key_check(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    url = api_url_for(rotkehlchen_api_server, 'exchangesresource')
+    response = requests.patch(url, json={'identifier': 'missing', 'new_name': 'renamed'})
+    assert_error_response(response=response, status_code=HTTPStatus.CONFLICT)
+    assert response.json()['cause'] == FailureCause.NOT_FOUND
+
+    # a check dying on an unexpected error is ours to fix, not a rejected key
+    with API_KEYPAIR_KRAKEN_VALIDATION_FAIL_PATCH:
+        response = requests.put(url, json={
+            'connector': 'kraken',
+            'name': 'my_kraken',
+            'api_key': 'ddddd',
+            'api_secret': 'ZmZmZmZmZg==',
+        })
+    assert_error_response(response=response, status_code=HTTPStatus.CONFLICT)
+    assert response.json()['cause'] == FailureCause.INTERNAL
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

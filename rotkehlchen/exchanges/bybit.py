@@ -16,9 +16,10 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import RemoteError, cause_for_status, credential_check_cause_of
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -432,14 +433,14 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
 
         return events
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """Validates that the Bybit API key is good for usage in rotki"""
         try:
             self._api_query(path='user/query-api')
         except RemoteError as e:
-            return False, str(e)
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
         else:
-            return True, ''
+            return ApiKeyCheck(True)
 
     def _query_balances_or_error(
             self,
@@ -448,20 +449,20 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
                 'asset/transfer/query-account-coins-balance',
             ],
             options: dict[str, str],
-    ) -> tuple[dict[str, Any], str | None]:
+    ) -> tuple[dict[str, Any], str | None, FailureCause | None]:
         """Auxiliary function to handle queries of balances to the api.
-        Returns a tuple of the response with the balances and a string or None depending
-        on whether there was an error.
+        Returns a tuple of the response with the balances, and if there was an error
+        the string describing it and its cause.
         """
         try:
-            return self._api_query(path=path, options=options), None
+            return self._api_query(path=path, options=options), None, None
         except RemoteError as e:
             msg = f'Bybit request failed. Could not reach the exchange due to {e!s}'
             log.error(msg)
-            return {}, msg
+            return {}, msg, e.cause
         except KeyError as e:
             log.error('Could not query balances for bybit. Check logs for more details')
-            return {}, f'Key {e} missing in response'
+            return {}, f'Key {e} missing in response', FailureCause.BAD_DATA
 
     def _process_wallet_balances(
             self,
@@ -499,22 +500,24 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
 
         return amounts
 
-    def _query_account_balances(self) -> tuple[dict[AssetWithOracles, FVal], str | None]:
+    def _query_account_balances(
+            self,
+    ) -> tuple[dict[AssetWithOracles, FVal], str | None, FailureCause | None]:
         """
         Query balance amounts in wallet. It queries the unified and spot accounts.
         This call assumes that the first connection has been made to identify the account type.
 
-        Returns a tuple of balance amounts and None if there wasn't any error or a string
-        message with a description of what went wrong.
+        Returns a tuple of balance amounts, and if something went wrong a string message
+        describing it and its cause.
         """
         asset_balances = {}
-        response, error = self._query_balances_or_error(
+        response, error, cause = self._query_balances_or_error(
             path='account/wallet-balance',
             options={'accountType': 'UNIFIED' if self.is_unified_account else 'SPOT'},
         )
 
         if error is not None:
-            return {}, error
+            return {}, error, cause
 
         for account in response.get('list', []):
             if (account_coin_data := account.get('coin')) is None:
@@ -524,32 +527,34 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
             try:
                 asset_balances = self._process_wallet_balances(account_coin_data)
             except DeserializationError as e:
-                return {}, str(e)
+                return {}, str(e), FailureCause.BAD_DATA
 
-        return asset_balances, None
+        return asset_balances, None, None
 
-    def _query_funding_balances(self) -> tuple[dict[AssetWithOracles, FVal], str | None]:
+    def _query_funding_balances(
+            self,
+    ) -> tuple[dict[AssetWithOracles, FVal], str | None, FailureCause | None]:
         """
         Query balance amounts in the funding wallet.
         This call assumes that the first connection has been made to identify the account type.
 
-        Returns a tuple of balance amounts and None if there wasn't any error or a string
-        message with a description of what went wrong.
+        Returns a tuple of balance amounts, and if something went wrong a string message
+        describing it and its cause.
         """
         asset_balances: dict[AssetWithOracles, FVal] = {}
-        response, error = self._query_balances_or_error(
+        response, error, cause = self._query_balances_or_error(
             path='asset/transfer/query-account-coins-balance',
             options={'accountType': 'FUND'},
         )
         if error is not None:
-            return {}, error
+            return {}, error, cause
 
         try:
             asset_balances = self._process_wallet_balances(response.get('balance', []))
         except DeserializationError as e:
-            return {}, str(e)
+            return {}, str(e), FailureCause.BAD_DATA
 
-        return asset_balances, None
+        return asset_balances, None, None
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """
@@ -560,17 +565,20 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
         """
         self.first_connection()
 
-        account_assets_balance, err = self._query_account_balances()
+        account_assets_balance, err, cause = self._query_account_balances()
         if err is not None:
-            return None, err
+            return ExchangeQueryBalances(None, err, cause)
 
-        account_funding_balance, err = self._query_funding_balances()
+        account_funding_balance, err, cause = self._query_funding_balances()
         if err is not None:
-            return None, err
+            return ExchangeQueryBalances(None, err, cause)
 
-        return dict(self.balances_from_amounts(
-            combine_dicts(a=account_assets_balance, b=account_funding_balance),
-        )), ''
+        return ExchangeQueryBalances(
+            dict(self.balances_from_amounts(
+                combine_dicts(a=account_assets_balance, b=account_funding_balance),
+            )),
+            '',
+        )
 
     def _query_deposits_withdrawals(
             self,

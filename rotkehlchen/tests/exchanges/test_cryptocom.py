@@ -4,10 +4,12 @@ from typing import Final
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_USD, A_USDC, A_USDT
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.cryptocom import Cryptocom
 from rotkehlchen.fval import FVal
@@ -97,7 +99,7 @@ def test_query_balances_empty_account(mock_cryptocom):
         attribute='_api_query',
         return_value=MockResponse(HTTPStatus.OK, text=json.dumps(EMPTY_BALANCES_RESPONSE)),
     ):
-        balances, msg = mock_cryptocom.query_balances()
+        balances, msg, _ = mock_cryptocom.query_balances()
 
     assert msg == ''
     assert len(balances) == 0
@@ -116,7 +118,7 @@ def test_query_balances(mock_cryptocom):
             for from_asset in from_assets
         },
     )):
-        balances, msg = mock_cryptocom.query_balances()
+        balances, msg, _ = mock_cryptocom.query_balances()
         assert msg == ''
         assert len(balances) == 2
         assert balances[A_BTC] == Balance(amount=FVal('0.00016915'), value=FVal('18.94480000'))
@@ -268,15 +270,57 @@ def test_validate_api_key(mock_cryptocom):
         return MockResponse(HTTPStatus.OK, text='{"code": 0, "result": {"data": []}}')
 
     with patch.object(mock_cryptocom, '_api_query', side_effect=mock_api_query_success):
-        result, msg = mock_cryptocom.validate_api_key()
+        result, msg, _ = mock_cryptocom.validate_api_key()
         assert result is True
         assert msg == ''
 
     # Test failed validation
     def mock_api_query_fail(method, options=None):
-        return MockResponse(HTTPStatus.OK, text='{"code": 10003, "message": "Invalid API key"}')
+        return MockResponse(HTTPStatus.OK, text='{"code": 40101, "message": "Invalid API key"}')
 
     with patch.object(mock_cryptocom, '_api_query', side_effect=mock_api_query_fail):
-        result, msg = mock_cryptocom.validate_api_key()
+        result, msg, cause = mock_cryptocom.validate_api_key()
         assert result is False
         assert 'Invalid API key' in msg
+        assert cause == FailureCause.AUTH
+
+        balances, msg, cause = mock_cryptocom.query_balances()
+        assert balances is None
+        assert 'Invalid API key' in msg
+        assert cause == FailureCause.AUTH
+
+
+@pytest.mark.parametrize(('code', 'expected_cause'), [
+    (42901, FailureCause.RATE_LIMITED),
+    (40103, FailureCause.AUTH),
+    (40401, FailureCause.REMOTE_REJECTED),
+])
+def test_response_code_decides_the_cause(
+        mock_cryptocom: Cryptocom,
+        code: int,
+        expected_cause: FailureCause,
+) -> None:
+    response = MockResponse(HTTPStatus.OK, text=f'{{"code": {code}, "message": "no"}}')
+    with patch.object(mock_cryptocom, '_api_query', return_value=response):
+        valid, _, check_cause = mock_cryptocom.validate_api_key()
+        balances, _, balances_cause = mock_cryptocom.query_balances()
+
+    assert valid is False
+    assert check_cause == expected_cause
+    assert balances is None
+    assert balances_cause == expected_cause
+
+
+def test_unreachable_is_a_failed_query_not_an_exception(mock_cryptocom: Cryptocom) -> None:
+    with patch.object(
+        mock_cryptocom.session,
+        'post',
+        side_effect=requests.exceptions.ConnectionError,
+    ):
+        balances, _, balances_cause = mock_cryptocom.query_balances()
+        valid, _, check_cause = mock_cryptocom.validate_api_key()
+
+    assert balances is None
+    assert balances_cause == FailureCause.NETWORK
+    assert valid is False
+    assert check_cause == FailureCause.NETWORK

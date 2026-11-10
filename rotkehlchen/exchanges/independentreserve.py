@@ -16,9 +16,10 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import RemoteError, cause_for_status, credential_check_cause_of
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -251,14 +252,14 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
 
         return json_ret
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """Validates that the IndependentReserve API key is good for usage in rotki"""
         try:
             self._api_query(verb='post', method_type='Private', path='GetAccounts')
         except RemoteError as e:
-            return False, str(e)
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
         else:
-            return True, ''
+            return ApiKeyCheck(True)
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
@@ -267,7 +268,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
         except RemoteError as e:
             msg = f'IndependentReserve request failed. Could not reach the exchange due to {e!s}'
             log.error(msg)
-            return None, msg
+            return ExchangeQueryBalances(None, msg, e.cause)
 
         log.debug(f'IndependentReserve account response: {response}')
         account_guids = []
@@ -286,7 +287,11 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                 msg = str(e)
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
-                return None, f'Error processing IndependentReserve balance entry {entry}. {msg}'
+                return ExchangeQueryBalances(
+                    None,
+                    f'Error processing IndependentReserve balance entry {entry}. {msg}',
+                    FailureCause.BAD_DATA,
+                )
 
             if amount == ZERO:
                 continue
@@ -294,7 +299,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
             amounts[asset] += amount
 
         self.account_guids = account_guids
-        return dict(self.balances_from_amounts(amounts)), ''
+        return ExchangeQueryBalances(dict(self.balances_from_amounts(amounts)), '')
 
     def _iterate_paginated_data(
             self,

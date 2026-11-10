@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import logging
 from collections import defaultdict
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlparse
 
@@ -15,9 +16,15 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_undecodable_body
+from rotkehlchen.errors.misc import (
+    RemoteError,
+    cause_for_status,
+    cause_for_undecodable_body,
+    credential_check_cause_of,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -323,13 +330,13 @@ class Coinbaseprime(ExchangeInterface):
             location=LOCATION_COINBASE,
         )
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         try:
             self._get_portfolio_ids()
         except RemoteError as e:
-            return False, str(e)
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
         else:
-            return True, ''
+            return ApiKeyCheck(True)
 
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
         if super().edit_exchange_credentials(credentials) is False:
@@ -384,6 +391,13 @@ class Coinbaseprime(ExchangeInterface):
                 f'Coinbase Prime returned invalid json {response.text}',
                 cause=cause_for_undecodable_body(response.status_code),
             ) from e
+
+        if response.status_code != HTTPStatus.OK:
+            raise RemoteError(
+                f'Coinbase Prime query at {uri} responded with error '
+                f'status code: {response.status_code} and text: {response.text}',
+                cause=cause_for_status(response.status_code),
+            )
 
         return data
 
@@ -495,20 +509,32 @@ class Coinbaseprime(ExchangeInterface):
                 f'to {e}'
             )
             log.error(f'{msg_prefix} Could not reach coinbase due to {e}')
-            return None, f'{msg_prefix} Check logs for more details'
+            return ExchangeQueryBalances(
+                None,
+                f'{msg_prefix} Check logs for more details',
+                e.cause,
+            )
 
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for account_id in portfolio_ids:
             try:
-                balances_query: dict[str, list[dict[str, Any]]] = self._api_query(
+                balance_entries: list[dict[str, Any]] = self._api_query(
                     module='portfolios',
                     path=f'{account_id}/balances',
-                )
+                )['balances']
             except RemoteError as e:
                 log.error(f'Failed to query CoinbasePrime balances due to {e}')
-                return None, 'Request to CoinbasePrime failed to fetch balances'
+                return ExchangeQueryBalances(
+                    None,
+                    'Request to CoinbasePrime failed to fetch balances',
+                    e.cause,
+                )
+            except KeyError as e:
+                msg = f'CoinbasePrime balances response is missing the key {e}'
+                log.error(msg)
+                return ExchangeQueryBalances(None, msg, FailureCause.BAD_DATA)
 
-            for balance_entry in balances_query['balances']:
+            for balance_entry in balance_entries:
                 try:
                     total_balance = ZERO
                     for balance_key in (
@@ -542,7 +568,7 @@ class Coinbaseprime(ExchangeInterface):
                         error=msg,
                     )
 
-        return dict(self.balances_from_amounts(amounts)), ''
+        return ExchangeQueryBalances(dict(self.balances_from_amounts(amounts)), '')
 
     def query_online_history_events(
             self,

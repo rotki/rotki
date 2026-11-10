@@ -6,6 +6,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants.assets import A_BTC, A_ETC, A_ETH, A_OMG
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.exchange import HistoryEventQueue
 from rotkehlchen.exchanges.independentreserve import (
@@ -104,7 +105,7 @@ def test_query_balances(
         return MockResponse(200, response)
 
     with patch.object(exchange.session, 'request', side_effect=mock_api_return):
-        balances, msg = exchange.query_balances()
+        balances, msg, _ = exchange.query_balances()
 
     assert msg == ''
     assets_seen = {0}
@@ -156,7 +157,7 @@ def test_query_some_balances(
         return MockResponse(200, response)
 
     with patch.object(exchange.session, 'request', side_effect=mock_api_return):
-        balances, msg = exchange.query_balances()
+        balances, msg, _ = exchange.query_balances()
 
     assert msg == ''
     assert balances == {
@@ -285,3 +286,25 @@ def test_trade_query_flushes_completed_page_before_failure(
 
 # TODO: Make a test for asset movements.
 # Would need more mocking as it would require mocking of multiple calls
+
+
+def test_query_balances_failures_report_the_cause(function_scope_independentreserve):
+    exchange = function_scope_independentreserve
+    with patch.object(
+        exchange,
+        '_api_query',
+        side_effect=RemoteError('refused', cause=FailureCause.REMOTE_REJECTED),
+    ):
+        balances, _, cause = exchange.query_balances()
+        valid, _, check_cause = exchange.validate_api_key()
+
+    assert balances is None
+    assert cause == FailureCause.REMOTE_REJECTED
+    assert valid is False
+    assert check_cause == FailureCause.AUTH
+
+    with patch.object(exchange, '_api_query', return_value=[{'CurrencyCode': 'Xbt'}]):
+        balances, _, cause = exchange.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.BAD_DATA

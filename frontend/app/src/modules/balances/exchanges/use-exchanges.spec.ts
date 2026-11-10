@@ -108,7 +108,7 @@ describe('useExchanges', () => {
       set(exchangeBalances, { kraken: { BTC: { amount: bigNumberify(2), value: bigNumberify(100000) } } });
       store.exchangeAccountBalances = { kraken: { 'kraken-main': { BTC: { amount: bigNumberify(2), value: bigNumberify(100000) } } } };
       runTaskMock.mockResolvedValue(ok({
-        failedAccounts: { kraken: { 'kraken-main': 'API request failed' } },
+        failedAccounts: { kraken: { 'kraken-main': { cause: 'network', message: 'API request failed' } } },
         perAccount: { kraken: { other: { BTC: { amount: '1', value: '50000' } } } },
         totals: { kraken: { BTC: { amount: '1', value: '50000' } } },
       }));
@@ -124,7 +124,7 @@ describe('useExchanges', () => {
 
     it('should store healthy connection balances on a fresh login despite another connection failing', async () => {
       runTaskMock.mockResolvedValue(ok({
-        failedAccounts: { kraken: { expired: 'Invalid key' } },
+        failedAccounts: { kraken: { expired: { cause: 'auth', message: 'Invalid key' } } },
         perAccount: { kraken: { healthy: { BTC: { amount: '1', value: '50000' } } } },
         totals: { kraken: { BTC: { amount: '1', value: '50000' } } },
       }));
@@ -137,13 +137,31 @@ describe('useExchanges', () => {
       expect(store.exchangeBalances).toEqual({});
     });
 
+    it.each([
+      ['a rejected key alone offers no retry', [['one', 'auth']], 'auth'],
+      ['connections that all need fixing report the first cause', [['one', 'auth'], ['two', 'forbidden']], 'auth'],
+      ['any connection that could heal offers a retry', [['one', 'auth'], ['two', 'network']], 'network'],
+    ])('should report the cause of the failed connections: %s', async (_title, failed, expected) => {
+      runTaskMock.mockResolvedValue(ok({
+        failedAccounts: { kraken: Object.fromEntries(failed.map(([identifier, cause]) => [identifier, { cause, message: 'failed' }])) },
+        perAccount: {},
+        totals: {},
+      }));
+
+      await exchanges.fetchExchangeBalances({ location: 'kraken' });
+      await flushPromises();
+
+      const activity = get(useTaskOrchestrator().activities).find(({ id }) => id === exchangeBalancesActivity.id({ location: 'kraken' }));
+      expect(activity?.failureCause).toBe(expected);
+    });
+
     it('should fail the task with the connection errors when a connection of the location failed', async () => {
       useConnectedExchangesStore().setConnectedExchanges([
         createTestExchange('kraken', 'a'),
         createTestExchange('kraken', 'b'),
       ]);
       runTaskMock.mockResolvedValue(ok({
-        failedAccounts: { kraken: { 'kraken-a': 'first failed', 'kraken-b': 'second failed' } },
+        failedAccounts: { kraken: { 'kraken-a': { cause: 'network', message: 'first failed' }, 'kraken-b': { cause: 'auth', message: 'second failed' } } },
         perAccount: {},
         totals: {},
       }));
@@ -158,7 +176,7 @@ describe('useExchanges', () => {
 
     it('should store the balances when only another location failed', async () => {
       runTaskMock.mockResolvedValue(ok({
-        failedAccounts: { binance: { 'binance-main': 'API request failed' } },
+        failedAccounts: { binance: { 'binance-main': { cause: 'network', message: 'API request failed' } } },
         perAccount: {},
         totals: { kraken: { BTC: { amount: '1', value: '50000' } } },
       }));

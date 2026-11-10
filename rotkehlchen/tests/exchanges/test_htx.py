@@ -77,7 +77,7 @@ def test_balances(htx_exchange: Htx):
             return MockResponse(200, """{"status": "ok", "data": [{"id": 50, "type": "spot", "subtype": "", "state": "working"}]}""")  # noqa: E501
 
     with patch.object(htx_exchange.session, 'get', side_effect=mock_api_return):
-        balances, _ = htx_exchange.query_balances()
+        balances, _, _ = htx_exchange.query_balances()
 
     assert balances == {  # available (trade) and locked (frozen) must be summed per asset
         Asset('ATOM'): Balance(amount=FVal('1.600000007177861711'), value=FVal('2.4000000107667925665')),  # noqa: E501
@@ -428,3 +428,51 @@ def test_undecodable_body_cause_follows_the_status(
         htx_exchange._query('/v1/account/accounts')
 
     assert excinfo.value.cause == expected_cause
+
+
+def test_query_balances_failures_report_the_cause(htx_exchange: Htx) -> None:
+    with patch.object(
+        htx_exchange,
+        'get_accounts',
+        side_effect=RemoteError('down', cause=FailureCause.NETWORK),
+    ):
+        assert htx_exchange.query_balances() == (None, 'down', FailureCause.NETWORK)
+
+    with (
+        patch.object(htx_exchange, 'get_accounts', return_value=[{'id': 1}]),
+        patch.object(
+            htx_exchange,
+            '_query',
+            side_effect=RemoteError('refused', cause=FailureCause.REMOTE_REJECTED),
+        ),
+    ):
+        balances, _, cause = htx_exchange.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.REMOTE_REJECTED
+
+
+def test_query_balances_failing_on_a_later_account_is_not_a_partial_result(
+        htx_exchange: Htx,
+) -> None:
+    held = {'type': 'spot', 'list': [{'type': 'trade', 'balance': '1', 'currency': 'btc'}]}
+    with (
+        patch.object(htx_exchange, 'get_accounts', return_value=[{'id': 1}, {'id': 2}]),
+        patch.object(
+            htx_exchange,
+            '_query',
+            side_effect=[held, RemoteError('down', cause=FailureCause.NETWORK)],
+        ),
+    ):
+        balances, _, cause = htx_exchange.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.NETWORK
+
+
+def test_validate_api_key_without_accounts_is_auth(htx_exchange: Htx) -> None:
+    with patch.object(htx_exchange, 'get_accounts', return_value=[]):
+        valid, _, cause = htx_exchange.validate_api_key()
+
+    assert valid is False
+    assert cause == FailureCause.AUTH

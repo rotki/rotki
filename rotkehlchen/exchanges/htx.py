@@ -14,9 +14,14 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_undecodable_body
+from rotkehlchen.errors.misc import (
+    RemoteError,
+    cause_for_undecodable_body,
+    credential_check_cause_of,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import (
+    ApiKeyCheck,
     ExchangeInterface,
     ExchangeQueryBalances,
     HistoryEventQueue,
@@ -101,17 +106,21 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
             msg_aggregator=msg_aggregator,
         )
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """Validates that the HTX API key is good for usage in rotki"""
         try:
             accounts = self.get_accounts()
         except RemoteError as e:
-            return False, str(e)
+            return ApiKeyCheck(False, str(e), credential_check_cause_of(e))
 
         if len(accounts) != 0:
-            return True, ''
+            return ApiKeyCheck(True)
 
-        return False, 'API key cannot access account information'
+        return ApiKeyCheck(
+            False,
+            'API key cannot access account information',
+            FailureCause.AUTH,
+        )
 
     def _sign_request(self, url: str, params: dict[str, Any]) -> dict[str, Any]:
         """
@@ -186,17 +195,33 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """Query balances for the accounts linked to the api key"""
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
-        for account in self.get_accounts():
-            account_id = account['id']
+        try:
+            accounts = self.get_accounts()
+        except RemoteError as e:
+            log.error('Failed to query HTX accounts due to %s', e)
+            return ExchangeQueryBalances(None, str(e), e.cause)
+
+        for account in accounts:
+            try:
+                account_id = account['id']
+            except KeyError as e:
+                msg = f'HTX account response is missing the key {e}'
+                log.error(msg)
+                return ExchangeQueryBalances(None, msg, FailureCause.BAD_DATA)
+
             path = f'/v1/account/accounts/{account_id}/balance'
             try:
                 data = self._query(path)
             except RemoteError as e:
                 error_prefix = 'Failed to query HTX'
                 log.error(f'{error_prefix} balances due to {e}')
-                return dict(self.balances_from_amounts(amounts)), f'{error_prefix} due to a remote error. Check logs for more details'  # noqa: E501
+                return ExchangeQueryBalances(
+                    None,
+                    f'{error_prefix} due to a remote error. Check logs for more details',
+                    e.cause,
+                )
 
-            if (account_balance_type := data['type']) is None:
+            if (account_balance_type := data.get('type')) is None:
                 log.error(f'Response for balances does not contain the type key {data}. Skipping')
                 continue
 
@@ -214,7 +239,11 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
                     continue
 
                 if (amount_str := balance_info.get('balance')) is not None:
-                    amount = deserialize_fval(amount_str)
+                    try:
+                        amount = deserialize_fval(amount_str)
+                    except DeserializationError as e:
+                        log.error('Could not read HTX balance %s due to %s', balance_info, e)
+                        continue
                 else:
                     log.error(
                         f'Got HTX account with no balance value key in {balance_info}. Skipping',
@@ -239,7 +268,7 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
 
                 amounts[asset] += amount
 
-        return dict(self.balances_from_amounts(amounts)), ''
+        return ExchangeQueryBalances(dict(self.balances_from_amounts(amounts)), '')
 
     def _paginated_query(
             self,

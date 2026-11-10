@@ -27,6 +27,7 @@ from rotkehlchen.exchanges.binance import (
     BINANCE_LAUNCH_TS,
     BINANCE_SIMPLE_EARN_TIME_INTERVAL_CONSTRAINT_TS,
     Binance,
+    BinancePermissionError,
     trade_from_binance,
 )
 from rotkehlchen.exchanges.exchange import HistoryEventQueue
@@ -312,7 +313,7 @@ def test_binance_query_balances_include_features(function_scope_binance: Binance
         attribute='request',
         side_effect=mock_binance_balance_response,
     ):
-        balances, msg = binance.query_balances()
+        balances, msg, _ = binance.query_balances()
 
     assert msg == ''
     assert len(balances) == 7
@@ -1579,3 +1580,98 @@ def test_binance_query_convert_trades(function_scope_binance: Binance) -> None:
 
     assert len(consume_errors(function_scope_binance.msg_aggregator)) == 0
     assert len(consume_warnings(function_scope_binance.msg_aggregator)) == 0
+
+
+@pytest.mark.parametrize(('error', 'expected_cause'), [
+    ('API-key format invalid', FailureCause.AUTH),
+    ('Signature for this request is not valid', FailureCause.AUTH),
+    ('Timestamp for this request was outside', FailureCause.REMOTE_REJECTED),
+])
+def test_validate_api_key_known_errors(function_scope_binance: Binance, error, expected_cause):
+    with patch.object(
+        function_scope_binance,
+        'api_query_dict',
+        side_effect=RemoteError(error, cause=FailureCause.REMOTE_REJECTED),
+    ):
+        valid, _, cause = function_scope_binance.validate_api_key()
+
+    assert valid is False
+    assert cause == expected_cause
+
+
+def test_validate_api_key_unreachable_is_network(function_scope_binance: Binance):
+    with patch.object(
+        function_scope_binance.session,
+        'request',
+        side_effect=requests.exceptions.ConnectionError,
+    ):
+        valid, _, cause = function_scope_binance.validate_api_key()
+
+    assert valid is False
+    assert cause == FailureCause.NETWORK
+
+
+def test_query_balances_fails_when_neither_wallet_answers(function_scope_binance: Binance):
+    function_scope_binance.first_connection_made = True
+    down = RemoteError('down', cause=FailureCause.NETWORK)
+    with (
+        patch.object(function_scope_binance, 'api_query_dict', side_effect=down),
+        patch.object(
+            function_scope_binance,
+            'api_query_list',
+            side_effect=BinancePermissionError('refused'),
+        ),
+    ):
+        balances, _, cause = function_scope_binance.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.NETWORK
+
+
+def test_query_balances_fails_for_a_key_refused_by_both_wallets(function_scope_binance: Binance):
+    function_scope_binance.first_connection_made = True
+    refused = BinancePermissionError('refused')
+    with (
+        patch.object(function_scope_binance, 'api_query_dict', side_effect=refused),
+        patch.object(function_scope_binance, 'api_query_list', side_effect=refused),
+    ):
+        balances, _, cause = function_scope_binance.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.AUTH
+
+
+@pytest.mark.parametrize('spot_refused', [True, False])
+def test_query_balances_works_for_a_key_restricted_from_one_wallet(
+        function_scope_binance: Binance,
+        spot_refused: bool,
+):
+    function_scope_binance.first_connection_made = True
+    refused = BinancePermissionError('refused')
+    with (
+        patch.object(
+            function_scope_binance,
+            'api_query_dict',
+            side_effect=refused if spot_refused else None,
+            return_value={'balances': []},
+        ),
+        patch.object(
+            function_scope_binance,
+            'api_query_list',
+            side_effect=None if spot_refused else refused,
+            return_value=[],
+        ),
+    ):
+        balances, _, cause = function_scope_binance.query_balances()
+
+    assert balances == {}
+    assert cause is None
+
+
+def test_query_balances_failure_keeps_the_remote_cause(function_scope_binance: Binance):
+    function_scope_binance.first_connection_made = True
+    with patch.object(function_scope_binance, 'api_query_dict', return_value={}):
+        balances, _, cause = function_scope_binance.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.BAD_DATA

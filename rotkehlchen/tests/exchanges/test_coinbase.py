@@ -24,6 +24,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.coinbase import COINBASE_CANDLES_MAX_LIMIT, Coinbase
+from rotkehlchen.exchanges.exchange import ApiKeyCheck
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
@@ -157,7 +158,7 @@ def test_advanced_trade_jwt_supports_both_key_types(messages_aggregator) -> None
     uri = 'GET api.coinbase.com/api/v3/brokerage/products/BTC-USD/candles'
     for api_key, secret, algorithm, issuer in credentials:
         coinbase = Coinbase('coinbase', api_key, secret, object(), messages_aggregator)  # type: ignore
-        assert coinbase.validate_api_key() == (True, '')
+        assert coinbase.validate_api_key() == ApiKeyCheck(True)
         token = coinbase.build_jwt(uri=uri)
         assert jwt.get_unverified_header(token)['alg'] == algorithm
         payload = jwt.decode(token, options={'verify_signature': False})
@@ -236,7 +237,7 @@ def test_coinbase_query_balances(function_scope_coinbase):
         )
 
     with patch.object(coinbase.session, 'get', side_effect=mock_coinbase_accounts):
-        balances, msg = coinbase.query_balances()
+        balances, msg, _ = coinbase.query_balances()
 
     assert msg == ''
     assert len(balances) == 2
@@ -286,7 +287,7 @@ def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
             return MockResponse(200, response_str)
 
         with patch.object(coinbase.session, 'get', side_effect=mock_coinbase_accounts):
-            balances, msg = coinbase.query_balances()
+            balances, msg, _ = coinbase.query_balances()
 
         warnings = consume_warnings(coinbase.msg_aggregator)
         errors, unknown = consume_errors_and_unknown_assets(coinbase.msg_aggregator)
@@ -2114,3 +2115,29 @@ def test_ignore_asset_and_amount_advancedtrade(mock_coinbase):
             'order_side': 'sell',
         },
     }) == []
+
+
+def test_validate_api_key_malformed_key_is_auth(database) -> None:
+    coinbase = Coinbase(
+        name='test coinbase',
+        api_key=ApiKey('BOOM'),
+        secret=ApiSecret(b'BOOM'),
+        msg_aggregator=database.msg_aggregator,
+        database=database,
+    )
+    valid, _, cause = coinbase.validate_api_key()
+
+    assert valid is False
+    assert cause == FailureCause.AUTH
+
+
+def test_query_balances_permission_error_is_auth(function_scope_coinbase) -> None:
+    with patch.object(
+        function_scope_coinbase.session,
+        'get',
+        return_value=MockResponse(403, '{}'),
+    ), patch.object(function_scope_coinbase, 'build_jwt', return_value='token'):
+        balances, _, cause = function_scope_coinbase.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.AUTH

@@ -314,7 +314,7 @@ def test_query_balances(gate_exchange: Gate):
         '/spot/accounts': [(None, balance_response)],
     })
     with patch.object(gate_exchange, '_api_query', side_effect=mock_fn):
-        balances, _ = gate_exchange.query_balances()
+        balances, _, _ = gate_exchange.query_balances()
 
     assert balances == {
         A_BTC: Balance(amount=FVal('2.0'), value=FVal('3.0')),
@@ -328,7 +328,7 @@ def test_validate_api_key(gate_exchange: Gate):
         '/spot/accounts': [(None, [{'currency': 'BTC', 'available': '1.0', 'locked': '0.0'}])],
     })
     with patch.object(gate_exchange, '_api_query', side_effect=mock_fn):
-        result, msg = gate_exchange.validate_api_key()
+        result, msg, _ = gate_exchange.validate_api_key()
 
     assert result is True
     assert msg == ''
@@ -515,3 +515,24 @@ def test_trades_pagination(gate_exchange: Gate) -> None:
         )
 
     assert len(events) == 2  # spend + receive
+
+
+def test_query_balances_failures_report_the_cause(gate_exchange: Gate):
+    with patch.object(
+        gate_exchange,
+        '_api_query',
+        side_effect=RemoteError('down', cause=FailureCause.NETWORK),
+    ):
+        balances, _, cause = gate_exchange.query_balances()
+        valid, _, check_cause = gate_exchange.validate_api_key()
+
+    assert balances is None
+    assert cause == FailureCause.NETWORK
+    assert valid is False
+    assert check_cause == FailureCause.NETWORK
+
+    with patch.object(gate_exchange, '_api_query', return_value={'unexpected': 'dict'}):
+        balances, _, cause = gate_exchange.query_balances()
+
+    assert balances is None
+    assert cause == FailureCause.BAD_DATA

@@ -40,6 +40,7 @@ from rotkehlchen.connections.types import (
 )
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.exchanges.exchange import ApiKeyCheck
 from rotkehlchen.tests.utils.banks import FinTSFixtureTransport
 
 PRODUCT_ID = '0123456789012345678901234'
@@ -1032,9 +1033,11 @@ def test_rejected_setup_tan_drops_the_setup_without_a_connection_status(
     assert connector.load_session() is None, 'a new setup under this name would restore it'
 
 
+@pytest.mark.parametrize('check_cause', [FailureCause.AUTH, FailureCause.NETWORK])
 def test_setup_refused_after_its_answer_drops_the_setup_as_gone(
         database,
         function_scope_messages_aggregator,
+        check_cause,
 ) -> None:
     """The accepted answer is used up, so a 409 would invite a retry that can only fail"""
     challenge = FixtureTANResponse()
@@ -1052,14 +1055,18 @@ def test_setup_refused_after_its_answer_drops_the_setup_as_gone(
 
     with (
         patch.object(NeedRetryResponse, 'from_data', return_value=challenge),
-        patch.object(connector, 'validate_api_key', return_value=(False, refusal := 'No login')),
+        patch.object(
+            connector,
+            'validate_api_key',
+            return_value=ApiKeyCheck(False, refusal := 'No login', check_cause),
+        ),
     ):
         result = BanksService(rotki).answer_authentication(
             identifier=connector.connection_identifier,
             response='123456',
         )
 
-    assert result == FailResult(refusal, HTTPStatus.GONE, FailureCause.AUTH)
+    assert result == FailResult(refusal, HTTPStatus.GONE, check_cause)
     assert location_id not in manager.pending_setups
     assert location_id not in manager.sync_status
     assert connector.load_session() is None, 'a new setup under this name would restore it'
@@ -1086,7 +1093,7 @@ def test_setup_whose_name_got_taken_is_gone_as_a_conflict(
 
     with (
         patch.object(NeedRetryResponse, 'from_data', return_value=challenge),
-        patch.object(connector, 'validate_api_key', return_value=(True, '')),
+        patch.object(connector, 'validate_api_key', return_value=ApiKeyCheck(True)),
         patch.object(manager, 'get_bank_by_name', return_value=MagicMock()),
     ):
         result = BanksService(rotki).answer_authentication(

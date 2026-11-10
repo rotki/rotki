@@ -5,7 +5,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from http.client import RemoteDisconnected
 from threading import Event, RLock, Semaphore
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 import requests
 
@@ -15,7 +15,6 @@ from rotkehlchen.api.websockets.typedefs import (
     HistoryEventsStep,
     WSMessageType,
 )
-from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.connections.types import (
     ConnectionIdentifier,
     connection_range_name,
@@ -42,8 +41,10 @@ from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_l
 from rotkehlchen.utils.network import create_session
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.errors.cause import FailureCause
     from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
@@ -54,7 +55,19 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-ExchangeQueryBalances = tuple[dict[AssetWithOracles, Balance] | None, str]
+class ExchangeQueryBalances(NamedTuple):
+    """What a balance query found. On failure balances is None and cause says why."""
+    balances: dict[AssetWithOracles, Balance] | None
+    message: str
+    cause: FailureCause | None = None
+
+
+class ApiKeyCheck(NamedTuple):
+    """Whether the exchange accepted the credentials. If not, cause says why."""
+    valid: bool
+    message: str = ''
+    cause: FailureCause | None = None
+
 
 ExchangeHistoryFailCallback = Callable[[str], None]
 ExchangeHistoryNewStepCallback = Callable[[str], None]
@@ -306,7 +319,7 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         """Returns the balances held in the exchange in the following format:
 
         Successful response:
-        (
+        ExchangeQueryBalances(
             {  # dict can be empty
                 'name' : Balance(amount=1337, usd_value=42),
                 'ICN': Balance(amount=42, usd_value=1337)
@@ -315,9 +328,10 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         )
 
         Unsuccessful response:
-        (
+        ExchangeQueryBalances(
             None,
             'The reason of the failure',  # non-empty string
+            FailureCause.NETWORK,  # why it failed
         )
 
         The name must be the canonical name used by rotkehlchen
@@ -364,7 +378,7 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         """
         raise NotImplementedError('first_connection() should only be implemented by subclasses')
 
-    def validate_api_key(self) -> tuple[bool, str]:
+    def validate_api_key(self) -> ApiKeyCheck:
         """Tries to make the simplest private api query to the exchange in order to
         verify the api key's validity"""
         raise NotImplementedError('validate_api_key() should only be implemented by subclasses')

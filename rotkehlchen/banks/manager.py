@@ -31,6 +31,7 @@ from rotkehlchen.connections.types import (
     new_connection_identifier,
 )
 from rotkehlchen.db.connections import DBConnections
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError, combined_cause
 from rotkehlchen.locations.constants import LOCATION_BANKS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -43,7 +44,6 @@ if TYPE_CHECKING:
     from rotkehlchen.banks.connector import BankConnector
     from rotkehlchen.banks.manifest import BankConnectorType, BankManifest
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.errors.cause import FailureCause
     from rotkehlchen.types import Timestamp
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -319,13 +319,13 @@ class BankManager:
             return True, ''
 
         try:
-            valid, message = bank.validate_api_key()
+            valid, message, cause = bank.validate_api_key()
         except BankMFARequired as e:
             e.connection_identifier = identifier
             raise
         if not valid:  # the answer was used up, so nothing is left to retry: start over
             self._discard_setup(identifier)
-            raise BankAuthExpired(message)
+            raise BankAuthExpired(message, cause=cause or FailureCause.AUTH)
         assert self.database is not None, 'authentication answered before login'
         with self.registry_lock:
             if self.get_bank_by_name(bank.name) is not None:
