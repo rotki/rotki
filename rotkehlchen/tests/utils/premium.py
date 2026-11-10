@@ -18,6 +18,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.settings import ModifiableDBSettings
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 # Valid format but not "real" premium api key and secret
@@ -188,6 +189,7 @@ def setup_starting_environment(
         sync_database: bool = True,
         reencrypt_remote_data: bool = False,
         remote_header_ts_offset: int = 0,
+        initial_settings: ModifiableDBSettings | None = None,
 ):
     """
     Sets up the starting environment for premium testing when the user
@@ -262,6 +264,7 @@ def setup_starting_environment(
             create_new=create_new,
             sync_approval=sync_approval,
             sync_database=sync_database,
+            initial_settings=initial_settings,
         )
 
 

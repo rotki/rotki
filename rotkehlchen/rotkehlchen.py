@@ -403,6 +403,7 @@ class Rotkehlchen:
                 create_new=create_new,
                 sync_approval=sync_approval,
                 sync_database=sync_database,
+                initial_settings=initial_settings,
             )
         except PremiumAuthenticationError as e:
             # Reraise it only if this is during the creation of a new account where
