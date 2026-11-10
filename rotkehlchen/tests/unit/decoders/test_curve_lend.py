@@ -559,13 +559,12 @@ def test_close_loan_using_collateral(
             sequence_index=13,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
             asset=arbitrum_vault_underlying_token,
             amount=FVal(receive1_amount := '0.311352637896780974'),
             location_label=user_address,
-            notes=f'Withdraw {receive1_amount} crvUSD from Curve after repaying loan',
-            counterparty=CPT_CURVE,
+            notes=f'Receive {receive1_amount} crvUSD from 0xB5c6082d3307088C98dA8D79991501E113e6365d to {user_address}',  # noqa: E501
             address=string_to_evm_address('0xB5c6082d3307088C98dA8D79991501E113e6365d'),
         ), EvmEvent(
             tx_ref=tx_hash,

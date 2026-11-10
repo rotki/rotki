@@ -207,6 +207,46 @@ def test_repay(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xfEe1dCAf98c023e906edC9C6D75bb8bB1763aa00']])
+@pytest.mark.parametrize('crvusd_controller', ['0x1681195C176239ac5E72d9aeBaCf5b2492E0C4ee'], indirect=True)  # noqa: E501
+def test_repay_refunds_borrowed_token(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        crvusd_controller: ChecksumEvmAddress,
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x40597046dbd4cf69fbb9226fdff5de17eef2952062583a33b94071d6de689efa')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    user_address = ethereum_accounts[0]
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1772292143000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount := '0.00011472474736898'),
+            location_label=user_address,
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=340,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=Asset('eip155:1/erc20:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E'),
+            amount=FVal(refund_amount := '2224.88113498838606228'),
+            location_label=user_address,
+            notes=f'Receive {refund_amount} crvUSD from {crvusd_controller} to {user_address}',
+            address=crvusd_controller,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xbbD9FB5A548e09D0B6E8B8197e38c5ac925cc973']])
 @pytest.mark.parametrize('crvusd_controller', ['0x1C91da0223c763d2e0173243eAdaA0A2ea47E704'], indirect=True)  # noqa: E501
 def test_remove_collateral(
