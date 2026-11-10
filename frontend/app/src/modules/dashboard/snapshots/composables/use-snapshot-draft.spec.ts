@@ -398,6 +398,16 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-draft', () => {
       expect(get(isDirty)).toBe(false);
     });
 
+    it('should neither save nor mark when no snapshot is open', async () => {
+      const { commit } = useSnapshotDraft(undefined);
+      const saveFn = vi.fn<(snapshot: Snapshot) => Promise<boolean>>().mockResolvedValue(true);
+      const markSpam = markSpamWith();
+
+      expect(await commit(saveFn, markSpam)).toEqual({ saved: false });
+      expect(saveFn).not.toHaveBeenCalled();
+      expect(markSpam).not.toHaveBeenCalled();
+    });
+
     it('should mark nothing when the save fails', async () => {
       const { changes, commit, deleteBalance } = useSnapshotDraft(snapshot());
       const markSpam = markSpamWith();
