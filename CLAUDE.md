@@ -775,6 +775,11 @@ All checks are run from the `frontend/` directory through the workspace scripts 
   ```
   `vue-tsc --build` has no per-file mode, but after the first cold run subsequent passes only re-check files affected by your change (usually a few seconds). For instant single-file feedback, rely on Volar in the IDE — it uses the same `tsconfig`.
 
+  Templates are checked with `strictTemplates`, which needs the Rui component types in
+  `app/components.d.ts`. That file is gitignored and written by Vite, so in a fresh checkout run
+  `pnpm run --filter rotki build:app` (or start the dev server) once before typechecking, or every
+  `Rui*` component is reported as unknown. `pnpm run build` and CI already build first.
+
 Typical fast pre-commit loop, all from `frontend/`:
 
 ```bash
