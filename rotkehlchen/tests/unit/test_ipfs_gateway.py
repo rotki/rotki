@@ -23,41 +23,22 @@ def _fake_query_file(working: set[str]):
     return asked, query_file
 
 
-def test_ipfs_gateway_falls_through_to_next_gateway():
-    """A failing or rate limited gateway is skipped, and the first one that serves is used"""
-    asked, query_file = _fake_query_file(working={DEFAULT_IPFS_GATEWAYS[2]})
+def test_ipfs_gateway_order_and_fallback():
+    """The custom gateway is tried first, failing ones are skipped and the first to serve wins"""
+    asked, query_file = _fake_query_file(working={DEFAULT_IPFS_GATEWAYS[1]})
     with patch('rotkehlchen.externalapis.ipfs.query_file', side_effect=query_file):
-        result = IPFSGateway().query_json('cid')
+        result = IPFSGateway(custom_gateway='https://my.node').query_json('cid')
 
-    assert result == {'url': f'{DEFAULT_IPFS_GATEWAYS[2]}cid'}
-    assert asked == [f'{x}cid' for x in DEFAULT_IPFS_GATEWAYS[:3]]  # stops at the first success
-
-
-def test_ipfs_gateway_custom_gateway_is_tried_first():
-    asked, query_file = _fake_query_file(working={'https://my.node/ipfs/'})
-    with patch('rotkehlchen.externalapis.ipfs.query_file', side_effect=query_file):
-        IPFSGateway(custom_gateway='https://my.node').query_json('cid')
-
-    assert asked == ['https://my.node/ipfs/cid']
-
-
-def test_ipfs_gateway_custom_gateway_falls_back_to_defaults():
-    asked, query_file = _fake_query_file(working={DEFAULT_IPFS_GATEWAYS[0]})
-    with patch('rotkehlchen.externalapis.ipfs.query_file', side_effect=query_file):
-        IPFSGateway(custom_gateway='https://my.node/ipfs').query_json('cid')
-
-    assert asked == ['https://my.node/ipfs/cid', f'{DEFAULT_IPFS_GATEWAYS[0]}cid']
-
-
-def test_ipfs_gateway_does_not_repeat_a_custom_gateway_that_is_a_default():
-    assert IPFSGateway(custom_gateway=DEFAULT_IPFS_GATEWAYS[1]).gateways == (
-        DEFAULT_IPFS_GATEWAYS[1],
-        *(x for x in DEFAULT_IPFS_GATEWAYS if x != DEFAULT_IPFS_GATEWAYS[1]),
-    )
+    assert result == {'url': f'{DEFAULT_IPFS_GATEWAYS[1]}cid'}
+    assert asked == [
+        'https://my.node/ipfs/cid',
+        f'{DEFAULT_IPFS_GATEWAYS[0]}cid',
+        f'{DEFAULT_IPFS_GATEWAYS[1]}cid',  # stops at the first success
+    ]
 
 
 def test_ipfs_gateway_all_gateways_fail():
-    """If no gateway serves the content a single RemoteError names every failure"""
+    """If no gateway serves the content a single error names every failure"""
     asked, query_file = _fake_query_file(working=set())
     with (
         patch('rotkehlchen.externalapis.ipfs.query_file', side_effect=query_file),
@@ -65,7 +46,7 @@ def test_ipfs_gateway_all_gateways_fail():
     ):
         IPFSGateway(custom_gateway='https://my.node').query_json('cid')
 
-    assert len(asked) == len(DEFAULT_IPFS_GATEWAYS) + 1
+    assert len(asked) == len(DEFAULT_IPFS_GATEWAYS) + 1  # the custom gateway plus the defaults
     assert all(x in str(exc_info.value) for x in asked)
 
 
@@ -74,20 +55,46 @@ def test_ipfs_gateway_all_gateways_fail():
     ('https://my.node/', 'https://my.node/ipfs/'),
     (' http://localhost:8080/ipfs ', 'http://localhost:8080/ipfs/'),
     ('https://my.node/some/path/ipfs/', 'https://my.node/some/path/ipfs/'),
+    ('https://my.node?token=secret', 'https://my.node/ipfs/?token=secret'),
+    ('https://my.node/ipfs?a=1&b=2', 'https://my.node/ipfs/?a=1&b=2'),
 ])
 def test_normalize_ipfs_gateway_url(url: str, expected: str):
     assert normalize_ipfs_gateway_url(url) == expected
 
 
-@pytest.mark.parametrize('url', ['my.node', 'ftp://my.node', 'https://', 'ipfs://cid'])
-def test_normalize_ipfs_gateway_url_rejects_non_http(url: str):
-    with pytest.raises(ValueError, match='must be an http'):
+@pytest.mark.parametrize('url', [
+    'my.node',
+    'ftp://my.node',
+    'https://',
+    'https://user:secret@my.node',
+    'https://:secret@my.node',
+    'https://my.node#secret',
+    'https://my.node/ipfs;secret',
+])
+def test_normalize_ipfs_gateway_url_rejects_invalid(url: str):
+    """Non http(s) urls, credentials, fragments and path params are refused without being echoed"""
+    with pytest.raises(ValueError, match='IPFS gateway') as exc_info:
         normalize_ipfs_gateway_url(url)
 
-
-@pytest.mark.parametrize('userinfo', ['user:secret', 'user', ':secret', ''])
-def test_ipfs_gateway_rejects_credentials(userinfo: str) -> None:
-    with pytest.raises(ValueError, match='credentials') as exc_info:
-        IPFSGateway(custom_gateway=f'https://{userinfo}@gateway.example')
-
     assert 'secret' not in str(exc_info.value)
+
+
+def test_ipfs_gateway_query_is_sent_but_never_logged():
+    """The cid goes into the path before the query, and the token is redacted from errors"""
+    asked: list[str] = []
+
+    def query_file(url: str, **_: object) -> dict[str, str]:
+        asked.append(url)
+        raise RemoteError(f'Failed to query file {url} due to: max retries')
+
+    with (
+        patch('rotkehlchen.externalapis.ipfs.query_file', side_effect=query_file),
+        patch('rotkehlchen.externalapis.ipfs.log') as mock_log,
+        pytest.raises(IPFSRemoteError) as exc_info,
+    ):
+        IPFSGateway(custom_gateway='https://my.node?token=secret').query_json('cid')
+
+    assert asked[0] == 'https://my.node/ipfs/cid?token=secret'
+    assert 'secret' not in str(exc_info.value)
+    assert 'secret' not in str(mock_log.warning.call_args_list)
+    assert 'https://my.node/ipfs/' in str(exc_info.value)

@@ -1,6 +1,6 @@
 import logging
 from typing import Any, Final
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 from rotkehlchen.errors.misc import IPFSRemoteError, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -24,21 +24,27 @@ DEFAULT_IPFS_GATEWAYS: Final = (
 def normalize_ipfs_gateway_url(url: str) -> str:
     """Normalize a user provided gateway to a path style base url ending in `/ipfs/`.
 
-    Accepts `https://host`, `https://host/ipfs` or `https://host/ipfs/`.
+    Accepts `https://host`, `https://host/ipfs` or `https://host/ipfs/`, optionally with a
+    query string such as `?token=...` which is sent along with every request. The error
+    messages never include the url since it may hold a secret.
 
     May raise:
-        ValueError: if the url contains credentials or is not an http(s) url.
+        ValueError: if the url contains userinfo credentials, parameters or a fragment,
+        or is not an http(s) url.
     """
-    parsed = urlparse(url := url.strip())
+    parsed = urlparse(url.strip())
     if parsed.username is not None or parsed.password is not None:
-        raise ValueError('IPFS gateway URL must not contain credentials')
+        raise ValueError('IPFS gateway URL must not contain credentials in the userinfo')
+
+    if parsed.params != '' or parsed.fragment != '':
+        raise ValueError('IPFS gateway URL must not contain path parameters or a fragment')
 
     if parsed.scheme not in {'http', 'https'} or parsed.netloc == '':
-        raise ValueError(f'IPFS gateway "{url}" must be an http(s) url')
+        raise ValueError('IPFS gateway must be an http(s) url')
 
-    if not (url := url.rstrip('/')).endswith('/ipfs'):
-        url += '/ipfs'
-    return f'{url}/'
+    if not (path := parsed.path.rstrip('/')).endswith('/ipfs'):
+        path += '/ipfs'
+    return urlunparse(parsed._replace(path=f'{path}/'))
 
 
 class IPFSGateway:
@@ -58,16 +64,23 @@ class IPFSGateway:
         """Fetch the json document stored under the given cid from the first gateway
         that serves it.
 
+        The query string of a gateway may hold an access token, so it never reaches the
+        logs or the raised error.
+
         May raise:
             IPFSRemoteError: if every gateway failed. The error lists the reason for each.
         """
         failures: list[str] = []
         for gateway in self.gateways:
+            parsed = urlparse(gateway)
+            url = urlunparse(parsed._replace(path=f'{parsed.path}{cid}'))
             try:
-                return query_file(f'{gateway}{cid}', is_json=True)
+                return query_file(url, is_json=True)
             except RemoteError as e:
-                log.warning('IPFS gateway %s failed to serve %s: %s', gateway, cid, e)
-                failures.append(f'{gateway}: {e}')
+                shown = urlunparse(parsed._replace(query=''))
+                reason = str(e).replace(parsed.query, '<redacted>') if parsed.query else str(e)
+                log.warning('IPFS gateway %s failed to serve %s: %s', shown, cid, reason)
+                failures.append(f'{shown}: {reason}')
 
         raise IPFSRemoteError(
             f'Could not fetch IPFS content {cid} from any gateway. ' + '; '.join(failures),
