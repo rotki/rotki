@@ -2,7 +2,8 @@ import type { Accounts, AssetBreakdown, Balances, BlockchainAccount } from '@/mo
 import type { EthBalance, ProtocolBalances } from '@/modules/balances/types/blockchain-balances';
 import type { ExchangeData } from '@/modules/balances/types/exchanges';
 import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
-import { type AssetBalance, Zero } from '@rotki/common';
+import type { HistoricalBalanceEntry } from '@/modules/history/balances/types';
+import { type AssetBalance, type BigNumber, Zero } from '@rotki/common';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { groupAddresses } from '@/modules/accounts/core/account-groups';
 import { zeroBalance } from '@/modules/core/common/data/bignumbers';
@@ -157,4 +158,51 @@ export function assetsAtLocation(
     const row = rows.find(entry => entry.location === location);
     return row ? [{ amount: row.amount, asset, value: row.value }] : [];
   });
+}
+
+/** The lookups a history-derived breakdown needs. */
+export interface HistoricalBreakdownPorts extends BreakdownPorts {
+  /** Current price of an asset, or the no-price sentinel. */
+  readonly priceOf: (asset: string) => BigNumber;
+  /** Resolves a bucket's location to its canonical chain id, if it is a chain. */
+  readonly matchChain: (location: string) => string | undefined;
+}
+
+/**
+ * Where `asset` is held in the current history-derived balances, one row per location and account.
+ *
+ * @remarks
+ * Each bucket becomes a row: a chain location is shown under its display label with the bucket's
+ * `locationLabel` as the address, and other locations (exchange, bank, external) keep their own
+ * label with an empty address. Values are computed at the resolved identifier's current price; a
+ * missing price reads as zero. Rows are grouped per (location, address) exactly like the queried
+ * breakdown, so `AssetLocations.vue` and `EvmNativeTokenBreakdown.vue` render the same shape.
+ *
+ * @param asset - the asset whose breakdown is shown
+ * @param entries - the current history-derived buckets
+ * @param ports - pricing, identifier, chain and label lookups
+ */
+export function historicalAssetBreakdown(
+  asset: string,
+  entries: readonly HistoricalBalanceEntry[],
+  ports: HistoricalBreakdownPorts,
+): AssetBreakdown[] {
+  const rows: AssetBreakdown[] = [];
+
+  for (const entry of entries) {
+    if (!countsAs(entry.asset, asset, ports))
+      continue;
+
+    const price = ports.priceOf(ports.resolveIdentifier(entry.asset));
+    const value = price.gt(0) ? entry.amount.multipliedBy(price) : Zero;
+    const chain = ports.matchChain(entry.location);
+    rows.push({
+      address: chain !== undefined ? entry.locationLabel ?? '' : '',
+      amount: entry.amount,
+      location: chain !== undefined ? ports.chainLabel(chain) : entry.location,
+      value,
+    });
+  }
+
+  return groupAssetBreakdown(rows.filter(row => !row.amount.isZero()));
 }

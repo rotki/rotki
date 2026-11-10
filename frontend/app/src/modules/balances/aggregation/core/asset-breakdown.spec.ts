@@ -1,10 +1,10 @@
 import type { AssetBreakdown } from '@/modules/accounts/blockchain-accounts';
-import { bigNumberify } from '@rotki/common';
+import { bigNumberify, NoPrice } from '@rotki/common';
 import { createTestBalance, createTestManualBalance } from '@test/utils/create-data';
 import { describe, expect, it } from 'vitest';
 import { createAccount, createValidatorAccount } from '@/modules/accounts/create-account';
 import { BalanceType } from '@/modules/balances/types/balances';
-import { assetBreakdown, assetsAtLocation, type BreakdownInputs, type BreakdownPorts, mergedBreakdown } from './asset-breakdown';
+import { assetBreakdown, assetsAtLocation, type BreakdownInputs, type BreakdownPorts, historicalAssetBreakdown, type HistoricalBreakdownPorts, mergedBreakdown } from './asset-breakdown';
 
 const ports: BreakdownPorts = {
   chainLabel: chain => (chain === 'eth' ? 'ethereum' : chain),
@@ -183,5 +183,49 @@ describe('assetsAtLocation', () => {
       WETH: [{ address: '', amount: bigNumberify(2), location: 'binance', value: bigNumberify(20) }],
     }, 'kraken');
     expect(held.map(({ asset, amount }) => `${asset}:${amount.toFixed()}`)).toEqual(['ETH:1']);
+  });
+});
+
+describe('historicalAssetBreakdown', () => {
+  const historyPorts: HistoricalBreakdownPorts = {
+    chainLabel: chain => (chain === 'eth' ? 'ethereum' : chain),
+    matchChain: (location: string): string | undefined => ({ ethereum: 'eth', optimism: 'optimism' })[location],
+    priceOf: () => bigNumberify(10),
+    resolveIdentifier: identifier => (identifier === 'ETH2' ? 'ETH' : identifier),
+  };
+
+  it('should list each bucket as a location/address row, valued at current prices', () => {
+    const entries = [
+      { amount: bigNumberify(2), asset: 'ETH', location: 'ethereum', locationLabel: '0x1', protocol: null },
+      { amount: bigNumberify(3), asset: 'ETH', location: 'kraken', locationLabel: 'main', protocol: null },
+    ];
+    expect(plain(historicalAssetBreakdown('ETH', entries, historyPorts))).toEqual([
+      { address: '', amount: '3', location: 'kraken', value: '30' },
+      { address: '0x1', amount: '2', location: 'ethereum', value: '20' },
+    ]);
+  });
+
+  it('should fold a resolved identifier and group rows at the same location and address', () => {
+    const entries = [
+      { amount: bigNumberify(1), asset: 'ETH', location: 'ethereum', locationLabel: '0x1', protocol: null },
+      { amount: bigNumberify(2), asset: 'ETH2', location: 'ethereum', locationLabel: '0x1', protocol: null },
+    ];
+    expect(plain(historicalAssetBreakdown('ETH', entries, historyPorts))).toEqual([
+      { address: '0x1', amount: '3', location: 'ethereum', value: '30' },
+    ]);
+  });
+
+  it('should value an asset at zero when it has no price', () => {
+    const entries = [{ amount: bigNumberify(2), asset: 'ETH', location: 'ethereum', locationLabel: '0x1', protocol: null }];
+    const rows = historicalAssetBreakdown('ETH', entries, { ...historyPorts, priceOf: () => NoPrice });
+    expect(rows[0].value.isZero()).toBe(true);
+  });
+
+  it('should leave out buckets of other assets and zero-amount buckets', () => {
+    const entries = [
+      { amount: bigNumberify(1), asset: 'BTC', location: 'kraken', locationLabel: 'main', protocol: null },
+      { amount: bigNumberify(0), asset: 'ETH', location: 'external', locationLabel: null, protocol: null },
+    ];
+    expect(historicalAssetBreakdown('ETH', entries, historyPorts)).toEqual([]);
   });
 });

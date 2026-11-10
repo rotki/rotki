@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { RouteLocationRaw } from 'vue-router';
 import type { ManualPriceFormPayload } from '@/modules/assets/prices/price-types';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { AssetAmountDisplay, AssetValueDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
@@ -8,6 +9,8 @@ import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
+import { useBalanceDisplayComparison } from '@/modules/balances/use-balance-display-comparison';
+import { useBalanceDisplayModeStore } from '@/modules/balances/use-balance-display-mode-store';
 import { useSetting } from '@/modules/settings/use-setting';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
@@ -30,6 +33,22 @@ const { refreshing: refreshingPrices, refreshPrice } = usePriceRefresh();
 const info = useAssetPriceInfo(() => identifier, () => isCollectionParent);
 const price = useAssetPrice(() => identifier);
 const isManualPrice = useIsManualAssetPrice(() => identifier);
+
+const {
+  comparisonAmount,
+  delta,
+  hasDiscrepancy,
+  show: showComparison,
+} = useBalanceDisplayComparison(() => identifier, () => isCollectionParent);
+const { mode } = storeToRefs(useBalanceDisplayModeStore());
+const comparisonLabel = computed<string>(() => get(mode) === 'queried'
+  ? t('balance_display_mode.comparison_from_history')
+  : t('balance_display_mode.comparison_queried'));
+
+const reconciliationLink: RouteLocationRaw = {
+  name: '/history/data-issues/[[tab]]',
+  params: { tab: 'reconciliation' },
+};
 
 const pricesLoading = computed<boolean>(() => {
   const infoVal = get(info);
@@ -122,6 +141,31 @@ async function deleteCustomPrice(): Promise<void> {
           :asset="identifier"
           no-truncate
         />
+        <div
+          v-if="showComparison"
+          class="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-rui-text-secondary"
+          data-testid="asset-comparison"
+        >
+          <span>{{ comparisonLabel }}:</span>
+          <AssetAmountDisplay
+            :amount="comparisonAmount"
+            :asset="identifier"
+            no-truncate
+          />
+          <RouterLink
+            v-if="hasDiscrepancy"
+            :to="reconciliationLink"
+            class="flex items-center gap-x-1 font-medium text-rui-warning"
+            data-testid="asset-comparison-delta"
+          >
+            <span>{{ t('balance_display_mode.difference') }}:</span>
+            <AssetAmountDisplay
+              :amount="delta"
+              :asset="identifier"
+              no-truncate
+            />
+          </RouterLink>
+        </div>
       </div>
     </RuiCard>
     <RuiCard no-padding>
