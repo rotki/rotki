@@ -3,7 +3,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it } from 'vitest';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 
-function createWrapper(props: { alternativeAction?: string; secondaryAction?: string } = {}): VueWrapper<InstanceType<typeof ConfirmDialog>> {
+function createWrapper(props: { alternativeAction?: string; alternativeDisabledReason?: string; secondaryAction?: string } = {}): VueWrapper<InstanceType<typeof ConfirmDialog>> {
   return mount(ConfirmDialog, {
     global: { stubs: { RuiDialog: { template: '<div data-testid="dialog"><slot /></div>' } } },
     props: { display: true, message: 'message', title: 'title', ...props },
@@ -26,6 +26,13 @@ describe('modules/shell/components/dialogs/ConfirmDialog', () => {
 
     expect(wrapper.emitted('alternative')).toHaveLength(1);
     expect(wrapper.emitted('cancel')).toBeUndefined();
+  });
+
+  it('should disable only the alternative when it is given a reason to be', () => {
+    const wrapper = createWrapper({ alternativeAction: 'Exclude from Accounting', alternativeDisabledReason: 'Not now' });
+
+    expect(wrapper.find('[data-testid=button-alternative]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[data-testid=button-confirm]').attributes('disabled')).toBeUndefined();
   });
 
   it('should back out on the dismiss button and on Escape without taking the alternative', async () => {

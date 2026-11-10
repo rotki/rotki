@@ -4,13 +4,28 @@ import { bigNumberify } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { BalanceType } from '@/modules/balances/types/balances';
 import SnapshotBalanceDeleteDialog from '@/modules/dashboard/snapshots/components/SnapshotBalanceDeleteDialog.vue';
+import { SnapshotSpamEligibility } from '@/modules/dashboard/snapshots/composables/use-snapshot-spam-eligibility';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 
 const TS = 1_600_000_000;
+const TOKEN = 'eip155:1/erc20:0xfcaF0e4498E78d65526a507360F755178b804Ba8';
+
+const spamEligibility = vi.fn<(assetIdentifier: string) => SnapshotSpamEligibility>(() => SnapshotSpamEligibility.UNAVAILABLE);
+
+vi.mock('@/modules/dashboard/snapshots/composables/use-snapshot-spam-eligibility', async importOriginal => ({
+  ...await importOriginal<typeof import('@/modules/dashboard/snapshots/composables/use-snapshot-spam-eligibility')>(),
+  useSnapshotSpamEligibility: (): { spamEligibility: typeof spamEligibility } => ({ spamEligibility }),
+}));
+
+vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
+  useAssetInfoRetrieval: (): { getAssetField: (identifier: string) => string } => ({
+    getAssetField: (identifier: string): string => (identifier === TOKEN ? 'SPAM' : ''),
+  }),
+}));
 
 function createSnapshot(krakenValue = 100): Snapshot {
   return {
@@ -33,7 +48,7 @@ describe('modules/dashboard/snapshots/components/SnapshotBalanceDeleteDialog', (
         plugins: [createPinia()],
         provide: libraryDefaults,
         stubs: {
-          ConfirmDialog: { emits: ['confirm', 'cancel'], props: ['display', 'disabled'], template: '<div v-if="display" :data-disabled="disabled"><slot /></div>' },
+          ConfirmDialog: { emits: ['confirm', 'cancel', 'alternative'], props: ['display', 'disabled', 'alternativeAction', 'alternativeDisabledReason'], template: '<div v-if="display" :data-disabled="disabled"><slot /></div>' },
           EditBalancesSnapshotLocationSelector: { emits: ['update:modelValue'], props: { disabledLocations: { default: () => [] }, modelValue: {} }, template: '<input class="loc" :value="modelValue" :data-disabled-locations="(disabledLocations || []).join(\',\')" @input="$emit(\'update:modelValue\', $event.target.value)">' },
           SnapshotLocationSplit: { emits: ['update:modelValue', 'update:valid'], name: 'SnapshotLocationSplit', props: ['modelValue', 'total', 'locations', 'maxPerLocation', 'timestamp', 'valid'], template: '<div class="split-stub" />' },
         },
@@ -44,6 +59,8 @@ describe('modules/dashboard/snapshots/components/SnapshotBalanceDeleteDialog', (
 
   beforeEach(() => {
     setActivePinia(createPinia());
+    spamEligibility.mockReset();
+    spamEligibility.mockReturnValue(SnapshotSpamEligibility.UNAVAILABLE);
   });
 
   afterEach(() => {
@@ -58,7 +75,7 @@ describe('modules/dashboard/snapshots/components/SnapshotBalanceDeleteDialog', (
     await wrapper.find('.loc').setValue('kraken');
     wrapper.findComponent(ConfirmDialog).vm.$emit('confirm');
 
-    expect(wrapper.emitted('confirm')).toEqual([[{ index: 0, location: 'kraken' }]]);
+    expect(wrapper.emitted('confirm')).toEqual([[{ index: 0, location: 'kraken', markSpam: false }]]);
   });
 
   it('should preselect the only location that can cover the removal', async () => {
@@ -122,7 +139,7 @@ describe('modules/dashboard/snapshots/components/SnapshotBalanceDeleteDialog', (
     // Once a venue is chosen the (zero) removal is attributed and emitted.
     await wrapper.find('.loc').setValue('ledger');
     wrapper.findComponent(ConfirmDialog).vm.$emit('confirm');
-    expect(wrapper.emitted('confirm')).toEqual([[{ index: 0, location: 'ledger' }]]);
+    expect(wrapper.emitted('confirm')).toEqual([[{ index: 0, location: 'ledger', markSpam: false }]]);
   });
 
   it('should block confirm in split mode until the split is valid', async () => {
@@ -143,6 +160,63 @@ describe('modules/dashboard/snapshots/components/SnapshotBalanceDeleteDialog', (
     await nextTick();
 
     wrapper.findComponent(ConfirmDialog).vm.$emit('confirm');
-    expect(wrapper.emitted('confirm')).toEqual([[{ index: 0, location: split }]]);
+    expect(wrapper.emitted('confirm')).toEqual([[{ index: 0, location: split, markSpam: false }]]);
+  });
+
+  describe('remove and mark as spam', () => {
+    function tokenSnapshot(): Snapshot {
+      return {
+        balancesSnapshot: [
+          { amount: bigNumberify(1), assetIdentifier: TOKEN, category: BalanceType.ASSET, timestamp: TS, usdValue: bigNumberify(100) },
+          { amount: bigNumberify(1), assetIdentifier: TOKEN, category: BalanceType.LIABILITY, timestamp: TS, usdValue: bigNumberify(0) },
+        ],
+        locationDataSnapshot: [
+          { location: 'kraken', timestamp: TS, usdValue: bigNumberify(100) },
+          { location: 'total', timestamp: TS, usdValue: bigNumberify(100) },
+        ],
+      };
+    }
+
+    async function openFor(eligibility: SnapshotSpamEligibility): Promise<void> {
+      spamEligibility.mockReturnValue(eligibility);
+      wrapper = createWrapper(tokenSnapshot());
+      wrapper.vm.open(0);
+      await nextTick();
+    }
+
+    it('should not offer the spam action for an ineligible asset', async () => {
+      await openFor(SnapshotSpamEligibility.UNAVAILABLE);
+
+      expect(wrapper.findComponent(ConfirmDialog).props('alternativeAction')).toBeNull();
+      expect(wrapper.find('[data-testid=snapshot-balances-delete-spam-warning]').exists()).toBe(false);
+      expect(spamEligibility).toHaveBeenCalledWith(TOKEN);
+    });
+
+    it('should emit markSpam from the spam action, warning about the asset and its other rows', async () => {
+      await openFor(SnapshotSpamEligibility.ELIGIBLE);
+
+      const dialog = wrapper.findComponent(ConfirmDialog);
+      expect(dialog.props('alternativeAction')).toBeTruthy();
+      expect(dialog.props('alternativeDisabledReason')).toBeNull();
+      expect(wrapper.find('[data-testid=snapshot-balances-delete-spam-warning]').text()).toContain('SPAM');
+      expect(wrapper.find('[data-testid=snapshot-balances-delete-spam-other-rows]').text()).toContain('other_rows::1');
+
+      dialog.vm.$emit('alternative');
+
+      expect(wrapper.emitted('confirm')).toEqual([[{ index: 0, location: 'kraken', markSpam: true }]]);
+    });
+
+    it('should show the spam action disabled with a reason for an asset in a manual balance', async () => {
+      await openFor(SnapshotSpamEligibility.MANUAL_BALANCE);
+
+      const dialog = wrapper.findComponent(ConfirmDialog);
+      expect(dialog.props('alternativeAction')).toBeTruthy();
+      expect(dialog.props('alternativeDisabledReason')).toContain('spam.manual_balance');
+      expect(wrapper.find('[data-testid=snapshot-balances-delete-spam-warning]').exists()).toBe(false);
+
+      dialog.vm.$emit('alternative');
+
+      expect(wrapper.emitted('confirm')).toBeUndefined();
+    });
   });
 });

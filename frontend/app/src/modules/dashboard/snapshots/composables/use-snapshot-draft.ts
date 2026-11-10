@@ -1,6 +1,7 @@
-import type { BigNumber } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
+import type { ActionStatus } from '@/modules/core/common/action';
 import type { LocationDataSnapshot, Snapshot } from '@/modules/dashboard/snapshots';
+import { inferExcludeNfts, retrackTotal, seedDraft, trackedTotal } from '@/modules/dashboard/snapshots/utils/snapshot-draft-total';
 import {
   applyBalanceAdd,
   applyBalanceDelete,
@@ -8,31 +9,45 @@ import {
   applyLocationAdd,
   applyLocationDelete,
   applyLocationEdit,
-  applySetTotal,
-  approxEqualUsd,
   type BalanceMutation,
   buildSnapshotChanges,
   cloneSnapshot,
-  countSnapshotChanges,
   distributeToLocations,
   findSumMismatch,
   type LocationAttribution,
   type LocationSplit,
-  type SnapshotChange,
-  snapshotsEqual,
+  type SnapshotDraftChange,
   type SnapshotSumMismatch,
 } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { applyBalanceBulkDelete, applyReconcileLocations } from '@/modules/dashboard/snapshots/utils/snapshot-mutations';
-import { assetsTotal, getTotalValue, locationsTotal, nftsTotal } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 
 /** Maximum depth of the undo history (full draft states). */
 const UNDO_LIMIT = 50;
 
-/** A full undo entry: the draft plus the NFT-exclusion flag at that point. */
+/** A full undo entry: the draft, the NFT-exclusion flag and the pending spam marks at that point. */
 interface DraftState {
   snapshot: Snapshot;
   /** Whether NFTs are excluded from the tracked net worth at this point. */
   excludeNfts: boolean;
+  /** Assets to mark as spam on save, as queued at this point. */
+  pendingSpam: string[];
+}
+
+/**
+ * What a {@link UseSnapshotDraftReturn.commit} achieved.
+ *
+ * @remarks
+ * `spamError` says why marking the pending assets as spam failed. The marks stay pending, so the
+ * next save retries them.
+ */
+type SnapshotCommitResult = { saved: false } | { saved: true; spamError?: string };
+
+/** A balance row removal, as the delete dialog confirms it. */
+export interface BalanceDeletion {
+  index: number;
+  location: LocationAttribution;
+  /** Also mark the row's asset as spam on save. */
+  markSpam: boolean;
 }
 
 interface UseSnapshotDraftReturn {
@@ -40,14 +55,20 @@ interface UseSnapshotDraftReturn {
   original: Readonly<Ref<Snapshot | undefined>>;
   isDirty: ComputedRef<boolean>;
   dirtyCount: ComputedRef<number>;
-  changes: ComputedRef<SnapshotChange[]>;
+  changes: ComputedRef<SnapshotDraftChange[]>;
   mismatch: ComputedRef<SnapshotSumMismatch | null>;
   canUndo: ComputedRef<boolean>;
   /** Whether NFTs are excluded from the (always auto-tracked) net worth (writable). */
   excludeNfts: WritableComputedRef<boolean>;
   addBalance: (mutation: BalanceMutation) => void;
   editBalance: (index: number, mutation: BalanceMutation) => void;
-  deleteBalance: (index: number, location: LocationAttribution) => void;
+  /**
+   * Removes one balance row, debiting `location`.
+   *
+   * @remarks
+   * With `markSpam`, the row's asset is also queued to be marked as spam on save.
+   */
+  deleteBalance: (index: number, location: LocationAttribution, markSpam?: boolean) => void;
   /** Removes several balance rows in one undo step (used for the zero-value sweep). */
   deleteBalances: (indices: number[]) => void;
   addLocation: (location: LocationDataSnapshot) => void;
@@ -58,7 +79,21 @@ interface UseSnapshotDraftReturn {
   reconcileLocations: (location: string) => void;
   undo: () => void;
   discard: () => void;
-  commit: (saveFn: (snapshot: Snapshot) => Promise<boolean>) => Promise<boolean>;
+  /**
+   * Saves the draft, then marks the pending assets as spam.
+   *
+   * @remarks
+   * Nothing is marked unless the snapshot saved. A failed save leaves the draft and the undo stack
+   * standing, so the user keeps their work and can retry. A failed spam mark leaves the snapshot
+   * saved and the marks pending.
+   *
+   * @param saveFn - performs the snapshot write, reporting whether it landed
+   * @param markSpam - marks the given assets as spam in one batch
+   */
+  commit: (
+    saveFn: (snapshot: Snapshot) => Promise<boolean>,
+    markSpam: (assets: string[]) => Promise<ActionStatus>,
+  ) => Promise<SnapshotCommitResult>;
 }
 
 /**
@@ -73,8 +108,8 @@ interface UseSnapshotDraftReturn {
  * and re-tracked after every balance mutation; only the NFT-exclusion flag is
  * inferred on load.
  *
- * Undo uses a bounded full-state stack (snapshot + the NFT flag) rather than
- * op-inversion — simpler and impossible to desync for the v1 editor.
+ * Undo uses a bounded full-state stack (snapshot, the NFT flag and the pending
+ * spam marks) rather than op-inversion, which is simpler and cannot desync.
  *
  * @param initial - the loaded snapshot, as a value, ref or getter; the draft is re-seeded whenever
  * it changes, such as on navigating to a different snapshot
@@ -83,19 +118,17 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
   const original = ref<Snapshot>();
   const draft = ref<Snapshot>();
   const undoStack = ref<DraftState[]>([]);
+  const pendingSpam = shallowRef<string[]>([]);
 
   const excludeNftsState = shallowRef<boolean>(false);
 
-  /**
-   * Infers whether a freshly loaded snapshot's stored total excludes NFT value:
-   * true only when it clearly tracks assets-minus-NFTs rather than full assets.
-   */
-  function inferExcludeNfts(snapshot: Snapshot): void {
-    const assets = assetsTotal(snapshot.balancesSnapshot);
-    const stored = getTotalValue(snapshot.locationDataSnapshot);
-    const tracksFullAssets = approxEqualUsd(stored, assets);
-    const tracksAssetsExNfts = approxEqualUsd(stored, assets.minus(nftsTotal(snapshot.balancesSnapshot)));
-    set(excludeNftsState, !tracksFullAssets && tracksAssetsExNfts);
+  /** Seeds the draft from `baseline`, dropping the undo history and every pending spam mark. */
+  function reseed(baseline: Snapshot | undefined): void {
+    if (baseline)
+      set(excludeNftsState, inferExcludeNfts(baseline));
+    set(draft, baseline ? seedDraft(baseline, get(excludeNftsState)) : undefined);
+    set(undoStack, []);
+    set(pendingSpam, []);
   }
 
   /**
@@ -104,59 +137,14 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
    * @param snapshot - the snapshot to open, or `undefined` to close the editor
    */
   function reset(snapshot: Snapshot | undefined): void {
-    if (!snapshot) {
-      set(original, undefined);
-      set(draft, undefined);
-      set(undoStack, []);
-      return;
-    }
-    inferExcludeNfts(snapshot);
-    set(original, cloneSnapshot(snapshot));
-    set(draft, seedDraft(snapshot));
-    set(undoStack, []);
-  }
-
-  /**
-   * The draft a loaded snapshot opens as.
-   *
-   * @remarks
-   * Net worth always tracks the balances, so a stale stored total is corrected here and shows as an
-   * unsaved change against the untouched `original`, which is what lets the user save it. Drift
-   * within the reconciliation epsilon is kept as stored, so rounding noise never reads as a change.
-   *
-   * A total is only stale when the locations agree with the balances. When they do not, the total
-   * is one side of a mismatch the banner resolves, and correcting it on load would make an
-   * untouched snapshot read as edited and let a plain save write the unresolved balances sum.
-   */
-  function seedDraft(snapshot: Snapshot): Snapshot {
-    const copy = cloneSnapshot(snapshot);
-    const tracked = trackedTotal(copy);
-    if (approxEqualUsd(getTotalValue(copy.locationDataSnapshot), tracked))
-      return copy;
-    if (!approxEqualUsd(locationsTotal(copy.locationDataSnapshot), tracked))
-      return copy;
-    return retrackTotal(copy);
+    set(original, snapshot ? cloneSnapshot(snapshot) : undefined);
+    reseed(snapshot);
   }
 
   watch(() => toValue(initial), reset, { immediate: true });
 
-  /** The total the auto-tracker should hold for the given snapshot. */
-  function trackedTotal(snapshot: Snapshot): BigNumber {
-    const assets = assetsTotal(snapshot.balancesSnapshot);
-    return get(excludeNftsState) ? assets.minus(nftsTotal(snapshot.balancesSnapshot)) : assets;
-  }
-
   /**
-   * Re-asserts the stored total to the tracked net worth (counteracting the
-   * balance-rebuild's recompute). The total always tracks the balances, so this
-   * runs on load and after every balance mutation / NFT-flag change.
-   */
-  function retrackTotal(snapshot: Snapshot): Snapshot {
-    return applySetTotal(snapshot, trackedTotal(snapshot));
-  }
-
-  /**
-   * Pushes the current draft and mode onto the undo stack before a mutation.
+   * Pushes the current draft, mode and pending spam marks onto the undo stack before a mutation.
    *
    * @remarks
    * The snapshot is cloned in, because the rebuild helpers mutate location rows in place and would
@@ -168,6 +156,7 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
       return;
     const entry: DraftState = {
       excludeNfts: get(excludeNftsState),
+      pendingSpam: get(pendingSpam),
       snapshot: cloneSnapshot(current),
     };
     set(undoStack, [...get(undoStack), entry].slice(-UNDO_LIMIT));
@@ -184,7 +173,7 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
 
   /** A balance transform that re-asserts the tracked total afterwards. */
   function mutateBalance(transform: (snapshot: Snapshot) => Snapshot): void {
-    mutate(snapshot => retrackTotal(transform(snapshot)));
+    mutate(snapshot => retrackTotal(transform(snapshot), get(excludeNftsState)));
   }
 
   /**
@@ -201,29 +190,18 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
       set(draft, transform(current));
   }
 
-  const isDirty = computed<boolean>(() => {
-    const a = get(original);
-    const b = get(draft);
-    if (!a || !b)
-      return false;
-    return !snapshotsEqual(a, b);
-  });
-
-  const dirtyCount = computed<number>(() => {
-    const a = get(original);
-    const b = get(draft);
-    if (!a || !b)
-      return 0;
-    return countSnapshotChanges(a, b);
-  });
-
-  const changes = computed<SnapshotChange[]>(() => {
+  const changes = computed<SnapshotDraftChange[]>(() => {
     const a = get(original);
     const b = get(draft);
     if (!a || !b)
       return [];
-    return buildSnapshotChanges(a, b);
+    const marks = get(pendingSpam).map((asset): SnapshotDraftChange => ({ asset, kind: 'spam-marked' }));
+    return [...buildSnapshotChanges(a, b), ...marks];
   });
+
+  const dirtyCount = computed<number>(() => get(changes).length);
+
+  const isDirty = computed<boolean>(() => get(dirtyCount) > 0);
 
   /**
    * Where the locations stop summing to the total, if they do.
@@ -234,7 +212,7 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
    */
   const mismatch = computed<SnapshotSumMismatch | null>(() => {
     const current = get(draft);
-    return current ? findSumMismatch(current, undefined, trackedTotal(current)) : null;
+    return current ? findSumMismatch(current, undefined, trackedTotal(current, get(excludeNftsState))) : null;
   });
 
   const canUndo = computed<boolean>(() => get(undoStack).length > 0);
@@ -247,8 +225,12 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
     mutateBalance(snapshot => applyBalanceEdit(snapshot, index, mutation));
   }
 
-  function deleteBalance(index: number, location: LocationAttribution): void {
+  function deleteBalance(index: number, location: LocationAttribution, markSpam: boolean = false): void {
+    const asset = get(draft)?.balancesSnapshot[index]?.assetIdentifier;
     mutateBalance(snapshot => applyBalanceDelete(snapshot, index, location));
+    const pending = get(pendingSpam);
+    if (markSpam && asset && !pending.includes(asset))
+      set(pendingSpam, [...pending, asset]);
   }
 
   function deleteBalances(indices: number[]): void {
@@ -285,13 +267,13 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
    * edit keeps the snapshot reconciled.
    */
   function reconcileLocations(location: string): void {
-    mutate(snapshot => applyReconcileLocations(snapshot, location, trackedTotal(snapshot)));
+    mutate(snapshot => applyReconcileLocations(snapshot, location, trackedTotal(snapshot, get(excludeNftsState))));
   }
 
   function setExcludeNfts(value: boolean): void {
     if (value === get(excludeNftsState))
       return;
-    changeMode(() => set(excludeNftsState, value), retrackTotal);
+    changeMode(() => set(excludeNftsState, value), snapshot => retrackTotal(snapshot, value));
   }
 
   const excludeNfts = computed<boolean>({
@@ -307,37 +289,32 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
     set(undoStack, stack.slice(0, -1));
     set(draft, previous.snapshot);
     set(excludeNftsState, previous.excludeNfts);
+    set(pendingSpam, previous.pendingSpam);
   }
 
   function discard(): void {
-    const baseline = get(original);
-    if (baseline)
-      inferExcludeNfts(baseline);
-    set(draft, baseline ? seedDraft(baseline) : undefined);
-    set(undoStack, []);
+    reseed(get(original));
   }
 
-  /**
-   * Saves the draft, and on success adopts it as the new baseline.
-   *
-   * @remarks
-   * A failed save leaves the draft and the undo stack standing, so the user keeps their work and
-   * can retry.
-   *
-   * @param saveFn - performs the write, reporting whether it landed
-   * @returns what `saveFn` reported
-   */
-  async function commit(saveFn: (snapshot: Snapshot) => Promise<boolean>): Promise<boolean> {
+  async function commit(
+    saveFn: (snapshot: Snapshot) => Promise<boolean>,
+    markSpam: (assets: string[]) => Promise<ActionStatus>,
+  ): Promise<SnapshotCommitResult> {
     const current = get(draft);
-    if (!current)
-      return false;
+    const assets = get(pendingSpam);
+    const onlySpamPending = assets.length > 0 && get(dirtyCount) === assets.length;
+    if (!current || (!onlySpamPending && !(await saveFn(current))))
+      return { saved: false };
 
-    const success = await saveFn(current);
-    if (success) {
-      set(original, cloneSnapshot(current));
-      set(undoStack, []);
+    set(original, cloneSnapshot(current));
+    set(undoStack, []);
+    if (assets.length > 0) {
+      const status = await markSpam(assets);
+      if (!status.success)
+        return { saved: true, spamError: status.message };
+      set(pendingSpam, []);
     }
-    return success;
+    return { saved: true };
   }
 
   return {

@@ -349,7 +349,7 @@ export function rowsBehindMismatch(
   return null;
 }
 
-export type { SnapshotChange } from '@/modules/dashboard/snapshots/utils/snapshot-changes';
+export type { SnapshotChange, SnapshotDraftChange } from '@/modules/dashboard/snapshots/utils/snapshot-changes';
 
 export {
   buildSnapshotChanges,

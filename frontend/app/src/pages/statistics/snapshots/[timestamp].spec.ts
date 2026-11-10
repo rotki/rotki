@@ -1,3 +1,4 @@
+import type { ActionStatus } from '@/modules/core/common/action';
 import type { Snapshot } from '@/modules/dashboard/snapshots';
 import type { SnapshotListRow } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
 import type { BalanceMutation } from '@/modules/dashboard/snapshots/utils/snapshot-math';
@@ -36,6 +37,7 @@ const persist = vi.fn(async (_timestamp: number, _snapshot: Snapshot): Promise<b
 const remove = vi.fn(async (): Promise<boolean> => true);
 const refreshNetValue = vi.fn(async (): Promise<void> => {});
 const pushMock = vi.fn();
+const markAssetsAsSpam = vi.fn(async (_assets: string[], _options?: { silent?: boolean }): Promise<ActionStatus> => ({ success: true }));
 
 const route = vi.hoisted(() => ({ setTimestamp: (_value: number): void => {} }));
 
@@ -60,6 +62,10 @@ vi.mock('@/modules/dashboard/snapshots/use-snapshot-store', () => ({
     persist: typeof persist;
     remove: typeof remove;
   } => ({ fetchSnapshot, invalidate: vi.fn(), persist, remove }),
+}));
+
+vi.mock('@/modules/assets/use-spam-asset', () => ({
+  useSpamAsset: (): { markAssetsAsSpam: typeof markAssetsAsSpam } => ({ markAssetsAsSpam }),
 }));
 
 vi.mock('@/modules/dashboard/snapshots/composables/use-snapshot-list', () => ({
@@ -118,6 +124,8 @@ describe('pages/statistics/snapshots/[timestamp]', () => {
     remove.mockImplementation(async (): Promise<boolean> => true);
     refreshNetValue.mockClear();
     pushMock.mockClear();
+    markAssetsAsSpam.mockClear();
+    markAssetsAsSpam.mockImplementation(async (): Promise<ActionStatus> => ({ success: true }));
   });
 
   afterEach(() => {
@@ -234,5 +242,37 @@ describe('pages/statistics/snapshots/[timestamp]', () => {
 
     resolveNext(createSnapshot());
     await flushPromises();
+  });
+
+  it('should mark the asset of a row deleted as spam once the snapshot is saved', async () => {
+    wrapper = mountPage();
+    await flushPromises();
+
+    wrapper.findComponent(SnapshotBalancesTable).vm.$emit('delete', { index: 0, location: 'kraken', markSpam: true });
+    await flushPromises();
+    expect(wrapper.findComponent(SnapshotEditorToolbar).props('changes')).toContainEqual({ asset: 'ETH', kind: 'spam-marked' });
+
+    wrapper.findComponent(SnapshotEditorToolbar).vm.$emit('save');
+    await flushPromises();
+
+    expect(markAssetsAsSpam).toHaveBeenCalledExactlyOnceWith(['ETH'], { silent: true });
+    expect(persist.mock.invocationCallOrder[0]).toBeLessThan(markAssetsAsSpam.mock.invocationCallOrder[0]);
+    expect(wrapper.find('[data-testid=snapshot-save-success]').exists()).toBe(true);
+    expect(wrapper.findComponent(SnapshotEditorToolbar).props('changes')).toEqual([]);
+  });
+
+  it('should report a failed spam mark while keeping it pending for the next save', async () => {
+    markAssetsAsSpam.mockResolvedValue({ message: 'backend down', success: false });
+    wrapper = mountPage();
+    await flushPromises();
+
+    wrapper.findComponent(SnapshotBalancesTable).vm.$emit('delete', { index: 0, location: 'kraken', markSpam: true });
+    wrapper.findComponent(SnapshotEditorToolbar).vm.$emit('save');
+    await flushPromises();
+
+    expect(persist).toHaveBeenCalledOnce();
+    expect(wrapper.find('[data-testid=snapshot-action-error]').text()).toContain('spam_failure::backend down');
+    expect(wrapper.findComponent(SnapshotEditorToolbar).props('changes')).toEqual([{ asset: 'ETH', kind: 'spam-marked' }]);
+    expect(refreshNetValue).toHaveBeenCalledOnce();
   });
 });

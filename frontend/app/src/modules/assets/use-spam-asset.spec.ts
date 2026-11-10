@@ -2,11 +2,12 @@ import { mockUseNotifications } from '@test/utils/mocks/notifications';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSpamAsset } from '@/modules/assets/use-spam-asset';
 
-const { manualBalancesAssets, mockMarkAssetsAsSpam, mockNotifyWarning } = await vi.hoisted(async () => {
+const { manualBalancesAssets, mockMarkAssetsAsSpam, mockNotifyError, mockNotifyWarning } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   return {
     manualBalancesAssets: ref<string[]>([]),
     mockMarkAssetsAsSpam: vi.fn<(tokens: string[]) => Promise<boolean>>(),
+    mockNotifyError: vi.fn(),
     mockNotifyWarning: vi.fn(),
   };
 });
@@ -37,7 +38,7 @@ vi.mock('@/modules/balances/manual/use-manual-balance-data', () => ({
 }));
 
 vi.mock('@/modules/core/notifications/use-notifications', () =>
-  mockUseNotifications({ notifyWarning: mockNotifyWarning }));
+  mockUseNotifications({ notifyError: mockNotifyError, notifyWarning: mockNotifyWarning }));
 
 describe('useSpamAsset', () => {
   beforeEach(() => {
@@ -78,6 +79,17 @@ describe('useSpamAsset', () => {
 
       expect(mockNotifyWarning).toHaveBeenCalledOnce();
       expect(mockMarkAssetsAsSpam).not.toHaveBeenCalled();
+    });
+
+    it('should notify a failure unless the caller asks for silence', async () => {
+      mockMarkAssetsAsSpam.mockRejectedValue(new Error('backend down'));
+      const { markAssetsAsSpam } = useSpamAsset();
+
+      expect(await markAssetsAsSpam(['SPAM1'], { silent: true })).toEqual({ message: 'backend down', success: false });
+      expect(mockNotifyError).not.toHaveBeenCalled();
+
+      await markAssetsAsSpam(['SPAM1']);
+      expect(mockNotifyError).toHaveBeenCalledOnce();
     });
   });
 });
