@@ -22,10 +22,15 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
 
 /** `excluded` holds a chain to exclude it whole, or `chain:address` to exclude one address on it. */
 vi.mock('@/modules/settings/general/disabled-chain-queries/use-disabled-chains', () => ({
-  useDisabledChains: (): object => ({
-    isAddressExcluded: (chain: string, address: string): boolean =>
-      get(excluded).includes(chain) || get(excluded).includes(`${chain}:${address}`),
-  }),
+  useDisabledChains: (): object => {
+    const isAddressExcluded = (chain: string, address: string): boolean =>
+      get(excluded).includes(chain) || get(excluded).includes(`${chain}:${address}`);
+    return {
+      isAddressExcluded,
+      isEveryAddressExcluded: (chain: string, addresses: string[]): boolean =>
+        addresses.length > 0 && addresses.every(address => isAddressExcluded(chain, address)),
+    };
+  },
 }));
 
 function track(...chains: string[]): void {

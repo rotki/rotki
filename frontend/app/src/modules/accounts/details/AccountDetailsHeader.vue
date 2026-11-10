@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { BlockchainAccountGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
-import { getAccountAddress, getGroupId } from '@/modules/accounts/account-utils';
+import { getAccountAddress, getGroupId, isAddressAccount } from '@/modules/accounts/account-utils';
 import AccountChains from '@/modules/accounts/AccountChains.vue';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
@@ -81,6 +81,7 @@ defineExpose({
         v-model:chain-filter="chainFilter"
         :address="address"
         :row="chainsRow"
+        :skippable="isAddressAccount(group)"
       />
       <TagDisplay
         v-if="group.tags && group.tags.length > 0"

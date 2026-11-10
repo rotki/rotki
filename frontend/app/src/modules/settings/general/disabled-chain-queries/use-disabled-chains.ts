@@ -12,6 +12,11 @@ export interface UseDisabledChainsReturn {
   isChainExcluded: (chain: string) => boolean;
   /** True when this address is excluded on this chain, whether by an address rule or a chain one. */
   isAddressExcluded: (chain: string, address: string) => boolean;
+  /**
+   * True when `addresses` is not empty and every one of them is excluded on `chain`, so a query of
+   * them would ask for nothing. Which of a chain's accounts count is the caller's choice.
+   */
+  isEveryAddressExcluded: (chain: string, addresses: string[]) => boolean;
   /** Drop every account the user excluded. Keeps the input order and identity of what survives. */
   filterAccounts: <T extends AccountLike>(accounts: T[]) => T[];
 }
@@ -62,6 +67,9 @@ export function useDisabledChains(): UseDisabledChainsReturn {
     return rule.size === 0 || rule.has(address.toLowerCase());
   };
 
+  const isEveryAddressExcluded = (chain: string, addresses: string[]): boolean =>
+    ruleFor(chain) !== undefined && addresses.length > 0 && addresses.every(address => isAddressExcluded(chain, address));
+
   const filterAccounts = <T extends AccountLike>(accounts: T[]): T[] =>
     accounts.filter(({ address, chain }) => !isAddressExcluded(chain, address));
 
@@ -69,5 +77,6 @@ export function useDisabledChains(): UseDisabledChainsReturn {
     filterAccounts,
     isAddressExcluded,
     isChainExcluded,
+    isEveryAddressExcluded,
   };
 }

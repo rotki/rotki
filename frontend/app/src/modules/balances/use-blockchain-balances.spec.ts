@@ -447,6 +447,19 @@ describe('useBlockchainBalances', () => {
       expect(api.refreshBlockchainBalances).not.toHaveBeenCalled();
     });
 
+    it('should skip a whole-chain refresh when every tracked account is skipped on its own', async () => {
+      setDisabled({ [Blockchain.ETH]: ['0x49ff149D649769033d43783E7456F626862CD160'] });
+
+      await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, 'background', { detect: true });
+
+      expect(api.refreshBlockchainBalances).not.toHaveBeenCalled();
+      expect(detectForChain).not.toHaveBeenCalled();
+
+      const result = await submitTask.mock.results[0].value;
+      assert(!result.ok);
+      expect(hasTag(result.error, 'Skipped')).toBe(true);
+    });
+
     it('should match the rule regardless of address case', async () => {
       setDisabled({ [Blockchain.ETH]: ['0XEXCLUDED'] });
 

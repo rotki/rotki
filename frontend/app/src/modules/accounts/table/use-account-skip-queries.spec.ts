@@ -127,5 +127,37 @@ describe('useAccountSkipQueries', () => {
       expect(notifyError).not.toHaveBeenCalled();
       expect(get(pending)).toBe(false);
     });
+
+    /** Writes queue below this, so without the drop a double click skips and then un-skips. */
+    it('should drop a second write asked for while the first is still saving', async () => {
+      let finish: (status: ActionStatus) => void = () => {};
+      write.mockReturnValueOnce(new Promise((resolve) => {
+        finish = resolve;
+      }));
+      const { toggleChain } = useAccountSkipQueries(ADDRESS, ['eth']);
+
+      const first = toggleChain('eth');
+      const second = toggleChain('eth');
+      finish({ success: true });
+      await Promise.all([first, second]);
+
+      expect(write).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('labelFor', () => {
+    it('should offer to skip a chain that is still queried', () => {
+      expect(useAccountSkipQueries(ADDRESS, ['eth']).labelFor('eth')).toBe('account_balances.skip_queries.skip::Eth');
+    });
+
+    it('should offer to query a skipped chain again', () => {
+      setDisabled({ eth: [ADDRESS] });
+      expect(useAccountSkipQueries(ADDRESS, ['eth']).labelFor('eth')).toBe('account_balances.skip_queries.resume::Eth');
+    });
+
+    it('should say a chain switched off whole is out of reach', () => {
+      setDisabled({ eth: [] });
+      expect(useAccountSkipQueries(ADDRESS, ['eth']).labelFor('eth')).toBe('account_balances.skip_queries.entire_chain');
+    });
   });
 });

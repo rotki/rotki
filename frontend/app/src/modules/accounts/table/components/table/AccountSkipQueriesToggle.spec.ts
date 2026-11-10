@@ -22,6 +22,7 @@ vi.mock('@/modules/accounts/table/use-account-skip-queries', async importOrigina
   ...await importOriginal<typeof import('@/modules/accounts/table/use-account-skip-queries')>(),
   useAccountSkipQueries: (address: MaybeRefOrGetter<string>, chains: MaybeRefOrGetter<string[]>): {
     items: typeof items;
+    labelFor: (chain: string) => string;
     locked: typeof locked;
     pending: Ref<boolean>;
     state: typeof state;
@@ -29,7 +30,14 @@ vi.mock('@/modules/accounts/table/use-account-skip-queries', async importOrigina
     toggleChain: typeof toggleChain;
   } => {
     scope(toValue(address), toValue(chains));
-    return { items, locked, pending: ref(false), state, toggleAll, toggleChain };
+    /** The composable's own wording for one chain, kept to the keys its spec pins. */
+    const labelFor = (name: string): string => {
+      const item = get(items).find(entry => entry.chain === name);
+      if (item === undefined || item.wholeChain)
+        return 'account_balances.skip_queries.entire_chain';
+      return `account_balances.skip_queries.${item.skipped ? 'resume' : 'skip'}::${item.name}`;
+    };
+    return { items, labelFor, locked, pending: ref(false), state, toggleAll, toggleChain };
   },
 }));
 

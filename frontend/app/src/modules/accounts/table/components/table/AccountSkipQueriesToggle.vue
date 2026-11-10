@@ -11,7 +11,7 @@ const { address, chains, disabled = false } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { items, locked, pending, state, toggleAll, toggleChain } = useAccountSkipQueries(
+const { items, labelFor, locked, pending, state, toggleAll, toggleChain } = useAccountSkipQueries(
   () => address,
   () => chains,
 );
@@ -53,13 +53,8 @@ function activate(): void {
 const tooltip = computed<string>(() => {
   if (get(locked))
     return t('account_balances.skip_queries.entire_chain');
-  if (get(perChain))
-    return t('account_balances.skip_queries.menu');
 
-  const chain = get(items)[0];
-  return chain.skipped
-    ? t('account_balances.skip_queries.resume', { chains: chain.name })
-    : t('account_balances.skip_queries.skip', { chains: chain.name });
+  return get(perChain) ? t('account_balances.skip_queries.menu') : labelFor(get(items)[0].chain);
 });
 </script>
 
@@ -68,7 +63,8 @@ const tooltip = computed<string>(() => {
     <RuiButton
       variant="list"
       data-testid="account-skip-queries"
-      :disabled="disabled || pending"
+      :disabled="disabled"
+      :aria-busy="pending || undefined"
       :aria-disabled="locked || undefined"
       :aria-expanded="perChain && !locked ? expanded : undefined"
       :class="{ 'opacity-50 cursor-not-allowed': locked, 'text-rui-error': color === 'error', 'text-rui-warning': color === 'warning' }"
@@ -104,7 +100,7 @@ const tooltip = computed<string>(() => {
       <RuiButton
         variant="list"
         size="sm"
-        :disabled="pending"
+        :aria-busy="pending || undefined"
         data-testid="account-skip-queries-all"
         @click="toggleAll()"
       >
@@ -126,7 +122,7 @@ const tooltip = computed<string>(() => {
         :key="item.chain"
         variant="list"
         size="sm"
-        :disabled="pending || item.wholeChain"
+        :disabled="item.wholeChain"
         data-testid="account-skip-queries-chain"
         :data-chain="item.chain"
         @click="toggleChain(item.chain)"

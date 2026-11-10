@@ -1,16 +1,22 @@
 <script lang="ts" setup>
+import AccountChainIcon from '@/modules/accounts/AccountChainIcon.vue';
+import AccountChainsHoverMenu from '@/modules/accounts/AccountChainsHoverMenu.vue';
 import AccountChainsOverflow, { type AccountChainState } from '@/modules/accounts/AccountChainsOverflow.vue';
 import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
-import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 
 type Row = ({ chain: string } | { chains: string[] }) & { id: string };
 
 const chainFilter = defineModel<Record<string, string[]>>('chainFilter', { required: true });
 
-const { address, row } = defineProps<{ address?: string; row: Row }>();
+const { address, row, skippable } = defineProps<{
+  address?: string;
+  row: Row;
+  /** Whether the row is an address account, the only kind the backend matches a skip rule against. */
+  skippable?: boolean;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -47,10 +53,51 @@ const allChainStatus = computed<AccountChainState[]>(() => {
  */
 const MAX_VISIBLE_CHAINS = 6;
 
-/** The icons on the row, reversed because the row lays them out right to left for the overlap. */
-const chainStatus = computed<AccountChainState[]>(() => get(allChainStatus).slice(0, MAX_VISIBLE_CHAINS).reverse());
+const hoverMenuOpen = ref<boolean>(false);
 
-const overflowStatus = computed<AccountChainState[]>(() => get(allChainStatus).slice(MAX_VISIBLE_CHAINS));
+const overflowMenuOpen = ref<boolean>(false);
+
+function sameChains(set: Set<string>, chains: string[]): boolean {
+  return set.size === chains.length && chains.every(chain => set.has(chain));
+}
+
+/**
+ * The skipped chains the row keeps behind the "+N" rather than among its icons.
+ *
+ * @remarks
+ * Held while one of the row's menus is open: skipping would otherwise pull the icon out from under
+ * the menu that just skipped it. A single-chain row has no "+N" to park its only chain behind, so
+ * it parks nothing. An unchanged set is handed back as it was, so the layout only recomputes on a
+ * real change rather than on every filter click.
+ */
+const parkedChains = computed<Set<string>>((previous) => {
+  if (previous && (get(hoverMenuOpen) || get(overflowMenuOpen)))
+    return previous;
+
+  const skipped = get(chains).length > 1 ? get(allChainStatus).filter(item => item.skipped).map(({ chain }) => chain) : [];
+  return previous && sameChains(previous, skipped) ? previous : new Set(skipped);
+});
+
+/** Where each chain is drawn: as an icon, or behind the "+N" for lack of room or for being skipped. */
+const layout = computed<{ icons: AccountChainState[]; overflow: AccountChainState[] }>(() => {
+  const parked = get(parkedChains);
+  const shown: AccountChainState[] = [];
+  const hidden: AccountChainState[] = [];
+  for (const item of get(allChainStatus))
+    (parked.has(item.chain) ? hidden : shown).push(item);
+
+  return {
+    icons: shown.slice(0, MAX_VISIBLE_CHAINS),
+    overflow: [...shown.slice(MAX_VISIBLE_CHAINS), ...hidden],
+  };
+});
+
+/** The icons on the row, reversed because the row lays them out right to left for the overlap. */
+const chainStatus = computed<AccountChainState[]>(() => [...get(layout).icons].reverse());
+
+const overflowStatus = computed<AccountChainState[]>(() => get(layout).overflow);
+
+const skipAddress = computed<string | undefined>(() => skippable ? address : undefined);
 
 function updateChain(chain: string, enabled: boolean) {
   if (get(chains).length <= 1)
@@ -155,7 +202,9 @@ function reset() {
     </RuiTooltip>
     <AccountChainsOverflow
       v-if="overflowStatus.length > 0"
+      v-model:open="overflowMenuOpen"
       :items="overflowStatus"
+      :skip-address="skipAddress"
       @toggle="updateChain($event.chain, $event.enabled)"
     />
     <span
@@ -165,77 +214,22 @@ function reset() {
     >
       {{ getChainName(chains[0]) }}
     </span>
-    <template
-      v-for="item in chainStatus"
-      :key="item.chain"
+    <AccountChainsHoverMenu
+      v-model:open="hoverMenuOpen"
+      :items="chainStatus"
+      :filterable="chains.length > 1"
+      :skip-address="skipAddress"
     >
-      <RuiTooltip
-        :close-delay="0"
-        :class-names="{ tooltip: '-ml-1!' }"
-      >
-        <template #activator>
-          <div class="relative">
-            <div
-              class="rounded-full size-6 flex items-center justify-center dark:bg-white relative cursor-pointer transition-opacity"
-              :class="{ 'opacity-35': !item.enabled, 'ring-2 ring-rui-success-lighter dark:ring-rui-success': item.enabled && item.detected }"
-              :data-chain="item.chain"
-              :data-detected="item.detected || undefined"
-              data-testid="account-chain"
-              @click="updateChain(item.chain, !item.enabled)"
-            >
-              <ChainIcon
-                :chain="item.chain"
-                class="bg-transparent!"
-                size="1.125"
-              />
-            </div>
-            <div
-              v-if="item.skipped"
-              class="absolute -bottom-1 -right-1 flex items-center justify-center rounded-full bg-rui-error text-white p-0.5 border border-rui-surface z-3"
-              data-testid="account-chain-skipped"
-              :data-chain="item.chain"
-            >
-              <RuiIcon
-                name="lu-ban"
-                size="10"
-              />
-            </div>
-          </div>
-        </template>
-
-        <div
-          v-if="item.skipped"
-          data-testid="account-chain-skipped-tooltip"
-        >
-          {{ t('account_balances.skip_queries.chain_marker', { chain: getChainName(item.chain) }) }}
-        </div>
-
-        <template v-if="chains.length > 1">
-          <i18n-t
-            v-if="item.enabled"
-            scope="global"
-            keypath="account_balances.chain_filter.remove"
-            tag="span"
-          >
-            <template #chain>
-              <b>{{ getChainName(item.chain) }}</b>
-            </template>
-          </i18n-t>
-          <i18n-t
-            v-else
-            scope="global"
-            keypath="account_balances.chain_filter.add"
-            tag="span"
-          >
-            <template #chain>
-              <b>{{ getChainName(item.chain) }}</b>
-            </template>
-          </i18n-t>
-        </template>
-        <template v-else-if="!item.skipped">
-          {{ getChainName(item.chain) }}
-        </template>
-      </RuiTooltip>
-    </template>
+      <template #default="{ point }">
+        <AccountChainIcon
+          v-for="item in chainStatus"
+          :key="item.chain"
+          :item="item"
+          :filterable="chains.length > 1"
+          @toggle="updateChain(item.chain, $event)"
+          @point="point(item.chain, $event)"
+        />
+      </template>
+    </AccountChainsHoverMenu>
   </div>
 </template>
