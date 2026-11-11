@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,7 +13,9 @@ from typing import Any, Final
 # Keep the generated Markdown small enough to fit in a single Discord message.
 MAX_ALERTS = 20
 SCRIPT_PREFIX = 'window.BENCHMARK_DATA = '
-MIN_RUNNER_CHANGE_ALERTS: Final = 3
+# The fastest pass is what gets compared: the median of a few-millisecond operation
+# swings with a couple of slow passes on a noisy runner, the minimum barely moves.
+MIN_PATTERN: Final = re.compile(r'min ([0-9.]+)ms')
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +23,9 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class BenchmarkAlert:
     current: dict[str, Any]
-    previous: dict[str, Any]
+    current_min: float
+    previous_min: float
+    previous_commit: str | None
     ratio: float
 
 
@@ -34,25 +39,25 @@ def _load_current(path: Path) -> list[dict[str, Any]]:
     return data
 
 
-def _load_previous_suite(path: Path, bench_name: str) -> dict[str, Any] | None:
+def _load_history(path: Path, bench_name: str) -> list[dict[str, Any]]:
+    """Return the stored datapoints of the suite, oldest first"""
     if not path.exists():
-        return None
+        return []
 
     content = path.read_text(encoding='utf8').removeprefix(SCRIPT_PREFIX)
+    return json.loads(content).get('entries', {}).get(bench_name, [])
 
-    data = json.loads(content)
-    entries = data.get('entries', {})
-    suites = entries.get(bench_name, [])
-    if not suites:
+
+def _min_ms(bench: dict[str, Any]) -> float | None:
+    """Read the fastest pass persisted in github-action-benchmark's extra field."""
+    if not isinstance(extra := bench.get('extra'), str):
         return None
-
-    return suites[-1]
-
-
-def _format_value(bench: dict[str, Any]) -> str:
-    value = bench['value']
-    unit = bench.get('unit', '')
-    return f'`{value}` {unit}'.rstrip()
+    if (match := MIN_PATTERN.match(extra)) is None:
+        return None
+    try:
+        return float(match.group(1))
+    except ValueError:
+        return None
 
 
 def _machine(bench: dict[str, Any]) -> tuple[str, int] | None:
@@ -75,53 +80,48 @@ def _machine(bench: dict[str, Any]) -> tuple[str, int] | None:
 
 def _find_alerts(
         current: list[dict[str, Any]],
-        previous_suite: dict[str, Any],
+        history: list[dict[str, Any]],
         threshold: float,
 ) -> list[BenchmarkAlert]:
-    previous_by_name = {
-        bench['name']: bench
-        for bench in previous_suite.get('benches', [])
-        if isinstance(bench, dict) and 'name' in bench
-    }
+    """Compare the fastest pass of each benchmark against the latest stored datapoint
+    measured on the same runner CPU model and logical CPU count. Benchmarks with no
+    machine or minimum recorded, or never measured on this hardware before, are skipped:
+    across different runner CPUs the timings differ by more than the threshold."""
     alerts = []
-    compared = 0
     for current_bench in current:
-        if (previous_bench := previous_by_name.get(current_bench.get('name'))) is None:
-            continue
-
-        previous_value = previous_bench.get('value')
-        current_value = current_bench.get('value')
         if (
-                not isinstance(previous_value, int | float) or
-                not isinstance(current_value, int | float)
+                (current_machine := _machine(current_bench)) is None or
+                (current_min := _min_ms(current_bench)) is None
         ):
             continue
 
-        compared += 1
-        if previous_value == 0:
-            ratio = 1 if current_value == 0 else float('inf')
+        for suite in reversed(history):
+            previous_bench = next((
+                bench for bench in suite.get('benches', [])
+                if isinstance(bench, dict) and bench.get('name') == current_bench.get('name')
+            ), None)
+            if (
+                    previous_bench is not None and
+                    _machine(previous_bench) == current_machine and
+                    (previous_min := _min_ms(previous_bench)) is not None
+            ):
+                break
         else:
-            ratio = current_value / previous_value
+            continue
+
+        if previous_min == 0:
+            ratio = 1 if current_min == 0 else float('inf')
+        else:
+            ratio = current_min / previous_min
 
         if ratio > threshold:
             alerts.append(BenchmarkAlert(
                 current=current_bench,
-                previous=previous_bench,
+                current_min=current_min,
+                previous_min=previous_min,
+                previous_commit=suite.get('commit', {}).get('id'),
                 ratio=ratio,
             ))
-
-    # Require a broad slowdown and known, changed hardware for every affected benchmark.
-    if len(alerts) >= MIN_RUNNER_CHANGE_ALERTS and len(alerts) * 2 >= compared and all(
-            (current_machine := _machine(alert.current)) is not None and
-            (previous_machine := _machine(alert.previous)) is not None and
-            current_machine != previous_machine
-            for alert in alerts
-    ):
-        logger.info(
-            'Suppressing %s/%s benchmark alerts: runner CPU model or logical CPU count changed',
-            len(alerts), compared,
-        )
-        return []
 
     return sorted(alerts, key=lambda alert: alert.ratio, reverse=True)
 
@@ -146,17 +146,19 @@ def _render_alerts(
         f'## :warning: Benchmark regression alert ({branch})',
         '',
         (
-            f'`{bench_name}` has {len(alerts)} benchmark(s) worse than the previous nightly '
-            f'datapoint by more than `{threshold:.2f}x`.'
+            f'`{bench_name}` has {len(alerts)} benchmark(s) whose fastest pass is worse than '
+            f'the latest datapoint on the same runner CPU by more than `{threshold:.2f}x`.'
         ),
         f'Run: https://github.com/rotki/rotki/actions/runs/{run_id}',
         '',
-        '| Benchmark | Current | Previous | Ratio |',
-        '|-|-|-|-|',
+        '| Benchmark | Current min | Previous min | Previous commit | Ratio |',
+        '|-|-|-|-|-|',
     ]
     lines.extend(
-        f'| `{alert.current["name"]}` | {_format_value(alert.current)} | '
-        f'{_format_value(alert.previous)} | `{alert.ratio:.2f}x` |'
+        f'| `{alert.current["name"]}` | `{alert.current_min:g}` ms | '
+        f'`{alert.previous_min:g}` ms | '
+        f'{"`" + alert.previous_commit[:10] + "`" if alert.previous_commit else "?"} | '
+        f'`{alert.ratio:.2f}x` |'
         for alert in alerts[:MAX_ALERTS]
     )
 
@@ -180,15 +182,11 @@ def main() -> None:
     parser.add_argument('--output', required=True, type=Path)
     args = parser.parse_args()
 
-    current = _load_current(args.current)
-    previous_suite = _load_previous_suite(args.data_js, args.bench_name)
-    if previous_suite is None:
-        args.output.write_text('', encoding='utf8')
-        _write_output('has_alerts', 'false')
-        _write_output('alert_count', '0')
-        return
-
-    alerts = _find_alerts(current, previous_suite, args.threshold)
+    alerts = _find_alerts(
+        current=_load_current(args.current),
+        history=_load_history(args.data_js, args.bench_name),
+        threshold=args.threshold,
+    )
     args.output.write_text(
         _render_alerts(alerts, args.branch, args.bench_name, args.threshold, args.run_id),
         encoding='utf8',

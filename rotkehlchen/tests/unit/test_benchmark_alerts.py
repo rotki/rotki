@@ -2,54 +2,55 @@ import json
 import runpy
 import sys
 from pathlib import Path
+from typing import Final
 from unittest.mock import patch
 
 import pytest
 
 from tools.bench.output import collect_machine, to_gha_benchmark
 
+EPYC: Final = ('AMD EPYC 7763', 4)
+XEON: Final = ('Intel Xeon 8370C', 4)
 
-@pytest.mark.parametrize(
-    ('previous_machine', 'current_machine', 'regressions', 'total', 'expected'), [
-        (('AMD EPYC 7763', 4), ('AMD EPYC 9V74', 4), 3, 6, 0),
-        (('AMD EPYC 7763', 4), ('AMD EPYC 7763', 2), 6, 6, 0),
-        (('AMD EPYC 7763', 4), ('AMD EPYC 7763', 4), 6, 6, 6),
-        (('AMD EPYC 7763', 4), ('AMD EPYC 9V74', 4), 1, 6, 1),
-        (('AMD EPYC 7763', 4), ('AMD EPYC 9V74', 4), 2, 2, 2),
-        (('AMD EPYC 7763', 4), ('AMD EPYC 9V74', 4), 3, 7, 3),
-        (None, ('AMD EPYC 9V74', 4), 6, 6, 6),
-        (('AMD EPYC 7763', 4), None, 6, 6, 6),
-        (('', 4), ('AMD EPYC 9V74', 4), 6, 6, 6),
-        (('AMD EPYC 7763', None), ('AMD EPYC 9V74', 4), 6, 6, 6),
-    ],
-)
-def test_benchmark_runner_change_alerts(
-        tmp_path, monkeypatch, previous_machine, current_machine, regressions, total, expected,
-):
-    """Suppress broad hardware shifts, but preserve isolated and unverified warnings."""
-    current, previous = [], []
-    for machine, benches, is_current in (
-            (previous_machine, previous, False), (current_machine, current, True),
-    ):
-        benches.extend(to_gha_benchmark({'small': {
-            f'operation-{index}': {
-                'median_ms': 150 if is_current and index < regressions else 100,
-                'min_ms': 90,
-                'stddev_ms': 5,
-            } for index in range(total)
-        }}, machine={} if machine is None else {
-            'cpu_model': machine[0], 'logical_cpus': machine[1],
-        }))
-        if machine is None:
-            for bench in benches:
-                bench['extra'] = bench['extra'].partition('\nmachine: ')[0]
 
-    # New and invalid measurements must not dilute the comparable-test count.
-    current.extend([{'name': 'new', 'value': 200}, {'name': 'invalid', 'value': None}])
-    previous.extend([{'name': 'removed', 'value': 100}, {'name': 'invalid', 'value': 100}])
-    (current_path := tmp_path / 'current.json').write_text(json.dumps(current))
+def _benches(machine: tuple[str, int] | None, min_ms: float, median_ms: float = 100) -> list:
+    benches = to_gha_benchmark({'small': {'login': {
+        'median_ms': median_ms, 'min_ms': min_ms, 'stddev_ms': 5,
+    }}}, machine={} if machine is None else {
+        'cpu_model': machine[0], 'logical_cpus': machine[1],
+    })
+    if machine is None:
+        for bench in benches:
+            bench['extra'] = bench['extra'].partition('\nmachine: ')[0]
+    return benches
+
+
+@pytest.mark.parametrize(('history', 'current', 'expected_previous'), [
+    # slower fastest pass on the same runner CPU
+    ([('aaa', EPYC, 90)], (EPYC, 120), 'aaa'),
+    # a median inflated by a few slow passes, with a steady minimum, is noise
+    ([('aaa', EPYC, 90)], (EPYC, 95, 300), None),
+    # the latest datapoint ran on another CPU: compare against the older same-CPU one
+    ([('aaa', EPYC, 90), ('bbb', XEON, 200)], (EPYC, 120), 'aaa'),
+    ([('aaa', EPYC, 120), ('bbb', XEON, 60)], (EPYC, 120), None),
+    # same CPU model with a different logical CPU count is other hardware
+    ([('aaa', ('AMD EPYC 7763', 2), 50)], (EPYC, 120), None),
+    # hardware never seen before, or unknown on either side
+    ([('aaa', XEON, 50)], (EPYC, 120), None),
+    ([('aaa', None, 50)], (EPYC, 120), None),
+    ([('aaa', EPYC, 50)], (None, 120), None),
+    ([], (EPYC, 120), None),
+])
+def test_benchmark_alerts(tmp_path, monkeypatch, history, current, expected_previous):
+    """Alert on the fastest pass, against the latest datapoint on the same runner CPU"""
+    (current_path := tmp_path / 'current.json').write_text(json.dumps(
+        _benches(*current) + [{'name': 'new', 'value': 200}, {'name': 'invalid', 'value': None}],
+    ))
     (history_path := tmp_path / 'data.js').write_text('window.BENCHMARK_DATA = ' + json.dumps({
-        'entries': {'macro': [{'benches': previous}]},
+        'entries': {'macro': [
+            {'commit': {'id': commit}, 'benches': _benches(machine, min_ms)}
+            for commit, machine, min_ms in history
+        ]},
     }))
     monkeypatch.setenv('GITHUB_OUTPUT', str(github_output := tmp_path / 'github-output'))
     monkeypatch.setattr(sys, 'argv', [
@@ -61,13 +62,16 @@ def test_benchmark_runner_change_alerts(
         str(Path(__file__).resolve().parents[3] / '.github/scripts/benchmark_alerts.py'),
         run_name='__main__',
     )
+    expected = int(expected_previous is not None)
     assert github_output.read_text() == (
         f'has_alerts={str(expected > 0).lower()}\nalert_count={expected}\n'
     )
-    if expected == 0:
+    if expected_previous is None:
         assert alert_path.read_text() == ''
     else:
-        assert f'has {expected} benchmark(s)' in alert_path.read_text()
+        assert f'| `small/login` | `{current[1]}` ms | `90` ms | `{expected_previous}` |' in (
+            alert_path.read_text()
+        )
 
 
 def test_benchmark_machine_metadata():
