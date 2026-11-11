@@ -100,13 +100,13 @@ onMounted(startLoginScreen);
   <section class="w-full flex flex-col flex-1 overflow-auto">
     <div class="h-full grow flex flex-col">
       <RotkiLogo
-        class="my-5 lg:hidden w-full max-w-110 mx-auto max-[487px]:px-4 max-[487px]:max-w-full"
+        class="my-5 lg:hidden w-full max-w-120 mx-auto max-[512px]:px-4 max-[512px]:max-w-full"
         unique-key="0"
       />
-      <div class="flex flex-col max-w-full grow px-4 pt-10 pb-6">
+      <div class="flex flex-col max-w-full grow px-4 pb-6">
         <div
           data-testid="account-management"
-          class="grow flex flex-col lg:justify-center"
+          class="grow flex flex-col"
         >
           <UserHost>
             <LoginForm
@@ -138,13 +138,13 @@ onMounted(startLoginScreen);
     </div>
   </section>
   <AccountManagementAside>
-    <span class="rounded-full p-4 bg-rui-primary/20 inline-block mb-6 lg:mb-10 xl:mb-20">
-      <RotkiLogo
-        size="2"
-        unique-key="0"
-      />
-    </span>
-    <h2 class="text-h4 mb-3">
+    <RotkiLogo
+      class="mb-10"
+      size="2"
+      unique-key="0"
+      text
+    />
+    <h2 class="text-h5 mb-3">
       {{ header.header }}
     </h2>
     <p class="text-body-1 text-rui-text-secondary">

@@ -7,6 +7,10 @@ import { useRestartingStatus } from '@/modules/auth/use-restarting-status';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 
 defineSlots<{
+  /**
+   * The account page's form, placed at the top offset every account page shares, so the heading
+   * stays put when moving between login and profile creation.
+   */
   default: () => any;
 }>();
 
@@ -32,38 +36,43 @@ const displayRouter = logicAnd(connected, logicNot(autolog), logicNot(showDocker
 </script>
 
 <template>
-  <ConnectionLoading
-    v-if="!connectionFailure"
-    :connected="connected && !autolog"
-    :logging-in="autolog"
-    :restarting="restarting"
-  />
-  <ConnectionFailureMessage v-else />
-
   <div
-    v-if="displayRouter"
-    data-testid="account-management-forms"
-    class="min-h-37.5"
+    class="grow flex flex-col pt-14 lg:pt-[calc(12vh+3.5rem)]"
+    data-testid="user-host"
   >
-    <slot />
-  </div>
-
-  <DockerWarning v-else-if="showDockerWarning" />
-  <div
-    v-else-if="connected && !autolog"
-    class="grow w-full max-w-110 mx-auto flex flex-col gap-4 justify-center items-center py-12"
-  >
-    <RuiProgress
-      color="primary"
-      variant="indeterminate"
-      circular
-      size="48"
+    <ConnectionLoading
+      v-if="!connectionFailure"
+      :connected="connected && !autolog"
+      :logging-in="autolog"
+      :restarting="restarting"
     />
-    <p
-      v-if="restarting"
-      class="mb-0 text-rui-text-secondary text-center"
+    <ConnectionFailureMessage v-else />
+
+    <div
+      v-if="displayRouter"
+      data-testid="account-management-forms"
+      class="min-h-37.5"
     >
-      {{ t('connection_loading.restarting') }}
-    </p>
+      <slot />
+    </div>
+
+    <DockerWarning v-else-if="showDockerWarning" />
+    <div
+      v-else-if="connected && !autolog"
+      class="grow w-full max-w-110 mx-auto flex flex-col gap-4 justify-center items-center py-12"
+    >
+      <RuiProgress
+        color="primary"
+        variant="indeterminate"
+        circular
+        size="48"
+      />
+      <p
+        v-if="restarting"
+        class="mb-0 text-rui-text-secondary text-center"
+      >
+        {{ t('connection_loading.restarting') }}
+      </p>
+    </div>
   </div>
 </template>

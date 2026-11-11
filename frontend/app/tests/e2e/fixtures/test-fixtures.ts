@@ -37,7 +37,7 @@ export interface LoginOptions {
   /**
    * Logs in through the form instead of `fasterLogin`, which authenticates over the API first.
    * With the backend already holding that session the form submit does not take and the suite
-   * sits on "Unlock account" — a failure that only shows up once the spec runs after others.
+   * sits on "Unlock profile" — a failure that only shows up once the spec runs after others.
    *
    * Implied by `seed`, which needs the account created and released before login anyway.
    */

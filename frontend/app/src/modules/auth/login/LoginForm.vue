@@ -210,15 +210,13 @@ onMounted(() => {
 <template>
   <Transition
     appear
-    enter-from-class="translate-y-5 opacity-0"
-    enter-to-class="translate-y-0 opacity-1"
-    enter-active-class="transform duration-300"
-    leave-from-class="translate-y-0 opacity-1"
-    leave-to-class="-translate-y-5 opacity-0"
-    leave-active-class="transform duration-100"
+    enter-from-class="opacity-0"
+    enter-active-class="transition-opacity duration-200 motion-reduce:transition-none"
+    leave-to-class="opacity-0"
+    leave-active-class="transition-opacity duration-100 motion-reduce:transition-none"
   >
     <div>
-      <div class="max-w-110 mx-auto">
+      <div class="max-w-120 mx-auto">
         <h1 class="text-h4 mb-2">
           {{ t('login.title') }}
         </h1>

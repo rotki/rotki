@@ -38,7 +38,7 @@ onMounted(() => clearErrors());
         class="my-5 lg:hidden w-full max-w-120 mx-auto max-[512px]:px-4 max-[512px]:max-w-full"
         unique-key="1b"
       />
-      <div class="flex flex-col grow px-4 pt-14 lg:pt-[calc(12vh+3.5rem)] pb-6">
+      <div class="flex flex-col grow px-4 pb-6">
         <div
           data-testid="account-management"
           class="grow flex flex-col"
