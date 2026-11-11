@@ -3,6 +3,7 @@
 import argparse
 import json
 import logging
+import operator
 import os
 import re
 import sys
@@ -16,8 +17,13 @@ SCRIPT_PREFIX = 'window.BENCHMARK_DATA = '
 # The fastest pass is what gets compared: the median of a few-millisecond operation
 # swings with a couple of slow passes on a noisy runner, the minimum barely moves.
 MIN_PATTERN: Final = re.compile(r'min ([0-9.]+)ms')
+# The baseline is the median of this many latest same-hardware datapoints, so one
+# night with a lucky fast pass does not make the next night alert.
+BASELINE_DATAPOINTS: Final = 3
 
 logger = logging.getLogger(__name__)
+
+type Machine = tuple[str, int]  # CPU model, logical CPU count
 
 
 @dataclass(frozen=True)
@@ -60,7 +66,7 @@ def _min_ms(bench: dict[str, Any]) -> float | None:
         return None
 
 
-def _machine(bench: dict[str, Any]) -> tuple[str, int] | None:
+def _machine(bench: dict[str, Any]) -> Machine | None:
     """Read hardware persisted in github-action-benchmark's supported extra field."""
     if not isinstance(extra := bench.get('extra'), str):
         return None
@@ -78,37 +84,74 @@ def _machine(bench: dict[str, Any]) -> tuple[str, int] | None:
     return None
 
 
+# Per stored datapoint (newest first), its commit and each benchmark name mapped to
+# the machine and the min it was measured with
+type IndexedHistory = list[tuple[str | None, dict[str, tuple[Machine | None, float | None]]]]
+
+
+def _index_history(history: list[dict[str, Any]]) -> IndexedHistory:
+    """Parse every stored datapoint once, newest first."""
+    return [(
+        suite.get('commit', {}).get('id'),
+        {
+            bench['name']: (_machine(bench), _min_ms(bench))
+            for bench in suite.get('benches', [])
+            if isinstance(bench, dict) and isinstance(bench.get('name'), str)
+        },
+    ) for suite in reversed(history)]
+
+
+def _same_machine_baseline(
+        history: IndexedHistory,
+        name: str,
+        machine: Machine,
+) -> tuple[float, str | None] | None:
+    """Return the baseline min and its commit: the lower median of the latest
+    BASELINE_DATAPOINTS datapoints of this benchmark measured on the same machine.
+    Datapoints lacking the benchmark, a min or this machine are passed over."""
+    datapoints: list[tuple[float, str | None]] = []
+    for commit, benches in history:
+        if (
+                (entry := benches.get(name)) is not None and
+                entry[0] == machine and
+                entry[1] is not None
+        ):
+            datapoints.append((entry[1], commit))
+            if len(datapoints) == BASELINE_DATAPOINTS:
+                break
+
+    if len(datapoints) == 0:
+        return None
+    # the lower median, so the baseline is always an actual stored datapoint
+    return sorted(datapoints, key=operator.itemgetter(0))[(len(datapoints) - 1) // 2]
+
+
 def _find_alerts(
         current: list[dict[str, Any]],
         history: list[dict[str, Any]],
         threshold: float,
 ) -> list[BenchmarkAlert]:
-    """Compare the fastest pass of each benchmark against the latest stored datapoint
-    measured on the same runner CPU model and logical CPU count. Benchmarks with no
-    machine or minimum recorded, or never measured on this hardware before, are skipped:
-    across different runner CPUs the timings differ by more than the threshold."""
+    """Compare the fastest pass of each benchmark against a baseline of the latest
+    stored datapoints measured on the same runner CPU model and logical CPU count.
+    Benchmarks with no machine or minimum recorded, or never measured on this hardware
+    before, are skipped: across different runner CPUs the timings differ by more than
+    the threshold."""
     alerts = []
+    indexed_history = _index_history(history)
     for current_bench in current:
         if (
+                not isinstance(name := current_bench.get('name'), str) or
                 (current_machine := _machine(current_bench)) is None or
-                (current_min := _min_ms(current_bench)) is None
+                (current_min := _min_ms(current_bench)) is None or
+                (baseline := _same_machine_baseline(
+                    history=indexed_history,
+                    name=name,
+                    machine=current_machine,
+                )) is None
         ):
             continue
 
-        for suite in reversed(history):
-            previous_bench = next((
-                bench for bench in suite.get('benches', [])
-                if isinstance(bench, dict) and bench.get('name') == current_bench.get('name')
-            ), None)
-            if (
-                    previous_bench is not None and
-                    _machine(previous_bench) == current_machine and
-                    (previous_min := _min_ms(previous_bench)) is not None
-            ):
-                break
-        else:
-            continue
-
+        previous_min, previous_commit = baseline
         if previous_min == 0:
             ratio = 1 if current_min == 0 else float('inf')
         else:
@@ -119,7 +162,7 @@ def _find_alerts(
                 current=current_bench,
                 current_min=current_min,
                 previous_min=previous_min,
-                previous_commit=suite.get('commit', {}).get('id'),
+                previous_commit=previous_commit,
                 ratio=ratio,
             ))
 
@@ -147,11 +190,12 @@ def _render_alerts(
         '',
         (
             f'`{bench_name}` has {len(alerts)} benchmark(s) whose fastest pass is worse than '
-            f'the latest datapoint on the same runner CPU by more than `{threshold:.2f}x`.'
+            f'the median of the latest {BASELINE_DATAPOINTS} datapoints on the same runner CPU '
+            f'by more than `{threshold:.2f}x`.'
         ),
         f'Run: https://github.com/rotki/rotki/actions/runs/{run_id}',
         '',
-        '| Benchmark | Current min | Previous min | Previous commit | Ratio |',
+        '| Benchmark | Current min | Baseline min | Baseline commit | Ratio |',
         '|-|-|-|-|-|',
     ]
     lines.extend(
