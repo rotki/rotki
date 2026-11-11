@@ -86,13 +86,12 @@ defineExpose({
   <div class="flex flex-col gap-2">
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <AssetSelect
-        :model-value="form.state.asset"
+        v-model="form.state.asset"
         :disabled="disableAsset"
         :source="{ nfts: nft ? 'show_only' : 'exclude', showIgnored: true }"
         data-testid="asset"
         :error-messages="disableAsset ? [''] : form.errors('asset')"
         @blur="form.touch('asset')"
-        @update:model-value="form.state.asset = $event ?? ''"
       />
       <AmountInput
         v-model="form.state.amount"

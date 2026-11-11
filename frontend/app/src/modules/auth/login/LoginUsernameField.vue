@@ -42,11 +42,6 @@ const { loadProfiles, savedUsernames } = useSavedProfiles();
  */
 const usePlainField = computed<boolean>(() => !!isDocker || !!isTest);
 
-const username = computed<string>({
-  get: () => get(model),
-  set: (value: string | undefined) => set(model, value ?? ''),
-});
-
 const orderedUsernames = computed<string[]>(() => sortUsernamesByKeyword(get(savedUsernames), get(search)));
 
 function focus(): void {
@@ -60,7 +55,7 @@ defineExpose({ focus });
   <RuiTextField
     v-if="usePlainField"
     ref="inputRef"
-    v-model="username"
+    v-model="model"
     color="primary"
     autocomplete="username"
     :label="t('login.label_username')"
@@ -73,8 +68,9 @@ defineExpose({ focus });
   <RuiAutoComplete
     v-else
     ref="inputRef"
-    v-model="username"
+    v-model="model"
     v-model:search-input="search"
+    value-on-clear=""
     :label="t('login.label_username')"
     :options="orderedUsernames"
     :disabled="disabled"

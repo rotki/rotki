@@ -27,7 +27,7 @@ interface HistoryEventTypeFormProps {
 }
 
 const eventType = defineModel<string>('eventType', { required: true });
-const eventSubType = defineModel<string | undefined>('eventSubtype', { required: true });
+const eventSubType = defineModel<string>('eventSubtype', { required: true });
 
 const {
   counterparty = null,
@@ -58,7 +58,7 @@ const pickerValue = computed<{ eventType: string; eventSubtype: string } | undef
   },
   set: (value) => {
     set(eventType, value?.eventType ?? '');
-    set(eventSubType, value?.eventSubtype);
+    set(eventSubType, value?.eventSubtype ?? '');
     emit('touch');
   },
 });

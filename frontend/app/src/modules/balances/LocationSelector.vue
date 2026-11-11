@@ -11,6 +11,8 @@ interface Props {
   items?: readonly string[];
   excludes?: readonly string[];
   dense?: boolean;
+  /** Shows the clear button; clearing writes `''`, so the model stays a `string`. */
+  clearable?: boolean;
 }
 
 defineOptions({
@@ -19,7 +21,7 @@ defineOptions({
 
 const model = defineModel<string>({ default: '', required: true });
 
-const { dense, excludes = [], items = [] } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete<string, LocationOption>, Props>>();
+const { clearable = false, dense, excludes = [], items = [] } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete<string, LocationOption>, Props>>();
 
 /**
  * The height of an option when at least one option in the list shows a path line: its fixed 40px
@@ -120,6 +122,8 @@ watch([locations, model], ([locations, value]) => clearUnoffered(locations, valu
     text-attr="label"
     :item-height="itemHeight"
     :dense="dense"
+    :clearable="clearable"
+    value-on-clear=""
     auto-select-first
     v-bind="$attrs"
   >

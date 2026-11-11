@@ -6,7 +6,7 @@ import { useCustomAssetFormDialog } from '@/modules/assets/admin/custom/use-cust
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const open = defineModel<boolean>('open', { required: true });
-const savedAssetId = defineModel<string>('savedAssetId', { required: false });
+const savedAssetId = defineModel<string>('savedAssetId', { default: '' });
 
 const {
   editableItem = null,

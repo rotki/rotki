@@ -76,7 +76,7 @@ const userNotesLabel = computed<string>(() => {
         <HistoryEventAssetPriceForm
           v-model:amount="modelValue.amount"
           v-model:price-intent="modelValue.priceIntent"
-          :asset="modelValue.asset"
+          v-model:asset="modelValue.asset"
           hide-price-fields
           :timestamp="timestamp"
           :disabled="disabled"
@@ -87,7 +87,6 @@ const userNotesLabel = computed<string>(() => {
           :location="location"
           :type="type"
           @blur="emit('blur', $event)"
-          @update:asset="modelValue.asset = $event ?? ''"
         />
 
         <EventLocationLabel

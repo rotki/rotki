@@ -27,7 +27,7 @@ interface HistoryEventAssetPriceFormProps {
 }
 
 const amount = defineModel<string>('amount', { required: true });
-const asset = defineModel<string | undefined>('asset', { required: true });
+const asset = defineModel<string>('asset', { required: true });
 /**
  * The price write this form would perform, reported up so the parent runs it as part of saving
  * rather than reaching back in through a template ref. `undefined` means there is nothing to write.

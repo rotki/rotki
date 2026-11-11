@@ -59,7 +59,7 @@ defineExpose({
     <section class="flex flex-col gap-3">
       <HistoryEventTypeForm
         v-model:event-type="form.state.eventType"
-        :event-subtype="form.state.eventSubtype"
+        v-model:event-subtype="form.state.eventSubtype"
         :counterparty="form.state.counterparty"
         :error-messages="{
           eventType: form.errors('eventType'),
@@ -68,15 +68,14 @@ defineExpose({
         :disabled="isEventSpecificRule"
         disable-warning
         @touch="touchEventType()"
-        @update:event-subtype="form.state.eventSubtype = $event ?? ''"
       />
       <CounterpartyInput
-        :model-value="form.state.counterparty"
+        v-model="form.state.counterparty"
+        value-on-clear=""
         :label="t('common.counterparty')"
         :disabled="isEventSpecificRule"
         :error-messages="form.errors('counterparty')"
         @blur="form.touch('counterparty')"
-        @update:model-value="form.state.counterparty = $event ?? ''"
       />
     </section>
 
@@ -112,6 +111,7 @@ defineExpose({
           key-attr="identifier"
           text-attr="label"
           clearable
+          :value-on-clear="null"
           :label="t('accounting_settings.rule.labels.accounting_treatment')"
           :hint="t('accounting_settings.rule.labels.accounting_treatment_subtitle')"
           :error-messages="form.errors('accountingTreatment')"

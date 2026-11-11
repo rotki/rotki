@@ -14,6 +14,12 @@ type ModelKeys = 'modelValue' | 'modelModifiers' | 'onUpdate:modelValue' | 'onUp
  * the wrapper's template usage without turning the forwarded names into runtime props, which would
  * take them out of `$attrs` and stop them reaching the wrapped component.
  */
+/**
+ * `RuiAutoComplete` props whose types the library does not export. Name them in `TOwn` from a generic
+ * wrapper: its emitted type cannot refer to them, and the build fails with TS2883.
+ */
+export type UnexportedAutoCompleteProps = Record<'groupBy' | 'itemDisabled', unknown>;
+
 export type ForwardedProps<TComponent, TOwn = object, TEmits extends string = never> = Partial<Omit<
   ComponentProps<TComponent>,
   keyof TOwn | ModelKeys | `on${Capitalize<TEmits>}`

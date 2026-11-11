@@ -116,14 +116,14 @@ defineExpose({
 
     <div class="flex items-start gap-2">
       <AssetSelect
-        :model-value="state.asset"
+        v-model="state.asset"
         class="flex-1 min-w-0"
         :label="t('common.asset')"
         data-testid="manual-balances-form-asset"
         :source="{ chain: state.location }"
         :error-messages="fieldErrors('asset')"
         :disabled="submitting"
-        @update:model-value="state.asset = $event ?? ''; touch('asset')"
+        @update:model-value="touch('asset')"
       />
       <RuiTooltip
         :options="{ placement: 'top' }"
@@ -184,9 +184,8 @@ defineExpose({
 
     <CustomAssetFormDialog
       v-model:open="openCustomAssetDialog"
-      :saved-asset-id="state.asset"
+      v-model:saved-asset-id="state.asset"
       :types="customAssetTypes"
-      @update:saved-asset-id="state.asset = $event ?? ''"
     />
   </div>
 </template>

@@ -5,20 +5,17 @@ import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 
 interface Props {
   items: string[];
+  /** Shows the clear button; clearing writes `''`, so the model stays a `string`. */
+  clearable?: boolean;
 }
 
 defineOptions({
   inheritAttrs: false,
 });
 
-const model = defineModel<string, 'trim'>({
-  required: true,
-  set(value) {
-    return value === undefined ? '' : value;
-  },
-});
+const model = defineModel<string, 'trim'>({ required: true });
 
-const { items } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete<string, string>, Props>>();
+const { clearable = false, items } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete<string, string>, Props>>();
 
 const search = ref<string>('');
 
@@ -36,6 +33,8 @@ watch(search, (search) => {
     v-bind="$attrs"
     v-model:search-input="search"
     :options="items"
+    :clearable="clearable"
+    value-on-clear=""
     custom-value
   >
     <template

@@ -1,33 +1,49 @@
-<script setup lang="ts">
-import type { RuiAutoComplete } from '@rotki/ui-library';
+<script setup lang="ts" generic="TClear = undefined, TClearable extends boolean = false">
+import type { ClearedValue, RuiAutoComplete } from '@rotki/ui-library';
 import type { ChainInfo } from '@/modules/core/api/types/chains';
-import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+import type { ForwardedProps, UnexportedAutoCompleteProps } from '@/modules/core/common/forwarded-props';
 import { Blockchain } from '@rotki/common';
 import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
+import { toClearedValue } from '@/modules/core/common/cleared-value';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getModuleEnabled, Module } from '@/modules/session/use-module-enabled';
 
 interface Props {
-  disabled?: boolean;
   dense?: boolean;
   evmOnly?: boolean;
   excludeEthStaking?: boolean;
   items?: string[];
+  /**
+   * Shows the clear button, so the update can carry `valueOnClear`.
+   *
+   * @remarks
+   * Typed `& boolean` so the compiler emits a Boolean prop: a bare type parameter compiles to an
+   * untyped one, and a bare `clearable` attribute would then arrive as a falsy `''`.
+   */
+  clearable?: TClearable & boolean;
+  /** What clearing writes, `undefined` when not given; `''` keeps a `string` model exact. */
+  valueOnClear?: TClear;
+  /** The picked chain. Not a `defineModel`, since the update is typed apart from the prop. */
+  modelValue: string | NoInfer<TClear>;
 }
 
 defineOptions({
   inheritAttrs: false,
 });
 
-const model = defineModel<string | undefined>({ required: true });
-
 const {
+  clearable,
   dense = false,
-  disabled = false,
   evmOnly = false,
   excludeEthStaking = false,
   items = [],
-} = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete<string, ChainInfo>, Props>>();
+  modelValue,
+  valueOnClear,
+} = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete<string, ChainInfo>, Props & UnexportedAutoCompleteProps>>();
+
+const emit = defineEmits<{
+  'update:model-value': [value: string | ClearedValue<string, TClear, TClearable>];
+}>();
 
 const { isEvm, supportedChains } = useSupportedChains();
 
@@ -74,13 +90,21 @@ const groupBy = computed<((item: ChainInfo) => string) | undefined>(() => {
     return undefined;
   return (item: ChainInfo): string => (item.id === 'all' ? '' : t('common.chain'));
 });
+
+/** The chain the field shows; a clear value that is not a chain reads as none. */
+const selected = computed<string | undefined>(() => (typeof modelValue === 'string' ? modelValue : undefined));
+
+/** A picked chain goes up as is; a cleared field sends the caller's `valueOnClear`. */
+function onUpdateModelValue(value: string | undefined): void {
+  emit('update:model-value', value ?? toClearedValue<string, TClear, TClearable>(valueOnClear));
+}
 </script>
 
 <template>
   <RuiAutoComplete
-    v-model="model"
+    :model-value="selected"
+    :clearable="clearable"
     :dense="dense"
-    :disabled="disabled"
     :options="mappedOptions"
     :label="t('account_form.labels.blockchain')"
     data-testid="account-blockchain-field"
@@ -90,6 +114,7 @@ const groupBy = computed<((item: ChainInfo) => string) | undefined>(() => {
     :group-by="groupBy"
     :class-names="{ menu: 'max-h-96' }"
     v-bind="{ ...$attrs, keyAttr: 'id' as any }"
+    @update:model-value="onUpdateModelValue($event)"
   >
     <template #group-header="{ group }">
       <div

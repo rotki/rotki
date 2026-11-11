@@ -82,7 +82,6 @@ defineExpose({
         data-testid="counterparty"
         :label="t('common.counterparty')"
         exclude-exchanges
-        clearable
         :error-messages="form.errors('counterparty')"
       />
       <RuiTextField
@@ -96,11 +95,11 @@ defineExpose({
       />
     </template>
     <AssetSelect
-      :model-value="form.state.asset"
+      v-model="form.state.asset"
       data-testid="counterparty-asset"
       :label="t('asset_management.cex_mapping.recognized_as')"
       :error-messages="form.errors('asset')"
-      @update:model-value="form.state.asset = $event ?? ''; form.touch('asset')"
+      @update:model-value="form.touch('asset')"
     />
   </div>
 </template>

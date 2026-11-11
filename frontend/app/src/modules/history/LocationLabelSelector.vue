@@ -18,10 +18,7 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const modelValue = defineModel<string>({
-  required: true,
-  set: (val: string | undefined) => val ?? '',
-});
+const modelValue = defineModel<string>({ required: true });
 
 const { options } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete, Props>>();
 
@@ -114,6 +111,7 @@ const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: L
     :options="locationLabelOptions"
     :item-height="56"
     clearable
+    value-on-clear=""
     key-attr="locationLabel"
     text-attr="locationLabel"
     :filter="filter"

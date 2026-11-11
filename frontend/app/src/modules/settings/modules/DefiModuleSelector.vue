@@ -20,7 +20,8 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const model = defineModel<string | undefined>({ required: true });
+/** The picked module; clearing writes `''`, the purge selector's "every module". */
+const model = defineModel<string>({ required: true });
 
 const { items = [] } = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete, Props>>();
 
@@ -53,6 +54,7 @@ const modules = computed<PurgeableModuleEntry[]>(() => {
     text-attr="name"
     auto-select-first
     clearable
+    value-on-clear=""
     :item-height="52"
   >
     <template #selection="{ item }">

@@ -41,18 +41,16 @@ const { t } = useI18n({ useScope: 'global' });
       />
       <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
         <AssetSelect
-          :model-value="fromAsset"
+          v-model="fromAsset"
           :label="t('price_management.from_asset')"
           :disabled="loading"
           data-testid="oracle-cache-from-asset"
-          @update:model-value="fromAsset = $event ?? ''"
         />
         <AssetSelect
-          :model-value="toAsset"
+          v-model="toAsset"
           :label="t('price_management.to_asset')"
           :disabled="loading"
           data-testid="oracle-cache-to-asset"
-          @update:model-value="toAsset = $event ?? ''"
         />
       </div>
     </div>
