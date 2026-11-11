@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :bug:`13640` Compound v3 liquidations are now decoded, so the seized collateral and the repaid debt are removed from the historical balances.
+* :bug:`13640` Compound v3 liquidations are now properly decoded, showing the seized collateral and the repaid debt.
 * :bug:`-` Fiat exchange rates will be queried properly again. Frankfurter (ECB rates) is now used as a fallback source for fiat exchange rates.
 * :bug:`13643` Curve lend repay events should no longer decode borrowed-token refunds as protocol withdrawals.
 * :bug:`13642` CoW Swap trades no longer get a duplicate fee event when the same settlement contains an identical trade of an untracked address.
