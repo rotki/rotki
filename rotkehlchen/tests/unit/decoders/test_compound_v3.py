@@ -29,6 +29,7 @@ from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import EventMetricKey, Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
@@ -597,15 +598,17 @@ def test_deposit_native_eth(
 @pytest.mark.parametrize('ethereum_accounts', [['0x31B44B57d6F32798B03702Dc200A96072b5Ab507']])
 def test_compound_v3_liquidation(
         database: DBHandler,
-        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that a liquidation of a tracked borrower triggered by a third party (absorb)
     decodes the collateral loss, the debt repayment and the surplus received, and that
     the collateral and debt positions are closed in the historical balances.
 
-    The 50 WETH of seized collateral is seeded as 30 ETH supplied through the bulker and
-    20 WETH supplied directly, to check that both protocol buckets are emptied."""
+    The seized 50 WETH were supplied as native ETH through the bulker. Both transactions are
+    decoded in the same batch, so the deposit is not yet committed to the DB when the
+    liquidation is decoded. The wallet funding and the borrows happened in transactions not
+    relevant here, so they are seeded."""
     comet = string_to_evm_address('0xc3d688B66703497DAA19211EEdff47f25384cdc3')
     with database.user_write() as write_cursor:
         DBHistoryEvents(database).add_history_events(
@@ -615,28 +618,34 @@ def test_compound_v3_liquidation(
                 sequence_index=0,
                 timestamp=TimestampMS(1000 + idx),
                 location=Location.ETHEREUM,
-                event_type=event_type,
+                event_type=HistoryEventType.RECEIVE,
                 event_subtype=event_subtype,
                 asset=asset,
                 amount=FVal(amount),
                 location_label=(user_address := ethereum_accounts[0]),
-                counterparty=None if event_subtype == HistoryEventSubType.NONE else CPT_COMPOUND_V3,  # noqa: E501
+                counterparty=counterparty,
                 address=comet,
-            ) for idx, (event_type, event_subtype, asset, amount) in enumerate((
-                (HistoryEventType.RECEIVE, HistoryEventSubType.NONE, A_ETH, '30'),
-                (HistoryEventType.RECEIVE, HistoryEventSubType.NONE, A_WETH, '20'),
-                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL, A_ETH, '30'),
-                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL, A_WETH, '20'),
-                (HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT, A_USDC, '66336.36794'),  # noqa: E501
+            ) for idx, (event_subtype, asset, amount, counterparty) in enumerate((
+                (HistoryEventSubType.NONE, A_ETH, '51', None),
+                (HistoryEventSubType.GENERATE_DEBT, A_USDC, '66336.36794', CPT_COMPOUND_V3),
             ))],
         )
 
+    supply_tx_hash = deserialize_evm_tx_hash('0x7e408bda46de590bf319430e1c6e5ba4c1d3724fc95e0483f6f2029214ca037a')  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0xb0d6b75fdfbbcb34426532b96b41d256f998942ff039a25152ccfdceb9fe5c2c')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    assert events == [
+    decoded_events = ethereum_transaction_decoder.decode_and_get_transaction_hashes(
+        ignore_cache=True,
+        tx_hashes=[supply_tx_hash, tx_hash],
+    )
+    assert [  # the bulker supplies the collateral as native ETH
+        (event.event_type, event.event_subtype, event.asset, event.amount)
+        for event in decoded_events
+        if event.tx_ref == supply_tx_hash and event.event_type == HistoryEventType.DEPOSIT
+    ] == [(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL, A_ETH, FVal(50))]
+    assert [event for event in decoded_events if event.tx_ref == tx_hash] == [
         EvmEvent(
             tx_ref=tx_hash,
-            sequence_index=219,
+            sequence_index=218,
             timestamp=(timestamp := TimestampMS(1744007795000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -654,28 +663,15 @@ def test_compound_v3_liquidation(
             location=Location.ETHEREUM,
             event_type=HistoryEventType.LOSS,
             event_subtype=HistoryEventSubType.LIQUIDATE,
-            asset=A_ETH,
-            amount=FVal(30),
+            asset=A_WETH,
+            amount=FVal(50),
             location_label=user_address,
-            notes='Lost 30 ETH in a Compound v3 forced liquidation',
+            notes='Lost 50 WETH in a Compound v3 forced liquidation',
             counterparty=CPT_COMPOUND_V3,
             address=comet,
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=231,
-            timestamp=timestamp,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.LOSS,
-            event_subtype=HistoryEventSubType.LIQUIDATE,
-            asset=A_WETH,
-            amount=FVal(20),
-            location_label=user_address,
-            notes='Lost 20 WETH in a Compound v3 forced liquidation',
-            counterparty=CPT_COMPOUND_V3,
-            address=comet,
-        ), EvmEvent(
-            tx_ref=tx_hash,
-            sequence_index=232,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
@@ -696,10 +692,8 @@ def test_compound_v3_liquidation(
             'WHERE metric_key = ? GROUP BY location, location_label, protocol, asset',
             (EventMetricKey.BALANCE.serialize(),),
         )} == {
-            (None, A_ETH.identifier): ZERO,
-            (None, A_WETH.identifier): ZERO,
+            (None, A_ETH.identifier): FVal('0.99550293491099844'),  # 51 - 50 supplied - gas
             (None, c_usdc_v3.identifier): FVal('3988.386646'),
-            (CPT_COMPOUND_V3, A_ETH.identifier): ZERO,
             (CPT_COMPOUND_V3, A_WETH.identifier): ZERO,
             (CPT_COMPOUND_V3, A_USDC.identifier): ZERO,
         }
