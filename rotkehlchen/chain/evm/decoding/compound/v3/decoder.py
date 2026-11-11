@@ -25,6 +25,8 @@ from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
+    COMPOUND_V3_ABSORB_COLLATERAL,
+    COMPOUND_V3_ABSORB_DEBT,
     COMPOUND_V3_SUPPLY,
     COMPOUND_V3_SUPPLY_COLLATERAL,
     COMPOUND_V3_WITHDRAW_COLLATERAL,
@@ -361,12 +363,81 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
         )
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _decode_absorb(
+            self,
+            context: DecoderContext,
+            compound_token: EvmToken,
+    ) -> EvmDecodingOutput:
+        """Decode a liquidation (absorb) of a tracked borrower. The liquidation is triggered
+        by a third party, so there are no transfers of the seized collateral for the borrower.
+        topics are: absorber, borrower and (for collateral) the collateral asset."""
+        if not self.base.is_tracked(borrower := bytes_to_address(context.tx_log.topics[2])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        if context.tx_log.topics[0] == COMPOUND_V3_ABSORB_DEBT:
+            if (underlying_token := self._get_compound_underlying_token(compound_token)) is None:
+                return DEFAULT_EVM_DECODING_OUTPUT
+
+            amount = asset_normalized_value(
+                amount=int.from_bytes(context.tx_log.data[:32]),
+                asset=underlying_token,
+            )
+            context.decoded_events.append(self.base.make_event_next_index(
+                tx_ref=context.transaction.tx_hash,
+                timestamp=context.transaction.timestamp,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.NONE,
+                amount=ZERO,
+                asset=underlying_token,
+                location_label=borrower,
+                counterparty=CPT_COMPOUND_V3,
+                notes=f'Repay {amount} {underlying_token.symbol} in a Compound v3 liquidation',
+                address=compound_token.evm_address,
+            ))
+            # the surplus of the liquidation is minted as base token position to the borrower
+            return EvmDecodingOutput(action_items=[ActionItem(
+                action='transform',
+                from_event_type=HistoryEventType.RECEIVE,
+                from_event_subtype=HistoryEventSubType.NONE,
+                asset=compound_token,
+                location_label=borrower,
+                to_event_subtype=HistoryEventSubType.NONE,
+                to_notes=f'Receive {{amount}} {compound_token.symbol} from a Compound v3 liquidation',  # noqa: E501
+                to_counterparty=CPT_COMPOUND_V3,
+            )])
+
+        collateral_asset = EvmToken(evm_address_to_identifier(
+            address=bytes_to_address(context.tx_log.topics[3]),
+            chain_id=self.node_inquirer.chain_id,
+            token_type=TokenKind.ERC20,
+        ))
+        amount = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[:32]),
+            asset=collateral_asset,
+        )
+        context.decoded_events.append(self.base.make_event_next_index(
+            tx_ref=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.LOSS,
+            event_subtype=HistoryEventSubType.LIQUIDATE,
+            amount=amount,
+            asset=collateral_asset,
+            location_label=borrower,
+            counterparty=CPT_COMPOUND_V3,
+            notes=f'Lost {amount} {collateral_asset.symbol} in a Compound v3 forced liquidation',
+            address=compound_token.evm_address,
+        ))
+        return DEFAULT_EVM_DECODING_OUTPUT
+
     def decode_compound_token_movement(
             self,
             context: DecoderContext,
             compound_token: EvmToken,
     ) -> EvmDecodingOutput:
         """Decode a compound v3 token movement"""
+        if context.tx_log.topics[0] in {COMPOUND_V3_ABSORB_COLLATERAL, COMPOUND_V3_ABSORB_DEBT}:
+            return self._decode_absorb(context=context, compound_token=compound_token)
+
         if (
             context.tx_log.topics[0] not in {
                 COMPOUND_V3_SUPPLY, COMPOUND_V3_SUPPLY_COLLATERAL,

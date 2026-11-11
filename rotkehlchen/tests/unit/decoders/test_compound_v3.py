@@ -15,7 +15,7 @@ from rotkehlchen.chain.optimism.modules.compound.v3.constants import (
     COMPOUND_BULKER_ADDRESS as OPTIMISM_BULKER_ADDRESS,
 )
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_COMP, A_ETH, A_POL, A_USDC, A_WBTC
+from rotkehlchen.constants.assets import A_COMP, A_ETH, A_POL, A_USDC, A_WBTC, A_WETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -587,3 +587,54 @@ def test_deposit_native_eth(
         counterparty=CPT_COMPOUND_V3,
         address=compound_contract,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x31B44B57d6F32798B03702Dc200A96072b5Ab507']])
+def test_compound_v3_liquidation(ethereum_inquirer, ethereum_accounts):
+    """Test that a liquidation of a tracked borrower triggered by a third party (absorb)
+    decodes the collateral loss, the debt reduction and the surplus received."""
+    tx_hash = deserialize_evm_tx_hash('0xb0d6b75fdfbbcb34426532b96b41d256f998942ff039a25152ccfdceb9fe5c2c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=218,
+            timestamp=(timestamp := TimestampMS(1744007795000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=Asset('eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3'),
+            amount=FVal('3988.386646'),
+            location_label=ethereum_accounts[0],
+            notes='Receive 3988.386646 cUSDCv3 from a Compound v3 liquidation',
+            counterparty=CPT_COMPOUND_V3,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=230,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.LOSS,
+            event_subtype=HistoryEventSubType.LIQUIDATE,
+            asset=A_WETH,
+            amount=FVal(50),
+            location_label=ethereum_accounts[0],
+            notes='Lost 50 WETH in a Compound v3 forced liquidation',
+            counterparty=CPT_COMPOUND_V3,
+            address=(comet := string_to_evm_address('0xc3d688B66703497DAA19211EEdff47f25384cdc3')),
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=231,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_USDC,
+            amount=ZERO,
+            location_label=ethereum_accounts[0],
+            notes='Repay 70324.754586 USDC in a Compound v3 liquidation',
+            counterparty=CPT_COMPOUND_V3,
+            address=comet,
+        ),
+    ]
