@@ -54,7 +54,7 @@ const ROW = '[data-testid=history-event-row]';
  *
  * Logging in goes through the form rather than `fasterLogin`, which authenticates over the API
  * first: with the backend already holding that session the form submit does not take and the
- * suite sits on "Unlock account". `checkGetPremiumButton` pins the app as actually loaded, since
+ * suite sits on "Unlock profile". `checkGetPremiumButton` pins the app as actually loaded, since
  * `login()` assumes success when neither post-login dialog appears in time.
  */
 async function seedPillFilterUser(

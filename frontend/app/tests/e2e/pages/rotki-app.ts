@@ -63,7 +63,7 @@ export class RotkiApp {
       introductionContinue.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT }).then(() => 'create'),
     ]).catch(() => 'login');
 
-    // If on login page, click "Create account" button first
+    // If on login page, click "Create a profile" button first
     if (visibleElement === 'login' && await newAccountButton.isVisible()) {
       await newAccountButton.click();
     }

@@ -5,7 +5,8 @@
  * @remarks
  * It sits outside the flow so the heading, not the indicator, is what the page anchors. The login
  * page has no indicator and anchors its heading at the same offset, so moving between the two pages
- * keeps the heading in place. The parent must be positioned.
+ * keeps the heading in place. It occupies the top padding `UserHost` reserves, and the parent must
+ * be positioned.
  */
 import type { CreateAccountStep } from '@/modules/auth/create-account/use-create-account-steps';
 

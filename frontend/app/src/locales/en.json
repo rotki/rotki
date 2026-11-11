@@ -2558,7 +2558,7 @@
     },
     "have_account": {
       "description": "Already have a profile on this device?",
-      "log_in": "Log in"
+      "log_in": "Unlock a profile"
     },
     "issue_count": "{count} field needs attention | {count} fields need attention",
     "password_strength": {
@@ -5261,9 +5261,9 @@
   },
   "login": {
     "auto_logout_notice": "You were logged out after {minutes} minute without activity. | You were logged out after {minutes} minutes without activity.",
-    "button_create_account": "Create account",
-    "button_no_account": "Don’t have an account?",
-    "button_refresh_profiles": "Refresh Profiles",
+    "button_create_account": "Create a profile",
+    "button_no_account": "No profile on this device yet?",
+    "button_refresh_profiles": "Refresh profiles",
     "credential_error": {
       "description": "If you have not yet created an app account, you will need to do so in order to unlock your account.",
       "support": "If you need assistance, please contact us in our support channel on discord.",
@@ -5292,7 +5292,7 @@
       "title": "User action required to continue login"
     },
     "label_password": "Password",
-    "label_username": "Profile Name",
+    "label_username": "Profile name",
     "logout": "Logout",
     "migrating_data": {
       "current": "Step {currentStep} of {totalSteps} of data migration {currentVersion} is being applied.",
@@ -5303,14 +5303,14 @@
     "no_profiles_found_action": "{refresh_profiles} or {create_account} ",
     "remember_password": "Remember Password",
     "remember_password_tooltip": "The password will be saved on password management tool on your local machine (e.g. Keychain in MacOS)",
-    "remember_username": "Remember Profile Name",
+    "remember_username": "Remember profile name",
     "sync_error": {
       "local_modified": "Local last modified: {0}",
       "question": "Do you want to replace your local database?",
       "remote_modified": "Remote last modified: {0}",
       "title": "User action required for DB sync"
     },
-    "title": "Unlock account",
+    "title": "Unlock profile",
     "upgrading_db": {
       "current": "Step {currentStep} of {totalSteps} of database upgrade v{currentVersion} is being applied.",
       "title": "Database Upgrade",
