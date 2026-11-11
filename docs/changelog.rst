@@ -5,7 +5,7 @@ Changelog
 * :bug:`13640` Compound v3 liquidations are now properly decoded, showing the seized collateral and the repaid debt.
 * :bug:`-` Fiat exchange rates will be queried properly again. Frankfurter (ECB rates) is now used as a fallback source for fiat exchange rates.
 * :bug:`13643` Curve lend repay events should no longer decode borrowed-token refunds as protocol withdrawals.
-* :bug:`13640` Native ETH and POL collateral deposits into and withdrawals from Compound v3 now include the wrapping to WETH/WPOL, so historical balances track the collateral as the wrapped token. Redecode these transactions to update existing history.
+* :bug:`13640` Native ETH and POL collateral deposits into and withdrawals from Compound v3 now include the wrapping to WETH/WPOL, so historical balances track the collateral as the wrapped token. Existing transactions are redecoded automatically.
 * :bug:`13642` CoW Swap trades no longer get a duplicate fee event when the same settlement contains an identical trade of an untracked address.
 * :bug:`13513` When premium is turned off because the plan's device limit is reached, rotki now points to where you can remove devices you no longer use, both on login and in the notification shown while running.
 * :bug:`-` Morpho Blue collateral, lending positions and debt are now shown on every supported chain and include accrued interest. Previously, Morpho Blue balances were only queried on Base and were reconstructed from historical principal amounts.
