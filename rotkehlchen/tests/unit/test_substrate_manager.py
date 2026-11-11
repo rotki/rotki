@@ -1,5 +1,5 @@
 from typing import Any, NamedTuple
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -139,6 +139,35 @@ def test_set_available_nodes_call_order(kusama_manager):
         node_attrs_item_3,
         node_attrs_item_2,
     ]
+
+
+def test_check_node_synchronization(polkadot_manager: SubstrateManager) -> None:
+    """Test that a node is checked for synchronization against the already
+    connected nodes, warning only if it lags behind them more than the threshold.
+    """
+    node_interface = MagicMock(url='https://lagging.node')
+    with patch.object(polkadot_manager, '_get_last_block', return_value=BlockNumber(1000)):
+        # no other connected nodes to compare against
+        assert polkadot_manager._check_node_synchronization(node_interface) == 1000
+        assert polkadot_manager.msg_aggregator.consume_warnings() == []
+
+        polkadot_manager.available_node_attributes_map[PolkadotNodeName.DWELLIR] = NodeNameAttributes(  # noqa: E501
+            node_interface=MagicMock(),
+            weight_block=BlockNumber(1010),
+        )  # within the threshold
+        assert polkadot_manager._check_node_synchronization(node_interface) == 1000
+        assert polkadot_manager.msg_aggregator.consume_warnings() == []
+
+        polkadot_manager.available_node_attributes_map[PolkadotNodeName.ONFINALITY] = NodeNameAttributes(  # noqa: E501
+            node_interface=MagicMock(),
+            weight_block=BlockNumber(1011),
+        )  # beyond the threshold
+        assert polkadot_manager._check_node_synchronization(node_interface) == 1000
+        assert polkadot_manager.msg_aggregator.consume_warnings() == [(
+            'Found that polkadot node at endpoint https://lagging.node is not synced with '
+            'the chain. Node last block is 1000, while other connected nodes are at block '
+            '1011. Balances and other queries may be incorrect.'
+        )]
 
 
 @pytest.mark.parametrize(('endpoint', 'formatted_endpoint'), [
