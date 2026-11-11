@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import TYPE_CHECKING
 
 import pytest
@@ -10,17 +11,31 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.compound.v3.constants import COMPOUND_REWARDS_ADDRESS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.compound.v3.constants import CPT_COMPOUND_V3
+from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.compound.v3.constants import (
     COMPOUND_BULKER_ADDRESS as OPTIMISM_BULKER_ADDRESS,
 )
+from rotkehlchen.chain.polygon_pos.modules.wmatic.constants import CPT_WMATIC
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_COMP, A_ETH, A_POL, A_USDC, A_WBTC, A_WETH
+from rotkehlchen.constants.assets import (
+    A_COMP,
+    A_ETH,
+    A_POL,
+    A_USDC,
+    A_WBTC,
+    A_WETH,
+    A_WPOL,
+)
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tasks.historical_balances import process_historical_balances
+from rotkehlchen.history.events.structures.types import (
+    EventDirection,
+    HistoryEventSubType,
+    HistoryEventType,
+)
+from rotkehlchen.tasks.historical_balances import Bucket, process_historical_balances
 from rotkehlchen.tests.unit.decoders.test_paraswap import A_BRIDGED_USDC
 from rotkehlchen.tests.unit.decoders.test_zerox import A_BASE_USDC
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
@@ -31,8 +46,21 @@ from rotkehlchen.types import EventMetricKey, Location, TimestampMS, deserialize
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
+
+
+def _bucket_balance_changes(events: list[EvmEvent]) -> dict[tuple[str | None, str], FVal]:
+    """Net (protocol, asset) balance changes of the given events, skipping the gas fee."""
+    bucket_balances: defaultdict[Bucket, FVal] = defaultdict(lambda: ZERO)
+    for event in events:
+        if event.counterparty == CPT_GAS:
+            continue
+        for bucket, direction in Bucket.from_event(event):
+            bucket_balances[bucket] += event.amount if direction == EventDirection.IN else -event.amount  # noqa: E501
+
+    return {(bucket.protocol, bucket.asset): amount for bucket, amount in bucket_balances.items()}
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -550,7 +578,7 @@ def test_deposit_native_eth(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
-    """Check that depositing native ETH works correctly."""
+    """Check the virtual wrap and WETH deposit preserve wallet and protocol balances."""
     tx_hash = deserialize_evm_tx_hash('0xde4dcd5588a4f2e2c3a6f24b5386cf289aad5f3b7a3f99d5411ca815dccc9fa3')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
@@ -571,11 +599,92 @@ def test_deposit_native_eth(
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.DEPOSIT,
-        event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
         asset=A_ETH,
         amount=FVal(deposit_amount := '0.01'),
         location_label=user_address,
-        notes=f'Deposit {deposit_amount} ETH into Compound v3',
+        notes=f'Wrap {deposit_amount} ETH in WETH',
+        counterparty=CPT_WETH,
+        address=A_WETH.resolve_to_evm_token().evm_address,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=A_WETH,
+        amount=FVal(deposit_amount),
+        location_label=user_address,
+        notes=f'Receive {deposit_amount} WETH',
+        counterparty=CPT_WETH,
+        address=A_WETH.resolve_to_evm_token().evm_address,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+        asset=A_WETH,
+        amount=FVal(deposit_amount),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} WETH into Compound v3',
+        counterparty=CPT_COMPOUND_V3,
+        address=(compound_contract := string_to_evm_address('0xc3d688B66703497DAA19211EEdff47f25384cdc3')),  # noqa: E501
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=4,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_WETH,
+        amount=ZERO,
+        location_label=user_address,
+        notes=f'Enable {deposit_amount} WETH as collateral on Compound v3',
+        counterparty=CPT_COMPOUND_V3,
+        address=compound_contract,
+    )]
+    assert _bucket_balance_changes(events) == {
+        (None, A_ETH.identifier): -FVal(deposit_amount),
+        (None, A_WETH.identifier): ZERO,
+        (CPT_COMPOUND_V3, A_WETH.identifier): FVal(deposit_amount),
+    }
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x89bE8F2DA700ce27C7e1C4D06813E76a4172e352']])
+def test_withdraw_native_eth_collateral(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Check the WETH collateral withdrawal is followed by the bulker's virtual unwrap to ETH."""
+    tx_hash = deserialize_evm_tx_hash('0x555cf9181d07feba55c76442755cb4ddc2ad899929261e9c3459c82653d79797')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1794357815000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_fees := '0.000319212794180184'),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_fees} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+        asset=A_WETH,
+        amount=FVal(withdraw_amount := '10'),
+        location_label=user_address,
+        notes=f'Withdraw {withdraw_amount} WETH from Compound v3',
         counterparty=CPT_COMPOUND_V3,
         address=(compound_contract := string_to_evm_address('0xc3d688B66703497DAA19211EEdff47f25384cdc3')),  # noqa: E501
     ), EvmEvent(
@@ -585,13 +694,126 @@ def test_deposit_native_eth(
         location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.NONE,
-        asset=A_ETH,
+        asset=A_WETH,
         amount=ZERO,
         location_label=user_address,
-        notes=f'Enable {deposit_amount} ETH as collateral on Compound v3',
+        notes=f'Disable {withdraw_amount} WETH as collateral on Compound v3',
+        counterparty=CPT_COMPOUND_V3,
+        address=compound_contract,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=A_WETH,
+        amount=FVal(withdraw_amount),
+        location_label=user_address,
+        notes=f'Unwrap {withdraw_amount} WETH',
+        counterparty=CPT_WETH,
+        address=(weth_address := A_WETH.resolve_to_evm_token().evm_address),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=4,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=A_ETH,
+        amount=FVal(withdraw_amount),
+        location_label=user_address,
+        notes=f'Receive {withdraw_amount} ETH',
+        counterparty=CPT_WETH,
+        address=weth_address,
+    )]
+    assert _bucket_balance_changes(events) == {
+        (None, A_ETH.identifier): FVal(withdraw_amount),
+        (None, A_WETH.identifier): ZERO,
+        (CPT_COMPOUND_V3, A_WETH.identifier): -FVal(withdraw_amount),
+    }
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0xb7696dCa94A198b4E3A10Fb37C37101f02D42613']])
+def test_polygon_pos_deposit_native_pol_collateral(
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Check the bulker's virtual POL wrap is attributed to WPOL, not WETH, on Polygon."""
+    tx_hash = deserialize_evm_tx_hash('0x404c015cb97d517c330f659d2ab4a17fc8dc62eac62bd16e7ed667b057f3c85f')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
+    wpol_symbol = A_WPOL.resolve_to_evm_token().symbol
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1745309532000)),
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_POL,
+        amount=FVal(gas_fees := '0.003183357564408736'),
+        location_label=(user_address := polygon_pos_accounts[0]),
+        notes=f'Burn {gas_fees} POL for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=A_POL,
+        amount=FVal(deposit_amount := '5'),
+        location_label=user_address,
+        notes=f'Wrap {deposit_amount} POL in {wpol_symbol}',
+        counterparty=CPT_WMATIC,
+        address=(wpol_address := A_WPOL.resolve_to_evm_token().evm_address),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=A_WPOL,
+        amount=FVal(deposit_amount),
+        location_label=user_address,
+        notes=f'Receive {deposit_amount} {wpol_symbol}',
+        counterparty=CPT_WMATIC,
+        address=wpol_address,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+        asset=A_WPOL,
+        amount=FVal(deposit_amount),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} {wpol_symbol} into Compound v3',
+        counterparty=CPT_COMPOUND_V3,
+        address=(compound_contract := string_to_evm_address('0xF25212E676D1F7F89Cd72fFEe66158f541246445')),  # noqa: E501
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=4,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_WPOL,
+        amount=ZERO,
+        location_label=user_address,
+        notes=f'Enable {deposit_amount} {wpol_symbol} as collateral on Compound v3',
         counterparty=CPT_COMPOUND_V3,
         address=compound_contract,
     )]
+    assert _bucket_balance_changes(events) == {
+        (None, A_POL.identifier): -FVal(deposit_amount),
+        (None, A_WPOL.identifier): ZERO,
+        (CPT_COMPOUND_V3, A_WPOL.identifier): FVal(deposit_amount),
+    }
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -637,11 +859,14 @@ def test_compound_v3_liquidation(
         ignore_cache=True,
         tx_hashes=[supply_tx_hash, tx_hash],
     )
-    assert [  # the bulker supplies the collateral as native ETH
+    assert [  # the bulker wraps the native ETH and supplies the WETH as collateral
         (event.event_type, event.event_subtype, event.asset, event.amount)
         for event in decoded_events
         if event.tx_ref == supply_tx_hash and event.event_type == HistoryEventType.DEPOSIT
-    ] == [(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL, A_ETH, FVal(50))]
+    ] == [
+        (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED, A_ETH, FVal(50)),
+        (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL, A_WETH, FVal(50)),
+    ]
     assert [event for event in decoded_events if event.tx_ref == tx_hash] == [
         EvmEvent(
             tx_ref=tx_hash,
@@ -693,8 +918,91 @@ def test_compound_v3_liquidation(
             (EventMetricKey.BALANCE.serialize(),),
         )} == {
             (None, A_ETH.identifier): FVal('0.99550293491099844'),  # 51 - 50 supplied - gas
+            (None, A_WETH.identifier): ZERO,  # wrapped for the supply
             (None, c_usdc_v3.identifier): FVal('3988.386646'),
             (CPT_COMPOUND_V3, A_WETH.identifier): ZERO,
             (CPT_COMPOUND_V3, A_USDC.identifier): ZERO,
         }
         assert cursor.execute('SELECT COUNT(*) FROM data_issues').fetchone()[0] == 0
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0xb7696dCa94A198b4E3A10Fb37C37101f02D42613']])
+def test_polygon_pos_withdraw_native_pol_collateral(
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Check withdrawing the collateral deposited above unwinds the same WPOL protocol bucket."""
+    tx_hash = deserialize_evm_tx_hash('0x834ec50daa31398fedaf2e8499dc0f5aa47553601902e0d1e93504efd5ae72fc')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
+    wpol_symbol = A_WPOL.resolve_to_evm_token().symbol
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1794059817000)),
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_POL,
+        amount=FVal(gas_fees := '0.043608637611648471'),
+        location_label=(user_address := polygon_pos_accounts[0]),
+        notes=f'Burn {gas_fees} POL for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+        asset=A_WPOL,
+        amount=FVal(withdraw_amount := '5'),
+        location_label=user_address,
+        notes=f'Withdraw {withdraw_amount} {wpol_symbol} from Compound v3',
+        counterparty=CPT_COMPOUND_V3,
+        address=(compound_contract := string_to_evm_address('0xF25212E676D1F7F89Cd72fFEe66158f541246445')),  # noqa: E501
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_WPOL,
+        amount=ZERO,
+        location_label=user_address,
+        notes=f'Disable {withdraw_amount} {wpol_symbol} as collateral on Compound v3',
+        counterparty=CPT_COMPOUND_V3,
+        address=compound_contract,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=A_WPOL,
+        amount=FVal(withdraw_amount),
+        location_label=user_address,
+        notes=f'Unwrap {withdraw_amount} {wpol_symbol}',
+        counterparty=CPT_WMATIC,
+        address=(wpol_address := A_WPOL.resolve_to_evm_token().evm_address),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=4,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=A_POL,
+        amount=FVal(withdraw_amount),
+        location_label=user_address,
+        notes=f'Receive {withdraw_amount} POL',
+        counterparty=CPT_WMATIC,
+        address=wpol_address,
+    )]
+    assert _bucket_balance_changes(events) == {
+        (None, A_POL.identifier): FVal(withdraw_amount),
+        (None, A_WPOL.identifier): ZERO,
+        (CPT_COMPOUND_V3, A_WPOL.identifier): -FVal(withdraw_amount),
+    }
