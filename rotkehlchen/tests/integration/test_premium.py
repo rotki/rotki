@@ -485,6 +485,39 @@ def test_try_premium_at_start_new_account_can_pull_data(
     assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('submit_usage_analytics', [False, True])  # the remote DB has False
+def test_try_premium_at_start_new_account_restore_keeps_initial_settings(
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        premium_remote_data: bytes,
+        submit_usage_analytics: bool,
+) -> None:
+    """The settings a new account is created with survive the restore replacing its DB,
+    while the settings that were not given keep the value of the restored DB"""
+    setup_starting_environment(
+        rotkehlchen_instance=rotkehlchen_instance,
+        username=username,
+        premium_credentials=rotki_premium_credentials,
+        first_time=True,
+        same_hash_with_remote=False,
+        newer_remote_db=True,
+        db_can_sync_setting=False,
+        remote_data=premium_remote_data,
+        initial_settings=ModifiableDBSettings(
+            submit_usage_analytics=submit_usage_analytics,
+            premium_should_sync=True,
+        ),
+    )
+    assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
+        settings = rotkehlchen_instance.data.db.get_settings(cursor)
+    assert settings.submit_usage_analytics is submit_usage_analytics
+    assert settings.premium_should_sync is True
+
+
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_new_account_rejects_data(
         rotkehlchen_instance,
