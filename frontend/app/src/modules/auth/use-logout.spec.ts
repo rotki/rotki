@@ -17,6 +17,7 @@ const mockSetMessage = vi.fn();
 const mockClearPassword = vi.fn();
 const mockInterop = { isPackaged: false };
 const mockSavedRememberPassword = ref<string | null>(null);
+const mockWaitForDownload = vi.fn<() => Promise<void>>();
 const mockLogged = ref<boolean>(true);
 const mockUsername = ref<string>('testuser');
 
@@ -73,6 +74,12 @@ vi.mock('@/modules/core/api/rotki-api', () => ({
   }),
 }));
 
+vi.mock('@/modules/session/use-session-sync', () => ({
+  useSync: vi.fn(() => ({
+    waitForDownload: mockWaitForDownload,
+  })),
+}));
+
 vi.mock('@/modules/core/common/logging/logging', () => ({
   logger: {
     debug: vi.fn(),
@@ -103,6 +110,7 @@ describe('modules::account::use-logout', () => {
     mockNavigateToUserLogin.mockResolvedValue(undefined);
     mockGetLoggedUsers.mockResolvedValue([]);
     mockResetMcpSession.mockResolvedValue(undefined);
+    mockWaitForDownload.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -110,6 +118,39 @@ describe('modules::account::use-logout', () => {
   });
 
   describe('logout', () => {
+    it('should defer logout until a forced database download finishes', async () => {
+      let finishDownload: (() => void) | undefined;
+      mockWaitForDownload.mockReturnValue(new Promise<void>((resolve) => {
+        finishDownload = resolve;
+      }));
+
+      const pendingLogout = useLogout().logout();
+      await flushPromises();
+
+      expect(mockCallLogout).not.toHaveBeenCalled();
+
+      finishDownload?.();
+      await pendingLogout;
+
+      expect(mockCallLogout).toHaveBeenCalledExactlyOnceWith('testuser');
+    });
+
+    it('should share a deferred logout with the download completion path', async () => {
+      let finishDownload: (() => void) | undefined;
+      mockWaitForDownload.mockReturnValueOnce(new Promise<void>((resolve) => {
+        finishDownload = resolve;
+      }));
+      const { logout } = useLogout();
+
+      const requestedLogout = logout();
+      const downloadLogout = logout();
+      finishDownload?.();
+      await Promise.all([requestedLogout, downloadLogout]);
+
+      expect(mockCallLogout).toHaveBeenCalledOnce();
+      expect(mockNavigateToUserLogin).toHaveBeenCalledOnce();
+    });
+
     it('should end the session before anything else in the logout runs', async () => {
       const liveAt: boolean[] = [];
       mockNotifyUserLogout.mockImplementation(() => {

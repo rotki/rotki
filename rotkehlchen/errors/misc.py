@@ -206,6 +206,10 @@ def required_cause(causes: Collection[FailureCause]) -> FailureCause:
     return next(x for x in transient_causes if x in causes)
 
 
+class IPFSRemoteError(RemoteError):
+    """Raised when IPFS content cannot be retrieved from any configured gateway."""
+
+
 class APIKeyNotAvailable(RemoteError):
     """Raised when an API key required for a query is not available."""
 
@@ -333,6 +337,10 @@ class AccountingError(Exception):
         """
         super().__init__(message)
         self.report_id = report_id
+
+
+class PnlReportAlreadyRunning(Exception):
+    """A PnL report was asked for while another one is being generated"""
 
 
 class AddressNotSupported(Exception):

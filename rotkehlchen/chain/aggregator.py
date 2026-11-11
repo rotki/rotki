@@ -31,7 +31,6 @@ from rotkehlchen.chain.base.modules.aerodrome.balances import AerodromeBalances
 from rotkehlchen.chain.base.modules.extrafi.balances import (
     ExtrafiBalances as ExtrafiBalancesBase,
 )
-from rotkehlchen.chain.base.modules.morpho_blue.balances import MorphoBlueBalances
 from rotkehlchen.chain.base.modules.runmoney.balances import RunmoneyBalances
 from rotkehlchen.chain.base.modules.venice.balances import VeniceBalances
 from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
@@ -65,6 +64,7 @@ from rotkehlchen.chain.evm.decoding.frankencoin.savings.balances import (
     FrankencoinSavingsBalances,
 )
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
+from rotkehlchen.chain.evm.decoding.morpho_blue.balances import MorphoBlueBalances
 from rotkehlchen.chain.evm.decoding.woo_fi.balances import WoofiBalances
 from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances
@@ -235,6 +235,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         CurveCrvusdBalances,
         WoofiBalances,
         YearnVestingBalances,
+        MorphoBlueBalances,
         FrankencoinSavingsBalances,
         FlyingTulipLendBalances,
         FlyingTulipStakingBalances,
@@ -249,6 +250,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         CurveLendBalances,
         GivethOptimismBalances,
         WoofiBalances,
+        MorphoBlueBalances,
         FrankencoinSavingsBalances,
     ),
     ChainID.BASE: (
@@ -270,6 +272,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         UmamiBalances,
         CurveLendBalances,
         WoofiBalances,
+        MorphoBlueBalances,
         FrankencoinSavingsBalances,
     ),
     ChainID.POLYGON_POS: (
@@ -283,10 +286,10 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         GivethGnosisBalances,
         FrankencoinSavingsBalances,
     ),
-    ChainID.HYPERLIQUID: (KinetiqBalances,),
+    ChainID.HYPERLIQUID: (KinetiqBalances, MorphoBlueBalances),
     ChainID.SCROLL: (Compoundv3Balances,),
     ChainID.BINANCE_SC: (WoofiBalances, FlyingTulipLendBalances),
-    ChainID.MONAD: (),
+    ChainID.MONAD: (MorphoBlueBalances,),
     ChainID.SONIC: (BeetsV2Balances, BeetsV3Balances),
     ChainID.ROBINHOOD: (),
     ChainID.INK: (),

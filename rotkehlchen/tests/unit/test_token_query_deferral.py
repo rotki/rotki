@@ -31,7 +31,13 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQ
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.pending_transactions import TOKEN_QUERY_DEFERRAL_RETRY_AFTER
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError, TokenQueryFailed
+from rotkehlchen.errors.misc import (
+    ContractReverted,
+    NotERC20Conformant,
+    RemoteError,
+    RequestTooLargeError,
+    TokenQueryFailed,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -380,6 +386,35 @@ def test_nft_transfer_is_deferred(
         token_kind=TokenKind.ERC721,
         collectible_id='5',
     ) is None
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('error', [
+    ContractReverted('execution reverted'),
+    RequestTooLargeError('out of gas'),
+])
+def test_token_query_failing_on_chain_does_not_defer(
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        error: RemoteError,
+) -> None:
+    """A token query that reverts or runs out of gas was answered by the nodes and fails the
+    same way every time, as for a spam token whose getters burn all the gas. So the token is
+    not conformant and the transaction is decoded without it instead of being deferred."""
+    tx_hash = _add_transaction(database, (user := ethereum_accounts[0]), [_transfer_log(user)])
+    assert _decode_periodically(
+        decoder=ethereum_transaction_decoder,
+        inquirer=ethereum_inquirer,
+        now=ts_now(),
+        multicall={'side_effect': error},
+    ) == [tx_hash]
+    assert _is_decoded(database, tx_hash)
+    assert _transfers(database, tx_hash) == []
+    assert get_evm_token(evm_address=TOKEN_ADDRESS, chain_id=ChainID.ETHEREUM) is None
+    assert _deferred(database) == []
+    assert ethereum_inquirer.token_query_failures.get(TOKEN_ADDRESS) is None
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])

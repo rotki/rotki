@@ -1,6 +1,7 @@
 import json
 import sqlite3
 import tempfile
+import threading
 from contextlib import ExitStack, closing
 from http import HTTPStatus
 from pathlib import Path
@@ -438,6 +439,78 @@ def test_pull_db(
         result = wait_for_async_task(rotkehlchen_api_server, task_id)
         assert result['message'] == ''
         assert result['result'] == {'last_modify_ts': restored_backup_ts}
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_logout_waits_for_database_restore(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+) -> None:
+    """Logout must neither cancel the restore task nor tear its database down mid-replacement."""
+    rest_api = rotkehlchen_api_server.rest_api
+    rotki = rest_api.rotkehlchen
+    assert rotki.premium is not None
+    restore_started = threading.Event()
+    finish_restore = threading.Event()
+    cancellation_started = threading.Event()
+    cancel_api_tasks = rest_api._cancel_api_tasks
+
+    def paused_restore(_user_db: bytes) -> None:
+        restore_started.set()
+        assert finish_restore.wait(timeout=10), 'Test did not release the paused database restore'
+
+    def tracked_cancel_api_tasks(reason: str) -> None:
+        cancellation_started.set()
+        cancel_api_tasks(reason)
+
+    with (
+        create_patched_requests_get_for_premium(
+            session=rotki.premium.session,
+            metadata_last_modify_ts=0,
+            metadata_data_hash=b'',
+            metadata_data_size=9999999999,
+            saved_data=b'backup',
+        ),
+        patch.object(
+            rotki.premium_sync_manager.data,
+            'decrypt_db',
+            return_value=RemoteBackup(legacy=True, last_modify_ts=None, user_db=b'database'),
+        ),
+        patch.object(rotki.premium_sync_manager.data, 'restore_db', side_effect=paused_restore),
+        patch.object(rotki.premium_sync_manager.migration_manager, 'maybe_migrate_data'),
+        patch.object(rest_api, '_cancel_api_tasks', side_effect=tracked_cancel_api_tasks),
+        patch.object(rotki, 'logout', wraps=rotki.logout) as logout,
+    ):
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            'userpremiumsyncresource',
+        ), json={'async_query': True, 'action': 'download'})
+        task_id = assert_ok_async_response(response)
+        assert restore_started.wait(timeout=10), 'Database restore did not start'
+        task = next(task for task in rotki.api_tasks if task.task_id == task_id)
+        assert task.cancellation_token is not None
+
+        logout_response: list[requests.Response] = []
+        logout_thread = threading.Thread(target=lambda: logout_response.append(requests.patch(
+            api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
+            json={'action': 'logout'},
+        )))
+        logout_thread.start()
+        assert cancellation_started.wait(timeout=10), 'Logout did not try to cancel API tasks'
+
+        assert logout_thread.is_alive()
+        assert task.cancellation_token.cancelled is False
+        assert logout.call_count == 0
+        assert rotki.user_is_logged_in is True
+
+        finish_restore.set()
+        logout_thread.join(timeout=10)
+
+        assert logout_thread.is_alive() is False
+        assert len(logout_response) == 1
+        assert_simple_ok_response(logout_response[0])
+        assert logout.call_count == 1
+        assert rotki.user_is_logged_in is False
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

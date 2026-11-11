@@ -33,6 +33,7 @@ export const SettingsHighlightIds = {
   GLOBALDB_INFO: 'setting-globaldb-info',
   GRAPH_BASIS: 'setting-graph-basis',
   INTERNAL_TX_CONFLICT_REPULL: 'setting-internal-tx-conflict-repull',
+  IPFS_GATEWAY: 'setting-ipfs-gateway',
   LANGUAGE: 'setting-language',
   LOG_LEVEL: 'setting-log-level',
   MCP_SERVER: 'setting-mcp-server',

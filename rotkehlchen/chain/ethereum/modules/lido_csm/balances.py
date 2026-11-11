@@ -1,8 +1,9 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
@@ -17,9 +18,11 @@ from rotkehlchen.constants.assets import A_STETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.lido_csm import DBLidoCsm
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import IPFSRemoteError, RemoteError
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.locations.constants import LOCATION_ETHEREUM
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.user_messages import NetworkFailure
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
@@ -89,10 +92,7 @@ class LidoCsmBalances(ProtocolWithBalance):
         return token_normalized_value_decimals(pooled_eth, 18)
 
     def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
-        """Return the Lido CSM balances tracked in the DB for stETH.
-
-        Operators whose contract calls fail with a RemoteError are logged and skipped.
-        """
+        """Return the Lido CSM balances tracked in the DB for stETH."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         if len(node_operators := self._node_operator_db.get_node_operators(
             addresses=addresses,
@@ -105,7 +105,8 @@ class LidoCsmBalances(ProtocolWithBalance):
         )) == ZERO:
             log.error('Failed to fetch stETH price; reporting values as zero.')
 
-        rewards_trees: dict[LidoCsmStakingModule, dict[str, Any] | RemoteError] = {}
+        rewards_trees: dict[LidoCsmStakingModule, dict[int, int] | None] = {}
+        rewards_failed, ipfs_failed, last_error = False, False, ''
 
         for entry in node_operators:
             # Fetch bond shares and convert to stETH
@@ -123,37 +124,68 @@ class LidoCsmBalances(ProtocolWithBalance):
                 )
                 continue
 
-            # Fetch pending rewards (stETH) using the metrics fetcher
-            rewards_steth = ZERO
-            try:
-                if entry.staking_module not in rewards_trees:
-                    try:
-                        rewards_trees[entry.staking_module] = self._metrics_fetchers[
-                            entry.staking_module
-                        ].get_rewards_tree()
-                    except RemoteError as exc:
-                        rewards_trees[entry.staking_module] = exc
+            # Fetch pending rewards (stETH) from the staking module's rewards tree, fetched once
+            # and shared by its operators. If they can't be fetched fall back to the last stored
+            # value, if any, instead of reporting them as zero.
+            metrics_fetcher = self._metrics_fetchers[entry.staking_module]
+            if entry.staking_module not in rewards_trees:
+                rewards_trees[entry.staking_module] = None
+                try:
+                    rewards_trees[entry.staking_module] = metrics_fetcher.get_rewards_tree()
+                except RemoteError as e:
+                    ipfs_failed |= isinstance(e, IPFSRemoteError)
+                    last_error = str(e)
+                    log.error(
+                        'Failed to fetch the Lido CSM rewards tree of %s due to %s',
+                        entry.staking_module.name,
+                        e,
+                    )
 
-                tree_or_exc = rewards_trees[entry.staking_module]
-                if isinstance(tree_or_exc, RemoteError):
-                    raise tree_or_exc
+            rewards_steth: FVal | None = None
+            if (rewards_tree := rewards_trees[entry.staking_module]) is not None:
+                try:
+                    rewards_steth = metrics_fetcher.get_pending_rewards(
+                        node_operator_id=entry.node_operator_id,
+                        rewards_tree=rewards_tree,
+                    )
+                except RemoteError as e:
+                    last_error = str(e)
+                    log.error(
+                        'Failed to fetch Lido CSM pending rewards for node operator %s (%s) '
+                        'due to %s',
+                        entry.node_operator_id,
+                        entry.staking_module.name,
+                        e,
+                    )
 
-                rewards_steth = self._metrics_fetchers[entry.staking_module].get_operator_rewards(
-                    node_operator_id=entry.node_operator_id,
-                    rewards_tree=tree_or_exc,
-                )
-            except RemoteError as e:
-                log.error(
-                    f'Failed to fetch Lido CSM pending rewards for node operator '
-                    f'{entry.node_operator_id} ({entry.staking_module.name}) due to {e}',
-                )
+            if rewards_steth is None:
+                rewards_failed = True
+                rewards_steth = entry.metrics.rewards_steth if entry.metrics is not None else None
 
-            if (total_steth := bond_steth + rewards_steth) == ZERO:
+            if (total_steth := bond_steth + (rewards_steth or ZERO)) == ZERO:
                 continue
 
             balances[entry.address].assets[A_STETH][self.counterparty] += Balance(
                 amount=total_steth,
                 value=total_steth * steth_price,
+            )
+
+        if rewards_failed:
+            message = (
+                'Could not fetch the Lido CSM rewards from any IPFS gateway. '
+                if ipfs_failed else
+                'Could not fetch the Lido CSM rewards due to an on-chain query failure. '
+            )
+            message += (
+                'The pending rewards shown are the last known values, '
+                'or missing if there are none.'
+            )
+            if ipfs_failed:
+                message += ' You can set your own IPFS gateway in the settings.'
+            self.evm_inquirer.database.msg_aggregator.add_warning(
+                message,
+                classification=NetworkFailure(record=UserMessageRecord.BALANCE, error=last_error),
+                subject=LOCATION_ETHEREUM,
             )
 
         return balances

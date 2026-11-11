@@ -104,6 +104,8 @@ class XpubManager:
         """
         step_index = start_index
         addresses: list[XpubDerivedAddressData] = []
+        unused_addresses: list[XpubDerivedAddressData] = []
+        last_used_index = None
         should_continue = True
         while should_continue:
             batch_addresses: list[tuple[int, BTCAddress]] = []
@@ -117,32 +119,28 @@ class XpubManager:
             should_continue = False
             for idx, address in batch_addresses:
                 have_tx, balance = have_tx_mapping[address]
+                entry = XpubDerivedAddressData(
+                    account_index=account_index,
+                    derived_index=idx,
+                    address=address,
+                    balance=balance,
+                )
                 if have_tx:
-                    addresses.append(XpubDerivedAddressData(
-                        account_index=account_index,
-                        derived_index=idx,
-                        address=address,
-                        balance=balance,
-                    ))
+                    addresses.append(entry)
                     should_continue = True
-
-            # do one more pass and add any addresses with no transactions before the max index
-            # this is so we can start new address generation from the max index later
-            if len(addresses) != 0:
-                max_index = max(x[0] for x in addresses)
-                for idx, address in batch_addresses[:max_index]:
-                    have_tx, balance = have_tx_mapping[address]
-                    if not have_tx:
-                        addresses.append(XpubDerivedAddressData(
-                            account_index=account_index,
-                            derived_index=idx,
-                            address=address,
-                            balance=balance,
-                        ))
+                    last_used_index = idx
+                else:
+                    unused_addresses.append(entry)
 
             step_index += gap_limit
 
-        return addresses
+        # also add any addresses with no transactions before the last used index, across all
+        # batches. This is so we can start new address generation from that index later
+        if last_used_index is not None:
+            addresses.extend(x for x in unused_addresses if x.derived_index < last_used_index)
+
+        # sorted by derived index so that the mappings get written to the DB in that order
+        return sorted(addresses, key=lambda x: x.derived_index)
 
     def _derive_addresses_from_xpub_data(
             self,

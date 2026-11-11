@@ -1021,6 +1021,7 @@ async fn main() -> std::process::ExitCode {
             colibri_port: cli.colibri_port,
             mcp_port: cli.mcp_port,
             mcp_enabled: cookie_auth,
+            loopback_hosts_only: !docker,
             // Docker serves the built SPA from disk; embedded loads it from
             // `app://localhost` in Electron, so the proxy is data-plane only there
             // (no `ServeDir`).

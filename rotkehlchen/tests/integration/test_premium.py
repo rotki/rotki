@@ -27,7 +27,13 @@ from rotkehlchen.errors.api import (
     PremiumPermissionError,
     RotkehlchenPermissionError,
 )
-from rotkehlchen.errors.misc import DBUpgradeError, RemoteBackupDowngrade, RemoteBackupMismatch
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import (
+    DBUpgradeError,
+    RemoteBackupDowngrade,
+    RemoteBackupMismatch,
+    RemoteError,
+)
 from rotkehlchen.premium.premium import (
     DOCKER_PLATFORM_KEY,
     DOCKER_SHORT_ID_HASH_LENGTH,
@@ -818,6 +824,36 @@ def test_failed_db_replacement_removes_new_device(
         _create_new_premium_account(rotkehlchen_instance, username, rotki_premium_credentials)
 
     assert delete_mock.call_count == 1
+
+
+@pytest.mark.parametrize(('error', 'points_to_devices'), [
+    (PremiumPermissionError('Device limit of 3 exceeded'), True),
+    (RemoteError('Rotki server unavailable', cause=FailureCause.NETWORK), False),
+])
+def test_try_premium_at_start_old_account_device_limit_points_to_devices(
+        rotkehlchen_instance: Rotkehlchen,
+        username: str,
+        rotki_premium_credentials: PremiumCredentials,
+        error: Exception,
+        points_to_devices: bool,
+) -> None:
+    """Logging in on a device past the plan's limit, as a recreated container with a new
+    hostname is, says where to free up a device"""
+    rotkehlchen_instance.data.db.set_rotkehlchen_premium(rotki_premium_credentials)
+    with (
+        patch('rotkehlchen.premium.premium.Premium.authenticate_device', side_effect=error),
+        pytest.raises(PremiumAuthenticationError) as e,
+    ):
+        rotkehlchen_instance.premium_sync_manager.try_premium_at_start(
+            given_premium_credentials=None,
+            username=username,
+            create_new=False,
+            sync_approval='unknown',
+            sync_database=True,
+        )
+
+    assert str(error) in str(e.value)
+    assert ('_DEVICE_LIMIT_LINK_' in str(e.value)) is points_to_devices
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

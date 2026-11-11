@@ -114,6 +114,7 @@ from rotkehlchen.exchanges.constants import (
 from rotkehlchen.exchanges.gate import GateLocation
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.okx import OkxLocation
+from rotkehlchen.externalapis.ipfs import normalize_ipfs_gateway_url
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.bucket_checks import BucketStatus
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
@@ -1640,6 +1641,16 @@ def _validate_indexers_list(indexers: list[EvmIndexer]) -> None:
     )
 
 
+def _validate_ipfs_gateway(gateway: str) -> None:
+    if gateway == '':  # empty means unset
+        return
+
+    try:
+        normalize_ipfs_gateway_url(gateway)
+    except ValueError as e:
+        raise ValidationError(str(e)) from e
+
+
 class EvmIndexerOrderField(fields.Field):
     @staticmethod
     def _serialize(
@@ -1908,6 +1919,8 @@ class ModifiableSettingsSchema(Schema):
         load_default=None,
         validate=validate.OneOf(choices=('balanced', 'strict', 'raw')),
     )
+    # empty string unsets the custom gateway
+    ipfs_gateway = fields.String(load_default=None, validate=_validate_ipfs_gateway)
 
     @validates_schema
     def validate_settings_schema(
@@ -1983,6 +1996,7 @@ class ModifiableSettingsSchema(Schema):
             internal_txs_to_repull=data['internal_txs_to_repull'],
             internal_tx_conflict_repull_frequency=data['internal_tx_conflict_repull_frequency'],
             mcp_privacy_mode=data['mcp_privacy_mode'],
+            ipfs_gateway=data['ipfs_gateway'],
         )
 
 

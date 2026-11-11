@@ -13,14 +13,13 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.unresolved_conflicts import DBRemoteConflicts
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError
-from rotkehlchen.history.events.structures.base import get_event_type_identifier
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.db.filtering import AccountingRulesFilterQuery, DBFilterQuery
+    from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
@@ -98,13 +97,7 @@ class AccountingService:
         if success is False:
             return FailResult(error_msg, HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
-        for rule_info in json_data['accounting_rules'].values():
-            self._invalidate_cache_for_accounting_rule(
-                event_ids=rule_info['event_ids'],
-                event_type=HistoryEventType.deserialize(rule_info['event_type']),
-                event_subtype=HistoryEventSubType.deserialize(rule_info['event_subtype']),
-                counterparty=rule_info['counterparty'],
-            )
+        self.rotkehlchen.accountant.clear_processable_events_cache()
 
         return OkResult(True)
 
@@ -130,12 +123,7 @@ class AccountingService:
         except InputError as e:
             return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
-        self._invalidate_cache_for_accounting_rule(
-            event_ids=event_ids,
-            event_type=event_type,
-            event_subtype=event_subtype,
-            counterparty=counterparty,
-        )
+        self.rotkehlchen.accountant.clear_processable_events_cache()
         return OkResult(True)
 
     def update_accounting_rule(
@@ -162,29 +150,17 @@ class AccountingService:
         except InputError as e:
             return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
-        self._invalidate_cache_for_accounting_rule(
-            event_ids=event_ids,
-            event_type=event_type,
-            event_subtype=event_subtype,
-            counterparty=counterparty,
-        )
+        self.rotkehlchen.accountant.clear_processable_events_cache()
         return OkResult(True)
 
     def delete_accounting_rule(self, rule_id: int) -> ApiResult:
         db = DBAccountingRules(self.rotkehlchen.data.db)
         try:
-            event_ids, event_type, event_subtype, counterparty = db.remove_accounting_rule(
-                rule_id=rule_id,
-            )
+            db.remove_accounting_rule(rule_id=rule_id)
         except InputError as e:
             return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
-        self._invalidate_cache_for_accounting_rule(
-            event_ids=event_ids,
-            event_type=event_type,
-            event_subtype=event_subtype,
-            counterparty=counterparty,
-        )
+        self.rotkehlchen.accountant.clear_processable_events_cache()
         return OkResult(True)
 
     def query_accounting_rules(self, filter_query: AccountingRulesFilterQuery) -> ApiResult:
@@ -227,6 +203,8 @@ class AccountingService:
                 conflict_db.solve_all_conflicts(solve_all_using=solve_all_using)
         except (InputError, KeyError) as e:
             return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
+        finally:  # earlier conflicts may already be committed when a later one fails
+            self.rotkehlchen.accountant.clear_processable_events_cache()
 
         return OkResult(True)
 
@@ -245,30 +223,3 @@ class AccountingService:
             'entries_limit': -1,
         }
         return OkResult(result)
-
-    def _invalidate_cache_for_accounting_rule(
-            self,
-            event_type: HistoryEventType,
-            event_subtype: HistoryEventSubType,
-            counterparty: str | None,
-            event_ids: list[int] | None = None,
-    ) -> None:
-        if event_ids is None:
-            cache_keys = [get_event_type_identifier(
-                event_type=event_type,
-                event_subtype=event_subtype,
-                counterparty=counterparty,
-            )]
-        else:
-            cache_keys = [get_event_type_identifier(
-                event_type=event_type,
-                event_subtype=event_subtype,
-                counterparty=counterparty,
-                event_id=event_id,
-            ) for event_id in event_ids]
-
-        accountant = self.rotkehlchen.accountant
-        for cache_key in cache_keys:
-            affected_events = accountant.processable_events_cache_signatures.get(cache_key)
-            for event_idx in affected_events:
-                accountant.processable_events_cache.remove(event_idx)

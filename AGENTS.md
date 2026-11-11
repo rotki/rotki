@@ -1129,8 +1129,29 @@ Key files:
 - Mock external APIs for deterministic tests
 - Database fixtures for integration testing
 - Make sure that all EVM addresses constant literals you add in the code are properly checksummed. The output of to_checksum_address() is what they should be. Do not use string_to_evm_address(). This does not checksum the address.
-- Do not VCR tests. Let the human developers do it. That means do not put `@pytest.mark.vcr` on any decoder tests you write.
+- Any test whose external HTTP or RPC traffic can be captured by the project's VCR infrastructure
+  must be written as a VCR test and include the appropriate `@pytest.mark.vcr` marker. Never omit
+  VCR because a cassette does not exist yet, because the endpoint currently works live, or to make
+  the test easier for the assistant to run locally.
+- The human developer owns recording and committing new cassettes. Unless explicitly asked, the
+  assistant must add the VCR-enabled test but leave cassette recording to the human. Provide the
+  exact recording command in the handoff.
 - For Etherscan use the api key from ETHERSCAN_API_KEY env variable and use etherscan v2. It's as v1 but using https://api.etherscan.io/v2/api?chainid=${chainid} . As described here: https://docs.etherscan.io/etherscan-v2. If there is no API key in the env variable then prompt the user for it when you need to query etherscan.
+
+### Pre-handoff validation (mandatory)
+- Never export, commit, or hand off a code change with newly added or modified tests left unrun.
+- Run the exact tests added or changed and the relevant surrounding test file or focused suite. For
+  cross-cutting changes, expand validation to every directly affected module.
+- Run all repository-required lint, typecheck, and formatting gates for the files or subsystem
+  changed. A test that only collects, or a lint pass by itself, does not count as executing the test.
+- If a required test cannot run because of missing credentials, unavailable infrastructure, or an
+  external dependency, report the change as blocked rather than ready. State the exact unrun command
+  and reason; do not export it as a completed fix unless the user explicitly accepts that limitation.
+- A source export explicitly requested so that a human can record a new VCR cassette is an interim
+  handoff, not completion. Clearly report the VCR test as pending. After the human records the
+  cassette, replay the test and fix any mismatch before the final handoff.
+- In the final handoff, list the exact validation commands and their pass/fail counts. Do not say a
+  change is tested or ready based on inferred output or manually inspected transaction data.
 
 ### Frontend Testing
 
@@ -1200,7 +1221,14 @@ python package.py
 ## Committing
 - Commits should be just to the point, not too long and not too short.
 - Commit titles should not exceed 50 characters.
-- Give a description of what the commit does in a short title. If more information is needed, then add a blank line and afterward elaborate with as much information as needed.
+- Give a description of what the commit does in a short title.
+- Every non-trivial bugfix, feature, or performance commit must have a body after a blank line. The
+  body must explain both what behavior changed and why the change is necessary (including the root
+  cause for a bugfix). Do not rely on the title or diff to supply this context.
+- When the work addresses a GitHub issue and the commit is intended to close it, end the commit body
+  with `Fix #<issue-number>` on its own line. Do not omit the issue reference when the issue number is
+  known. Use a multiline message when invoking export or commit helpers so the body and issue-closing
+  line are included in the actual commit.
 - Commits should do one thing; if two commits both do the same thing, that's a good sign they should be combined.
 - Do not add Co-Authored-By entries for any AI tool.
 

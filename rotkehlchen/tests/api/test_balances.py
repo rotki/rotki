@@ -30,8 +30,9 @@ from rotkehlchen.constants.assets import (
     A_USDC,
     A_USDT,
 )
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic
-from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
 from rotkehlchen.db.utils import LocationData
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
@@ -40,7 +41,7 @@ from rotkehlchen.exchanges.exchange import ExchangeQueryBalances
 from rotkehlchen.exchanges.poloniex import Poloniex
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.types import HistoricalPriceOracle
+from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.locations.constants import (
     LOCATION_BANKS,
@@ -597,6 +598,58 @@ def test_query_all_balances_warms_price_cache(rotkehlchen_api_server: APIServer)
 
     assert price_mock.call_count != 0
     assert set(price_mock.call_args_list[0].args[0]) == {A_ETH, A_LUSD}
+
+
+@pytest.mark.parametrize('should_mock_price_queries', [False])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_query_all_balances_saves_snapshot_when_fiat_apis_are_down(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Test that a balance snapshot is saved with a non-USD main currency while all the
+    fiat rates sources are unreachable. The main currency to USD rate must come from the
+    cached current fiat rate instead of a historical query that has no oracle able to
+    answer it, which used to make the whole balance query task die."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.user_write() as write_cursor:
+        rotki.data.db.set_settings(write_cursor, ModifiableDBSettings(
+            main_currency=A_EUR.resolve_to_asset_with_oracles(),
+        ))
+        write_cursor.execute(
+            'INSERT INTO manually_tracked_balances(asset, label, amount, location, category) '
+            'VALUES (?, ?, ?, ?, ?)',
+            (
+                A_EUR.identifier,
+                'bank',
+                '100',
+                LOCATION_BANKS,
+                BalanceType.ASSET.serialize_for_db(),
+            ),
+        )
+
+    GlobalDBHandler.add_historical_prices([HistoricalPrice(  # cached rate older than a day
+        from_asset=A_USD,
+        to_asset=A_EUR,
+        source=HistoricalPriceOracle.XRATESCOM,
+        timestamp=Timestamp(ts_now() - 2 * DAY_IN_SECONDS),
+        price=Price(FVal('0.8')),
+    )])
+    with (
+        patch(
+            'rotkehlchen.externalapis.xratescom._scrape_xratescom_exchange_rates',
+            side_effect=RemoteError('x-rates.com is down', cause=FailureCause.NETWORK),
+        ),
+        patch(
+            'rotkehlchen.externalapis.frankfurter._query_frankfurter_exchange_rates',
+            side_effect=RemoteError('frankfurter is down', cause=FailureCause.NETWORK),
+        ),
+    ):
+        result = rotki.query_balances(requested_save_data=True)
+
+    assert result['net_value'] == FVal(100)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT currency, amount, usd_value FROM timed_balances',
+        ).fetchall() == [(A_EUR.identifier, '100', '125')]
 
 
 def test_query_all_balances_queries_sources_concurrently(

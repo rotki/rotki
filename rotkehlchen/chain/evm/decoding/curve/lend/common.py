@@ -256,7 +256,7 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
             if (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.asset in {collateral_token, borrowed_token} and
+                event.asset == collateral_token and
                 (
                     event.address in {controller_address, amm_address} or
                     (self.leverage_zap is not None and event.address == self.leverage_zap)

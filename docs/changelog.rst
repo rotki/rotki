@@ -90,11 +90,25 @@ Changelog
 * :feature:`12914` Beets pool joins and exits on Sonic are now decoded, and gauge balances for Beets v2 and v3 pools are queried.
 * :feature:`9110` Sonic is now a fully supported EVM chain. Transactions and balances can be tracked on it.
 * :feature:`13089` Venice.ai is now supported. VVV, sVVV and DIEM balances will be queried and events involving VVV and DIEM are now decoded.
+* :bug:`-` Fiat exchange rates will be queried properly again. Frankfurter (ECB rates) is now used as a fallback source for fiat exchange rates.
+* :bug:`13643` Curve lend repay events should no longer decode borrowed-token refunds as protocol withdrawals.
+* :bug:`13642` CoW Swap trades no longer get a duplicate fee event when the same settlement contains an identical trade of an untracked address.
+* :bug:`13513` When premium is turned off because the plan's device limit is reached, rotki now points to where you can remove devices you no longer use, both on login and in the notification shown while running.
+* :bug:`-` Morpho Blue collateral, lending positions and debt are now shown on every supported chain and include accrued interest. Previously, Morpho Blue balances were only queried on Base and were reconstructed from historical principal amounts.
+* :bug:`-` Transactions involving a token whose contract fails every details query, such as some spam tokens, are now decoded again instead of staying undecoded forever.
+* :bug:`13418` Logging out now waits for a running premium database restore to finish instead of risking interruption while the local database is being replaced.
+* :bug:`-` Uniswap on-chain prices for tokens that need a route through three pools are no longer wrong when the middle pool lists its tokens in the opposite order.
+* :bug:`-` The accounting rule status of history events is now updated right after the rules change. Before, an event could keep showing a missing rule after adding a rule without a counterparty that applies to it, or after resetting the rules, solving rule conflicts or receiving rule updates from the data repo, until rotki was restarted.
+* :bug:`-` A failed accounting rules import no longer leaves rules that were processed before the error partially imported.
+* :bug:`13562` Pending Lido CSM rewards no longer drop out of the balance when an unrelated metrics call fails, and a balance query downloads the rewards tree only once.
+* :bug:`13354` Generating a PnL report while another one is running is now refused instead of corrupting both, and a cancelled report no longer stays in the reports list as an empty entry. The report progress no longer goes past 100%.
+* :bug:`13530` The desktop app's local API now only answers requests addressed to ``localhost``, ``127.0.0.1`` or ``[::1]``, so a web page cannot reach it through DNS rebinding. Docker is unchanged.
 * :bug:`-` Lido CSM node operator metrics refresh again after the CSM v3 upgrade, and pending rewards are no longer shown as zero. Operators on the new Identified DVT Cluster curve are labelled as such, and permissionless and early adopter operators are no longer labelled as each other.
 * :bug:`13531` Web pages on other sites can no longer import files or change data in an unlocked account by sending forms to the local API. Requests that change data are now refused unless they come from the rotki app itself or a configured CORS origin. Docker users behind a reverse proxy need it to forward the original ``Host`` header (for nginx, ``proxy_set_header Host $host;``), otherwise logging in and saving changes are refused.
 * :bug:`-` The backend API now only accepts cross-origin requests from origins that fully match its configured CORS patterns. Lookalike domains such as ``localhost.example.com`` and pages of other desktop apps are no longer allowed to read API responses. ``--api-cors`` entries are plain patterns where only ``*`` is a wildcard, so an entry written as a regular expression needs to be rewritten (a warning is logged for it).
 * :bug:`13546` Reverting contract calls now stop after confirmation from two distinct RPC endpoints instead of retrying every node. Rate limits and missing chain data still fall back to other nodes or indexers, and known gas-limit errors still allow multicalls to retry with smaller chunks.
 * :bug:`13442` A failed premium database backup upload no longer leaves an unencrypted copy of the database in the temporary directory.
+* :bug:`13561` Lido CSM rewards now load more reliably and keep their last known value when unavailable. You can also set a custom IPFS gateway in general settings.
 * :bug:`13443` With premium sync enabled, the server backup is now replaced at the next automatic upload after a password change.
 * :bug:`-` Fixed missing profile images for ENS names migrated to v2.
 * :bug:`13520` Disabling balance queries for a chain now removes its stale last refresh time even when a refresh is already running. Excluding individual Ethereum staking validators preserves enabled validators' cached balances. API balance reads no longer trigger repeated refreshes when Ethereum staking queries are fully disabled.

@@ -93,6 +93,14 @@ export const generalRegistry = {
     search: { category: SettingsCategoryIds.HISTORY_EVENT, titleKey: msg.$t('general_settings.history_event.internal_tx_conflicts.title') },
   }),
   internalTxsToRepull: general('internalTxsToRepull', { anchor: SettingsHighlightIds.INTERNAL_TX_CONFLICT_REPULL }),
+  ipfsGateway: general('ipfsGateway', {
+    anchor: SettingsHighlightIds.IPFS_GATEWAY,
+    search: {
+      category: SettingsCategoryIds.GENERAL,
+      keywords: [msg.$t('general_settings.ipfs_gateway.subtitle')],
+      titleKey: msg.$t('general_settings.ipfs_gateway.title'),
+    },
+  }),
   ksmRpcEndpoint: general('ksmRpcEndpoint'),
   mcpPrivacyMode: general('mcpPrivacyMode'),
   nonSyncingExchanges: general('nonSyncingExchanges'),

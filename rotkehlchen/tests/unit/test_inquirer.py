@@ -201,6 +201,71 @@ def test_fiat_pair_caching(inquirer):
     assert inquirer._query_fiat_pair(usd, eur)[0] == FVal('0.9165902841')
 
 
+@pytest.mark.vcr
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_historical_fiat_rate_falls_back_to_frankfurter(inquirer: Inquirer) -> None:
+    """Test that if x-rates.com fails, the historical fiat rate comes from frankfurter
+    and all the rates it returns are cached at the UTC day start"""
+    with patch(
+        'rotkehlchen.externalapis.xratescom._scrape_xratescom_exchange_rates',
+        side_effect=RemoteError('x-rates.com is down', cause=FailureCause.NETWORK),
+    ) as xratescom_mock:
+        assert inquirer.query_historical_fiat_exchange_rates(
+            from_fiat_currency=(eur := A_EUR.resolve_to_fiat_asset()),
+            to_fiat_currency=A_USD.resolve_to_fiat_asset(),
+            timestamp=Timestamp(1762776000),  # 2025-11-10 12:00 UTC
+        ) == (rate := Price(FVal('1.1571')))
+
+    assert xratescom_mock.call_count == 1
+    assert GlobalDBHandler.get_historical_price(
+        from_asset=eur,
+        to_asset=A_USD,
+        timestamp=Timestamp(1762732800),  # 2025-11-10 00:00 UTC
+        max_seconds_distance=0,
+        sources=(HistoricalPriceOracle.XRATESCOM,),
+    ) == HistoricalPrice(
+        from_asset=eur,
+        to_asset=A_USD,
+        source=HistoricalPriceOracle.XRATESCOM,
+        timestamp=Timestamp(1762732800),
+        price=rate,
+    )
+    assert GlobalDBHandler.get_historical_price(  # the other rates are cached too
+        from_asset=eur,
+        to_asset=A_JPY,
+        timestamp=Timestamp(1762732800),
+        max_seconds_distance=0,
+    ) is not None
+
+
+@pytest.mark.vcr
+@pytest.mark.freeze_time('2026-11-11 12:00:00 GMT')
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_current_fiat_rate_falls_back_to_frankfurter(inquirer: Inquirer) -> None:
+    """Test that if x-rates.com fails, the current fiat rate comes from frankfurter"""
+    with patch(
+        'rotkehlchen.externalapis.xratescom._scrape_xratescom_exchange_rates',
+        side_effect=RemoteError('x-rates.com is down', cause=FailureCause.NETWORK),
+    ) as xratescom_mock:
+        result = inquirer._query_fiat_pair(
+            base=(usd := A_USD.resolve_to_fiat_asset()),
+            quote=A_EUR.resolve_to_fiat_asset(),
+        )
+
+    assert xratescom_mock.call_count == 1
+    assert result is not None
+    assert result[1] == CurrentPriceOracle.FIAT
+    assert (cached := GlobalDBHandler.get_historical_price(
+        from_asset=usd,
+        to_asset=A_EUR,
+        timestamp=Timestamp(1794355200),  # 2026-11-11 00:00 UTC
+        max_seconds_distance=0,
+        sources=(HistoricalPriceOracle.XRATESCOM,),
+    )) is not None
+    assert cached.price == result[0] > ZERO
+
+
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_fallback_to_cached_values_within_a_month(inquirer):  # pylint: disable=unused-argument

@@ -1,23 +1,29 @@
 from types import SimpleNamespace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.lido_csm.balances import LidoCsmBalances
 from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
     CPT_LIDO_CSM,
     LIDO_CSM_MODULE_CONTRACTS,
+    LidoCsmOperatorType,
     LidoCsmStakingModule,
 )
-from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmMetricsFetcher
+from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import (
+    LidoCsmMetricsFetcher,
+    LidoCsmNodeOperatorStats,
+)
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_STETH
 from rotkehlchen.db.lido_csm import DBLidoCsm, LidoCsmNodeOperator
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import IPFSRemoteError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE
@@ -26,51 +32,195 @@ from rotkehlchen.types import ChainID, SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
+    from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
-def _make_evm_inquirer():
-    return SimpleNamespace(
-        database=MagicMock(),
-        chain_id=ChainID.ETHEREUM,
+# The contract calls of the metrics that have nothing to do with rewards
+METRICS_ONLY_CALLS = (
+    'getBondCurveId',
+    'getBondSummaryShares',
+    'getClaimableBondShares',
+    'getNodeOperatorSummary',
+)
+REWARDS_TREE = {'values': [{'value': [1, 10**18]}, {'value': [2, 3 * 10**18]}]}
+
+
+class FakeLidoContracts:
+    """Stands in for every contract of the balances query, with bond shares of 1 for each
+    operator and 0.5 distributed shares, and stETH shares worth one stETH."""
+
+    def __init__(self, failing: tuple[str, ...] = ()) -> None:
+        self.failing = failing
+        self.called: list[str] = []
+
+    def call(self, *, method_name: str, arguments: list[int], **_: object) -> int | str:
+        self.called.append(method_name)
+        if method_name in self.failing:
+            raise RemoteError(f'{method_name} failed', cause=FailureCause.NETWORK)
+
+        match method_name:
+            case 'getBondShares':
+                return 10**18
+            case 'getPooledEthByShares':
+                return arguments[0]
+            case 'treeCid':
+                return 'tree-cid'
+            case 'distributedShares':
+                return 5 * 10**17
+
+        raise AssertionError(f'Unexpected contract call to {method_name}')
+
+
+def _make_balances(contracts: FakeLidoContracts) -> LidoCsmBalances:
+    balances = LidoCsmBalances(
+        evm_inquirer=cast(
+            'EthereumInquirer',
+            SimpleNamespace(database=MagicMock(), chain_id=ChainID.ETHEREUM),
+        ),
+        tx_decoder=MagicMock(),
     )
+    contract = cast('EvmContract', contracts)
+    balances._steth_contract = contract
+    for fetcher in balances._metrics_fetchers.values():
+        fetcher.accounting_contract = fetcher.module_contract = contract
+        fetcher.steth_contract = fetcher.fee_distributor_contract = contract
+    return balances
 
 
-def test_lido_csm_balances_skips_on_error():
-    entry = LidoCsmNodeOperator(
-        address=make_evm_address(),
-        node_operator_id=5,
-        staking_module=LidoCsmStakingModule.CSM,
+@pytest.fixture(name='operators')
+def fixture_operators():
+    operators = (
+        LidoCsmNodeOperator(
+            address=make_evm_address(),
+            node_operator_id=1,
+            staking_module=LidoCsmStakingModule.CSM,
+        ),
+        LidoCsmNodeOperator(
+            address=make_evm_address(),
+            node_operator_id=2,
+            staking_module=LidoCsmStakingModule.CSM,
+        ),
     )
-
-    def _raise_remote_error(*_args, **_kwargs):
-        raise RemoteError('boom', cause=FailureCause.NETWORK)
-
     with patch(
         'rotkehlchen.db.lido_csm.DBLidoCsm.get_node_operators',
-        return_value=(entry,),
-    ), patch.object(
-        LidoCsmBalances,
-        '_get_bond_shares',
-        side_effect=_raise_remote_error,
-    ), patch.object(
-        Inquirer,
-        'find_price',
-        return_value=FVal('2000'),
-    ), patch.object(
+        return_value=operators,
+    ), patch.object(Inquirer, 'find_price', return_value=FVal('2000')):
+        yield operators
+
+
+def _steth_amounts(result: BalancesSheetType, operators: tuple[LidoCsmNodeOperator, ...]) -> list[FVal]:  # noqa: E501
+    return [result[x.address].assets[A_STETH][CPT_LIDO_CSM].amount for x in operators]
+
+
+def test_lido_csm_balances_accumulates(operators):
+    """Test that each operator's balance is the bond plus the pending rewards"""
+    balances = _make_balances(FakeLidoContracts())
+    with patch.object(LidoCsmMetricsFetcher, '_fetch_ipfs_json', return_value=REWARDS_TREE):
+        result = balances.query_balances(addresses=[x.address for x in operators])
+
+    assert result[operators[0].address].assets[A_STETH][CPT_LIDO_CSM] == Balance(
+        amount=FVal('1.5'),
+        value=FVal('3000'),
+    )
+    assert _steth_amounts(result, operators)[1] == FVal('3.5')
+
+
+def test_lido_csm_balances_download_rewards_tree_once(operators):
+    """Test that many operators share one download of the tree and of its cid"""
+    contracts = FakeLidoContracts()
+    balances = _make_balances(contracts)
+    with patch.object(
         LidoCsmMetricsFetcher,
-        'get_rewards_tree',
-        return_value={},
-    ), patch.object(
+        '_fetch_ipfs_json',
+        return_value=REWARDS_TREE,
+    ) as fetch_tree:
+        balances.query_balances(addresses=[x.address for x in operators])
+
+    assert fetch_tree.call_count == 1
+    assert contracts.called.count('treeCid') == 1
+
+
+def test_lido_csm_balances_ignore_metrics_failures(operators):
+    """Test that the balance needs none of the calls that only the metrics use, so their
+    failure can't take the pending rewards away, as happened with the CSM v3 upgrade."""
+    contracts = FakeLidoContracts(failing=METRICS_ONLY_CALLS)
+    balances = _make_balances(contracts)
+    with patch.object(LidoCsmMetricsFetcher, '_fetch_ipfs_json', return_value=REWARDS_TREE):
+        result = balances.query_balances(addresses=[x.address for x in operators])
+
+    assert _steth_amounts(result, operators) == [FVal('1.5'), FVal('3.5')]
+    assert set(contracts.called).isdisjoint(METRICS_ONLY_CALLS)
+
+
+def test_lido_csm_balances_keep_bond_if_rewards_tree_fails(operators):
+    """Test that a failed tree download leaves the bond and is not repeated per operator"""
+    balances = _make_balances(FakeLidoContracts())
+    with patch.object(
         LidoCsmMetricsFetcher,
-        'get_operator_rewards',
-        return_value=FVal(0),
+        '_fetch_ipfs_json',
+        side_effect=IPFSRemoteError('rate limited', cause=FailureCause.NETWORK),
+    ) as fetch_tree:
+        result = balances.query_balances(addresses=[x.address for x in operators])
+
+    assert fetch_tree.call_count == 1
+    assert _steth_amounts(result, operators) == [FVal('1'), FVal('1')]
+    # the user is told that the rewards are missing
+    balances.evm_inquirer.database.msg_aggregator.add_warning.assert_called_once()
+
+
+def test_lido_csm_balances_use_stored_rewards_if_rewards_tree_fails():
+    """Test that rewards that can't be fetched fall back to the last stored value
+    for the operators that have one, instead of being reported as zero"""
+    operators = (
+        LidoCsmNodeOperator(
+            address=make_evm_address(),
+            node_operator_id=1,
+            staking_module=LidoCsmStakingModule.CSM,
+            metrics=LidoCsmNodeOperatorStats(
+                operator_type=LidoCsmOperatorType.PERMISSIONLESS,
+                current_bond=ONE,
+                required_bond=ONE,
+                claimable_bond=ZERO,
+                total_deposited_validators=1,
+                rewards_steth=FVal('0.25'),
+            ),
+        ),
+        LidoCsmNodeOperator(
+            address=make_evm_address(),
+            node_operator_id=2,
+            staking_module=LidoCsmStakingModule.CSM,
+        ),
+    )
+    balances = _make_balances(FakeLidoContracts())
+    with (
+        patch('rotkehlchen.db.lido_csm.DBLidoCsm.get_node_operators', return_value=operators),
+        patch.object(Inquirer, 'find_price', return_value=FVal('2000')),
+        patch.object(
+            LidoCsmMetricsFetcher,
+            '_fetch_ipfs_json',
+            side_effect=IPFSRemoteError('429', cause=FailureCause.NETWORK),
+        ),
     ):
-        balances = LidoCsmBalances(
-            evm_inquirer=_make_evm_inquirer(),
-            tx_decoder=MagicMock(),
-        )
-        result = balances.query_balances(addresses=[entry.address])
+        result = balances.query_balances(addresses=[x.address for x in operators])
+
+    assert _steth_amounts(result, operators) == [FVal('1.25'), FVal('1')]
+
+
+def test_lido_csm_balances_keep_bond_if_pending_rewards_fail(operators):
+    """Test that a failed call for the distributed shares leaves the bond"""
+    balances = _make_balances(FakeLidoContracts(failing=('distributedShares',)))
+    with patch.object(LidoCsmMetricsFetcher, '_fetch_ipfs_json', return_value=REWARDS_TREE):
+        result = balances.query_balances(addresses=[x.address for x in operators])
+
+    assert _steth_amounts(result, operators) == [FVal('1'), FVal('1')]
+
+
+def test_lido_csm_balances_skips_on_error(operators):
+    balances = _make_balances(FakeLidoContracts(failing=('getBondShares',)))
+    with patch.object(LidoCsmMetricsFetcher, '_fetch_ipfs_json', return_value=REWARDS_TREE):
+        result = balances.query_balances(addresses=[x.address for x in operators])
+
     assert len(result) == 0
 
 
@@ -100,10 +250,13 @@ def test_lido_csm_balances_query_each_staking_module_accounting_contract():
     ), patch.object(Inquirer, 'find_price', return_value=FVal('2')), patch.object(
         LidoCsmMetricsFetcher, 'get_rewards_tree', return_value={},
     ), patch.object(
-        LidoCsmMetricsFetcher, 'get_operator_rewards', return_value=FVal(0),
+        LidoCsmMetricsFetcher, 'get_pending_rewards', return_value=FVal(0),
     ):
         result = LidoCsmBalances(
-            evm_inquirer=_make_evm_inquirer(),
+            evm_inquirer=cast(
+                'EthereumInquirer',
+                SimpleNamespace(database=MagicMock(), chain_id=ChainID.ETHEREUM),
+            ),
             tx_decoder=MagicMock(),
         ).query_balances(addresses=[address])
 
@@ -143,195 +296,3 @@ def test_lido_csm_balances_real_data(
     operator_balance = result[node_operator_address].assets[A_STETH][CPT_LIDO_CSM]
     assert operator_balance.amount.is_close(FVal('29.154399977908747719'))
     assert operator_balance.value.is_close(FVal('43.7315999668631215785'))
-
-
-def test_lido_csm_balances_rewards_preserved_when_non_rewards_metrics_fail():
-    """Unrelated metrics contract failures do not wipe out pending rewards."""
-    address = make_evm_address()
-    entry = LidoCsmNodeOperator(
-        address=address,
-        node_operator_id=42,
-        staking_module=LidoCsmStakingModule.CSM,
-    )
-
-    forbidden_methods = {
-        'getBondCurveId',
-        'getBondSummaryShares',
-        'getClaimableBondShares',
-        'getNodeOperatorSummary',
-    }
-
-    def fake_contract_call(self, node_inquirer, method_name, arguments):
-        if method_name in forbidden_methods:
-            raise AssertionError(
-                f'Non-rewards metrics method {method_name} was unexpectedly called',
-            )
-        if method_name == 'getBondShares':
-            return 10 * 10**18
-        if method_name == 'treeCid':
-            return 'bafkreitree'
-        if method_name == 'distributedShares':
-            return 2 * 10**18
-        if method_name == 'getPooledEthByShares':
-            return arguments[0]
-        raise AssertionError(f'Unexpected method call {method_name}')
-
-    fake_tree = {
-        'values': [
-            {'value': [42, 5 * 10**18]},
-        ],
-    }
-
-    with patch(
-        'rotkehlchen.db.lido_csm.DBLidoCsm.get_node_operators',
-        return_value=(entry,),
-    ), patch.object(
-        EvmContract,
-        'call',
-        autospec=True,
-        side_effect=fake_contract_call,
-    ), patch.object(
-        LidoCsmMetricsFetcher,
-        '_fetch_ipfs_json',
-        return_value=fake_tree,
-    ), patch.object(
-        Inquirer,
-        'find_price',
-        return_value=FVal('2'),
-    ):
-        balances = LidoCsmBalances(
-            evm_inquirer=_make_evm_inquirer(),
-            tx_decoder=MagicMock(),
-        )
-        result = balances.query_balances(addresses=[address])
-
-    # Bond: 10 stETH, Rewards: 5 - 2 = 3 stETH, Total: 13 stETH
-    operator_balance = result[address].assets[A_STETH][CPT_LIDO_CSM]
-    assert operator_balance.amount == FVal('13')
-    assert operator_balance.value == FVal('26')
-
-
-def test_lido_csm_balances_tree_downloaded_once_for_multiple_operators():
-    """Rewards tree is downloaded only once across multiple operators in the same batch."""
-    address_1 = make_evm_address()
-    address_2 = make_evm_address()
-    entries = (
-        LidoCsmNodeOperator(
-            address=address_1,
-            node_operator_id=1,
-            staking_module=LidoCsmStakingModule.CSM,
-        ),
-        LidoCsmNodeOperator(
-            address=address_2,
-            node_operator_id=2,
-            staking_module=LidoCsmStakingModule.CSM,
-        ),
-        LidoCsmNodeOperator(
-            address=address_1,
-            node_operator_id=3,
-            staking_module=LidoCsmStakingModule.CSM,
-        ),
-    )
-
-    fake_tree = {
-        'values': [
-            {'value': [1, 10 * 10**18]},
-            {'value': [2, 20 * 10**18]},
-            {'value': [3, 30 * 10**18]},
-        ],
-    }
-    ipfs_mock = MagicMock(return_value=fake_tree)
-
-    def fake_contract_call(self, node_inquirer, method_name, arguments):
-        if method_name == 'getBondShares':
-            return 10**18
-        if method_name == 'treeCid':
-            return 'bafkreitree'
-        if method_name == 'distributedShares':
-            return 0
-        if method_name == 'getPooledEthByShares':
-            return arguments[0]
-        raise AssertionError(f'Unexpected method call {method_name}')
-
-    with patch(
-        'rotkehlchen.db.lido_csm.DBLidoCsm.get_node_operators',
-        return_value=entries,
-    ), patch.object(
-        EvmContract,
-        'call',
-        autospec=True,
-        side_effect=fake_contract_call,
-    ), patch.object(
-        LidoCsmMetricsFetcher,
-        '_fetch_ipfs_json',
-        new=ipfs_mock,
-    ), patch.object(
-        Inquirer,
-        'find_price',
-        return_value=FVal('1'),
-    ):
-        balances = LidoCsmBalances(
-            evm_inquirer=_make_evm_inquirer(),
-            tx_decoder=MagicMock(),
-        )
-        result = balances.query_balances(addresses=[address_1, address_2])
-
-    assert ipfs_mock.call_count == 1
-    # address_1: operator 1 (1 bond + 10 rewards) + operator 3 (1 bond + 30 rewards) = 42
-    assert result[address_1].assets[A_STETH][CPT_LIDO_CSM].amount == FVal('42')
-    # address_2: operator 2 (1 bond + 20 rewards) = 21
-    assert result[address_2].assets[A_STETH][CPT_LIDO_CSM].amount == FVal('21')
-
-
-def test_lido_csm_balances_tree_download_failure_cached_within_batch():
-    """If tree download fails, subsequent operators in the same batch do not retry it."""
-    address_1 = make_evm_address()
-    address_2 = make_evm_address()
-    entries = (
-        LidoCsmNodeOperator(
-            address=address_1,
-            node_operator_id=1,
-            staking_module=LidoCsmStakingModule.CSM,
-        ),
-        LidoCsmNodeOperator(
-            address=address_2,
-            node_operator_id=2,
-            staking_module=LidoCsmStakingModule.CSM,
-        ),
-    )
-
-    fetch_tree_mock = MagicMock(side_effect=RemoteError(
-        'IPFS gateway timeout',
-        cause=FailureCause.NETWORK,
-    ))
-
-    with patch(
-        'rotkehlchen.db.lido_csm.DBLidoCsm.get_node_operators',
-        return_value=entries,
-    ), patch.object(
-        LidoCsmBalances,
-        '_get_bond_shares',
-        return_value=10 * 10**18,
-    ), patch.object(
-        LidoCsmBalances,
-        '_convert_shares_to_steth',
-        return_value=FVal('10'),
-    ), patch.object(
-        LidoCsmMetricsFetcher,
-        'get_rewards_tree',
-        new=fetch_tree_mock,
-    ), patch.object(
-        Inquirer,
-        'find_price',
-        return_value=FVal('1'),
-    ):
-        balances = LidoCsmBalances(
-            evm_inquirer=_make_evm_inquirer(),
-            tx_decoder=MagicMock(),
-        )
-        result = balances.query_balances(addresses=[address_1, address_2])
-
-    assert fetch_tree_mock.call_count == 1
-    # Bond amount is preserved even though rewards failed
-    assert result[address_1].assets[A_STETH][CPT_LIDO_CSM].amount == FVal('10')
-    assert result[address_2].assets[A_STETH][CPT_LIDO_CSM].amount == FVal('10')

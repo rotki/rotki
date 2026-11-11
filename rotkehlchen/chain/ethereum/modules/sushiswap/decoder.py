@@ -133,6 +133,9 @@ class SushiswapDecoder(EvmDecoderInterface):
         """
         tx_log = None
         for i_tx_log in all_logs:
+            if len(i_tx_log.topics) == 0:
+                continue
+
             if i_tx_log.topics[0] == REDSNWAP_ROUTE_PROCESSOR_TOPIC:
                 tx_log = i_tx_log
                 break
@@ -230,15 +233,18 @@ class SushiswapDecoder(EvmDecoderInterface):
         else:
             for tx_log in all_logs:
                 if (
-                    tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                    tx_log.address == asset_address and
-                    bytes_to_address(tx_log.topics[1]) in SUSHISWAP_REDSNWAP_ROUTE_PROCESSORS and
-                    not self.base.is_tracked(bytes_to_address(tx_log.topics[2]))
+                    len(tx_log.topics) == 0 or
+                    tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER or
+                    tx_log.address != asset_address or
+                    bytes_to_address(tx_log.topics[1]) not in SUSHISWAP_REDSNWAP_ROUTE_PROCESSORS or  # noqa: E501
+                    self.base.is_tracked(bytes_to_address(tx_log.topics[2]))
                 ):
-                    fee += asset_normalized_value(
-                        amount=int.from_bytes(tx_log.data),
-                        asset=asset,
-                    )
+                    continue
+
+                fee += asset_normalized_value(
+                    amount=int.from_bytes(tx_log.data),
+                    asset=asset,
+                )
 
         if fee > ZERO:  # create fee event if there is a fee
             fee_event = self.base.make_event_next_index(

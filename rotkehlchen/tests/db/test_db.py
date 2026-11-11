@@ -616,6 +616,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'internal_txs_to_repull': DEFAULT_INTERNAL_TXS_TO_REPULL,
         'internal_tx_conflict_repull_frequency': DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY,
         'mcp_privacy_mode': DEFAULT_MCP_PRIVACY_MODE,
+        'ipfs_gateway': '',
     }
     assert len(expected_dict) == len(dataclasses.fields(DBSettings)), 'One or more settings are missing'  # noqa: E501
 

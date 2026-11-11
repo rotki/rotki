@@ -175,11 +175,13 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
                         messenger=L2_MESSENGER_PROXY,
                     ),
                 )
-
-        log.error(
-            f'Token receiving event was not found in Scroll for '
-            f'{context.transaction.tx_hash!s} and L1 token {ethereum_token_address}',
-        )
+                break
+        else:  # event was not found
+            log.error(
+                'Token receiving event was not found in Scroll for %s and L1 token %s',
+                context.transaction.tx_hash,
+                ethereum_token_address,
+            )
 
         return DEFAULT_EVM_DECODING_OUTPUT
 

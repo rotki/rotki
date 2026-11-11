@@ -1,5 +1,6 @@
 import type { MessageHandler } from '../interfaces';
 import { startPromise } from '@shared/utils';
+import { parseDeviceLimitError } from '@/modules/auth/create-account/analytics/parse-device-limit-error';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
@@ -14,15 +15,16 @@ import { createConditionalHandler } from '../utils/handler-factories';
 /** The AuthFailure service the backend names for rotki's own premium credentials. */
 const ROTKI_PREMIUM_SERVICE = 'rotki_premium';
 
-type AuthFields = Extract<UserMessageData, { key: typeof UserMessageKey.AUTH }>['fields'];
+type AuthMessage = Extract<UserMessageData, { key: typeof UserMessageKey.AUTH }>;
 
 /**
  * Files a backend `add_error` / `add_warning` user message. It never creates a notification.
  *
  * @remarks
  * Rejected credentials raise the action center row that asks for the fix, since only the user can
- * fix them. Premium credentials raise the premium row, an exchange account's the row for that
- * account, and any other service's the missing key row, which stays while the service has no key.
+ * fix them. Premium credentials raise the premium row, as a device limit when the backend marks the
+ * message with the device limit link. Rejected exchange credentials raise the row for that account,
+ * and any other service's the missing key row, which stays while the service has no key.
  *
  * Every other family is a backend problem: filed in the drawer's tree under its family and
  * location, as one item per backend `group`, and never popped. The bulk of the corpus is
@@ -35,13 +37,21 @@ export function createUserMessageHandler(): MessageHandler<UserMessageData> {
   const { raise } = useRaisedConditionsStore();
   const { record } = useBackendProblemsStore();
 
-  function raiseRejectedCredentials({ account, service }: AuthFields): void {
+  function raiseRejectedCredentials({ fields: { account, service }, value }: AuthMessage): void {
     if (service === ROTKI_PREMIUM_SERVICE)
-      raise({ cause: PremiumInactiveCause.EXPIRED, kind: RaisedConditionKind.PREMIUM_INACTIVE });
+      raisePremiumInactive(value);
     else if (account && get(allExchanges).includes(service))
       raise({ kind: RaisedConditionKind.EXCHANGE_KEY_REJECTED, location: service, name: account });
     else
       raiseRemovedServiceKey(service);
+  }
+
+  function raisePremiumInactive(message: string): void {
+    const { hasLink, parts } = parseDeviceLimitError(message);
+    if (hasLink)
+      raise({ cause: PremiumInactiveCause.DEVICE_LIMIT, kind: RaisedConditionKind.PREMIUM_INACTIVE, reason: parts.map(part => part.trimEnd()).join('') });
+    else
+      raise({ cause: PremiumInactiveCause.EXPIRED, kind: RaisedConditionKind.PREMIUM_INACTIVE });
   }
 
   /**
@@ -59,7 +69,7 @@ export function createUserMessageHandler(): MessageHandler<UserMessageData> {
 
   return createConditionalHandler<UserMessageData>((data, { count, lastSent }) => {
     if (data.key === UserMessageKey.AUTH)
-      raiseRejectedCredentials(data.fields);
+      raiseRejectedCredentials(data);
     else
       record({ at: lastSent ?? new Date(), count, identity: JSON.stringify(data.group), source: data });
 

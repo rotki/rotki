@@ -562,6 +562,7 @@
           "description_device_limit": "Premium is off on this device: {reason}",
           "description_expired": "Your premium key was rejected, usually because the subscription ended. Premium features are off until it is renewed.",
           "description_unreachable": "The premium server could not be reached, so premium features are off for now. rotki checks again every hour.",
+          "manage_devices": "Manage devices",
           "remove_confirm": {
             "message": "rotki will stop checking the premium key and turn premium features off on this device. You can add a key again in the premium settings.",
             "title": "Remove the premium key?"
@@ -4274,6 +4275,14 @@
         "title": "Skipped External Events"
       },
       "title": "History events"
+    },
+    "ipfs_gateway": {
+      "error": "Error setting the IPFS gateway",
+      "hint": "Leave empty to use only the default gateways",
+      "label": "Gateway URL",
+      "subtitle": "An IPFS gateway rotki tries before its default ones, for example when fetching the Lido CSM rewards. Use it if the public gateways are rate limited.",
+      "success": "IPFS gateway saved",
+      "title": "Custom IPFS gateway"
     },
     "labels": {
       "btc_derivation_gap": "BTC derivation gap limit",

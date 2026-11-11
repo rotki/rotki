@@ -108,6 +108,21 @@ describe('createUserMessageHandler', () => {
       ]);
     });
 
+    it('should raise the premium row as a device limit when the backend marks it, without the marker', async () => {
+      const { raised } = storeToRefs(useRaisedConditionsStore());
+
+      await createUserMessageHandler().handle({
+        ...authFailure('rotki_premium', null),
+        value: 'Device limit of 3 exceeded _DEVICE_LIMIT_LINK_. Check logs for more details',
+      });
+
+      expect(Object.values(get(raised))).toEqual([{
+        cause: PremiumInactiveCause.DEVICE_LIMIT,
+        kind: RaisedConditionKind.PREMIUM_INACTIVE,
+        reason: 'Device limit of 3 exceeded. Check logs for more details',
+      }]);
+    });
+
     it('should raise the missing key row of an external service', async () => {
       const { raised } = storeToRefs(useRaisedConditionsStore());
 

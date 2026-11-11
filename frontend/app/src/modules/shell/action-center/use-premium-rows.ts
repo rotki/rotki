@@ -22,6 +22,8 @@ const PREMIUM_SETTINGS: ActionTarget = { kind: 'route', to: { name: '/api-keys/p
 
 const RENEW: ActionTarget = { kind: 'external', url: externalLinks.manageSubscriptions };
 
+const MANAGE_DEVICES: ActionTarget = { kind: 'external', url: externalLinks.premiumDevices };
+
 /**
  * The premium row: a saved premium key that does not work.
  *
@@ -83,6 +85,9 @@ export function usePremiumRows(): ComputedRef<ActionItem[]> {
       options: applicable<ActionItemOption>([
         expired
           ? some({ icon: 'lu-settings', id: 'premium-settings', label: t('action_center.rows.integrations.premium_inactive.settings'), target: PREMIUM_SETTINGS })
+          : none,
+        condition.cause === PremiumInactiveCause.DEVICE_LIMIT
+          ? some({ icon: 'lu-external-link', id: 'premium-manage-devices', label: t('action_center.rows.integrations.premium_inactive.manage_devices'), target: MANAGE_DEVICES })
           : none,
         some(removeKey),
       ]),

@@ -14,6 +14,7 @@ from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment
 from rotkehlchen.constants.assets import A_CUSDC, A_USDC
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_PROPERTIES,
     NO_ACCOUNTING_COUNTERPARTY,
@@ -353,6 +354,38 @@ def test_solving_conflicts(
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
+def test_failed_conflict_resolution_clears_cache(
+        rotkehlchen_api_server: APIServer,
+        latest_accounting_rules_data: list[tuple[int, list[dict[str, Any]]]],
+) -> None:
+    """A later invalid conflict must not leave statuses cached before an earlier rule changed."""
+    _setup_conflict_tests(rotkehlchen_api_server, latest_accounting_rules_data)
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    rotki.accountant.processable_events_cache.add(
+        key=1,
+        value=EventAccountingRuleStatus.NOT_PROCESSED,
+    )
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'UPDATE unresolved_remote_conflicts SET remote_data=? WHERE local_id=?',
+            ('{}', 2),
+        )
+
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesconflictsresource'),
+        json={'conflicts': [
+            {'local_id': 1, 'solve_using': 'remote'},
+            {'local_id': 2, 'solve_using': 'remote'},
+        ]},
+    )
+    assert_error_response(response, contained_in_msg='event_type', status_code=HTTPStatus.CONFLICT)
+    assert rotki.accountant.processable_events_cache.get(1) is None
+    with rotki.data.db.conn.read_ctx() as cursor:
+        cursor.execute('SELECT taxable FROM accounting_rules WHERE identifier=?', (1,))
+        assert cursor.fetchone()[0] == 0  # the first remote rule was committed before the failure
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [False])
 @pytest.mark.parametrize('solve_all_using', ['remote', 'local'])
 def test_solving_conflicts_all(
         rotkehlchen_api_server: APIServer,
@@ -574,10 +607,79 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer) -> None:
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 2
-    all(
+    assert all(
         entry['event_accounting_rule_status'] == EventAccountingRuleStatus.NOT_PROCESSED.serialize()  # noqa: E501
         for entry in result['entries']
     )
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [False])
+def test_rule_changes_refresh_cached_statuses(rotkehlchen_api_server: APIServer) -> None:
+    """Every way the accounting rules change must refresh the statuses cached for the history
+    page, since a page whose events are all cached is served from the cache alone.
+
+    Covers a rule without counterparty matching an event with one, rule updates pulled from
+    the data repo and resetting the rules to the defaults of the data repo."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    def query_status(group_identifier: str) -> str:
+        result = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json={'group_identifiers': [group_identifier]},
+        ))
+        assert len(result['entries']) == 1
+        return result['entries'][0]['event_accounting_rule_status']
+
+    migrate_event, trade_fee_event = (store_and_retrieve_events([EvmEvent(
+        tx_ref=make_evm_tx_hash(),
+        sequence_index=0,
+        timestamp=TimestampMS(16433333000),
+        location=LOCATION_ETHEREUM,
+        asset=A_USDC,
+        amount=ONE,
+        event_type=event_type,
+        event_subtype=event_subtype,
+        counterparty='my_custom_cpt',
+    )], rotki.data.db)[0] for event_type, event_subtype in (
+        # MIGRATE/RECEIVE has no rule in the defaults of the data repo
+        (HistoryEventType.MIGRATE, HistoryEventSubType.RECEIVE),
+        (HistoryEventType.TRADE, HistoryEventSubType.FEE),
+    ))
+    for event in (migrate_event, trade_fee_event):
+        assert query_status(event.group_identifier) == EventAccountingRuleStatus.NOT_PROCESSED.serialize()  # noqa: E501
+
+    assert_simple_ok_response(requests.put(  # a rule without counterparty applies to all of them
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json={
+            'event_type': HistoryEventType.MIGRATE.serialize(),
+            'event_subtype': HistoryEventSubType.RECEIVE.serialize(),
+            'counterparty': None,
+            'taxable': {'value': True},
+            'count_entire_amount_spend': {'value': True},
+            'count_cost_basis_pnl': {'value': True},
+            'accounting_treatment': None,
+        },
+    ))
+    assert query_status(migrate_event.group_identifier) == EventAccountingRuleStatus.HAS_RULE.serialize()  # noqa: E501
+    # cache the status again, since the rule change above cleared it
+    assert query_status(trade_fee_event.group_identifier) == EventAccountingRuleStatus.NOT_PROCESSED.serialize()  # noqa: E501
+
+    rotki.data_updater.update_accounting_rules(data=[{
+        'event_type': HistoryEventType.TRADE.serialize(),
+        'event_subtype': HistoryEventSubType.FEE.serialize(),
+        'counterparty': 'my_custom_cpt',
+        'taxable': True,
+        'count_entire_amount_spend': True,
+        'count_cost_basis_pnl': True,
+        'accounting_treatment': None,
+    }], version=1)
+    assert query_status(trade_fee_event.group_identifier) == EventAccountingRuleStatus.HAS_RULE.serialize()  # noqa: E501
+    assert query_status(migrate_event.group_identifier) == EventAccountingRuleStatus.HAS_RULE.serialize()  # noqa: E501
+
+    assert_simple_ok_response(requests.put(  # the defaults have no MIGRATE/RECEIVE rule
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresetresource'),
+    ))
+    assert query_status(migrate_event.group_identifier) == EventAccountingRuleStatus.NOT_PROCESSED.serialize()  # noqa: E501
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
@@ -795,6 +897,31 @@ def test_import_export_accounting_rules(rotkehlchen_api_server: APIServer) -> No
             (3, 65, 'count_entire_amount_spend', 'include_gas_costs'),
             (4, 65, 'count_cost_basis_pnl', 'include_crypto2crypto'),
         ] == initial_properties
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [False])
+def test_failed_import_is_atomic(rotkehlchen_api_server: APIServer) -> None:
+    """A failed event mapping must roll back rules inserted earlier in the import."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    success, error_message = DBAccountingRules(rotki.data.db).import_accounting_rules(
+        accounting_rules={'1': {
+            'event_type': HistoryEventType.DEPOSIT.serialize(),
+            'event_subtype': HistoryEventSubType.DEPOSIT_ASSET.serialize(),
+            'counterparty': None,
+            'event_ids': [1],  # no history event exists with this identifier
+            'rule': {
+                'taxable': {'value': False},
+                'count_entire_amount_spend': {'value': False},
+                'count_cost_basis_pnl': {'value': True},
+                'accounting_treatment': None,
+            },
+        }},
+        linked_properties={},
+    )
+    assert success is False
+    assert 'FOREIGN KEY constraint failed' in error_message
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM accounting_rules').fetchone()[0] == 0
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])

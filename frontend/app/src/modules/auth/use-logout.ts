@@ -7,6 +7,7 @@ import { api } from '@/modules/core/api/rotki-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { endSession, finishPendingWrites } from '@/modules/core/session/session-lifecycle';
+import { useSync } from '@/modules/session/use-session-sync';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
 import { disconnectWalletIfActive } from '@/modules/wallet/use-wallet-store';
@@ -55,6 +56,9 @@ function cancelInFlightRequests(): void {
   api.cancel();
 }
 
+/** The logout in progress, so a second call joins it instead of tearing the session down twice. */
+let activeLogout: Promise<void> | undefined;
+
 export function useLogout(): UseLogoutReturn {
   const { navigateToUserLogin } = useAppNavigation();
   const { logged, username } = storeToRefs(useSessionAuthStore());
@@ -62,6 +66,7 @@ export function useLogout(): UseLogoutReturn {
   const { clearPassword, isPackaged, notifyUserLogout, resetMcpSession, resetTray } = useInterop();
   const { loggedUsers: getLoggedUsers, logout: callLogout } = useUsersApi();
   const { savedRememberPassword } = useRememberSettings();
+  const { waitForDownload } = useSync();
 
   /**
    * Tears the wallet bridge down, main process first.
@@ -79,11 +84,13 @@ export function useLogout(): UseLogoutReturn {
    * Ends the session, then tears the logged-in state down and logs the user out of the backend.
    *
    * @remarks
-   * Only the writes still persisting the user's input are waited for first; the session ends before
-   * anything else awaits. The backend keeps serving this user until the logout call lands, so
-   * anything still running for the session must already be refused by then.
+   * A premium database restore that is replacing the user database is let finish, and the writes
+   * still persisting the user's input are waited for; the session ends before anything else awaits.
+   * The backend keeps serving this user until the logout call lands, so anything still running for
+   * the session must already be refused by then.
    */
-  const logout = async (navigate: boolean = true, options: LogoutOptions = {}): Promise<void> => {
+  const performLogout = async (navigate: boolean, options: LogoutOptions): Promise<void> => {
+    await waitForDownload();
     await finishPendingWrites();
     endSession();
 
@@ -117,6 +124,18 @@ export function useLogout(): UseLogoutReturn {
 
     if (navigate)
       await navigateToUserLogin();
+  };
+
+  const logout = async (navigate: boolean = true, options: LogoutOptions = {}): Promise<void> => {
+    if (activeLogout)
+      return activeLogout;
+
+    const logoutPromise = performLogout(navigate, options).finally(() => {
+      if (activeLogout === logoutPromise)
+        activeLogout = undefined;
+    });
+    activeLogout = logoutPromise;
+    return logoutPromise;
   };
 
   const logoutRemoteSession = async (): Promise<ActionStatus> => {

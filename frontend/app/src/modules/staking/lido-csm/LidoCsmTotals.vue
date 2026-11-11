@@ -7,7 +7,7 @@ import { STETH_IDENTIFIER } from '@/modules/staking/lido-csm/constants';
 /**
  * The tracked node operators' figures added up, read before the table: the bond held, the part of
  * it that can be claimed, and the rewards not yet claimed. Operators whose metrics are not in yet
- * add nothing.
+ * add nothing, and pending rewards the backend could not fetch add nothing to the rewards.
  */
 const { operators } = defineProps<{
   operators: LidoCsmNodeOperator[];
@@ -28,7 +28,7 @@ const sums = computed<Sums>(() => operators.reduce<Sums>((acc, { metrics }) => {
   return {
     bond: acc.bond.plus(metrics.bond.current),
     claimable: acc.claimable.plus(metrics.bond.claimable),
-    rewards: acc.rewards.plus(metrics.rewards.pending),
+    rewards: acc.rewards.plus(metrics.rewards.pending ?? Zero),
   };
 }, { bond: Zero, claimable: Zero, rewards: Zero }));
 

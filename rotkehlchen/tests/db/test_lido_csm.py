@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import pytest
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
@@ -69,6 +71,15 @@ def test_lido_csm_db_operations(database) -> None:
             metrics=stats,
         ),
     )
+
+    # Metrics refreshed without rewards (fetch failed) keep the stored rewards, not zero
+    db.set_metrics(node_operator_id=1, metrics=replace(stats, current_bond=FVal(3), rewards_steth=None), staking_module=LidoCsmStakingModule.CSM)  # noqa: E501
+    assert db.get_node_operators()[0].metrics == replace(stats, current_bond=FVal(3))
+
+    # and a never fetched value stays unknown instead of becoming zero
+    db.delete_metrics(node_operator_id=1, staking_module=LidoCsmStakingModule.CSM)
+    db.set_metrics(node_operator_id=1, metrics=replace(stats, rewards_steth=None), staking_module=LidoCsmStakingModule.CSM)  # noqa: E501
+    assert db.get_node_operators()[0].metrics == replace(stats, rewards_steth=None)
     db.delete_metrics(node_operator_id=1, staking_module=LidoCsmStakingModule.CSM)
     assert db.get_node_operators() == (
         LidoCsmNodeOperator(

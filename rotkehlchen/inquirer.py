@@ -1,7 +1,6 @@
 import logging
 import operator
 from collections.abc import Callable, Iterable, Sequence
-from contextlib import suppress
 from threading import Event, Lock, local
 from time import monotonic
 from typing import (
@@ -146,6 +145,10 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.frankfurter import (
+    get_current_frankfurter_exchange_rates,
+    get_historical_frankfurter_exchange_rates,
+)
 from rotkehlchen.externalapis.xratescom import (
     get_current_xratescom_exchange_rates,
     get_historical_xratescom_exchange_rates,
@@ -1806,35 +1809,62 @@ class Inquirer:
         if price_cache_entry:
             return price_cache_entry.price
 
-        try:
-            prices_map = get_historical_xratescom_exchange_rates(
-                from_asset=from_fiat_currency,
-                time=timestamp,
-            )
-        except RemoteError:
-            return None
-
-        # Since xratecoms has daily rates let's save at timestamp of UTC day start
-        timestamp = timestamp_to_daystart_timestamp(timestamp)
-        for asset, asset_price in prices_map.items():
-            GlobalDBHandler.add_historical_prices(entries=[HistoricalPrice(
-                from_asset=from_fiat_currency,
-                to_asset=asset,
-                source=HistoricalPriceOracle.XRATESCOM,
-                timestamp=timestamp,
-                price=asset_price,
-            )])
-            if asset == to_fiat_currency:
-                rate = asset_price
-                break
-        else:
+        if (rate := Inquirer._query_fiat_rates_sources(
+            queries=(
+                (get_historical_xratescom_exchange_rates, 'x-rates.com'),
+                (get_historical_frankfurter_exchange_rates, 'frankfurter'),
+            ),
+            base=from_fiat_currency,
+            quote=to_fiat_currency,
+            timestamp=timestamp,
+        )) is None:
             log.debug(
-                f'Could not find historical fiat exchange rate for asset {to_fiat_currency=}',
+                'Could not find historical fiat exchange rate',
+                to_fiat_currency=to_fiat_currency.identifier,
             )
             return None
 
         log.debug('Historical fiat exchange rate query successful', rate=rate)
         return rate
+
+    @staticmethod
+    def _query_fiat_rates_sources(
+            queries: tuple[tuple[Callable[[FiatAsset, Timestamp], dict[FiatAsset, Price]], str], ...],  # noqa: E501
+            base: FiatAsset,
+            quote: FiatAsset,
+            timestamp: Timestamp,
+    ) -> Price | None:
+        """Query the daily rates of `base` from each fiat rates source in order, until one
+        has the `quote` rate. All the rates a source returns are cached at the UTC day
+        start of `timestamp` since the sources have daily rates.
+
+        All fiat rates sources are cached under the XRATESCOM source type. It is not
+        exposed to the user and stands for any fiat exchange rates source.
+        """
+        daystart = timestamp_to_daystart_timestamp(timestamp)
+        for query, name in queries:
+            try:
+                prices_map = query(base, timestamp)
+            except RemoteError as e:
+                log.warning(
+                    'Failed to query fiat exchange rates',
+                    source=name,
+                    base=base.identifier,
+                    error=str(e),
+                )
+                continue
+
+            GlobalDBHandler.add_historical_prices(entries=[HistoricalPrice(
+                from_asset=base,
+                to_asset=asset,
+                source=HistoricalPriceOracle.XRATESCOM,
+                timestamp=daystart,
+                price=asset_price,
+            ) for asset, asset_price in prices_map.items()])
+            if (rate := prices_map.get(quote)) is not None:
+                return rate
+
+        return None
 
     @staticmethod
     def _query_fiat_pairs(
@@ -1886,25 +1916,17 @@ class Inquirer:
         if price_cache_entry:
             return price_cache_entry.price, CurrentPriceOracle.FIAT
 
-        # Use the xratescom query and save all prices in the cache
-        price = None
-        with suppress(RemoteError):
-            price_map = get_current_xratescom_exchange_rates(base)
-            for quote_asset, quote_price in price_map.items():
-                if quote_asset == quote:
-                    # if the quote asset price is found return it
-                    price = quote_price
-
-                GlobalDBHandler.add_historical_prices(entries=[HistoricalPrice(
-                    from_asset=base,
-                    to_asset=quote_asset,
-                    source=HistoricalPriceOracle.XRATESCOM,
-                    timestamp=timestamp_to_daystart_timestamp(now),
-                    price=quote_price,
-                )])
-
-            if price:  # the quote asset may not be found
-                return price, CurrentPriceOracle.FIAT
+        # Query the fiat rates sources and save all prices in the cache
+        if (price := Inquirer._query_fiat_rates_sources(
+            queries=(
+                (lambda base, _: get_current_xratescom_exchange_rates(base), 'x-rates.com'),
+                (lambda base, _: get_current_frankfurter_exchange_rates(base), 'frankfurter'),
+            ),
+            base=base,
+            quote=quote,
+            timestamp=now,
+        )) is not None:
+            return price, CurrentPriceOracle.FIAT
 
         # Check cache
         price_cache_entry = GlobalDBHandler.get_historical_price(

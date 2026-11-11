@@ -58,6 +58,7 @@ export const useSync = createSharedComposable(() => {
    * automatic backup is not opened beside it.
    */
   const manualSyncActive = ref<boolean>(false);
+  const downloadActive = ref<boolean>(false);
 
   const showSyncConfirmation = (action: SyncAction): void => {
     set(syncAction, action);
@@ -110,6 +111,8 @@ export const useSync = createSharedComposable(() => {
       set(displaySyncConfirmation, false);
 
     set(manualSyncActive, true);
+    if (action === SYNC_DOWNLOAD)
+      set(downloadActive, true);
     const sameSessionLive = captureSession();
     const outcome = await submitTask<ForceSyncResult>({
       id: manualSyncActivity.id(),
@@ -132,7 +135,10 @@ export const useSync = createSharedComposable(() => {
       },
       subtitle: action === SYNC_UPLOAD ? t('sync_indicator.activity.upload') : t('sync_indicator.activity.download'),
       title: t('task_center.group.sync'),
-    }).finally(() => set(manualSyncActive, false));
+    }).finally(() => {
+      set(manualSyncActive, false);
+      set(downloadActive, false);
+    });
 
     // A session that ended meanwhile was already logged out, which locked colibri as well
     if (action === SYNC_DOWNLOAD && lockedColibri(outcome) && sameSessionLive())
@@ -142,6 +148,11 @@ export const useSync = createSharedComposable(() => {
   const clearUploadStatus = (): void => {
     set(uploadStatus, null);
     set(uploadProgress, undefined);
+  };
+
+  const waitForDownload = async (): Promise<void> => {
+    if (get(downloadActive))
+      await until(downloadActive).toBe(false);
   };
 
   return {
@@ -156,5 +167,6 @@ export const useSync = createSharedComposable(() => {
     uploadProgress,
     uploadStatus,
     uploadStatusAlreadyHandled,
+    waitForDownload,
   };
 });

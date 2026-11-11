@@ -1,3 +1,4 @@
+import itertools
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -13,6 +14,7 @@ from rotkehlchen.chain.ethereum.oracles.constants import (
     A_OPTIMISM_USDT,
     A_POLYGON_USDC,
 )
+from rotkehlchen.chain.ethereum.oracles.uniswap import PoolPrice
 from rotkehlchen.chain.evm.types import (
     EvmIndexer,
     NodeName,
@@ -41,7 +43,14 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChainID, Price, SupportedBlockchain, Timestamp, TokenKind
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    Price,
+    SupportedBlockchain,
+    Timestamp,
+    TokenKind,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.inquirer import Inquirer
@@ -340,3 +349,35 @@ def test_uniswap_oracle_query_multiple_handles_exceptions(inquirer_defi):
     # At least some valid tokens should have prices (assuming pools exist)
     valid_erc20_tokens = [asset for asset in from_assets if asset != nft_token]
     assert any(token in prices for token in valid_erc20_tokens)
+
+
+@pytest.mark.parametrize('pools_in_route', [1, 2, 3])
+def test_uniswap_route_pool_orientation(inquirer_defi: Inquirer, pools_in_route: int) -> None:
+    """Every pool of a route is priced from the token entering it, whatever its token order.
+
+    Regression test for the intermediate pools of a route being oriented against the
+    wrong neighbour, which gave a wrong price for routes of three or more pools.
+    """
+    assert (oracle := inquirer_defi._uniswapv3) is not None
+    tokens = [asset.resolve_to_evm_token() for asset in (A_1INCH, A_LINK, A_WETH, A_USDC)]
+    forward_prices = [FVal(2), FVal(3), FVal(5)][:pools_in_route]
+    pools = [string_to_evm_address(f'0x{idx:040x}') for idx in range(1, pools_in_route + 1)]
+    expected_price = FVal(1)
+    for forward_price in forward_prices:
+        expected_price *= forward_price
+
+    pool_prices: dict[ChecksumEvmAddress, PoolPrice] = {}
+    for reversed_pools in itertools.product((False, True), repeat=pools_in_route):
+        for idx, (pool, forward_price, is_reversed) in enumerate(zip(pools, forward_prices, reversed_pools, strict=True)):  # noqa: E501
+            pool_price = PoolPrice(price=forward_price, token_0=tokens[idx], token_1=tokens[idx + 1])  # noqa: E501
+            pool_prices[pool] = pool_price.swap_tokens() if is_reversed else pool_price
+
+        with (
+            patch.object(oracle, 'find_route', return_value=pools),
+            patch.object(oracle, 'get_pool_price', side_effect=lambda pool_addr, **_: pool_prices[pool_addr]),  # noqa: E501
+        ):
+            assert oracle.get_price(
+                from_token=tokens[0],
+                to_token=tokens[pools_in_route],
+                block_identifier='latest',
+            ) == expected_price, f'wrong price with reversed pools {reversed_pools}'

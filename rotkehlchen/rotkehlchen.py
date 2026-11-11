@@ -73,6 +73,7 @@ from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import CONTRACT_TAG_NAME, NFT_DIRECTIVE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_import.manager import CSVDataImporter
 from rotkehlchen.data_migrations.manager import DataMigrationManager
@@ -87,9 +88,11 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import (
     EthSyncError,
     InputError,
+    PnlReportAlreadyRunning,
     RemoteError,
     SystemPermissionError,
 )
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.alchemy import Alchemy
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
@@ -156,13 +159,14 @@ from rotkehlchen.user_messages import (
     AuthFailure,
     LocalDbProblem,
     MessagesAggregator,
+    MissingPrice,
 )
 from rotkehlchen.utils.datadir import maybe_restructure_rotki_data_directory
 from rotkehlchen.utils.misc import combine_dicts, ts_now
 
 if TYPE_CHECKING:
     import argparse
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Generator, Sequence
 
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.connections.types import ConnectionIdentifier
@@ -209,6 +213,8 @@ class Rotkehlchen:
             )
         self.main_loop_spawned = False
         self.api_tasks: list[Task] = []
+        # report runs share the single accountant and history querying manager
+        self.pnl_report_lock = threading.Lock()
         self.msg_aggregator = MessagesAggregator()
         self.task_supervisor = TaskSupervisor(msg_aggregator=self.msg_aggregator)
         self.rotki_notifier = RotkiNotifier()
@@ -716,6 +722,7 @@ class Rotkehlchen:
             msg_aggregator=self.msg_aggregator,
             user_db=self.data.db,
             chains_aggregator=self.chains_aggregator,
+            accountant=self.accountant,
         )
         self.task_manager = TaskManager(
             max_tasks_num=DEFAULT_MAX_TASKS_NUM,
@@ -1210,6 +1217,9 @@ class Rotkehlchen:
             self.data.db.remove_single_blockchain_accounts(write_cursor, blockchain, accounts)
 
     def get_history_query_status(self) -> dict[str, str]:
+        if not self.pnl_report_lock.locked():
+            return {'processing_state': '', 'total_progress': '0'}
+
         if self.history_querying_manager.progress < FVal('100'):
             processing_state = self.history_querying_manager.processing_state_name
             progress = self.history_querying_manager.progress / 2
@@ -1236,17 +1246,36 @@ class Rotkehlchen:
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> tuple[int, str]:
-        error_or_empty, events = self.history_querying_manager.get_history(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            has_premium=has_premium_check(self.premium),
-        )
-        report_id = self.accountant.process_history(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            events=events,
-        )
+        """May raise:
+        - PnlReportAlreadyRunning if another report is being generated
+        - AccountingError if a fatal error stopped processing
+        """
+        with self.pnl_report_run():
+            error_or_empty, events = self.history_querying_manager.get_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                has_premium=has_premium_check(self.premium),
+            )
+            report_id = self.accountant.process_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                events=events,
+            )
         return report_id, error_or_empty
+
+    @contextlib.contextmanager
+    def pnl_report_run(self) -> Generator[None]:
+        """Holds the PnL report lock for a report run or its debug export/import.
+
+        May raise:
+        - PnlReportAlreadyRunning if another run holds it
+        """
+        if not self.pnl_report_lock.acquire(blocking=False):
+            raise PnlReportAlreadyRunning('A PnL report is already being generated')
+        try:
+            yield
+        finally:
+            self.pnl_report_lock.release()
 
     def query_balances(
             self,
@@ -1479,11 +1508,9 @@ class Rotkehlchen:
             if (problem_free or save_despite_errors) and allowed_to_save:
                 if not timestamp:
                     timestamp = Timestamp(int(time.time()))
-                main_to_usd_rate = PriceHistorian.query_historical_price(
-                    from_asset=main_currency,
-                    to_asset=A_USD,
-                    timestamp=timestamp,
-                ) if (main_currency := CachedSettings().main_currency) != A_USD else Price(ONE)
+                if (main_to_usd_rate := self._query_main_to_usd_rate(timestamp)) is None:
+                    return result_dict
+
                 with self.data.db.user_write() as write_cursor:
                     self.data.db.save_balances_data(
                         write_cursor=write_cursor,
@@ -1502,6 +1529,48 @@ class Rotkehlchen:
                 )
 
         return result_dict
+
+    def _query_main_to_usd_rate(self, timestamp: Timestamp) -> Price | None:
+        """Get the main currency to USD rate used to store the snapshot's USD values.
+
+        If no historical rate can be found for the snapshot timestamp, which happens for
+        fiat main currencies when x-rates.com is unreachable since no other historical
+        oracle supports fiat, fall back to the current rate. That uses the same cached
+        fiat rates that valued the balances. For a fiat main currency the current rate
+        is derived from USD -> main currency, since that is the direction in which
+        current fiat rates are queried and cached.
+
+        Returns None, after warning the user, if no rate could be found at all.
+        """
+        if (main_currency := CachedSettings().main_currency) == A_USD:
+            return Price(ONE)
+
+        try:
+            return PriceHistorian.query_historical_price(
+                from_asset=main_currency,
+                to_asset=A_USD,
+                timestamp=timestamp,
+            )
+        except NoPriceForGivenTimestamp as e:
+            log.warning(
+                'Could not get the historical main currency to USD rate for the '
+                'balance snapshot. Falling back to the current rate.',
+                main_currency=main_currency.identifier,
+                error=str(e),
+            )
+
+        if main_currency.is_fiat():
+            if (usd_to_main := Inquirer.find_price(from_asset=A_USD, to_asset=main_currency)) != ZERO_PRICE:  # noqa: E501
+                return Price(ONE / usd_to_main)
+        elif (rate := Inquirer.find_usd_price(main_currency)) != ZERO_PRICE:
+            return rate
+
+        self.msg_aggregator.add_warning(
+            f'Could not save the balance snapshot since no {main_currency.identifier} '
+            f'to USD rate could be found.',
+            classification=MissingPrice(asset=main_currency.identifier, timestamp=timestamp),
+        )
+        return None
 
     @staticmethod
     def _save_manual_prices_as_historical(result_dict: dict[str, Any]) -> None:

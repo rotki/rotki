@@ -8,7 +8,7 @@ import threading
 import time
 import traceback
 from collections import defaultdict
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
@@ -688,24 +688,32 @@ class RestAPI:
         a remote query) is abandoned and dies at its next checkpoint, with its
         death logged without alerting the user since its token shows the
         cancellation was deliberate."""
-        with self.task_lock:
-            # From here on newly spawned tasks are cancelled at spawn (see
-            # _query_async), so a task slipping in during the grace period below
-            # cannot escape cancellation. Reset by user_logout and session takeover
-            # once their teardown is done; deliberately never reset on shutdown.
-            self.api_tasks_stop_reason = reason
-            pending = [x for x in self.rotkehlchen.api_tasks if x.dead is False]
-        if len(pending) != 0:
-            for task in pending:
-                task.request_cancellation(reason)
-            wait(pending, timeout=DEFAULT_CANCEL_GRACE_SECONDS)
-            if len(survivors := [x.task_id for x in pending if x.dead is False]) != 0:
-                log.warning(
-                    'Abandoning cancelled api tasks that did not exit within the grace period',
-                    task_ids=survivors,
-                )
-        with self.task_lock:
-            self.rotkehlchen.api_tasks.clear()
+        # A premium download replaces the open user DB. Let that critical section and its
+        # failure cleanup finish before cancellation can reach a database checkpoint. The
+        # manager does not exist yet on API servers without an initialized user session.
+        premium_sync_manager = getattr(self.rotkehlchen, 'premium_sync_manager', None)
+        with (
+            nullcontext() if premium_sync_manager is None
+            else premium_sync_manager.database_restore_lock
+        ):
+            with self.task_lock:
+                # From here on newly spawned tasks are cancelled at spawn (see
+                # _query_async), so a task slipping in during the grace period below
+                # cannot escape cancellation. Reset by user_logout and session takeover
+                # once their teardown is done; deliberately never reset on shutdown.
+                self.api_tasks_stop_reason = reason
+                pending = [x for x in self.rotkehlchen.api_tasks if x.dead is False]
+            if len(pending) != 0:
+                for task in pending:
+                    task.request_cancellation(reason)
+                wait(pending, timeout=DEFAULT_CANCEL_GRACE_SECONDS)
+                if len(survivors := [x.task_id for x in pending if x.dead is False]) != 0:
+                    log.warning(
+                        'Abandoning cancelled api tasks that did not exit within the grace period',
+                        task_ids=survivors,
+                    )
+            with self.task_lock:
+                self.rotkehlchen.api_tasks.clear()
 
     # - Public functions not exposed via the rest api
     def stop(self) -> None:
@@ -2119,10 +2127,14 @@ class RestAPI:
         # Compute and persist metrics for the newly added operator. If it fails
         # we still return the list but metrics will be empty until refreshed.
         try:
-            metrics = LidoCsmMetricsFetcher(
+            metrics_fetcher = LidoCsmMetricsFetcher(
                 evm_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
                 staking_module=staking_module,
-            ).get_operator_stats(node_operator_id)
+            )
+            metrics = metrics_fetcher.get_operator_stats(
+                node_operator_id=node_operator_id,
+                rewards_tree=metrics_fetcher.get_rewards_tree_or_none(),
+            )
             DBLidoCsm(self.rotkehlchen.data.db).set_metrics(
                 node_operator_id=node_operator_id,
                 metrics=metrics,
@@ -2130,13 +2142,25 @@ class RestAPI:
             )
         except RemoteError as e:
             log.error(
-                f'Failed to fetch Lido CSM metrics for new operator {node_operator_id}: {e}',
+                'Failed to fetch Lido CSM metrics for new operator %s: %s',
+                node_operator_id,
+                e,
             )
             return api_response(FailResult(
                 f'Failed to fetch metrics for node operator '
                 f'{staking_module.name} #{node_operator_id}',
                 HTTPStatus.BAD_GATEWAY,
                 e.cause,
+                result=self._serialize_lido_csm_node_operators(),
+            ))
+
+        if metrics.rewards_steth is None:
+            return api_response(FailResult(
+                f'Could not fetch the pending rewards of node operator '
+                f'{staking_module.name} #{node_operator_id} from any IPFS gateway. '
+                f'You can set your own IPFS gateway in the settings.',
+                HTTPStatus.BAD_GATEWAY,
+                FailureCause.NETWORK,
                 result=self._serialize_lido_csm_node_operators(),
             ))
 
@@ -2164,34 +2188,67 @@ class RestAPI:
         return api_response(OkResult(self._serialize_lido_csm_node_operators()))
 
     def refresh_lido_csm_metrics(self) -> Response:
-        """Recompute metrics for a given node operator id,
-        or for all tracked operators if omitted."""
+        """Recompute and store the metrics of all tracked node operators.
+
+        The IPFS rewards tree of a staking module holds the rewards of all its operators,
+        so it is fetched once per module and shared, instead of once per operator.
+        """
         metrics_fetchers = {
             staking_module: LidoCsmMetricsFetcher(
                 evm_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
                 staking_module=staking_module,
             ) for staking_module in LidoCsmStakingModule
         }
-
+        rewards_trees: dict[LidoCsmStakingModule, dict[int, int] | RemoteError | None] = {}
         result = []
         failed_ids: list[str] = []
+        unknown_rewards_ids: list[str] = []
         failure_causes: set[FailureCause] = set()
         for entry in DBLidoCsm(self.rotkehlchen.data.db).get_node_operators():
-            try:
-                metrics = metrics_fetchers[entry.staking_module].get_operator_stats(
-                    entry.node_operator_id,
-                )
-                metrics_payload = metrics.serialize()
-                DBLidoCsm(self.rotkehlchen.data.db).set_metrics(
-                    node_operator_id=entry.node_operator_id,
-                    metrics=metrics,
-                    staking_module=entry.staking_module,
-                )
-            except RemoteError as e:
-                log.error(f'Failed to refresh Lido CSM metrics for {entry}: {e}')
-                metrics_payload = None
-                failed_ids.append(f'{entry.staking_module.name} #{entry.node_operator_id}')
-                failure_causes.add(e.cause)
+            metrics_fetcher = metrics_fetchers[entry.staking_module]
+            operator_label = f'{entry.staking_module.name} #{entry.node_operator_id}'
+            if entry.staking_module not in rewards_trees:
+                try:
+                    tree = metrics_fetcher.get_rewards_tree_or_none()
+                except RemoteError as e:  # the on-chain cid query failed, not IPFS
+                    log.error(
+                        'Failed to query the Lido CSM rewards tree cid of %s: %s',
+                        entry.staking_module.name,
+                        e,
+                    )
+                    rewards_trees[entry.staking_module] = e
+                else:
+                    rewards_trees[entry.staking_module] = tree
+
+            metrics_payload = None
+            if isinstance(rewards_tree := rewards_trees[entry.staking_module], RemoteError):
+                failed_ids.append(operator_label)
+                failure_causes.add(rewards_tree.cause)
+            else:
+                try:
+                    metrics = metrics_fetcher.get_operator_stats(
+                        node_operator_id=entry.node_operator_id,
+                        rewards_tree=rewards_tree,
+                    )
+                except RemoteError as e:
+                    log.error('Failed to refresh Lido CSM metrics for %s: %s', entry, e)
+                    failed_ids.append(operator_label)
+                    failure_causes.add(e.cause)
+                else:
+                    metrics_payload = metrics.serialize()
+                    if metrics.rewards_steth is None:
+                        unknown_rewards_ids.append(operator_label)
+                        failure_causes.add(FailureCause.NETWORK)
+                        # report the stored value, which set_metrics keeps, and not null
+                        if entry.metrics is not None and entry.metrics.rewards_steth is not None:
+                            metrics_payload['rewards']['pending'] = str(
+                                entry.metrics.rewards_steth,
+                            )
+                    DBLidoCsm(self.rotkehlchen.data.db).set_metrics(
+                        node_operator_id=entry.node_operator_id,
+                        metrics=metrics,
+                        staking_module=entry.staking_module,
+                    )
 
             result.append({
                 'address': entry.address,
@@ -2199,10 +2256,21 @@ class RestAPI:
                 'staking_module_id': entry.staking_module.value,
                 'metrics': metrics_payload,
             })
+
+        messages: list[str] = []
         if failed_ids:
+            messages.append(
+                f"Failed to refresh metrics for node operators: {', '.join(failed_ids)}",
+            )
+        if unknown_rewards_ids:
+            messages.append(
+                'Could not fetch the pending rewards from any IPFS gateway for node operators: '
+                f"{', '.join(unknown_rewards_ids)}. The last known values are kept. "
+                'You can set your own IPFS gateway in the settings.',
+            )
+        if messages:
             return api_response(FailResult(
-                'Failed to refresh metrics for node operators: '
-                f"{', '.join(failed_ids)}",
+                '. '.join(messages),
                 HTTPStatus.BAD_GATEWAY,
                 combined_cause(failure_causes),
                 result=result,

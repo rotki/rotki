@@ -133,9 +133,9 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
         collateral_sent, borrowed_collateral_amount = None, None
         for tx_log in context.all_logs:
             if (
+                len(tx_log.topics) < 3 or
                 tx_log.address != collateral_token.evm_address or
                 tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER or
-                len(tx_log.topics) < 3 or
                 bytes_to_address(tx_log.topics[2]) != amm_address
             ):
                 continue
@@ -204,13 +204,16 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
         # tracked address and retrieve the raw reward amount from there.
         for tx_log in context.all_logs:
             if (
-                tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                tx_log.address == pool_token_address and
-                bytes_to_address(tx_log.topics[1]) == context.tx_log.address and
-                self.base.is_tracked(bytes_to_address(tx_log.topics[2]))
+                len(tx_log.topics) == 0 or
+                tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER or
+                tx_log.address != pool_token_address or
+                bytes_to_address(tx_log.topics[1]) != context.tx_log.address or
+                not self.base.is_tracked(bytes_to_address(tx_log.topics[2]))
             ):
-                reward_raw_amount = int.from_bytes(tx_log.data[:32])
-                break
+                continue
+
+            reward_raw_amount = int.from_bytes(tx_log.data[:32])
+            break
         else:
             log.error(f'Failed to find reward amount for curve peg keeper update transaction {context.transaction!s}')  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT

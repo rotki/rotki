@@ -38,9 +38,15 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import AccountingError, APIKeyNotAvailable, RemoteError
+from rotkehlchen.errors.misc import (
+    AccountingError,
+    APIKeyNotAvailable,
+    PnlReportAlreadyRunning,
+    RemoteError,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
+from rotkehlchen.externalapis.ipfs import redact_ipfs_gateway_url
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -159,6 +165,8 @@ class HistoryService:
                 FailureCause.CONFLICT,
                 result=e.report_id,
             )
+        except PnlReportAlreadyRunning as e:
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.CONFLICT)
 
         return OkResult(report_id, message=error_or_empty)
 
@@ -168,11 +176,16 @@ class HistoryService:
             to_timestamp: Timestamp,
             directory_path: Path | None,
     ) -> ApiResult:
-        error_or_empty, events = self.rotkehlchen.history_querying_manager.get_history(
-            start_ts=from_timestamp,
-            end_ts=to_timestamp,
-            has_premium=has_premium_check(self.rotkehlchen.premium),
-        )
+        try:
+            with self.rotkehlchen.pnl_report_run():  # shares the report's history manager
+                error_or_empty, events = self.rotkehlchen.history_querying_manager.get_history(
+                    start_ts=from_timestamp,
+                    end_ts=to_timestamp,
+                    has_premium=has_premium_check(self.rotkehlchen.premium),
+                )
+        except PnlReportAlreadyRunning as e:
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+
         if error_or_empty != '':
             return FailResult(error_or_empty, HTTPStatus.CONFLICT, FailureCause.CONFLICT)
 
@@ -180,9 +193,12 @@ class HistoryService:
             settings = self.rotkehlchen.get_settings(cursor)
             cache = self.rotkehlchen.data.db.get_cache_for_api(cursor)
             ignored_ids = self.rotkehlchen.data.db.get_ignored_action_ids(cursor)
+        serialized_settings = settings.serialize() | cache
+        # The gateway's query may hold an access token, and users attach this to bug reports
+        serialized_settings['ipfs_gateway'] = redact_ipfs_gateway_url(settings.ipfs_gateway)
         debug_info = {
             'events': [entry.serialize_for_debug_import() for entry in events],
-            'settings': settings.serialize() | cache,
+            'settings': serialized_settings,
             'ignored_events_ids': list(ignored_ids),
             'pnl_settings': {
                 'from_timestamp': int(from_timestamp),
@@ -196,6 +212,13 @@ class HistoryService:
         return OkResult(debug_info)
 
     def import_history_debug(self, filepath: Path) -> ApiResult:
+        try:
+            with self.rotkehlchen.pnl_report_run():  # shares the report's accountant
+                return self._import_history_debug(filepath)
+        except PnlReportAlreadyRunning as e:
+            return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.CONFLICT)
+
+    def _import_history_debug(self, filepath: Path) -> ApiResult:
         json_importer = DebugHistoryImporter(self.rotkehlchen.data.db)
         success, msg, data = json_importer.import_history_debug(filepath=filepath)
 

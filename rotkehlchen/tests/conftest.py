@@ -644,7 +644,7 @@ def vcr_fixture(vcr: VCR) -> VCR:
                 _normalize_solana_rpc_uri(r1.uri) == _normalize_solana_rpc_uri(r2.uri) and
                 r1.method == r2.method
             )
-        if 'etherscan.io' not in uri_pair and 'blockscout.com' not in uri_pair:
+        if 'etherscan.io' not in uri_pair and 'blockscout.com' not in uri_pair and 'routescan.io' not in uri_pair:  # noqa: E501
             return r1.uri == r2.uri and r1.method == r2.method
 
         # Check base URL (scheme + netloc + path) matches
@@ -675,7 +675,50 @@ def vcr_fixture(vcr: VCR) -> VCR:
             elif key not in params2 and key in params1 and set(params1[key]).issubset(default_values):  # noqa: E501
                 params1.pop(key)
 
+        # Block timestamps are now read from header-only blocks. A full block, which existing
+        # cassettes recorded, carries the same header, so let it answer the header-only request.
+        if (
+            params1.get('action') == params2.get('action') == ['eth_getBlockByNumber'] and
+            params1.get('boolean') == ['false'] and
+            params2.get('boolean') == ['true']
+        ):
+            params1.pop('boolean')
+            params2.pop('boolean')
+
         return params1 == params2
+
+    def rpc_body_matcher(r1, r2):
+        """Match request bodies, ignoring JSON-RPC call ids in single and batched calls,
+        since they depend on how many calls the provider made before. A recorded
+        full-block eth_getBlockByNumber call may also answer a header-only one, since block
+        timestamps are now read from header-only blocks and the header is the same."""
+        if r1.body == r2.body:
+            return True
+
+        try:
+            b1, b2 = json.loads(r1.body), json.loads(r2.body)
+        except (TypeError, json.JSONDecodeError):
+            return False
+
+        if isinstance(b1, dict) and isinstance(b2, dict):
+            b1, b2 = [b1], [b2]
+        if not (isinstance(b1, list) and isinstance(b2, list) and len(b1) == len(b2)):
+            return False
+
+        for call1, call2 in zip(b1, b2, strict=True):
+            if not (isinstance(call1, dict) and isinstance(call2, dict)):
+                return False
+            call1.pop('id', None)
+            call2.pop('id', None)
+            if (
+                call1.get('method') == call2.get('method') == 'eth_getBlockByNumber' and
+                len(params1 := call1.get('params', [])) == len(params2 := call2.get('params', [])) == 2 and  # noqa: E501
+                params1[1] is False and params2[1] is True
+            ):
+                params1.pop()
+                params2.pop()
+
+        return b1 == b2
 
     vcr.register_matcher('alchemy_api_matcher', alchemy_api_matcher)
     vcr.register_matcher('beaconchain_matcher', beaconchain_matcher)
@@ -683,6 +726,7 @@ def vcr_fixture(vcr: VCR) -> VCR:
     vcr.register_matcher('match_rpc_calls', match_rpc_calls)
     vcr.register_matcher('solana_rpc_matcher', solana_rpc_matcher)
     vcr.register_matcher('etherscan_matcher', etherscan_matcher)
+    vcr.register_matcher('rpc_body_matcher', rpc_body_matcher)
     return vcr
 
 

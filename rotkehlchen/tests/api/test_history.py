@@ -1,4 +1,5 @@
 import random
+import time
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
@@ -14,6 +15,7 @@ from rotkehlchen.accounting.constants import (
 )
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import AccountingError
@@ -27,6 +29,7 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.history.manager import STEPS_PER_CEX
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.locations.constants import (
@@ -254,6 +257,126 @@ def test_fatal_error_during_query_history(rotkehlchen_api_server: APIServer) -> 
             'cause': 'conflict',
             'status_code': HTTPStatus.CONFLICT,
         }
+    assert _count_pnl_reports(rotkehlchen_api_server) == 1  # a fatal error keeps its report
+
+
+def _start_report(server: APIServer) -> int:
+    return assert_ok_async_response(requests.get(
+        api_url_for(server, 'historyprocessingresource'),
+        json={'from_timestamp': 0, 'to_timestamp': 1, 'async_query': True},
+    ))
+
+
+def _count_pnl_reports(server: APIServer) -> int:
+    with server.rest_api.rotkehlchen.data.db.conn_transient.read_ctx() as cursor:
+        return cursor.execute('SELECT COUNT(*) FROM pnl_reports').fetchone()[0]
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('ethereum_accounts', [[]])  # no accounts so no history is pulled
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_overlapping_and_cancelled_report_runs(rotkehlchen_api_server: APIServer) -> None:
+    """A second report is refused while one runs, and a cancelled run leaves no
+    empty report behind and an idle status"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    def block_until_cancelled(**kwargs: Any) -> None:  # pylint: disable=unused-argument
+        while True:
+            cancellable_sleep(0.1)  # dies here with TaskCancelledError when cancelled
+
+    with patch(
+        'rotkehlchen.accounting.accountant.Accountant._process_event',
+        side_effect=block_until_cancelled,
+    ):
+        first_task_id = _start_report(rotkehlchen_api_server)
+        deadline = time.monotonic() + 10
+        while _count_pnl_reports(rotkehlchen_api_server) == 0:
+            assert time.monotonic() < deadline, 'the first report never started processing'
+            time.sleep(0.1)
+
+        outcome = wait_for_async_task(rotkehlchen_api_server, _start_report(rotkehlchen_api_server))  # noqa: E501
+        assert outcome == {
+            'result': None,
+            'message': 'A PnL report is already being generated',
+            'status_code': HTTPStatus.CONFLICT,
+            'cause': 'conflict',
+        }
+        # the debug export and import share the same history manager and accountant
+        debug_url = api_url_for(rotkehlchen_api_server, 'historyprocessingdebugresource')
+        assert_error_response(
+            response=requests.post(debug_url, json={'from_timestamp': 0, 'to_timestamp': 1}),
+            contained_in_msg='A PnL report is already being generated',
+            status_code=HTTPStatus.CONFLICT,
+        )
+        assert_error_response(
+            response=requests.put(debug_url, json={'filepath': str(
+                Path(__file__).resolve().parent.parent / 'data' / 'pnl_debug.json',
+            )}),
+            contained_in_msg='A PnL report is already being generated',
+            status_code=HTTPStatus.CONFLICT,
+        )
+        assert _count_pnl_reports(rotkehlchen_api_server) == 1
+
+        first_task = next(task for task in rotki.api_tasks if task.task_id == first_task_id)
+        assert_proper_sync_response_with_result(requests.delete(api_url_for(
+            rotkehlchen_api_server,
+            'specific_async_tasks_resource',
+            task_id=first_task_id,
+        )))
+        first_task.join(timeout=10)
+        assert first_task.dead
+
+    assert _count_pnl_reports(rotkehlchen_api_server) == 0
+    assert assert_proper_sync_response_with_result(requests.get(
+        api_url_for(rotkehlchen_api_server, 'historystatusresource'),
+    )) == {'processing_state': '', 'total_progress': '0'}
+
+    # the slot was released, so the next report goes through and keeps its report
+    outcome = wait_for_async_task(rotkehlchen_api_server, _start_report(rotkehlchen_api_server))
+    assert isinstance(outcome['result'], int)
+    assert _count_pnl_reports(rotkehlchen_api_server) == 1
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('callbacks_num', [2, STEPS_PER_CEX + 2])
+def test_history_query_progress_counts_exchange_steps_once(
+        rotkehlchen_api_server: APIServer,
+        callbacks_num: int,
+) -> None:
+    """The steps an exchange reports through its callbacks fall within its own budget,
+    so the query progress ends at 100 instead of passing it. An exchange firing more
+    callbacks than its budget does not make the progress go back."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    manager = rotki.history_querying_manager
+
+    class FakeExchange:
+        name = 'fake'
+
+        def query_history_with_callbacks(self, new_step_data: tuple, **kwargs: Any) -> None:  # pylint: disable=unused-argument
+            new_step_callback, exchange_name = new_step_data
+            for idx in range(callbacks_num):
+                new_step_callback(f'{exchange_name} step {idx}')
+
+    exchanges = [FakeExchange(), FakeExchange()]
+    seen_progress: list[FVal] = []
+    original_increase = manager._increase_progress
+
+    def record_progress(step: int, total_steps: int, step_by: int = 1) -> int:
+        result = original_increase(step, total_steps, step_by)
+        seen_progress.append(manager.progress)
+        return result
+
+    with (
+        patch.object(rotki.exchange_manager, 'iterate_exchanges', return_value=exchanges),
+        patch.object(rotki.exchange_manager, 'connected_and_syncing_exchanges_num', return_value=len(exchanges)),  # noqa: E501
+        patch.object(manager, '_increase_progress', side_effect=record_progress),
+    ):
+        manager.get_history(start_ts=Timestamp(0), end_ts=Timestamp(1), has_premium=False)
+
+    assert seen_progress == sorted(seen_progress)
+    if callbacks_num <= STEPS_PER_CEX:
+        assert seen_progress[-1] == FVal(100)
 
 
 @pytest.mark.parametrize('have_decoders', [True])
@@ -404,7 +527,8 @@ def test_query_pnl_report_events_pagination_filtering(
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('have_decoders', [[True]])
 def test_history_debug_export(rotkehlchen_api_server: APIServer) -> None:
-    """Check that the format of the data exported matches the expected type."""
+    """Check that the format of the data exported matches the expected type, and that the
+    access token in the IPFS gateway's query is not exported."""
     tx_id = '10' + str(make_evm_tx_hash())  # add a random tx id to the ignore list to ensure that at least one kind of event is ignored and is not empty  # noqa: E501
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     with rotki.data.db.user_write() as write_cursor:
@@ -413,6 +537,10 @@ def test_history_debug_export(rotkehlchen_api_server: APIServer) -> None:
             identifiers=[tx_id],
         )
 
+    assert_proper_sync_response_with_result(requests.put(
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
+        json={'settings': {'ipfs_gateway': 'https://my.node/ipfs?token=secret'}},
+    ))
     expected_keys = ('events', 'settings', 'ignored_events_ids', 'pnl_settings')
     now = ts_now()
     response = requests.post(
@@ -429,6 +557,7 @@ def test_history_debug_export(rotkehlchen_api_server: APIServer) -> None:
     assert tuple(result.keys()) == expected_keys
     assert result['pnl_settings'] == {'from_timestamp': Timestamp(0), 'to_timestamp': now}
     assert result['ignored_events_ids'] == [tx_id]
+    assert result['settings']['ipfs_gateway'] == 'https://my.node/ipfs'
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])

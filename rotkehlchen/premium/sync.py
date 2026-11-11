@@ -1,12 +1,14 @@
 import logging
 import shutil
 import tempfile
+import threading
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.websockets.typedefs import UserMessageRecord, WSMessageType
+from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants.misc import AUTO_BACKUP_DIR_PREFIX, USERSDIR_NAME
 from rotkehlchen.crypto import is_backup_format
 from rotkehlchen.db.cache import DBCacheStatic
@@ -94,6 +96,10 @@ class PremiumSyncManager(LockableQueryMixIn):
         self.data = data
         self.migration_manager = migration_manager
         self.premium: Premium | None = None
+        # Serializes database replacement with API-task cancellation. A logout or shutdown
+        # must not cancel the restore task, or tear its session down, while the user DB is
+        # being replaced and the replacement is being brought up to date.
+        self.database_restore_lock = threading.Lock()
 
     def _query_last_data_metadata(self) -> RemoteMetadata:
         """Query remote metadata and keep up to date the last remote data upload ts"""
@@ -213,32 +219,36 @@ class PremiumSyncManager(LockableQueryMixIn):
             # passing off an older backup as the newer one its metadata reports
             raise RemoteBackupMismatch
 
-        try:
-            self.data.restore_db(backup.user_db)
-        except DataIntegrityError as e:
-            log.error('sync from server -- downloaded db integrity check failed', error=str(e))
-            return False, str(e), None
+        with self.database_restore_lock:
+            # Cancellation may have won the lock before replacement started. Do not touch the
+            # database after the cancelling path has begun tearing the session down.
+            checkpoint()
+            try:
+                self.data.restore_db(backup.user_db)
+            except DataIntegrityError as e:
+                log.error('sync from server -- downloaded db integrity check failed', error=str(e))
+                return False, str(e), None
 
-        if backup.legacy is False:  # after the restore, since it replaced the whole DB
-            with self.data.db.conn.write_ctx() as write_cursor:  # don't bump last_write_ts
-                self.data.db.set_static_cache(
-                    write_cursor=write_cursor,
-                    name=DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS,
-                    value=ts_now(),
-                )
-                # A backup which decrypted successfully already uses the current password.
-                self.data.db.set_static_cache(
-                    write_cursor=write_cursor,
-                    name=DBCacheStatic.PREMIUM_BACKUP_PASSWORD_CHANGE_TS,
-                    value=Timestamp(0),
-                )
+            if backup.legacy is False:  # after the restore, since it replaced the whole DB
+                with self.data.db.conn.write_ctx() as write_cursor:  # don't bump last_write_ts
+                    self.data.db.set_static_cache(
+                        write_cursor=write_cursor,
+                        name=DBCacheStatic.LAST_PREMIUM_BACKUP_V1_SYNC_TS,
+                        value=ts_now(),
+                    )
+                    # A backup which decrypted successfully already uses the current password.
+                    self.data.db.set_static_cache(
+                        write_cursor=write_cursor,
+                        name=DBCacheStatic.PREMIUM_BACKUP_PASSWORD_CHANGE_TS,
+                        value=Timestamp(0),
+                    )
 
-        # Need to run migrations in case the app was updated since last sync and in
-        # case this is a request to sync from the API, where all modules are initialized
-        # and can be used during the migration. Otherwise if this is happening at login
-        # migrations are run later down the line of the unlock process
-        if perform_migrations:
-            self.migration_manager.maybe_migrate_data()
+            # Need to run migrations in case the app was updated since last sync and in
+            # case this is a request to sync from the API, where all modules are initialized
+            # and can be used during the migration. Otherwise if this is happening at login
+            # migrations are run later down the line of the unlock process
+            if perform_migrations:
+                self.migration_manager.maybe_migrate_data()
 
         return True, '', backup.last_modify_ts
 
@@ -666,9 +676,12 @@ class PremiumSyncManager(LockableQueryMixIn):
                     db=self.data.db,
                 )
             except (PremiumAuthenticationError, PremiumPermissionError, RemoteError) as e:
-                message = (
-                    f'Could not authenticate with the rotkehlchen server with '
-                    f'the API keys found in the Database. {e}'
+                message = self.maybe_add_device_limit_link(
+                    exception=e,
+                    msg=(
+                        f'Could not authenticate with the rotkehlchen server with '
+                        f'the API keys found in the Database. {e}'
+                    ),
                 )
                 log.error(message)
                 raise PremiumAuthenticationError(message) from e

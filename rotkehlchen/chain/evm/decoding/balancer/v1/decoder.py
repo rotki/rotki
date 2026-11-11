@@ -72,7 +72,7 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
         needed to decode the transfers made in the transaction to/from the ds proxy
         """
         # The transfer event appears after the debt generation event, so we need to transform it
-        if len(target_logs := [x for x in all_logs if x.topics[0] in (JOIN_V1, EXIT_V1)]) == 0:
+        if len(target_logs := [x for x in all_logs if len(x.topics) != 0 and x.topics[0] in (JOIN_V1, EXIT_V1)]) == 0:  # noqa: E501
             return None
 
         events_information = []

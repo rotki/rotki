@@ -196,6 +196,24 @@ describe('useSync', () => {
   });
 
   describe('forceSync download', () => {
+    it('should defer logout requests until the download finishes', async () => {
+      let finishDownload: (() => void) | undefined;
+      runTaskResult.mockReturnValue(new Promise((resolve) => {
+        finishDownload = (): void => resolve(ok(true));
+      }));
+
+      const syncPromise = sync.forceSync(vi.fn(async (): Promise<void> => {}));
+      const waiting = sync.waitForDownload();
+
+      expect(await Promise.race([
+        waiting.then((): boolean => true),
+        nextTick().then((): boolean => false),
+      ])).toBe(false);
+
+      finishDownload?.();
+      await Promise.all([syncPromise, waiting]);
+    });
+
     it('should not be cancellable once running', async () => {
       runTaskResult.mockResolvedValue(ok(true));
 

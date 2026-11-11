@@ -4566,7 +4566,8 @@ class DBHandler:
         for acc_idx in (0, 1):
             query = cursor.execute(
                 'SELECT derived_index from xpub_mappings WHERE xpub=? AND '
-                'derivation_path IS ? AND account_index=? AND blockchain = ?;',
+                'derivation_path IS ? AND account_index=? AND blockchain = ? '
+                'ORDER BY derived_index;',
                 (
                     xpub_data.xpub.xpub,
                     xpub_data.serialize_derivation_path_for_db(),

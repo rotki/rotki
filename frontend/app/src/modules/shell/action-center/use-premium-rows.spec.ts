@@ -66,6 +66,13 @@ describe('modules/shell/action-center/use-premium-rows', () => {
     expect(row.urgency).toBe(ActionUrgency.DECISION);
   });
 
+  it('should offer managing the premium devices only for a device limit', () => {
+    const option = premiumRow(PremiumInactiveCause.DEVICE_LIMIT, 'All 3 devices are in use').options.find(({ id }) => id === 'premium-manage-devices');
+
+    expect(option?.target).toEqual({ kind: 'external', url: externalLinks.premiumDevices });
+    expect(premiumRow(PremiumInactiveCause.EXPIRED).options.map(({ id }) => id)).not.toContain('premium-manage-devices');
+  });
+
   it('should treat an unreachable server as something rotki retries', () => {
     expect(premiumRow(PremiumInactiveCause.UNREACHABLE).urgency).toBe(ActionUrgency.AUTOMATIC);
   });

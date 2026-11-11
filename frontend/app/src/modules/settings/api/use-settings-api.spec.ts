@@ -34,6 +34,7 @@ function createSettingsResponse(overrides: Record<string, unknown> = {}): Action
       dot_rpc_endpoint: '',
       beacon_rpc_endpoint: '',
       btc_mempool_api: '',
+      ipfs_gateway: '',
       main_currency: 'EUR',
       date_display_format: '%d/%m/%Y %H:%M:%S %Z',
       submit_usage_analytics: true,

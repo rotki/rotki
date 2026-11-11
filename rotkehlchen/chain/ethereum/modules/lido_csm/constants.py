@@ -101,8 +101,5 @@ LIDO_CSM_CURVE_OPERATOR_TYPES: Final[dict[LidoCsmStakingModule, dict[int, LidoCs
 
 FEE_DISTRIBUTOR_ABI: Final[ABI] = [{'inputs': [], 'name': 'treeCid', 'outputs': [{'name': '', 'type': 'string'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [{'name': 'nodeOperatorId', 'type': 'uint256'}], 'name': 'distributedShares', 'outputs': [{'name': 'distributed', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 
-# Public IPFS gateway used to fetch treeCid documents
-LIDO_CSM_IPFS_GATEWAY: Final = 'https://gateway.pinata.cloud/ipfs/'
-
 # Counterparty identifier for Lido CSM
 CPT_LIDO_CSM: Final = 'lido-csm'

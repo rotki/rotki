@@ -74,6 +74,7 @@ const GeneralSettings = z.object({
   inferZeroTimedBalances: z.boolean(),
   internalTxConflictRepullFrequency: z.number().int().min(30).default(Defaults.DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY),
   internalTxsToRepull: z.number().int().min(1).default(Defaults.DEFAULT_INTERNAL_TXS_TO_REPULL),
+  ipfsGateway: z.string(),
   ksmRpcEndpoint: z.string(),
   mainCurrency: z.string().transform((currency) => {
     const { findCurrency } = useCurrencies();
@@ -197,6 +198,7 @@ function getGeneralSettings(settings: UserSettings): GeneralSettings {
     inferZeroTimedBalances: settings.inferZeroTimedBalances,
     internalTxConflictRepullFrequency: settings.internalTxConflictRepullFrequency,
     internalTxsToRepull: settings.internalTxsToRepull,
+    ipfsGateway: settings.ipfsGateway,
     ksmRpcEndpoint: settings.ksmRpcEndpoint,
     mainCurrency: settings.mainCurrency,
     mcpPrivacyMode: settings.mcpPrivacyMode,
