@@ -13,11 +13,13 @@ from rotkehlchen.tests.utils.constants import A_CNY
 @pytest.mark.vcr
 def test_get_current_xratescom_exchange_rates():
     rates_map = get_current_xratescom_exchange_rates(A_USD.resolve_to_fiat_asset())
+    assert {A_EUR, A_CNY} <= rates_map.keys()  # an unparsable page gives an empty map
     for asset, price in rates_map.items():
         assert asset.is_fiat()
         assert price is not None and price > ZERO
 
     rates_map = get_current_xratescom_exchange_rates(A_CNY.resolve_to_fiat_asset())
+    assert {A_EUR, A_USD} <= rates_map.keys()
     for asset, price in rates_map.items():
         assert asset.is_fiat()
         assert price is not None and price > ZERO

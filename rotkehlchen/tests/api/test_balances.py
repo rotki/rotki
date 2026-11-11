@@ -593,10 +593,10 @@ def test_query_all_balances_warms_price_cache(rotkehlchen_api_server: APIServer)
 def test_query_all_balances_saves_snapshot_when_fiat_apis_are_down(
         rotkehlchen_api_server: APIServer,
 ) -> None:
-    """Test that a balance snapshot is saved with a non-USD main currency while x-rates.com
-    is unreachable. The main currency to USD rate must come from the cached current fiat
-    rate instead of a historical query that has no oracle able to answer it, which used to
-    make the whole balance query task die. Regression test for a production failure."""
+    """Test that a balance snapshot is saved with a non-USD main currency while all the
+    fiat rates sources are unreachable. The main currency to USD rate must come from the
+    cached current fiat rate instead of a historical query that has no oracle able to
+    answer it, which used to make the whole balance query task die."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     with rotki.data.db.user_write() as write_cursor:
         rotki.data.db.set_settings(write_cursor, ModifiableDBSettings(
@@ -615,9 +615,15 @@ def test_query_all_balances_saves_snapshot_when_fiat_apis_are_down(
         timestamp=Timestamp(ts_now() - 2 * DAY_IN_SECONDS),
         price=Price(FVal('0.8')),
     )])
-    with patch(
-        'rotkehlchen.externalapis.xratescom._scrape_xratescom_exchange_rates',
-        side_effect=RemoteError('x-rates.com is down'),
+    with (
+        patch(
+            'rotkehlchen.externalapis.xratescom._scrape_xratescom_exchange_rates',
+            side_effect=RemoteError('x-rates.com is down'),
+        ),
+        patch(
+            'rotkehlchen.externalapis.frankfurter._query_frankfurter_exchange_rates',
+            side_effect=RemoteError('frankfurter is down'),
+        ),
     ):
         result = rotki.query_balances(requested_save_data=True)
 
