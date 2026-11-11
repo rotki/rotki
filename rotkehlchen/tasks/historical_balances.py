@@ -3,6 +3,8 @@ import time
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
+from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
+from rotkehlchen.chain.evm.decoding.compound.v3.constants import CPT_COMPOUND_V3
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ZERO
@@ -29,7 +31,14 @@ from rotkehlchen.tasks.bridges import (
     get_event_bridge_data,
     get_unmatched_bridge_events,
 )
-from rotkehlchen.types import EventMetricKey, Location, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    EVM_LOCATIONS,
+    EventMetricKey,
+    Location,
+    SupportedBlockchain,
+    Timestamp,
+    TimestampMS,
+)
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.lockable import skip_if_running
 
@@ -50,6 +59,20 @@ PROTOCOL_BUCKET_SUBTYPES: Final = {
     HistoryEventSubType.GENERATE_DEBT,
     HistoryEventSubType.PAYBACK_DEBT,
 }
+
+# Counterparties whose liquidations seize collateral that was booked as a deposit to the
+# protocol, so the liquidation loss has to leave the protocol bucket instead of the wallet.
+PROTOCOL_BUCKET_LIQUIDATION_COUNTERPARTIES: Final = {CPT_COMPOUND_V3}
+
+# Compound v3 comets hold the wrapped native token, but the bulker lets users supply and withdraw
+# it as native token. Both are tracked as the wrapped token in the compound v3 protocol bucket so
+# that a liquidation of wrapped native collateral also closes collateral supplied as native token.
+NATIVE_TO_WRAPPED_TOKEN: Final = {
+    (location.serialize_for_db(), chain.get_native_token_id()): CHAIN_TO_WRAPPED_TOKEN[chain].identifier  # noqa: E501
+    for location in EVM_LOCATIONS
+    if (chain := SupportedBlockchain.from_location(location)) in CHAIN_TO_WRAPPED_TOKEN
+}
+WRAPPED_NATIVE_PROTOCOL_BUCKET_COUNTERPARTIES: Final = {CPT_COMPOUND_V3}
 
 # Protocol withdrawals that can trigger synthetic interest events when withdrawal exceeds deposit.
 PROTOCOL_WITHDRAWAL_EVENTS: Final[EventTypeSubtypePairs] = {
@@ -134,7 +157,8 @@ class Bucket(NamedTuple):
         - Protocol deposits/withdrawals: affects both wallet and protocol buckets
         - Transfers: affects sender (OUT) and receiver (IN) wallet buckets.
         - Wrapped token deposits/redemptions: tracked as wallet-held asset conversions
-        - Debt positions: tracked in protocol bucket
+        - Debt positions and liquidations of protocol held collateral: tracked in protocol bucket
+        - Native token in compound v3: tracked as the wrapped native token in the protocol bucket
         - Everything else: tracked in wallet bucket
         """
         location = event.location.serialize_for_db()
@@ -144,6 +168,10 @@ class Bucket(NamedTuple):
         )
         event_key = (event.event_type, event.event_subtype)
         counterparty = getattr(event, 'counterparty', None)
+        protocol_asset = (
+            NATIVE_TO_WRAPPED_TOKEN.get((location, asset), asset)
+            if counterparty in WRAPPED_NATIVE_PROTOCOL_BUCKET_COUNTERPARTIES else asset
+        )
         address = getattr(event, 'address', None)
         if (  # Bitcoin/BCH events are plain HistoryEvents with no address column, so recover the
             # counterparty from the notes. Without it a transfer between two owned addresses
@@ -192,7 +220,7 @@ class Bucket(NamedTuple):
                     location=location,
                     location_label=event.location_label,
                     protocol=counterparty,
-                    asset=asset,
+                    asset=protocol_asset,
                 ), EventDirection.IN if wallet_direction == EventDirection.OUT else EventDirection.OUT),  # noqa: E501
             ]
 
@@ -221,12 +249,17 @@ class Bucket(NamedTuple):
         ):
             return []
 
-        if event.event_subtype in PROTOCOL_BUCKET_SUBTYPES and counterparty not in (None, ''):
+        if counterparty not in (None, '') and (
+            event.event_subtype in PROTOCOL_BUCKET_SUBTYPES or (
+                event_key == (HistoryEventType.LOSS, HistoryEventSubType.LIQUIDATE) and
+                counterparty in PROTOCOL_BUCKET_LIQUIDATION_COUNTERPARTIES
+            )
+        ):
             return [(cls(
                 location=location,
                 location_label=event.location_label,
                 protocol=counterparty,
-                asset=asset,
+                asset=protocol_asset,
             ), direction)]
 
         # Everything else: wallet bucket. Token protocol metadata describes asset identity,

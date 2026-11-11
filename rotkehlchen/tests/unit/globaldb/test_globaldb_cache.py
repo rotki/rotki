@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 from contextlib import suppress
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, _Call, call, patch
 
 import pytest
@@ -95,6 +95,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
     from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 logger = logging.getLogger(__name__)
@@ -309,7 +310,7 @@ def test_velodrome_cache_progress(database, chain_id, pool_case):
 
 
 @pytest.mark.parametrize('chain_id', [ChainID.OPTIMISM, ChainID.BASE])
-def test_velodrome_cache_chunk_halving(database, chain_id):
+def test_velodrome_cache_chunk_halving(database: DBHandler, chain_id: ChainID) -> None:
     """A chunk that exceeds the gas limit is retried with half the size instead of ending the
     query, so the concentrated liquidity pools listed after the v2 pools are still found.
     The failure happens after a full page of v2 pools, as it does on chain."""
@@ -319,7 +320,7 @@ def test_velodrome_cache_chunk_halving(database, chain_id):
     raw_cl = [cl_pool, '', 0, 0, 200, *([ZERO_ADDRESS] * 13)]
     calls: list[list[int]] = []
 
-    def mock_call(contract, node_inquirer, method_name, arguments, **kwargs):  # pylint: disable=unused-argument
+    def mock_call(contract: Any, node_inquirer: Any, method_name: str, arguments: list[int], **kwargs: Any) -> list[Any]:  # pylint: disable=unused-argument  # noqa: E501
         calls.append(arguments)
         limit, offset = arguments[0], arguments[1]
         if offset == 0:
@@ -356,7 +357,7 @@ def test_velodrome_cache_chunk_halving(database, chain_id):
         ).fetchone()[0] == f"{'Velodrome' if chain_id == ChainID.OPTIMISM else 'Aerodrome'} pool CL200"  # noqa: E501
 
 
-def test_velodrome_cache_backfills_gauges_of_cached_pools(database):
+def test_velodrome_cache_backfills_gauges_of_cached_pools(database: DBHandler) -> None:
     """A pool cached before its gauge existed must get the gauge on the next refresh, even
     though the pool itself is skipped as already cached. Otherwise the gauge's reward claims
     decode as plain receives. Uses the Aerodrome CL pool from the 1.44.1 report, whose claim
@@ -381,7 +382,7 @@ def test_velodrome_cache_backfills_gauges_of_cached_pools(database):
         ))
 
     voter = EvmContract(address=VOTER_ADDRESSES[ChainID.BASE], abi=VOTER_ABI)
-    voter_answers = {
+    voter_answers: dict[str, Callable[..., str]] = {
         'pools': list(voter_pools).__getitem__,
         'gauges': voter_pools.__getitem__,
         'gaugeToFees': {gauge: (fee := string_to_evm_address('0xa3dd24A326bfC34940AFA330AAa414B126B3d7bf'))}.__getitem__,  # noqa: E501
@@ -389,8 +390,8 @@ def test_velodrome_cache_backfills_gauges_of_cached_pools(database):
     }
     queried_methods: list[str] = []
 
-    def mock_multicall(calls, calls_chunk_size):  # pylint: disable=unused-argument
-        results = []
+    def mock_multicall(calls: list[tuple[str, str]], calls_chunk_size: int) -> list[bytes]:  # pylint: disable=unused-argument
+        results: list[bytes] = []
         for address, data in calls:
             assert address == voter.address
             function, arguments = voter.decode_input_data(bytes.fromhex(data.removeprefix('0x')))
@@ -398,7 +399,7 @@ def test_velodrome_cache_backfills_gauges_of_cached_pools(database):
             results.append(bytes.fromhex(voter_answers[function.fn_name](*arguments.values())[2:]).rjust(32, b'\0'))  # noqa: E501
         return results
 
-    def mock_call(contract, node_inquirer, method_name, arguments=None, **kwargs):  # pylint: disable=unused-argument
+    def mock_call(contract: Any, node_inquirer: Any, method_name: str, arguments: Any = None, **kwargs: Any) -> Any:  # pylint: disable=unused-argument  # noqa: E501
         if method_name == 'length':
             return len(voter_pools)
         # sugar lists the cached pool with its gauge, which the pool pass skips

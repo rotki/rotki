@@ -25,6 +25,8 @@ from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
+    COMPOUND_V3_ABSORB_COLLATERAL,
+    COMPOUND_V3_ABSORB_DEBT,
     COMPOUND_V3_SUPPLY,
     COMPOUND_V3_SUPPLY_COLLATERAL,
     COMPOUND_V3_WITHDRAW_COLLATERAL,
@@ -68,7 +70,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
         """Get the underlying token for a compound token."""
         if compound_token not in self.underlying_tokens:
             if compound_token.underlying_tokens is None:
-                log.debug(f'No underlying tokens found for {compound_token}')
+                log.debug('No underlying tokens found for %s', compound_token)
                 self.underlying_tokens[compound_token] = None
             else:
                 try:  # if not in cached mapping, fetch from DB and add it
@@ -78,7 +80,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
                         token_type=compound_token.underlying_tokens[0].token_kind,
                     ))
                 except (WrongAssetType, UnknownAsset) as e:
-                    log.error(f'Could not derive underlying token from {compound_token}: {e}')
+                    log.error('Could not derive underlying token from %s: %s', compound_token, e)
 
         return self.underlying_tokens.get(compound_token)  # return from cached mapping
 
@@ -361,12 +363,121 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
         )
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _decode_absorb_debt(
+            self,
+            context: DecoderContext,
+            compound_token: EvmToken,
+            borrower: ChecksumEvmAddress,
+    ) -> EvmDecodingOutput:
+        """Decode the debt repayment of a liquidated borrower. basePaidOut is the difference
+        between the base balance after and before the absorb. If the seized collateral is worth
+        more than the debt, the surplus is minted as compound tokens to the borrower right after
+        the AbsorbDebt log, so the repaid debt is basePaidOut minus that surplus."""
+        if (underlying_token := self._get_compound_underlying_token(compound_token)) is None:
+            log.error(
+                'At compound v3 liquidation decoding of tx %s the underlying token of %s '
+                'was not found.',
+                context.transaction.tx_hash,
+                compound_token,
+            )
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        surplus_raw = 0
+        for tx_log in context.all_logs:
+            if (
+                tx_log.log_index == context.tx_log.log_index + 1 and
+                tx_log.address == compound_token.evm_address and
+                tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                bytes_to_address(tx_log.topics[1]) == ZERO_ADDRESS and
+                bytes_to_address(tx_log.topics[2]) == borrower
+            ):
+                surplus_raw = int.from_bytes(tx_log.data[:32])
+                break
+
+        amount = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[:32]) - surplus_raw,
+            asset=underlying_token,
+        )
+        context.decoded_events.append(self.base.make_event_next_index(
+            tx_ref=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+            amount=amount,
+            asset=underlying_token,
+            location_label=borrower,
+            counterparty=CPT_COMPOUND_V3,
+            notes=f'Repay {amount} {underlying_token.symbol} in a Compound v3 liquidation',
+            address=compound_token.evm_address,
+        ))
+        if surplus_raw == 0:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        return EvmDecodingOutput(action_items=[ActionItem(
+            action='transform',
+            from_event_type=HistoryEventType.RECEIVE,
+            from_event_subtype=HistoryEventSubType.NONE,
+            asset=compound_token,
+            location_label=borrower,
+            to_event_subtype=HistoryEventSubType.NONE,
+            to_notes=f'Receive {{amount}} {compound_token.symbol} from a Compound v3 liquidation',
+            to_counterparty=CPT_COMPOUND_V3,
+        )])
+
+    def _decode_absorb(
+            self,
+            context: DecoderContext,
+            compound_token: EvmToken,
+    ) -> EvmDecodingOutput:
+        """Decode a liquidation (absorb) of a tracked borrower. The liquidation is triggered
+        by a third party, so there are no transfers of the seized collateral for the borrower.
+        topics are: absorber, borrower and (for collateral) the collateral asset.
+
+        The seized collateral is held in the compound v3 protocol bucket of historical
+        balances, since supplying collateral is a deposit to the protocol. Collateral supplied
+        through the bulker as native token is merged with the wrapped native token there."""
+        if not self.base.is_tracked(borrower := bytes_to_address(context.tx_log.topics[2])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        if context.tx_log.topics[0] == COMPOUND_V3_ABSORB_DEBT:
+            return self._decode_absorb_debt(
+                context=context,
+                compound_token=compound_token,
+                borrower=borrower,
+            )
+
+        collateral_asset = EvmToken(evm_address_to_identifier(
+            address=bytes_to_address(context.tx_log.topics[3]),
+            chain_id=self.node_inquirer.chain_id,
+            token_type=TokenKind.ERC20,
+        ))
+        seized_amount = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[:32]),
+            asset=collateral_asset,
+        )
+        context.decoded_events.append(self.base.make_event_next_index(
+            tx_ref=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.LOSS,
+            event_subtype=HistoryEventSubType.LIQUIDATE,
+            amount=seized_amount,
+            asset=collateral_asset,
+            location_label=borrower,
+            counterparty=CPT_COMPOUND_V3,
+            notes=f'Lost {seized_amount} {collateral_asset.symbol} in a Compound v3 forced liquidation',  # noqa: E501
+            address=compound_token.evm_address,
+        ))
+        return DEFAULT_EVM_DECODING_OUTPUT
+
     def decode_compound_token_movement(
             self,
             context: DecoderContext,
             compound_token: EvmToken,
     ) -> EvmDecodingOutput:
         """Decode a compound v3 token movement"""
+        if context.tx_log.topics[0] in {COMPOUND_V3_ABSORB_COLLATERAL, COMPOUND_V3_ABSORB_DEBT}:
+            return self._decode_absorb(context=context, compound_token=compound_token)
+
         if (
             context.tx_log.topics[0] not in {
                 COMPOUND_V3_SUPPLY, COMPOUND_V3_SUPPLY_COLLATERAL,
