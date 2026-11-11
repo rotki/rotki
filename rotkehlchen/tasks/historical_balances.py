@@ -3,6 +3,7 @@ import time
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
+from rotkehlchen.chain.evm.decoding.compound.v3.constants import CPT_COMPOUND_V3
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ZERO
@@ -50,6 +51,10 @@ PROTOCOL_BUCKET_SUBTYPES: Final = {
     HistoryEventSubType.GENERATE_DEBT,
     HistoryEventSubType.PAYBACK_DEBT,
 }
+
+# Counterparties whose liquidations seize collateral that was booked as a deposit to the
+# protocol, so the liquidation loss has to leave the protocol bucket instead of the wallet.
+PROTOCOL_BUCKET_LIQUIDATION_COUNTERPARTIES: Final = {CPT_COMPOUND_V3}
 
 # Protocol withdrawals that can trigger synthetic interest events when withdrawal exceeds deposit.
 PROTOCOL_WITHDRAWAL_EVENTS: Final[EventTypeSubtypePairs] = {
@@ -134,7 +139,7 @@ class Bucket(NamedTuple):
         - Protocol deposits/withdrawals: affects both wallet and protocol buckets
         - Transfers: affects sender (OUT) and receiver (IN) wallet buckets.
         - Wrapped token deposits/redemptions: tracked as wallet-held asset conversions
-        - Debt positions: tracked in protocol bucket
+        - Debt positions and liquidations of protocol held collateral: tracked in protocol bucket
         - Everything else: tracked in wallet bucket
         """
         location = event.location.serialize_for_db()
@@ -221,7 +226,12 @@ class Bucket(NamedTuple):
         ):
             return []
 
-        if event.event_subtype in PROTOCOL_BUCKET_SUBTYPES and counterparty not in (None, ''):
+        if counterparty not in (None, '') and (
+            event.event_subtype in PROTOCOL_BUCKET_SUBTYPES or (
+                event_key == (HistoryEventType.LOSS, HistoryEventSubType.LIQUIDATE) and
+                counterparty in PROTOCOL_BUCKET_LIQUIDATION_COUNTERPARTIES
+            )
+        ):
             return [(cls(
                 location=location,
                 location_label=event.location_label,

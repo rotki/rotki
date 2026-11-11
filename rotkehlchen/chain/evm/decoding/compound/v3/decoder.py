@@ -17,11 +17,13 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, TokenKind
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, Location, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
@@ -37,9 +39,11 @@ from .constants import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -70,7 +74,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
         """Get the underlying token for a compound token."""
         if compound_token not in self.underlying_tokens:
             if compound_token.underlying_tokens is None:
-                log.debug(f'No underlying tokens found for {compound_token}')
+                log.debug('No underlying tokens found for %s', compound_token)
                 self.underlying_tokens[compound_token] = None
             else:
                 try:  # if not in cached mapping, fetch from DB and add it
@@ -80,7 +84,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
                         token_type=compound_token.underlying_tokens[0].token_kind,
                     ))
                 except (WrongAssetType, UnknownAsset) as e:
-                    log.error(f'Could not derive underlying token from {compound_token}: {e}')
+                    log.error('Could not derive underlying token from %s: %s', compound_token, e)
 
         return self.underlying_tokens.get(compound_token)  # return from cached mapping
 
@@ -363,6 +367,107 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
         )
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _get_native_collateral_amount(
+            self,
+            context: DecoderContext,
+            borrower: ChecksumEvmAddress,
+            compound_token: EvmToken,
+    ) -> FVal:
+        """Return the amount of native token collateral that the borrower still has in the
+        given comet. Collateral supplied/withdrawn through the bulker as native token is booked
+        under the native token instead of the wrapped one, so a liquidation seizing the wrapped
+        native token needs to know how much of it was supplied as native token."""
+        with self.base.database.conn.read_ctx() as cursor:
+            events = DBHistoryEvents(self.base.database).get_history_events_internal(
+                cursor=cursor,
+                filter_query=EvmEventFilterQuery.make(
+                    to_ts=context.transaction.timestamp,
+                    assets=(self.node_inquirer.native_token,),
+                    location=Location.from_chain_id(self.node_inquirer.chain_id),
+                    location_labels=[borrower],
+                    counterparties=[CPT_COMPOUND_V3],
+                    addresses=[compound_token.evm_address],
+                    type_and_subtype_combinations=[
+                        (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
+                        (HistoryEventType.WITHDRAWAL, HistoryEventSubType.WITHDRAW_FROM_PROTOCOL),
+                        (HistoryEventType.LOSS, HistoryEventSubType.LIQUIDATE),
+                    ],
+                ),
+            )
+
+        balance = ZERO
+        for event in events:
+            if event.tx_ref == context.transaction.tx_hash:
+                continue  # skip events of this transaction if it is being redecoded
+
+            if event.event_type == HistoryEventType.DEPOSIT:
+                balance += event.amount
+            else:
+                balance -= event.amount
+
+        return max(balance, ZERO)
+
+    def _decode_absorb_debt(
+            self,
+            context: DecoderContext,
+            compound_token: EvmToken,
+            borrower: ChecksumEvmAddress,
+    ) -> EvmDecodingOutput:
+        """Decode the debt repayment of a liquidated borrower. basePaidOut is the difference
+        between the base balance after and before the absorb. If the seized collateral is worth
+        more than the debt, the surplus is minted as compound tokens to the borrower right after
+        the AbsorbDebt log, so the repaid debt is basePaidOut minus that surplus."""
+        if (underlying_token := self._get_compound_underlying_token(compound_token)) is None:
+            log.error(
+                'At compound v3 liquidation decoding of tx %s the underlying token of %s '
+                'was not found.',
+                context.transaction.tx_hash,
+                compound_token,
+            )
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        surplus_raw = 0
+        for tx_log in context.all_logs:
+            if (
+                tx_log.log_index == context.tx_log.log_index + 1 and
+                tx_log.address == compound_token.evm_address and
+                tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                bytes_to_address(tx_log.topics[1]) == ZERO_ADDRESS and
+                bytes_to_address(tx_log.topics[2]) == borrower
+            ):
+                surplus_raw = int.from_bytes(tx_log.data[:32])
+                break
+
+        amount = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[:32]) - surplus_raw,
+            asset=underlying_token,
+        )
+        context.decoded_events.append(self.base.make_event_next_index(
+            tx_ref=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+            amount=amount,
+            asset=underlying_token,
+            location_label=borrower,
+            counterparty=CPT_COMPOUND_V3,
+            notes=f'Repay {amount} {underlying_token.symbol} in a Compound v3 liquidation',
+            address=compound_token.evm_address,
+        ))
+        if surplus_raw == 0:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        return EvmDecodingOutput(action_items=[ActionItem(
+            action='transform',
+            from_event_type=HistoryEventType.RECEIVE,
+            from_event_subtype=HistoryEventSubType.NONE,
+            asset=compound_token,
+            location_label=borrower,
+            to_event_subtype=HistoryEventSubType.NONE,
+            to_notes=f'Receive {{amount}} {compound_token.symbol} from a Compound v3 liquidation',
+            to_counterparty=CPT_COMPOUND_V3,
+        )])
+
     def _decode_absorb(
             self,
             context: DecoderContext,
@@ -370,63 +475,60 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
     ) -> EvmDecodingOutput:
         """Decode a liquidation (absorb) of a tracked borrower. The liquidation is triggered
         by a third party, so there are no transfers of the seized collateral for the borrower.
-        topics are: absorber, borrower and (for collateral) the collateral asset."""
+        topics are: absorber, borrower and (for collateral) the collateral asset.
+
+        The seized collateral is held in the compound v3 protocol bucket of historical
+        balances, since supplying collateral is a deposit to the protocol."""
         if not self.base.is_tracked(borrower := bytes_to_address(context.tx_log.topics[2])):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         if context.tx_log.topics[0] == COMPOUND_V3_ABSORB_DEBT:
-            if (underlying_token := self._get_compound_underlying_token(compound_token)) is None:
-                return DEFAULT_EVM_DECODING_OUTPUT
-
-            amount = asset_normalized_value(
-                amount=int.from_bytes(context.tx_log.data[:32]),
-                asset=underlying_token,
+            return self._decode_absorb_debt(
+                context=context,
+                compound_token=compound_token,
+                borrower=borrower,
             )
-            context.decoded_events.append(self.base.make_event_next_index(
-                tx_ref=context.transaction.tx_hash,
-                timestamp=context.transaction.timestamp,
-                event_type=HistoryEventType.INFORMATIONAL,
-                event_subtype=HistoryEventSubType.NONE,
-                amount=ZERO,
-                asset=underlying_token,
-                location_label=borrower,
-                counterparty=CPT_COMPOUND_V3,
-                notes=f'Repay {amount} {underlying_token.symbol} in a Compound v3 liquidation',
-                address=compound_token.evm_address,
-            ))
-            # the surplus of the liquidation is minted as base token position to the borrower
-            return EvmDecodingOutput(action_items=[ActionItem(
-                action='transform',
-                from_event_type=HistoryEventType.RECEIVE,
-                from_event_subtype=HistoryEventSubType.NONE,
-                asset=compound_token,
-                location_label=borrower,
-                to_event_subtype=HistoryEventSubType.NONE,
-                to_notes=f'Receive {{amount}} {compound_token.symbol} from a Compound v3 liquidation',  # noqa: E501
-                to_counterparty=CPT_COMPOUND_V3,
-            )])
 
         collateral_asset = EvmToken(evm_address_to_identifier(
             address=bytes_to_address(context.tx_log.topics[3]),
             chain_id=self.node_inquirer.chain_id,
             token_type=TokenKind.ERC20,
         ))
-        amount = asset_normalized_value(
+        seized_amount = asset_normalized_value(
             amount=int.from_bytes(context.tx_log.data[:32]),
             asset=collateral_asset,
         )
-        context.decoded_events.append(self.base.make_event_next_index(
-            tx_ref=context.transaction.tx_hash,
-            timestamp=context.transaction.timestamp,
-            event_type=HistoryEventType.LOSS,
-            event_subtype=HistoryEventSubType.LIQUIDATE,
-            amount=amount,
-            asset=collateral_asset,
-            location_label=borrower,
-            counterparty=CPT_COMPOUND_V3,
-            notes=f'Lost {amount} {collateral_asset.symbol} in a Compound v3 forced liquidation',
-            address=compound_token.evm_address,
-        ))
+        losses: list[tuple[EvmToken | CryptoAsset, FVal]] = [(collateral_asset, seized_amount)]
+        if (
+            collateral_asset == self.node_inquirer.wrapped_native_token and
+            (native_amount := min(seized_amount, self._get_native_collateral_amount(
+                context=context,
+                borrower=borrower,
+                compound_token=compound_token,
+            ))) > ZERO
+        ):
+            losses = [
+                (self.node_inquirer.native_token, native_amount),
+                (collateral_asset, seized_amount - native_amount),
+            ]
+
+        for asset, amount in losses:
+            if amount == ZERO:
+                continue
+
+            context.decoded_events.append(self.base.make_event_next_index(
+                tx_ref=context.transaction.tx_hash,
+                timestamp=context.transaction.timestamp,
+                event_type=HistoryEventType.LOSS,
+                event_subtype=HistoryEventSubType.LIQUIDATE,
+                amount=amount,
+                asset=asset,
+                location_label=borrower,
+                counterparty=CPT_COMPOUND_V3,
+                notes=f'Lost {amount} {asset.symbol} in a Compound v3 forced liquidation',
+                address=compound_token.evm_address,
+            ))
+
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def decode_compound_token_movement(

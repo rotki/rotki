@@ -16,17 +16,21 @@ from rotkehlchen.chain.optimism.modules.compound.v3.constants import (
 )
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_COMP, A_ETH, A_POL, A_USDC, A_WBTC, A_WETH
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.tests.unit.decoders.test_paraswap import A_BRIDGED_USDC
 from rotkehlchen.tests.unit.decoders.test_zerox import A_BASE_USDC
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.tests.utils.factories import make_evm_tx_hash
+from rotkehlchen.types import EventMetricKey, Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
 
 
@@ -591,22 +595,55 @@ def test_deposit_native_eth(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x31B44B57d6F32798B03702Dc200A96072b5Ab507']])
-def test_compound_v3_liquidation(ethereum_inquirer, ethereum_accounts):
+def test_compound_v3_liquidation(
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Test that a liquidation of a tracked borrower triggered by a third party (absorb)
-    decodes the collateral loss, the debt reduction and the surplus received."""
+    decodes the collateral loss, the debt repayment and the surplus received, and that
+    the collateral and debt positions are closed in the historical balances.
+
+    The 50 WETH of seized collateral is seeded as 30 ETH supplied through the bulker and
+    20 WETH supplied directly, to check that both protocol buckets are emptied."""
+    comet = string_to_evm_address('0xc3d688B66703497DAA19211EEdff47f25384cdc3')
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1000 + idx),
+                location=Location.ETHEREUM,
+                event_type=event_type,
+                event_subtype=event_subtype,
+                asset=asset,
+                amount=FVal(amount),
+                location_label=(user_address := ethereum_accounts[0]),
+                counterparty=None if event_subtype == HistoryEventSubType.NONE else CPT_COMPOUND_V3,  # noqa: E501
+                address=comet,
+            ) for idx, (event_type, event_subtype, asset, amount) in enumerate((
+                (HistoryEventType.RECEIVE, HistoryEventSubType.NONE, A_ETH, '30'),
+                (HistoryEventType.RECEIVE, HistoryEventSubType.NONE, A_WETH, '20'),
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL, A_ETH, '30'),
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL, A_WETH, '20'),
+                (HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT, A_USDC, '66336.36794'),  # noqa: E501
+            ))],
+        )
+
     tx_hash = deserialize_evm_tx_hash('0xb0d6b75fdfbbcb34426532b96b41d256f998942ff039a25152ccfdceb9fe5c2c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
-            sequence_index=218,
+            sequence_index=219,
             timestamp=(timestamp := TimestampMS(1744007795000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
-            asset=Asset('eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3'),
+            asset=(c_usdc_v3 := Asset('eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3')),  # noqa: E501
             amount=FVal('3988.386646'),
-            location_label=ethereum_accounts[0],
+            location_label=user_address,
             notes='Receive 3988.386646 cUSDCv3 from a Compound v3 liquidation',
             counterparty=CPT_COMPOUND_V3,
             address=ZERO_ADDRESS,
@@ -617,24 +654,53 @@ def test_compound_v3_liquidation(ethereum_inquirer, ethereum_accounts):
             location=Location.ETHEREUM,
             event_type=HistoryEventType.LOSS,
             event_subtype=HistoryEventSubType.LIQUIDATE,
-            asset=A_WETH,
-            amount=FVal(50),
-            location_label=ethereum_accounts[0],
-            notes='Lost 50 WETH in a Compound v3 forced liquidation',
+            asset=A_ETH,
+            amount=FVal(30),
+            location_label=user_address,
+            notes='Lost 30 ETH in a Compound v3 forced liquidation',
             counterparty=CPT_COMPOUND_V3,
-            address=(comet := string_to_evm_address('0xc3d688B66703497DAA19211EEdff47f25384cdc3')),
+            address=comet,
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=231,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
+            event_type=HistoryEventType.LOSS,
+            event_subtype=HistoryEventSubType.LIQUIDATE,
+            asset=A_WETH,
+            amount=FVal(20),
+            location_label=user_address,
+            notes='Lost 20 WETH in a Compound v3 forced liquidation',
+            counterparty=CPT_COMPOUND_V3,
+            address=comet,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=232,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
             asset=A_USDC,
-            amount=ZERO,
-            location_label=ethereum_accounts[0],
-            notes='Repay 70324.754586 USDC in a Compound v3 liquidation',
+            amount=FVal('66336.36794'),
+            location_label=user_address,
+            notes='Repay 66336.36794 USDC in a Compound v3 liquidation',
             counterparty=CPT_COMPOUND_V3,
             address=comet,
         ),
     ]
+
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+    with database.conn.read_ctx() as cursor:
+        assert {(row[0], row[1]): FVal(row[2]) for row in cursor.execute(
+            'SELECT protocol, asset, metric_value, MAX(sort_key) FROM event_metrics '
+            'WHERE metric_key = ? GROUP BY location, location_label, protocol, asset',
+            (EventMetricKey.BALANCE.serialize(),),
+        )} == {
+            (None, A_ETH.identifier): ZERO,
+            (None, A_WETH.identifier): ZERO,
+            (None, c_usdc_v3.identifier): FVal('3988.386646'),
+            (CPT_COMPOUND_V3, A_ETH.identifier): ZERO,
+            (CPT_COMPOUND_V3, A_WETH.identifier): ZERO,
+            (CPT_COMPOUND_V3, A_USDC.identifier): ZERO,
+        }
+        assert cursor.execute('SELECT COUNT(*) FROM data_issues').fetchone()[0] == 0
