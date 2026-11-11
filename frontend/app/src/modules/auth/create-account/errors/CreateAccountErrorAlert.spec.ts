@@ -11,7 +11,7 @@ function mountAlert(error: string): VueWrapper<InstanceType<typeof CreateAccount
   });
 }
 
-describe('modules/auth/create-account/analytics/CreateAccountErrorAlert', () => {
+describe('modules/auth/create-account/errors/CreateAccountErrorAlert', () => {
   it('should render a plain error without a link', () => {
     const wrapper = mountAlert('Something went wrong');
 

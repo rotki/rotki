@@ -2102,10 +2102,6 @@
     "incomplete": "不完整"
   },
   "create_account": {
-    "actions": {
-      "create_account": "创建账户",
-      "restore_account": "恢复账户"
-    },
     "credentials": {
       "description": "选择一个配置文件名称和密码。密码会加密此配置文件中的所有内容。",
       "label_password": "密码",
@@ -2113,8 +2109,6 @@
       "label_password_repeat": "重复密码",
       "label_username": "用户名",
       "password_sync_requirement": "请使用与你最初备份的数据库相同的密码。如果输入不同的密码，将无法访问该数据库。",
-      "restore_description": "设置用户名以及你所备份数据库的{password}。用户将在本地创建，并将同步的数据库下载到其中。",
-      "restore_highlight": "密码",
       "validation": {
         "check_prompt": "请确认你已阅读并完成备份",
         "non_empty_password": "请输入密码",
@@ -2131,43 +2125,9 @@
       "description": "已经有账户了？",
       "log_in": "解锁你的账户"
     },
-    "introduction": {
-      "create": {
-        "description": "从全新的本地 rotki 用户开始。",
-        "title": "创建新账户"
-      },
-      "restore": {
-        "description": "已是 rotki 高级版用户？恢复之前同步到云端的数据库。",
-        "title": "从云同步恢复"
-      }
-    },
     "premium": {
-      "button_premium_approve": "是的，启用高级版",
-      "premium_question": "已经是高级版用户？现在使用你的 API 凭据启用。{premiumLink}",
       "restore_question": "输入你的高级版 API 凭据，以下载从其他设备同步的数据库。你可以在 {premiumLink} 中找到它们。"
     },
-    "steps": {
-      "step_1": {
-        "description": "选择开始方式",
-        "title": "介绍"
-      },
-      "step_2": {
-        "description": "你在我们的网站上有高级版账户吗？",
-        "restore_description": "连接你的高级版账户",
-        "restore_title": "从云端恢复",
-        "title": "启用高级版"
-      },
-      "step_3": {
-        "description": "设置你的凭据",
-        "restore_title": "恢复账户",
-        "title": "创建账户"
-      },
-      "step_4": {
-        "title": "使用统计"
-      }
-    },
-    "title": "创建账户",
-    "title_restore": "恢复账户",
     "usage_analytics": {
       "description": "可选。匿名使用数据可帮助我们改进 rotki。你可以随时在通用设置中更改此项。",
       "label_confirm": "提交匿名使用统计"

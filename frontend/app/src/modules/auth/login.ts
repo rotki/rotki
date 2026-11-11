@@ -1,3 +1,4 @@
+import type { SupportedCurrency } from '@/modules/assets/amount-display/currencies';
 import { z } from 'zod';
 
 export type SyncApproval = 'yes' | 'no' | 'unknown';
@@ -19,7 +20,10 @@ export interface PremiumSetup {
 }
 
 interface InitialSettings {
-  readonly submitUsageAnalytics: boolean;
+  readonly submitUsageAnalytics?: boolean;
+  readonly mainCurrency?: SupportedCurrency;
+  /** Only ever sent as true, so leaving the option alone never turns automatic backups off. */
+  readonly premiumShouldSync?: true;
 }
 
 export const AccountSession = z.record(z.string(), z.enum(['loggedin', 'loggedout'] as const));

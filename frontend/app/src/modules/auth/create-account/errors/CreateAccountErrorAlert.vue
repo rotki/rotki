@@ -3,7 +3,7 @@ import { externalLinks } from '@shared/external-links';
 import {
   type ParsedDeviceLimitError,
   parseDeviceLimitError,
-} from '@/modules/auth/create-account/analytics/parse-device-limit-error';
+} from '@/modules/auth/create-account/errors/parse-device-limit-error';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const { error } = defineProps<{

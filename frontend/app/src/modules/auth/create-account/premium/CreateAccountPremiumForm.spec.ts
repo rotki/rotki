@@ -1,199 +1,93 @@
 import type { StubInstance } from '@test/utils/component-vm';
 import type { PremiumSetup } from '@/modules/auth/login';
-import { mount, type VueWrapper } from '@vue/test-utils';
-import { afterEach, assert, describe, expect, it } from 'vitest';
-import { defineComponent, h, ref, type VNode } from 'vue';
+import { type ModelFormHarness, mountModelForm } from '@test/utils/model-form-harness';
+import { assert, describe, expect, it, vi } from 'vitest';
 import CreateAccountPremiumForm from '@/modules/auth/create-account/premium/CreateAccountPremiumForm.vue';
 import '@test/i18n';
 
-function inputStub(name: string): Record<string, unknown> {
-  return {
-    emits: ['update:modelValue'],
-    name,
-    props: ['modelValue', 'errorMessages', 'disabled'],
-    template: '<div />',
-  };
+/** Marks the input the way the real field does, so the shared error focus can find it. */
+const InputStub = {
+  emits: ['update:modelValue'],
+  props: ['modelValue', 'errorMessages', 'disabled'],
+  template: '<div><input :aria-invalid="errorMessages && errorMessages.length > 0 ? \'true\' : \'false\'" /></div>',
+};
+
+const API_KEY = 'create-account-premium-api-key';
+const API_SECRET = 'create-account-premium-api-secret';
+
+function createHarness(setup: Partial<PremiumSetup> = {}, optional: boolean = false): ModelFormHarness<PremiumSetup> {
+  return mountModelForm<PremiumSetup>(CreateAccountPremiumForm, {
+    global: { stubs: { RuiRevealableTextField: InputStub } },
+    payload: { apiKey: '', apiSecret: '', syncDatabase: false, ...setup },
+    props: { loading: false, optional },
+  });
 }
 
-interface Harness {
-  wrapper: VueWrapper;
-  form: () => PremiumSetup;
-  valid: () => boolean;
-  setEnabled: (value: boolean) => void;
+function messages(harness: ModelFormHarness<PremiumSetup>, testId: string): string[] {
+  const value: unknown = harness.wrapper.findComponent<StubInstance>(`[data-testid=${testId}]`).props('errorMessages');
+  assert(Array.isArray(value));
+  return value.map(String);
 }
-
-const KEY_FIELD = 'premium_credentials.label_api_key';
-const SECRET_FIELD = 'premium_credentials.label_api_secret';
-const VALID_SEED_AN_INVALID_FORM_MUST_OVERWRITE = true;
 
 describe('createAccountPremiumForm', () => {
-  let harness: Harness;
+  describe('when the credentials are required, as on a restore', () => {
+    it('should hold back empty credentials and name both fields', async () => {
+      const harness = createHarness();
 
-  afterEach(() => {
-    harness?.wrapper.unmount();
+      await expect(harness.validate()).resolves.toBe(false);
+      expect(messages(harness, API_KEY)).toStrictEqual(['premium_credentials.validation.non_empty_key']);
+      expect(messages(harness, API_SECRET)).toStrictEqual(['premium_credentials.validation.non_empty_secret']);
+    });
+
+    it('should let a full pair through', async () => {
+      const harness = createHarness({ apiKey: 'key', apiSecret: 'secret' });
+
+      await expect(harness.validate()).resolves.toBe(true);
+    });
+
+    it('should focus the first empty field', async () => {
+      const focus = vi.spyOn(HTMLInputElement.prototype, 'focus');
+      const harness = createHarness({ apiKey: 'key' });
+
+      await harness.validate();
+      await nextTick();
+
+      const focused = focus.mock.contexts.at(-1);
+      assert(focused instanceof HTMLInputElement);
+      expect(focused.closest('[data-testid]')?.getAttribute('data-testid')).toBe(API_SECRET);
+      focus.mockRestore();
+    });
   });
 
-  function emptySetup(): PremiumSetup {
-    return { apiKey: '', apiSecret: '', syncDatabase: false };
-  }
+  describe('when the credentials are optional, as on a create', () => {
+    it('should let both fields be left empty', async () => {
+      const harness = createHarness({}, true);
 
-  function createHarness(options: { enabled: boolean; setup?: PremiumSetup }): Harness {
-    const form = ref<PremiumSetup>(options.setup ?? emptySetup());
-    const valid = ref<boolean>(VALID_SEED_AN_INVALID_FORM_MUST_OVERWRITE);
-    const enabled = ref<boolean>(options.enabled);
-
-    const parent = defineComponent({
-      setup(): () => VNode {
-        return () => h(CreateAccountPremiumForm, {
-          'enabled': get(enabled),
-          'form': get(form),
-          'loading': false,
-          'onUpdate:form': (value: PremiumSetup): void => set(form, value),
-          'onUpdate:valid': (value: boolean): void => set(valid, value),
-          'valid': get(valid),
-        });
-      },
+      await expect(harness.validate()).resolves.toBe(true);
     });
 
-    const wrapper = mount(parent, {
-      global: {
-        stubs: {
-          RuiRevealableTextField: inputStub('RuiRevealableTextField'),
-        },
-      },
+    it('should ask for the missing half of a pair', async () => {
+      const harness = createHarness({ apiKey: 'key' }, true);
+
+      await expect(harness.validate()).resolves.toBe(false);
+      expect(messages(harness, API_KEY)).toStrictEqual([]);
+      expect(messages(harness, API_SECRET)).toStrictEqual(['create_account.premium.validation.optional_secret']);
     });
+  });
 
-    return {
-      form: (): PremiumSetup => get(form),
-      setEnabled: (value: boolean): void => set(enabled, value),
-      valid: (): boolean => get(valid),
-      wrapper,
-    };
-  }
+  it('should keep the database download choice it does not edit', async () => {
+    const harness = createHarness({ syncDatabase: true });
 
-  function field(label: string): VueWrapper<StubInstance> {
-    const match = harness.wrapper
-      .findAllComponents<StubInstance>({ name: 'RuiRevealableTextField' })
-      .find(component => component.attributes('label') === label);
-    assert(match, `no field labelled ${label} is rendered`);
-    return match;
-  }
-
-  function messages(label: string): string[] {
-    const value: unknown = field(label).props('errorMessages');
-    assert(Array.isArray(value));
-    return value.map(String);
-  }
-
-  async function edit(label: string, value: string): Promise<void> {
-    field(label).vm.$emit('update:modelValue', value);
+    harness.wrapper.findComponent<StubInstance>(`[data-testid=${API_KEY}]`).vm.$emit('update:modelValue', 'typed');
     await nextTick();
-  }
 
-  describe('when premium is not enabled', () => {
-    it('should report valid immediately, with both credentials empty', async () => {
-      harness = createHarness({ enabled: false });
-      await nextTick();
-
-      expect(harness.valid()).toBe(true);
-    });
-
-    it('should render no credential fields at all', async () => {
-      harness = createHarness({ enabled: false });
-      await nextTick();
-
-      expect(harness.wrapper.findAllComponents({ name: 'RuiRevealableTextField' })).toHaveLength(0);
-    });
+    expect(harness.model()).toStrictEqual({ apiKey: 'typed', apiSecret: '', syncDatabase: true });
   });
 
-  describe('when premium is enabled', () => {
-    it('should report invalid while both credentials are empty', async () => {
-      harness = createHarness({ enabled: true });
-      await nextTick();
+  it('should not report an unsaved edit on open', async () => {
+    const harness = createHarness({ apiKey: 'key', apiSecret: 'secret' });
+    await nextTick();
 
-      expect(harness.valid()).toBe(false);
-    });
-
-    it('should report valid once both credentials are filled', async () => {
-      harness = createHarness({ enabled: true, setup: { apiKey: 'key', apiSecret: 'secret', syncDatabase: false } });
-      await nextTick();
-
-      expect(harness.valid()).toBe(true);
-    });
-
-    it.each([
-      [KEY_FIELD, SECRET_FIELD],
-      [SECRET_FIELD, KEY_FIELD],
-    ])('should report invalid while only %s is filled', async (filled, empty) => {
-      harness = createHarness({ enabled: true });
-      await edit(filled, 'value');
-      await edit(empty, '');
-
-      expect(harness.valid()).toBe(false);
-    });
-
-    it.each([
-      [KEY_FIELD, 'premium_credentials.validation.non_empty_key'],
-      [SECRET_FIELD, 'premium_credentials.validation.non_empty_secret'],
-    ])('should show %s its own message once cleared', async (label, message) => {
-      harness = createHarness({ enabled: true, setup: { apiKey: 'key', apiSecret: 'secret', syncDatabase: false } });
-      await edit(label, '');
-
-      expect(messages(label)).toStrictEqual([message]);
-    });
-
-    it('should show no message on a field the user has not touched', async () => {
-      harness = createHarness({ enabled: true });
-      await nextTick();
-
-      expect(messages(KEY_FIELD)).toStrictEqual([]);
-      expect(messages(SECRET_FIELD)).toStrictEqual([]);
-    });
-
-    it('should reject a whitespace-only api key arriving on the model rather than through the field', async () => {
-      harness = createHarness({ enabled: true, setup: { apiKey: '   ', apiSecret: 'secret', syncDatabase: false } });
-      await edit(KEY_FIELD, '   ');
-
-      expect(harness.valid()).toBe(false);
-      expect(messages(KEY_FIELD)).toStrictEqual(['premium_credentials.validation.non_empty_key']);
-    });
-
-    it('should write an edit back to the wizard model', async () => {
-      harness = createHarness({ enabled: true });
-      await edit(KEY_FIELD, 'typed-key');
-
-      expect(harness.form().apiKey).toBe('typed-key');
-    });
-
-    it('should carry the untouched syncDatabase flag through an edit', async () => {
-      harness = createHarness({ enabled: true, setup: { apiKey: '', apiSecret: '', syncDatabase: true } });
-      await edit(KEY_FIELD, 'typed-key');
-
-      expect(harness.form().syncDatabase).toBe(true);
-    });
-  });
-
-  describe('when premium is toggled', () => {
-    it('should turn valid on as soon as premium is declined', async () => {
-      harness = createHarness({ enabled: true });
-      await nextTick();
-      expect(harness.valid()).toBe(false);
-
-      harness.setEnabled(false);
-      await nextTick();
-
-      expect(harness.valid()).toBe(true);
-    });
-
-    it('should turn valid off as soon as premium is accepted with empty credentials', async () => {
-      harness = createHarness({ enabled: false });
-      await nextTick();
-      expect(harness.valid()).toBe(true);
-
-      harness.setEnabled(true);
-      await nextTick();
-
-      expect(harness.valid()).toBe(false);
-    });
+    expect(harness.stateUpdated()).toBe(false);
   });
 });

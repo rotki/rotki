@@ -336,28 +336,6 @@
       "description": "¿Ya tienes una cuenta?",
       "log_in": "Desbloquea tu cuenta"
     },
-    "premium": {
-      "button_premium_approve": "Sí, habilitar premium",
-      "premium_question": "¿Ya eres un usuario premium de rotki y quieres habilitar funciones premium?\nPuedes comprar premium {premiumLink}"
-    },
-    "steps": {
-      "step_1": {
-        "description": "Primer paso",
-        "title": "Introducción"
-      },
-      "step_2": {
-        "description": "¿Tienes una cuenta premium en nuestro sitio web?",
-        "title": "Habilitar Premium"
-      },
-      "step_3": {
-        "description": "Configura tus credenciales",
-        "title": "Crear cuenta"
-      },
-      "step_4": {
-        "title": "Análisis de uso"
-      }
-    },
-    "title": "Crear Cuenta",
     "usage_analytics": {
       "description": "rotki es una aplicación local y el análisis de uso anónimo es la única forma que tenemos de tener una idea de cuántas personas utilizan nuestro software, de dónde son, etc. Estos datos son muy importantes para nosotros, son completamente anónimos y nos ayudan a crear un mejor producto para ti.",
       "label_confirm": "Enviar análisis de uso anónimo"

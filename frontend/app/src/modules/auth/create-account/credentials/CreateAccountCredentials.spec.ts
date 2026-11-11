@@ -1,166 +1,130 @@
-import type { StubInstance } from '@test/utils/component-vm';
 import type { LoginCredentials } from '@/modules/auth/login';
-import { mount, type VueWrapper } from '@vue/test-utils';
-import { afterEach, assert, describe, expect, it } from 'vitest';
-import { defineComponent, h, ref, type VNode } from 'vue';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent, h, ref } from 'vue';
 import CreateAccountCredentials from '@/modules/auth/create-account/credentials/CreateAccountCredentials.vue';
 import '@test/i18n';
 
-function inputStub(name: string): Record<string, unknown> {
-  return {
-    emits: ['update:modelValue'],
-    name,
-    props: ['modelValue', 'errorMessages', 'disabled'],
-    template: '<div />',
-  };
-}
+const { check, errorCount } = await vi.hoisted(async () => {
+  const { ref } = await import('vue');
+  return { check: vi.fn<() => Promise<boolean>>(), errorCount: ref<number>(0) };
+});
 
-const ButtonStub = {
-  name: 'RuiButton',
-  props: ['disabled', 'loading'],
-  template: '<button :disabled="disabled"><slot /></button>',
+/** Stands in for the form, keeping only what the step reads off it: `check()` and the error count. */
+const FormStub = defineComponent({
+  name: 'CreateAccountCredentialsForm',
+  setup(_props, { expose }) {
+    expose({ errorCount, validate: check });
+    return (): ReturnType<typeof h> => h('div');
+  },
+});
+
+const ActionsStub = {
+  emits: ['back', 'next'],
+  name: 'CreateAccountStepActions',
+  props: ['nextLabel', 'nextTestId', 'issueCount', 'loading'],
+  template: '<div><button data-testid="back" @click="$emit(\'back\')" /><button data-testid="next" @click="$emit(\'next\')" /></div>',
 };
 
-const USERNAME = 'create-account-username';
-const PASSWORD = 'create-account-password';
-const PASSWORD_REPEAT = 'create-account-password-repeat';
-const USER_PROMPTED = 'create-account-user-prompted';
-const CONTINUE = 'create-account-credentials-continue';
-
-interface State {
-  credentials: LoginCredentials;
-  passwordConfirm: string;
-  userPrompted: boolean;
+function createWrapper(mode: 'create' | 'restore' = 'create'): VueWrapper {
+  return mount(CreateAccountCredentials, {
+    global: {
+      stubs: {
+        CreateAccountCredentialsForm: FormStub,
+        CreateAccountStepActions: ActionsStub,
+        RuiAlert: { template: '<div><slot /></div>' },
+      },
+    },
+    props: {
+      form: ref<LoginCredentials>({ password: '', username: '' }).value,
+      loading: false,
+      mode,
+      passwordConfirm: '',
+      userPrompted: false,
+    },
+  });
 }
 
-function filled(): State {
-  return {
-    credentials: { password: 'password', username: 'user' },
-    passwordConfirm: 'password',
-    userPrompted: true,
-  };
-}
-
-function blank(): State {
-  return {
-    credentials: { password: '', username: '' },
-    passwordConfirm: '',
-    userPrompted: false,
-  };
+function issueCount(wrapper: VueWrapper): unknown {
+  return wrapper.findComponent({ name: 'CreateAccountStepActions' }).props('issueCount');
 }
 
 describe('createAccountCredentials', () => {
-  let wrapper: VueWrapper;
-
-  afterEach(() => {
-    wrapper?.unmount();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    set(errorCount, 0);
   });
 
-  function createWrapper(initial: State = filled(), props: Record<string, unknown> = {}): VueWrapper {
-    const form = ref<LoginCredentials>(initial.credentials);
-    const passwordConfirm = ref<string>(initial.passwordConfirm);
-    const userPrompted = ref<boolean>(initial.userPrompted);
+  describe('continuing', () => {
+    it('should move on once the form passes its check', async () => {
+      check.mockResolvedValue(true);
+      const wrapper = createWrapper();
 
-    const parent = defineComponent({
-      setup(): () => VNode {
-        return () => h(CreateAccountCredentials, {
-          'form': get(form),
-          'loading': false,
-          'onUpdate:form': (value: LoginCredentials): void => set(form, value),
-          'onUpdate:passwordConfirm': (value: string): void => set(passwordConfirm, value),
-          'onUpdate:userPrompted': (value: boolean): void => set(userPrompted, value),
-          'passwordConfirm': get(passwordConfirm),
-          'userPrompted': get(userPrompted),
-          ...props,
-        });
-      },
+      await wrapper.find('[data-testid=next]').trigger('click');
+      await flushPromises();
+
+      expect(wrapper.emitted('next')).toHaveLength(1);
     });
 
-    return mount(parent, {
-      global: {
-        stubs: {
-          RuiButton: ButtonStub,
-          RuiCheckbox: inputStub('RuiCheckbox'),
-          RuiRevealableTextField: inputStub('RuiRevealableTextField'),
-          RuiTextField: inputStub('RuiTextField'),
-        },
-      },
+    it('should stay while the form holds an error', async () => {
+      check.mockResolvedValue(false);
+      const wrapper = createWrapper();
+
+      await wrapper.find('[data-testid=next]').trigger('click');
+      await flushPromises();
+
+      expect(check).toHaveBeenCalledTimes(1);
+      expect(wrapper.emitted('next')).toBeUndefined();
     });
-  }
-
-  function continueDisabled(): boolean {
-    return wrapper.get(`[data-testid=${CONTINUE}]`).attributes('disabled') !== undefined;
-  }
-
-  async function edit(testId: string, value: string | boolean): Promise<void> {
-    const field = wrapper.findComponent<StubInstance>(`[data-testid=${testId}]`);
-    assert(field.exists(), `no field with test id ${testId} is rendered`);
-    field.vm.$emit('update:modelValue', value);
-    await nextTick();
-  }
-
-  it('should enable continue for a complete set of credentials', async () => {
-    wrapper = createWrapper();
-    await nextTick();
-
-    expect(continueDisabled()).toBe(false);
   });
 
-  it('should keep continue disabled on a blank step', async () => {
-    wrapper = createWrapper(blank());
-    await nextTick();
+  describe('the issue count', () => {
+    it('should stay hidden before the first Continue, even with errors pending', async () => {
+      set(errorCount, 3);
+      const wrapper = createWrapper();
+      await nextTick();
 
-    expect(continueDisabled()).toBe(true);
+      expect(issueCount(wrapper)).toBe(0);
+    });
+
+    it('should follow the form\'s errors after a Continue', async () => {
+      check.mockResolvedValue(false);
+      set(errorCount, 3);
+      const wrapper = createWrapper();
+
+      await wrapper.find('[data-testid=next]').trigger('click');
+      await flushPromises();
+
+      expect(issueCount(wrapper)).toBe(3);
+
+      set(errorCount, 1);
+      await nextTick();
+
+      expect(issueCount(wrapper)).toBe(1);
+    });
   });
 
-  it.each([
-    [USERNAME, ''],
-    [PASSWORD, ''],
-    [PASSWORD_REPEAT, ''],
-    [USER_PROMPTED, false],
-  ] as const)('should disable continue once %s is cleared', async (testId, cleared) => {
-    wrapper = createWrapper();
-    await edit(testId, cleared);
+  it('should hand Back to the wizard', async () => {
+    const wrapper = createWrapper();
 
-    expect(continueDisabled()).toBe(true);
+    await wrapper.find('[data-testid=back]').trigger('click');
+
+    expect(wrapper.emitted('back')).toHaveLength(1);
   });
 
-  it('should disable continue for an invalid username', async () => {
-    wrapper = createWrapper();
-    await edit(USERNAME, 'user name');
+  describe('the guidance above the form', () => {
+    it('should warn about the original password on a restore', () => {
+      const wrapper = createWrapper('restore');
 
-    expect(continueDisabled()).toBe(true);
-  });
+      expect(wrapper.find('[data-testid=create-account-restore-password-warning]').text())
+        .toBe('create_account.credentials.password_sync_requirement');
+    });
 
-  it('should disable continue when the confirmation stops matching', async () => {
-    wrapper = createWrapper();
-    await edit(PASSWORD_REPEAT, 'different');
+    it('should explain what the password protects on a create', () => {
+      const wrapper = createWrapper('create');
 
-    expect(continueDisabled()).toBe(true);
-  });
-
-  it('should re-enable continue once the credentials are corrected', async () => {
-    wrapper = createWrapper(blank());
-    await edit(USERNAME, 'user');
-    await edit(PASSWORD, 'password');
-    await edit(PASSWORD_REPEAT, 'password');
-    await edit(USER_PROMPTED, true);
-
-    expect(continueDisabled()).toBe(false);
-  });
-
-  it('should disable continue while the step is loading', async () => {
-    wrapper = createWrapper(filled(), { loading: true });
-    await nextTick();
-
-    expect(continueDisabled()).toBe(true);
-  });
-
-  it('should advance the wizard when continue is pressed', async () => {
-    wrapper = createWrapper();
-    await nextTick();
-    await wrapper.get(`[data-testid=${CONTINUE}]`).trigger('click');
-
-    expect(wrapper.findComponent(CreateAccountCredentials).emitted('next')).toHaveLength(1);
+      expect(wrapper.find('[data-testid=create-account-restore-password-warning]').exists()).toBe(false);
+      expect(wrapper.text()).toContain('create_account.credentials.description');
+    });
   });
 });

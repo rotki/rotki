@@ -9,6 +9,7 @@ import UpgradeProgressDisplay from '@/modules/auth/upgrade/UpgradeProgressDispla
 import { useAccountManagement } from '@/modules/auth/use-account-management';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import UserHost from '@/modules/auth/UserHost.vue';
+import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
 import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
 
@@ -25,19 +26,19 @@ const { clearErrors, createNewAccount, error, loading } = useAccountManagement()
 const step = ref<number>(1);
 const mode = ref<CreateAccountMode>();
 
-const { steps } = useCreateAccountSteps(mode);
+const { context } = useCreateAccountSteps(mode, step);
 
 onMounted(() => clearErrors());
 </script>
 
 <template>
-  <section class="w-full flex flex-col flex-1 overflow-auto">
+  <section class="w-full flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
     <div class="h-full grow flex flex-col">
       <RotkiLogo
-        class="my-5 lg:hidden w-full max-w-110 mx-auto max-[487px]:px-4 max-[487px]:max-w-full"
+        class="my-5 lg:hidden w-full max-w-120 mx-auto max-[512px]:px-4 max-[512px]:max-w-full"
         unique-key="1b"
       />
-      <div class="flex flex-col grow px-4 pt-10 lg:pt-20 pb-6">
+      <div class="flex flex-col grow px-4 pt-14 lg:pt-[calc(12vh+3.5rem)] pb-6">
         <div
           data-testid="account-management"
           class="grow flex flex-col"
@@ -57,13 +58,6 @@ onMounted(() => clearErrors());
           </UserHost>
         </div>
       </div>
-      <div class="lg:hidden w-full max-w-110 mx-auto px-4">
-        <RuiFooterStepper
-          :model-value="step"
-          :pages="steps.length"
-          variant="pill"
-        />
-      </div>
       <footer class="p-6 lg:p-8 flex items-center gap-3">
         <AccountManagementFooterText #default="{ copyright }">
           {{ copyright }}
@@ -73,19 +67,26 @@ onMounted(() => clearErrors());
     </div>
   </section>
   <AccountManagementAside>
-    <div class="mb-10">
-      <RotkiLogo
-        size="2"
-        unique-key="1"
-        text
-      />
-    </div>
-    <div>
-      <RuiStepper
-        custom
-        orientation="vertical"
-        :step="step"
-        :steps="steps"
+    <RotkiLogo
+      class="mb-10"
+      size="2"
+      unique-key="1"
+      text
+    />
+    <div
+      class="flex flex-col gap-3"
+      data-testid="create-account-context"
+    >
+      <h2 class="text-h5">
+        {{ context.title }}
+      </h2>
+      <p class="text-body-1 text-rui-text-secondary whitespace-pre-line">
+        {{ context.body }}
+      </p>
+      <ExternalLink
+        v-if="context.link"
+        :text="context.link.text"
+        :url="context.link.url"
       />
     </div>
   </AccountManagementAside>

@@ -1,27 +1,34 @@
-import type { ComputedRef, Ref } from 'vue';
-import type { CreateAccountMode } from '@/modules/auth/create-account/types';
+import type { Ref } from 'vue';
+import type { SupportedCurrency } from '@/modules/assets/amount-display/currencies';
+import type { CreateAccountMode, CreateAccountStepId } from '@/modules/auth/create-account/types';
 import type { CreateAccountPayload, LoginCredentials, PremiumSetup } from '@/modules/auth/login';
+import { suggestCurrency } from '@/modules/auth/create-account/locale-currency';
+import { stepPosition } from '@/modules/auth/create-account/use-create-account-steps';
 
 interface UseCreateAccountWizardReturn {
-  /** Whether the account is being given premium credentials. */
+  /** Whether premium credentials are being given: the opened premium section, or always on restore. */
   modelPremiumEnabled: Ref<boolean>;
-  /** The premium credentials, and whether the database is synced from them. */
+  /** The premium credentials, and whether the database is downloaded from them. */
   modelPremiumSetupForm: Ref<PremiumSetup>;
+  /** Whether a newly created premium profile turns on automatic backups. */
+  modelPremiumShouldSync: Ref<boolean>;
   /** The username and password the account is created with. */
   modelCredentialsForm: Ref<LoginCredentials>;
   /** The repeated password, checked against the one in the credentials form. */
   modelPasswordConfirm: Ref<string>;
-  /** Whether the user has been warned that a lost password cannot be recovered. */
+  /** Whether the user has acknowledged that a lost password cannot be recovered. */
   modelUserPrompted: Ref<boolean>;
+  /** The currency a created profile starts in, suggested from the system locale until the user picks. */
+  modelMainCurrency: Ref<SupportedCurrency>;
   /** Whether anonymous usage analytics are submitted. */
   modelSubmitUsageAnalytics: Ref<boolean>;
-  /** Whether the account is being restored rather than created. */
-  isRestoreMode: ComputedRef<boolean>;
   /** Moves to the following step. */
   nextStep: () => void;
-  /** Moves back one step, forgetting the mode when the first step is reached again. */
+  /** Moves back one step, returning to the path choice from the first one. */
   prevStep: () => void;
-  /** Answers the first step and moves on. */
+  /** Jumps back to an earlier step of the chosen path. */
+  goToStep: (id: CreateAccountStepId) => void;
+  /** Answers the path choice and moves to the path's first step. */
   selectMode: (selected: CreateAccountMode) => void;
   /** Collects the answers into the payload the account is created from. */
   buildPayload: () => CreateAccountPayload;
@@ -38,8 +45,8 @@ function emptyPremiumSetup(): PremiumSetup {
  * The wizard owns the answers rather than the steps, because a step is unmounted while another one
  * is showing: going back and forward again has to find what was typed still there.
  *
- * @param step - the wizard's current step, 1-based, shared with the page's stepper
- * @param mode - whether the account is created or restored, unset until the first step answers
+ * @param step - the 1-based position within the chosen path, shared with the page
+ * @param mode - whether the account is created or restored, unset while the path is being chosen
  * @returns the per-step forms plus the transitions between the steps
  */
 export function useCreateAccountWizard(
@@ -48,65 +55,111 @@ export function useCreateAccountWizard(
 ): UseCreateAccountWizardReturn {
   const modelPremiumEnabled = shallowRef<boolean>(false);
   const modelPremiumSetupForm = ref<PremiumSetup>(emptyPremiumSetup());
+  const modelPremiumShouldSync = shallowRef<boolean>(false);
   const modelCredentialsForm = ref<LoginCredentials>({ password: '', username: '' });
   const modelPasswordConfirm = shallowRef<string>('');
   const modelUserPrompted = shallowRef<boolean>(false);
+  const systemLocale = typeof navigator === 'undefined' ? '' : navigator.language;
+  const modelMainCurrency = shallowRef<SupportedCurrency>(suggestCurrency(systemLocale));
   const modelSubmitUsageAnalytics = shallowRef<boolean>(true);
 
-  const isRestoreMode = computed<boolean>(() => get(mode) === 'restore');
+  function resetPremium(): void {
+    set(modelPremiumEnabled, false);
+    set(modelPremiumSetupForm, emptyPremiumSetup());
+    set(modelPremiumShouldSync, false);
+  }
 
   function nextStep(): void {
     set(step, get(step) + 1);
   }
 
   /**
+   * A password typed for one path is not the password the other path needs: a new profile picks its
+   * own, a restore must use the synced profile's. The profile name may stay.
+   */
+  function resetPassword(): void {
+    set(modelCredentialsForm, { ...get(modelCredentialsForm), password: '' });
+    set(modelPasswordConfirm, '');
+    set(modelUserPrompted, false);
+  }
+
+  /**
    * @remarks
-   * Landing back on the first step means the mode is being chosen again, so the premium answers
-   * seeded by the previous choice are dropped: a restore seeds them, and keeping them would carry
-   * a database sync into a plain create.
+   * Leaving the first step means the path is being chosen again, so the premium answers are dropped
+   * (a restore seeds them, and keeping them would carry a database download into a plain create) and
+   * so is the password.
    */
   function prevStep(): void {
-    const next = get(step) - 1;
-    set(step, next);
-    if (next === 1) {
-      set(mode, undefined);
-      set(modelPremiumEnabled, false);
-      set(modelPremiumSetupForm, emptyPremiumSetup());
+    if (get(step) > 1) {
+      set(step, get(step) - 1);
+      return;
     }
+    set(mode, undefined);
+    set(step, 1);
+    resetPremium();
+    resetPassword();
   }
 
-  /** Restoring an account is restoring it from the premium sync, so both are answered up front. */
+  /** A step the chosen path does not have is ignored, rather than leaving the wizard on no step. */
+  function goToStep(id: CreateAccountStepId): void {
+    const selected = get(mode);
+    const position = selected ? stepPosition(selected, id) : undefined;
+    if (position)
+      set(step, position);
+  }
+
+  /** Restoring is restoring from the premium sync, so both are answered as soon as it is chosen. */
   function selectMode(selected: CreateAccountMode): void {
+    resetPremium();
     set(mode, selected);
+    set(step, 1);
     if (selected === 'restore') {
       set(modelPremiumEnabled, true);
-      set(modelPremiumSetupForm, { ...get(modelPremiumSetupForm), syncDatabase: true });
+      set(modelPremiumSetupForm, { ...emptyPremiumSetup(), syncDatabase: true });
     }
-    nextStep();
   }
 
-  /** The premium credentials are only sent when the user asked for premium. */
+  /**
+   * On create, an opened premium section with both fields left empty counts as no premium.
+   *
+   * @remarks
+   * A restore sends no settings: the downloaded database replaces the one they would be written to,
+   * so the backup's own currency, analytics and backup choices are the ones that apply.
+   */
   function buildPayload(): CreateAccountPayload {
+    const premium = get(modelPremiumSetupForm);
+    const restore = get(mode) === 'restore';
+    const withPremium = restore
+      || (get(modelPremiumEnabled) && premium.apiKey !== '' && premium.apiSecret !== '');
+
+    const initialSettings: CreateAccountPayload['initialSettings'] = restore
+      ? {}
+      : {
+          mainCurrency: get(modelMainCurrency),
+          submitUsageAnalytics: get(modelSubmitUsageAnalytics),
+          ...(withPremium && get(modelPremiumShouldSync) ? { premiumShouldSync: true } : {}),
+        };
+
     const payload: CreateAccountPayload = {
       credentials: get(modelCredentialsForm),
-      initialSettings: {
-        submitUsageAnalytics: get(modelSubmitUsageAnalytics),
-      },
+      initialSettings,
     };
 
-    if (get(modelPremiumEnabled))
-      payload.premiumSetup = get(modelPremiumSetupForm);
+    if (withPremium)
+      payload.premiumSetup = premium;
 
     return payload;
   }
 
   return {
     buildPayload,
-    isRestoreMode,
+    goToStep,
     modelCredentialsForm,
+    modelMainCurrency,
     modelPasswordConfirm,
     modelPremiumEnabled,
     modelPremiumSetupForm,
+    modelPremiumShouldSync,
     modelSubmitUsageAnalytics,
     modelUserPrompted,
     nextStep,
