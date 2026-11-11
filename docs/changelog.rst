@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fiat exchange rates will be queried properly again. Frankfurter (ECB rates) is now used as a fallback source for fiat exchange rates.
 * :bug:`13643` Curve lend repay events should no longer decode borrowed-token refunds as protocol withdrawals.
 * :bug:`13642` CoW Swap trades no longer get a duplicate fee event when the same settlement contains an identical trade of an untracked address.
 * :bug:`13513` When premium is turned off because the plan's device limit is reached, rotki now points to where you can remove devices you no longer use, both on login and in the notification shown while running.

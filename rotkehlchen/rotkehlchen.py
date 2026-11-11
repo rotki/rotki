@@ -61,6 +61,7 @@ from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import CONTRACT_TAG_NAME, NFT_DIRECTIVE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_import.manager import CSVDataImporter
 from rotkehlchen.data_migrations.manager import DataMigrationManager
@@ -79,6 +80,7 @@ from rotkehlchen.errors.misc import (
     RemoteError,
     SystemPermissionError,
 )
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.alchemy import Alchemy
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
@@ -1428,11 +1430,9 @@ class Rotkehlchen:
             if (problem_free or save_despite_errors) and allowed_to_save:
                 if not timestamp:
                     timestamp = Timestamp(int(time.time()))
-                main_to_usd_rate = PriceHistorian.query_historical_price(
-                    from_asset=main_currency,
-                    to_asset=A_USD,
-                    timestamp=timestamp,
-                ) if (main_currency := CachedSettings().main_currency) != A_USD else Price(ONE)
+                if (main_to_usd_rate := self._query_main_to_usd_rate(timestamp)) is None:
+                    return result_dict
+
                 with self.data.db.user_write() as write_cursor:
                     self.data.db.save_balances_data(
                         write_cursor=write_cursor,
@@ -1451,6 +1451,47 @@ class Rotkehlchen:
                 )
 
         return result_dict
+
+    def _query_main_to_usd_rate(self, timestamp: Timestamp) -> Price | None:
+        """Get the main currency to USD rate used to store the snapshot's USD values.
+
+        If no historical rate can be found for the snapshot timestamp, which happens for
+        fiat main currencies when x-rates.com is unreachable since no other historical
+        oracle supports fiat, fall back to the current rate. That uses the same cached
+        fiat rates that valued the balances. For a fiat main currency the current rate
+        is derived from USD -> main currency, since that is the direction in which
+        current fiat rates are queried and cached.
+
+        Returns None, after warning the user, if no rate could be found at all.
+        """
+        if (main_currency := CachedSettings().main_currency) == A_USD:
+            return Price(ONE)
+
+        try:
+            return PriceHistorian.query_historical_price(
+                from_asset=main_currency,
+                to_asset=A_USD,
+                timestamp=timestamp,
+            )
+        except NoPriceForGivenTimestamp as e:
+            log.warning(
+                'Could not get the historical main currency to USD rate for the '
+                'balance snapshot. Falling back to the current rate.',
+                main_currency=main_currency.identifier,
+                error=str(e),
+            )
+
+        if main_currency.is_fiat():
+            if (usd_to_main := Inquirer.find_price(from_asset=A_USD, to_asset=main_currency)) != ZERO_PRICE:  # noqa: E501
+                return Price(ONE / usd_to_main)
+        elif (rate := Inquirer.find_usd_price(main_currency)) != ZERO_PRICE:
+            return rate
+
+        self.msg_aggregator.add_warning(
+            f'Could not save the balance snapshot since no {main_currency.identifier} '
+            f'to USD rate could be found.',
+        )
+        return None
 
     @staticmethod
     def _save_manual_prices_as_historical(result_dict: dict[str, Any]) -> None:

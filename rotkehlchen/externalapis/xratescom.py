@@ -40,14 +40,11 @@ def _scrape_xratescom_exchange_rates(url: str) -> dict[FiatAsset, Price]:
             f' and response: {response.text}',
         )
 
-    soup = BeautifulSoup(
-        response.text,
-        'html.parser',
-        parse_only=SoupStrainer('table', {'class': 'tablesorter ratesTable'}),
-    )
-
+    # the parse-time strainer sees the raw class attribute string, so only keep the tables
+    # and match the rates table by one of its classes after parsing
+    soup = BeautifulSoup(response.text, 'html.parser', parse_only=SoupStrainer('table'))
     try:
-        tr = soup.table.tbody.tr  # type: ignore  # we catch it with the AttributeError
+        tr = soup.find('table', class_='tablesorter').tbody.tr  # type: ignore  # we catch it with the AttributeError
     except AttributeError as e:
         raise RemoteError('Could not find first <tr> while parsing x-rates.com page') from e
 
