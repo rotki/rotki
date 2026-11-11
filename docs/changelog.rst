@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.44.3 <2026-11-11>`
 * :bug:`-` Restoring a premium backup while creating an account now keeps the settings chosen at account creation, such as the usage analytics choice, instead of replacing them with the ones in the backup.
 * :bug:`13640` Compound v3 liquidations are now properly decoded, showing the seized collateral and the repaid debt.
 * :bug:`-` Fiat exchange rates will be queried properly again. Frankfurter (ECB rates) is now used as a fallback source for fiat exchange rates.
