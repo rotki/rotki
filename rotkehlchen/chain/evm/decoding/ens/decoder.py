@@ -2,8 +2,6 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-import content_hash
-
 from rotkehlchen.api.websockets.typedefs import UserMessageOperation
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
@@ -19,6 +17,7 @@ from rotkehlchen.chain.evm.decoding.ens.constants import (
     TEXT_CHANGED_KEY_ONLY,
     TEXT_CHANGED_KEY_ONLY_ABI,
 )
+from rotkehlchen.chain.evm.decoding.ens.content_hash import decode_content_hash
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -218,8 +217,7 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
         name_to_show = self._get_name_to_show(node=node, context=context)
 
         try:
-            codec = content_hash.get_codec(new_hash)
-            value_hash = content_hash.decode(new_hash)
+            codec, value_hash = decode_content_hash(new_hash)
             value = f'{codec}://{value_hash}'
         except (TypeError, KeyError, ValueError) as e:
             msg = str(e)

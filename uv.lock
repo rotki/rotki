@@ -250,15 +250,6 @@ wheels = [
 ]
 
 [[package]]
-name = "base58check"
-version = "1.0.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/9c/78/cfbfd63b5dc23ad33ee5f1774e5828b7c6bf2f0302cbec95cbba191d3d62/base58check-1.0.2.tar.gz", hash = "sha256:a597d250ef564806d5c91a8882c92a69f542b90c6b4f04f581ee3202855cc396", size = 5414, upload-time = "2018-04-07T01:13:08.158Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/64/d2/a8e47d4cd73c416ea0d27b4dcfe3cde0bce17c0acce493c10791ee468a7a/base58check-1.0.2-py2.py3-none-any.whl", hash = "sha256:a83863696845a9b0b5ec95aebb32ebfc6ce5596984302c0f2b7b27f24afc2719", size = 6025, upload-time = "2018-04-07T01:13:07.342Z" },
-]
-
-[[package]]
 name = "bases"
 version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -504,20 +495,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/02/77/8c84b98eca70d245a2a956452f21d57930d22ab88cbeed9290ca630cf03f/construct-2.10.70.tar.gz", hash = "sha256:4d2472f9684731e58cc9c56c463be63baa1447d674e0d66aeb5627b22f512c29", size = 86337, upload-time = "2023-11-29T08:44:49.545Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b2/fb/08b3f4bf05da99aba8ffea52a558758def16e8516bc75ca94ff73587e7d3/construct-2.10.70-py3-none-any.whl", hash = "sha256:c80be81ef595a1a821ec69dc16099550ed22197615f4320b57cc9ce2a672cb30", size = 63020, upload-time = "2023-11-29T08:44:46.876Z" },
-]
-
-[[package]]
-name = "content-hash"
-version = "2.0.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "base58check" },
-    { name = "multiformats" },
-    { name = "pycryptodomex" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/47/d2/7e5f3345dccc3ed3abbe08bd0c22337fdd77dee24c92c8521de08b63b438/content-hash-2.0.0.tar.gz", hash = "sha256:f7627040ce47bab2d69d41a8e550aafac5671b042c1705581bfb82af04917a83", size = 11896, upload-time = "2023-12-24T16:57:01.839Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c4/43/7c2896fcf7c8325a0bfdb36d153e2be2ae12ff1bd60f5750f5e7c6a70362/content_hash-2.0.0-py3-none-any.whl", hash = "sha256:bff5a619b53122a3e02773b3fd55a8d2a85da46d420c04381bc80a8185dbd7ec", size = 11048, upload-time = "2023-12-24T16:56:59.573Z" },
 ]
 
 [[package]]
@@ -1916,32 +1893,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pycryptodomex"
-version = "3.24.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f4/e7/50e72301e32acb73a314e663c2014e1ddefc019d5f434ff14ec89861d664/pycryptodomex-3.24.1.tar.gz", hash = "sha256:09081666ffc599976c0b8b29caf2cf82212c0f05bed233c8f8ed53e4f6e1d356", size = 4934627, upload-time = "2026-10-11T19:26:49.624Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/48/3b/aeef17f479f6c7e367a9f6ad9974866ea311719b2f976e8b26cecd1b27de/pycryptodomex-3.24.1-cp314-cp314t-macosx_10_15_universal2.whl", hash = "sha256:514d685de4b0227d35d7114047fbd575bf162bff373e07af665aa41eee089dd0", size = 2477998, upload-time = "2026-10-11T19:25:53.619Z" },
-    { url = "https://files.pythonhosted.org/packages/18/c1/d26287bf0e1f8c62ed7d448320a0d6704ddbb27f26506e66ffb4431e8ec5/pycryptodomex-3.24.1-cp314-cp314t-macosx_10_15_x86_64.whl", hash = "sha256:7a81e9be7084af3591912475b22c5d0646a9160f3974b6b7300138781fffdc0d", size = 1646567, upload-time = "2026-10-11T19:25:55.45Z" },
-    { url = "https://files.pythonhosted.org/packages/82/a6/cf6db80b637d9480f7429797002779d5b57ecbeefb91169e0a70826359ca/pycryptodomex-3.24.1-cp314-cp314t-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:e87928d8f37952ba53d215836cb3d89c63c1367f037d055c3a5b3f4403f4c6b6", size = 2195699, upload-time = "2026-10-11T19:25:57.591Z" },
-    { url = "https://files.pythonhosted.org/packages/2d/20/969e8df9f253b2b9586582e911c2b14ac0a8a0b2cc4f22abbe34c0b1d77c/pycryptodomex-3.24.1-cp314-cp314t-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:f3ed97cdde1d96894057778095238bad3dd94d3e46dc07d6d618e6d4b7700cce", size = 2281499, upload-time = "2026-10-11T19:25:59.648Z" },
-    { url = "https://files.pythonhosted.org/packages/fe/33/6a0fe299a475a6f4dfc4dfd34ce70b158556d31e1a043eefa83651152d90/pycryptodomex-3.24.1-cp314-cp314t-musllinux_1_2_aarch64.whl", hash = "sha256:48d9058dd4c8f3af83e048b6ff83d9c6300841c42579f77fdfab19e49156a512", size = 2187039, upload-time = "2026-10-11T19:26:01.794Z" },
-    { url = "https://files.pythonhosted.org/packages/5f/6f/3580b64c6a166a00f4de5abe977bd4d9a0de893ce1fbe86ddb47851ca7d6/pycryptodomex-3.24.1-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:9dd5104a1d8ccf725a3c1b40b21d5ed47530b6499abba30955c174d895c1be2f", size = 2279238, upload-time = "2026-10-11T19:26:03.558Z" },
-    { url = "https://files.pythonhosted.org/packages/4d/55/ed1fdab2642548db89a3153143f4557315f1cba9e0c66166054bc07c2eaa/pycryptodomex-3.24.1-cp314-cp314t-win32.whl", hash = "sha256:569fdbeff936cbd5beb852b3969dc2f58fb255bd221b3f7a8999c035c30ec958", size = 1809532, upload-time = "2026-10-11T19:26:05.592Z" },
-    { url = "https://files.pythonhosted.org/packages/d8/88/8ebf1ae58911beeb7316502decfb0b86913f00a983eecda6cf37ce0c61b6/pycryptodomex-3.24.1-cp314-cp314t-win_amd64.whl", hash = "sha256:3bbcc1807502da4b5d66c94357a99589c8547aa9ad2f9ecfa537b2e9a347538b", size = 1842970, upload-time = "2026-10-11T19:26:07.842Z" },
-    { url = "https://files.pythonhosted.org/packages/ce/e2/32a1ffba448295e642cb51f6fb8a5b796cdbefa23bc61379e7b1bea191ac/pycryptodomex-3.24.1-cp314-cp314t-win_arm64.whl", hash = "sha256:794f32227a480ab3b39971ac4a53dfa8ed444e28c0ddecbdc35f26d038bb46da", size = 1779090, upload-time = "2026-10-11T19:26:09.75Z" },
-    { url = "https://files.pythonhosted.org/packages/bf/ae/48679004ab908818326a62c35586b51ccd6ba0e3a03d0ae637cd13e8df99/pycryptodomex-3.24.1-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:9bb353c764c144a9fc03302ef3763ad0c3e75bc7ca41f445cc98455f36da6c59", size = 2477923, upload-time = "2026-10-11T19:26:11.828Z" },
-    { url = "https://files.pythonhosted.org/packages/11/3f/14abc2a50521961dc864266d95898e87e073379ee9407f65c9d259f75018/pycryptodomex-3.24.1-cp37-abi3-macosx_10_9_x86_64.whl", hash = "sha256:eeac2c9acbd2d9f0ca493fdf692ce8245ca37cbebee08c496025868d4b8ef70f", size = 1645300, upload-time = "2026-10-11T19:26:13.583Z" },
-    { url = "https://files.pythonhosted.org/packages/3b/5f/44916f6aa08a08b34b3ce41e2282d36149aa416a8edca9dbecd7c07e0a10/pycryptodomex-3.24.1-cp37-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:9a732b9f5603b153dcdc071d6b342f192981907519827f2c1e4aeac41e2b34c2", size = 2194142, upload-time = "2026-10-11T19:26:15.535Z" },
-    { url = "https://files.pythonhosted.org/packages/cf/93/a954b7a8746980e31648943e29772aca0311d0d8a407a3adf5788083b693/pycryptodomex-3.24.1-cp37-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:9b94a8c647c1f80b4c82c7ac9642dda94a71abbb4efa29ad652c410ad7a39879", size = 2280275, upload-time = "2026-10-11T19:26:17.671Z" },
-    { url = "https://files.pythonhosted.org/packages/90/8b/bb2bcc9da5cb1b70415bbfaa4d9dc837a677d021b4da16ed99b0159b42b1/pycryptodomex-3.24.1-cp37-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:bd06ab1d9cf90e8b198daae3b364e9ac23a640d210bb8faddad6627cf2e33be7", size = 2185457, upload-time = "2026-10-11T19:26:19.818Z" },
-    { url = "https://files.pythonhosted.org/packages/e9/54/c123cfe95a7caba1eee9cb92e8482d59f74638b92d9035dff673246c45a2/pycryptodomex-3.24.1-cp37-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:8321c315c4418dfe45a811b792380438ec81185deaaf202dbcd77711b4f51796", size = 2277787, upload-time = "2026-10-11T19:26:21.765Z" },
-    { url = "https://files.pythonhosted.org/packages/5b/58/b06b695ff0f31261e841a25fc1342c8e774167e0d6db5d0a569fe1a137f6/pycryptodomex-3.24.1-cp37-abi3-win32.whl", hash = "sha256:cc64f4e1fc07a155ef31eb9815183a6a8eb13dfd6876ab049c01125223aa0c40", size = 1793402, upload-time = "2026-10-11T19:26:23.589Z" },
-    { url = "https://files.pythonhosted.org/packages/13/4c/2c1963e4154da534a3b3a4d6ee9549f5cac4ecffe986d3b470d08b9c4df6/pycryptodomex-3.24.1-cp37-abi3-win_amd64.whl", hash = "sha256:82eb0dd8a95be97f03527b108ee49f9b86a7c534fa47fa7a510be3eab8ea9acd", size = 1825955, upload-time = "2026-10-11T19:26:25.258Z" },
-    { url = "https://files.pythonhosted.org/packages/57/d2/a3a2158e44f468993583c2a0ae07f8b2a58f349e8cac1b4f039745d80945/pycryptodomex-3.24.1-cp37-abi3-win_arm64.whl", hash = "sha256:a692d2484ca8fa2c69f45c63f2b30cd00b8512834e3a522fc297d981dde5b34c", size = 1760463, upload-time = "2026-10-11T19:26:27.457Z" },
-]
-
-[[package]]
 name = "pydantic"
 version = "2.13.4"
 source = { registry = "https://pypi.org/simple" }
@@ -2402,7 +2353,6 @@ dependencies = [
     { name = "bitarray" },
     { name = "cbor2" },
     { name = "construct" },
-    { name = "content-hash" },
     { name = "cryptography" },
     { name = "cytoolz" },
     { name = "defusedxml" },
@@ -2422,6 +2372,7 @@ dependencies = [
     { name = "mcp" },
     { name = "more-itertools" },
     { name = "mt-940" },
+    { name = "multiformats" },
     { name = "oauthlib" },
     { name = "packaging" },
     { name = "pandas" },
@@ -2514,7 +2465,6 @@ requires-dist = [
     { name = "bitarray", specifier = "==3.8.2" },
     { name = "cbor2", specifier = "==5.9.0" },
     { name = "construct", specifier = "==2.10.70" },
-    { name = "content-hash", specifier = "==2.0.0" },
     { name = "cryptography", specifier = "==48.0.1" },
     { name = "cytoolz", specifier = "==1.2.0" },
     { name = "defusedxml", specifier = "==0.7.1" },
@@ -2534,6 +2484,7 @@ requires-dist = [
     { name = "mcp", specifier = "==1.30.0" },
     { name = "more-itertools", specifier = "==10.8.0" },
     { name = "mt-940", specifier = "==4.30.0" },
+    { name = "multiformats", specifier = "==0.3.1.post4" },
     { name = "oauthlib", specifier = "==4.0.1" },
     { name = "packaging", specifier = "==25.0" },
     { name = "pandas", specifier = "==3.1.0" },
