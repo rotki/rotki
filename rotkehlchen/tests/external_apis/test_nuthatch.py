@@ -17,6 +17,7 @@ from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError, RequestTooLargeError
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.externalapis.nuthatch import Nuthatch
@@ -848,7 +849,8 @@ def test_adding_an_account_with_the_nest_down_still_adds_it(rotkehlchen_api_serv
         )
         assert schedule.call_count == 1
 
-    with patch.object(rotki.nuthatch, 'sync_watched', side_effect=RemoteError('nest is down')):
+    nest_down = RemoteError('nest is down', cause=FailureCause.NETWORK)
+    with patch.object(rotki.nuthatch, 'sync_watched', side_effect=nest_down):
         rotki._sync_nuthatch_watched()  # logs, never raises
 
 

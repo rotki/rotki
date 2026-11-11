@@ -13,11 +13,13 @@ import requests
 from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     IndexerHistoryStartsAt,
     IndexerRangeNotCovered,
     RemoteError,
     TimestampLookupUnsupported,
+    cause_for_status,
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
@@ -38,7 +40,7 @@ from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Generator, Iterator
 
     from requests import Response
 
@@ -117,7 +119,7 @@ class Nuthatch(EtherscanLikeApi):
         return str(CachedSettings().get_entry('nuthatch_api_endpoint')).rstrip('/')
 
     @contextmanager
-    def _one_nest(self) -> Iterator[None]:
+    def _one_nest(self) -> Generator[None]:
         """Pin the endpoint for every request of one query, so that a changed setting cannot
         put pages of two nests into one answer."""
         token = PINNED_ENDPOINT.set(self._endpoint())
@@ -173,14 +175,17 @@ class Nuthatch(EtherscanLikeApi):
                 str(result).startswith(NUTHATCH_UNSUPPORTED) and
                 'chainid' not in str(result)
         ):  # e.g. on a chain whose blocks can share a second
-            raise TimestampLookupUnsupported(message)
+            raise TimestampLookupUnsupported(message, cause=FailureCause.UNSUPPORTED)
         if action == 'getLogs' and 'narrower range' in str(result):
             # the wording rotki's get_logs looks for before it halves the block range
-            raise RemoteError(f'{message}. Please select a smaller result dataset')
+            raise RemoteError(
+                f'{message}. Please select a smaller result dataset',
+                cause=FailureCause.REMOTE_REJECTED,
+            )
         if (history_start := HISTORY_STARTS_AT.search(str(result))) is not None:
             raise IndexerHistoryStartsAt(message, start_block=int(history_start.group(1)))
 
-        raise RemoteError(message)
+        raise RemoteError(message, cause=FailureCause.REMOTE_REJECTED)
 
     def _query(  # type: ignore[override]  # the overloads are the base's, unchanged
             self,
@@ -220,7 +225,10 @@ class Nuthatch(EtherscanLikeApi):
 
         page = json.dumps(result, sort_keys=True)
         if page in (read := options.setdefault(PAGES_READ, set())):
-            raise RemoteError(f'{self.name} answered page {options.get("page")} as an earlier one')
+            raise RemoteError(
+                f'{self.name} answered page {options.get("page")} as an earlier one',
+                cause=FailureCause.BAD_DATA,
+            )
 
         read.add(page)
         if (generation := getattr(result, 'generation', None)) is not None:
@@ -254,7 +262,10 @@ class Nuthatch(EtherscanLikeApi):
                     raise IndexerRangeNotCovered(str(e)) from e  # nothing of it to serve
                 raise
             if not isinstance(page, list):
-                raise RemoteError(f'{self.name} answered {action} with {page}')
+                raise RemoteError(
+                    f'{self.name} answered {action} with {page}',
+                    cause=FailureCause.BAD_DATA,
+                )
             yield from page
             if 'txhash' in options or (new_options := self._maybe_paginate(result=page, options=options)) is None:  # noqa: E501
                 return
@@ -325,7 +336,10 @@ class Nuthatch(EtherscanLikeApi):
                     if entry.get('callType') == 'delegatecall' or entry.get('isError') == '1':
                         continue
                     if (trace_index := entry.get(TRACE_INDEX)) is None:
-                        raise RemoteError(f'{self.name} answered an internal transaction without {TRACE_INDEX}: {entry}')  # noqa: E501
+                        raise RemoteError(
+                            f'{self.name} answered an internal transaction without {TRACE_INDEX}: {entry}',  # noqa: E501
+                            cause=FailureCause.BAD_DATA,
+                        )
                     data = entry | {'traceId': trace_index}
                 try:
                     tx, _ = deserialize_evm_transaction(  # type: ignore[call-overload]  # any kind
@@ -337,7 +351,10 @@ class Nuthatch(EtherscanLikeApi):
                         indexer=self,
                     )
                 except (DeserializationError, KeyError) as e:
-                    raise RemoteError(f'{self.name} answered a {action} row rotki cannot read: {e!s}') from e  # noqa: E501
+                    raise RemoteError(
+                        f'{self.name} answered a {action} row rotki cannot read: {e!s}',
+                        cause=FailureCause.BAD_DATA,
+                    ) from e
                 transactions.append(tx)
 
         yield transactions
@@ -371,7 +388,10 @@ class Nuthatch(EtherscanLikeApi):
                         deserialize_int(entry['blockNumber'], location=f'{self.name} tokentx'),
                     ))
                 except (DeserializationError, KeyError) as e:
-                    raise RemoteError(f'{self.name} answered a tokentx row rotki cannot read: {e!s}') from e  # noqa: E501
+                    raise RemoteError(
+                        f'{self.name} answered a tokentx row rotki cannot read: {e!s}',
+                        cause=FailureCause.BAD_DATA,
+                    ) from e
 
         yield sorted(tx_data, key=operator.itemgetter(1))
 
@@ -385,7 +405,7 @@ class Nuthatch(EtherscanLikeApi):
             try:
                 return super().has_activity(chain_id=chain_id, account=account)
             except IndexerHistoryStartsAt as e:  # the check has no range that could be split
-                raise RemoteError(str(e)) from e
+                raise RemoteError(str(e), cause=e.cause) from e
 
     def _nest_call(
             self,
@@ -407,18 +427,28 @@ class Nuthatch(EtherscanLikeApi):
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'{self.name} {path} failed: {e!s}') from e
+            raise RemoteError(
+                f'{self.name} {path} failed: {e!s}',
+                cause=FailureCause.NETWORK,
+            ) from e
 
         # A nest that has not reached its chain head yet answers /ready with 503, and still says
         # which chains it is on, which is all the watch sync needs.
         if response.status_code != HTTPStatus.OK and not (
             path == '/ready' and response.status_code == HTTPStatus.SERVICE_UNAVAILABLE
         ):
-            raise RemoteError(f'{self.name} {path} answered {response.status_code}: {response.text}')  # noqa: E501
+            raise RemoteError(
+                f'{self.name} {path} answered {response.status_code}: {response.text}',
+                cause=cause_for_status(response.status_code),
+                error_code=response.status_code,
+            )
         try:
             return jsonloads_dict(response.text)
         except JSONDecodeError as e:
-            raise RemoteError(f'{self.name} {path} answered invalid JSON: {response.text}') from e
+            raise RemoteError(
+                f'{self.name} {path} answered invalid JSON: {response.text}',
+                cause=FailureCause.BAD_DATA,
+            ) from e
 
     @staticmethod
     def ordered_chains() -> set[ChainID]:
@@ -471,4 +501,4 @@ class Nuthatch(EtherscanLikeApi):
             block_number: int,
     ) -> int:
         """A nest records no L1 fees."""
-        raise RemoteError(f'{self.name} does not serve L1 fees')
+        raise RemoteError(f'{self.name} does not serve L1 fees', cause=FailureCause.UNSUPPORTED)

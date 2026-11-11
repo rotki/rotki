@@ -2156,7 +2156,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
     @staticmethod
     @contextmanager
-    def blocks_within(lowest: int | None, highest: int | None) -> Iterator[None]:
+    def blocks_within(lowest: int | None, highest: int | None) -> Generator[None]:
         """Keep the block ranges block_range_skipping_stale_indexers resolves in the body
         between lowest and highest."""
         token = BLOCK_BOUNDS.set((lowest, highest))
