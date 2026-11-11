@@ -19,7 +19,7 @@ from rotkehlchen.history.events.utils import create_group_identifier_from_unique
 from rotkehlchen.locations.constants import (
     LOCATION_OKX,
 )
-from rotkehlchen.tests.utils.constants import A_SOL, A_XMR
+from rotkehlchen.tests.utils.constants import A_ADA, A_SOL, A_XMR
 from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Timestamp, TimestampMS
@@ -76,6 +76,8 @@ def test_okx_query_balances(mock_okx: Okx):
     def mock_okx_balances(method, url, **_kwargs):     # pylint: disable=unused-argument
         if '/api/v5/asset/balances' in url:
             return MockResponse(200, '{"code":"0","data":[{"availBal":"25","bal":"25","ccy":"USDT","frozenBal":"0"},{"availBal":"30","bal":"30","ccy":"USDC","frozenBal":"0"}],"msg":""}')  # noqa: E501
+        if '/api/v5/finance/' in url:
+            return MockResponse(200, '{"code":"0","data":[],"msg":""}')
 
         return MockResponse(
             200,
@@ -198,6 +200,72 @@ def test_okx_query_balances(mock_okx: Okx):
     errors = consume_errors(mock_okx.msg_aggregator)
     assert len(warnings) == 0
     assert len(errors) == 0
+
+
+def test_okx_query_earn_balances(mock_okx: Okx) -> None:
+    """Simple Earn flexible balances and active On-chain Earn orders count towards the balances,
+    including the not yet settled earnings of the orders but not their cumulative earnings."""
+    def mock_okx_balances(method, url, **_kwargs):  # pylint: disable=unused-argument
+        if '/api/v5/account/balance' in url:
+            return MockResponse(200, '{"code":"0","data":[{"details":[{"availBal":"2","ccy":"USDT","frozenBal":"3"}]}],"msg":""}')  # noqa: E501
+        if '/api/v5/asset/balances' in url:
+            return MockResponse(200, '{"code":"0","data":[{"availBal":"100","bal":"100","ccy":"ADA","frozenBal":"0"}],"msg":""}')  # noqa: E501
+        if '/api/v5/finance/savings/balance' in url:
+            return MockResponse(200, '{"code":"0","data":[{"earnings":"0.0010737388791526","redemptAmt":"","rate":"0.0100000000000000","ccy":"USDT","amt":"11.0010737453457821","loanAmt":"11.0010630707982819","pendingAmt":"0.0000106745475002"},{"earnings":"0.0001","redemptAmt":"","rate":"0.02","ccy":"ETH","amt":"0.5","loanAmt":"0.5","pendingAmt":"0"},{"earnings":"0","redemptAmt":"","rate":"0.02","ccy":"NOTANOKXASSET","amt":"5","loanAmt":"5","pendingAmt":"0"}],"msg":""}')  # noqa: E501
+        if '/api/v5/finance/staking-defi/orders-active' in url:
+            return MockResponse(200, '{"code":"0","data":[{"ccy":"ADA","ordId":"2413499","productId":"4","state":"1","protocol":"Cardano","protocolType":"staking","term":"0","apy":"0.03","investData":[{"ccy":"ADA","amt":"400"}],"earningData":[{"ccy":"ADA","earningType":"0","earnings":"1.604"},{"ccy":"ADA","earningType":"1","earnings":"12"}],"purchasedTime":"1597026383085","estSettlementTime":"","cancelRedemptionDeadline":"","tag":"","fastRedemptionData":[]},{"ccy":"ETH","ordId":"2413500","productId":"5","state":"8","protocol":"Compound","protocolType":"defi","term":"0","apy":"0.0306","investData":[{"ccy":"ETH","amt":"0.25"}],"earningData":[{"ccy":"USDT","earningType":"0","earnings":"2"}],"purchasedTime":"1597026383085","estSettlementTime":"","cancelRedemptionDeadline":"","tag":"","fastRedemptionData":[]}],"msg":""}')  # noqa: E501
+
+        raise AssertionError(f'Unexpected OKX query {url}')
+
+    with (
+        patch.object(mock_okx.session, 'request', side_effect=mock_okx_balances),
+        patch.object(mock_okx, 'send_unknown_asset_message') as unknown_asset_message,
+    ):
+        balances, msg, _ = mock_okx.query_balances()
+
+    assert msg == ''
+    assert balances is not None
+    assert {asset: balance.amount for asset, balance in balances.items()} == {
+        A_USDT.resolve_to_asset_with_oracles(): FVal('18.0010737453457821'),
+        A_ETH.resolve_to_asset_with_oracles(): FVal('0.75'),
+        A_ADA.resolve_to_asset_with_oracles(): FVal('501.604'),
+    }
+    unknown_asset_message.assert_called_once_with(
+        asset_identifier='NOTANOKXASSET',
+        details='balance query',
+    )
+    assert len(consume_warnings(mock_okx.msg_aggregator)) == 0
+    assert len(consume_errors(mock_okx.msg_aggregator)) == 0
+
+
+@pytest.mark.parametrize('earn_response', [
+    MockResponse(HTTPStatus.OK, '{"code":"50001","data":[],"msg":"Service temporarily unavailable"}'),  # noqa: E501
+    MockResponse(HTTPStatus.FORBIDDEN, '{"code":"50120","data":[],"msg":"API key doesn\'t have permission"}'),  # noqa: E501
+    MockResponse(HTTPStatus.OK, '{"code":"0","data":{},"msg":""}'),
+])
+def test_okx_failed_earn_query_keeps_balances(mock_okx: Okx, earn_response: MockResponse) -> None:
+    """Earn is not available everywhere, so a failed Earn query does not fail the balances"""
+    def mock_okx_balances(method, url, **_kwargs):  # pylint: disable=unused-argument
+        if '/api/v5/account/balance' in url:
+            return MockResponse(200, '{"code":"0","data":[{"details":[{"availBal":"1","ccy":"USDT","frozenBal":"0"}]}],"msg":""}')  # noqa: E501
+        if '/api/v5/asset/balances' in url:
+            return MockResponse(200, '{"code":"0","data":[],"msg":""}')
+        if '/api/v5/finance/' in url:
+            return earn_response
+
+        raise AssertionError(f'Unexpected OKX query {url}')
+
+    with patch.object(mock_okx.session, 'request', side_effect=mock_okx_balances):
+        balances, msg, cause = mock_okx.query_balances()
+
+    assert msg == ''
+    assert cause is None
+    assert balances is not None
+    assert {asset: balance.amount for asset, balance in balances.items()} == {
+        A_USDT.resolve_to_asset_with_oracles(): FVal(1),
+    }
+    assert len(consume_warnings(mock_okx.msg_aggregator)) == 0
+    assert len(consume_errors(mock_okx.msg_aggregator)) == 0
 
 
 def test_okx_query_trades(mock_okx: Okx) -> None:

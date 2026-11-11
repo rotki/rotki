@@ -76,12 +76,16 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 OKX_SUCCESS_CODE: Final = '0'
+# earningType of an On-chain Earn order's earning that is estimated and not settled yet
+ESTIMATED_EARNING_TYPE: Final = '0'
 
 
 class OkxEndpoint(Enum):
     CURRENCIES = '/api/v5/asset/currencies'
     TRADING_BALANCE = '/api/v5/account/balance'
     FUNDING_BALANCE = '/api/v5/asset/balances'
+    SIMPLE_EARN_BALANCE = '/api/v5/finance/savings/balance'
+    ONCHAIN_EARN_ORDERS = '/api/v5/finance/staking-defi/orders-active'
     TRADES = '/api/v5/trade/orders-history-archive'
     DEPOSITS = '/api/v5/asset/deposit-history'
     WITHDRAWALS = '/api/v5/asset/withdrawal-history'
@@ -306,12 +310,90 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             return ApiKeyCheck(False, 'Error validating API credentials', FailureCause.AUTH)
         return ApiKeyCheck(True)
 
+    def _add_balance_amount(
+            self,
+            amounts: defaultdict[AssetWithOracles, FVal],
+            balance_entry: dict[str, Any],
+            amount_keys: tuple[str, ...],
+    ) -> None:
+        """Adds the sum of the `amount_keys` of an OKX balance entry to the amount of its
+        currency in `amounts`. An entry that can't be read is reported and skipped."""
+        try:
+            asset = asset_from_okx(okx_name=balance_entry['ccy'])
+            amount = sum(
+                (deserialize_fval(balance_entry[key]) for key in amount_keys),
+                start=ZERO,
+            )
+        except UnknownAsset as e:
+            self.send_unknown_asset_message(
+                asset_identifier=e.identifier,
+                details='balance query',
+            )
+            return
+        except (DeserializationError, KeyError) as e:
+            error = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
+            self.add_classified_error(
+                f'Error processing {self.name} {balance_entry.get("ccy")} balance result due '
+                f'to {error}. Skipping balance result.',
+                BadData(record=UserMessageRecord.BALANCE, error=error),
+            )
+            return
+
+        amounts[asset] += amount
+
+    def _query_earn_balances(self, amounts: defaultdict[AssetWithOracles, FVal]) -> None:
+        """Adds the Simple Earn flexible balances and the principal and accrued earnings of the
+        active On-chain Earn orders to `amounts`.
+
+        Earn is not offered in every region and to every account, so a failed query is logged
+        and skipped instead of failing the whole balance query.
+
+        https://www.okx.com/docs-v5/en/#financial-product-simple-earn-flexible-get-saving-balance
+        https://www.okx.com/docs-v5/en/#financial-product-on-chain-earn-get-active-orders
+        """
+        try:
+            savings = self._api_query_list(endpoint=OkxEndpoint.SIMPLE_EARN_BALANCE)
+        except RemoteError as e:
+            log.warning('Failed to query %s Simple Earn balances due to %s', self.name, e)
+        else:
+            for entry in savings:
+                # amt is the whole balance: the lent loanAmt plus the pendingAmt not lent yet.
+                # The earnings are already added to it, so they are not counted on their own.
+                self._add_balance_amount(
+                    amounts=amounts,
+                    balance_entry=entry,
+                    amount_keys=('amt',),
+                )
+
+        try:
+            orders = self._api_query_list(endpoint=OkxEndpoint.ONCHAIN_EARN_ORDERS)
+        except RemoteError as e:
+            log.warning('Failed to query %s On-chain Earn orders due to %s', self.name, e)
+            return
+
+        for order in orders:
+            for entry in order.get('investData', []):
+                self._add_balance_amount(
+                    amounts=amounts,
+                    balance_entry=entry,
+                    amount_keys=('amt',),
+                )
+            for entry in order.get('earningData', []):
+                # Type 0 is the estimated earning not settled yet. Type 1 is the cumulative
+                # earning, which for some products is already paid out to the funding account
+                # and would be counted twice.
+                if entry.get('earningType') == ESTIMATED_EARNING_TYPE:
+                    self._add_balance_amount(
+                        amounts=amounts,
+                        balance_entry=entry,
+                        amount_keys=('earnings',),
+                    )
+
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """
         https://www.okx.com/docs-v5/en/#trading-account-rest-api-get-balance
         https://www.okx.com/docs-v5/en/#funding-account-rest-api-get-balance
         """
-        currencies_data: list[dict] = []
         try:
             data = self._api_query_list(endpoint=OkxEndpoint.TRADING_BALANCE)
             funding_data = self._api_query_list(endpoint=OkxEndpoint.FUNDING_BALANCE)
@@ -326,36 +408,21 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             return ExchangeQueryBalances(None, msg, FailureCause.BAD_DATA)
 
         try:
-            currencies_data.extend(data[0]['details'])
+            trading_data = data[0]['details']
         except KeyError as e:
             msg = f'Missing key: {e!s}'
             log.error('%s API request failed due to %s', self.name, msg)
             return ExchangeQueryBalances(None, msg, FailureCause.BAD_DATA)
 
-        currencies_data.extend(funding_data)
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
-        for currency_data in currencies_data:
-            try:
-                asset = asset_from_okx(okx_name=currency_data['ccy'])
-            except UnknownAsset as e:
-                self.send_unknown_asset_message(
-                    asset_identifier=e.identifier,
-                    details='balance query',
-                )
-                continue
+        for currency_data in trading_data + funding_data:
+            self._add_balance_amount(
+                amounts=amounts,
+                balance_entry=currency_data,
+                amount_keys=('availBal', 'frozenBal'),
+            )
 
-            try:
-                amount = deserialize_fval(currency_data['availBal']) + deserialize_fval(currency_data['frozenBal'])  # noqa: E501
-            except DeserializationError as e:
-                self.add_classified_error(
-                    f'Error processing {self.name} {asset.name} balance result due to inability '
-                    f'to deserialize asset amount due to {e!s}. Skipping balance result.',
-                    BadData(record=UserMessageRecord.BALANCE, error=str(e)),
-                )
-                continue
-
-            amounts[asset] += amount
-
+        self._query_earn_balances(amounts)
         return ExchangeQueryBalances(dict(self.balances_from_amounts(amounts)), '')
 
     def query_online_margin_history(
