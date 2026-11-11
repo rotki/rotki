@@ -151,20 +151,27 @@ a = Entrypoint(
     ],
     excludes=[
         'FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter', 'debugimporter',
-        # polars submodules we never import. polars.sql is NOT excluded because
-        # polars/__init__.py unconditionally imports SQLContext from it.
-        'polars.testing', 'polars.ml',
-        # SelfTest suites bundled inside pycryptodome and pycryptodomex.
-        'Crypto.SelfTest', 'Cryptodome.SelfTest',
+        # SelfTest suites bundled inside pycryptodome.
+        'Crypto.SelfTest',
         # Test packages shipped inside runtime dependencies. None of these are
-        # imported at runtime; gevent.testing is only used by gevent.tests
-        # and a towncrier release helper in gevent/_util.py.
-        'gevent.tests', 'gevent.testing',
-        'greenlet.tests',
-        'zope.interface.tests',
+        # imported at runtime.
         'regex.tests',
         'cytoolz.tests', 'toolz.tests',
         'parsimonious.tests',
+        # setuptools is only reachable from cffi's runtime-compilation shim
+        # (cffi/_shimmed_dist_utils.py, imported inside functions rotki never calls)
+        # and from PyInstaller's own setuptools runtime hook, which is guarded
+        # by a try/except. Nothing imports it, or pkg_resources, at runtime.
+        'setuptools',
+        # pydantic only imports the v1 compatibility models for objects that define
+        # __get_validators__, i.e. pydantic v1 models. rotki uses pydantic v2 only.
+        'pydantic.v1',
+        # numpy exposes f2py from its module __getattr__, so it is only reached by
+        # `from numpy import *` or an explicit numpy.f2py import.
+        'numpy.f2py',
+        # pydoc_data is only imported by pydoc, which reaches the bundle via the
+        # function-level imports in numpy.lib._utils_impl and werkzeug's debug repr.
+        'pydoc_data',
     ],
 )
 
