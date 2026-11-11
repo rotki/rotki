@@ -1,8 +1,10 @@
 <script lang="ts" setup>
 import type { CreateAccountMode } from '@/modules/auth/create-account/types';
 import type { LoginCredentials } from '@/modules/auth/login';
+import CreateAccountStepActions from '@/modules/auth/create-account/CreateAccountStepActions.vue';
 import CreateAccountCredentialsForm
   from '@/modules/auth/create-account/credentials/CreateAccountCredentialsForm.vue';
+import { useStepCheck } from '@/modules/auth/create-account/use-step-check';
 
 const form = defineModel<LoginCredentials>('form', { required: true });
 const passwordConfirm = defineModel<string>('passwordConfirm', { required: true });
@@ -18,26 +20,29 @@ const emit = defineEmits<{
   next: [];
 }>();
 
-const valid = ref<boolean>(false);
-
 const { t } = useI18n({ useScope: 'global' });
 
+const credentials = useTemplateRef<InstanceType<typeof CreateAccountCredentialsForm>>('credentials');
+
+const { issueCount, validate } = useStepCheck(credentials);
+
 const isRestoreMode = computed<boolean>(() => mode === 'restore');
+
+async function next(): Promise<void> {
+  if (await validate())
+    emit('next');
+}
 </script>
 
 <template>
-  <div class="space-y-6">
-    <i18n-t
+  <div class="flex flex-col gap-6">
+    <RuiAlert
       v-if="isRestoreMode"
-      scope="global"
-      keypath="create_account.credentials.restore_description"
-      class="text-body-1 text-rui-text-secondary"
-      tag="p"
+      type="warning"
+      data-testid="create-account-restore-password-warning"
     >
-      <template #password>
-        <strong>{{ t('create_account.credentials.restore_highlight') }}</strong>
-      </template>
-    </i18n-t>
+      {{ t('create_account.credentials.password_sync_requirement') }}
+    </RuiAlert>
     <p
       v-else
       class="text-body-1 text-rui-text-secondary"
@@ -45,38 +50,19 @@ const isRestoreMode = computed<boolean>(() => mode === 'restore');
       {{ t('create_account.credentials.description') }}
     </p>
     <CreateAccountCredentialsForm
-      v-model:valid="valid"
+      ref="credentials"
       v-model:form="form"
       v-model:password-confirm="passwordConfirm"
       v-model:user-prompted="userPrompted"
       :loading="loading"
     />
-    <RuiAlert
-      v-if="isRestoreMode"
-      type="warning"
-    >
-      {{ t('create_account.credentials.password_sync_requirement') }}
-    </RuiAlert>
-    <div class="grid grid-cols-2 gap-4">
-      <RuiButton
-        size="lg"
-        class="w-full"
-        :disabled="loading"
-        @click="emit('back')"
-      >
-        {{ t('common.actions.back') }}
-      </RuiButton>
-      <RuiButton
-        size="lg"
-        class="w-full"
-        data-testid="create-account-credentials-continue"
-        :disabled="!valid || loading"
-        :loading="loading"
-        color="primary"
-        @click="emit('next')"
-      >
-        {{ t('common.actions.continue') }}
-      </RuiButton>
-    </div>
+    <CreateAccountStepActions
+      :next-label="t('common.actions.continue')"
+      next-test-id="create-account-credentials-continue"
+      :issue-count="issueCount"
+      :loading="loading"
+      @back="emit('back')"
+      @next="next()"
+    />
   </div>
 </template>

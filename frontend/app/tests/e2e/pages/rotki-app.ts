@@ -69,13 +69,12 @@ export class RotkiApp {
     }
 
     await this.page.locator('[data-testid=create-account-introduction-create]').click();
-    await this.page.locator('[data-testid=create-account-premium-continue]').click();
     await this.page.locator('[data-testid=create-account-username] input').fill(username);
     await this.page.locator('[data-testid=create-account-password] input').fill(password);
     await this.page.locator('[data-testid=create-account-password-repeat] input').fill(password);
     await this.page.locator('[data-testid=create-account-user-prompted] > label').click();
     await this.page.locator('[data-testid=create-account-credentials-continue]').click();
-    await this.page.locator('[data-testid=create-account-analytics-continue]').click();
+    await this.page.locator('[data-testid=create-account-submit]').click();
     await this.page.locator('[data-testid=account-management-forms]').waitFor({ state: 'detached' });
     await this.checkGetPremiumButton();
     await apiUpdateAssets(this.request);

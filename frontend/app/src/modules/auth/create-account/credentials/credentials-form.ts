@@ -36,7 +36,14 @@ function confirmationIssues(state: CredentialsFormState, messages: CredentialsFo
     ctx.addIssue({ code: 'custom', message: messages.emptyConfirmation, path: ['passwordConfirm'] });
 }
 
-export function credentialsSchema(messages: CredentialsFormMessages): ZodType {
+/**
+ * The create-account credentials rules.
+ *
+ * @remarks
+ * `requireConfirmation` is false while the password is shown in plain text: the user can read what
+ * they typed, and the repeat field is hidden.
+ */
+export function credentialsSchema(messages: CredentialsFormMessages, requireConfirmation: boolean = true): ZodType {
   return z.object({
     password: requiredField(messages.emptyPassword),
     passwordConfirm: z.string(),
@@ -46,6 +53,7 @@ export function credentialsSchema(messages: CredentialsFormMessages): ZodType {
     }),
     username: usernameField({ invalid: messages.invalidUsername, required: messages.requiredUsername }),
   }).superRefine((state, ctx) => {
-    confirmationIssues(state, messages, ctx);
+    if (requireConfirmation)
+      confirmationIssues(state, messages, ctx);
   });
 }

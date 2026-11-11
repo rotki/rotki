@@ -1,7 +1,5 @@
 <script lang="ts" setup>
 import type { CreateAccountMode } from '@/modules/auth/create-account/types';
-import { externalLinks } from '@shared/external-links';
-import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const emit = defineEmits<{
   select: [mode: CreateAccountMode];
@@ -19,59 +17,44 @@ interface ModeCard {
 
 const cards = computed<ModeCard[]>(() => [
   {
-    description: t('create_account.introduction.create.description'),
+    description: t('create_account.entry.create.description'),
     icon: 'lu-user-plus',
     mode: 'create',
     testId: 'create-account-introduction-create',
-    title: t('create_account.introduction.create.title'),
+    title: t('create_account.entry.create.title'),
   },
   {
-    description: t('create_account.introduction.restore.description'),
+    description: t('create_account.entry.restore.description'),
     icon: 'lu-cloud-download',
     mode: 'restore',
     testId: 'create-account-introduction-restore',
-    title: t('create_account.introduction.restore.title'),
+    title: t('create_account.entry.restore.title'),
   },
 ]);
 </script>
 
 <template>
-  <div class="space-y-6">
-    <i18n-t
-      scope="global"
-      keypath="create_account.introduction.intro"
-      class="text-body-1 text-rui-text-secondary"
-      tag="p"
+  <div class="grid gap-3">
+    <button
+      v-for="card in cards"
+      :key="card.mode"
+      type="button"
+      :data-testid="card.testId"
+      class="flex items-start gap-4 p-4 rounded-md border text-left transition-colors bg-white dark:bg-transparent border-rui-grey-300 dark:border-rui-grey-800 hover:border-rui-primary/70 hover:bg-rui-primary/5 focus-visible:outline-2 focus-visible:outline-rui-primary"
+      @click="emit('select', card.mode)"
     >
-      <template #documentation>
-        <ExternalLink
-          :text="t('login.description.learn_more')"
-          :url="externalLinks.usageGuide"
-        />
-      </template>
-    </i18n-t>
-    <div class="grid gap-3">
-      <button
-        v-for="card in cards"
-        :key="card.mode"
-        type="button"
-        :data-testid="card.testId"
-        class="flex items-start gap-3 p-4 rounded-md border text-left transition-colors border-rui-grey-300 dark:border-rui-grey-800 hover:border-rui-primary/70 hover:bg-rui-primary/5"
-        @click="emit('select', card.mode)"
-      >
-        <RuiIcon
-          :name="card.icon"
-          class="text-rui-primary mt-0.5 shrink-0"
-        />
-        <div class="space-y-1">
-          <div class="font-medium text-rui-text">
-            {{ card.title }}
-          </div>
-          <div class="text-sm text-rui-text-secondary">
-            {{ card.description }}
-          </div>
-        </div>
-      </button>
-    </div>
+      <RuiIcon
+        :name="card.icon"
+        class="text-rui-primary mt-0.5 shrink-0"
+      />
+      <span class="flex flex-col gap-1">
+        <span class="font-medium text-rui-text">
+          {{ card.title }}
+        </span>
+        <span class="text-body-2 text-rui-text-secondary">
+          {{ card.description }}
+        </span>
+      </span>
+    </button>
   </div>
 </template>

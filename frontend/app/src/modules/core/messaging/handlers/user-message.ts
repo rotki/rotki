@@ -1,6 +1,6 @@
 import type { MessageHandler } from '../interfaces';
 import { startPromise } from '@shared/utils';
-import { parseDeviceLimitError } from '@/modules/auth/create-account/analytics/parse-device-limit-error';
+import { parseDeviceLimitError } from '@/modules/auth/create-account/errors/parse-device-limit-error';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';

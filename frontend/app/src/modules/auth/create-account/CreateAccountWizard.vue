@@ -1,16 +1,22 @@
 <script lang="ts" setup>
-import type { CreateAccountMode } from '@/modules/auth/create-account/types';
+import type { CreateAccountMode, CreateAccountStepId } from '@/modules/auth/create-account/types';
 import type { CreateAccountPayload } from '@/modules/auth/login';
-import CreateAccountSubmitStep
-  from '@/modules/auth/create-account/analytics/CreateAccountSubmitStep.vue';
+import { externalLinks } from '@shared/external-links';
+import CreateAccountProgress from '@/modules/auth/create-account/CreateAccountProgress.vue';
 import CreateAccountCredentials
   from '@/modules/auth/create-account/credentials/CreateAccountCredentials.vue';
 import CreateAccountIntroduction
   from '@/modules/auth/create-account/introduction/CreateAccountIntroduction.vue';
+import CreateAccountPreferences
+  from '@/modules/auth/create-account/preferences/CreateAccountPreferences.vue';
 import CreateAccountPremium from '@/modules/auth/create-account/premium/CreateAccountPremium.vue';
+import CreateAccountRestoreSummary
+  from '@/modules/auth/create-account/summary/CreateAccountRestoreSummary.vue';
 import { useCreateAccountSteps } from '@/modules/auth/create-account/use-create-account-steps';
 import { useCreateAccountWizard } from '@/modules/auth/create-account/use-create-account-wizard';
+import { useStepTransition } from '@/modules/auth/create-account/use-step-transition';
 import { useSavedProfiles } from '@/modules/auth/use-saved-profiles';
+import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const step = defineModel<number>('step', { required: true });
 const mode = defineModel<CreateAccountMode | undefined>('mode', { default: undefined });
@@ -33,11 +39,13 @@ const { t } = useI18n({ useScope: 'global' });
 
 const {
   buildPayload,
-  isRestoreMode,
+  goToStep,
   modelCredentialsForm,
+  modelMainCurrency,
   modelPasswordConfirm,
   modelPremiumEnabled,
   modelPremiumSetupForm,
+  modelPremiumShouldSync,
   modelSubmitUsageAnalytics,
   modelUserPrompted,
   nextStep,
@@ -46,116 +54,164 @@ const {
 } = useCreateAccountWizard(step, mode);
 
 const { hasProfiles, loadProfiles } = useSavedProfiles();
-const { steps } = useCreateAccountSteps(mode);
+const { current, steps } = useCreateAccountSteps(mode, step);
 
-/**
- * Names the step on screen, since the side stepper that also names it is hidden on small screens.
- * The first step is where the flow starts, so it carries the flow's own title instead.
- */
-const heading = computed<string>(() => {
-  const current = get(step);
-  if (current > 1)
-    return get(steps)[current - 1]?.title ?? '';
-  return get(isRestoreMode) ? t('create_account.title_restore') : t('create_account.title');
-});
+const root = useTemplateRef<HTMLElement>('root');
+const heading = useTemplateRef<HTMLElement>('heading');
 
-const cancel = (): void => emit('cancel');
-const errorClear = (): void => emit('clear-error');
+/** Keys the step transition, so moving between steps swaps the content in one go. */
+const screen = computed<CreateAccountStepId | 'entry'>(() => get(current)?.id ?? 'entry');
 
-/** The error belongs to the submit the user is stepping away from, so going back clears it. */
+const title = computed<string>(() => get(current)?.title ?? t('create_account.entry.title'));
+
+const { classes: stepTransition } = useStepTransition(() => (get(current) ? get(step) : 0));
+
+/** The error belongs to the submit the user is stepping away from, so leaving the step clears it. */
+function clearError(): void {
+  if (error)
+    emit('clear-error');
+}
+
 function prevStep(): void {
   rewind();
-  if (error)
-    errorClear();
+  clearError();
+}
+
+function goTo(id: CreateAccountStepId): void {
+  goToStep(id);
+  clearError();
 }
 
 function confirm(): void {
   emit('confirm', buildPayload());
 }
 
+/** A step entered after scrolling down to the previous one's buttons starts at its top, not mid-way. */
+function revealTop(): void {
+  get(root)?.scrollIntoView({ block: 'nearest' });
+}
+
+/**
+ * Hands focus to the new step's heading once the button that moved here has gone with the old step.
+ *
+ * @remarks
+ * A step that already focused one of its own fields, such as the profile name, keeps that focus.
+ */
+function settleFocus(): void {
+  const container = get(root);
+  if (container && !container.contains(document.activeElement))
+    get(heading)?.focus({ preventScroll: true });
+}
+
 onBeforeMount(loadProfiles);
 </script>
 
 <template>
-  <Transition
-    appear
-    enter-from-class="translate-y-5 opacity-0"
-    enter-to-class="translate-y-0 opacity-1"
-    enter-active-class="transform duration-300"
-    leave-from-class="translate-y-0 opacity-1"
-    leave-to-class="-translate-y-5 opacity-0"
-    leave-active-class="transform duration-100"
+  <div
+    ref="root"
+    class="relative w-full max-w-120 mx-auto scroll-mt-16"
   >
-    <div>
-      <div class="max-w-110 mx-auto">
-        <div class="flex flex-col">
-          <div class="text-caption uppercase tracking-wide text-rui-text-secondary mb-1">
-            {{ t('create_account.step_progress', { current: step, total: steps.length }) }}
-          </div>
-          <h1 class="text-h4 mb-2">
-            {{ heading }}
-          </h1>
-          <div class="w-full">
-            <RuiTabItems
-              class="overflow-visible!"
-              :model-value="step - 1"
-            >
-              <RuiTabItem>
-                <CreateAccountIntroduction @select="selectMode($event)" />
-              </RuiTabItem>
-              <RuiTabItem>
-                <CreateAccountPremium
-                  v-model:premium-enabled="modelPremiumEnabled"
-                  v-model:form="modelPremiumSetupForm"
-                  :loading="loading"
-                  :mode="mode ?? 'create'"
-                  @back="prevStep()"
-                  @next="nextStep()"
-                />
-              </RuiTabItem>
-              <RuiTabItem>
-                <CreateAccountCredentials
-                  v-model:form="modelCredentialsForm"
-                  v-model:password-confirm="modelPasswordConfirm"
-                  v-model:user-prompted="modelUserPrompted"
-                  :loading="loading"
-                  :mode="mode ?? 'create'"
-                  @back="prevStep()"
-                  @next="nextStep()"
-                />
-              </RuiTabItem>
-              <RuiTabItem>
-                <CreateAccountSubmitStep
-                  v-model:submit-usage-analytics="modelSubmitUsageAnalytics"
-                  :loading="loading"
-                  :mode="mode ?? 'create'"
-                  :error="error"
-                  @back="prevStep()"
-                  @confirm="confirm()"
-                />
-              </RuiTabItem>
-            </RuiTabItems>
-          </div>
+    <CreateAccountProgress
+      :steps="steps"
+      :step="step"
+      :current="current"
+    />
+    <Transition
+      mode="out-in"
+      :enter-from-class="stepTransition.enterFromClass"
+      enter-active-class="transition duration-200 ease-out motion-reduce:transition-none"
+      :leave-to-class="stepTransition.leaveToClass"
+      leave-active-class="transition duration-100 ease-in motion-reduce:transition-none"
+      @before-enter="revealTop()"
+      @after-enter="settleFocus()"
+    >
+      <div
+        :key="screen"
+        :data-testid="`create-account-screen-${screen}`"
+      >
+        <h1
+          ref="heading"
+          tabindex="-1"
+          class="text-h4 mb-6 outline-none"
+          data-testid="create-account-heading"
+        >
+          {{ title }}
+        </h1>
+        <div
+          v-if="screen === 'entry'"
+          class="flex flex-col gap-6"
+        >
+          <i18n-t
+            scope="global"
+            keypath="create_account.entry.description"
+            class="text-body-1 text-rui-text-secondary"
+            tag="p"
+          >
+            <template #documentation>
+              <ExternalLink
+                :text="t('login.description.learn_more')"
+                :url="externalLinks.usageGuide"
+              />
+            </template>
+          </i18n-t>
+          <CreateAccountIntroduction @select="selectMode($event)" />
           <div
             v-if="hasProfiles"
-            class="flex flex-wrap gap-1 sm:gap-0 items-center justify-center py-6 text-rui-text-secondary"
+            class="flex flex-wrap items-center justify-center gap-1 text-rui-text-secondary"
           >
             <span>{{ t('create_account.have_account.description') }}</span>
             <RuiButton
               color="primary"
-              size="lg"
               variant="text"
-              :disabled="loading"
               type="button"
               data-testid="login"
-              class="py-1"
-              @click="cancel()"
+              :disabled="loading"
+              @click="emit('cancel')"
             >
               {{ t('create_account.have_account.log_in') }}
             </RuiButton>
           </div>
         </div>
+        <CreateAccountPremium
+          v-else-if="screen === 'premium'"
+          v-model:form="modelPremiumSetupForm"
+          :loading="loading"
+          @back="prevStep()"
+          @next="nextStep()"
+        />
+        <CreateAccountCredentials
+          v-else-if="screen === 'profile'"
+          v-model:form="modelCredentialsForm"
+          v-model:password-confirm="modelPasswordConfirm"
+          v-model:user-prompted="modelUserPrompted"
+          :loading="loading"
+          :mode="mode ?? 'create'"
+          @back="prevStep()"
+          @next="nextStep()"
+        />
+        <CreateAccountPreferences
+          v-else-if="screen === 'preferences'"
+          v-model:main-currency="modelMainCurrency"
+          v-model:submit-usage-analytics="modelSubmitUsageAnalytics"
+          v-model:premium-enabled="modelPremiumEnabled"
+          v-model:premium-form="modelPremiumSetupForm"
+          v-model:premium-should-sync="modelPremiumShouldSync"
+          :loading="loading"
+          :error="error"
+          @back="prevStep()"
+          @confirm="confirm()"
+        />
+        <CreateAccountRestoreSummary
+          v-else-if="screen === 'summary'"
+          :api-key="modelPremiumSetupForm.apiKey"
+          :username="modelCredentialsForm.username"
+          :loading="loading"
+          :error="error"
+          @back="prevStep()"
+          @go-to="goTo($event)"
+          @confirm="confirm()"
+        />
       </div>
-    </div>
-  </Transition>
+    </Transition>
+  </div>
 </template>

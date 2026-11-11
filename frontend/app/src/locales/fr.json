@@ -944,27 +944,6 @@
       "description": "Vous avez déjà un compte?",
       "log_in": "Déverrouiller votre compte"
     },
-    "premium": {
-      "button_premium_approve": "Oui, activer premium",
-      "premium_question": "Êtes-vous déjà un utilisateur premium rotki et souhaitez-vous activer les fonctionnalités premium?\nVous pouvez acheter premium {premiumLink}"
-    },
-    "steps": {
-      "step_1": {
-        "description": "Premier pas"
-      },
-      "step_2": {
-        "description": "Avez-vous un compte premium sur notre site web?",
-        "title": "Activer premium"
-      },
-      "step_3": {
-        "description": "Définir vos informations d'identification",
-        "title": "Créer un compte"
-      },
-      "step_4": {
-        "title": "Analyse d'utilisation"
-      }
-    },
-    "title": "Créer un compte",
     "usage_analytics": {
       "description": "rotki est une application locale et l'analyse d'utilisation anonyme est le seul moyen pour nous de savoir combien de personnes utilisent notre logiciel, d'où ils viennent, etc. Ces données sont vraiment importantes pour nous, sont entièrement anonymes et nous aident à créer un meilleur produit pour vous.",
       "label_confirm": "Envoyer des données d'analyse d'utilisation anonymes"

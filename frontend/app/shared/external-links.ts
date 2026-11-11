@@ -38,6 +38,7 @@ export const externalLinks = {
     gnosisPayKey: `${USAGE_GUIDE_URL}integrations/external-services#gnosis-pay`,
     importBlockchainAccounts: `${USAGE_GUIDE_URL}portfolio/accounts#import-and-export-blockchain-accounts-csv`,
     importAddressBook: `${USAGE_GUIDE_URL}data-management/address-book#importing-address-book-names-csv`,
+    moveGlobalDatabase: `${USAGE_GUIDE_URL}#manually-move-global-database`,
     solanaTokenMigration: `${GITHUB_BASE_URL}releases/tag/v1.40.0`,
     eventTypes: `${USAGE_GUIDE_URL}tax-accounting/event-types`,
     accountingRules: `${USAGE_GUIDE_URL}tax-accounting/accounting-rules`,

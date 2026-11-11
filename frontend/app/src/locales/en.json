@@ -2492,78 +2492,126 @@
   },
   "create_account": {
     "actions": {
-      "create_account": "Create account",
-      "restore_account": "Restore account"
+      "create_profile": "Create profile",
+      "restore_profile": "Restore profile"
+    },
+    "context": {
+      "entry": {
+        "body": "A profile is your rotki account on this device: a local database, encrypted with a password that only you know. It exists only here.\n\nYour rotki.com account is separate, and only manages a premium subscription. You can keep several profiles on one device.",
+        "title": "What is a profile?"
+      },
+      "preferences": {
+        "body": "The main currency and analytics can be changed any time in the settings.\n\nAlready a premium subscriber? Add your API key now to connect this profile to your premium account.",
+        "title": "Optional extras"
+      },
+      "premium": {
+        "body": "Log in at rotki.com, open your account page, and create or copy an API key and secret.\n\nThey are checked when the restore starts.",
+        "link": "Manage your premium account",
+        "title": "Where to find your keys"
+      },
+      "profile": {
+        "body": "The password encrypts all of this profile's local files. rotki cannot reset it, and without it the data cannot be opened. A password manager is the safest place to keep it.",
+        "title": "Your password"
+      },
+      "profile_restore": {
+        "body": "The synced database stays encrypted with the password of the profile you backed up, so rotki needs that password to open it. Your rotki.com password will not work, and a different one makes the restore fail at the end.",
+        "title": "Same password as before"
+      },
+      "summary": {
+        "body": "rotki registers this device with your premium account, creates the profile, and downloads the synced database into it.\n\nOnly the profile is synced. Custom assets, address book names and historical prices live in the global database, which you move to this device by hand.",
+        "link": "Moving the global database",
+        "title": "What happens next"
+      }
     },
     "credentials": {
-      "description": "Pick a profile name and a password. The password encrypts everything in this profile.",
+      "description": "The password encrypts everything in this profile. Nobody, including rotki, can reset it.",
+      "hide_password": "Hide password",
       "label_password": "Password",
-      "label_password_backup_reminder": "I saved my password somewhere safe. Without it, my local data can't be recovered.",
-      "label_password_repeat": "Repeat Password",
-      "label_username": "Profile Name",
-      "password_sync_requirement": "Use the same password as the database you originally backed up. You can't access the database if you input a different password.",
-      "restore_description": "Set the profile name and the {password} of the database you backed up. The profile will be created locally and the synced database will be downloaded into it.",
-      "restore_highlight": "password",
+      "label_password_backup_reminder": "I have stored this password safely, for example in a password manager. Without it, this profile cannot be opened.",
+      "label_password_repeat": "Repeat password",
+      "label_username": "Profile name",
+      "password_sync_requirement": "Use the same password as the profile you synced, not your rotki.com password. A different password cannot open the downloaded database.",
+      "show_password": "Show password",
       "validation": {
-        "check_prompt": "Confirm that you have read and created a backup",
-        "non_empty_password": "Please provide a password",
-        "non_empty_password_confirmation": "Please provide a password confirmation",
-        "non_empty_username": "Please provide a profile name",
-        "password_confirmation_mismatch": "The password confirmation does not match the provided password",
-        "valid_username": "A profile name must contain only alphanumeric characters and have no spaces"
+        "check_prompt": "Confirm that you stored the password. It cannot be recovered.",
+        "non_empty_password": "Enter a password",
+        "non_empty_password_confirmation": "Repeat the password",
+        "non_empty_username": "Enter a profile name",
+        "password_confirmation_mismatch": "The passwords do not match",
+        "valid_username": "Use only letters, numbers, dots, dashes and underscores, without spaces"
       }
+    },
+    "entry": {
+      "create": {
+        "description": "Start with an empty profile on this device.",
+        "title": "Create a new profile"
+      },
+      "description": "A profile keeps your portfolio in an encrypted database on this device. It is separate from your rotki.com account. {documentation}",
+      "restore": {
+        "description": "Download a profile you backed up with rotki premium.",
+        "title": "Restore from premium sync"
+      },
+      "title": "Set up rotki"
     },
     "error": {
       "device_limit_link": "Click {here} if you want to learn more about managing premium devices"
     },
     "have_account": {
-      "description": "Already have an account?",
-      "log_in": "Unlock your account"
+      "description": "Already have a profile on this device?",
+      "log_in": "Log in"
     },
-    "introduction": {
-      "create": {
-        "description": "Start fresh with a new local rotki profile.",
-        "title": "Create new account"
-      },
-      "intro": "A profile is encrypted with your password, stays on this device, and is separate from your rotki.com account. {documentation}",
-      "restore": {
-        "description": "Already a rotki premium user? Restore the database you previously synced to the cloud.",
-        "title": "Restore from cloud sync"
-      }
+    "issue_count": "{count} field needs attention | {count} fields need attention",
+    "password_strength": {
+      "empty": "A passphrase of four or more unrelated words is easy to remember and hard to guess.",
+      "fair": "Fair. A few more characters make it much harder to guess.",
+      "good": "Good.",
+      "strong": "Strong.",
+      "weak": "Weak. Use at least 8 characters, ideally a passphrase. You can still continue."
+    },
+    "preferences": {
+      "description": "You can change all of these later in the settings.",
+      "main_currency": "Main currency",
+      "main_currency_hint": "Balances, charts and reports are shown in this currency."
     },
     "premium": {
       "account_link": "your rotki.com account",
-      "button_premium_approve": "Yes, enable premium",
-      "get_premium": "Get premium",
-      "premium_question": "Already a premium user? Enable it now with your API credentials. {premiumLink}",
-      "restore_question": "Enter your premium API credentials to download the database you synced from another device. You can find them in {premiumLink}."
+      "restore_question": "Enter the API credentials of the premium account your database is synced to. You can find them in {premiumLink}.",
+      "should_sync": "Back this profile up with premium sync",
+      "should_sync_hint": "Already have a synced database? Go back and restore it instead.",
+      "toggle": "I have rotki premium",
+      "validation": {
+        "optional_key": "Enter the API key, or leave both fields empty",
+        "optional_secret": "Enter the API secret, or leave both fields empty"
+      },
+      "where_to_find": "You can find the API key and secret in {premiumLink}."
     },
     "step_progress": "Step {current} of {total}",
     "steps": {
-      "step_1": {
-        "description": "Choose how to get started",
-        "title": "Introduction"
+      "preferences": {
+        "title": "Preferences"
       },
-      "step_2": {
-        "description": "Do you have a premium account on our website?",
-        "restore_description": "Connect your premium account",
-        "restore_title": "Restore from cloud",
-        "title": "Enable Premium"
+      "premium": {
+        "title": "Connect premium"
       },
-      "step_3": {
-        "description": "Set your credentials",
-        "restore_title": "Restore account",
-        "title": "Create account"
+      "profile": {
+        "restore_title": "Profile for the restore",
+        "title": "Create your profile"
       },
-      "step_4": {
-        "title": "Usage analytics"
+      "summary": {
+        "title": "Check and restore"
       }
     },
-    "title": "Create Account",
-    "title_restore": "Restore Account",
+    "summary": {
+      "change": "Change",
+      "premium": "Premium",
+      "premium_value": "API key ending in {tail}",
+      "profile": "Profile",
+      "what_happens": "What happens",
+      "what_happens_value": "rotki creates the profile on this device, then downloads your synced database into it. Its settings, analytics included, come from that backup."
+    },
     "usage_analytics": {
-      "description": "Optional. Anonymous usage data helps us improve rotki. You can change this any time in General Settings.",
-      "label_confirm": "Submit anonymous usage analytics"
+      "description": "Anonymous usage data helps us improve rotki. You can change this any time in the settings.",
+      "label_confirm": "Send anonymous usage analytics"
     }
   },
   "currencies": {

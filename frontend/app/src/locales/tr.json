@@ -2121,10 +2121,6 @@
     "incomplete": "Eksik"
   },
   "create_account": {
-    "actions": {
-      "create_account": "Hesap oluştur",
-      "restore_account": "Hesabı geri yükle"
-    },
     "credentials": {
       "description": "Bir profil adı ve parola seçin. Parola bu profildeki her şeyi şifreler.",
       "label_password": "Parola",
@@ -2132,8 +2128,6 @@
       "label_password_repeat": "Parola (tekrar)",
       "label_username": "Profil adı",
       "password_sync_requirement": "Başlangıçta yedeklediğiniz veritabanıyla aynı parolayı kullanın. Farklı bir parola girerseniz veritabanına erişemezsiniz.",
-      "restore_description": "Profil adını ve yedeklediğiniz veritabanının {password} girin. Profil yerel olarak oluşturulacak ve senkronize edilen veritabanı bu profile indirilecek.",
-      "restore_highlight": "parolasını",
       "validation": {
         "check_prompt": "Okuduğunuzu ve bir yedek oluşturduğunuzu onaylayın",
         "non_empty_password": "Lütfen bir parola girin",
@@ -2150,43 +2144,9 @@
       "description": "Zaten bir hesabınız var mı?",
       "log_in": "Hesabınızın kilidini açın"
     },
-    "introduction": {
-      "create": {
-        "description": "Yeni bir yerel rotki profiliyle sıfırdan başlayın.",
-        "title": "Yeni hesap oluştur"
-      },
-      "restore": {
-        "description": "Zaten rotki Premium kullanıcısı mısınız? Daha önce buluta senkronize ettiğiniz veritabanını geri yükleyin.",
-        "title": "Bulut senkronizasyonundan geri yükle"
-      }
-    },
     "premium": {
-      "button_premium_approve": "Evet, Premium'u etkinleştir",
-      "premium_question": "Zaten Premium kullanıcısı mısınız? API kimlik bilgilerinizle şimdi etkinleştirin. {premiumLink}",
       "restore_question": "Başka bir cihazdan senkronize ettiğiniz veritabanını indirmek için Premium API kimlik bilgilerinizi girin. Bunları {premiumLink} içinde bulabilirsiniz."
     },
-    "steps": {
-      "step_1": {
-        "description": "Nasıl başlamak istediğinizi seçin",
-        "title": "Giriş"
-      },
-      "step_2": {
-        "description": "Web sitemizde Premium hesabınız var mı?",
-        "restore_description": "Premium hesabınızı bağlayın",
-        "restore_title": "Buluttan geri yükle",
-        "title": "Premium'u etkinleştir"
-      },
-      "step_3": {
-        "description": "Kimlik bilgilerinizi belirleyin",
-        "restore_title": "Hesabı geri yükle",
-        "title": "Hesap oluştur"
-      },
-      "step_4": {
-        "title": "Kullanım analitiği"
-      }
-    },
-    "title": "Hesap oluştur",
-    "title_restore": "Hesabı geri yükle",
     "usage_analytics": {
       "description": "İsteğe bağlı. Anonim kullanım verileri rotki'yi geliştirmemize yardımcı olur. Bunu istediğiniz zaman Genel ayarlar bölümünden değiştirebilirsiniz.",
       "label_confirm": "Anonim kullanım analitiği gönder"

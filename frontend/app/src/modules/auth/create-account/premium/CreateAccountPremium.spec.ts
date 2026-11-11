@@ -1,123 +1,82 @@
-import type { PremiumSetup } from '@/modules/auth/login';
-import { mount, type VueWrapper } from '@vue/test-utils';
-import { afterEach, assert, describe, expect, it } from 'vitest';
-import { defineComponent, h, ref, type VNode } from 'vue';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent, h } from 'vue';
 import CreateAccountPremium from '@/modules/auth/create-account/premium/CreateAccountPremium.vue';
 import '@test/i18n';
 
-function inputStub(name: string): Record<string, unknown> {
-  return {
-    emits: ['update:modelValue'],
-    name,
-    props: ['modelValue', 'errorMessages', 'disabled'],
-    template: '<div />',
-  };
-}
+const { check, errorCount } = await vi.hoisted(async () => {
+  const { ref } = await import('vue');
+  return { check: vi.fn<() => Promise<boolean>>(), errorCount: ref<number>(0) };
+});
 
-const ButtonStub = {
-  name: 'RuiButton',
-  props: ['disabled', 'loading'],
-  template: '<button :disabled="disabled"><slot /></button>',
+const FormStub = defineComponent({
+  name: 'CreateAccountPremiumForm',
+  props: { optional: { default: false, type: Boolean } },
+  setup(_props, { expose }) {
+    expose({ errorCount, validate: check });
+    return (): ReturnType<typeof h> => h('div');
+  },
+});
+
+const ActionsStub = {
+  emits: ['back', 'next'],
+  name: 'CreateAccountStepActions',
+  props: ['nextLabel', 'nextTestId', 'issueCount', 'loading'],
+  template: '<div><button data-testid="back" @click="$emit(\'back\')" /><button data-testid="next" @click="$emit(\'next\')" /></div>',
 };
 
-const CONTINUE = 'create-account-premium-continue';
+function createWrapper(): VueWrapper {
+  return mount(CreateAccountPremium, {
+    global: {
+      stubs: {
+        CreateAccountPremiumForm: FormStub,
+        CreateAccountStepActions: ActionsStub,
+      },
+    },
+    props: {
+      form: { apiKey: '', apiSecret: '', syncDatabase: true },
+      loading: false,
+    },
+  });
+}
 
 describe('createAccountPremium', () => {
-  let wrapper: VueWrapper;
-
-  afterEach(() => {
-    wrapper?.unmount();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    set(errorCount, 0);
   });
 
-  function emptySetup(): PremiumSetup {
-    return { apiKey: '', apiSecret: '', syncDatabase: false };
-  }
-
-  function createWrapper(options: {
-    premiumEnabled: boolean;
-    setup?: PremiumSetup;
-    props?: Record<string, unknown>;
-  }): VueWrapper {
-    const form = ref<PremiumSetup>(options.setup ?? emptySetup());
-    const premiumEnabled = ref<boolean>(options.premiumEnabled);
-
-    const parent = defineComponent({
-      setup(): () => VNode {
-        return () => h(CreateAccountPremium, {
-          'form': get(form),
-          'loading': false,
-          'mode': 'create',
-          'onUpdate:form': (value: PremiumSetup): void => set(form, value),
-          'onUpdate:premiumEnabled': (value: boolean): void => set(premiumEnabled, value),
-          'premiumEnabled': get(premiumEnabled),
-          ...options.props,
-        });
-      },
-    });
-
-    return mount(parent, {
-      global: {
-        stubs: {
-          ExternalLink: true,
-          RuiButton: ButtonStub,
-          RuiRevealableTextField: inputStub('RuiRevealableTextField'),
-        },
-      },
-    });
-  }
-
-  function continueDisabled(): boolean {
-    return wrapper.get(`[data-testid=${CONTINUE}]`).attributes('disabled') !== undefined;
-  }
-
-  async function editCredential(label: string, value: string): Promise<void> {
-    const field = wrapper
-      .findAllComponents({ name: 'RuiRevealableTextField' })
-      .find(component => component.attributes('label') === label);
-    assert(field, `no field labelled ${label} is rendered`);
-    field.vm.$emit('update:modelValue', value);
-    await nextTick();
-  }
-
-  it('should enable continue when premium is declined, with empty credentials, or the wizard locks the user out', async () => {
-    wrapper = createWrapper({ premiumEnabled: false });
-    await nextTick();
-
-    expect(continueDisabled()).toBe(false);
+  it('should require the credentials, since a restore cannot go without them', () => {
+    expect(createWrapper().findComponent({ name: 'CreateAccountPremiumForm' }).props('optional')).toBe(false);
   });
 
-  it('should disable continue when premium is accepted with empty credentials', async () => {
-    wrapper = createWrapper({ premiumEnabled: true });
-    await nextTick();
+  it('should move on once the credentials pass their check', async () => {
+    check.mockResolvedValue(true);
+    const wrapper = createWrapper();
 
-    expect(continueDisabled()).toBe(true);
+    await wrapper.find('[data-testid=next]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.emitted('next')).toHaveLength(1);
   });
 
-  it('should enable continue once both premium credentials are filled', async () => {
-    wrapper = createWrapper({
-      premiumEnabled: true,
-      setup: { apiKey: 'key', apiSecret: 'secret', syncDatabase: false },
-    });
-    await nextTick();
+  it('should stay and count the problems while a credential is missing', async () => {
+    check.mockResolvedValue(false);
+    set(errorCount, 2);
+    const wrapper = createWrapper();
 
-    expect(continueDisabled()).toBe(false);
+    await wrapper.find('[data-testid=next]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.emitted('next')).toBeUndefined();
+    expect(wrapper.findComponent({ name: 'CreateAccountStepActions' }).props('issueCount')).toBe(2);
   });
 
-  it('should disable continue again when a premium credential is cleared', async () => {
-    wrapper = createWrapper({
-      premiumEnabled: true,
-      setup: { apiKey: 'key', apiSecret: 'secret', syncDatabase: false },
-    });
-    await editCredential('premium_credentials.label_api_key', '');
+  it('should hand Back to the wizard', async () => {
+    const wrapper = createWrapper();
 
-    expect(continueDisabled()).toBe(true);
-  });
+    await wrapper.find('[data-testid=back]').trigger('click');
 
-  it('should advance the wizard when continue is pressed', async () => {
-    wrapper = createWrapper({ premiumEnabled: false });
-    await nextTick();
-    await wrapper.get(`[data-testid=${CONTINUE}]`).trigger('click');
-
-    expect(wrapper.findComponent(CreateAccountPremium).emitted('next')).toHaveLength(1);
+    expect(wrapper.emitted('back')).toHaveLength(1);
   });
 });

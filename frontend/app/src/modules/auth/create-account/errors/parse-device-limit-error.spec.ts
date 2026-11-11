@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseDeviceLimitError } from './parse-device-limit-error';
 
-describe('modules/auth/create-account/analytics/parseDeviceLimitError', () => {
+describe('modules/auth/create-account/errors/parseDeviceLimitError', () => {
   it('should report no link for a plain message', () => {
     expect(parseDeviceLimitError('Something went wrong')).toEqual({
       hasLink: false,
