@@ -1,12 +1,13 @@
-<script setup lang="ts">
-import type { FormDetails, RuiAutoComplete } from '@rotki/ui-library';
+<script setup lang="ts" generic="TClear = undefined, TClearable extends boolean = false">
+import type { ClearedValue, RuiAutoComplete } from '@rotki/ui-library';
 import type { NftAsset } from '@/modules/assets/nfts';
 import type { AssetActions, AssetDisplay } from '@/modules/assets/types';
-import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+import type { ForwardedProps, UnexportedAutoCompleteProps } from '@/modules/core/common/forwarded-props';
 import { type AssetInfoWithId, getValidSelectorFromEvmAddress } from '@rotki/common';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import { NftHandling } from '@/modules/assets/nft-handling';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
+import { toClearedValue } from '@/modules/core/common/cleared-value';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 import { type AssetSearchSource, useAssetSearch } from '@/modules/shell/components/inputs/use-asset-search';
 
@@ -25,17 +26,24 @@ interface Props {
   errorMessages?: string[];
   label?: string;
   disabled?: boolean;
-  clearable?: boolean;
-  required?: boolean;
-  details?: FormDetails;
+  /**
+   * Shows the clear button, so the update can carry `valueOnClear`.
+   *
+   * @remarks
+   * Typed `& boolean` so the compiler emits a Boolean prop: a bare type parameter compiles to an
+   * untyped one, and a bare `clearable` attribute would then arrive as a falsy `''`.
+   */
+  clearable?: TClearable & boolean;
+  /** What clearing writes, `undefined` when not given; `''` keeps a `string` model exact. */
+  valueOnClear?: TClear;
   dense?: boolean;
+  /** The selected identifier. Not a `defineModel`, since the update is typed apart from the prop. */
+  modelValue: string | NoInfer<TClear>;
 }
 
 defineOptions({
   inheritAttrs: false,
 });
-
-const modelValue = defineModel<string | undefined>({ required: true });
 
 /**
  * The resolved asset behind the selected identifier. The component only ever writes it, so it is a
@@ -45,29 +53,36 @@ const modelValue = defineModel<string | undefined>({ required: true });
 const asset = defineModel<AssetInfoWithId | NftAsset | undefined>('asset');
 
 const {
-  clearable = false,
+  clearable,
   dense = false,
-  details,
   disabled = false,
   errorMessages = [],
   hint = '',
   label,
-  required = false,
+  modelValue,
   source,
   successMessages = '',
-} = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete<string, AssetInfoWithId>, Props>>();
+  valueOnClear,
+} = defineProps<Props & /* @vue-ignore */ ForwardedProps<typeof RuiAutoComplete<string, AssetInfoWithId>, Props & UnexportedAutoCompleteProps>>();
+
+const emit = defineEmits<{
+  'update:model-value': [value: string | ClearedValue<string, TClear, TClearable>];
+}>();
 
 defineSlots<{
-  prepend: () => any;
+  prepend?: () => any;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+/** The identifier the search resolves; a clear value that is not an identifier reads as none. */
+const selectedIdentifier = computed<string | undefined>(() => (typeof modelValue === 'string' ? modelValue : undefined));
 
 const { error, getVisibleAsset, loading, modelSearch, visibleAssets } = useAssetSearch({
   chain: () => source?.chain,
   excludes: () => source?.excludes ?? [],
   items: () => source?.items ?? [],
-  modelValue,
+  modelValue: selectedIdentifier,
   nftHandling: () => source?.nfts ?? NftHandling.EXCLUDE,
   // A selection that drops out of the options takes the resolved asset with it.
   onSelectionLost: (): void => {
@@ -103,16 +118,22 @@ const errors = computed<string[]>(() => {
   return messages;
 });
 
-function onUpdateModelValue(value: string): void {
-  set(modelValue, value);
+/** A picked or emptied identifier goes up as is; a cleared field sends the caller's `valueOnClear`. */
+function onUpdateModelValue(value: string | undefined): void {
+  if (value === undefined) {
+    emit('update:model-value', toClearedValue<string, TClear, TClearable>(valueOnClear));
+    set(asset, undefined);
+    return;
+  }
+  emit('update:model-value', value);
   set(asset, getVisibleAsset(value));
 }
 </script>
 
 <template>
   <RuiAutoComplete
-    v-model="modelValue"
     v-model:search-input="modelSearch"
+    :model-value="selectedIdentifier"
     :disabled="disabled"
     :options="visibleAssets"
     class="asset-select w-full"
@@ -122,12 +143,10 @@ function onUpdateModelValue(value: string): void {
     :label="fieldLabel"
     :clearable="clearable"
     :placeholder="placeholder"
-    :required="required"
     :success-messages="successMessages"
     :error-messages="errors"
     key-attr="identifier"
     text-attr="identifier"
-    :details="details"
     :hide-no-data="loading || !modelSearch || !!error"
     auto-select-first
     :dense="dense"
@@ -135,6 +154,7 @@ function onUpdateModelValue(value: string): void {
     :item-height="dense ? 44 : 50"
     v-bind="$attrs"
     no-filter
+    @update:model-value="onUpdateModelValue($event)"
   >
     <template #selection="{ item }">
       <template v-if="item && item.identifier">

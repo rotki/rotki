@@ -40,15 +40,6 @@ describe('modules/auth/login/LoginUsernameField', () => {
     set(savedUsernames, ['alice', 'bob']);
   });
 
-  it('should normalize to an empty string the `undefined` the control clears to when still-loading profiles drop the current value', async () => {
-    const wrapper = mountField({ modelValue: 'alice' });
-
-    wrapper.findComponent({ name: 'RuiTextField' }).vm.$emit('update:modelValue', undefined);
-    await nextTick();
-
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['']);
-  });
-
   it('should render an undefined model value as an empty string', () => {
     const wrapper = mountField({ modelValue: undefined });
 

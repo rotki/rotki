@@ -46,6 +46,7 @@ vi.mock('@/modules/shell/components/inputs/use-asset-search', async (importOrigi
 const RuiAutoComplete = defineComponent({
   name: 'RuiAutoComplete',
   props: {
+    clearable: { default: false, type: Boolean },
     dense: { default: false, type: Boolean },
     errorMessages: { default: undefined, type: [String, Array] },
     details: { default: undefined, type: String },
@@ -196,5 +197,36 @@ describe('assetSelect', () => {
     expect(roomy.find('.selection').findComponent(AssetIcon).props('size')).toBe('20px');
     expect(roomy.find('.selection').text()).toContain('Ether');
     roomy.unmount();
+  });
+
+  it('should read a bare clearable attribute, which arrives as an empty string, as true', () => {
+    const wrapper = mount(AssetSelect, {
+      attrs: { clearable: '' },
+      global: { stubs: { AssetDetailsBase: true, AssetIcon: true, NftDetails: true, RuiAutoComplete } },
+      props: { modelValue: 'ETH' },
+    });
+
+    expect(wrapper.props('clearable')).toBe(true);
+  });
+
+  it('should send the value on clear when the field is cleared, and undefined without one', async () => {
+    const withClearValue = createWrapper({ clearable: true, modelValue: 'ETH', valueOnClear: '' });
+    withClearValue.getComponent(RuiAutoComplete).vm.$emit('update:modelValue', undefined);
+    await nextTick();
+    expect(withClearValue.emitted('update:model-value')).toEqual([['']]);
+
+    const withoutClearValue = createWrapper({ clearable: true, modelValue: 'ETH' });
+    withoutClearValue.getComponent(RuiAutoComplete).vm.$emit('update:modelValue', undefined);
+    await nextTick();
+    expect(withoutClearValue.emitted('update:model-value')).toEqual([[undefined]]);
+  });
+
+  it('should send a picked identifier up as is', async () => {
+    const wrapper = createWrapper({ clearable: true, modelValue: undefined, valueOnClear: '' });
+
+    wrapper.getComponent(RuiAutoComplete).vm.$emit('update:modelValue', 'BTC');
+    await nextTick();
+
+    expect(wrapper.emitted('update:model-value')).toEqual([['BTC']]);
   });
 });

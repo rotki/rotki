@@ -55,13 +55,13 @@ defineExpose({
 <template>
   <div class="flex flex-col gap-2">
     <AssetSelect
-      :model-value="form.state.fromAsset"
+      v-model="form.state.fromAsset"
       :label="t('price_form.from_asset')"
       :source="{ nfts: 'include' }"
       :disabled="editMode || disableFromAsset"
       :error-messages="form.errors('fromAsset')"
       data-testid="latest-price-from-asset"
-      @update:model-value="form.state.fromAsset = $event ?? ''; form.touch('fromAsset')"
+      @update:model-value="form.touch('fromAsset')"
     />
     <div class="grid grid-cols-2 gap-x-4">
       <AmountInput
@@ -73,11 +73,11 @@ defineExpose({
         @update:model-value="form.touch('price')"
       />
       <AssetSelect
-        :model-value="form.state.toAsset"
+        v-model="form.state.toAsset"
         :label="t('price_form.to_asset')"
         :error-messages="form.errors('toAsset')"
         data-testid="latest-price-to-asset"
-        @update:model-value="form.state.toAsset = $event ?? ''; form.touch('toAsset')"
+        @update:model-value="form.touch('toAsset')"
       />
     </div>
   </div>

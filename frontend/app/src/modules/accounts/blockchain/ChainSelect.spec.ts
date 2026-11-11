@@ -51,9 +51,12 @@ const ChainDisplayStub = defineComponent({
 });
 
 interface MountProps {
+  clearable?: boolean;
   evmOnly?: boolean;
   excludeEthStaking?: boolean;
   items?: string[];
+  modelValue?: string;
+  valueOnClear?: string;
 }
 
 /**
@@ -166,6 +169,24 @@ describe('accounts/blockchain/ChainSelect.vue', () => {
       await search(wrapper, 'supported');
 
       expect(renderedOptions(wrapper)).toEqual(['all']);
+    });
+  });
+
+  describe('clearing', () => {
+    it('should send the value on clear when the clear button empties the field', async () => {
+      wrapper = createWrapper({ clearable: true, modelValue: Blockchain.ETH, valueOnClear: '' });
+
+      await wrapper.get('[data-id=clear]').trigger('click');
+
+      expect(wrapper.emitted('update:model-value')).toEqual([['']]);
+    });
+
+    it('should send undefined when the caller gives no value on clear', async () => {
+      wrapper = createWrapper({ clearable: true, modelValue: Blockchain.ETH });
+
+      await wrapper.get('[data-id=clear]').trigger('click');
+
+      expect(wrapper.emitted('update:model-value')).toEqual([[undefined]]);
     });
   });
 });

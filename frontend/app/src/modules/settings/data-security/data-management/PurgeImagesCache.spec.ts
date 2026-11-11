@@ -113,7 +113,7 @@ describe('purgeImagesCache', () => {
       await purge();
 
       expect(spies.clearIconCache).toHaveBeenCalledExactlyOnceWith(['ETH']);
-      expect(wrapper.findComponent(AssetSelect).props('modelValue')).toBe('');
+      expect(wrapper.findComponent({ name: 'AssetSelect' }).props('modelValue')).toBe('');
     });
 
     it('should report the purge under the name of the source', async () => {

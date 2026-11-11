@@ -42,13 +42,13 @@ const { t } = useI18n({ useScope: 'global' });
         @blur="emit('blur', 'fee')"
       />
       <AssetSelect
-        :model-value="feeAsset"
+        v-model="feeAsset"
         clearable
+        value-on-clear=""
         data-testid="fee-asset"
         :label="t('transactions.events.form.fee_asset.label')"
         :error-messages="errorMessages.feeAsset"
         @blur="emit('blur', 'feeAsset')"
-        @update:model-value="feeAsset = $event ?? ''"
       />
     </div>
   </div>
