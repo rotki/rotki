@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import asset_normalized_value, get_or_create_evm_token
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
@@ -14,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -40,6 +41,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -56,6 +58,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
             msg_aggregator: MessagesAggregator,
             rewards_address: ChecksumEvmAddress,
             bulker_address: ChecksumEvmAddress,
+            wrapped_native_counterparty: str = CPT_WETH,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -64,6 +67,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
         )
         self.rewards_address = rewards_address
         self.bulker_address = bulker_address
+        self.wrapped_native_counterparty = wrapped_native_counterparty
         self.underlying_tokens: dict[EvmToken, EvmToken | None] = {}
 
     def _get_compound_underlying_token(self, compound_token: EvmToken) -> EvmToken | None:
@@ -310,6 +314,7 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
             asset=collateral_asset,
         )
 
+        wrapping_events: list[EvmEvent] = []
         for event in context.decoded_events:
             if (
                 event.event_type in {HistoryEventType.SPEND, HistoryEventType.RECEIVE} and
@@ -321,6 +326,17 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
                 )) and
                 event.address in (compound_token.evm_address, self.bulker_address)
             ):
+                if event.asset == self.node_inquirer.native_token:
+                    # The bulker wraps/unwraps the user's native asset while Comet only
+                    # holds the wrapped token, so the protocol movement is in the wrapped token.
+                    wrapping_events = self._make_native_wrapping_events(
+                        context=context,
+                        native_event=event,
+                        wrapped_token=collateral_asset,
+                        amount=collateral_amount,
+                    )
+                    event.asset = collateral_asset
+
                 transfer_event = event
                 event.counterparty = CPT_COMPOUND_V3
                 event.address = compound_token.evm_address  # used to query balances later
@@ -356,10 +372,15 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 
+        context.decoded_events.extend(wrapping_events)
         context.decoded_events.append(collateral_event)
         maybe_reshuffle_events(
             events_list=context.decoded_events,
-            ordered_events=[transfer_event, collateral_event],
+            ordered_events=(
+                [*wrapping_events, transfer_event, collateral_event]
+                if transfer_event.event_type == HistoryEventType.DEPOSIT else
+                [transfer_event, collateral_event, *wrapping_events]
+            ),
         )
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -468,6 +489,38 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
             address=compound_token.evm_address,
         ))
         return DEFAULT_EVM_DECODING_OUTPUT
+
+    def _make_native_wrapping_events(
+            self,
+            context: DecoderContext,
+            native_event: EvmEvent,
+            wrapped_token: EvmToken,
+            amount: FVal,
+    ) -> list[EvmEvent]:
+        """Create the bulker's wrap (deposit) or unwrap (withdrawal) of the native asset.
+        Returns the pair in chronological order."""
+        native_symbol = native_event.asset.resolve_to_asset_with_symbol().symbol
+        first: tuple[HistoryEventType, HistoryEventSubType, Asset, str]
+        second: tuple[HistoryEventType, HistoryEventSubType, Asset, str]
+        if native_event.event_type == HistoryEventType.SPEND:
+            first = (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED, native_event.asset, f'Wrap {amount} {native_symbol} in {wrapped_token.symbol}')  # noqa: E501
+            second = (HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED, wrapped_token, f'Receive {amount} {wrapped_token.symbol}')  # noqa: E501
+        else:
+            first = (HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED, wrapped_token, f'Unwrap {amount} {wrapped_token.symbol}')  # noqa: E501
+            second = (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REDEEM_WRAPPED, native_event.asset, f'Receive {amount} {native_symbol}')  # noqa: E501
+
+        return [self.base.make_event_next_index(
+            tx_ref=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=event_type,
+            event_subtype=event_subtype,
+            amount=amount,
+            asset=asset,
+            location_label=native_event.location_label,
+            counterparty=self.wrapped_native_counterparty,
+            notes=notes,
+            address=wrapped_token.evm_address,
+        ) for event_type, event_subtype, asset, notes in (first, second)]
 
     def decode_compound_token_movement(
             self,
