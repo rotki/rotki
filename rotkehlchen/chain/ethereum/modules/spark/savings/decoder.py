@@ -53,6 +53,11 @@ class SparksavingsDecoder(SparksavingsCommonDecoder):
                 string_to_evm_address('0xBc65ad17c5C0a2A4D159fa5a503f4992c7B545FE'),  # sUSDC
                 string_to_evm_address('0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD'),  # sUSDS
                 string_to_evm_address('0x83F20F44975D03b1b09e64809B757c47f942BEeA'),  # sDAI
+                # Spark Savings V2 vaults
+                string_to_evm_address('0x28B3a8fb53B741A8Fd78c0fb9A6B2393d896a43d'),  # spUSDC
+                string_to_evm_address('0xe2e7a17dFf93280dec073C995595155283e3C372'),  # spUSDT
+                string_to_evm_address('0xfE6eb3b609a7C8352A241f7F3A21CEA4e9209B8f'),  # spETH
+                string_to_evm_address('0x80128DbB9f07b93DDE62A6daeadb69ED14a7D354'),  # spPYUSD
             ),
         )
         self.sdai = A_SDAI.resolve_to_evm_token()
