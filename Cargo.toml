@@ -16,7 +16,7 @@ exclude = ["tools/find-duplicate-constants"]
 version = "1.44.3"
 edition = "2021"
 license = "AGPL-3.0-only"
-rust-version = "1.88.0"
+rust-version = "1.89.0"
 repository = "https://github.com/rotki/rotki"
 
 # Exact-pinned, matching colibri's convention: reproducible builds, and a

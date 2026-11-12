@@ -352,8 +352,8 @@ jobs:
 
       - name: Setup Rust
         run: |
-          rustup toolchain install 1.91 --profile minimal --component clippy --no-self-update
-          rustup default 1.91
+          rustup toolchain install 1.99 --profile minimal --component clippy --no-self-update
+          rustup default 1.99
 
       # Restore only: warm-rust-caches fills this key from the base branch.
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0  # v2.9.2
@@ -388,8 +388,8 @@ jobs:
 
       - name: Setup Rust
         run: |
-          rustup toolchain install 1.91 --profile minimal --component clippy,rustfmt --no-self-update
-          rustup default 1.91
+          rustup toolchain install 1.99 --profile minimal --component clippy,rustfmt --no-self-update
+          rustup default 1.99
 
       # Restore only: warm-rust-caches fills this key from the base branch.
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0  # v2.9.2
@@ -436,8 +436,8 @@ jobs:
       - name: Setup Rust
         shell: bash
         run: |
-          rustup toolchain install 1.91 --profile minimal --no-self-update
-          rustup default 1.91
+          rustup toolchain install 1.99 --profile minimal --no-self-update
+          rustup default 1.99
 
       # Restore only: warm-rust-caches-windows fills this key from the base branch.
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0  # v2.9.2
@@ -508,8 +508,8 @@ jobs:
 
       - name: Setup Rust
         run: |
-          rustup toolchain install 1.91 --profile minimal --component clippy --no-self-update
-          rustup default 1.91
+          rustup toolchain install 1.99 --profile minimal --component clippy --no-self-update
+          rustup default 1.99
 
       - name: Look up the Rust cache
         id: rust-cache
@@ -549,8 +549,8 @@ jobs:
       - name: Setup Rust
         shell: bash
         run: |
-          rustup toolchain install 1.91 --profile minimal --no-self-update
-          rustup default 1.91
+          rustup toolchain install 1.99 --profile minimal --no-self-update
+          rustup default 1.99
 
       - name: Look up the Rust cache
         id: rust-cache
@@ -615,8 +615,8 @@ jobs:
       - name: Setup Rust
         if: steps.fdc-cache.outputs.cache-hit != 'true'
         run: |
-          rustup toolchain install 1.91 --profile minimal --no-self-update
-          rustup default 1.91
+          rustup toolchain install 1.99 --profile minimal --no-self-update
+          rustup default 1.99
 
       - name: Cache Rust dependencies
         if: steps.fdc-cache.outputs.cache-hit != 'true'

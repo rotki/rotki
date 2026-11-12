@@ -39,6 +39,12 @@ jobs:
         with:
           env_file: .github/.env.ci
 
+      # Pinned like CI, so a release is built with the toolchain CI lints and tests.
+      - name: Setup Rust
+        run: |
+          rustup toolchain install 1.99 --profile minimal --no-self-update
+          rustup default 1.99
+
       - name: Setup python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.0.0
         with:
@@ -127,6 +133,12 @@ jobs:
         with:
           env_file: .github/.env.ci
 
+      # Pinned like CI, so a release is built with the toolchain CI lints and tests.
+      - name: Setup Rust
+        run: |
+          rustup toolchain install 1.99 --profile minimal --no-self-update
+          rustup default 1.99
+
       - name: Add rust target for building deps
         if: ${{ matrix.os.arch == 'arm64' }}
         run: rustup target add aarch64-apple-darwin
@@ -208,6 +220,12 @@ jobs:
         uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
         with:
           env_file: .github/.env.ci
+
+      # Pinned like CI, so a release is built with the toolchain CI lints and tests.
+      - name: Setup Rust
+        run: |
+          rustup toolchain install 1.99 --profile minimal --no-self-update
+          rustup default 1.99
 
       - name: Set up python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.0.0

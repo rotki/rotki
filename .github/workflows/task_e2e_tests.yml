@@ -96,8 +96,8 @@ jobs:
       - name: Setup Rust
         if: steps.rust-cache.outputs.cache-hit != 'true'
         run: |
-          rustup toolchain install 1.91 --profile minimal --no-self-update
-          rustup default 1.91
+          rustup toolchain install 1.99 --profile minimal --no-self-update
+          rustup default 1.99
 
       - name: Build Rust services
         if: steps.rust-cache.outputs.cache-hit != 'true'
