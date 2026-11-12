@@ -1,8 +1,6 @@
-import type { APIRequestContext, Page, Route } from '@playwright/test';
+import type { APIRequestContext, Page } from '@playwright/test';
 import { backendUrl } from '../../../playwright.config';
-
-/** Task ids handed out by the fake bank endpoints, far above anything the real backend reaches in a run. */
-const FAKE_TASK_ID_START = 900_000;
+import { fulfillJson, installFakeTasks } from './fake-tasks';
 
 export interface FakeBankConnection {
   identifier?: string;
@@ -69,14 +67,6 @@ export interface BankEventSeed {
   connectionName: string;
   notes?: string;
   extraData?: { bank_account_id: string; kind: string; reference?: string; counterparty_account?: string };
-}
-
-async function fulfillJson(route: Route, result: unknown, status = 200): Promise<void> {
-  await route.fulfill({
-    body: JSON.stringify({ message: '', result }),
-    contentType: 'application/json',
-    status,
-  });
 }
 
 /** Whether a request body addresses the connection, as the backend does: by connection identifier. */
@@ -154,9 +144,7 @@ export async function apiAddBankEvent(request: APIRequestContext, event: BankEve
  *
  * @remarks
  * Install before navigating: a route only applies to requests made after it exists. Balance queries and
- * syncs are async tasks, so each returns a fake task id and the outcome is served on `/tasks/<id>`. The
- * task list is fetched from the real backend and only has the fake ids appended, because the app polls
- * one `/tasks` endpoint for every task and real ones must keep resolving. `/banks/supported` is left to
+ * syncs are async tasks, answered through {@link installFakeTasks}. `/banks/supported` is left to
  * the real backend, which serves the Qonto manifest without an account.
  */
 export async function fakeBankEndpoints(page: Page, setup: FakeBankSetup): Promise<BankRequests> {
@@ -165,14 +153,7 @@ export async function fakeBankEndpoints(page: Page, setup: FakeBankSetup): Promi
     ...connection,
     identifier: connection.identifier ?? fakeBankIdentifier(connection.name),
   }));
-  let nextTaskId = FAKE_TASK_ID_START;
-  const outcomes = new Map<number, { result: unknown; message: string }>();
-
-  const startTask = (result: unknown, message = ''): number => {
-    const id = nextTaskId++;
-    outcomes.set(id, { message, result });
-    return id;
-  };
+  const { start: startTask } = await installFakeTasks(page);
 
   await page.route('**/api/1/banks', async (route) => {
     const request = route.request();
@@ -275,28 +256,6 @@ export async function fakeBankEndpoints(page: Page, setup: FakeBankSetup): Promi
         connections: queried,
       }),
     });
-  });
-
-  await page.route('**/api/1/tasks', async (route) => {
-    if (route.request().method() !== 'GET') {
-      await route.continue();
-      return;
-    }
-    const response = await route.fetch();
-    const body = await response.json();
-    body.result.completed = [...(body.result.completed ?? []), ...outcomes.keys()];
-    await route.fulfill({ json: body, response });
-  });
-
-  await page.route('**/api/1/tasks/*', async (route) => {
-    const id = Number(new URL(route.request().url()).pathname.split('/').pop());
-    const outcome = outcomes.get(id);
-    if (!outcome) {
-      await route.continue();
-      return;
-    }
-    outcomes.delete(id);
-    await fulfillJson(route, { outcome, status: 'completed' });
   });
 
   return requests;

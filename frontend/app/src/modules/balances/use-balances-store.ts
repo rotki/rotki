@@ -18,6 +18,8 @@ export const useBalancesStore = defineStore('balances', () => {
 
   const exchangeBalances = shallowRef<ExchangeData>({});
   const exchangeAccountBalances = shallowRef<Record<string, ExchangeData>>({});
+  /** Why each connection failed its last refresh, by location and then connection identifier. */
+  const exchangeFailedAccounts = shallowRef<Record<string, Record<string, string>>>({});
   /** What each bank connection holds; banks are a source of their own, never an exchange. */
   const bankBalances = shallowRef<BankConnectionBalances[]>([]);
   const nonFungibleTotalValue = ref<BigNumber>(Zero);
@@ -112,6 +114,7 @@ export const useBalancesStore = defineStore('balances', () => {
     bankBalances,
     exchangeAccountBalances,
     exchangeBalances,
+    exchangeFailedAccounts,
     manualBalances,
     manualLiabilities,
     nonFungibleTotalValue,

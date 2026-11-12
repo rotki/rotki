@@ -29,6 +29,7 @@ interface UseAggregatedBalancesReturn {
   assets: ComputedRef<string[]>;
   useBlockchainBalances: (chains: MaybeRefOrGetter<string[]>, groupId?: MaybeRefOrGetter<string>, key?: keyof EthBalance) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   getExchangeBalances: (exchange?: string) => AssetBalanceWithPriceAndChains[];
+  getExchangeAccountBalances: (exchange: string, identifier: string) => AssetBalanceWithPriceAndChains[];
   useExchangeBalances: (exchange?: MaybeRefOrGetter<string>) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   useLocationBreakdown: (location: MaybeRefOrGetter<string>) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   balancesByLocation: ComputedRef<Record<string, BigNumber>>;
@@ -38,7 +39,7 @@ interface UseAggregatedBalancesReturn {
 const EXCLUDABLE_SOURCES = ['blockchain', 'exchange', 'manual'] as const satisfies readonly ExclusionSource[];
 
 export function useAggregatedBalances(): UseAggregatedBalancesReturn {
-  const { balances: allBlockchainBalances, bankBalances, exchangeBalances, manualBalances, manualLiabilities, visibleBalances: blockchainBalances } = storeToRefs(useBalancesStore());
+  const { balances: allBlockchainBalances, bankBalances, exchangeAccountBalances, exchangeBalances, manualBalances, manualLiabilities, visibleBalances: blockchainBalances } = storeToRefs(useBalancesStore());
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { manualBalanceByLocation } = useManualBalanceData();
   const { tradeLocations } = useLocations();
@@ -125,6 +126,17 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     return summarizeBalances([fromExchanges(get(exchangeBalances), exchange)], context);
   }
 
+  /**
+   * The balances of one connection of an exchange, by its stable identifier.
+   *
+   * @remarks
+   * The backend reports these without the hide-small-balances threshold it applies to the totals.
+   */
+  function getExchangeAccountBalances(exchange: string, identifier: string): AssetBalanceWithPriceAndChains[] {
+    const account = get(exchangeAccountBalances)[exchange]?.[identifier] ?? {};
+    return summarizeBalances([fromExchanges({ [exchange]: account }, exchange)], context);
+  }
+
   const useLocationBreakdown = (location: MaybeRefOrGetter<string>): ComputedRef<AssetBalanceWithPriceAndChains[]> =>
     computed<AssetBalanceWithPriceAndChains[]>(() => {
       const selected = toValue(location);
@@ -178,6 +190,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     balancesByLocation,
     getAssetPriceInfo,
     getBalances,
+    getExchangeAccountBalances,
     getExchangeBalances,
     getLiabilities,
     useAssetPriceInfo,

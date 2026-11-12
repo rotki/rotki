@@ -3,6 +3,8 @@ Changelog
 =========
 
 * :bug:`-` Bitpanda history queries now save each page as it arrives, so a failure part way through no longer throws away the history already fetched.
+* :bug:`-` Refreshing exchange balances now queries each exchange once. Before, an exchange with several connected accounts was queried again for every account, so balances took longer to load the more accounts it had.
+* :feature:`8019` Balances > Exchanges can now show the assets of one account at a time when an exchange has several connected accounts. Pick the account from the account menu above the table, which shows each account's value and share and marks one whose last refresh failed, or pick All accounts for the whole exchange.
 * :feature:`13144` The rotki container can now listen on IPv6 by setting the ``ROTKI_HTTP_HOST`` environment variable. ``::`` accepts both IPv6 and IPv4 connections, for example in dual-stack Kubernetes clusters, and a single address listens on that address only. The default stays ``0.0.0.0``, and the container's health check follows the address automatically.
 * :bug:`12578` The backend now keeps answering health checks and reporting finished tasks while many slow requests are running at once, for example several sessions of a docker deployment or scripts using the API. Before, it could look dead until those requests finished.
 * :feature:`13287` Deleting a token balance from a balance snapshot can now also mark the token as spam, so it is not queried again and does not come back in the next snapshot. The mark is applied when the snapshot is saved, and undoing the delete or discarding the changes drops it.
@@ -92,8 +94,12 @@ Changelog
 * :feature:`12914` Beets pool joins and exits on Sonic are now decoded, and gauge balances for Beets v2 and v3 pools are queried.
 * :feature:`9110` Sonic is now a fully supported EVM chain. Transactions and balances can be tracked on it.
 * :feature:`13089` Venice.ai is now supported. VVV, sVVV and DIEM balances will be queried and events involving VVV and DIEM are now decoded.
+* :release:`1.44.3 <2026-11-11>`
+* :bug:`-` Restoring a premium backup while creating an account now keeps the settings chosen at account creation, such as the usage analytics choice, instead of replacing them with the ones in the backup.
+* :bug:`13640` Compound v3 liquidations are now properly decoded, showing the seized collateral and the repaid debt.
 * :bug:`-` Fiat exchange rates will be queried properly again. Frankfurter (ECB rates) is now used as a fallback source for fiat exchange rates.
 * :bug:`13643` Curve lend repay events should no longer decode borrowed-token refunds as protocol withdrawals.
+* :bug:`13640` Native ETH and POL collateral deposits into and withdrawals from Compound v3 through the bulker now show the wrapping to WETH/WPOL. Existing transactions are redecoded automatically.
 * :bug:`13642` CoW Swap trades no longer get a duplicate fee event when the same settlement contains an identical trade of an untracked address.
 * :bug:`13513` When premium is turned off because the plan's device limit is reached, rotki now points to where you can remove devices you no longer use, both on login and in the notification shown while running.
 * :bug:`-` Morpho Blue collateral, lending positions and debt are now shown on every supported chain and include accrued interest. Previously, Morpho Blue balances were only queried on Base and were reconstructed from historical principal amounts.

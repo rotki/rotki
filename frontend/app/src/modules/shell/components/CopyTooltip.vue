@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import { useCopy } from '@/modules/core/common/use-clipboard';
 
 const { disabled, tooltip, value } = defineProps<{
@@ -16,6 +17,20 @@ defineSlots<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { copied, copy } = useCopy(() => value);
+
+/**
+ * Copies the value, and keeps the click from also reaching an ancestor that handles clicks.
+ *
+ * @remarks
+ * A disabled tooltip leaves the click alone, so the value can sit inside a clickable parent, such as
+ * a chip, without swallowing the parent's click.
+ */
+function onClick(event: MouseEvent): void {
+  if (disabled)
+    return;
+  event.stopPropagation();
+  startPromise(copy());
+}
 </script>
 
 <template>
@@ -26,7 +41,7 @@ const { copied, copy } = useCopy(() => value);
     class="text-no-wrap"
     :class="{ 'cursor-pointer': !disabled }"
     :disabled="disabled"
-    @click.stop="copy()"
+    @click="onClick($event)"
   >
     <template #activator>
       <slot />

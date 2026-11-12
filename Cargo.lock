@@ -341,7 +341,7 @@ checksum = "1c133bc6a41be0d194c306b5506d15e6feeea7b1d6604bd3f8310dfb2ca96486"
 
 [[package]]
 name = "colibri"
-version = "1.44.2"
+version = "1.44.3"
 dependencies = [
  "async-sqlite",
  "axum",
@@ -1971,7 +1971,7 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
 name = "starling"
-version = "1.44.2"
+version = "1.44.3"
 dependencies = [
  "clap",
  "fs4",
@@ -1989,7 +1989,7 @@ dependencies = [
 
 [[package]]
 name = "starling-core"
-version = "1.44.2"
+version = "1.44.3"
 dependencies = [
  "async-trait",
  "dirs",
@@ -2004,7 +2004,7 @@ dependencies = [
 
 [[package]]
 name = "starling-proxy"
-version = "1.44.2"
+version = "1.44.3"
 dependencies = [
  "axum",
  "futures-util",

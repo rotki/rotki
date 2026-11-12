@@ -51,7 +51,7 @@ export function useExchanges(): UseExchangesReturn {
   const { t } = useI18n({ useScope: 'global' });
 
   const { submitTask } = useNativeTask();
-  const { exchangeAccountBalances, exchangeBalances } = storeToRefs(useBalancesStore());
+  const { exchangeAccountBalances, exchangeBalances, exchangeFailedAccounts } = storeToRefs(useBalancesStore());
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const { setConnectedExchanges } = useConnectedExchangesStore();
   const { queryExchangeBalances } = useExchangeApi();
@@ -95,6 +95,10 @@ export function useExchanges(): UseExchangesReturn {
               ? { ...get(exchangeAccountBalances)[location], ...perAccount[location] }
               : perAccount[location] ?? {},
           });
+          set(exchangeFailedAccounts, {
+            ...get(exchangeFailedAccounts),
+            [location]: Object.fromEntries(failedConnections.map(([identifier, { message }]) => [identifier, message])),
+          });
           if (failures.length > 0) {
             return err(TaskFailed({
               failureCause: locationFailureCause(failedConnections.map(([, { cause }]) => cause)),
@@ -114,12 +118,19 @@ export function useExchanges(): UseExchangesReturn {
     });
   };
 
+  /**
+   * Refreshes every exchange with a connection, once per exchange.
+   *
+   * @remarks
+   * One query of a location returns all of its connections, so querying it once per connection
+   * repeats the same work as many times as the exchange has accounts.
+   */
   const fetchConnectedExchangeBalances = async (refresh = false): Promise<void> => {
-    const exchanges = get(connectedExchanges);
-    for (const exchange of exchanges) {
+    const locations = new Set(get(connectedExchanges).map(({ location }) => location));
+    for (const location of locations) {
       await fetchExchangeBalances({
         ignoreCache: refresh,
-        location: exchange.location,
+        location,
       });
     }
   };

@@ -45,6 +45,7 @@ from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_l
 if TYPE_CHECKING:
     from rotkehlchen.data_handler import DataHandler
     from rotkehlchen.data_migrations.manager import DataMigrationManager
+    from rotkehlchen.db.settings import ModifiableDBSettings
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -639,9 +640,13 @@ class PremiumSyncManager(LockableQueryMixIn):
             create_new: bool,
             sync_approval: Literal['yes', 'no', 'unknown'],
             sync_database: bool,
+            initial_settings: ModifiableDBSettings | None = None,
     ) -> Premium | None:
         """
         Check if new user provided api pair or we already got one in the DB
+
+        initial_settings are the settings the new account was created with. They are
+        written again after a possible restore, since a restore replaces the whole DB.
 
         Returns the created premium if user's premium credentials were fine.
 
@@ -711,6 +716,11 @@ class PremiumSyncManager(LockableQueryMixIn):
                     # failed creation but knows nothing of the device
                     self._deregister_new_device()
                     raise
+
+                if initial_settings is not None:
+                    # don't bump last_write_ts, so a restored DB is not seen as newer
+                    with self.data.db.conn.write_ctx() as write_cursor:
+                        self.data.db.set_settings(write_cursor, initial_settings)
 
             self.data.db.set_rotkehlchen_premium(self.premium.credentials)
         else:
