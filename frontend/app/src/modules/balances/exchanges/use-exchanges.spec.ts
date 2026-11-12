@@ -203,6 +203,26 @@ describe('useExchanges', () => {
     });
   });
 
+  describe('fetchConnectedExchangeBalances', () => {
+    it('should query each exchange once, however many connections it has', async () => {
+      runTaskMock.mockResolvedValue(ok({ perAccount: {}, totals: {} }));
+      useConnectedExchangesStore().setConnectedExchanges([
+        createTestExchange('kraken', 'Main'),
+        createTestExchange('kraken', 'Bot'),
+        createTestExchange('coinbase', 'Only'),
+        createTestExchange('kraken', 'Savings'),
+      ]);
+
+      await exchanges.fetchConnectedExchangeBalances(true);
+      await flushPromises();
+
+      expect(queryExchangeBalances.mock.calls.map(([location, ignoreCache]) => [location, ignoreCache])).toEqual([
+        ['kraken', true],
+        ['coinbase', true],
+      ]);
+    });
+  });
+
   describe('removeExchange balance cleanup', () => {
     it('should remove only the deleted connection balance if the remaining query fails', async () => {
       const main = createTestExchange('kraken', 'main');
