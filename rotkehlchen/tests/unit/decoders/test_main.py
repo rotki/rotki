@@ -107,6 +107,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'KilnDefi',
         'Kyber',
         'Lido',
+        'LidoCsm',
         'Lifi',
         'Liquity',
         'Lockedgno',

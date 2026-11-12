@@ -12,6 +12,7 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.balances.historical import HistoricalBalancesManager
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import CPT_EIGENLAYER
+from rotkehlchen.chain.ethereum.modules.lido_csm.constants import CPT_LIDO_CSM
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V5
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
@@ -23,7 +24,17 @@ from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
 from rotkehlchen.chain.evm.structures import EvmTxReceipt
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_HYPE, A_USDC, A_WETH
+from rotkehlchen.constants.assets import (
+    A_BTC,
+    A_DAI,
+    A_ETH,
+    A_ETH2,
+    A_HYPE,
+    A_STETH,
+    A_USDC,
+    A_WETH,
+    A_WSTETH,
+)
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HistoryMappingState
@@ -1342,6 +1353,93 @@ def test_wrapped_deposit_and_redeem_updates_wallet_bucket(
             (2000, TEST_ADDR1, None, '4'),  # 10 - 6 = 4
             (3000, TEST_ADDR1, None, '7'),  # 4 + 3 = 7
         ]
+
+
+def test_lido_csm_bond_is_tracked_as_steth_for_all_asset_forms(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """The Lido CSM bond is always held as stETH, so deposits of ETH or wstETH and claims as
+    wstETH or a withdrawal request convert in the wallet and only move stETH in the bond.
+
+    1. Receive 10 ETH -> ETH wallet = 10
+    2. Deposit 4 ETH, converted to 4 stETH -> ETH wallet = 6, bond = 4
+    3. Deposit 3 wstETH, unwrapped to 3.5 stETH -> wstETH wallet = 0, bond = 7.5
+    4. Claim 1 stETH -> stETH wallet = 1, bond = 6.5
+    5. Claim 2.5 stETH as 2 wstETH -> stETH wallet = 1, wstETH wallet = 2, bond = 4
+    6. Claim 4 stETH as a withdrawal request -> stETH wallet = 1, bond = 0
+    """
+    def make_event(
+            tx_ref: EVMTxHash,
+            sequence_index: int,
+            timestamp: int,
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
+            asset: Asset,
+            amount: str,
+    ) -> EvmEvent:
+        return EvmEvent(
+            tx_ref=tx_ref,
+            sequence_index=sequence_index,
+            timestamp=TimestampMS(timestamp),
+            location=LOCATION_ETHEREUM,
+            event_type=event_type,
+            event_subtype=event_subtype,
+            asset=asset,
+            amount=FVal(amount),
+            location_label=TEST_ADDR1,
+            counterparty=CPT_LIDO_CSM,
+        )
+
+    receive, spend = HistoryEventType.RECEIVE, HistoryEventType.SPEND
+    deposit, withdrawal = HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL
+    none, wrapped_in = HistoryEventSubType.NONE, HistoryEventSubType.RECEIVE_WRAPPED
+    wrap, to_protocol = HistoryEventSubType.DEPOSIT_FOR_WRAPPED, HistoryEventSubType.DEPOSIT_TO_PROTOCOL  # noqa: E501
+    unwrap, return_wrapped = HistoryEventSubType.REDEEM_WRAPPED, HistoryEventSubType.RETURN_WRAPPED
+    from_protocol = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
+    eth_tx, wsteth_tx, wsteth_claim_tx, request_tx = (make_evm_tx_hash() for _ in range(4))
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[
+                make_event(make_evm_tx_hash(), 0, 1000, receive, none, A_ETH, '10'),
+                # ETH deposit
+                make_event(eth_tx, 0, 2000, deposit, wrap, A_ETH, '4'),
+                make_event(eth_tx, 1, 2000, receive, wrapped_in, A_STETH, '4'),
+                make_event(eth_tx, 2, 2000, deposit, to_protocol, A_STETH, '4'),
+                # wstETH deposit
+                make_event(wsteth_tx, 0, 3000, receive, none, A_WSTETH, '3'),
+                make_event(wsteth_tx, 1, 3000, spend, return_wrapped, A_WSTETH, '3'),
+                make_event(wsteth_tx, 2, 3000, withdrawal, unwrap, A_STETH, '3.5'),
+                make_event(wsteth_tx, 3, 3000, deposit, to_protocol, A_STETH, '3.5'),
+                # stETH claim
+                make_event(make_evm_tx_hash(), 0, 4000, withdrawal, from_protocol, A_STETH, '1'),
+                # wstETH claim
+                make_event(wsteth_claim_tx, 0, 5000, withdrawal, from_protocol, A_STETH, '2.5'),
+                make_event(wsteth_claim_tx, 1, 5000, deposit, wrap, A_STETH, '2.5'),
+                make_event(wsteth_claim_tx, 2, 5000, receive, wrapped_in, A_WSTETH, '2'),
+                # withdrawal request claim
+                make_event(request_tx, 0, 6000, withdrawal, from_protocol, A_STETH, '4'),
+                make_event(request_tx, 1, 6000, spend, return_wrapped, A_STETH, '4'),
+            ],
+        )
+
+    process_historical_balances(database, messages_aggregator)
+
+    with database.conn.read_ctx() as cursor:
+        balances = {
+            (asset, protocol): metric_value
+            for asset, protocol, metric_value in cursor.execute(
+                'SELECT asset, protocol, metric_value FROM event_metrics ORDER BY sort_key',
+            )
+        }
+
+    assert balances == {
+        (A_ETH.identifier, None): '6',
+        (A_STETH.identifier, None): '1',
+        (A_WSTETH.identifier, None): '2',
+        (A_STETH.identifier, CPT_LIDO_CSM): '0',
+    }
 
 
 @pytest.mark.parametrize('db_settings', [
