@@ -14,7 +14,7 @@ import ManagedAssetRowActions from '@/modules/assets/admin/managed/ManagedAssetR
 import { useAssetDisplayHelpers } from '@/modules/assets/admin/use-asset-display-helpers';
 import { useManagedAssetOperations } from '@/modules/assets/admin/use-managed-asset-operations';
 import { useManagedAssetTable } from '@/modules/assets/admin/use-managed-asset-table';
-import NewlyDetectedTokenSpamHint from '@/modules/assets/detection/spam/NewlyDetectedTokenSpamHint.vue';
+import SpamAssessmentHint from '@/modules/assets/spam/SpamAssessmentHint.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -83,9 +83,8 @@ const {
   emptyState,
   expand,
   getAssetLocation,
-  getSpamPrediction,
+  getSpamAssessment,
   isExpanded,
-  isSpamUnavailable,
   spamDisabled,
 } = useManagedAssetTable(paginationModel, expanded, () => collection, selected);
 
@@ -155,10 +154,7 @@ const { canBeEdited, canBeIgnored, disabledRows, formatType, getAsset } = useAss
         {{ formatType(row.assetType) }}
       </template>
       <template #item.spam="{ row }">
-        <NewlyDetectedTokenSpamHint
-          :prediction="getSpamPrediction(row.identifier)"
-          :unavailable="isSpamUnavailable(row.identifier)"
-        />
+        <SpamAssessmentHint :assessment="getSpamAssessment(row.identifier)" />
       </template>
       <template #item.ignored="{ row }">
         <ManagedAssetIgnoreSwitch

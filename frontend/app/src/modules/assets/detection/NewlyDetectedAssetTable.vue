@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { NewDetectedToken, NewDetectedTokensRequestPayload } from './types';
+import type { SpamPredictionToken } from '@/modules/assets/api/use-asset-spam-prediction-api';
 import type { Filters } from '@/modules/assets/detection/newly-detected-filter-keys';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useNewlyDetectedFields } from '@/modules/assets/detection/use-newly-detected-fields';
 import { useNewlyDetectedSelection } from '@/modules/assets/detection/use-newly-detected-selection';
+import SpamAssessmentHint from '@/modules/assets/spam/SpamAssessmentHint.vue';
+import { useSpamAssessments } from '@/modules/assets/spam/use-spam-assessments';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable, useTableEmptyState } from '@/modules/core/table/use-server-table';
@@ -13,8 +15,7 @@ import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import NewlyDetectedAssetRowActions from './NewlyDetectedAssetRowActions.vue';
 import NewlyDetectedAssetToolbar from './NewlyDetectedAssetToolbar.vue';
-import NewlyDetectedTokenSpamHint from './spam/NewlyDetectedTokenSpamHint.vue';
-import { useNewlyDetectedSpamAssessments } from './spam/use-newly-detected-spam-assessments';
+import { type NewDetectedToken, NewDetectedTokenKind, type NewDetectedTokensRequestPayload } from './types';
 import { type NewlyDetectedTokenRow, useNewlyDetectedTokenRows } from './use-newly-detected-token-rows';
 import { useNewlyDetectedTokens } from './use-newly-detected-tokens';
 
@@ -50,7 +51,10 @@ const {
 const emptyState = useTableEmptyState({ error });
 
 const pageTokens = computed<NewDetectedToken[]>(() => get(collection).data);
-const { assessments, status: spamStatus } = useNewlyDetectedSpamAssessments(pageTokens);
+const spamTokens = computed<SpamPredictionToken[]>(() => get(pageTokens)
+  .filter(token => token.tokenKind === NewDetectedTokenKind.EVM)
+  .map(token => ({ identifier: token.tokenIdentifier, txReference: token.seenTxReference })));
+const { assessments, status: spamStatus } = useSpamAssessments(spamTokens);
 
 const cols = computed<DataTableColumn<NewlyDetectedTokenRow>[]>(() => [
   {
@@ -79,7 +83,7 @@ const cols = computed<DataTableColumn<NewlyDetectedTokenRow>[]>(() => [
     cellClass: 'py-0',
     class: 'py-0',
     key: 'spam',
-    label: t('asset_table.newly_detected.spam.label'),
+    label: t('spam_estimate.label'),
     sortable: false,
   },
   {
@@ -150,7 +154,7 @@ onMounted(async () => {
       v-if="spamStatus === 'unavailable'"
       class="px-4 pt-2 text-caption text-rui-warning"
     >
-      {{ t('asset_table.newly_detected.spam.unavailable_hint') }}
+      {{ t('spam_estimate.unavailable_hint') }}
     </div>
 
     <RuiDataTable
@@ -187,10 +191,7 @@ onMounted(async () => {
       </template>
 
       <template #item.spam="{ row }">
-        <NewlyDetectedTokenSpamHint
-          :prediction="row.spamPrediction"
-          :unavailable="row.spamUnavailable"
-        />
+        <SpamAssessmentHint :assessment="row.spamAssessment" />
       </template>
 
       <template #item.detectedAt="{ row }">

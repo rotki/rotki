@@ -23,7 +23,7 @@ describe('useAssetSpamPredictionApi', () => {
                 probability_delta: 0.12,
                 value: 4,
               }],
-              observed_signals: ['unverified_contract'],
+              observed_signals: [{ code: 'max_token_transfers', field: 'context', value: 3 }],
               spam_probability: 0.87,
               threshold: 0.5,
             },
@@ -52,7 +52,7 @@ describe('useAssetSpamPredictionApi', () => {
         probabilityDelta: 0.12,
         value: 4,
       }],
-      observedSignals: ['unverified_contract'],
+      observedSignals: [{ code: 'max_token_transfers', field: 'context', value: 3 }],
       spamProbability: 0.87,
       threshold: 0.5,
     });

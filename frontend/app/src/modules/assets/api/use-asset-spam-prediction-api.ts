@@ -12,16 +12,47 @@ const SpamPredictionReason = z.object({
 });
 
 /**
+ * One observed fact about the token, identified by a stable code the frontend translates.
+ *
+ * @remarks
+ * `value` is only present for the transfer-count codes.
+ */
+const SpamSignal = z.object({
+  code: z.enum([
+    'non_ascii',
+    'invisible_characters',
+    'combining_marks',
+    'mixed_scripts',
+    'url',
+    'promotion',
+    'common_symbol',
+    'lookalike_symbol',
+    'known_origin_unavailable',
+    'max_token_transfers',
+    'mean_token_transfers',
+    'in_packaged_globaldb',
+    'not_in_packaged_globaldb',
+    'in_collection',
+    'not_in_collection',
+  ]),
+  field: z.enum(['name', 'symbol', 'context']),
+  value: z.number().optional(),
+});
+
+export type SpamSignal = z.infer<typeof SpamSignal>;
+
+/**
  * One token's local-model output.
  *
  * @remarks
  * `spamProbability` is a model estimate, not a verdict: it says nothing about whether the asset is
  * authentic, only how strongly the model associates its locally known metadata with spam.
+ * `flagged` is the backend's decision against `threshold`; read it rather than comparing again.
  */
 export const SpamPrediction = z.object({
   flagged: z.boolean(),
   modelReasons: z.array(SpamPredictionReason),
-  observedSignals: z.array(z.string()),
+  observedSignals: z.array(SpamSignal),
   spamProbability: z.number().min(0).max(1),
   threshold: z.number().min(0).max(1),
 });
@@ -31,6 +62,10 @@ export type SpamPrediction = z.infer<typeof SpamPrediction>;
 /**
  * The result keyed by the exact requested identifier. A `null` entry means the backend could not
  * assess that token; a missing entry is a contract violation and is treated as unavailable.
+ *
+ * @remarks
+ * The keys are asset identifiers and must reach the caller byte for byte, so the request skips the
+ * camel-casing of root keys.
  */
 export const SpamPredictionResponse = z.record(z.string(), SpamPrediction.nullable());
 
@@ -51,9 +86,8 @@ export function useAssetSpamPredictionApi(): UseAssetSpamPredictionApiReturn {
       '/assets/spam/predict',
       { tokens },
       {
-        target: RequestTarget.COLIBRI,
-        // The response is a map keyed by asset identifiers, which must reach us byte for byte.
         skipRootCamelCase: true,
+        target: RequestTarget.COLIBRI,
       },
     );
     return SpamPredictionResponse.parse(response);

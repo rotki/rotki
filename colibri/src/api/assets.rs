@@ -13,7 +13,7 @@ use crate::api::utils::ApiResponse;
 use crate::api::AppState;
 use crate::blockchain::SupportedBlockchain;
 use crate::database::sql_utils::escape_like_pattern;
-use crate::database::user_db::NftData;
+use crate::database::user_db::{NftData, ReceiptContextRequest};
 use crate::globaldb::{AssetMappings, CollectionInfo};
 use crate::spam_detection::{predict_spam, SpamPrediction, SpamRecord};
 use crate::types::{AssetType, ChainID};
@@ -605,119 +605,104 @@ pub async fn search_assets_levenshtein(
 /// Advisory spam estimate for each requested token.
 ///
 /// Only local metadata and the referenced local transaction receipt are used. Tokens that
-/// cannot be resolved to a local ERC20 token get a `null` prediction so the caller keeps its
-/// rows and can show that no estimate is available.
+/// cannot be resolved to a local ERC20 token, or whose local data cannot be read, get a
+/// `null` prediction so the caller keeps its rows and can show that no estimate is available.
 pub async fn get_spam_predictions(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<SpamPredictionsRequest>,
 ) -> impl IntoResponse {
-    if payload.tokens.is_empty() || payload.tokens.len() > MAX_SPAM_PREDICTION_BATCH_SIZE {
-        return (
+    let error = |message: String| {
+        (
             StatusCode::BAD_REQUEST,
             Json(ApiResponse::<HashMap<String, Option<SpamPrediction>>> {
                 result: None,
-                message: format!(
-                    "tokens: length must be between 1 and {MAX_SPAM_PREDICTION_BATCH_SIZE}"
-                ),
+                message,
             }),
         )
-            .into_response();
+            .into_response()
+    };
+
+    if payload.tokens.is_empty() || payload.tokens.len() > MAX_SPAM_PREDICTION_BATCH_SIZE {
+        return error(format!(
+            "tokens: length must be between 1 and {MAX_SPAM_PREDICTION_BATCH_SIZE}"
+        ));
     }
 
     if payload.tokens.iter().any(|token| {
         token.identifier.is_empty() || token.tx_reference.as_deref().is_some_and(str::is_empty)
     }) {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(ApiResponse::<HashMap<String, Option<SpamPrediction>>> {
-                result: None,
-                message: "Field cannot be an empty string".to_string(),
-            }),
-        )
-            .into_response();
+        return error("Field cannot be an empty string".to_string());
     }
 
-    let db = state.userdb.read().await;
-    if db.client.is_none() {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(ApiResponse::<HashMap<String, Option<SpamPrediction>>> {
-                result: None,
-                message: "DB not unlocked".to_string(),
-            }),
-        )
-            .into_response();
+    if state.userdb.read().await.client.is_none() {
+        return error("DB not unlocked".to_string());
     }
 
-    let mut predictions: HashMap<String, Option<SpamPrediction>> = HashMap::new();
-    for request in payload.tokens {
-        let metadata = match state
-            .globaldb
-            .get_spam_token_metadata(&request.identifier)
-            .await
-        {
-            Ok(metadata) => metadata,
-            Err(e) => {
-                log::error!(
-                    "Failed to query spam metadata for {}: {}",
-                    request.identifier,
-                    e
-                );
-                return (
-                    StatusCode::BAD_REQUEST,
-                    Json(ApiResponse::<HashMap<String, Option<SpamPrediction>>> {
-                        result: None,
-                        message: "Failed to query asset metadata from database".to_string(),
-                    }),
-                )
-                    .into_response();
-            }
-        };
+    let mut identifiers: Vec<String> = payload
+        .tokens
+        .iter()
+        .map(|token| token.identifier.clone())
+        .collect();
+    identifiers.sort_unstable();
+    identifiers.dedup();
+    let mut metadata = match state.globaldb.get_spam_tokens_metadata(&identifiers).await {
+        Ok(metadata) => metadata,
+        Err(e) => {
+            log::error!("Failed to query spam metadata: {e}");
+            return error("Failed to query asset metadata from database".to_string());
+        }
+    };
 
-        let Some(metadata) = metadata else {
-            predictions.insert(request.identifier, None);
-            continue;
-        };
+    let requests = payload
+        .tokens
+        .into_iter()
+        .filter_map(|token| {
+            let token_metadata = metadata.get(&token.identifier)?;
+            Some(ReceiptContextRequest {
+                chain_id: token_metadata.chain,
+                address: token_metadata.address.clone(),
+                identifier: token.identifier,
+                tx_reference: token.tx_reference,
+            })
+        })
+        .collect();
+    // One DB-worker round trip, so an unlock or logout waits for at most one batch query.
+    let mut contexts = match state
+        .userdb
+        .read()
+        .await
+        .gather_receipt_contexts(requests)
+        .await
+    {
+        Ok(contexts) => contexts,
+        Err(e) => {
+            log::error!("Failed to gather spam receipt contexts: {e}");
+            return error("Failed to query transaction context from database".to_string());
+        }
+    };
 
-        let context = match db
-            .gather_receipt_context(metadata.chain, &metadata.address, request.tx_reference)
-            .await
-        {
-            Ok(context) => context,
-            Err(e) => {
-                log::error!(
-                    "Failed to gather receipt context for {}: {}",
-                    request.identifier,
-                    e
-                );
-                return (
-                    StatusCode::BAD_REQUEST,
-                    Json(ApiResponse::<HashMap<String, Option<SpamPrediction>>> {
-                        result: None,
-                        message: "Failed to query transaction context from database".to_string(),
-                    }),
-                )
-                    .into_response();
-            }
-        };
-
-        // A token whose metadata could not be queried carries its identifier as name. The
-        // model was trained on missing text, so such a name is fed as an empty string.
-        let resolved_name = metadata.name.unwrap_or_else(|| metadata.identifier.clone());
-        let name = if resolved_name == metadata.identifier {
-            String::new()
-        } else {
-            resolved_name
-        };
-
-        let record = SpamRecord {
-            name,
-            symbol: metadata.symbol.unwrap_or_default(),
-            decimals: metadata.decimals,
-            context,
-        };
-        predictions.insert(request.identifier, Some(predict_spam(&record)));
-    }
+    let predictions: HashMap<String, Option<SpamPrediction>> = identifiers
+        .into_iter()
+        .map(|identifier| {
+            let prediction = metadata
+                .remove(&identifier)
+                .zip(contexts.remove(&identifier))
+                .map(|(token, context)| {
+                    predict_spam(&SpamRecord {
+                        // A token whose name could not be queried carries its identifier as
+                        // name. The model was trained on missing text, so it gets none.
+                        name: token
+                            .name
+                            .filter(|name| *name != token.identifier)
+                            .unwrap_or_default(),
+                        symbol: token.symbol.unwrap_or_default(),
+                        decimals: token.decimals,
+                        context,
+                    })
+                });
+            (identifier, prediction)
+        })
+        .collect();
 
     (
         StatusCode::OK,
@@ -1285,12 +1270,13 @@ mod tests {
     const SPAM_TOKEN_IDENTIFIER: &str = "eip155:1/erc20:0x1111111111111111111111111111111111111111";
     const SPAM_TX_HASH: &str = "0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
 
-    async fn add_spam_token(state: &Arc<AppState>) {
+    async fn add_spam_token(state: &Arc<AppState>, identifier: &str, decimals: i64) {
+        let address = identifier.rsplit(':').next().unwrap();
         let conn = state.globaldb.conn.lock().await;
         conn.execute(
             "INSERT OR REPLACE INTO assets(identifier, name, type) VALUES (?, ?, ?)",
             rusqlite::params![
-                SPAM_TOKEN_IDENTIFIER,
+                identifier,
                 "Test Token",
                 AssetType::EvmToken.serialize_for_db(),
             ],
@@ -1298,19 +1284,13 @@ mod tests {
         .unwrap();
         conn.execute(
             "INSERT OR REPLACE INTO common_asset_details(identifier, symbol) VALUES (?, ?)",
-            rusqlite::params![SPAM_TOKEN_IDENTIFIER, "TST"],
+            rusqlite::params![identifier, "TST"],
         )
         .unwrap();
         conn.execute(
             "INSERT OR REPLACE INTO evm_tokens(identifier, token_kind, chain, address, decimals)
              VALUES (?, ?, ?, ?, ?)",
-            rusqlite::params![
-                SPAM_TOKEN_IDENTIFIER,
-                "A",
-                1,
-                "0x1111111111111111111111111111111111111111",
-                18,
-            ],
+            rusqlite::params![identifier, "A", 1, address, decimals],
         )
         .unwrap();
     }
@@ -1370,7 +1350,7 @@ mod tests {
     #[tokio::test]
     async fn test_spam_predict_returns_estimate_and_null_for_unknown_asset() {
         let (state, _tmp_dirs) = create_test_state().await;
-        add_spam_token(&state).await;
+        add_spam_token(&state, SPAM_TOKEN_IDENTIFIER, 18).await;
         add_spam_receipt(&state).await;
 
         let (status, body) = call_predictions(
@@ -1403,11 +1383,12 @@ mod tests {
             prediction["observed_signals"]
                 .as_array()
                 .unwrap()
-                .iter()
-                .any(|signal| signal
-                    .as_str()
-                    .is_some_and(|signal| signal.contains("Transfer events"))),
-            "the receipt context must reach the model"
+                .contains(&serde_json::json!({
+                    "field": "context",
+                    "code": "max_token_transfers",
+                    "value": 0.0,
+                })),
+            "the receipt context must reach the model as a structured signal"
         );
 
         assert!(result
@@ -1419,13 +1400,34 @@ mod tests {
     #[tokio::test]
     async fn test_spam_predict_without_receipt_context_still_predicts() {
         let (state, _tmp_dirs) = create_test_state().await;
-        add_spam_token(&state).await;
+        add_spam_token(&state, SPAM_TOKEN_IDENTIFIER, 18).await;
 
         let (status, body) =
             call_predictions(state, vec![(SPAM_TOKEN_IDENTIFIER.to_string(), None)]).await;
 
         assert_eq!(status, StatusCode::OK);
         assert!(body["result"][SPAM_TOKEN_IDENTIFIER]["spam_probability"].is_number());
+    }
+
+    #[tokio::test]
+    async fn test_spam_predict_unreadable_token_is_null_without_failing_the_batch() {
+        let (state, _tmp_dirs) = create_test_state().await;
+        add_spam_token(&state, SPAM_TOKEN_IDENTIFIER, 18).await;
+        let broken = "eip155:1/erc20:0x2222222222222222222222222222222222222222";
+        add_spam_token(&state, broken, -1).await;
+
+        let (status, body) = call_predictions(
+            state,
+            vec![
+                (SPAM_TOKEN_IDENTIFIER.to_string(), None),
+                (broken.to_string(), None),
+            ],
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::OK);
+        assert!(body["result"][SPAM_TOKEN_IDENTIFIER]["spam_probability"].is_number());
+        assert!(body["result"][broken].is_null());
     }
 
     #[tokio::test]

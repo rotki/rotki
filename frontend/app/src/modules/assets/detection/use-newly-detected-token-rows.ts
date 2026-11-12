@@ -1,6 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { SpamAssessment } from './spam/use-newly-detected-spam-assessments';
-import type { SpamPrediction } from '@/modules/assets/api/use-asset-spam-prediction-api';
+import type { SpamAssessment } from '@/modules/assets/spam/use-spam-assessments';
 import { type BigNumber, getAddressFromEvmIdentifier, getAddressFromSolanaIdentifier } from '@rotki/common';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -11,8 +10,7 @@ export interface NewlyDetectedTokenRow extends NewDetectedToken {
   address: string;
   chain: string;
   price?: BigNumber;
-  spamPrediction?: SpamPrediction | null;
-  spamUnavailable?: boolean;
+  spamAssessment?: SpamAssessment;
 }
 
 const TOKEN_KIND_MAPPING = {
@@ -29,8 +27,7 @@ const TOKEN_KIND_MAPPING = {
  *
  * @remarks
  * Presentation only: the stored token is never rewritten, and a missing assessment stays missing
- * rather than becoming a zero score. An unsupported token is represented by a `null` prediction,
- * while an unavailable one is flagged separately so the table can state the difference.
+ * rather than becoming a zero score.
  */
 export function useNewlyDetectedTokenRows(
   tokens: MaybeRefOrGetter<NewDetectedToken[]>,
@@ -43,22 +40,12 @@ export function useNewlyDetectedTokenRows(
     const evmChains = get(allEvmChains);
     const spam = toValue(assessments);
 
-    return toValue(tokens).map((token) => {
-      const assessment = spam[token.tokenIdentifier];
-      let spamPrediction: SpamPrediction | null | undefined;
-      if (assessment?.status === 'ready')
-        spamPrediction = assessment.prediction;
-      else if (assessment?.status === 'unsupported')
-        spamPrediction = null;
-
-      return {
-        ...token,
-        address: TOKEN_KIND_MAPPING[token.tokenKind].addressFormatter(token.tokenIdentifier),
-        chain: getTokenChain(token, evmChains),
-        price: getAssetPrice(token.tokenIdentifier),
-        spamPrediction,
-        spamUnavailable: assessment?.status === 'unavailable',
-      };
-    });
+    return toValue(tokens).map(token => ({
+      ...token,
+      address: TOKEN_KIND_MAPPING[token.tokenKind].addressFormatter(token.tokenIdentifier),
+      chain: getTokenChain(token, evmChains),
+      price: getAssetPrice(token.tokenIdentifier),
+      spamAssessment: spam[token.tokenIdentifier],
+    }));
   });
 }

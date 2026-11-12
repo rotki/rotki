@@ -3,8 +3,7 @@ import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type EffectScope, effectScope, type Ref, ref } from 'vue';
 import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
-import { type NewDetectedToken, NewDetectedTokenKind } from '../types';
-import { useNewlyDetectedSpamAssessments } from './use-newly-detected-spam-assessments';
+import { useSpamAssessments } from './use-spam-assessments';
 
 const { predictSpam } = vi.hoisted(() => ({
   predictSpam: vi.fn<(tokens: SpamPredictionToken[]) => Promise<SpamPredictionResponse>>(),
@@ -15,13 +14,8 @@ vi.mock('@/modules/assets/api/use-asset-spam-prediction-api', () => ({
   useAssetSpamPredictionApi: (): object => ({ predictSpam }),
 }));
 
-function token(identifier: string, txReference?: string): NewDetectedToken {
-  return {
-    detectedAt: 1,
-    seenTxReference: txReference,
-    tokenIdentifier: identifier,
-    tokenKind: NewDetectedTokenKind.EVM,
-  };
+function token(identifier: string, txReference?: string): SpamPredictionToken {
+  return { identifier, txReference };
 }
 
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
@@ -36,19 +30,19 @@ function prediction(spamProbability = 0.8, threshold = 0.5): SpamPrediction {
   return {
     flagged: spamProbability >= threshold,
     modelReasons: [{ feature: 'log_transfer_count', probabilityDelta: 0.02, value: 3 }],
-    observedSignals: ['unverified_contract'],
+    observedSignals: [{ code: 'url', field: 'name' }],
     spamProbability,
     threshold,
   };
 }
 
-describe('useNewlyDetectedSpamAssessments', () => {
+describe('useSpamAssessments', () => {
   let scopes: EffectScope[] = [];
 
-  function assess(tokens: Ref<NewDetectedToken[]>): ReturnType<typeof useNewlyDetectedSpamAssessments> {
+  function assess(tokens: Ref<SpamPredictionToken[]>): ReturnType<typeof useSpamAssessments> {
     const scope = effectScope();
     scopes.push(scope);
-    return scope.run(() => useNewlyDetectedSpamAssessments(tokens))!;
+    return scope.run(() => useSpamAssessments(tokens))!;
   }
 
   beforeEach(() => {
@@ -79,6 +73,16 @@ describe('useNewlyDetectedSpamAssessments', () => {
     expect(predictSpam.mock.calls[1][0]).toHaveLength(1);
     expect(Object.keys(get(assessments))).toHaveLength(101);
     expect(get(assessments)['eip155:1/erc20:0x0']).toStrictEqual({ prediction: prediction(), status: 'ready' });
+  });
+
+  it('should forward a transaction reference only when there is one', async () => {
+    assess(ref([token('eip155:1/erc20:0x1', '0xabc'), token('eip155:1/erc20:0x2', '')]));
+    await flushPromises();
+
+    expect(predictSpam).toHaveBeenCalledWith([
+      { identifier: 'eip155:1/erc20:0x1', txReference: '0xabc' },
+      { identifier: 'eip155:1/erc20:0x2' },
+    ]);
   });
 
   it('should report unsupported tokens without inventing a score', async () => {

@@ -29,6 +29,16 @@ pub struct DBHandler {
     pub client: Option<Arc<Client>>,
 }
 
+/// One token whose spam-model receipt context should be read.
+pub struct ReceiptContextRequest {
+    /// Key of the returned context.
+    pub identifier: String,
+    pub chain_id: u32,
+    pub address: String,
+    /// Hex hash of the local transaction in which the token was seen.
+    pub tx_reference: Option<String>,
+}
+
 /// Context keys read by the spam model. Every key is always present so a missing
 /// input stays `None` instead of masquerading as zero observed activity.
 const SPAM_CONTEXT_KEYS: [&str; 10] = [
@@ -74,8 +84,8 @@ fn empty_spam_context() -> SpamContext {
 
 /// Turn a hex transaction hash into the BLOB form stored in the local DB.
 ///
-/// Anything that is not exactly 32 bytes of hex yields `None`, matching
-/// `_tx_hash_bytes` in the Python implementation.
+/// Anything that is not exactly 32 bytes of hex yields `None`; the `0x` prefix is
+/// optional and surrounding whitespace is ignored.
 fn tx_hash_bytes(tx_reference: Option<&str>) -> Option<Vec<u8>> {
     let mut value = tx_reference?.trim();
     if value
@@ -120,41 +130,33 @@ fn gather_receipt_context_sync(
     };
 
     let tx_id: Option<i64> = conn
-        .query_row(
-            "SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?",
-            rusqlite::params![tx_hash, chain_id],
-            |row| row.get(0),
-        )
+        .prepare_cached("SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?")?
+        .query_row(rusqlite::params![tx_hash, chain_id], |row| row.get(0))
         .optional()?;
     let Some(tx_id) = tx_id else {
         return Ok(context);
     };
 
-    let has_receipt: bool = conn.query_row(
-        "SELECT EXISTS(SELECT 1 FROM evmtx_receipts WHERE tx_id=?)",
-        [tx_id],
-        |row| row.get(0),
-    )?;
+    let has_receipt: bool = conn
+        .prepare_cached("SELECT EXISTS(SELECT 1 FROM evmtx_receipts WHERE tx_id=?)")?
+        .query_row([tx_id], |row| row.get(0))?;
     if !has_receipt {
         return Ok(context);
     }
 
-    let has_log: bool = conn.query_row(
-        "SELECT EXISTS(SELECT 1 FROM evmtx_receipt_logs WHERE tx_id=? AND lower(address)=? LIMIT 1)",
-        rusqlite::params![tx_id, address],
-        |row| row.get(0),
-    )?;
+    let has_log: bool = conn
+        .prepare_cached(
+            "SELECT EXISTS(SELECT 1 FROM evmtx_receipt_logs WHERE tx_id=? AND lower(address)=? LIMIT 1)",
+        )?
+        .query_row(rusqlite::params![tx_id, address], |row| row.get(0))?;
     if !has_log {
         return Ok(context);
     }
 
-    let log_count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM evmtx_receipt_logs WHERE tx_id=?",
-        [tx_id],
-        |row| row.get(0),
-    )?;
-    let transfer_count: i64 = conn.query_row(
-        TOKEN_TRANSFER_COUNT_QUERY,
+    let log_count: i64 = conn
+        .prepare_cached("SELECT COUNT(*) FROM evmtx_receipt_logs WHERE tx_id=?")?
+        .query_row([tx_id], |row| row.get(0))?;
+    let transfer_count: i64 = conn.prepare_cached(TOKEN_TRANSFER_COUNT_QUERY)?.query_row(
         rusqlite::params![tx_id, address, &ERC20_OR_ERC721_TRANSFER_TOPIC[..]],
         |row| row.get(0),
     )?;
@@ -245,28 +247,43 @@ impl DBHandler {
         }
     }
 
-    /// Read the receipt context of the locally stored transaction a spam
-    /// prediction request refers to.
-    pub async fn gather_receipt_context(
+    /// Read the receipt context of the locally stored transaction each spam
+    /// prediction request refers to, in one round trip to the DB worker.
+    ///
+    /// A request whose context cannot be read is logged and left out of the result, so
+    /// one bad row does not fail the others.
+    pub async fn gather_receipt_contexts(
         &self,
-        chain_id: u32,
-        address: &str,
-        tx_reference: Option<String>,
-    ) -> Result<SpamContext, DBError> {
+        requests: Vec<ReceiptContextRequest>,
+    ) -> Result<HashMap<String, SpamContext>, DBError> {
         let client = match &self.client {
             Some(client) => client,
             None => return Err(DBError::UnlockError("No client found".to_string())),
         };
-        let address = address.to_lowercase();
-        match client
+        client
             .conn(move |conn| {
-                gather_receipt_context_sync(conn, chain_id, &address, tx_reference.as_deref())
+                let mut contexts = HashMap::with_capacity(requests.len());
+                for request in requests {
+                    match gather_receipt_context_sync(
+                        conn,
+                        request.chain_id,
+                        &request.address.to_lowercase(),
+                        request.tx_reference.as_deref(),
+                    ) {
+                        Ok(context) => {
+                            contexts.insert(request.identifier, context);
+                        }
+                        Err(e) => log::error!(
+                            "Failed to gather receipt context for {}: {}",
+                            request.identifier,
+                            e
+                        ),
+                    }
+                }
+                Ok(contexts)
             })
             .await
-        {
-            Ok(context) => Ok(context),
-            Err(e) => Err(DBError::QueryError(e.to_string())),
-        }
+            .map_err(|e| DBError::QueryError(e.to_string()))
     }
 
     pub async fn get_setting_bool(
@@ -571,6 +588,24 @@ mod tests {
         }
     }
 
+    async fn gather_one(
+        db_handler: &DBHandler,
+        address: &str,
+        tx_reference: Option<&str>,
+    ) -> SpamContext {
+        db_handler
+            .gather_receipt_contexts(vec![ReceiptContextRequest {
+                identifier: "token".to_string(),
+                chain_id: 1,
+                address: address.to_string(),
+                tx_reference: tx_reference.map(str::to_string),
+            }])
+            .await
+            .unwrap()
+            .remove("token")
+            .expect("a readable request must have a context")
+    }
+
     #[test]
     fn test_tx_hash_bytes() {
         assert_eq!(tx_hash_bytes(None), None);
@@ -600,23 +635,14 @@ mod tests {
     async fn test_gather_receipt_context_missing_inputs_are_none() {
         let (db_handler, _tmp_dir) = create_test_userdb!();
 
-        let empty = db_handler
-            .gather_receipt_context(1, TOKEN_ADDRESS, None)
-            .await
-            .unwrap();
+        let empty = gather_one(&db_handler, TOKEN_ADDRESS, None).await;
         assert_eq!(empty.len(), SPAM_CONTEXT_KEYS.len());
         assert!(empty.values().all(Option::is_none));
 
-        let invalid = db_handler
-            .gather_receipt_context(1, TOKEN_ADDRESS, Some("not-a-hash".to_string()))
-            .await
-            .unwrap();
+        let invalid = gather_one(&db_handler, TOKEN_ADDRESS, Some("not-a-hash")).await;
         assert!(invalid.values().all(Option::is_none));
 
-        let unknown_tx = db_handler
-            .gather_receipt_context(1, TOKEN_ADDRESS, Some(TX_HASH.to_string()))
-            .await
-            .unwrap();
+        let unknown_tx = gather_one(&db_handler, TOKEN_ADDRESS, Some(TX_HASH)).await;
         assert!(unknown_tx.values().all(Option::is_none));
     }
 
@@ -639,10 +665,7 @@ mod tests {
             .await
             .unwrap();
 
-        let no_receipt = db_handler
-            .gather_receipt_context(1, TOKEN_ADDRESS, Some(TX_HASH.to_string()))
-            .await
-            .unwrap();
+        let no_receipt = gather_one(&db_handler, TOKEN_ADDRESS, Some(TX_HASH)).await;
         assert!(no_receipt.values().all(Option::is_none));
 
         client
@@ -662,10 +685,7 @@ mod tests {
             .await
             .unwrap();
 
-        let no_token_log = db_handler
-            .gather_receipt_context(1, TOKEN_ADDRESS, Some(TX_HASH.to_string()))
-            .await
-            .unwrap();
+        let no_token_log = gather_one(&db_handler, TOKEN_ADDRESS, Some(TX_HASH)).await;
         assert!(no_token_log.values().all(Option::is_none));
     }
 
@@ -681,10 +701,7 @@ mod tests {
             .await
             .unwrap();
 
-        let context = db_handler
-            .gather_receipt_context(1, TOKEN_ADDRESS, Some(TX_HASH.to_string()))
-            .await
-            .unwrap();
+        let context = gather_one(&db_handler, TOKEN_ADDRESS, Some(TX_HASH)).await;
         assert_eq!(context_value(&context, "tx_count"), Some(1.0));
         assert_eq!(context_value(&context, "mean_log_count"), Some(2.0));
         assert_eq!(context_value(&context, "max_log_count"), Some(2.0));
@@ -702,11 +719,8 @@ mod tests {
         assert_eq!(context_value(&context, "in_packaged_globaldb"), None);
         assert_eq!(context_value(&context, "in_collection"), None);
 
-        // The address match is case-insensitive, like Python's `lower(address)=?`.
-        let upper = db_handler
-            .gather_receipt_context(1, &TOKEN_ADDRESS.to_uppercase(), Some(TX_HASH.to_string()))
-            .await
-            .unwrap();
+        // The address match is case-insensitive.
+        let upper = gather_one(&db_handler, &TOKEN_ADDRESS.to_uppercase(), Some(TX_HASH)).await;
         assert_eq!(context_value(&upper, "mean_log_count"), Some(2.0));
     }
 }

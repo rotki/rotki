@@ -1,5 +1,4 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
-import type { NewDetectedToken } from '../types';
 import { startPromise } from '@shared/utils';
 import { SPAM_PREDICTION_BATCH_SIZE, type SpamPrediction, type SpamPredictionToken, useAssetSpamPredictionApi } from '@/modules/assets/api/use-asset-spam-prediction-api';
 import { fromRequest } from '@/modules/core/api/request-result';
@@ -14,52 +13,47 @@ export type SpamAssessment =
 
 type SpamAssessmentStatus = 'idle' | 'loading' | 'ready' | 'unavailable';
 
-interface UseNewlyDetectedSpamAssessmentsReturn {
+interface UseSpamAssessmentsReturn {
   assessments: Readonly<Ref<Record<string, SpamAssessment>>>;
   status: Readonly<Ref<SpamAssessmentStatus>>;
 }
 
-type AssessmentToken = Pick<NewDetectedToken, 'tokenIdentifier' | 'seenTxReference'>;
-
-function splitBatches(tokens: AssessmentToken[]): AssessmentToken[][] {
-  const batches: AssessmentToken[][] = [];
+function splitBatches(tokens: SpamPredictionToken[]): SpamPredictionToken[][] {
+  const batches: SpamPredictionToken[][] = [];
   for (let index = 0; index < tokens.length; index += SPAM_PREDICTION_BATCH_SIZE)
     batches.push(tokens.slice(index, index + SPAM_PREDICTION_BATCH_SIZE));
 
   return batches;
 }
 
-function toRequestToken(token: AssessmentToken): SpamPredictionToken {
-  return {
-    identifier: token.tokenIdentifier,
-    ...(token.seenTxReference ? { txReference: token.seenTxReference } : {}),
-  };
-}
-
 /**
- * Classifies only the rows of the page currently handed in.
+ * Classifies only the tokens of the page currently handed in.
  *
  * @remarks
  * Nothing is inferred for stored tokens outside the page. When the page, the transaction context
  * or the session changes, the previous scores are dropped before the new request starts, so a row
  * never shows a score that belonged to another page or another user. A failed request leaves the
- * table rows untouched and reports the score for its own batch as unavailable.
+ * table rows untouched and reports the score for its own batch as unavailable. The backend rejects
+ * an empty transaction reference, so a missing or empty one is left out of the request.
+ *
+ * @param tokens - The page's tokens. Callers pass only tokens the model can assess (EVM tokens);
+ * anything else is answered as unsupported after a pointless lookup.
  */
-export function useNewlyDetectedSpamAssessments(
-  tokens: MaybeRefOrGetter<AssessmentToken[]>,
-): UseNewlyDetectedSpamAssessmentsReturn {
+export function useSpamAssessments(
+  tokens: MaybeRefOrGetter<SpamPredictionToken[]>,
+): UseSpamAssessmentsReturn {
   const { predictSpam } = useAssetSpamPredictionApi();
 
   const assessments = ref<Record<string, SpamAssessment>>({});
   const status = shallowRef<SpamAssessmentStatus>('idle');
 
   let latestRequest = 0;
-  let lastPage: AssessmentToken[] | undefined;
+  let lastPage: SpamPredictionToken[] | undefined;
   let lastSignature: string | undefined;
   let lastSession: number | undefined;
 
   const pageSignature = computed<string>(() => toValue(tokens)
-    .map(token => `${token.tokenIdentifier}\u{0}${token.seenTxReference ?? ''}`)
+    .map(token => `${token.identifier}\u{0}${token.txReference ?? ''}`)
     .join('\u{1}'));
 
   function clearScores(): void {
@@ -82,14 +76,14 @@ export function useNewlyDetectedSpamAssessments(
 
     const loading: Record<string, SpamAssessment> = {};
     for (const token of page)
-      loading[token.tokenIdentifier] = { status: 'loading' };
+      loading[token.identifier] = { status: 'loading' };
 
     set(assessments, loading);
     set(status, 'loading');
 
     const batches = splitBatches(page);
     const outcomes = await Promise.all(batches.map(async batch =>
-      fromRequest(async () => predictSpam(batch.map(toRequestToken))),
+      fromRequest(async () => predictSpam(batch.map(({ identifier, txReference }) => (txReference ? { identifier, txReference } : { identifier })))),
     ));
 
     if (request !== latestRequest || signature !== get(pageSignature) || session !== get(liveSessionKey()))
@@ -100,23 +94,23 @@ export function useNewlyDetectedSpamAssessments(
 
     batches.forEach((batch, index) => {
       const outcome = outcomes[index];
-      for (const token of batch) {
+      for (const { identifier } of batch) {
         if (!outcome.ok) {
           anyUnavailable = true;
-          resolved[token.tokenIdentifier] = { status: 'unavailable' };
+          resolved[identifier] = { status: 'unavailable' };
           continue;
         }
 
-        const prediction = outcome.value[token.tokenIdentifier];
+        const prediction = outcome.value[identifier];
         if (prediction === null) {
-          resolved[token.tokenIdentifier] = { status: 'unsupported' };
+          resolved[identifier] = { status: 'unsupported' };
         }
         else if (prediction === undefined) {
           anyUnavailable = true;
-          resolved[token.tokenIdentifier] = { status: 'unavailable' };
+          resolved[identifier] = { status: 'unavailable' };
         }
         else {
-          resolved[token.tokenIdentifier] = { prediction, status: 'ready' };
+          resolved[identifier] = { prediction, status: 'ready' };
         }
       }
     });
@@ -139,7 +133,7 @@ export function useNewlyDetectedSpamAssessments(
     startPromise(refresh());
   }
 
-  watch([(): AssessmentToken[] => toValue(tokens), pageSignature, liveSessionKey()], onSourcesChanged, { flush: 'sync', immediate: true });
+  watch([(): SpamPredictionToken[] => toValue(tokens), pageSignature, liveSessionKey()], onSourcesChanged, { flush: 'sync', immediate: true });
 
   return {
     assessments: shallowReadonly(assessments),

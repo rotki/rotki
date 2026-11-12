@@ -60,9 +60,8 @@ describe('modules/assets/admin/useManagedAssetTable', () => {
     endSession();
   });
 
-  it('should preserve search results without a stale score when their assessment fails', async () => {
-    beginSession();
-    const identifier = 'eip155:1/erc20:0xToken';
+  describe('the spam estimates', () => {
+    const token = 'eip155:1/erc20:0xToken';
     const prediction = {
       flagged: true,
       modelReasons: [],
@@ -70,21 +69,38 @@ describe('modules/assets/admin/useManagedAssetTable', () => {
       spamProbability: 0.9,
       threshold: 0.8,
     };
-    predictSpam.mockResolvedValueOnce({ [identifier]: prediction });
-    set(collection, page([asset({ assetType: EVM_TOKEN, identifier })]));
-    const { data, getSpamPrediction, isSpamUnavailable } = table();
-    await flushPromises();
 
-    expect(getSpamPrediction(identifier)).toEqual(prediction);
+    beforeEach(() => {
+      predictSpam.mockReset();
+      beginSession();
+    });
 
-    predictSpam.mockRejectedValueOnce(new Error('assessment unavailable'));
-    set(collection, page([asset({ identifier: 'BTC' })]));
-    await flushPromises();
+    it('should assess only EVM tokens and give other assets no estimate', async () => {
+      predictSpam.mockResolvedValueOnce({ [token]: prediction });
+      set(collection, page([asset({ assetType: EVM_TOKEN, identifier: token }), asset({ identifier: 'BTC' })]));
+      const { getSpamAssessment } = table();
+      await flushPromises();
 
-    expect(get(data).map(row => row.identifier)).toEqual(['BTC']);
-    expect(getSpamPrediction(identifier)).toBeUndefined();
-    expect(getSpamPrediction('BTC')).toBeUndefined();
-    expect(isSpamUnavailable('BTC')).toBe(true);
+      expect(predictSpam).toHaveBeenCalledExactlyOnceWith([{ identifier: token }]);
+      expect(getSpamAssessment(token)).toEqual({ prediction, status: 'ready' });
+      expect(getSpamAssessment('BTC')).toBeUndefined();
+    });
+
+    it('should drop the previous page score when the next assessment fails', async () => {
+      const next = 'eip155:1/erc20:0xNext';
+      predictSpam.mockResolvedValueOnce({ [token]: prediction });
+      set(collection, page([asset({ assetType: EVM_TOKEN, identifier: token })]));
+      const { data, getSpamAssessment } = table();
+      await flushPromises();
+
+      predictSpam.mockRejectedValueOnce(new Error('assessment unavailable'));
+      set(collection, page([asset({ assetType: EVM_TOKEN, identifier: next })]));
+      await flushPromises();
+
+      expect(get(data).map(row => row.identifier)).toEqual([next]);
+      expect(getSpamAssessment(token)).toBeUndefined();
+      expect(getSpamAssessment(next)).toEqual({ status: 'unavailable' });
+    });
   });
 
   describe('the rows', () => {

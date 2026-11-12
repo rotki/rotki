@@ -33,9 +33,6 @@ FROM rust-toolchain AS rust-build-stage
 COPY Cargo.toml Cargo.lock ./
 COPY colibri/ ./colibri
 COPY crates/ ./crates
-# The spam-detection model is embedded in colibri at compile time. Copy only that
-# artifact so the Rust stage does not need the rest of the Python tree.
-COPY rotkehlchen/data/spam_mlp_no_provenance.json ./rotkehlchen/data/
 # Build both shipped Rust binaries from their shared workspace. The registry and
 # target caches preserve the expensive vendored OpenSSL/SQLCipher build, while
 # the single Cargo invocation lets Colibri and Starling reuse common artifacts.

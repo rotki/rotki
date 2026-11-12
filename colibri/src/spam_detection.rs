@@ -1,9 +1,15 @@
 //! Advisory token-spam scoring from the exported spam-detection MLP.
 //!
-//! The model is the provenance-disabled 59-input MLP exported by the offline ``spam-detection``
+//! The model is the provenance-disabled 59-input MLP exported by the offline ``spam_nn``
 //! experiment. Inference is local only: no network and no remote RPC. The exported
-//! artifact lives in ``rotkehlchen/data`` and is embedded in the binary, then parsed and
+//! artifact lives in ``colibri/data`` and is embedded in the binary, then parsed and
 //! validated once per process.
+//!
+//! This is a port of the Python reference (``spam_nn/features.py`` and ``spam_nn/model.py``).
+//! That reference, the training pipeline and the generator of
+//! ``tests/fixtures/spam_detection_parity.json`` live in
+//! <https://gist.github.com/yabirgb/6811c4337f3c1648a6115b253b1b78ad>. Regenerate the
+//! fixture after retraining or changing a feature, then keep this port in step with it.
 //!
 //! The score is an advisory model estimate, not a spam verdict and not a guarantee of
 //! authenticity. The experiment trained on weak labels and sampled controls; it is not
@@ -23,7 +29,7 @@ use serde::{Deserialize, Serialize};
 use unicode_general_category::{get_general_category, GeneralCategory};
 use unicode_normalization::UnicodeNormalization;
 
-const SPAM_MODEL_JSON: &str = include_str!("../../rotkehlchen/data/spam_mlp_no_provenance.json");
+const SPAM_MODEL_JSON: &str = include_str!("../data/spam_mlp_no_provenance.json");
 
 /// Common Greek/Cyrillic Latin lookalikes, applied after NFKC and casefold.
 const CONFUSABLES: [(char, char); 36] = [
@@ -193,13 +199,66 @@ pub(crate) struct SpamModelReason {
     pub probability_delta: f64,
 }
 
+/// The part of the token a [`SpamSignal`] describes.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum SpamSignalField {
+    Name,
+    Symbol,
+    Context,
+}
+
+/// What was observed. Consumers translate the code; none of them is a spam verdict
+/// or an authenticity claim on its own.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum SpamSignalCode {
+    NonAscii,
+    InvisibleCharacters,
+    CombiningMarks,
+    MixedScripts,
+    Url,
+    Promotion,
+    CommonSymbol,
+    LookalikeSymbol,
+    KnownOriginUnavailable,
+    /// `value` is the maximum same-token Transfer count within one transaction.
+    MaxTokenTransfers,
+    /// `value` is the mean same-token Transfer count per observed transaction.
+    MeanTokenTransfers,
+    InPackagedGlobaldb,
+    NotInPackagedGlobaldb,
+    InCollection,
+    NotInCollection,
+}
+
+/// One observed metadata fact behind a prediction.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub(crate) struct SpamSignal {
+    pub field: SpamSignalField,
+    pub code: SpamSignalCode,
+    /// Only set for the transfer-count codes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<f64>,
+}
+
+impl SpamSignal {
+    fn new(field: SpamSignalField, code: SpamSignalCode) -> Self {
+        Self {
+            field,
+            code,
+            value: None,
+        }
+    }
+}
+
 /// The advisory model estimate for one token.
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub(crate) struct SpamPrediction {
     pub spam_probability: f64,
     pub flagged: bool,
     pub threshold: f64,
-    pub observed_signals: Vec<String>,
+    pub observed_signals: Vec<SpamSignal>,
     pub model_reasons: Vec<SpamModelReason>,
 }
 
@@ -261,7 +320,7 @@ fn is_punctuation(category: GeneralCategory) -> bool {
     )
 }
 
-/// Unicode chars with `Numeric_Type=Digit` that are not `Nd`, which Python's
+/// Unicode chars with `Numeric_Type=Digit` that are not `Decimal_Number`, which Python's
 /// `str.isdigit()` accepts but no Rust standard-library predicate exposes.
 const DIGIT_OTHER_NUMBER_RANGES: [(u32, u32); 20] = [
     (0xb2, 0xb3),
@@ -431,15 +490,10 @@ fn text_vector(text: &str) -> Vec<f64> {
     ]
 }
 
-/// Python's `_number`: finite, non-negative floats only.
+/// `_number` of the reference: finite, non-negative floats only. Boolean provenance
+/// flags arrive as already-scaled `0.0`/`1.0` values from [`SpamContext`].
 fn number(value: Option<f64>) -> Option<f64> {
     value.filter(|number| number.is_finite() && *number >= 0.0)
-}
-
-/// Python's `_context_number`. Boolean provenance flags arrive as already-scaled
-/// `0.0`/`1.0` values from [`SpamContext`], so no special casing is needed here.
-fn context_number(_key: &str, value: Option<f64>) -> Option<f64> {
-    number(value)
 }
 
 /// Return bounded/interpretable floats, never labels or raw identity fields.
@@ -480,7 +534,7 @@ fn vectorize(record: &SpamRecord) -> Vec<f64> {
     values.push(if decimals.is_none() { 1.0 } else { 0.0 });
 
     for (key, cap) in CONTEXT {
-        let number = context_number(key, record.context.get(key).copied().flatten());
+        let number = number(record.context.get(key).copied().flatten());
         let value = number.map_or(0.0, |number| number.min(cap));
         values.push(if cap == 1.0 { value } else { value.ln_1p() });
         values.push(if number.is_none() { 1.0 } else { 0.0 });
@@ -614,139 +668,80 @@ pub(crate) fn predict_spam(record: &SpamRecord) -> SpamPrediction {
     }
 }
 
-/// Format a float like Python's `format(value, 'g')` (6 significant digits, trailing
-/// zeros stripped, exponent at least two digits).
-fn format_g(value: f64) -> String {
-    if value.is_nan() {
-        return "nan".to_string();
-    }
-    if value.is_infinite() {
-        return if value.is_sign_positive() {
-            "inf"
-        } else {
-            "-inf"
-        }
-        .to_string();
-    }
-    if value == 0.0 {
-        return if value.is_sign_negative() { "-0" } else { "0" }.to_string();
-    }
-
-    let scientific = format!("{value:.5e}");
-    let (mantissa, exponent) = scientific
-        .split_once('e')
-        .expect("scientific formatting contains an exponent");
-    let exponent: i32 = exponent.parse().expect("scientific exponent is an integer");
-    if !(-4..6).contains(&exponent) {
-        format!(
-            "{}e{}{:02}",
-            strip_trailing_zeros(mantissa),
-            if exponent < 0 { '-' } else { '+' },
-            exponent.abs()
-        )
-    } else {
-        let fraction_digits = (5 - exponent).max(0) as usize;
-        strip_trailing_zeros(&format!("{value:.fraction_digits$}"))
-    }
-}
-
-fn strip_trailing_zeros(text: &str) -> String {
-    match text.split_once('.') {
-        Some((integer, fraction)) => {
-            let fraction = fraction.trim_end_matches('0');
-            if fraction.is_empty() {
-                integer.to_string()
-            } else {
-                format!("{integer}.{fraction}")
-            }
-        }
-        None => text.to_string(),
-    }
-}
-
 /// Describe observed metadata without claiming a spam verdict/authenticity.
-fn evidence(record: &SpamRecord) -> Vec<String> {
+fn evidence(record: &SpamRecord) -> Vec<SpamSignal> {
+    use SpamSignalCode as Code;
+    use SpamSignalField as Field;
+
     let mut facts = Vec::new();
     for (field, text) in [
-        ("name", record.name.as_str()),
-        ("symbol", record.symbol.as_str()),
+        (Field::Name, record.name.as_str()),
+        (Field::Symbol, record.symbol.as_str()),
     ] {
+        let mut push = |code| facts.push(SpamSignal::new(field, code));
         if !text.is_ascii() {
-            facts.push(format!("{field}: contains non-ASCII characters"));
+            push(Code::NonAscii);
         }
         if text.chars().any(is_invisible) {
-            facts.push(format!("{field}: contains invisible formatting characters"));
+            push(Code::InvisibleCharacters);
         }
         if text
             .chars()
             .any(|char| is_combining(get_general_category(char)))
         {
-            facts.push(format!("{field}: contains combining marks"));
+            push(Code::CombiningMarks);
         }
         if scripts(text).len() > 1 {
-            facts.push(format!("{field}: contains multiple writing scripts"));
+            push(Code::MixedScripts);
         }
-        if URL.is_match(&skeleton(text)) {
-            facts.push(format!("{field}: contains URL-like text"));
+        let text_key = skeleton(text);
+        if URL.is_match(&text_key) {
+            push(Code::Url);
         }
-        if PROMO.is_match(&skeleton(text)) {
-            facts.push(format!("{field}: contains promotional wording"));
+        if PROMO.is_match(&text_key) {
+            push(Code::Promotion);
         }
     }
 
     let symbol = &record.symbol;
     if CANONICAL_SYMBOLS.contains(&casefold(python_strip(symbol)).as_str()) {
-        facts.push("symbol: matches a common symbol spelling; authenticity is unknown".to_string());
+        facts.push(SpamSignal::new(Field::Symbol, Code::CommonSymbol));
     } else if CANONICAL_SYMBOLS.contains(&skeleton(symbol).as_str()) {
-        facts.push(
-            "symbol: visual/compatibility skeleton matches a common symbol; authenticity is unknown"
-                .to_string(),
-        );
+        facts.push(SpamSignal::new(Field::Symbol, Code::LookalikeSymbol));
     }
 
-    if number(
-        record
-            .context
-            .get("known_origin_fraction")
-            .copied()
-            .flatten(),
-    )
-    .is_none()
-    {
-        facts.push("context: known-origin fraction is unavailable".to_string());
+    let context_value = |key: &str| number(record.context.get(key).copied().flatten());
+    if context_value("known_origin_fraction").is_none() {
+        facts.push(SpamSignal::new(
+            Field::Context,
+            Code::KnownOriginUnavailable,
+        ));
     }
 
-    for (key, description) in [
-        (
-            "max_token_transfer_count",
-            "maximum same-token ERC-20 Transfer events within one transaction",
-        ),
-        (
-            "mean_token_transfer_count",
-            "mean same-token ERC-20 Transfer events per observed transaction",
-        ),
+    for (key, code) in [
+        ("max_token_transfer_count", Code::MaxTokenTransfers),
+        ("mean_token_transfer_count", Code::MeanTokenTransfers),
     ] {
-        if let Some(value) = number(record.context.get(key).copied().flatten()) {
-            facts.push(format!(
-                "context: {description}: {}; batching alone does not establish spam",
-                format_g(value)
-            ));
+        if let Some(value) = context_value(key) {
+            facts.push(SpamSignal {
+                field: Field::Context,
+                code,
+                value: Some(value),
+            });
         }
     }
 
-    for (key, description) in [
-        ("in_packaged_globaldb", "packaged globaldb"),
-        ("in_collection", "an asset collection"),
+    for (key, present, absent) in [
+        (
+            "in_packaged_globaldb",
+            Code::InPackagedGlobaldb,
+            Code::NotInPackagedGlobaldb,
+        ),
+        ("in_collection", Code::InCollection, Code::NotInCollection),
     ] {
-        if let Some(value) = context_number(key, record.context.get(key).copied().flatten()) {
-            facts.push(format!(
-                "context: {} {description}; not an authenticity guarantee",
-                if value != 0.0 {
-                    "present in"
-                } else {
-                    "not present in"
-                }
-            ));
+        if let Some(value) = context_value(key) {
+            let code = if value != 0.0 { present } else { absent };
+            facts.push(SpamSignal::new(Field::Context, code));
         }
     }
 
@@ -768,7 +763,6 @@ mod tests {
         feature_names: Vec<String>,
         cases: Vec<FixtureCase>,
         skeletons: Vec<SkeletonCase>,
-        g_format: Vec<GFormatCase>,
     }
 
     #[derive(Deserialize)]
@@ -778,7 +772,7 @@ mod tests {
         skeleton: SkeletonPair,
         vector: Vec<f64>,
         feature_values: Vec<f64>,
-        evidence: Vec<String>,
+        evidence: Vec<SpamSignal>,
         prediction: FixturePrediction,
     }
 
@@ -824,7 +818,7 @@ mod tests {
         spam_probability: f64,
         flagged: bool,
         threshold: f64,
-        observed_signals: Vec<String>,
+        observed_signals: Vec<SpamSignal>,
         model_reasons: Vec<FixtureReason>,
     }
 
@@ -838,12 +832,6 @@ mod tests {
     #[derive(Deserialize)]
     struct SkeletonCase {
         input: String,
-        expected: String,
-    }
-
-    #[derive(Deserialize)]
-    struct GFormatCase {
-        value: f64,
         expected: String,
     }
 
@@ -963,13 +951,6 @@ mod tests {
     }
 
     #[test]
-    fn format_g_matches_python() {
-        for case in fixtures().g_format {
-            assert_eq!(format_g(case.value), case.expected, "{}", case.value);
-        }
-    }
-
-    #[test]
     fn missing_context_is_missing_not_zero() {
         let record = SpamRecord {
             name: "Sample".to_string(),
@@ -998,8 +979,10 @@ mod tests {
             predict_spam(&record).spam_probability,
             predict_spam(&zero_context).spam_probability,
         );
-        assert!(evidence(&record)
-            .contains(&"context: known-origin fraction is unavailable".to_string()));
+        assert!(evidence(&record).contains(&SpamSignal::new(
+            SpamSignalField::Context,
+            SpamSignalCode::KnownOriginUnavailable
+        )));
     }
 
     #[test]
@@ -1062,22 +1045,5 @@ mod tests {
         assert!(URL.is_match("foo.com\u{301}"));
         assert!(!URL.is_match("-.com"));
         assert!(URL.is_match("中-foo.com"));
-    }
-
-    #[test]
-    fn unicode_is_evidence_not_a_verdict() {
-        let record = SpamRecord {
-            name: "\u{0422}ether USD".to_string(),
-            symbol: "USD\u{0422}".to_string(),
-            decimals: Some(6),
-            context: HashMap::new(),
-        };
-        let facts = evidence(&record);
-        assert!(facts.contains(&"name: contains non-ASCII characters".to_string()));
-        assert!(facts.contains(&"name: contains multiple writing scripts".to_string()));
-        assert!(facts.contains(
-            &"symbol: visual/compatibility skeleton matches a common symbol; authenticity is unknown"
-                .to_string()
-        ));
     }
 }

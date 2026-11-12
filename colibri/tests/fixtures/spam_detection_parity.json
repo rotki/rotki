@@ -207,24 +207,64 @@
         1.0
       ],
       "evidence": [
-        "symbol: matches a common symbol spelling; authenticity is unknown",
-        "context: known-origin fraction is unavailable",
-        "context: maximum same-token ERC-20 Transfer events within one transaction: 140; batching alone does not establish spam",
-        "context: mean same-token ERC-20 Transfer events per observed transaction: 3.23404; batching alone does not establish spam",
-        "context: present in packaged globaldb; not an authenticity guarantee",
-        "context: present in an asset collection; not an authenticity guarantee"
+        {
+          "field": "symbol",
+          "code": "common_symbol"
+        },
+        {
+          "field": "context",
+          "code": "known_origin_unavailable"
+        },
+        {
+          "field": "context",
+          "code": "max_token_transfers",
+          "value": 140.0
+        },
+        {
+          "field": "context",
+          "code": "mean_token_transfers",
+          "value": 3.234042553191489
+        },
+        {
+          "field": "context",
+          "code": "in_packaged_globaldb"
+        },
+        {
+          "field": "context",
+          "code": "in_collection"
+        }
       ],
       "prediction": {
         "spam_probability": 0.05097038595323972,
         "flagged": false,
         "threshold": 0.8708363650723653,
         "observed_signals": [
-          "symbol: matches a common symbol spelling; authenticity is unknown",
-          "context: known-origin fraction is unavailable",
-          "context: maximum same-token ERC-20 Transfer events within one transaction: 140; batching alone does not establish spam",
-          "context: mean same-token ERC-20 Transfer events per observed transaction: 3.23404; batching alone does not establish spam",
-          "context: present in packaged globaldb; not an authenticity guarantee",
-          "context: present in an asset collection; not an authenticity guarantee"
+          {
+            "field": "symbol",
+            "code": "common_symbol"
+          },
+          {
+            "field": "context",
+            "code": "known_origin_unavailable"
+          },
+          {
+            "field": "context",
+            "code": "max_token_transfers",
+            "value": 140.0
+          },
+          {
+            "field": "context",
+            "code": "mean_token_transfers",
+            "value": 3.234042553191489
+          },
+          {
+            "field": "context",
+            "code": "in_packaged_globaldb"
+          },
+          {
+            "field": "context",
+            "code": "in_collection"
+          }
         ],
         "model_reasons": [
           {
@@ -390,24 +430,60 @@
         1.0
       ],
       "evidence": [
-        "name: contains non-ASCII characters",
-        "name: contains multiple writing scripts",
-        "symbol: contains non-ASCII characters",
-        "symbol: contains multiple writing scripts",
-        "symbol: visual/compatibility skeleton matches a common symbol; authenticity is unknown",
-        "context: known-origin fraction is unavailable"
+        {
+          "field": "name",
+          "code": "non_ascii"
+        },
+        {
+          "field": "name",
+          "code": "mixed_scripts"
+        },
+        {
+          "field": "symbol",
+          "code": "non_ascii"
+        },
+        {
+          "field": "symbol",
+          "code": "mixed_scripts"
+        },
+        {
+          "field": "symbol",
+          "code": "lookalike_symbol"
+        },
+        {
+          "field": "context",
+          "code": "known_origin_unavailable"
+        }
       ],
       "prediction": {
         "spam_probability": 0.9793504767071407,
         "flagged": true,
         "threshold": 0.8708363650723653,
         "observed_signals": [
-          "name: contains non-ASCII characters",
-          "name: contains multiple writing scripts",
-          "symbol: contains non-ASCII characters",
-          "symbol: contains multiple writing scripts",
-          "symbol: visual/compatibility skeleton matches a common symbol; authenticity is unknown",
-          "context: known-origin fraction is unavailable"
+          {
+            "field": "name",
+            "code": "non_ascii"
+          },
+          {
+            "field": "name",
+            "code": "mixed_scripts"
+          },
+          {
+            "field": "symbol",
+            "code": "non_ascii"
+          },
+          {
+            "field": "symbol",
+            "code": "mixed_scripts"
+          },
+          {
+            "field": "symbol",
+            "code": "lookalike_symbol"
+          },
+          {
+            "field": "context",
+            "code": "known_origin_unavailable"
+          }
         ],
         "model_reasons": [
           {
@@ -573,20 +649,44 @@
         1.0
       ],
       "evidence": [
-        "name: contains URL-like text",
-        "symbol: contains URL-like text",
-        "symbol: contains promotional wording",
-        "context: known-origin fraction is unavailable"
+        {
+          "field": "name",
+          "code": "url"
+        },
+        {
+          "field": "symbol",
+          "code": "url"
+        },
+        {
+          "field": "symbol",
+          "code": "promotion"
+        },
+        {
+          "field": "context",
+          "code": "known_origin_unavailable"
+        }
       ],
       "prediction": {
         "spam_probability": 0.9999990282688608,
         "flagged": true,
         "threshold": 0.8708363650723653,
         "observed_signals": [
-          "name: contains URL-like text",
-          "symbol: contains URL-like text",
-          "symbol: contains promotional wording",
-          "context: known-origin fraction is unavailable"
+          {
+            "field": "name",
+            "code": "url"
+          },
+          {
+            "field": "symbol",
+            "code": "url"
+          },
+          {
+            "field": "symbol",
+            "code": "promotion"
+          },
+          {
+            "field": "context",
+            "code": "known_origin_unavailable"
+          }
         ],
         "model_reasons": []
       }
@@ -730,24 +830,60 @@
         1.0
       ],
       "evidence": [
-        "name: contains non-ASCII characters",
-        "name: contains invisible formatting characters",
-        "symbol: contains non-ASCII characters",
-        "symbol: contains invisible formatting characters",
-        "context: not present in packaged globaldb; not an authenticity guarantee",
-        "context: present in an asset collection; not an authenticity guarantee"
+        {
+          "field": "name",
+          "code": "non_ascii"
+        },
+        {
+          "field": "name",
+          "code": "invisible_characters"
+        },
+        {
+          "field": "symbol",
+          "code": "non_ascii"
+        },
+        {
+          "field": "symbol",
+          "code": "invisible_characters"
+        },
+        {
+          "field": "context",
+          "code": "not_in_packaged_globaldb"
+        },
+        {
+          "field": "context",
+          "code": "in_collection"
+        }
       ],
       "prediction": {
         "spam_probability": 0.9596773109537396,
         "flagged": true,
         "threshold": 0.8708363650723653,
         "observed_signals": [
-          "name: contains non-ASCII characters",
-          "name: contains invisible formatting characters",
-          "symbol: contains non-ASCII characters",
-          "symbol: contains invisible formatting characters",
-          "context: not present in packaged globaldb; not an authenticity guarantee",
-          "context: present in an asset collection; not an authenticity guarantee"
+          {
+            "field": "name",
+            "code": "non_ascii"
+          },
+          {
+            "field": "name",
+            "code": "invisible_characters"
+          },
+          {
+            "field": "symbol",
+            "code": "non_ascii"
+          },
+          {
+            "field": "symbol",
+            "code": "invisible_characters"
+          },
+          {
+            "field": "context",
+            "code": "not_in_packaged_globaldb"
+          },
+          {
+            "field": "context",
+            "code": "in_collection"
+          }
         ],
         "model_reasons": [
           {
@@ -924,30 +1060,88 @@
         1.0
       ],
       "evidence": [
-        "name: contains non-ASCII characters",
-        "name: contains combining marks",
-        "name: contains multiple writing scripts",
-        "symbol: contains non-ASCII characters",
-        "symbol: contains combining marks",
-        "context: maximum same-token ERC-20 Transfer events within one transaction: 1e+06; batching alone does not establish spam",
-        "context: mean same-token ERC-20 Transfer events per observed transaction: 500000; batching alone does not establish spam",
-        "context: present in packaged globaldb; not an authenticity guarantee",
-        "context: not present in an asset collection; not an authenticity guarantee"
+        {
+          "field": "name",
+          "code": "non_ascii"
+        },
+        {
+          "field": "name",
+          "code": "combining_marks"
+        },
+        {
+          "field": "name",
+          "code": "mixed_scripts"
+        },
+        {
+          "field": "symbol",
+          "code": "non_ascii"
+        },
+        {
+          "field": "symbol",
+          "code": "combining_marks"
+        },
+        {
+          "field": "context",
+          "code": "max_token_transfers",
+          "value": 1000000.0
+        },
+        {
+          "field": "context",
+          "code": "mean_token_transfers",
+          "value": 500000.0
+        },
+        {
+          "field": "context",
+          "code": "in_packaged_globaldb"
+        },
+        {
+          "field": "context",
+          "code": "not_in_collection"
+        }
       ],
       "prediction": {
         "spam_probability": 0.007649779993860275,
         "flagged": false,
         "threshold": 0.8708363650723653,
         "observed_signals": [
-          "name: contains non-ASCII characters",
-          "name: contains combining marks",
-          "name: contains multiple writing scripts",
-          "symbol: contains non-ASCII characters",
-          "symbol: contains combining marks",
-          "context: maximum same-token ERC-20 Transfer events within one transaction: 1e+06; batching alone does not establish spam",
-          "context: mean same-token ERC-20 Transfer events per observed transaction: 500000; batching alone does not establish spam",
-          "context: present in packaged globaldb; not an authenticity guarantee",
-          "context: not present in an asset collection; not an authenticity guarantee"
+          {
+            "field": "name",
+            "code": "non_ascii"
+          },
+          {
+            "field": "name",
+            "code": "combining_marks"
+          },
+          {
+            "field": "name",
+            "code": "mixed_scripts"
+          },
+          {
+            "field": "symbol",
+            "code": "non_ascii"
+          },
+          {
+            "field": "symbol",
+            "code": "combining_marks"
+          },
+          {
+            "field": "context",
+            "code": "max_token_transfers",
+            "value": 1000000.0
+          },
+          {
+            "field": "context",
+            "code": "mean_token_transfers",
+            "value": 500000.0
+          },
+          {
+            "field": "context",
+            "code": "in_packaged_globaldb"
+          },
+          {
+            "field": "context",
+            "code": "not_in_collection"
+          }
         ],
         "model_reasons": [
           {
@@ -1113,14 +1307,20 @@
         1.0
       ],
       "evidence": [
-        "context: known-origin fraction is unavailable"
+        {
+          "field": "context",
+          "code": "known_origin_unavailable"
+        }
       ],
       "prediction": {
         "spam_probability": 0.9997793983634473,
         "flagged": true,
         "threshold": 0.8708363650723653,
         "observed_signals": [
-          "context: known-origin fraction is unavailable"
+          {
+            "field": "context",
+            "code": "known_origin_unavailable"
+          }
         ],
         "model_reasons": [
           {
@@ -1287,22 +1487,56 @@
         1.0
       ],
       "evidence": [
-        "symbol: matches a common symbol spelling; authenticity is unknown",
-        "context: maximum same-token ERC-20 Transfer events within one transaction: 0; batching alone does not establish spam",
-        "context: mean same-token ERC-20 Transfer events per observed transaction: 0; batching alone does not establish spam",
-        "context: not present in packaged globaldb; not an authenticity guarantee",
-        "context: not present in an asset collection; not an authenticity guarantee"
+        {
+          "field": "symbol",
+          "code": "common_symbol"
+        },
+        {
+          "field": "context",
+          "code": "max_token_transfers",
+          "value": 0.0
+        },
+        {
+          "field": "context",
+          "code": "mean_token_transfers",
+          "value": 0.0
+        },
+        {
+          "field": "context",
+          "code": "not_in_packaged_globaldb"
+        },
+        {
+          "field": "context",
+          "code": "not_in_collection"
+        }
       ],
       "prediction": {
         "spam_probability": 0.99676415469065,
         "flagged": true,
         "threshold": 0.8708363650723653,
         "observed_signals": [
-          "symbol: matches a common symbol spelling; authenticity is unknown",
-          "context: maximum same-token ERC-20 Transfer events within one transaction: 0; batching alone does not establish spam",
-          "context: mean same-token ERC-20 Transfer events per observed transaction: 0; batching alone does not establish spam",
-          "context: not present in packaged globaldb; not an authenticity guarantee",
-          "context: not present in an asset collection; not an authenticity guarantee"
+          {
+            "field": "symbol",
+            "code": "common_symbol"
+          },
+          {
+            "field": "context",
+            "code": "max_token_transfers",
+            "value": 0.0
+          },
+          {
+            "field": "context",
+            "code": "mean_token_transfers",
+            "value": 0.0
+          },
+          {
+            "field": "context",
+            "code": "not_in_packaged_globaldb"
+          },
+          {
+            "field": "context",
+            "code": "not_in_collection"
+          }
         ],
         "model_reasons": [
           {
@@ -1472,24 +1706,60 @@
         1.0
       ],
       "evidence": [
-        "name: contains non-ASCII characters",
-        "name: contains URL-like text",
-        "name: contains promotional wording",
-        "symbol: contains non-ASCII characters",
-        "symbol: visual/compatibility skeleton matches a common symbol; authenticity is unknown",
-        "context: known-origin fraction is unavailable"
+        {
+          "field": "name",
+          "code": "non_ascii"
+        },
+        {
+          "field": "name",
+          "code": "url"
+        },
+        {
+          "field": "name",
+          "code": "promotion"
+        },
+        {
+          "field": "symbol",
+          "code": "non_ascii"
+        },
+        {
+          "field": "symbol",
+          "code": "lookalike_symbol"
+        },
+        {
+          "field": "context",
+          "code": "known_origin_unavailable"
+        }
       ],
       "prediction": {
         "spam_probability": 0.9999996277111827,
         "flagged": true,
         "threshold": 0.8708363650723653,
         "observed_signals": [
-          "name: contains non-ASCII characters",
-          "name: contains URL-like text",
-          "name: contains promotional wording",
-          "symbol: contains non-ASCII characters",
-          "symbol: visual/compatibility skeleton matches a common symbol; authenticity is unknown",
-          "context: known-origin fraction is unavailable"
+          {
+            "field": "name",
+            "code": "non_ascii"
+          },
+          {
+            "field": "name",
+            "code": "url"
+          },
+          {
+            "field": "name",
+            "code": "promotion"
+          },
+          {
+            "field": "symbol",
+            "code": "non_ascii"
+          },
+          {
+            "field": "symbol",
+            "code": "lookalike_symbol"
+          },
+          {
+            "field": "context",
+            "code": "known_origin_unavailable"
+          }
         ],
         "model_reasons": []
       }
@@ -1633,28 +1903,80 @@
         1.0
       ],
       "evidence": [
-        "name: contains non-ASCII characters",
-        "name: contains multiple writing scripts",
-        "name: contains promotional wording",
-        "symbol: matches a common symbol spelling; authenticity is unknown",
-        "context: known-origin fraction is unavailable",
-        "context: maximum same-token ERC-20 Transfer events within one transaction: 1; batching alone does not establish spam",
-        "context: mean same-token ERC-20 Transfer events per observed transaction: 0.5; batching alone does not establish spam",
-        "context: present in an asset collection; not an authenticity guarantee"
+        {
+          "field": "name",
+          "code": "non_ascii"
+        },
+        {
+          "field": "name",
+          "code": "mixed_scripts"
+        },
+        {
+          "field": "name",
+          "code": "promotion"
+        },
+        {
+          "field": "symbol",
+          "code": "common_symbol"
+        },
+        {
+          "field": "context",
+          "code": "known_origin_unavailable"
+        },
+        {
+          "field": "context",
+          "code": "max_token_transfers",
+          "value": 1.0
+        },
+        {
+          "field": "context",
+          "code": "mean_token_transfers",
+          "value": 0.5
+        },
+        {
+          "field": "context",
+          "code": "in_collection"
+        }
       ],
       "prediction": {
         "spam_probability": 0.9904043021957156,
         "flagged": true,
         "threshold": 0.8708363650723653,
         "observed_signals": [
-          "name: contains non-ASCII characters",
-          "name: contains multiple writing scripts",
-          "name: contains promotional wording",
-          "symbol: matches a common symbol spelling; authenticity is unknown",
-          "context: known-origin fraction is unavailable",
-          "context: maximum same-token ERC-20 Transfer events within one transaction: 1; batching alone does not establish spam",
-          "context: mean same-token ERC-20 Transfer events per observed transaction: 0.5; batching alone does not establish spam",
-          "context: present in an asset collection; not an authenticity guarantee"
+          {
+            "field": "name",
+            "code": "non_ascii"
+          },
+          {
+            "field": "name",
+            "code": "mixed_scripts"
+          },
+          {
+            "field": "name",
+            "code": "promotion"
+          },
+          {
+            "field": "symbol",
+            "code": "common_symbol"
+          },
+          {
+            "field": "context",
+            "code": "known_origin_unavailable"
+          },
+          {
+            "field": "context",
+            "code": "max_token_transfers",
+            "value": 1.0
+          },
+          {
+            "field": "context",
+            "code": "mean_token_transfers",
+            "value": 0.5
+          },
+          {
+            "field": "context",
+            "code": "in_collection"
+          }
         ],
         "model_reasons": [
           {
@@ -1706,48 +2028,6 @@
     {
       "input": "ǅ",
       "expected": "dž"
-    }
-  ],
-  "g_format": [
-    {
-      "value": 0.0,
-      "expected": "0"
-    },
-    {
-      "value": 1.0,
-      "expected": "1"
-    },
-    {
-      "value": 140.0,
-      "expected": "140"
-    },
-    {
-      "value": 0.5,
-      "expected": "0.5"
-    },
-    {
-      "value": 0.6785714285714286,
-      "expected": "0.678571"
-    },
-    {
-      "value": 1234567.0,
-      "expected": "1.23457e+06"
-    },
-    {
-      "value": 0.0001234567,
-      "expected": "0.000123457"
-    },
-    {
-      "value": 1.234567e-05,
-      "expected": "1.23457e-05"
-    },
-    {
-      "value": 123456789012345.0,
-      "expected": "1.23457e+14"
-    },
-    {
-      "value": 1e-07,
-      "expected": "1e-07"
     }
   ]
 }

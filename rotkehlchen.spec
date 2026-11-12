@@ -140,7 +140,6 @@ a = Entrypoint(
         ('rotkehlchen/data/populate_location_asset_mappings.sql', 'rotkehlchen/data'),
         ('rotkehlchen/data/populate_location_unsupported_assets.sql', 'rotkehlchen/data'),
         ('rotkehlchen/data/solana_tokens_data.csv', 'rotkehlchen/data'),
-        ('rotkehlchen/data/spam_mlp_no_provenance.json', 'rotkehlchen/data'),
         # TODO
         # We probably should have a better way to specify some data should be loaded
         # by a module in pyinstaller. Should be loaded dynamically by rotki and not
