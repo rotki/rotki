@@ -3,9 +3,9 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { AssetBreakdown, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
+import { useBalanceViewData } from '@/modules/balances/view/use-balance-view-data';
 import { isBlockchain } from '@/modules/core/common/chains';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -53,7 +53,7 @@ export function useAssetLocationsData(options: UseAssetLocationsDataOptions): Us
   const { getAccountByAddress } = useBlockchainAccountsStore();
   const { getAddressName } = useAddressNameResolution();
 
-  const { getAssetPriceInfo } = useAggregatedBalances();
+  const { getAssetPriceInfo } = useBalanceViewData();
   const { matchChain } = useSupportedChains();
   const { getAssetBreakdown } = useAssetBalancesBreakdown();
 

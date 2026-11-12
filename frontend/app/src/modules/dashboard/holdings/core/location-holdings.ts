@@ -1,3 +1,4 @@
+import type { BigNumber } from '@rotki/common';
 import { pipe } from 'plainfp';
 import { filter, flatMap, groupBy, map } from 'plainfp/arrays';
 import { values } from 'plainfp/records';
@@ -15,6 +16,14 @@ import {
 interface MergeOptions {
   /** The trade location a chain's balances show under, when the backend has one. */
   readonly locationOfChain: (chain: string) => string | undefined;
+  /**
+   * The weight a place is ordered by, by place key, in place of its own value.
+   *
+   * @remarks
+   * Lets two balance views share one tile order, so switching between them changes values in place
+   * instead of reshuffling the tiles. A place without a weight is ordered by its own value.
+   */
+  readonly rank?: ReadonlyMap<string, BigNumber>;
 }
 
 interface Placed {
@@ -65,16 +74,21 @@ function partsOf(contributions: readonly SourceContribution[]): HoldingPart[] {
     SOURCE_KIND_ORDER,
     map(kind => ({ kind, ofKind: contributions.filter(contribution => contribution.kind === kind) })),
     filter(({ ofKind }) => ofKind.length > 0),
-    map(({ kind, ofKind }) => ({
-      kind,
-      loading: ofKind.some(contribution => contribution.loading),
-      value: bigNumberSum(ofKind.map(contribution => contribution.value)),
-    })),
+    map(({ kind, ofKind }): HoldingPart => {
+      const counted = ofKind.filter(contribution => !contribution.excluded);
+      return {
+        ...(counted.length === 0 ? { excluded: true } : {}),
+        kind,
+        loading: counted.some(contribution => contribution.loading),
+        value: bigNumberSum(counted.map(contribution => contribution.value)),
+      };
+    }),
   );
 }
 
 function holdingOf(place: HoldingPlace, parts: readonly HoldingPart[]): LocationHolding {
   return {
+    excluded: parts.every(part => part.excluded),
     loading: parts.some(part => part.loading),
     parts,
     place,
@@ -83,8 +97,9 @@ function holdingOf(place: HoldingPlace, parts: readonly HoldingPart[]): Location
   };
 }
 
-function byValue(holdings: LocationHolding[]): LocationHolding[] {
-  return [...holdings].sort((a, b) => b.value.comparedTo(a.value) ?? 0);
+function byValue(holdings: LocationHolding[], rank?: ReadonlyMap<string, BigNumber>): LocationHolding[] {
+  const weight = (holding: LocationHolding): BigNumber => rank?.get(holding.place.key) ?? holding.value;
+  return [...holdings].sort((a, b) => weight(b).comparedTo(weight(a)) ?? 0);
 }
 
 /**
@@ -94,7 +109,8 @@ function byValue(holdings: LocationHolding[]): LocationHolding[] {
  * Places are trade locations, so an exchange and a manual balance at Kraken share a tile, and a
  * manual balance recorded at `ethereum` joins the Ethereum chain. A chain the backend has no
  * location for, such as ETH2, keeps a tile of its own. Places with nothing in them are dropped
- * unless they are still loading.
+ * unless they are still loading, or hold only excluded contributions, which keep their tile so
+ * switching balance views moves nothing.
  */
 export function mergeLocations(contributions: readonly SourceContribution[], options: MergeOptions): LocationHolding[] {
   return pipe(
@@ -103,8 +119,8 @@ export function mergeLocations(contributions: readonly SourceContribution[], opt
     groupBy(({ place }) => place.key),
     values,
     map(atPlace => holdingOf(atPlace[0].place, partsOf(atPlace.map(({ contribution }) => contribution)))),
-    filter(holding => holding.loading || !holding.value.isZero()),
-    byValue,
+    filter(holding => holding.loading || holding.excluded || !holding.value.isZero()),
+    holdings => byValue(holdings, options.rank),
   );
 }
 
@@ -115,6 +131,6 @@ export function narrowToKind(holdings: readonly LocationHolding[], kind: SourceK
     flatMap(holding => holding.parts
       .filter(part => part.kind === kind)
       .map(part => holdingOf(holding.place, [part]))),
-    byValue,
+    holdings => byValue(holdings),
   );
 }

@@ -2,7 +2,7 @@ import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import { startPromise } from '@shared/utils';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
-import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
+import { useBalanceViewData } from '@/modules/balances/view/use-balance-view-data';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useAssetPageActions } from '@/pages/assets/use-asset-page-actions';
 
@@ -34,15 +34,19 @@ interface UseAssetDetailReturn {
   toggleWhitelistAsset: () => Promise<void>;
 }
 
-export function useAssetDetail(identifier: MaybeRefOrGetter<string>): UseAssetDetailReturn {
+/**
+ * State and actions of the asset page.
+ *
+ * @param identifier - the asset the page shows
+ * @param isHistory - the page's balance view; the page provides it, so it cannot inject it
+ */
+export function useAssetDetail(identifier: MaybeRefOrGetter<string>, isHistory?: ComputedRef<boolean>): UseAssetDetailReturn {
   const router = useRouter();
   const route = useRoute();
 
   const { refetchAssetInfo, useAssetContractInfo, useAssetInfo } = useAssetInfoRetrieval();
   const premium = usePremium();
-  const { useBalances } = useAggregatedBalances();
-
-  const aggregatedBalances = useBalances();
+  const { balances: aggregatedBalances } = useBalanceViewData(isHistory);
 
   const isCollectionParent = computed<boolean>(() => !!get(route).query[COLLECTION_PARENT_QUERY]);
 

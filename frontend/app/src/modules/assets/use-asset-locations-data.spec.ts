@@ -25,8 +25,8 @@ vi.mock('@/modules/accounts/use-blockchain-accounts-store', () => ({
 vi.mock('@/modules/accounts/address-book/use-address-name-resolution', () => ({
   useAddressNameResolution: (): object => ({ getAddressName: spies.getAddressName }),
 }));
-vi.mock('@/modules/balances/use-aggregated-balances', () => ({
-  useAggregatedBalances: (): object => ({ getAssetPriceInfo: spies.getAssetPriceInfo }),
+vi.mock('@/modules/balances/view/use-balance-view-data', () => ({
+  useBalanceViewData: (): object => ({ getAssetPriceInfo: spies.getAssetPriceInfo }),
 }));
 vi.mock('@/modules/core/common/use-supported-chains', () =>
   mockUseSupportedChains({ matchChain: spies.matchChain }));

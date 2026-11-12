@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type { SourceKind } from '@/modules/dashboard/holdings/core/holdings-types';
-import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
+import HistoryDeltaCell from '@/modules/balances/components/HistoryDeltaCell.vue';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
+import { provideHistoryView } from '@/modules/balances/view/balance-view';
+import { useBalanceView } from '@/modules/balances/view/use-balance-view';
+import { useBalanceViewData } from '@/modules/balances/view/use-balance-view-data';
 import { useDynamicMessages } from '@/modules/core/messaging/use-dynamic-messages';
 import DashboardAssetTable from '@/modules/dashboard/DashboardAssetTable.vue';
 import DynamicMessageDisplay from '@/modules/dashboard/DynamicMessageDisplay.vue';
@@ -22,11 +25,10 @@ const dashboardRef = useTemplateRef<HTMLElement>('dashboardRef');
 const floatingRef = useTemplateRef<HTMLElement>('floatingRef');
 
 const { t } = useI18n({ useScope: 'global' });
-const { useBalances, useLiabilities } = useAggregatedBalances();
 const { activeDashboardMessages } = useDynamicMessages();
-
-const aggregatedBalances = useBalances();
-const aggregatedLiabilities = useLiabilities();
+const { available: viewAvailable, isHistory } = useBalanceView();
+provideHistoryView(isHistory);
+const { balances: aggregatedBalances, comparable, comparisons, liabilities: aggregatedLiabilities, liabilitiesHeld } = useBalanceViewData(isHistory);
 
 const { enabled: nftEnabled } = useModuleEnabled(Module.NFTS);
 
@@ -98,10 +100,15 @@ watch(width, (newWidth) => {
         :table-type="Type.ASSETS"
         :loading="isAnyLoading"
         :balances="aggregatedBalances"
-      />
+        :show-comparison="viewAvailable && comparable"
+      >
+        <template #comparison="{ row }">
+          <HistoryDeltaCell :comparison="comparisons.get(row.asset)" />
+        </template>
+      </DashboardAssetTable>
       <PoolTable class="mt-8" />
       <DashboardAssetTable
-        v-if="aggregatedLiabilities.length > 0"
+        v-if="liabilitiesHeld"
         id="dashboard-liabilities"
         class="mt-8"
         :table-type="Type.LIABILITIES"

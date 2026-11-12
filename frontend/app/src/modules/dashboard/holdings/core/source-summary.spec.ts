@@ -87,6 +87,21 @@ describe('summarizeSources', () => {
   it('should not be loading once every contribution is priced', () => {
     expect(summarizeSources(contributions, { liabilities: Zero, nfts: undefined }).loading).toBe(false);
   });
+
+  it('should keep a kind holding only excluded contributions as an excluded row that counts nowhere', () => {
+    const summary = summarizeSources([
+      ...contributions.filter(({ kind }) => kind !== SourceKind.MANUAL),
+      { excluded: true, kind: SourceKind.MANUAL, loading: false, location: 'external', value: bigNumberify(50) },
+    ], { liabilities: Zero, nfts: undefined });
+
+    expect(summary.sources.find(({ kind }) => kind === SourceKind.MANUAL)).toMatchObject({ excluded: true });
+    expect(summary.gross.toFixed()).toBe('450');
+    expect(summary.emptyKinds).toEqual(['bank']);
+  });
+
+  it('should pass on that liabilities are excluded', () => {
+    expect(summarizeSources(contributions, { liabilities: Zero, liabilitiesExcluded: true, nfts: undefined }).liabilitiesExcluded).toBe(true);
+  });
 });
 
 describe('barWeights', () => {

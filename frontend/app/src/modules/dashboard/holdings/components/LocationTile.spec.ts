@@ -61,4 +61,15 @@ describe('locationTile', () => {
     expect(wrapper.find('[data-testid=badge]').exists()).toBe(true);
     expect(wrapper.find('[data-testid=percentage]').text()).toBe('12.50');
   });
+
+  it('should keep an excluded place as a tile saying it is not in history, with no value or share', () => {
+    const [external] = mergeLocations([
+      { excluded: true, kind: SourceKind.MANUAL, loading: false, location: 'external', value: bigNumberify(50) },
+    ], { locationOfChain: () => undefined });
+    const wrapper = createWrapper(external);
+
+    expect(wrapper.find('[data-testid=dashboard-location-tile-excluded]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=fiat]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=percentage]').exists()).toBe(false);
+  });
 });

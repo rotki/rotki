@@ -24,10 +24,8 @@ interface UseAggregatedBalancesReturn {
   getBalances: (hideIgnored?: boolean, groupMultiChain?: boolean, exclude?: ExclusionSource[]) => AssetBalanceWithPriceAndChains[];
   useLiabilities: (hideIgnored?: boolean) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   getLiabilities: (hideIgnored?: boolean) => AssetBalanceWithPriceAndChains[];
-  getAssetPriceInfo: (identifier: string, groupMultiChain?: boolean) => AssetPriceInfo;
-  getQueriedAssetPriceInfo: (identifier: string, groupMultiChain?: boolean) => AssetPriceInfo;
-  getHistoryAssetPriceInfo: (identifier: string, groupMultiChain?: boolean) => AssetPriceInfo;
   useAssetPriceInfo: (identifier: MaybeRefOrGetter<string>, groupCollection?: MaybeRefOrGetter<boolean>) => ComputedRef<AssetPriceInfo>;
+  getAssetPriceInfo: (identifier: string, groupMultiChain?: boolean) => AssetPriceInfo;
   assets: ComputedRef<string[]>;
   useBlockchainBalances: (chains: MaybeRefOrGetter<string[]>, groupId?: MaybeRefOrGetter<string>, key?: keyof EthBalance) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   getExchangeBalances: (exchange?: string) => AssetBalanceWithPriceAndChains[];
@@ -49,12 +47,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
 
   const context = useAggregationContext();
   const { isAssetIgnored } = context;
-  const {
-    isHistoryMode,
-    source: historicalAssets,
-    sourceForChains: historicalForChains,
-    unfilteredSource: historicalUnfiltered,
-  } = useHistoricalBalanceSource(context);
+  const { unfilteredSource: historicalAssets } = useHistoricalBalanceSource(context);
 
   const blockchainAssets = computed<AssetBalanceEntries>(() => fromBlockchain(get(blockchainBalances)));
   const blockchainLiabilities = computed<AssetBalanceEntries>(() => fromBlockchain(get(blockchainBalances), { key: 'liabilities' }));
@@ -77,49 +70,27 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     manual: manualAssets,
   };
 
-  function queriedBalances(hideIgnored = true, groupCollections = true, exclude: ExclusionSource[] = []): AssetBalanceWithPriceAndChains[] {
+  function getBalances(hideIgnored = true, groupCollections = true, exclude: ExclusionSource[] = []): AssetBalanceWithPriceAndChains[] {
     const sources = EXCLUDABLE_SOURCES
       .filter(source => !exclude.includes(source))
       .map(source => get(assetSources[source]));
     return summarizeBalances(sources, context, { groupCollections, hideIgnored });
   }
 
-  function getBalances(hideIgnored = true, groupCollections = true, exclude: ExclusionSource[] = []): AssetBalanceWithPriceAndChains[] {
-    if (get(isHistoryMode))
-      return summarizeBalances([get(historicalAssets)], context, { groupCollections, hideIgnored });
-
-    return queriedBalances(hideIgnored, groupCollections, exclude);
-  }
-
-  /** History-derived balances have no separate negative liability buckets. */
   function getLiabilities(hideIgnored = true): AssetBalanceWithPriceAndChains[] {
-    if (get(isHistoryMode))
-      return [];
-
     return summarizeBalances([get(blockchainLiabilities), get(manualLiabilityEntries)], context, { hideIgnored });
   }
 
-  function priceInfoOf(rows: AssetBalanceWithPriceAndChains[], identifier: string): AssetPriceInfo {
-    const assetValue = rows.find((value: AssetBalanceWithPrice) => value.asset === identifier);
+  function getAssetPriceInfo(identifier: string, groupMultiChain = false): AssetPriceInfo {
+    const assetValue = getBalances(true, groupMultiChain).find(
+      (value: AssetBalanceWithPrice) => value.asset === identifier,
+    );
+
     return {
       amount: assetValue?.amount ?? Zero,
       price: assetValue?.price ?? Zero,
       value: assetValue?.value ?? Zero,
     };
-  }
-
-  function getAssetPriceInfo(identifier: string, groupMultiChain = false): AssetPriceInfo {
-    return priceInfoOf(getBalances(true, groupMultiChain), identifier);
-  }
-
-  /** The queried amount regardless of the active display mode, for side-by-side comparison. */
-  function getQueriedAssetPriceInfo(identifier: string, groupMultiChain = false): AssetPriceInfo {
-    return priceInfoOf(queriedBalances(true, groupMultiChain), identifier);
-  }
-
-  /** The history-derived amount regardless of the active display mode, for side-by-side comparison. */
-  function getHistoryAssetPriceInfo(identifier: string, groupMultiChain = false): AssetPriceInfo {
-    return priceInfoOf(summarizeBalances([get(historicalAssets)], context, { groupCollections: groupMultiChain, hideIgnored: true }), identifier);
   }
 
   const useBalances = (
@@ -142,10 +113,6 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     groupId?: MaybeRefOrGetter<string>,
     key: keyof EthBalance = 'assets',
   ): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() => {
-    if (get(isHistoryMode)) {
-      return summarizeBalances([historicalForChains(toValue(chains))], context);
-    }
-
     const group = groupId ? toValue(groupId) : undefined;
     const source = fromBlockchain(get(blockchainBalances), {
       addresses: group ? groupAddresses(get(accounts), group) : undefined,
@@ -188,16 +155,21 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     getExchangeBalances(exchange ? toValue(exchange) : undefined),
   );
 
-  /** Read from the unfiltered balances, since an asset hidden for lacking a price still needs one.
-   * History-held assets join the union so switching to `history` mode prices an asset whose current
-   * queried balance is zero. */
+  /**
+   * Every asset that needs a price.
+   *
+   * @remarks
+   * Read from the unfiltered balances, since an asset hidden for lacking a price still needs one. The
+   * history-derived snapshot joins once loaded, so the history view can price an asset whose queried
+   * balance is zero.
+   */
   const assets = computed<string[]>(() => heldAssets([
     fromBlockchain(get(allBlockchainBalances)),
     fromBlockchain(get(allBlockchainBalances), { key: 'liabilities' }),
     get(exchangeAssets),
     get(manualAssets),
     get(manualLiabilityEntries),
-    get(historicalUnfiltered),
+    get(historicalAssets),
   ]));
 
   const balancesByLocation = computed<Record<string, BigNumber>>(() => totalsByLocation(
@@ -230,8 +202,6 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     getExchangeAccountBalances,
     getExchangeBalances,
     getLiabilities,
-    getHistoryAssetPriceInfo,
-    getQueriedAssetPriceInfo,
     useAssetPriceInfo,
     useBalances,
     useLiabilities,

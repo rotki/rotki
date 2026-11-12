@@ -21,6 +21,11 @@ interface ContributionValue {
   /** In the main currency, with ignored assets already left out. */
   readonly value: BigNumber;
   readonly loading: boolean;
+  /**
+   * Held, but not part of the balance view on show, as manual balances are not part of the history
+   * view. Counted nowhere, but its legend row and tile stay, so switching views moves nothing.
+   */
+  readonly excluded?: boolean;
 }
 
 /** One chain's or one location's share of a source, as the stores report it. */
@@ -45,6 +50,8 @@ export interface SourceTotal {
   readonly share: BigNumber;
   /** Some of its value still waits on a price, so `value` and `share` are partial. */
   readonly loading: boolean;
+  /** Only excluded contributions: the row keeps its place with no value. */
+  readonly excluded?: boolean;
 }
 
 export interface HoldingsSummary {
@@ -55,6 +62,8 @@ export interface HoldingsSummary {
   /** Everything held, before liabilities. */
   readonly gross: BigNumber;
   readonly liabilities: BigNumber;
+  /** Liabilities are held but not part of the balance view on show; their row stays, with no value. */
+  readonly liabilitiesExcluded: boolean;
   /** Source kinds with nothing in them, offered as places to add balances. */
   readonly emptyKinds: readonly SourceKind[];
 }
@@ -75,6 +84,8 @@ export interface HoldingPart {
   readonly kind: SourceKind;
   readonly value: BigNumber;
   readonly loading: boolean;
+  /** Only excluded contributions of this kind are held here. */
+  readonly excluded?: boolean;
 }
 
 /**
@@ -94,5 +105,7 @@ export interface LocationHolding {
   readonly parts: readonly HoldingPart[];
   readonly value: BigNumber;
   readonly loading: boolean;
+  /** Everything here is excluded from the balance view on show; the tile stays, with no value. */
+  readonly excluded: boolean;
   readonly target: TileTarget;
 }

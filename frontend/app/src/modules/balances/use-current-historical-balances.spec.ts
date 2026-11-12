@@ -7,7 +7,7 @@ import { flushPromises } from '@vue/test-utils';
 import { get } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type EffectScope, effectScope } from 'vue';
-import { useBalanceDisplayModeStore } from '@/modules/balances/use-balance-display-mode-store';
+import { useHistoricalSnapshotStore } from '@/modules/balances/use-historical-snapshot-store';
 import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 
 const h = await vi.hoisted(async () => {
@@ -76,28 +76,28 @@ describe('useCurrentHistoricalBalances', () => {
 
   afterEach(() => scope.stop());
 
-  it('should not load in queried mode until a snapshot is requested', async () => {
+  it('should not load until a snapshot is requested', async () => {
     await create();
     await flushPromises();
 
     expect(h.fetchCurrentHistoricalBalances).not.toHaveBeenCalled();
   });
 
-  it('should lazily load on mode switch and store the snapshot', async () => {
-    await create();
-    useBalanceDisplayModeStore().setMode('history');
+  it('should load on request and store the snapshot', async () => {
+    const { ensureLoaded } = await create();
+    await ensureLoaded();
     await flushPromises();
 
     expect(h.fetchCurrentHistoricalBalances).toHaveBeenCalledOnce();
-    const store = useBalanceDisplayModeStore();
+    const store = useHistoricalSnapshotStore();
     expect(store.entries.map(entry => entry.asset)).toEqual(['ETH']);
     expect(store.loaded).toBe(true);
   });
 
-  it('should load once even when explicitly requested and the mode later switches', async () => {
+  it('should load once when asked twice', async () => {
     const { ensureLoaded } = await create();
     await ensureLoaded();
-    useBalanceDisplayModeStore().setMode('history');
+    await ensureLoaded();
     await flushPromises();
 
     expect(h.fetchCurrentHistoricalBalances).toHaveBeenCalledOnce();
@@ -105,18 +105,18 @@ describe('useCurrentHistoricalBalances', () => {
 
   it('should surface processingRequired and stale flags', async () => {
     h.fetchCurrentHistoricalBalances.mockResolvedValue(response('ETH', { processingRequired: true, stale: true }));
-    await create();
-    useBalanceDisplayModeStore().setMode('history');
+    const { ensureLoaded } = await create();
+    await ensureLoaded();
     await flushPromises();
 
-    const store = useBalanceDisplayModeStore();
+    const store = useHistoricalSnapshotStore();
     expect(store.processingRequired).toBe(true);
     expect(store.stale).toBe(true);
   });
 
   it('should auto-refresh when backend processing completes', async () => {
-    await create();
-    useBalanceDisplayModeStore().setMode('history');
+    const { ensureLoaded } = await create();
+    await ensureLoaded();
     await flushPromises();
 
     useHistoricalBalanceProcessingStore().notifyHistoricalBalanceProcessingCompleted();
@@ -136,9 +136,9 @@ describe('useCurrentHistoricalBalances', () => {
   it('should drop a stale response when a newer load started', async () => {
     const slow = deferred();
     h.fetchCurrentHistoricalBalances.mockReturnValueOnce(slow.promise).mockResolvedValueOnce(response('DAI'));
-    const { refresh } = await create();
-    const store = useBalanceDisplayModeStore();
-    store.setMode('history');
+    const { ensureLoaded, refresh } = await create();
+    const store = useHistoricalSnapshotStore();
+    startPromise(ensureLoaded());
     await flushPromises();
 
     // An explicit refresh overtakes the in-flight first request.
@@ -159,11 +159,11 @@ describe('useCurrentHistoricalBalances', () => {
 
   it('should record an error and stop loading on failure', async () => {
     h.fetchCurrentHistoricalBalances.mockRejectedValue(new Error('backend down'));
-    const { loading } = await create();
-    useBalanceDisplayModeStore().setMode('history');
+    const { ensureLoaded, loading } = await create();
+    await ensureLoaded();
     await flushPromises();
 
-    const store = useBalanceDisplayModeStore();
+    const store = useHistoricalSnapshotStore();
     expect(store.error).toBe('backend down');
     expect(get(loading)).toBe(false);
   });

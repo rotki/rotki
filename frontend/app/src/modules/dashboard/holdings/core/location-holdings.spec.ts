@@ -71,6 +71,27 @@ describe('mergeLocations', () => {
     expect(summary(merged)).toEqual([{ key: 'ethereum', kinds: ['blockchain'], value: '0' }]);
     expect(merged[0].loading).toBe(true);
   });
+
+  it('should keep a place holding only excluded contributions, marked excluded and worth nothing', () => {
+    const holdings = mergeLocations([
+      chain('eth', 100),
+      { excluded: true, kind: SourceKind.MANUAL, loading: false, location: 'external', value: bigNumberify(50) },
+    ], { locationOfChain });
+    const external = holdings.find(({ place }) => place.key === 'external');
+
+    expect(external?.excluded).toBe(true);
+    expect(external?.value.isZero()).toBe(true);
+  });
+
+  it('should value a place by its counted contributions when an excluded one shares it', () => {
+    const holdings = mergeLocations([
+      at(SourceKind.EXCHANGE, 'kraken', 30),
+      { excluded: true, kind: SourceKind.MANUAL, loading: false, location: 'kraken', value: bigNumberify(50) },
+    ], { locationOfChain });
+
+    expect(holdings[0]).toMatchObject({ excluded: false });
+    expect(holdings[0].value.toFixed()).toBe('30');
+  });
 });
 
 describe('tileTarget', () => {

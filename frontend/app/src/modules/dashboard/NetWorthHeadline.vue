@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
-import BalanceDisplayModeSwitch from '@/modules/balances/components/BalanceDisplayModeSwitch.vue';
+import BalanceViewPicker from '@/modules/balances/components/BalanceViewPicker.vue';
+import { useBalanceViewData } from '@/modules/balances/view/use-balance-view-data';
 import ChainsUpdatedCaption from '@/modules/dashboard/components/ChainsUpdatedCaption.vue';
 import DashboardRefresh from '@/modules/dashboard/components/DashboardRefresh.vue';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 
-const { balanceDelta, busy, loadingNetWorth, netWorth, percentage } = defineProps<{
-  netWorth: BigNumber;
+/**
+ * The dashboard's net worth, in the page's balance view.
+ *
+ * @remarks
+ * In the history view the timeframe delta is replaced by the difference from the queried net worth:
+ * the delta measures against queried snapshots, so against a history total it would be meaningless.
+ * Both occupy the same one-line slot, so switching views moves nothing below it.
+ */
+const { balanceDelta, busy, loadingNetWorth, percentage } = defineProps<{
   balanceDelta: BigNumber;
   /** The delta as a percentage string, or `-` when there is no starting value. */
   percentage: string;
@@ -18,6 +26,8 @@ const { balanceDelta, busy, loadingNetWorth, netWorth, percentage } = defineProp
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const { isHistory: historyView, netWorth, netWorthDifference } = useBalanceViewData();
 
 const indicator = computed<string>(() => {
   if (balanceDelta.isNegative())
@@ -42,15 +52,12 @@ const balanceClass = computed<string>(() => {
 
 <template>
   <div class="flex flex-col justify-start">
-    <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <div class="text-rui-text-secondary">
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <div class="flex items-center gap-1 text-rui-text-secondary">
         {{ t('overall_balances.total_balance') }}
+        <BalanceViewPicker />
       </div>
       <DashboardRefresh />
-      <BalanceDisplayModeSwitch
-        class="ml-auto"
-        compact
-      />
     </div>
     <div
       class="font-medium"
@@ -69,8 +76,24 @@ const balanceClass = computed<string>(() => {
       />
     </div>
 
+    <div
+      v-if="historyView"
+      class="flex items-center gap-2 h-6 font-medium whitespace-nowrap"
+      data-testid="overall-balances-history-difference"
+    >
+      <RuiIcon
+        name="lu-history"
+        size="16"
+        class="text-rui-text-secondary"
+      />
+      <span class="text-rui-text-secondary font-normal">{{ t('balance_view.vs_queried') }}</span>
+      <FiatDisplay
+        :class="{ 'text-rui-warning': !netWorthDifference.isZero() }"
+        :value="netWorthDifference"
+      />
+    </div>
     <RuiSkeletonLoader
-      v-if="busy"
+      v-else-if="busy"
       class="w-48 h-6"
       data-testid="overall-balances-delta-loading"
     />
