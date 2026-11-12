@@ -62,7 +62,7 @@ describe('balanceViewPicker', () => {
   it('should keep both view labels in the trigger, so switching views keeps its width', () => {
     const labels = mountPicker().get('[data-testid="balance-view-picker-trigger"]').text();
 
-    expect(labels).toContain('balance_view.queried');
+    expect(labels).toContain('balance_view.live');
     expect(labels).toContain('balance_view.history');
   });
 

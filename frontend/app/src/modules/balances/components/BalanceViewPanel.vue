@@ -50,7 +50,7 @@ const reconciliationIssues = computed<boolean>(() => get(totals).mismatch + get(
 function basisLabel({ basis }: SourceDifference): string {
   if (basis === 'derived')
     return t('balance_view.basis_derived');
-  return basis === 'queried' ? t('balance_view.basis_queried') : t('balance_view.not_in_history');
+  return basis === 'queried' ? t('balance_view.basis_live') : t('balance_view.not_in_history');
 }
 
 function select(value: BalanceView | BalanceView[] | undefined): void {
@@ -78,16 +78,34 @@ function select(value: BalanceView | BalanceView[] | undefined): void {
         :model-value="BalanceView.QUERIED"
         data-testid="balance-view-queried"
       >
-        {{ t('balance_view.queried') }}
+        {{ t('balance_view.live_balances') }}
       </RuiButton>
       <RuiButton
         :model-value="BalanceView.HISTORY"
         :disabled="!hasData"
         data-testid="balance-view-history"
       >
-        {{ t('balance_view.from_history') }}
+        {{ t('balance_view.from_event_history') }}
       </RuiButton>
     </RuiButtonGroup>
+
+    <p
+      class="grid -mt-1 text-xs text-rui-text-secondary"
+      data-testid="balance-view-panel-description"
+    >
+      <span
+        class="col-start-1 row-start-1"
+        :class="{ invisible: view !== BalanceView.QUERIED }"
+      >
+        {{ t('balance_view.live_description') }}
+      </span>
+      <span
+        class="col-start-1 row-start-1"
+        :class="{ invisible: view !== BalanceView.HISTORY }"
+      >
+        {{ t('balance_view.history_description') }}
+      </span>
+    </p>
 
     <template v-if="hasData">
       <section class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
@@ -99,7 +117,7 @@ function select(value: BalanceView | BalanceView[] | undefined): void {
           class="justify-self-end"
           :value="historyNetWorth"
         />
-        <span class="text-rui-text-secondary">{{ t('balance_view.queried') }}</span>
+        <span class="text-rui-text-secondary">{{ t('balance_view.live') }}</span>
         <FiatDisplay
           class="justify-self-end"
           :value="queriedNetWorth"

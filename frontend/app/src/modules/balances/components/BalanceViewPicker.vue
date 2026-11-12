@@ -35,7 +35,7 @@ watch(available, loadSummaryWhenAvailable, { immediate: true });
       <button
         type="button"
         class="inline-flex items-center gap-1 h-7 px-1.5 rounded-md text-sm text-rui-primary hover:bg-rui-primary/10"
-        :aria-label="t('balance_view.label')"
+        :aria-label="t('balance_view.trigger_label', { view: isHistory ? t('balance_view.from_history') : t('balance_view.live') })"
         data-testid="balance-view-picker-trigger"
         v-bind="attrs"
       >
@@ -44,7 +44,7 @@ watch(available, loadSummaryWhenAvailable, { immediate: true });
             class="col-start-1 row-start-1"
             :class="{ invisible: isHistory }"
           >
-            {{ t('balance_view.queried') }}
+            {{ t('balance_view.live') }}
           </span>
           <span
             class="col-start-1 row-start-1"
