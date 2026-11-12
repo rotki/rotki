@@ -255,6 +255,8 @@
     "blocked": {
       "no_link": "The balance after this event is unknown: an earlier event took this account's balance of the asset below zero, so later events could not be applied.",
       "open_issue": "The balance after this event is unknown: an earlier event took this account's balance of the asset below zero. Click to open the data issue and resolve it.",
+      "self_no_link": "The balance after this event is unknown: this event took this account's balance of the asset below zero, so it and later events could not be applied.",
+      "self_open_issue": "The balance after this event is unknown: this event took this account's balance of the asset below zero. Click to open the data issue and resolve it.",
       "view_event": "The balance after this event is unknown: an earlier event took this account's balance of the asset below zero. Click to go to that event."
     },
     "error": "Could not load the balance for this event.",

@@ -124,6 +124,7 @@ const placeholder = computed<string | undefined>(() => {
       v-else-if="status === EventOverlayStatus.BLOCKED && stop"
       :stop="stop"
       :asset="event.asset"
+      :event-identifier="event.identifier"
     />
 
     <div

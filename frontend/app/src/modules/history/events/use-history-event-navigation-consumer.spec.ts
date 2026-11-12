@@ -655,6 +655,35 @@ describe('use-history-event-navigation-consumer', () => {
       });
     });
 
+    it('should keep the balance overlay on when the route query carries it', async () => {
+      setupMockRoute('/history/events/', {
+        highlightedNegativeBalanceEvent: '500',
+        overlay: 'balance',
+        targetGroupIdentifier: 'group-route',
+      });
+      mockGetHistoryEventGroupPosition.mockResolvedValue(10);
+
+      const { useHistoryEventNavigationConsumer } = await importFresh();
+      const pagination = createPagination(10);
+
+      scope.run(() => {
+        useHistoryEventNavigationConsumer(pagination);
+      });
+
+      await flushPromises();
+
+      expect(mockRouterPush).toHaveBeenCalledWith({
+        force: true,
+        name: '/history/events/',
+        query: {
+          highlightedNegativeBalanceEvent: '500',
+          limit: '10',
+          overlay: 'balance',
+          page: '2',
+        },
+      });
+    });
+
     it('should push the asset-filter route before loading and preserve the filter after loading', async () => {
       setupMockRoute('/history/events/', {
         asset: 'ETH',

@@ -1,20 +1,27 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 import type { HistoricalBalanceStop } from '@/modules/history/balances/types';
+import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 
-const { stop, asset } = defineProps<{
+const { stop, asset, eventIdentifier } = defineProps<{
   stop: HistoricalBalanceStop;
   asset: string;
+  /** The event of the row, which is the stopping event itself when the stop starts here. */
+  eventIdentifier: number;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const isStoppingEvent = computed<boolean>(() => stop.eventIdentifier === eventIdentifier);
 
 /**
  * Where the user can resolve the stop: its data issue, else the stopping event itself.
  *
  * @remarks
  * The events view pages to an event only through its group, so a stop with neither an issue nor
- * a surviving event gets no link rather than one that lands on an unfiltered list.
+ * a surviving event gets no link rather than one that lands on an unfiltered list. The stopping
+ * event's own row gets no event link either, since it would only point back at itself. The event
+ * link keeps the overlay on, so the user lands on the column they came from.
  */
 const route = computed<RouteLocationRaw | undefined>(() => {
   if (stop.issueId !== null) {
@@ -24,7 +31,7 @@ const route = computed<RouteLocationRaw | undefined>(() => {
       query: { issue: String(stop.issueId) },
     };
   }
-  if (stop.groupIdentifier === null)
+  if (stop.groupIdentifier === null || get(isStoppingEvent))
     return undefined;
 
   return {
@@ -32,12 +39,18 @@ const route = computed<RouteLocationRaw | undefined>(() => {
     query: {
       asset,
       highlightedNegativeBalanceEvent: String(stop.eventIdentifier),
+      overlay: OverlayMode.BALANCE,
       targetGroupIdentifier: stop.groupIdentifier,
     },
   };
 });
 
 const explanation = computed<string>(() => {
+  if (get(isStoppingEvent)) {
+    return stop.issueId === null
+      ? t('accounting_overlay.blocked.self_no_link')
+      : t('accounting_overlay.blocked.self_open_issue');
+  }
   if (stop.issueId !== null)
     return t('accounting_overlay.blocked.open_issue');
   if (stop.groupIdentifier !== null)

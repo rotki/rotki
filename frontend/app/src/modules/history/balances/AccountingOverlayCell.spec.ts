@@ -19,7 +19,7 @@ vi.mock('@/modules/history/events/mapping/use-history-event-mappings', () => ({
 }));
 
 const stubs = {
-  AccountingOverlayBlocked: { props: ['stop', 'asset'], template: '<div class="blocked" :data-event="stop.eventIdentifier" :data-asset="asset" />' },
+  AccountingOverlayBlocked: { props: ['stop', 'asset', 'eventIdentifier'], template: '<div class="blocked" :data-event="stop.eventIdentifier" :data-asset="asset" :data-row="eventIdentifier" />' },
   AccountingOverlayBuckets: { props: ['eventLocation', 'eventProtocol'], template: '<div class="buckets" :data-location="eventLocation" :data-protocol="eventProtocol ?? \'\'" />' },
   AccountingOverlaySparkline: { template: '<div class="sparkline" />' },
   AssetAmountDisplay: { props: ['amount', 'asset'], template: '<span class="amount">{{ amount?.toString() }}</span>' },
@@ -136,6 +136,7 @@ describe('accountingOverlayCell.vue', () => {
     const blocked = wrapper.find('.blocked');
     expect(blocked.attributes('data-event')).toBe('7');
     expect(blocked.attributes('data-asset')).toBe('ETH');
+    expect(blocked.attributes('data-row')).toBe('123');
     expect(wrapper.find('.amount').exists()).toBe(false);
   });
 
