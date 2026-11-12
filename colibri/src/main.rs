@@ -1,27 +1,19 @@
 use crate::blockchain::EvmInquirerManager;
-use axum::http::{
-    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
-    request::Parts as RequestParts,
-    HeaderValue,
-};
 use axum::{http::Request, routing, Router};
 use database::DBHandler;
-use glob::Pattern;
 use log::{error, info};
 use std::collections::HashSet;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio::sync::{Mutex, RwLock};
-use tower_http::{
-    cors::{AllowOrigin, Any, CorsLayer},
-    trace::TraceLayer,
-};
+use tower_http::trace::TraceLayer;
 
 mod api;
 mod args;
 mod blockchain;
 mod coingecko;
+mod cors;
 mod database;
 mod globaldb;
 mod http;
@@ -132,39 +124,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ))
         .with_state(state);
 
-    let cors_patterns: Vec<Pattern> = parsed_args
-        .api_cors
-        .iter()
-        .filter_map(|pattern| match Pattern::new(pattern) {
-            Ok(glob) => Some(glob),
-            Err(e) => {
-                error!(
-                    "Found pattern {} not valid for API CORS due to {}",
-                    pattern, e
-                );
-                None
-            }
-        })
-        .collect();
-
-    // configure cors to allow only requests matching the configured glob patterns
-    let cors_layer = CorsLayer::new()
-        .allow_origin(AllowOrigin::predicate(
-            move |origin: &HeaderValue, _request_parts: &RequestParts| {
-                if let Ok(origin_str) = origin.to_str() {
-                    // Check if the origin matches any of our glob patterns
-                    for pattern in &cors_patterns {
-                        if pattern.matches(origin_str) {
-                            return true;
-                        }
-                    }
-                    error!("Origin {} did not match any CORS patterns", origin_str);
-                }
-                false
-            },
-        ))
-        .allow_methods(Any)
-        .allow_headers([CONTENT_TYPE, AUTHORIZATION, ACCEPT]);
+    let cors_layer = cors::cors_layer(&parsed_args.api_cors);
 
     let app = Router::new()
         .merge(stateless_routes)
