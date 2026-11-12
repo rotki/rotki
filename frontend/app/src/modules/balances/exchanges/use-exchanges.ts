@@ -114,12 +114,19 @@ export function useExchanges(): UseExchangesReturn {
     });
   };
 
+  /**
+   * Refreshes every exchange with a connection, once per exchange.
+   *
+   * @remarks
+   * One query of a location returns all of its connections, so querying it once per connection
+   * repeats the same work as many times as the exchange has accounts.
+   */
   const fetchConnectedExchangeBalances = async (refresh = false): Promise<void> => {
-    const exchanges = get(connectedExchanges);
-    for (const exchange of exchanges) {
+    const locations = new Set(get(connectedExchanges).map(({ location }) => location));
+    for (const location of locations) {
       await fetchExchangeBalances({
         ignoreCache: refresh,
-        location: exchange.location,
+        location,
       });
     }
   };
