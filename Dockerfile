@@ -19,7 +19,7 @@ RUN --mount=type=cache,target=/pnpm-store \
     pnpm install --frozen-lockfile && \
     pnpm run docker:build
 
-FROM rust:1.91-bookworm AS rust-build-stage
+FROM rust:1.99-bookworm AS rust-build-stage
 
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
@@ -44,8 +44,8 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # The non-amd64 PyInstaller bootloader is built from source below. Copy the Rust
 # toolchain from its image rather than from rust-build-stage, so both stages can
 # still build in parallel.
-COPY --from=rust:1.91-bookworm /usr/local/cargo /usr/local/cargo
-COPY --from=rust:1.91-bookworm /usr/local/rustup /usr/local/rustup
+COPY --from=rust:1.99-bookworm /usr/local/cargo /usr/local/cargo
+COPY --from=rust:1.99-bookworm /usr/local/rustup /usr/local/rustup
 ENV CARGO_HOME=/usr/local/cargo \
     RUSTUP_HOME=/usr/local/rustup \
     PATH=/usr/local/cargo/bin:$PATH
