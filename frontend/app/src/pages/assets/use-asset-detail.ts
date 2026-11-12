@@ -40,7 +40,7 @@ interface UseAssetDetailReturn {
  * @param identifier - the asset the page shows
  * @param isHistory - the page's balance view; the page provides it, so it cannot inject it
  */
-export function useAssetDetail(identifier: MaybeRefOrGetter<string>, isHistory?: ComputedRef<boolean>): UseAssetDetailReturn {
+export function useAssetDetail(identifier: MaybeRefOrGetter<string>, isHistory: ComputedRef<boolean>): UseAssetDetailReturn {
   const router = useRouter();
   const route = useRoute();
 

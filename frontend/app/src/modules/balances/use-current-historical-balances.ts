@@ -28,6 +28,10 @@ export interface UseCurrentHistoricalBalancesReturn {
  * requests. Nothing loads until a caller asks with `ensureLoaded`; after that, the snapshot reloads
  * when backend processing completes, when a history sync settles, and when the ignored assets
  * change. A monotonic request counter drops responses that arrive after a newer load started.
+ *
+ * The shared instance, its watchers with it, is disposed when the last page using it unmounts,
+ * while the store keeps the snapshot. Changes made while no page was listening went unseen, so a
+ * snapshot that is already loaded is refreshed each time a page sets this up again.
  */
 export const useCurrentHistoricalBalances = createSharedComposable((): UseCurrentHistoricalBalancesReturn => {
   const store = useHistoricalSnapshotStore();
@@ -88,6 +92,8 @@ export const useCurrentHistoricalBalances = createSharedComposable((): UseCurren
   watch(historicalBalanceProcessingCompleted, refreshIfLoaded);
   watch(syncCompleted, refreshIfLoaded);
   watch(ignoredAssets, refreshIfLoaded);
+
+  refreshIfLoaded();
 
   return {
     ensureLoaded,

@@ -82,7 +82,7 @@ function balance(asset: string): AssetBalanceWithPrice {
 
 describe('pages/assets/useAssetDetail', () => {
   function setup(identifier = PARENT): ReturnType<typeof useAssetDetail> {
-    return withSetup(() => useAssetDetail(() => identifier)).result;
+    return withSetup(() => useAssetDetail(() => identifier, computed<boolean>(() => false))).result;
   }
 
   beforeEach(() => {

@@ -150,6 +150,31 @@ describe('useCurrentHistoricalBalances', () => {
     expect(store.entries.map(entry => entry.asset)).toEqual(['DAI']);
   });
 
+  it('should refresh a loaded snapshot when a page sets it up again after every page left', async () => {
+    const { ensureLoaded } = await create();
+    await ensureLoaded();
+    await flushPromises();
+    scope.stop();
+
+    h.syncCompleted.value += 1;
+    await flushPromises();
+    expect(h.fetchCurrentHistoricalBalances).toHaveBeenCalledOnce();
+
+    scope = effectScope();
+    const { useCurrentHistoricalBalances } = await import('./use-current-historical-balances');
+    scope.run(() => useCurrentHistoricalBalances());
+    await flushPromises();
+
+    expect(h.fetchCurrentHistoricalBalances).toHaveBeenCalledTimes(2);
+  });
+
+  it('should not load on set-up when nothing has been loaded yet', async () => {
+    await create();
+    await flushPromises();
+
+    expect(h.fetchCurrentHistoricalBalances).not.toHaveBeenCalled();
+  });
+
   it('should trigger backend processing on demand', async () => {
     const { triggerProcessing } = await create();
     await triggerProcessing();

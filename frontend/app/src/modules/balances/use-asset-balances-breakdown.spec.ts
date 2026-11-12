@@ -15,6 +15,8 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useHistoricalSnapshotStore } from '@/modules/balances/use-historical-snapshot-store';
 import { provideHistoryView } from '@/modules/balances/view/balance-view';
 import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN, TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
+import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 
 vi.mock('@/modules/core/common/use-supported-chains', async () => {
   const { computed } = await import('vue');
@@ -219,6 +221,12 @@ describe('useAssetBalancesBreakdown', () => {
 
     it('should list the history buckets, without queried exchanges or manual balances, in the history view', () => {
       expect(breakdownInHistoryView('GNO')).toMatchObject([{ address: '0xaddress1', amount: bigNumberify(5), location: 'ethereum' }]);
+    });
+
+    it('should leave out history buckets at or below the blockchain small-balance threshold', () => {
+      useSettingsRepo().updateFrontend({ balanceValueThreshold: { [BalanceSource.BLOCKCHAIN]: '1000000' } });
+
+      expect(breakdownInHistoryView('GNO')).toStrictEqual([]);
     });
 
     it('should keep liabilities queried and leave manual liabilities out in the history view', () => {

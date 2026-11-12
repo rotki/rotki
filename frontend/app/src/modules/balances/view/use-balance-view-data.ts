@@ -4,7 +4,7 @@ import { type AssetBalanceWithPriceAndChains, type BigNumber, Zero } from '@rotk
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useHistoricalSnapshotStore } from '@/modules/balances/use-historical-snapshot-store';
 import { useIsHistoryView } from '@/modules/balances/view/balance-view';
-import { type AssetComparison, compareByAsset, withQueriedOnlyAssets } from '@/modules/balances/view/history-comparison';
+import { type AssetComparison, compareByAsset, withMissingAssets } from '@/modules/balances/view/history-comparison';
 import { useHistoryBalances } from '@/modules/balances/view/use-history-balances';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
@@ -55,7 +55,7 @@ function priceInfoOf(rows: readonly AssetBalanceWithPriceAndChains[], identifier
  * component cannot inject what it provides
  */
 export function useBalanceViewData(isHistory: ComputedRef<boolean> = useIsHistoryView()): UseBalanceViewDataReturn {
-  const { getBalances, getLiabilities } = useAggregatedBalances();
+  const { getAssetPriceInfo: getLiveAssetPriceInfo, getBalances, getLiabilities } = useAggregatedBalances();
   const history = useHistoryBalances();
   const { hasData } = storeToRefs(useHistoricalSnapshotStore());
   const { nftValue, totalNetWorth } = storeToRefs(useStatisticsStore());
@@ -64,11 +64,18 @@ export function useBalanceViewData(isHistory: ComputedRef<boolean> = useIsHistor
   const historyBalances = computed<AssetBalanceWithPriceAndChains[]>(() => history.getBalances());
   const historyLiabilities = computed<AssetBalanceWithPriceAndChains[]>(() => history.getLiabilities());
 
-  const balances = computed<AssetBalanceWithPriceAndChains[]>(() => (get(isHistory)
-    ? withQueriedOnlyAssets(get(historyBalances), getBalances())
-    : getBalances()));
+  /** Live rows; once history has data, each view also lists at zero what only the other holds. */
+  const balances = computed<AssetBalanceWithPriceAndChains[]>(() => {
+    const live = getBalances();
+    if (!get(hasData))
+      return live;
+    return get(isHistory) ? withMissingAssets(get(historyBalances), live) : withMissingAssets(live, get(historyBalances));
+  });
 
-  const liabilities = computed<AssetBalanceWithPriceAndChains[]>(() => (get(isHistory) ? get(historyLiabilities) : getLiabilities()));
+  /** History liabilities are a subset of the live ones, so only the history view needs zero rows. */
+  const liabilities = computed<AssetBalanceWithPriceAndChains[]>(() => (get(isHistory)
+    ? withMissingAssets(get(historyLiabilities), getLiabilities())
+    : getLiabilities()));
 
   const historyNetWorth = computed<BigNumber>(() => sumValues(get(historyBalances))
     .plus(get(nftsInNetValue) ? get(nftValue) : Zero)
@@ -82,8 +89,9 @@ export function useBalanceViewData(isHistory: ComputedRef<boolean> = useIsHistor
     compareByAsset(get(historyBalances), getBalances(), history.getManualBalances()));
 
   function getAssetPriceInfo(identifier: string, groupCollection = false): AssetPriceInfo {
-    const rows = get(isHistory) ? history.getBalances(groupCollection) : getBalances(true, groupCollection);
-    return priceInfoOf(rows, identifier);
+    return get(isHistory)
+      ? priceInfoOf(history.getBalances(groupCollection), identifier)
+      : getLiveAssetPriceInfo(identifier, groupCollection);
   }
 
   function getAssetComparison(identifier: string, groupCollection = false): AssetComparison {
