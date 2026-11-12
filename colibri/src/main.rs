@@ -20,6 +20,7 @@ mod http;
 mod icons;
 mod logging;
 mod session;
+mod spam_detection;
 mod types;
 
 #[tokio::main(flavor = "multi_thread")]
@@ -97,6 +98,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route(
             "/assets/search/levenshtein",
             routing::post(api::assets::search_assets_levenshtein),
+        )
+        .route(
+            "/assets/spam/predict",
+            routing::post(api::assets::get_spam_predictions),
         )
         .route(
             "/prices/oracle",

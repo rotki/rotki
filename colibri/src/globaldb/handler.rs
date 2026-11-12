@@ -32,6 +32,16 @@ pub struct OraclePricesQueryResult {
     pub entries_limit: i64,
 }
 
+#[derive(Clone)]
+pub struct SpamTokenMetadata {
+    pub identifier: String,
+    pub name: Option<String>,
+    pub symbol: Option<String>,
+    pub decimals: Option<u32>,
+    pub chain: u32,
+    pub address: String,
+}
+
 #[derive(Clone, Default)]
 pub struct OraclePricesQueryFilters {
     pub from_asset: Option<String>,
@@ -65,6 +75,65 @@ impl GlobalDB {
         } else {
             Ok(None)
         }
+    }
+
+    /// Resolve the local metadata needed to score EVM tokens for spam.
+    ///
+    /// Only EVM tokens whose kind is ERC20 are scored. An identifier that is unknown, is not
+    /// an ERC20 EVM token, or whose row cannot be read is left out of the result.
+    pub async fn get_spam_tokens_metadata(
+        &self,
+        identifiers: &[String],
+    ) -> Result<HashMap<String, SpamTokenMetadata>> {
+        let mut result = HashMap::with_capacity(identifiers.len());
+        let fixed_params = [
+            Value::Text(crate::types::AssetType::EvmToken.serialize_for_db()),
+            Value::Text("A".to_string()),
+        ];
+        let conn = self.conn.lock().await;
+        let chunk_size = SQLITE_SAFE_VARIABLE_LIMIT
+            .saturating_sub(fixed_params.len())
+            .max(1);
+        for chunk in identifiers.chunks(chunk_size) {
+            let placeholders: String = std::iter::repeat_n("?", chunk.len())
+                .collect::<Vec<_>>()
+                .join(",");
+            let query = format!(
+                "SELECT a.identifier, a.name, c.symbol, b.decimals, b.chain, b.address
+                 FROM assets AS a
+                 JOIN evm_tokens AS b ON b.identifier = a.identifier
+                 JOIN common_asset_details AS c ON c.identifier = b.identifier
+                 WHERE a.type = ? AND b.token_kind = ? AND a.identifier IN ({placeholders})"
+            );
+            let params = fixed_params
+                .iter()
+                .cloned()
+                .chain(chunk.iter().map(|id| Value::Text(id.clone())));
+
+            let mut stmt = conn.prepare(&query)?;
+            let mut rows = stmt.query(rusqlite::params_from_iter(params))?;
+            while let Some(row) = rows.next()? {
+                let identifier: String = row.get(0)?;
+                let metadata: Result<SpamTokenMetadata> = (|| {
+                    Ok(SpamTokenMetadata {
+                        identifier: identifier.clone(),
+                        name: row.get(1)?,
+                        symbol: row.get(2)?,
+                        decimals: row.get(3)?,
+                        chain: row.get(4)?,
+                        address: row.get(5)?,
+                    })
+                })();
+                match metadata {
+                    Ok(metadata) => {
+                        result.insert(identifier, metadata);
+                    }
+                    Err(e) => log::error!("Skipping spam metadata of {identifier}: {e}"),
+                }
+            }
+        }
+
+        Ok(result)
     }
 
     pub async fn get_collection_main_asset(&self, asset_id: &str) -> Result<Option<String>> {

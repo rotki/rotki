@@ -1,0 +1,2033 @@
+{
+  "feature_names": [
+    "name_length_log1p",
+    "name_nonascii_fraction",
+    "name_invisible_fraction",
+    "name_combining_fraction",
+    "name_digit_fraction",
+    "name_punctuation_fraction",
+    "name_whitespace_fraction",
+    "name_mixed_scripts",
+    "name_script_count",
+    "name_nfkc_changed",
+    "name_skeleton_changed",
+    "name_has_url",
+    "name_has_promotion",
+    "name_has_contact",
+    "name_has_currency_sign",
+    "name_has_percent",
+    "name_exclamation_count",
+    "symbol_length_log1p",
+    "symbol_nonascii_fraction",
+    "symbol_invisible_fraction",
+    "symbol_combining_fraction",
+    "symbol_digit_fraction",
+    "symbol_punctuation_fraction",
+    "symbol_whitespace_fraction",
+    "symbol_mixed_scripts",
+    "symbol_script_count",
+    "symbol_nfkc_changed",
+    "symbol_skeleton_changed",
+    "symbol_has_url",
+    "symbol_has_promotion",
+    "symbol_has_contact",
+    "symbol_has_currency_sign",
+    "symbol_has_percent",
+    "symbol_exclamation_count",
+    "symbol_canonical_match",
+    "symbol_confusable_canonical_match",
+    "name_symbol_equal",
+    "decimals_scaled",
+    "decimals_missing",
+    "context_tx_count_value",
+    "context_tx_count_missing",
+    "context_mean_log_count_value",
+    "context_mean_log_count_missing",
+    "context_max_log_count_value",
+    "context_max_log_count_missing",
+    "context_mean_token_transfer_count_value",
+    "context_mean_token_transfer_count_missing",
+    "context_max_token_transfer_count_value",
+    "context_max_token_transfer_count_missing",
+    "context_min_prior_tx_gap_seconds_value",
+    "context_min_prior_tx_gap_seconds_missing",
+    "context_known_origin_fraction_value",
+    "context_known_origin_fraction_missing",
+    "context_outgoing_fraction_value",
+    "context_outgoing_fraction_missing",
+    "context_in_packaged_globaldb_value",
+    "context_in_packaged_globaldb_missing",
+    "context_in_collection_value",
+    "context_in_collection_missing"
+  ],
+  "cases": [
+    {
+      "label": "usdc_known_token",
+      "record": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": 6,
+        "context": {
+          "tx_count": 141,
+          "mean_log_count": 13.31205673758865,
+          "max_log_count": 211,
+          "mean_token_transfer_count": 3.234042553191489,
+          "max_token_transfer_count": 140,
+          "min_prior_tx_gap_seconds": 12,
+          "known_origin_fraction": null,
+          "outgoing_fraction": 0.6785714285714286,
+          "in_packaged_globaldb": true,
+          "in_collection": true
+        }
+      },
+      "skeleton": {
+        "name": "usd coin",
+        "symbol": "usdc"
+      },
+      "vector": [
+        2.1972245773362196,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.125,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.6094379124341003,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.023529411764705882,
+        0.0,
+        4.955827057601261,
+        0.0,
+        2.661102310535386,
+        0.0,
+        5.356586274672012,
+        0.0,
+        1.4431572230144338,
+        0.0,
+        4.948759890378168,
+        0.0,
+        2.5649493574615367,
+        0.0,
+        0.0,
+        1.0,
+        0.6785714285714286,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "feature_values": [
+        2.1972245773362196,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.125,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.6094379124341003,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.023529411764705882,
+        0.0,
+        4.955827057601261,
+        0.0,
+        2.661102310535386,
+        0.0,
+        5.356586274672012,
+        0.0,
+        1.4431572230144338,
+        0.0,
+        4.948759890378168,
+        0.0,
+        2.5649493574615367,
+        0.0,
+        0.0,
+        1.0,
+        0.6785714285714286,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "evidence": [
+        {
+          "field": "symbol",
+          "code": "common_symbol"
+        },
+        {
+          "field": "context",
+          "code": "known_origin_unavailable"
+        },
+        {
+          "field": "context",
+          "code": "max_token_transfers",
+          "value": 140.0
+        },
+        {
+          "field": "context",
+          "code": "mean_token_transfers",
+          "value": 3.234042553191489
+        },
+        {
+          "field": "context",
+          "code": "in_packaged_globaldb"
+        },
+        {
+          "field": "context",
+          "code": "in_collection"
+        }
+      ],
+      "prediction": {
+        "spam_probability": 0.05097038595323972,
+        "flagged": false,
+        "threshold": 0.8708363650723653,
+        "observed_signals": [
+          {
+            "field": "symbol",
+            "code": "common_symbol"
+          },
+          {
+            "field": "context",
+            "code": "known_origin_unavailable"
+          },
+          {
+            "field": "context",
+            "code": "max_token_transfers",
+            "value": 140.0
+          },
+          {
+            "field": "context",
+            "code": "mean_token_transfers",
+            "value": 3.234042553191489
+          },
+          {
+            "field": "context",
+            "code": "in_packaged_globaldb"
+          },
+          {
+            "field": "context",
+            "code": "in_collection"
+          }
+        ],
+        "model_reasons": [
+          {
+            "feature": "context_max_token_transfer_count_value",
+            "value": 4.948759890378168,
+            "probability_delta": 0.03956609661401036
+          },
+          {
+            "feature": "symbol_canonical_match",
+            "value": 1.0,
+            "probability_delta": 0.03907174462644025
+          },
+          {
+            "feature": "context_mean_token_transfer_count_value",
+            "value": 1.4431572230144338,
+            "probability_delta": 0.02266722818623658
+          },
+          {
+            "feature": "context_outgoing_fraction_missing",
+            "value": 0.0,
+            "probability_delta": 0.013322517633083314
+          },
+          {
+            "feature": "decimals_scaled",
+            "value": 0.023529411764705882,
+            "probability_delta": 0.007932145334438458
+          }
+        ]
+      }
+    },
+    {
+      "label": "cyrillic_te_impostor",
+      "record": {
+        "name": "Тether USD",
+        "symbol": "USDТ",
+        "decimals": 6,
+        "context": {}
+      },
+      "skeleton": {
+        "name": "tether usd",
+        "symbol": "usdt"
+      },
+      "vector": [
+        2.3978952727983707,
+        0.1,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.1,
+        1.0,
+        2.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.6094379124341003,
+        0.25,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        2.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.023529411764705882,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "feature_values": [
+        2.3978952727983707,
+        0.1,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.1,
+        1.0,
+        2.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.6094379124341003,
+        0.25,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        2.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.023529411764705882,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "evidence": [
+        {
+          "field": "name",
+          "code": "non_ascii"
+        },
+        {
+          "field": "name",
+          "code": "mixed_scripts"
+        },
+        {
+          "field": "symbol",
+          "code": "non_ascii"
+        },
+        {
+          "field": "symbol",
+          "code": "mixed_scripts"
+        },
+        {
+          "field": "symbol",
+          "code": "lookalike_symbol"
+        },
+        {
+          "field": "context",
+          "code": "known_origin_unavailable"
+        }
+      ],
+      "prediction": {
+        "spam_probability": 0.9793504767071407,
+        "flagged": true,
+        "threshold": 0.8708363650723653,
+        "observed_signals": [
+          {
+            "field": "name",
+            "code": "non_ascii"
+          },
+          {
+            "field": "name",
+            "code": "mixed_scripts"
+          },
+          {
+            "field": "symbol",
+            "code": "non_ascii"
+          },
+          {
+            "field": "symbol",
+            "code": "mixed_scripts"
+          },
+          {
+            "field": "symbol",
+            "code": "lookalike_symbol"
+          },
+          {
+            "field": "context",
+            "code": "known_origin_unavailable"
+          }
+        ],
+        "model_reasons": [
+          {
+            "feature": "symbol_confusable_canonical_match",
+            "value": 1.0,
+            "probability_delta": 0.13661926873046626
+          },
+          {
+            "feature": "name_mixed_scripts",
+            "value": 1.0,
+            "probability_delta": 0.03790662650851262
+          },
+          {
+            "feature": "symbol_mixed_scripts",
+            "value": 1.0,
+            "probability_delta": 0.02746757067688521
+          },
+          {
+            "feature": "symbol_script_count",
+            "value": 2.0,
+            "probability_delta": 0.01101454448462258
+          },
+          {
+            "feature": "name_skeleton_changed",
+            "value": 1.0,
+            "probability_delta": 0.006873065219306529
+          }
+        ]
+      }
+    },
+    {
+      "label": "promotional_url_token",
+      "record": {
+        "name": "# liquid-eth.org",
+        "symbol": "Visit liquid-eth.org claim rewards",
+        "decimals": 6,
+        "context": {}
+      },
+      "skeleton": {
+        "name": "# liquid-eth.org",
+        "symbol": "visit liquid-eth.org claim rewards"
+      },
+      "vector": [
+        2.833213344056216,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.1875,
+        0.0625,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        3.5553480614894135,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.058823529411764705,
+        0.08823529411764706,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.023529411764705882,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "feature_values": [
+        2.833213344056216,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.1875,
+        0.0625,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        3.5553480614894135,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.058823529411764705,
+        0.08823529411764706,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.023529411764705882,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "evidence": [
+        {
+          "field": "name",
+          "code": "url"
+        },
+        {
+          "field": "symbol",
+          "code": "url"
+        },
+        {
+          "field": "symbol",
+          "code": "promotion"
+        },
+        {
+          "field": "context",
+          "code": "known_origin_unavailable"
+        }
+      ],
+      "prediction": {
+        "spam_probability": 0.9999990282688608,
+        "flagged": true,
+        "threshold": 0.8708363650723653,
+        "observed_signals": [
+          {
+            "field": "name",
+            "code": "url"
+          },
+          {
+            "field": "symbol",
+            "code": "url"
+          },
+          {
+            "field": "symbol",
+            "code": "promotion"
+          },
+          {
+            "field": "context",
+            "code": "known_origin_unavailable"
+          }
+        ],
+        "model_reasons": []
+      }
+    },
+    {
+      "label": "fullwidth_invisible_marks",
+      "record": {
+        "name": "ＵＳＤ⁯ Coin",
+        "symbol": "U⁯S⁯D",
+        "decimals": 0,
+        "context": {
+          "known_origin_fraction": 0.25,
+          "in_packaged_globaldb": false,
+          "in_collection": true
+        }
+      },
+      "skeleton": {
+        "name": "usd coin",
+        "symbol": "usd"
+      },
+      "vector": [
+        2.302585092994046,
+        0.4444444444444444,
+        0.1111111111111111,
+        0.0,
+        0.0,
+        0.0,
+        0.1111111111111111,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.791759469228055,
+        0.4,
+        0.4,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.25,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "feature_values": [
+        2.302585092994046,
+        0.4444444444444444,
+        0.1111111111111111,
+        0.0,
+        0.0,
+        0.0,
+        0.1111111111111111,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.791759469228055,
+        0.4,
+        0.4,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.25,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "evidence": [
+        {
+          "field": "name",
+          "code": "non_ascii"
+        },
+        {
+          "field": "name",
+          "code": "invisible_characters"
+        },
+        {
+          "field": "symbol",
+          "code": "non_ascii"
+        },
+        {
+          "field": "symbol",
+          "code": "invisible_characters"
+        },
+        {
+          "field": "context",
+          "code": "not_in_packaged_globaldb"
+        },
+        {
+          "field": "context",
+          "code": "in_collection"
+        }
+      ],
+      "prediction": {
+        "spam_probability": 0.9596773109537396,
+        "flagged": true,
+        "threshold": 0.8708363650723653,
+        "observed_signals": [
+          {
+            "field": "name",
+            "code": "non_ascii"
+          },
+          {
+            "field": "name",
+            "code": "invisible_characters"
+          },
+          {
+            "field": "symbol",
+            "code": "non_ascii"
+          },
+          {
+            "field": "symbol",
+            "code": "invisible_characters"
+          },
+          {
+            "field": "context",
+            "code": "not_in_packaged_globaldb"
+          },
+          {
+            "field": "context",
+            "code": "in_collection"
+          }
+        ],
+        "model_reasons": [
+          {
+            "feature": "name_skeleton_changed",
+            "value": 1.0,
+            "probability_delta": 0.11317925373563564
+          },
+          {
+            "feature": "name_nfkc_changed",
+            "value": 1.0,
+            "probability_delta": 0.04341936055814932
+          },
+          {
+            "feature": "symbol_skeleton_changed",
+            "value": 1.0,
+            "probability_delta": 0.032489110116142084
+          },
+          {
+            "feature": "name_nonascii_fraction",
+            "value": 0.4444444444444444,
+            "probability_delta": 0.025371243144179823
+          },
+          {
+            "feature": "symbol_invisible_fraction",
+            "value": 0.4,
+            "probability_delta": 0.01494510687215822
+          }
+        ]
+      }
+    },
+    {
+      "label": "mixed_scripts_and_combining",
+      "record": {
+        "name": "代币 Coin ́",
+        "symbol": "C̸ÓIN",
+        "decimals": 255,
+        "context": {
+          "tx_count": 1000000000,
+          "mean_log_count": 1000000,
+          "max_log_count": 2000000,
+          "mean_token_transfer_count": 500000,
+          "max_token_transfer_count": 1000000,
+          "min_prior_tx_gap_seconds": 315576000,
+          "known_origin_fraction": 1.0,
+          "outgoing_fraction": 1.0,
+          "in_packaged_globaldb": true,
+          "in_collection": false
+        }
+      },
+      "skeleton": {
+        "name": "代币 coin ́",
+        "symbol": "c̸óin"
+      },
+      "vector": [
+        2.302585092994046,
+        0.3333333333333333,
+        0.0,
+        0.1111111111111111,
+        0.0,
+        0.0,
+        0.2222222222222222,
+        1.0,
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.9459101490553132,
+        0.3333333333333333,
+        0.0,
+        0.3333333333333333,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        20.72326583794641,
+        0.0,
+        13.815511557963774,
+        0.0,
+        13.815511557963774,
+        0.0,
+        13.122365377402328,
+        0.0,
+        13.815511557963774,
+        0.0,
+        19.569910101585812,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "feature_values": [
+        2.302585092994046,
+        0.3333333333333333,
+        0.0,
+        0.1111111111111111,
+        0.0,
+        0.0,
+        0.2222222222222222,
+        1.0,
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.9459101490553132,
+        0.3333333333333333,
+        0.0,
+        0.3333333333333333,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        20.72326583794641,
+        0.0,
+        13.815511557963774,
+        0.0,
+        13.815511557963774,
+        0.0,
+        13.122365377402328,
+        0.0,
+        13.815511557963774,
+        0.0,
+        19.569910101585812,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "evidence": [
+        {
+          "field": "name",
+          "code": "non_ascii"
+        },
+        {
+          "field": "name",
+          "code": "combining_marks"
+        },
+        {
+          "field": "name",
+          "code": "mixed_scripts"
+        },
+        {
+          "field": "symbol",
+          "code": "non_ascii"
+        },
+        {
+          "field": "symbol",
+          "code": "combining_marks"
+        },
+        {
+          "field": "context",
+          "code": "max_token_transfers",
+          "value": 1000000.0
+        },
+        {
+          "field": "context",
+          "code": "mean_token_transfers",
+          "value": 500000.0
+        },
+        {
+          "field": "context",
+          "code": "in_packaged_globaldb"
+        },
+        {
+          "field": "context",
+          "code": "not_in_collection"
+        }
+      ],
+      "prediction": {
+        "spam_probability": 0.007649779993860275,
+        "flagged": false,
+        "threshold": 0.8708363650723653,
+        "observed_signals": [
+          {
+            "field": "name",
+            "code": "non_ascii"
+          },
+          {
+            "field": "name",
+            "code": "combining_marks"
+          },
+          {
+            "field": "name",
+            "code": "mixed_scripts"
+          },
+          {
+            "field": "symbol",
+            "code": "non_ascii"
+          },
+          {
+            "field": "symbol",
+            "code": "combining_marks"
+          },
+          {
+            "field": "context",
+            "code": "max_token_transfers",
+            "value": 1000000.0
+          },
+          {
+            "field": "context",
+            "code": "mean_token_transfers",
+            "value": 500000.0
+          },
+          {
+            "field": "context",
+            "code": "in_packaged_globaldb"
+          },
+          {
+            "field": "context",
+            "code": "not_in_collection"
+          }
+        ],
+        "model_reasons": [
+          {
+            "feature": "context_mean_token_transfer_count_value",
+            "value": 13.122365377402328,
+            "probability_delta": 0.007649264761334983
+          },
+          {
+            "feature": "context_max_token_transfer_count_value",
+            "value": 13.815511557963774,
+            "probability_delta": 0.0076390484737756306
+          },
+          {
+            "feature": "context_min_prior_tx_gap_seconds_value",
+            "value": 19.569910101585812,
+            "probability_delta": 0.005335071756315561
+          },
+          {
+            "feature": "symbol_nfkc_changed",
+            "value": 1.0,
+            "probability_delta": 0.0044975649795296595
+          },
+          {
+            "feature": "name_nonascii_fraction",
+            "value": 0.3333333333333333,
+            "probability_delta": 0.00361673796014345
+          }
+        ]
+      }
+    },
+    {
+      "label": "empty_metadata_missing_context",
+      "record": {
+        "name": null,
+        "symbol": null,
+        "decimals": null,
+        "context": {}
+      },
+      "skeleton": {
+        "name": "",
+        "symbol": ""
+      },
+      "vector": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "feature_values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "evidence": [
+        {
+          "field": "context",
+          "code": "known_origin_unavailable"
+        }
+      ],
+      "prediction": {
+        "spam_probability": 0.9997793983634473,
+        "flagged": true,
+        "threshold": 0.8708363650723653,
+        "observed_signals": [
+          {
+            "field": "context",
+            "code": "known_origin_unavailable"
+          }
+        ],
+        "model_reasons": [
+          {
+            "feature": "symbol_script_count",
+            "value": 0.0,
+            "probability_delta": 0.7318777084318352
+          },
+          {
+            "feature": "name_script_count",
+            "value": 0.0,
+            "probability_delta": 0.0060295386056223865
+          },
+          {
+            "feature": "name_length_log1p",
+            "value": 0.0,
+            "probability_delta": 0.003998409970755734
+          }
+        ]
+      }
+    },
+    {
+      "label": "canonical_spelling_with_padding",
+      "record": {
+        "name": "  ",
+        "symbol": " eth ",
+        "decimals": 18,
+        "context": {
+          "tx_count": 0,
+          "mean_log_count": 0,
+          "max_log_count": 0,
+          "mean_token_transfer_count": 0,
+          "max_token_transfer_count": 0,
+          "min_prior_tx_gap_seconds": 0,
+          "known_origin_fraction": 0.0,
+          "outgoing_fraction": 0.0,
+          "in_packaged_globaldb": false,
+          "in_collection": false
+        }
+      },
+      "skeleton": {
+        "name": "",
+        "symbol": "eth"
+      },
+      "vector": [
+        1.0986122886681098,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.791759469228055,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.4,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.07058823529411765,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "feature_values": [
+        1.0986122886681098,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.791759469228055,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.4,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.07058823529411765,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "evidence": [
+        {
+          "field": "symbol",
+          "code": "common_symbol"
+        },
+        {
+          "field": "context",
+          "code": "max_token_transfers",
+          "value": 0.0
+        },
+        {
+          "field": "context",
+          "code": "mean_token_transfers",
+          "value": 0.0
+        },
+        {
+          "field": "context",
+          "code": "not_in_packaged_globaldb"
+        },
+        {
+          "field": "context",
+          "code": "not_in_collection"
+        }
+      ],
+      "prediction": {
+        "spam_probability": 0.99676415469065,
+        "flagged": true,
+        "threshold": 0.8708363650723653,
+        "observed_signals": [
+          {
+            "field": "symbol",
+            "code": "common_symbol"
+          },
+          {
+            "field": "context",
+            "code": "max_token_transfers",
+            "value": 0.0
+          },
+          {
+            "field": "context",
+            "code": "mean_token_transfers",
+            "value": 0.0
+          },
+          {
+            "field": "context",
+            "code": "not_in_packaged_globaldb"
+          },
+          {
+            "field": "context",
+            "code": "not_in_collection"
+          }
+        ],
+        "model_reasons": [
+          {
+            "feature": "symbol_canonical_match",
+            "value": 1.0,
+            "probability_delta": 0.025128039038864736
+          },
+          {
+            "feature": "name_script_count",
+            "value": 0.0,
+            "probability_delta": 0.02354296512483034
+          },
+          {
+            "feature": "symbol_whitespace_fraction",
+            "value": 0.4,
+            "probability_delta": 0.005758745122856679
+          },
+          {
+            "feature": "name_length_log1p",
+            "value": 1.0986122886681098,
+            "probability_delta": 0.0025706381627745856
+          },
+          {
+            "feature": "symbol_length_log1p",
+            "value": 1.791759469228055,
+            "probability_delta": 0.001722071436862871
+          }
+        ]
+      }
+    },
+    {
+      "label": "digits_symbols_and_confusables",
+      "record": {
+        "name": "Free 100% ²³ airdrop!!! visit t.me/claim",
+        "symbol": "ＵＳＤＣ",
+        "decimals": 3,
+        "context": {
+          "tx_count": 12.5,
+          "known_origin_fraction": null,
+          "outgoing_fraction": 0.0
+        }
+      },
+      "skeleton": {
+        "name": "free 100% 23 airdrop!!! visit t.me/claim",
+        "symbol": "usdc"
+      },
+      "vector": [
+        3.713572066704308,
+        0.05,
+        0.0,
+        0.0,
+        0.125,
+        0.15,
+        0.125,
+        0.0,
+        1.0,
+        1.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        1.0,
+        3.0,
+        1.6094379124341003,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.011764705882352941,
+        0.0,
+        2.6026896854443837,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "feature_values": [
+        3.713572066704308,
+        0.05,
+        0.0,
+        0.0,
+        0.125,
+        0.15,
+        0.125,
+        0.0,
+        1.0,
+        1.0,
+        0.0,
+        1.0,
+        1.0,
+        1.0,
+        0.0,
+        1.0,
+        3.0,
+        1.6094379124341003,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.011764705882352941,
+        0.0,
+        2.6026896854443837,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "evidence": [
+        {
+          "field": "name",
+          "code": "non_ascii"
+        },
+        {
+          "field": "name",
+          "code": "url"
+        },
+        {
+          "field": "name",
+          "code": "promotion"
+        },
+        {
+          "field": "symbol",
+          "code": "non_ascii"
+        },
+        {
+          "field": "symbol",
+          "code": "lookalike_symbol"
+        },
+        {
+          "field": "context",
+          "code": "known_origin_unavailable"
+        }
+      ],
+      "prediction": {
+        "spam_probability": 0.9999996277111827,
+        "flagged": true,
+        "threshold": 0.8708363650723653,
+        "observed_signals": [
+          {
+            "field": "name",
+            "code": "non_ascii"
+          },
+          {
+            "field": "name",
+            "code": "url"
+          },
+          {
+            "field": "name",
+            "code": "promotion"
+          },
+          {
+            "field": "symbol",
+            "code": "non_ascii"
+          },
+          {
+            "field": "symbol",
+            "code": "lookalike_symbol"
+          },
+          {
+            "field": "context",
+            "code": "known_origin_unavailable"
+          }
+        ],
+        "model_reasons": []
+      }
+    },
+    {
+      "label": "greek_confusable_and_contact",
+      "record": {
+        "name": "Whatσpp αirdrop",
+        "symbol": "USDT",
+        "decimals": 9,
+        "context": {
+          "max_token_transfer_count": 1,
+          "mean_token_transfer_count": 0.5,
+          "in_collection": true
+        }
+      },
+      "skeleton": {
+        "name": "whatσpp airdrop",
+        "symbol": "usdt"
+      },
+      "vector": [
+        2.772588722239781,
+        0.13333333333333333,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.06666666666666667,
+        1.0,
+        2.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.6094379124341003,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.03529411764705882,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.4054651081081644,
+        0.0,
+        0.6931471805599453,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "feature_values": [
+        2.772588722239781,
+        0.13333333333333333,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.06666666666666667,
+        1.0,
+        2.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.6094379124341003,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.03529411764705882,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.4054651081081644,
+        0.0,
+        0.6931471805599453,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "evidence": [
+        {
+          "field": "name",
+          "code": "non_ascii"
+        },
+        {
+          "field": "name",
+          "code": "mixed_scripts"
+        },
+        {
+          "field": "name",
+          "code": "promotion"
+        },
+        {
+          "field": "symbol",
+          "code": "common_symbol"
+        },
+        {
+          "field": "context",
+          "code": "known_origin_unavailable"
+        },
+        {
+          "field": "context",
+          "code": "max_token_transfers",
+          "value": 1.0
+        },
+        {
+          "field": "context",
+          "code": "mean_token_transfers",
+          "value": 0.5
+        },
+        {
+          "field": "context",
+          "code": "in_collection"
+        }
+      ],
+      "prediction": {
+        "spam_probability": 0.9904043021957156,
+        "flagged": true,
+        "threshold": 0.8708363650723653,
+        "observed_signals": [
+          {
+            "field": "name",
+            "code": "non_ascii"
+          },
+          {
+            "field": "name",
+            "code": "mixed_scripts"
+          },
+          {
+            "field": "name",
+            "code": "promotion"
+          },
+          {
+            "field": "symbol",
+            "code": "common_symbol"
+          },
+          {
+            "field": "context",
+            "code": "known_origin_unavailable"
+          },
+          {
+            "field": "context",
+            "code": "max_token_transfers",
+            "value": 1.0
+          },
+          {
+            "field": "context",
+            "code": "mean_token_transfers",
+            "value": 0.5
+          },
+          {
+            "field": "context",
+            "code": "in_collection"
+          }
+        ],
+        "model_reasons": [
+          {
+            "feature": "name_has_promotion",
+            "value": 1.0,
+            "probability_delta": 0.05129720534520954
+          },
+          {
+            "feature": "symbol_canonical_match",
+            "value": 1.0,
+            "probability_delta": 0.030912680130346315
+          },
+          {
+            "feature": "name_mixed_scripts",
+            "value": 1.0,
+            "probability_delta": 0.00439437159136713
+          },
+          {
+            "feature": "name_nonascii_fraction",
+            "value": 0.13333333333333333,
+            "probability_delta": 0.0016515821986479162
+          },
+          {
+            "feature": "context_max_token_transfer_count_value",
+            "value": 0.6931471805599453,
+            "probability_delta": 0.0012623565867330155
+          }
+        ]
+      }
+    }
+  ],
+  "skeletons": [
+    {
+      "input": "ＵＳＤＣ",
+      "expected": "usdc"
+    },
+    {
+      "input": "U⁯S⁯D",
+      "expected": "usd"
+    },
+    {
+      "input": "Тether",
+      "expected": "tether"
+    },
+    {
+      "input": "  Straße  ",
+      "expected": "strasse"
+    },
+    {
+      "input": "ǅ",
+      "expected": "dž"
+    }
+  ]
+}

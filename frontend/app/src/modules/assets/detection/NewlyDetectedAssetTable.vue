@@ -1,49 +1,31 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
+import type { SpamPredictionToken } from '@/modules/assets/api/use-asset-spam-prediction-api';
 import type { Filters } from '@/modules/assets/detection/newly-detected-filter-keys';
-import { type BigNumber, getAddressFromEvmIdentifier, getAddressFromSolanaIdentifier } from '@rotki/common';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useNewlyDetectedFields } from '@/modules/assets/detection/use-newly-detected-fields';
 import { useNewlyDetectedSelection } from '@/modules/assets/detection/use-newly-detected-selection';
-import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import SpamAssessmentHint from '@/modules/assets/spam/SpamAssessmentHint.vue';
+import { useSpamAssessments } from '@/modules/assets/spam/use-spam-assessments';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useServerTable } from '@/modules/core/table/use-server-table';
-import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
+import { useServerTable, useTableEmptyState } from '@/modules/core/table/use-server-table';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
-import { getTokenChain } from './get-token-chain';
 import NewlyDetectedAssetRowActions from './NewlyDetectedAssetRowActions.vue';
 import NewlyDetectedAssetToolbar from './NewlyDetectedAssetToolbar.vue';
 import { type NewDetectedToken, NewDetectedTokenKind, type NewDetectedTokensRequestPayload } from './types';
+import { type NewlyDetectedTokenRow, useNewlyDetectedTokenRows } from './use-newly-detected-token-rows';
 import { useNewlyDetectedTokens } from './use-newly-detected-tokens';
 
 defineOptions({
   name: 'NewlyDetectedAssetTable',
 });
 
-interface Token extends NewDetectedToken {
-  address: string;
-  chain: string;
-  price?: BigNumber;
-}
-
-const TOKEN_KIND_MAPPING = {
-  [NewDetectedTokenKind.EVM]: {
-    addressFormatter: getAddressFromEvmIdentifier,
-  },
-  [NewDetectedTokenKind.SOLANA]: {
-    addressFormatter: getAddressFromSolanaIdentifier,
-  },
-} as const;
-
 const { t } = useI18n({ useScope: 'global' });
 
 const { getData, isReady } = useNewlyDetectedTokens();
-const { allEvmChains } = useSupportedChains();
-const { getAssetPrice } = usePriceUtils();
 
 const fields = useNewlyDetectedFields();
 
@@ -68,7 +50,13 @@ const {
 
 const emptyState = useTableEmptyState({ error });
 
-const cols = computed<DataTableColumn<Token>[]>(() => [
+const pageTokens = computed<NewDetectedToken[]>(() => get(collection).data);
+const spamTokens = computed<SpamPredictionToken[]>(() => get(pageTokens)
+  .filter(token => token.tokenKind === NewDetectedTokenKind.EVM)
+  .map(token => ({ identifier: token.tokenIdentifier, txReference: token.seenTxReference })));
+const { assessments, status: spamStatus } = useSpamAssessments(spamTokens);
+
+const cols = computed<DataTableColumn<NewlyDetectedTokenRow>[]>(() => [
   {
     // `max-w-0`: the asset takes the room left and truncates, keeping the actions on screen
     cellClass: 'py-0 max-w-0',
@@ -94,6 +82,13 @@ const cols = computed<DataTableColumn<Token>[]>(() => [
   {
     cellClass: 'py-0',
     class: 'py-0',
+    key: 'spam',
+    label: t('spam_estimate.label'),
+    sortable: false,
+  },
+  {
+    cellClass: 'py-0',
+    class: 'py-0',
     key: 'detectedAt',
     label: t('asset_table.newly_detected.detected_at'),
     sortable: true,
@@ -113,17 +108,9 @@ const cols = computed<DataTableColumn<Token>[]>(() => [
   },
 ]);
 
-useRememberTableSorting<Token>(TableId.NEWLY_DETECTED_ASSETS, sort, cols);
+useRememberTableSorting<NewlyDetectedTokenRow>(TableId.NEWLY_DETECTED_ASSETS, sort, cols);
 
-const rows = computed<Token[]>(() => {
-  const evmChains = get(allEvmChains);
-  return get(collection).data.map(data => ({
-    ...data,
-    address: TOKEN_KIND_MAPPING[data.tokenKind].addressFormatter(data.tokenIdentifier),
-    chain: getTokenChain(data, evmChains),
-    price: getAssetPrice(data.tokenIdentifier),
-  }));
-});
+const rows = useNewlyDetectedTokenRows(pageTokens, assessments);
 
 const {
   allSelected,
@@ -163,6 +150,13 @@ onMounted(async () => {
       />
     </template>
 
+    <div
+      v-if="spamStatus === 'unavailable'"
+      class="px-4 pt-2 text-caption text-rui-warning"
+    >
+      {{ t('spam_estimate.unavailable_hint') }}
+    </div>
+
     <RuiDataTable
       v-model="modelSelected"
       v-model:sort.external="sort"
@@ -194,6 +188,10 @@ onMounted(async () => {
           :value="row.price"
           :price-asset="row.tokenIdentifier"
         />
+      </template>
+
+      <template #item.spam="{ row }">
+        <SpamAssessmentHint :assessment="row.spamAssessment" />
       </template>
 
       <template #item.detectedAt="{ row }">

@@ -1,15 +1,26 @@
 import type { SupportedAsset } from '@rotki/common';
 import type { TablePaginationData } from '@rotki/ui-library';
+import type { SpamPredictionResponse, SpamPredictionToken } from '@/modules/assets/api/use-asset-spam-prediction-api';
 import type { Collection } from '@/modules/core/common/collection';
 import { createMock } from '@test/utils/create-mock';
 import { withSetup } from '@test/utils/with-setup';
 import { flushPromises } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';
 import { EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
+import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
 import { useManagedAssetTable } from './use-managed-asset-table';
 
 let itemsPerPage: Ref<number>;
+
+const { predictSpam } = vi.hoisted(() => ({
+  predictSpam: vi.fn<(tokens: SpamPredictionToken[]) => Promise<SpamPredictionResponse>>(),
+}));
+
+vi.mock(import('@/modules/assets/api/use-asset-spam-prediction-api'), async importOriginal => ({
+  ...await importOriginal(),
+  useAssetSpamPredictionApi: (): { predictSpam: typeof predictSpam } => ({ predictSpam }),
+}));
 
 vi.mock('@/modules/settings/use-setting', () => ({
   useSetting: (): Ref<number> => itemsPerPage,
@@ -43,6 +54,53 @@ describe('modules/assets/admin/useManagedAssetTable', () => {
     expanded = ref<SupportedAsset[]>([]);
     collection = ref<Collection<SupportedAsset>>(page([]));
     selected = ref<string[]>([]);
+  });
+
+  afterEach(() => {
+    endSession();
+  });
+
+  describe('the spam estimates', () => {
+    const token = 'eip155:1/erc20:0xToken';
+    const prediction = {
+      flagged: true,
+      modelReasons: [],
+      observedSignals: [],
+      spamProbability: 0.9,
+      threshold: 0.8,
+    };
+
+    beforeEach(() => {
+      predictSpam.mockReset();
+      beginSession();
+    });
+
+    it('should assess only EVM tokens and give other assets no estimate', async () => {
+      predictSpam.mockResolvedValueOnce({ [token]: prediction });
+      set(collection, page([asset({ assetType: EVM_TOKEN, identifier: token }), asset({ identifier: 'BTC' })]));
+      const { getSpamAssessment } = table();
+      await flushPromises();
+
+      expect(predictSpam).toHaveBeenCalledExactlyOnceWith([{ identifier: token }]);
+      expect(getSpamAssessment(token)).toEqual({ prediction, status: 'ready' });
+      expect(getSpamAssessment('BTC')).toBeUndefined();
+    });
+
+    it('should drop the previous page score when the next assessment fails', async () => {
+      const next = 'eip155:1/erc20:0xNext';
+      predictSpam.mockResolvedValueOnce({ [token]: prediction });
+      set(collection, page([asset({ assetType: EVM_TOKEN, identifier: token })]));
+      const { data, getSpamAssessment } = table();
+      await flushPromises();
+
+      predictSpam.mockRejectedValueOnce(new Error('assessment unavailable'));
+      set(collection, page([asset({ assetType: EVM_TOKEN, identifier: next })]));
+      await flushPromises();
+
+      expect(get(data).map(row => row.identifier)).toEqual([next]);
+      expect(getSpamAssessment(token)).toBeUndefined();
+      expect(getSpamAssessment(next)).toEqual({ status: 'unavailable' });
+    });
   });
 
   describe('the rows', () => {
