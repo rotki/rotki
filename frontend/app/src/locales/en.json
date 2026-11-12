@@ -252,6 +252,11 @@
   },
   "accounting_overlay": {
     "balance_after": "Balance after this event",
+    "blocked": {
+      "no_link": "The balance after this event is unknown: an earlier event took this account's balance of the asset below zero, so later events could not be applied.",
+      "open_issue": "The balance after this event is unknown: an earlier event took this account's balance of the asset below zero. Click to open the data issue and resolve it.",
+      "view_event": "The balance after this event is unknown: an earlier event took this account's balance of the asset below zero. Click to go to that event."
+    },
     "error": "Could not load the balance for this event.",
     "high_precision": "This balance has unusually high precision and is shown rounded to {decimals} decimals. The actual value is preserved for calculations.",
     "modes": {

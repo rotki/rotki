@@ -19,6 +19,7 @@ vi.mock('@/modules/history/events/mapping/use-history-event-mappings', () => ({
 }));
 
 const stubs = {
+  AccountingOverlayBlocked: { props: ['stop', 'asset'], template: '<div class="blocked" :data-event="stop.eventIdentifier" :data-asset="asset" />' },
   AccountingOverlayBuckets: { props: ['eventLocation', 'eventProtocol'], template: '<div class="buckets" :data-location="eventLocation" :data-protocol="eventProtocol ?? \'\'" />' },
   AccountingOverlaySparkline: { template: '<div class="sparkline" />' },
   AssetAmountDisplay: { props: ['amount', 'asset'], template: '<span class="amount">{{ amount?.toString() }}</span>' },
@@ -61,6 +62,7 @@ function mountCell(opts: {
     registerEvent: () => () => {},
     refresh: async () => {},
     statusFor: () => opts.status ?? 'ready',
+    stopFor: () => undefined,
     ...opts.overlay,
   };
   const context: AccountingOverlayContext = {
@@ -121,6 +123,19 @@ describe('accountingOverlayCell.vue', () => {
   it('should render a skeleton while loading', () => {
     const wrapper = mountCell({ enabled: true, status: 'loading' });
     expect(wrapper.find('.skeleton').exists()).toBe(true);
+    expect(wrapper.find('.amount').exists()).toBe(false);
+  });
+
+  it('should replace the balance with the stop placeholder when the event is blocked', () => {
+    const wrapper = mountCell({
+      balance: '5',
+      enabled: true,
+      overlay: { stopFor: () => ({ eventIdentifier: 7, groupIdentifier: 'group', issueId: 3 }) },
+      status: 'blocked',
+    });
+    const blocked = wrapper.find('.blocked');
+    expect(blocked.attributes('data-event')).toBe('7');
+    expect(blocked.attributes('data-asset')).toBe('ETH');
     expect(wrapper.find('.amount').exists()).toBe(false);
   });
 

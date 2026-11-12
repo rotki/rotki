@@ -16411,6 +16411,11 @@ Historical Balance Queries
     true even when some bucket balances are available; those balances may be incomplete.
     No balance time series or fiat prices are included.
 
+    ``stop`` is set for an event at or after the event that drove any bucket of its
+    account and asset negative. Historical processing applies no further event to such
+    a bucket, so the returned buckets hold the balance from before the stop and must
+    not be shown as the balance after the event. It is the earliest such stop.
+
     .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
 
@@ -16444,19 +16449,21 @@ Historical Balance Queries
               "processing_required": false,
               "buckets": [
                 {"location": "ethereum", "protocol": null, "balance": "5"}
-              ]
+              ],
+              "stop": null
             },
             "124": {
               "processing_required": false,
               "buckets": [
-                {"location": "ethereum", "protocol": null, "balance": "0"}
-              ]
+                {"location": "ethereum", "protocol": null, "balance": "5"}
+              ],
+              "stop": {"event_identifier": 124, "group_identifier": "10x4bc6...", "issue_id": 7}
             }
           }
         }
       }
 
-      :resjson object entries: Results keyed by the string form of each requested event identifier. Each result contains ``processing_required`` and ``buckets``. Each bucket contains ``location``, nullable ``protocol``, and an exact decimal ``balance`` string.
+      :resjson object entries: Results keyed by the string form of each requested event identifier. Each result contains ``processing_required``, ``buckets`` and nullable ``stop``. Each bucket contains ``location``, nullable ``protocol``, and an exact decimal ``balance`` string. A stop contains ``event_identifier``, ``group_identifier`` (null when the stopping event was deleted) and ``issue_id`` (the negative balance data issue of the stop, null when there is none).
       :statuscode 200: Bucket snapshots returned, including empty results
       :statuscode 400: Malformed query or event count outside 1 to 500
       :statuscode 403: User does not have premium access

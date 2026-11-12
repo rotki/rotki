@@ -17,6 +17,7 @@ from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import NotFoundError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.data_issues.constants import IssueKind
 from rotkehlchen.history.events.structures.base import HistoryEvent, get_event_direction
 from rotkehlchen.history.events.structures.types import EventDirection, HistoryEventSubType
 from rotkehlchen.locations.chains import (
@@ -39,6 +40,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.types import EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
@@ -51,6 +53,17 @@ class HistoricalBalanceEntry(NamedTuple):
     protocol: str | None
     asset: Asset
     amount: FVal
+
+
+class HistoricalBalanceStop(NamedTuple):
+    """The event from which the balance of an account and asset can no longer be trusted.
+
+    `group_identifier` is null when the stopping event was deleted, and `issue_id` when the
+    stop has no negative balance issue.
+    """
+    event_identifier: int
+    group_identifier: str | None
+    issue_id: int | None
 
 
 class HistoricalBalanceSeriesEntry(NamedTuple):
@@ -241,10 +254,17 @@ class HistoricalBalancesManager:
     def get_balances_at_events(
             self,
             event_identifiers: list[int],
-    ) -> tuple[set[int], dict[int, list[HistoricalBalanceEntry]]]:
+    ) -> tuple[
+        set[int],
+        dict[int, list[HistoricalBalanceEntry]],
+        dict[int, HistoricalBalanceStop],
+    ]:
         """Read account-wide bucket snapshots in a batch, in historical processing order.
 
-        Return the identifiers requiring processing and buckets keyed by event identifier.
+        Return the identifiers requiring processing, the buckets keyed by event identifier and,
+        for each event at or after a processing stop of its account and asset, that stop. The
+        processor applies no event to a stopped bucket, so the buckets of such an event hold
+        the balance from before the stop and their sum is not the balance after the event.
         Raise NotFoundError if any requested event does not exist.
         """
         balances: dict[int, list[HistoricalBalanceEntry]] = {
@@ -316,6 +336,11 @@ class HistoricalBalancesManager:
                     amount=FVal(amount),
                 ))
 
+            stops = self._get_stops_at_events(
+                cursor=cursor,
+                requested=requested,
+                bindings=bindings,
+            )
             stale, last_processing_ts = self.db.get_static_caches(
                 cursor=cursor,
                 names=(
@@ -326,7 +351,7 @@ class HistoricalBalancesManager:
             if last_processing_ts is None:
                 unprocessed_from_ts = 0
             elif stale is None:
-                return set(), balances
+                return set(), balances, stops
             else:
                 unprocessed_from_ts = int(stale)
 
@@ -356,7 +381,50 @@ class HistoricalBalancesManager:
                  *[value for pair in self._neutral_balance_tracking_pairs for value in pair],
                  metric_key],
             )}
-        return processing, balances
+        return processing, balances, stops
+
+    @staticmethod
+    def _get_stops_at_events(
+            cursor: DBCursor,
+            requested: str,
+            bindings: list,
+    ) -> dict[int, HistoricalBalanceStop]:
+        """The earliest stop of its account and asset at or before each requested event.
+
+        Any stopped bucket of the account and asset counts, since the snapshot of an event sums
+        all of them. `requested` is the CTE of the requested events and `bindings` its values.
+        A stop whose event was deleted has no sequence index left, so it is ordered by its
+        timestamp alone. The issue is the negative balance issue of the stopping event in the
+        stopped bucket, whatever its state: a dismissed issue still describes the stop.
+        """
+        stops: dict[int, HistoricalBalanceStop] = {}
+        for identifier, stop_event_identifier, group_identifier, issue_id in cursor.execute(
+            requested + """SELECT r.identifier, s.event_identifier, he.group_identifier, (
+                    SELECT MAX(di.id) FROM data_issues di
+                    WHERE di.kind = ? AND di.event_identifier = s.event_identifier
+                        AND di.location = s.location AND di.location_label = s.location_label
+                        AND di.protocol = s.protocol
+                ) FROM requested r JOIN bucket_processing_stops s
+                    ON s.location_label = r.location_label AND s.asset = r.asset
+                LEFT JOIN history_events he ON he.identifier = s.event_identifier
+                WHERE s.event_timestamp <= r.timestamp AND (
+                    he.identifier IS NULL
+                    OR (s.event_timestamp, he.sequence_index, he.identifier)
+                        <= (r.timestamp, r.sequence_index, r.identifier)
+                ) AND s.asset NOT IN (
+                    SELECT value FROM multisettings WHERE name='ignored_asset'
+                )
+                ORDER BY s.event_timestamp DESC, he.sequence_index DESC, s.event_identifier DESC
+            """,
+            [*bindings, IssueKind.NEGATIVE_BALANCE.value],
+        ):  # ordered latest first, so the earliest stop of each event is the one that stays
+            stops[identifier] = HistoricalBalanceStop(
+                event_identifier=stop_event_identifier,
+                group_identifier=group_identifier,
+                issue_id=issue_id,
+            )
+
+        return stops
 
     def find_onchain_balance_divergence(
             self,
