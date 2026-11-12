@@ -26,7 +26,7 @@ from .tools import BaseDecoderTools
 from .types import CounterpartyDetails, DecodingRulesBase
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Generator
 
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.chain.solana.rpc import Signature
@@ -211,7 +211,7 @@ class TransactionDecoder[
         )
 
     @contextmanager
-    def _decoding_lock(self) -> Iterator[None]:
+    def _decoding_lock(self) -> Generator[None]:
         """Acquire the decoder lock cooperatively, releasing it if cancellation wins the race."""
         checkpoint()
         while not self.undecoded_tx_query_lock.acquire(timeout=0.1):
