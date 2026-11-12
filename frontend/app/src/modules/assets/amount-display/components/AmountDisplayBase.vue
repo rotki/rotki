@@ -55,6 +55,7 @@ const {
 } = useAmountFormatter({
   decimals: () => format?.decimals,
   integer: isInteger,
+  noRoundingMark: () => format?.noRoundingMark ?? false,
   rounding: roundingType,
   value: () => value,
 });

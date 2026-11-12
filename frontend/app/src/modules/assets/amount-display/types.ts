@@ -55,4 +55,12 @@ export interface FormatOptions {
    * - 'amount': Uses amountRoundingMode setting (typically ROUND_UP)
    */
   rounding?: RoundingType;
+  /**
+   * Leave out the `<` or `>` that marks a rounded value.
+   *
+   * @remarks
+   * For signed differences, where the mark reads as a comparison. The exact value stays in the
+   * tooltip.
+   */
+  noRoundingMark?: boolean;
 }

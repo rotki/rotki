@@ -19,6 +19,15 @@ import { useTaskCenter } from '@/modules/task-center/use-task-center';
 /** How many of the largest per-asset gaps the panel lists. */
 const TOP_GAPS = 3;
 
+/** A section heading in the figures grid: spans the row, set apart from the rows' secondary text. */
+const HEADING = 'col-span-3 mb-1 text-xs font-medium tracking-wide text-rui-text-secondary';
+
+/** The third column's notes: one step quieter than labels, so the amounts lead. */
+const NOTE = 'truncate text-xs text-rui-text-disabled';
+
+/** Footer actions share one width, so the status and reconciliation rows line up. */
+const ACTION = 'min-w-24 shrink-0';
+
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 
@@ -62,108 +71,116 @@ function select(value: BalanceView | BalanceView[] | undefined): void {
 
 <template>
   <div
-    class="flex flex-col gap-3 p-3 w-80 text-sm"
+    class="flex flex-col gap-4 p-4 w-[22rem] text-sm"
     data-testid="balance-view-panel"
   >
-    <RuiButtonGroup
-      :model-value="view"
-      variant="segmented"
-      required
-      size="sm"
-      class="w-full [&>*]:flex-1"
-      :aria-label="t('balance_view.label')"
-      @update:model-value="select($event)"
+    <div class="flex flex-col gap-2">
+      <RuiButtonGroup
+        :model-value="view"
+        variant="segmented"
+        required
+        size="sm"
+        class="w-full [&>*]:flex-1"
+        :aria-label="t('balance_view.label')"
+        @update:model-value="select($event)"
+      >
+        <RuiButton
+          :model-value="BalanceView.QUERIED"
+          data-testid="balance-view-queried"
+        >
+          {{ t('balance_view.live_balances') }}
+        </RuiButton>
+        <RuiButton
+          :model-value="BalanceView.HISTORY"
+          :disabled="!hasData"
+          data-testid="balance-view-history"
+        >
+          {{ t('balance_view.from_event_history') }}
+        </RuiButton>
+      </RuiButtonGroup>
+
+      <p
+        class="grid text-xs text-rui-text-secondary"
+        data-testid="balance-view-panel-description"
+      >
+        <span
+          class="col-start-1 row-start-1"
+          :class="{ invisible: view !== BalanceView.QUERIED }"
+        >
+          {{ t('balance_view.live_description') }}
+        </span>
+        <span
+          class="col-start-1 row-start-1"
+          :class="{ invisible: view !== BalanceView.HISTORY }"
+        >
+          {{ t('balance_view.history_description') }}
+        </span>
+      </p>
+    </div>
+
+    <div
+      v-if="hasData"
+      class="grid grid-cols-[minmax(0,1fr)_auto_5.5rem] items-baseline gap-x-3 gap-y-1 tabular-nums"
+      data-testid="balance-view-panel-figures"
     >
-      <RuiButton
-        :model-value="BalanceView.QUERIED"
-        data-testid="balance-view-queried"
-      >
-        {{ t('balance_view.live_balances') }}
-      </RuiButton>
-      <RuiButton
-        :model-value="BalanceView.HISTORY"
-        :disabled="!hasData"
-        data-testid="balance-view-history"
-      >
-        {{ t('balance_view.from_event_history') }}
-      </RuiButton>
-    </RuiButtonGroup>
+      <h4 :class="HEADING">
+        {{ t('balance_view.net_worth') }}
+      </h4>
+      <span class="text-rui-text-secondary">{{ t('balance_view.from_history') }}</span>
+      <FiatDisplay
+        class="justify-self-end"
+        :value="historyNetWorth"
+      />
+      <span />
+      <span class="text-rui-text-secondary">{{ t('balance_view.live') }}</span>
+      <FiatDisplay
+        class="justify-self-end"
+        :value="queriedNetWorth"
+      />
+      <span />
+      <span class="col-span-3 border-t border-default my-0.5" />
+      <span class="font-medium">{{ t('balance_view.difference') }}</span>
+      <FiatDisplay
+        class="justify-self-end font-medium"
+        :class="{ 'text-rui-warning': !netWorthDifference.isZero() }"
+        :value="netWorthDifference"
+        data-testid="balance-view-panel-difference"
+      />
+      <span />
 
-    <p
-      class="grid -mt-1 text-xs text-rui-text-secondary"
-      data-testid="balance-view-panel-description"
-    >
-      <span
-        class="col-start-1 row-start-1"
-        :class="{ invisible: view !== BalanceView.QUERIED }"
-      >
-        {{ t('balance_view.live_description') }}
-      </span>
-      <span
-        class="col-start-1 row-start-1"
-        :class="{ invisible: view !== BalanceView.HISTORY }"
-      >
-        {{ t('balance_view.history_description') }}
-      </span>
-    </p>
-
-    <template v-if="hasData">
-      <section class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
-        <h4 class="col-span-2 text-xs text-rui-text-secondary">
-          {{ t('balance_view.net_worth') }}
-        </h4>
-        <span class="text-rui-text-secondary">{{ t('balance_view.from_history') }}</span>
-        <FiatDisplay
-          class="justify-self-end"
-          :value="historyNetWorth"
-        />
-        <span class="text-rui-text-secondary">{{ t('balance_view.live') }}</span>
-        <FiatDisplay
-          class="justify-self-end"
-          :value="queriedNetWorth"
-        />
-        <span class="font-medium">{{ t('balance_view.difference') }}</span>
-        <FiatDisplay
-          class="justify-self-end font-medium"
-          :class="{ 'text-rui-warning': !netWorthDifference.isZero() }"
-          :value="netWorthDifference"
-          data-testid="balance-view-panel-difference"
-        />
-      </section>
-
-      <section
-        v-if="sources.length > 0"
-        class="grid grid-cols-[1fr_auto_auto] gap-x-3 gap-y-1"
-        data-testid="balance-view-panel-sources"
-      >
-        <h4 class="col-span-3 text-xs text-rui-text-secondary">
+      <template v-if="sources.length > 0">
+        <h4
+          class="mt-3"
+          :class="[HEADING]"
+          data-testid="balance-view-panel-sources"
+        >
           {{ t('balance_view.by_source') }}
         </h4>
         <template
           v-for="source in sources"
           :key="source.kind"
         >
-          <span>{{ kindLabel(source.kind) }}</span>
+          <span class="truncate">{{ kindLabel(source.kind) }}</span>
           <FiatDisplay
             class="justify-self-end"
             :class="{ 'text-rui-warning': source.basis === 'derived' && !source.delta.isZero() }"
             :value="source.delta"
           />
           <span
-            class="text-xs text-rui-text-secondary"
+            :class="NOTE"
             :data-basis="source.basis"
           >
             {{ basisLabel(source) }}
           </span>
         </template>
-      </section>
+      </template>
 
-      <section
-        v-if="gaps.length > 0"
-        class="grid grid-cols-[1fr_auto_auto] gap-x-3 gap-y-1"
-        data-testid="balance-view-panel-gaps"
-      >
-        <h4 class="col-span-3 text-xs text-rui-text-secondary">
+      <template v-if="gaps.length > 0">
+        <h4
+          class="mt-3"
+          :class="[HEADING]"
+          data-testid="balance-view-panel-gaps"
+        >
           {{ t('balance_view.largest_gaps') }}
         </h4>
         <template
@@ -173,35 +190,37 @@ function select(value: BalanceView | BalanceView[] | undefined): void {
           <RouterLink
             :to="{ name: '/assets/[identifier]', params: { identifier: asset }, query: { view: BalanceView.HISTORY } }"
             class="text-rui-primary truncate"
+            data-testid="balance-view-panel-gap"
           >
             {{ getAssetField(asset, 'symbol') || asset }}
           </RouterLink>
           <ValueDisplay
             class="justify-self-end text-rui-warning"
             :value="comparison.delta"
+            :format="{ noRoundingMark: true }"
           />
           <i18n-t
             scope="global"
             keypath="balance_view.manual_amount"
             tag="span"
-            class="text-xs text-rui-text-secondary"
-            :class="{ invisible: comparison.manual.isZero() }"
+            :class="[NOTE, { invisible: comparison.manual.isZero() }]"
           >
             <template #amount>
               <ValueDisplay
                 class="inline"
                 :value="comparison.manual"
+                :format="{ noRoundingMark: true }"
               />
             </template>
           </i18n-t>
         </template>
-      </section>
-    </template>
+      </template>
+    </div>
 
-    <section class="flex flex-col gap-2 border-t border-default pt-3">
+    <section class="flex flex-col gap-2.5 border-t border-default pt-4">
       <div
         v-if="error"
-        class="flex items-center gap-2 text-rui-error"
+        class="flex flex-wrap items-center justify-end gap-x-2 gap-y-2 text-rui-error"
         data-testid="balance-view-panel-error"
       >
         <RuiIcon
@@ -209,11 +228,12 @@ function select(value: BalanceView | BalanceView[] | undefined): void {
           size="16"
           class="shrink-0"
         />
-        <span class="grow">{{ loaded ? t('balance_view.refresh_failed') : t('balance_view.load_failed') }}</span>
+        <span class="grow basis-56">{{ loaded ? t('balance_view.refresh_failed') : t('balance_view.load_failed') }}</span>
         <RuiButton
           size="sm"
           variant="outlined"
           color="error"
+          :class="ACTION"
           :loading="loading"
           @click="startPromise(refresh())"
         >
@@ -272,6 +292,7 @@ function select(value: BalanceView | BalanceView[] | undefined): void {
           size="sm"
           variant="outlined"
           color="warning"
+          :class="ACTION"
           data-testid="balance-view-panel-process"
           @click="startPromise(triggerProcessing())"
         >
@@ -303,6 +324,7 @@ function select(value: BalanceView | BalanceView[] | undefined): void {
           size="sm"
           variant="outlined"
           color="primary"
+          :class="ACTION"
           data-testid="balance-view-panel-review"
           @click="startPromise(router.push(reconciliationLink))"
         >
