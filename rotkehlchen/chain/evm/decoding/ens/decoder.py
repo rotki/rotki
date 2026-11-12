@@ -2,8 +2,6 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-import content_hash
-
 from rotkehlchen.api.websockets.typedefs import UserMessageOperation
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
@@ -19,6 +17,7 @@ from rotkehlchen.chain.evm.decoding.ens.constants import (
     TEXT_CHANGED_KEY_ONLY,
     TEXT_CHANGED_KEY_ONLY_ABI,
 )
+from rotkehlchen.chain.evm.decoding.ens.content_hash import decode_content_hash
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -186,8 +185,8 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _get_new_contenthash(self, context: DecoderContext) -> str | None:
-        """Extract the new content hash hex string from a ContenthashChanged log.
+    def _get_new_contenthash(self, context: DecoderContext) -> bytes | None:
+        """Extract the new content hash bytes from a ContenthashChanged log.
 
         Subclasses whose resolver contract is not in the contracts DB override this.
         Returns None if the hash can't be extracted.
@@ -205,7 +204,7 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
             return None
 
         result = contract.decode_event(context.tx_log, 'ContenthashChanged', argument_names=None)
-        return result[1][0].hex()
+        return result[1][0]
 
     def _decode_ens_public_resolver_content_hash(self, context: DecoderContext) -> EvmDecodingOutput:  # noqa: E501
         """Decode an event that modifies a content hash for the public ENS resolver"""
@@ -218,15 +217,17 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
         name_to_show = self._get_name_to_show(node=node, context=context)
 
         try:
-            codec = content_hash.get_codec(new_hash)
-            value_hash = content_hash.decode(new_hash)
+            codec, value_hash = decode_content_hash(new_hash)
             value = f'{codec}://{value_hash}'
         except (TypeError, KeyError, ValueError) as e:
             msg = str(e)
             if isinstance(e, KeyError):
                 msg = f'Inability to find key {msg}'
-            log.error(f'Failed to decode content hash {new_hash} in {context.transaction} due to {msg}')  # noqa: E501
-            value = f'unknown type hash {new_hash}'
+            log.error(
+                'Failed to decode content hash %s in %s due to %s',
+                new_hash.hex(), context.transaction, msg,
+            )
+            value = f'unknown type hash {new_hash.hex()}'
 
         notes = f'Change {self.display_name} content hash to {value}'
         if name_to_show is not None:

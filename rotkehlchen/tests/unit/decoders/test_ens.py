@@ -21,6 +21,7 @@ from rotkehlchen.chain.ethereum.modules.ens.decoder import (
     ENS_REGISTRAR_CONTROLLER_2,
     _save_hash_mappings_get_fullname,
 )
+from rotkehlchen.chain.evm.decoding.ens.content_hash import decode_content_hash
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ENS, A_ETH
@@ -1213,3 +1214,41 @@ def test_ens_v2_migrate_name(ethereum_inquirer, ethereum_accounts):
             extra_data={'name': 'yabir.eth', 'expires': 1833929774},
         ),
     ]
+
+
+@pytest.mark.parametrize(('content_hash', 'expected'), [
+    # ipfs CIDv1 wrapping the sha2-256 multihash of the empty file, and the
+    # equivalent CIDv0 form of the same multihash.
+    (
+        'e30101701220e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        ('ipfs', 'QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n'),
+    ), (
+        'e3011220e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        ('ipfs', 'QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n'),
+    ), (
+        'e50101700024080112205a58df354ff51502eacea30725a2a8c2d092195a5d19000f56bae2bab3814910',
+        ('ipns', '12D3KooWFu3TexBDLUusrnFkjh9eh9PL2PY5UuwbQcgesXMRmcyM'),
+    ), (
+        'e40101fa011b20d1de9994b4d039f6548d191eb26786769f58cd229ef491815162450fa1cb5f02',
+        ('swarm', 'd1de9994b4d039f6548d191eb26786769f58cd229ef491815162450fa1cb5f02'),
+    ),
+    # Codecs without a decoding profile get their payload as an utf-8 string.
+    ('e20168656c6c6f2069706c64', ('ipld', 'hello ipld')),
+    ('7c626974746f7272656e742d64617461', ('torrent-file', 'bittorrent-data')),
+    ('0168656c6c6f', ('cidv1', 'hello')),  # codec below 0x10, leading zero nibble
+])
+def test_decode_content_hash(content_hash, expected):
+    """Test decoding of EIP-1577 content hashes for all the supported profiles"""
+    assert decode_content_hash(bytes.fromhex(content_hash)) == expected
+
+
+@pytest.mark.parametrize('content_hash', [
+    '818040616263',  # unknown multicodec
+    '',  # no multicodec at all
+    'e3',  # truncated varint
+    'e40101fa011b28' + 'ab' * 40,  # swarm keccak-256 digest longer than 32 bytes
+])
+def test_decode_content_hash_undecodable(content_hash):
+    """Test that content hashes the decoder can't handle raise what it catches"""
+    with pytest.raises((TypeError, KeyError, ValueError)):
+        decode_content_hash(bytes.fromhex(content_hash))
