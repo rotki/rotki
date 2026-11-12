@@ -1,5 +1,5 @@
-import { effectScope, type EffectScope } from 'vue';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { effectScope, type EffectScope } from 'vue';
 import { ActionUrgency } from '@/modules/core/action-center/types';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import { HISTORY_ISSUE_IDS, type useHistoryEventIssues as UseHistoryEventIssues } from '@/modules/history/events/actions-center/use-history-event-issues';
