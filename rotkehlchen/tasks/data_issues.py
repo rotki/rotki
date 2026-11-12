@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
-from rotkehlchen.concurrency import TaskCancelledError, checkpoint
+from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
@@ -189,7 +189,6 @@ def _serialize_comparison_events(
 def _check_issue(
         database: DBHandler,
         chains_aggregator: ChainsAggregator,
-        issues_manager: DataIssuesManager,
         issue: DataIssue,
         transactions: dict[EVMTxHash, list[EvmEvent]],
         treat_eth2_as_eth: bool,
@@ -273,19 +272,6 @@ def _check_issue(
             changed_transaction_count=changed_transaction_count,
             reason=str(e),
         )
-    except TaskCancelledError:
-        attempt = _make_comparison_attempt(
-            result='redecoding_failed',
-            customized_transaction_count=customized_transaction_count,
-            changed_transaction_count=changed_transaction_count,
-            reason='Remediation was cancelled before the comparison finished',
-        )
-        issues_manager.update_state(
-            issue_id=issue.id,
-            state=IssueState.UNRESOLVED,
-            attempt=attempt,
-        )
-        raise
     else:
         attempt = _make_comparison_attempt(
             result=(
@@ -323,7 +309,6 @@ class RedecodeCustomizedTransactionsStrategy(BaseRemediationStrategy):
     def __init__(self, database: DBHandler, chains_aggregator: ChainsAggregator) -> None:
         self.database = database
         self.chains_aggregator = chains_aggregator
-        self.issues_manager = DataIssuesManager(database)
         self.treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
         self.preview_cache: PreviewCache = {}
         self.reloaded_chains: set[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE] = set()
@@ -358,7 +343,6 @@ class RedecodeCustomizedTransactionsStrategy(BaseRemediationStrategy):
         return _check_issue(
             database=self.database,
             chains_aggregator=self.chains_aggregator,
-            issues_manager=self.issues_manager,
             issue=issue,
             transactions=transactions,
             treat_eth2_as_eth=self.treat_eth2_as_eth,
