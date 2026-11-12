@@ -71,9 +71,9 @@ jobs:
               - name: colibri
                 # The colibri tests read the packaged global database, so a new asset list has to
                 # run them too. Leaving it out let a shipped asset break them for six days.
-                paths: [colibri, Cargo.toml, Cargo.lock, rotkehlchen/data/global.db]
+                paths: [colibri, Cargo.toml, Cargo.lock, rust-toolchain.toml, rotkehlchen/data/global.db]
               - name: starling
-                paths: [crates, Cargo.toml, Cargo.lock]
+                paths: [crates, Cargo.toml, Cargo.lock, rust-toolchain.toml]
               - name: documentation
                 paths: [docs]
 
@@ -351,9 +351,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Rust
-        run: |
-          rustup toolchain install 1.99 --profile minimal --component clippy --no-self-update
-          rustup default 1.99
+        run: rustup toolchain install --no-self-update
 
       # Restore only: warm-rust-caches fills this key from the base branch.
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0  # v2.9.2
@@ -387,9 +385,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Rust
-        run: |
-          rustup toolchain install 1.99 --profile minimal --component clippy,rustfmt --no-self-update
-          rustup default 1.99
+        run: rustup toolchain install --no-self-update
 
       # Restore only: warm-rust-caches fills this key from the base branch.
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0  # v2.9.2
@@ -435,9 +431,7 @@ jobs:
 
       - name: Setup Rust
         shell: bash
-        run: |
-          rustup toolchain install 1.99 --profile minimal --no-self-update
-          rustup default 1.99
+        run: rustup toolchain install --no-self-update
 
       # Restore only: warm-rust-caches-windows fills this key from the base branch.
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0  # v2.9.2
@@ -507,9 +501,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Rust
-        run: |
-          rustup toolchain install 1.99 --profile minimal --component clippy --no-self-update
-          rustup default 1.99
+        run: rustup toolchain install --no-self-update
 
       - name: Look up the Rust cache
         id: rust-cache
@@ -548,9 +540,7 @@ jobs:
 
       - name: Setup Rust
         shell: bash
-        run: |
-          rustup toolchain install 1.99 --profile minimal --no-self-update
-          rustup default 1.99
+        run: rustup toolchain install --no-self-update
 
       - name: Look up the Rust cache
         id: rust-cache
@@ -614,9 +604,7 @@ jobs:
 
       - name: Setup Rust
         if: steps.fdc-cache.outputs.cache-hit != 'true'
-        run: |
-          rustup toolchain install 1.99 --profile minimal --no-self-update
-          rustup default 1.99
+        run: rustup toolchain install --no-self-update
 
       - name: Cache Rust dependencies
         if: steps.fdc-cache.outputs.cache-hit != 'true'

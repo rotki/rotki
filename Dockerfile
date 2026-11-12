@@ -19,9 +19,17 @@ RUN --mount=type=cache,target=/pnpm-store \
     pnpm install --frozen-lockfile && \
     pnpm run docker:build
 
-FROM rust:1.99-bookworm AS rust-build-stage
+# The base image only provides rustup; the version comes from rust-toolchain.toml,
+# installed here and made the default so cargo outside /app uses it as well.
+FROM rust:1-bookworm AS rust-toolchain
 
 WORKDIR /app
+COPY rust-toolchain.toml ./
+RUN rustup toolchain install --no-self-update && \
+    rustup default "$(rustup show active-toolchain | cut -d' ' -f1)"
+
+FROM rust-toolchain AS rust-build-stage
+
 COPY Cargo.toml Cargo.lock ./
 COPY colibri/ ./colibri
 COPY crates/ ./crates
@@ -42,10 +50,10 @@ FROM python:3.14-bookworm AS backend-build-stage
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # The non-amd64 PyInstaller bootloader is built from source below. Copy the Rust
-# toolchain from its image rather than from rust-build-stage, so both stages can
-# still build in parallel.
-COPY --from=rust:1.99-bookworm /usr/local/cargo /usr/local/cargo
-COPY --from=rust:1.99-bookworm /usr/local/rustup /usr/local/rustup
+# toolchain from rust-toolchain rather than from rust-build-stage, so both stages
+# can still build in parallel.
+COPY --from=rust-toolchain /usr/local/cargo /usr/local/cargo
+COPY --from=rust-toolchain /usr/local/rustup /usr/local/rustup
 ENV CARGO_HOME=/usr/local/cargo \
     RUSTUP_HOME=/usr/local/rustup \
     PATH=/usr/local/cargo/bin:$PATH
