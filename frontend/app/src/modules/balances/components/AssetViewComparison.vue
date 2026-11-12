@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { BigNumber } from '@rotki/common';
 import type { RouteLocationRaw } from 'vue-router';
 import type { AssetComparison } from '@/modules/balances/view/history-comparison';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
@@ -23,7 +24,7 @@ const reconciliationLink: RouteLocationRaw = {
 const comparison = computed<AssetComparison>(() => getAssetComparison(identifier, isCollectionParent));
 const show = computed<boolean>(() => get(available) && get(comparable));
 /** The amount under the view the page is not showing. */
-const otherAmount = computed(() => (get(isHistory) ? get(comparison).queried : get(comparison).history));
+const otherAmount = computed<BigNumber>(() => (get(isHistory) ? get(comparison).queried : get(comparison).history));
 const differs = computed<boolean>(() => !get(comparison).delta.isZero());
 const hasManual = computed<boolean>(() => get(differs) && get(comparison).manual.gt(0));
 </script>

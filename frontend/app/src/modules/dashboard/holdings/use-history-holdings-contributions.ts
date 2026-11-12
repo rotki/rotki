@@ -4,20 +4,22 @@ import { type BigNumber, NoPrice, Zero } from '@rotki/common';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
+import { useAggregationContext } from '@/modules/balances/aggregation/use-aggregation-context';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useHistoricalBalanceSource } from '@/modules/balances/use-historical-balance-source';
 import { useHistoricalSnapshotStore } from '@/modules/balances/use-historical-snapshot-store';
 import { useIsHistoryView } from '@/modules/balances/view/balance-view';
 import { useHistoryBalances } from '@/modules/balances/view/use-history-balances';
 import { bigNumberSum } from '@/modules/core/common/data/calculation';
-import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN } from '@/modules/core/common/defaults';
+import { TRADE_LOCATION_BLOCKCHAIN } from '@/modules/core/common/defaults';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { type SourceContribution, SourceKind } from '@/modules/dashboard/holdings/core/holdings-types';
 import { mergeLocations } from '@/modules/dashboard/holdings/core/location-holdings';
 import { type HoldingsInputs, useHoldingsContributions } from '@/modules/dashboard/holdings/use-holdings-contributions';
 
-/** Chain and exchange contributions from history buckets, one per chain or exchange location. */
+/** Chain and exchange contributions from the visible history buckets, one per chain or exchange location. */
 function useDerivedContributions(): ComputedRef<SourceContribution[]> {
-  const { entries } = storeToRefs(useHistoricalSnapshotStore());
+  const { visibleEntries: entries } = useHistoricalBalanceSource(useAggregationContext());
   const { isAssetIgnored } = useAssetsStore();
   const { getAssetPrice } = usePriceUtils();
   const resolveIdentifier = useResolveAssetIdentifier();
@@ -32,7 +34,7 @@ function useDerivedContributions(): ComputedRef<SourceContribution[]> {
     const byChain = new Map<string, BigNumber>();
     const byLocation = new Map<string, BigNumber>();
     for (const entry of get(entries)) {
-      if (isAssetIgnored(resolveIdentifier(entry.asset)) || entry.location === TRADE_LOCATION_BANKS)
+      if (isAssetIgnored(resolveIdentifier(entry.asset)))
         continue;
 
       const chain = matchChain(entry.location) ?? (entry.location === TRADE_LOCATION_BLOCKCHAIN ? TRADE_LOCATION_BLOCKCHAIN : undefined);

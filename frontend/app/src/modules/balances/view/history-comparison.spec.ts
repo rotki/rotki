@@ -1,21 +1,29 @@
 import { type AssetBalanceWithPriceAndChains, bigNumberify } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
-import { compareByAsset, withQueriedOnlyAssets } from '@/modules/balances/view/history-comparison';
+import { compareByAsset, withMissingAssets } from '@/modules/balances/view/history-comparison';
 
 function row(asset: string, amount: number, price = 2): AssetBalanceWithPriceAndChains {
   return { amount: bigNumberify(amount), asset, price: bigNumberify(price), value: bigNumberify(amount * price) };
 }
 
-describe('withQueriedOnlyAssets', () => {
+describe('withMissingAssets', () => {
+  it('should work in both directions, so each view lists the assets only the other holds', () => {
+    const live = [row('ETH', 25)];
+    const history = [row('ETH', 15), row('DAI', 500, 1)];
+
+    expect(withMissingAssets(live, history).map(({ amount, asset }) => `${asset}:${amount.toFixed()}`)).toStrictEqual(['ETH:25', 'DAI:0']);
+    expect(withMissingAssets(history, live).map(({ asset }) => asset)).toStrictEqual(['ETH', 'DAI']);
+  });
+
   it('should list an asset only the queried side holds at zero, at its queried price', () => {
-    const rows = withQueriedOnlyAssets([row('ETH', 15)], [row('ETH', 25), row('BTC', 1.5, 72000)]);
+    const rows = withMissingAssets([row('ETH', 15)], [row('ETH', 25), row('BTC', 1.5, 72000)]);
 
     expect(rows.map(({ amount, asset, price, value }) => [asset, amount.toNumber(), price.toNumber(), value.toNumber()]))
       .toStrictEqual([['ETH', 15, 2, 30], ['BTC', 0, 72000, 0]]);
   });
 
   it('should leave out a queried-only asset worth nothing', () => {
-    const rows = withQueriedOnlyAssets([row('ETH', 15)], [row('ETH', 25), row('SPAM', 1000000, 0)]);
+    const rows = withMissingAssets([row('ETH', 15)], [row('ETH', 25), row('SPAM', 1000000, 0)]);
 
     expect(rows.map(({ asset }) => asset)).toStrictEqual(['ETH']);
   });
@@ -23,7 +31,7 @@ describe('withQueriedOnlyAssets', () => {
   it('should keep the history row when both sides hold the asset', () => {
     const history = [row('ETH', 15)];
 
-    expect(withQueriedOnlyAssets(history, [row('ETH', 25)])).toStrictEqual(history);
+    expect(withMissingAssets(history, [row('ETH', 25)])).toStrictEqual(history);
   });
 });
 

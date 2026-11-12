@@ -24,7 +24,6 @@ interface UseAggregatedBalancesReturn {
   getBalances: (hideIgnored?: boolean, groupMultiChain?: boolean, exclude?: ExclusionSource[]) => AssetBalanceWithPriceAndChains[];
   useLiabilities: (hideIgnored?: boolean) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   getLiabilities: (hideIgnored?: boolean) => AssetBalanceWithPriceAndChains[];
-  useAssetPriceInfo: (identifier: MaybeRefOrGetter<string>, groupCollection?: MaybeRefOrGetter<boolean>) => ComputedRef<AssetPriceInfo>;
   getAssetPriceInfo: (identifier: string, groupMultiChain?: boolean) => AssetPriceInfo;
   assets: ComputedRef<string[]>;
   useBlockchainBalances: (chains: MaybeRefOrGetter<string[]>, groupId?: MaybeRefOrGetter<string>, key?: keyof EthBalance) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
@@ -102,11 +101,6 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
 
   const useLiabilities = (hideIgnored = true): ComputedRef<AssetBalanceWithPriceAndChains[]> =>
     computed<AssetBalanceWithPriceAndChains[]>(() => getLiabilities(hideIgnored));
-
-  const useAssetPriceInfo = (
-    identifier: MaybeRefOrGetter<string>,
-    groupMultiChain: MaybeRefOrGetter<boolean> = false,
-  ): ComputedRef<AssetPriceInfo> => computed<AssetPriceInfo>(() => getAssetPriceInfo(toValue(identifier), toValue(groupMultiChain)));
 
   const useBlockchainBalances = (
     chains: MaybeRefOrGetter<string[]> = [],
@@ -202,7 +196,6 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     getExchangeAccountBalances,
     getExchangeBalances,
     getLiabilities,
-    useAssetPriceInfo,
     useBalances,
     useLiabilities,
     useBlockchainBalances,

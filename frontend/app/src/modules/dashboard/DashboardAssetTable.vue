@@ -73,6 +73,16 @@ const emptyDescription = computed<string>(() => tableType === DashboardTableType
   ? t('dashboard_asset_table.no_assets')
   : t('data_table.no_data'));
 
+/**
+ * Mutes a placeholder row: an asset listed at zero because only the other balance view holds it.
+ *
+ * @remarks
+ * Only placeholder rows have a zero amount, since aggregation drops held assets that sum to zero.
+ */
+function placeholderRowClass(row: AssetBalanceWithPrice): string {
+  return row.amount.isZero() ? 'opacity-60' : '';
+}
+
 function isPriceMissing(asset: string): boolean {
   return get(prices)[asset]?.priceMissing === true;
 }
@@ -121,6 +131,7 @@ watch(modelSearch, () => setPage(1));
       data-testid="dashboard-asset-table-balances"
       :cols="tableHeaders"
       :rows="sorted"
+      :item-class="placeholderRowClass"
       :loading="loading"
       :empty="{ description: emptyDescription }"
       :expanded="modelExpanded"

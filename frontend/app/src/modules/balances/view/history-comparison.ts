@@ -32,23 +32,24 @@ function valueOf(row: AssetBalanceWithPriceAndChains | undefined): BigNumber {
 }
 
 /**
- * The history rows, plus a zero row for every asset of value only the queried side holds.
+ * The rows of the view on show, plus a zero row for every asset of value only the other view holds.
  *
  * @remarks
- * An asset that history does not see at all is the largest discrepancy there is, so the history view
- * lists it at zero instead of leaving it out. The queried price is kept so the row still prices.
- * Queried-only assets worth nothing, such as unpriced airdropped spam, are left out: listed at zero
- * they would bury the gaps that matter.
+ * Both views list the same assets this way, so switching between them changes amounts in place
+ * instead of adding or removing rows; and an asset one side does not see at all, the largest
+ * discrepancy there is, stays visible as a zero. The other side's price is kept so the row still
+ * prices. Assets worth nothing on the other side, such as unpriced airdropped spam, are left out:
+ * listed at zero they would bury the gaps that matter.
  */
-export function withQueriedOnlyAssets(
-  history: readonly AssetBalanceWithPriceAndChains[],
-  queried: readonly AssetBalanceWithPriceAndChains[],
+export function withMissingAssets(
+  shown: readonly AssetBalanceWithPriceAndChains[],
+  other: readonly AssetBalanceWithPriceAndChains[],
 ): AssetBalanceWithPriceAndChains[] {
-  const seen = new Set(history.map(row => row.asset));
-  const missing = queried
+  const seen = new Set(shown.map(row => row.asset));
+  const missing = other
     .filter(row => !seen.has(row.asset) && row.value.gt(0))
     .map((row): AssetBalanceWithPriceAndChains => ({ amount: Zero, asset: row.asset, price: row.price, value: Zero }));
-  return [...history, ...missing];
+  return [...shown, ...missing];
 }
 
 /** Per-asset amounts under both views, keyed by asset, for every asset either side holds. */

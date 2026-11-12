@@ -34,7 +34,7 @@ watch(available, loadSummaryWhenAvailable, { immediate: true });
     <template #activator="{ attrs }">
       <button
         type="button"
-        class="inline-flex items-center gap-1 h-7 px-1.5 rounded-md text-sm text-rui-primary hover:bg-rui-primary/10"
+        class="inline-flex items-center gap-1 h-7 px-1.5 rounded-md text-sm text-rui-primary hover:bg-rui-primary/10 outline-none focus-visible:ring-2 focus-visible:ring-rui-primary/50"
         :aria-label="t('balance_view.trigger_label', { view: isHistory ? t('balance_view.from_history') : t('balance_view.live') })"
         data-testid="balance-view-picker-trigger"
         v-bind="attrs"

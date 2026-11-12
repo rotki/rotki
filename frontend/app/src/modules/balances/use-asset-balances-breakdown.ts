@@ -13,8 +13,9 @@ import {
   historicalAssetBreakdown,
   type HistoricalBreakdownPorts,
 } from '@/modules/balances/aggregation/core/asset-breakdown';
+import { useAggregationContext } from '@/modules/balances/aggregation/use-aggregation-context';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useHistoricalSnapshotStore } from '@/modules/balances/use-historical-snapshot-store';
+import { useHistoricalBalanceSource } from '@/modules/balances/use-historical-balance-source';
 import { useIsHistoryView } from '@/modules/balances/view/balance-view';
 import { bankLocationBalances } from '@/modules/banks/bank-balances';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -36,7 +37,7 @@ interface UseAssetBalancesBreakdownReturn {
 export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
   const { bankBalances, exchangeBalances, manualBalances, manualLiabilities, visibleBalances: balances } = storeToRefs(useBalancesStore());
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
-  const { entries: historicalEntries } = storeToRefs(useHistoricalSnapshotStore());
+  const { visibleEntries: historicalEntries } = useHistoricalBalanceSource(useAggregationContext());
   const isHistory = useIsHistoryView();
   const { getEvmChainName, matchChain } = useSupportedChains();
   const { getAssetPrice } = usePriceUtils();

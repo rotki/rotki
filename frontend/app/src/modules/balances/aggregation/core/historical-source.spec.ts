@@ -3,7 +3,7 @@ import type { HistoricalSourceContext } from '@/modules/balances/aggregation/cor
 import type { HistoricalBalanceEntry } from '@/modules/history/balances/types';
 import { bigNumberify, NoPrice } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
-import { fromHistoricalEntries } from './historical-source';
+import { fromHistoricalEntries, visibleHistoricalEntries } from './historical-source';
 import { summarizeBalances } from './summarize';
 
 function plain(value: unknown): unknown {
@@ -49,7 +49,7 @@ function fullContext(overrides: Partial<AggregationContext & HistoricalSourceCon
 
 describe('fromHistoricalEntries', () => {
   it('should map a wallet bucket to the address protocol with a per-chain split', () => {
-    const result = fromHistoricalEntries([entry({ amount: bigNumberify('3') })], createContext(), undefined);
+    const result = fromHistoricalEntries([entry({ amount: bigNumberify('3') })], createContext());
 
     expect(plain(result.ETH.address)).toEqual({
       amount: '3',
@@ -64,7 +64,7 @@ describe('fromHistoricalEntries', () => {
       entry({ amount: bigNumberify('3'), location: 'ethereum', locationLabel: '0xB' }),
       entry({ amount: bigNumberify('4'), location: 'base', locationLabel: '0xA' }),
     ];
-    const result = fromHistoricalEntries(entries, createContext(), undefined);
+    const result = fromHistoricalEntries(entries, createContext());
 
     expect(plain(result.ETH.address)).toEqual({
       amount: '9',
@@ -80,7 +80,6 @@ describe('fromHistoricalEntries', () => {
     const result = fromHistoricalEntries(
       [entry({ amount: bigNumberify('2'), protocol: 'aave' })],
       createContext(),
-      undefined,
     );
 
     expect(plain(result.ETH.aave)).toEqual({ amount: '2', value: '200' });
@@ -91,7 +90,6 @@ describe('fromHistoricalEntries', () => {
     const result = fromHistoricalEntries(
       [entry({ amount: bigNumberify('5'), asset: 'BTC', location: 'kraken', locationLabel: 'main', protocol: null })],
       createContext(),
-      undefined,
     );
 
     expect(plain(result.BTC.kraken)).toEqual({ amount: '5', value: '500' });
@@ -105,7 +103,6 @@ describe('fromHistoricalEntries', () => {
         priceOf: (asset: string) => (asset === 'ETH' ? bigNumberify(50) : bigNumberify(1)),
         resolveIdentifier: (id: string): string => (id === 'ETH2' ? 'ETH' : id),
       }),
-      undefined,
     );
 
     expect(result.ETH2.address.value.toString()).toBe('100');
@@ -115,22 +112,31 @@ describe('fromHistoricalEntries', () => {
     const result = fromHistoricalEntries(
       [entry({ amount: bigNumberify('2') })],
       createContext({ priceOf: () => NoPrice }),
-      undefined,
     );
 
     expect(result.ETH.address.value.isZero()).toBe(true);
   });
+});
 
-  it('should drop chain buckets at or below the blockchain small-balance threshold', () => {
+describe('visibleHistoricalEntries', () => {
+  it('should drop chain buckets at or below the blockchain small-balance threshold, and keep the rest', () => {
     const entries = [
-      entry({ amount: bigNumberify('0.5'), location: 'ethereum' }), // value 50
-      entry({ amount: bigNumberify('2'), location: 'ethereum' }), // value 200
-      entry({ amount: bigNumberify('0.5'), location: 'kraken', protocol: null }), // exchange: not filtered
+      entry({ amount: bigNumberify('0.5'), location: 'ethereum' }),
+      entry({ amount: bigNumberify('2'), location: 'ethereum' }),
+      entry({ amount: bigNumberify('0.5'), location: 'kraken' }),
     ];
-    const result = fromHistoricalEntries(entries, createContext(), bigNumberify(100));
 
-    expect(result.ETH.address.amount.toString()).toBe('2');
-    expect(plain(result.ETH.kraken)).toEqual({ amount: '0.5', value: '50' });
+    const amounts = visibleHistoricalEntries(entries, createContext(), bigNumberify(100)).map(({ amount, location }) => `${location}:${amount.toFixed()}`);
+
+    expect(amounts).toStrictEqual(['ethereum:2', 'kraken:0.5']);
+  });
+
+  it('should keep every chain bucket when no threshold is set', () => {
+    expect(visibleHistoricalEntries([entry({ amount: bigNumberify('0.01') })], createContext(), undefined)).toHaveLength(1);
+  });
+
+  it('should drop bank buckets, which the history view carries through from the live side', () => {
+    expect(visibleHistoricalEntries([entry({ location: 'banks', locationLabel: null })], createContext(), undefined)).toStrictEqual([]);
   });
 });
 
@@ -146,7 +152,7 @@ describe('fromHistoricalEntries with summarizeBalances', () => {
       resolveIdentifier: (id: string): string => (id === 'ETH2' ? 'ETH' : id),
     });
     const rows = summarizeBalances(
-      [fromHistoricalEntries(entries, context, undefined)],
+      [fromHistoricalEntries(entries, context)],
       context,
       { groupCollections: false },
     );
@@ -166,7 +172,7 @@ describe('fromHistoricalEntries with summarizeBalances', () => {
       collectionOf: (asset: string): string | undefined => (asset === 'WETH' || asset === 'ETH' ? 'eth-collection' : undefined),
       mainAssetOf: (): string | undefined => 'ETH',
     });
-    const rows = summarizeBalances([fromHistoricalEntries(entries, context, undefined)], context);
+    const rows = summarizeBalances([fromHistoricalEntries(entries, context)], context);
 
     expect(rows).toHaveLength(1);
     expect(rows[0].asset).toBe('ETH');
