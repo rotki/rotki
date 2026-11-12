@@ -140,7 +140,7 @@ const placeholder = computed<string | undefined>(() => {
           <RuiIcon
             name="lu-info"
             size="14"
-            class="text-rui-text-secondary cursor-help shrink-0"
+            class="text-rui-text-secondary cursor-help shrink-0 m-0.5"
           />
         </template>
         {{ placeholder }}
@@ -176,6 +176,7 @@ const placeholder = computed<string | undefined>(() => {
       </div>
       <RuiMenu
         v-model="modelBreakdownOpen"
+        class="flex"
         open-on-hover
         lazy
         :close-delay="200"

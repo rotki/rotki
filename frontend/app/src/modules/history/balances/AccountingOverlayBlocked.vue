@@ -80,14 +80,14 @@ const explanation = computed<string>(() => {
           <RuiIcon
             name="lu-triangle-alert"
             size="14"
-            class="text-rui-warning shrink-0"
+            class="text-rui-warning shrink-0 m-0.5"
           />
         </RouterLink>
         <RuiIcon
           v-else
           name="lu-triangle-alert"
           size="14"
-          class="text-rui-warning cursor-help shrink-0"
+          class="text-rui-warning cursor-help shrink-0 m-0.5"
         />
       </template>
       {{ explanation }}
