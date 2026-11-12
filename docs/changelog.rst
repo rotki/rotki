@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Bitpanda history queries now save each page as it arrives, so a failure part way through no longer throws away the history already fetched.
 * :bug:`-` Refreshing exchange balances now queries each exchange once. Before, an exchange with several connected accounts was queried again for every account, so balances took longer to load the more accounts it had.
 * :feature:`8019` Balances > Exchanges can now show the assets of one account at a time when an exchange has several connected accounts. Pick the account from the account menu above the table, which shows each account's value and share and marks one whose last refresh failed, or pick All accounts for the whole exchange.
 * :feature:`13144` The rotki container can now listen on IPv6 by setting the ``ROTKI_HTTP_HOST`` environment variable. ``::`` accepts both IPv6 and IPv4 connections, for example in dual-stack Kubernetes clusters, and a single address listens on that address only. The default stays ``0.0.0.0``, and the container's health check follows the address automatically.

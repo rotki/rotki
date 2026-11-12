@@ -4,6 +4,7 @@ from unittest.mock import call, patch
 
 import pytest
 
+from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BEST, A_ETH, A_EUR, A_USDT
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -361,6 +362,47 @@ def test_asset_movements(database, mock_bitpanda):
         },
     )]
     assert expected_movements == movements
+
+
+def test_history_query_keeps_completed_pages_after_failure(database, mock_bitpanda):
+    """A failing second page keeps the first page saved but leaves the range unqueried"""
+
+    def mock_bitpanda_query(url: str, **kwargs):  # pylint: disable=unused-argument
+        if '/fiatwallets/transactions' in url and url.endswith('&page=1'):
+            return MockResponse(
+                status_code=HTTPStatus.OK,
+                text=FIATWALLETS_TX_RESPONSE.replace('"total_count":2', '"total_count":3'),
+            )
+        if '/fiatwallets/transactions' in url:
+            return MockResponse(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, text='boom')
+        if '/wallets' in url:
+            return MockResponse(status_code=HTTPStatus.OK, text=WALLETS_RESPONSE)
+        if '/fiatwallets' in url:
+            return MockResponse(status_code=HTTPStatus.OK, text=FIAT_WALLETS_RESPONSE)
+
+        raise AssertionError(f'Unexpected url {url} in bitpanda test')
+
+    with (
+        patch.object(mock_bitpanda.session, 'get', side_effect=mock_bitpanda_query),
+        pytest.raises(RemoteError, match='boom'),
+    ):
+        mock_bitpanda.query_history_events()
+
+    with database.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor,
+            filter_query=HistoryEventFilterQuery.make(location=LOCATION_BITPANDA),
+        )
+        assert database.get_used_query_range(
+            cursor,
+            connection_range_name(mock_bitpanda.connection_identifier, 'history_events'),
+        ) is None
+
+    assert {(event.timestamp, event.amount) for event in events} == {
+        (TimestampMS(1631088548000), FVal('25.00')),
+        (TimestampMS(1631888548000), FVal('50.00')),
+        (TimestampMS(1631888548000), FVal('0.01')),
+    }
 
 
 def test_failures_report_the_cause(mock_bitpanda):

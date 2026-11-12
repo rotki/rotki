@@ -2,7 +2,7 @@ import json
 import logging
 from collections import defaultdict
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, overload
 from urllib.parse import urlencode
 
 import requests
@@ -22,6 +22,7 @@ from rotkehlchen.exchanges.exchange import (
     ApiKeyCheck,
     ExchangeQueryBalances,
     ExchangeWithoutApiSecret,
+    HistoryEventQueue,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
@@ -66,6 +67,12 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 MAX_PAGE_SIZE = 100
+HistoryEndpoint = Literal['fiatwallets/transactions', 'wallets/transactions', 'trades']
+HISTORY_ENDPOINTS: Final[tuple[HistoryEndpoint, ...]] = (
+    'fiatwallets/transactions',
+    'wallets/transactions',
+    'trades',
+)
 
 
 class Bitpanda(ExchangeWithoutApiSecret):
@@ -439,12 +446,16 @@ class Bitpanda(ExchangeWithoutApiSecret):
 
     def _query_endpoint_until_end(
             self,
-            endpoint: Literal['trades', 'fiatwallets/transactions', 'wallets/transactions'],
+            endpoint: HistoryEndpoint,
             from_ts: Timestamp | None,
             to_ts: Timestamp | None,
             options: dict[str, Any] | None = None,
+            event_queue: HistoryEventQueue | None = None,
     ) -> list[HistoryBaseEntry]:
         """Query a paginated endpoint until all pages are read
+
+        With an event queue each page is persisted as soon as it is deserialized and the
+        returned list stays empty. Without one all events are returned.
 
         May raise RemoteError
         """
@@ -463,8 +474,14 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 endpoint=endpoint,
                 options=given_options,
             )
+            page_events: list[HistoryBaseEntry] = []
             for entry in data:
-                result.extend(deserialize_fn(entry, from_timestamp, to_timestamp))
+                page_events.extend(deserialize_fn(entry, from_timestamp, to_timestamp))
+
+            if event_queue is None:
+                result.extend(page_events)
+            else:
+                event_queue.flush(page_events)
 
             count_so_far += len(data)
             if meta is None or meta.get('total_count') is None:
@@ -540,26 +557,39 @@ class Bitpanda(ExchangeWithoutApiSecret):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
+            event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
+        """Query fiat wallet transactions, crypto wallet transactions and trades.
+
+        With an event queue every page is persisted as it arrives, so a failure on a later
+        page or endpoint keeps what was already fetched. The range itself is only marked as
+        queried once all endpoints finish, since pages are not ordered by time.
+
+        May raise RemoteError
+        """
         self.first_connection()
-        # Should probably also query wallets/transactions for crypto deposits/withdrawals
-        # but it does not seem as if they contain them
-        events = self._query_endpoint_until_end(
-            endpoint='fiatwallets/transactions',
-            from_ts=start_ts,
-            to_ts=end_ts,
-        )
-        events.extend(self._query_endpoint_until_end(
-            endpoint='wallets/transactions',
-            from_ts=start_ts,
-            to_ts=end_ts,
-        ))
-        events.extend(self._query_endpoint_until_end(
-            endpoint='trades',
-            from_ts=start_ts,
-            to_ts=end_ts,
-        ))
+        events: list[HistoryBaseEntry] = []
+        for endpoint in HISTORY_ENDPOINTS:
+            events.extend(self._query_endpoint_until_end(
+                endpoint=endpoint,
+                from_ts=start_ts,
+                to_ts=end_ts,
+                event_queue=event_queue,
+            ))
         return events, end_ts
+
+    def query_online_history_events_into_queue(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            event_queue: HistoryEventQueue,
+    ) -> Timestamp:
+        _, actual_end_ts = self.query_online_history_events(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            event_queue=event_queue,
+        )
+        return actual_end_ts
 
     def query_online_margin_history(
             self,
