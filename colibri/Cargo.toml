@@ -28,8 +28,7 @@ dirs.workspace = true
 # for CLI args parsing
 clap = { workspace = true, features = ["string"] }
 # for globalDB and other sqlite operations
-rusqlite = { version = "=0.39.0", features = ["bundled", "bundled-sqlcipher-vendored-openssl"] }
-async-sqlite = {version = "=0.5.7" }
+rusqlite = { version = "=0.42.0", features = ["bundled", "bundled-sqlcipher-vendored-openssl"] }
 # for cors and network
 tower-http = { workspace = true, features = ["cors", "trace"] }
 # for detailed logs when requests happen. Tracing in maintained by the tokio team and it helps

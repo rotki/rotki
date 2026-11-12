@@ -1,9 +1,9 @@
-use async_sqlite::{Client, ClientBuilder};
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use crate::database::client::Client;
 use crate::database::errors::DBError;
 use crate::database::sql_utils::escape_like_pattern;
 
@@ -38,7 +38,7 @@ impl DBHandler {
 
     // unlock database by creating the connection and setting the sqlcipher key
     pub async fn unlock(&mut self, path: PathBuf, password: String) -> Result<(), DBError> {
-        let client = match ClientBuilder::new().path(path.clone()).open().await {
+        let client = match Client::open(path.clone()).await {
             Ok(c) => c,
             Err(e) => {
                 return Err(DBError::UnlockError(format!(
@@ -262,9 +262,7 @@ macro_rules! create_test_userdb {
 
         // Create DBHandler and connect without encryption for testing
         let mut db_handler = DBHandler::new();
-        let client = async_sqlite::ClientBuilder::new()
-            .path(db_path)
-            .open()
+        let client = $crate::database::client::Client::open(db_path)
             .await
             .expect("Failed to open async client");
 
