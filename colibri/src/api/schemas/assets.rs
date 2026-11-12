@@ -30,3 +30,15 @@ pub struct AssetsLevenshteinSearch {
     #[serde(default)]
     pub nft_handling: NftHandling,
 }
+
+#[derive(Deserialize)]
+pub struct SpamPredictionEntry {
+    pub identifier: String,
+    #[serde(default)]
+    pub tx_reference: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct SpamPredictionsRequest {
+    pub tokens: Vec<SpamPredictionEntry>,
+}

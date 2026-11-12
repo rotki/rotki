@@ -1,6 +1,6 @@
 use crate::blockchain::{RpcNode, SupportedBlockchain};
 use crate::types::{PriceOracle, SerializableDBEnum};
-use rusqlite::{types::Type, types::Value, Connection, Result};
+use rusqlite::{types::Type, types::Value, Connection, OptionalExtension, Result};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -30,6 +30,16 @@ pub struct OraclePricesQueryResult {
     pub entries_found: i64,
     pub entries_total: i64,
     pub entries_limit: i64,
+}
+
+#[derive(Clone)]
+pub struct SpamTokenMetadata {
+    pub identifier: String,
+    pub name: Option<String>,
+    pub symbol: Option<String>,
+    pub decimals: Option<u32>,
+    pub chain: u32,
+    pub address: String,
 }
 
 #[derive(Clone, Default)]
@@ -65,6 +75,40 @@ impl GlobalDB {
         } else {
             Ok(None)
         }
+    }
+
+    /// Resolve the local metadata needed to score one EVM token for spam.
+    ///
+    /// Only EVM tokens whose kind is ERC20 are scored. Returns `None` when the identifier is
+    /// unknown, is not an EVM token, or is not an ERC20 token.
+    pub async fn get_spam_token_metadata(
+        &self,
+        identifier: &str,
+    ) -> Result<Option<SpamTokenMetadata>> {
+        let conn = self.conn.lock().await;
+        conn.query_row(
+            "SELECT a.identifier, a.name, c.symbol, b.decimals, b.chain, b.address
+             FROM assets AS a
+             JOIN evm_tokens AS b ON b.identifier = a.identifier
+             JOIN common_asset_details AS c ON c.identifier = b.identifier
+             WHERE a.type = ? AND a.identifier = ? AND b.token_kind = ?",
+            rusqlite::params![
+                crate::types::AssetType::EvmToken.serialize_for_db(),
+                identifier,
+                "A",
+            ],
+            |row| {
+                Ok(SpamTokenMetadata {
+                    identifier: row.get(0)?,
+                    name: row.get(1)?,
+                    symbol: row.get(2)?,
+                    decimals: row.get(3)?,
+                    chain: row.get(4)?,
+                    address: row.get(5)?,
+                })
+            },
+        )
+        .optional()
     }
 
     pub async fn get_collection_main_asset(&self, asset_id: &str) -> Result<Option<String>> {

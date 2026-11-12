@@ -45,6 +45,7 @@ vi.mock('@/modules/core/table/use-server-table', () => ({
     refetch: spies.refetch,
     sort: ref([]),
   }),
+  useTableEmptyState: (): object => computed(() => ({ description: 'No data' })),
 }));
 
 vi.mock('@/modules/assets/detection/use-newly-detected-selection', () => ({

@@ -9,6 +9,7 @@ import { useSpamAsset } from '@/modules/assets/use-spam-asset';
 import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
 
 interface UseManagedAssetOperationsReturn {
+  fetchIgnoredAssets: () => Promise<void>;
   isAssetWhitelisted: (identifier: string) => boolean;
   useIsAssetWhitelisted: (identifier: string) => ComputedRef<boolean>;
   loadingIgnore: DeepReadonly<Ref<string | undefined>>;
@@ -26,7 +27,7 @@ export function useManagedAssetOperations(
   ignoredHandling: MaybeRefOrGetter<IgnoredAssetsHandlingType>,
   selected: Ref<string[]>,
 ): UseManagedAssetOperationsReturn {
-  const { ignoreAsset, unignoreAsset } = useIgnoredAssetOperations();
+  const { fetchIgnoredAssets, ignoreAsset, unignoreAsset } = useIgnoredAssetOperations();
   const { ignoreSelected } = useSelectedAssetIgnoring();
   const { markSelectedAsSpam } = useSelectedAssetSpam();
   const { isAssetIgnored, isAssetWhitelisted, useIsAssetWhitelisted } = useAssetsStore();
@@ -109,6 +110,7 @@ export function useManagedAssetOperations(
   };
 
   return {
+    fetchIgnoredAssets,
     isAssetWhitelisted,
     loadingIgnore: readonly(loadingIgnore),
     loadingSpam: readonly(loadingSpam),

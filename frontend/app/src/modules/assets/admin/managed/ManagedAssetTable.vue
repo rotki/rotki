@@ -14,7 +14,7 @@ import ManagedAssetRowActions from '@/modules/assets/admin/managed/ManagedAssetR
 import { useAssetDisplayHelpers } from '@/modules/assets/admin/use-asset-display-helpers';
 import { useManagedAssetOperations } from '@/modules/assets/admin/use-managed-asset-operations';
 import { useManagedAssetTable } from '@/modules/assets/admin/use-managed-asset-table';
-import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
+import NewlyDetectedTokenSpamHint from '@/modules/assets/detection/spam/NewlyDetectedTokenSpamHint.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -65,6 +65,7 @@ const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
 const {
+  fetchIgnoredAssets,
   isAssetWhitelisted,
   loadingIgnore,
   loadingSpam,
@@ -76,12 +77,17 @@ const {
   toggleWhitelistAsset,
 } = useManagedAssetOperations(() => emit('refresh'), () => ignoredHandling, selected);
 
-const { cols, data, emptyState, expand, getAssetLocation, isExpanded, spamDisabled } = useManagedAssetTable(
-  paginationModel,
-  expanded,
-  () => collection,
-  selected,
-);
+const {
+  cols,
+  data,
+  emptyState,
+  expand,
+  getAssetLocation,
+  getSpamPrediction,
+  isExpanded,
+  isSpamUnavailable,
+  spamDisabled,
+} = useManagedAssetTable(paginationModel, expanded, () => collection, selected);
 
 useRememberTableSorting<SupportedAsset>(TableId.SUPPORTED_ASSET, sortModel, cols);
 
@@ -89,8 +95,6 @@ const { canBeEdited, canBeIgnored, disabledRows, formatType, getAsset } = useAss
   () => collection,
   isAssetWhitelisted,
 );
-
-const { fetchIgnoredAssets } = useIgnoredAssetOperations();
 </script>
 
 <template>
@@ -149,6 +153,12 @@ const { fetchIgnoredAssets } = useIgnoredAssetOperations();
       </template>
       <template #item.type="{ row }">
         {{ formatType(row.assetType) }}
+      </template>
+      <template #item.spam="{ row }">
+        <NewlyDetectedTokenSpamHint
+          :prediction="getSpamPrediction(row.identifier)"
+          :unavailable="isSpamUnavailable(row.identifier)"
+        />
       </template>
       <template #item.ignored="{ row }">
         <ManagedAssetIgnoreSwitch

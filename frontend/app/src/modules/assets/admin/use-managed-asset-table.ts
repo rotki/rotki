@@ -1,8 +1,10 @@
 import type { SupportedAsset } from '@rotki/common';
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
+import type { SpamPrediction } from '@/modules/assets/api/use-asset-spam-prediction-api';
 import type { Collection } from '@/modules/core/common/collection';
 import { some } from 'es-toolkit/compat';
+import { useNewlyDetectedSpamAssessments } from '@/modules/assets/detection/spam/use-newly-detected-spam-assessments';
 import { EVM_TOKEN, isSpammableAssetType, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { type TableEmptyState, useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -21,6 +23,8 @@ interface UseManagedAssetTableReturn {
    * resolve them. Their icon comes from the resolved asset type instead, so nothing is lost.
    */
   getAssetLocation: (row: SupportedAsset) => string | undefined;
+  getSpamPrediction: (identifier: string) => SpamPrediction | null | undefined;
+  isSpamUnavailable: (identifier: string) => boolean;
   isExpanded: (identifier: string) => boolean;
   /**
    * Whether marking the selection as spam is unavailable.
@@ -67,6 +71,11 @@ export function useManagedAssetTable(
     label: t('asset_table.headers.started'),
     sortable: true,
   }, {
+    cellClass: 'py-0 whitespace-nowrap',
+    key: 'spam',
+    label: t('asset_table.newly_detected.spam.label'),
+    sortable: false,
+  }, {
     cellClass: 'py-0',
     key: 'ignored',
     label: t('assets.action.ignore'),
@@ -77,6 +86,20 @@ export function useManagedAssetTable(
 
   const data = computed<SupportedAsset[]>(() => toValue(collection).data ?? []);
   const found = computed<number>(() => toValue(collection).found ?? 0);
+  const tokens = computed<{ tokenIdentifier: string }[]>(() => get(data).map(asset => ({ tokenIdentifier: asset.identifier })));
+  const { assessments } = useNewlyDetectedSpamAssessments(tokens);
+
+  function getSpamPrediction(identifier: string): SpamPrediction | null | undefined {
+    const assessment = get(assessments)[identifier];
+    if (assessment?.status === 'ready')
+      return assessment.prediction;
+
+    return assessment?.status === 'unsupported' ? null : undefined;
+  }
+
+  function isSpamUnavailable(identifier: string): boolean {
+    return get(assessments)[identifier]?.status === 'unavailable';
+  }
 
   const setPage = (page: number): void => {
     set(paginationModel, {
@@ -126,6 +149,8 @@ export function useManagedAssetTable(
     emptyState,
     expand,
     getAssetLocation,
+    getSpamPrediction,
+    isSpamUnavailable,
     isExpanded,
     spamDisabled,
   };

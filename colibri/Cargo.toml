@@ -55,6 +55,14 @@ sha2 = "=0.11.1"
 sha3 = "=0.12.0"
 # constant-time comparison for the session-cookie signature check
 subtle = "=2.6.1"
+# Spam-detection model feature extraction mirrors Python's Unicode handling:
+# NFKC normalization, full case folding, general categories and character names.
+caseless = "=0.2.2"
+unicode-normalization = "=0.1.24"
+unicode-general-category = "=1.1.0"
+unicode_names2 = "=1.3.0"
+# Python-compatible text signals for the spam-detection model
+regex = "=1.13.1"
 
 # Version resource and icon for colibri.exe, see crates/build-support/windows_resource.rs
 [target.'cfg(windows)'.build-dependencies]
@@ -63,7 +71,6 @@ winresource = { version = "=0.1.34", default-features = false }
 [dev-dependencies]
 mockito = "=1.7.2"
 tokio = { workspace = true, features = ["test-util"] }
-regex = "=1.13.1"
 # `oneshot` for exercising the session middleware in tests
 tower.workspace = true
 # RAII temp dirs for test fixtures: removed on drop instead of piling up in /tmp
