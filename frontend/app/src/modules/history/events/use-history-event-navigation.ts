@@ -1,3 +1,4 @@
+import type { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
@@ -30,6 +31,8 @@ export interface HistoryEventNavigationRequest {
    *  computed within this asset-filtered view and the param is preserved in the final
    *  route query, so the highlight and the asset filter coexist. */
   assetFilter?: string;
+  /** The accounting overlay mode to land with, so a link from the overlay keeps it on. */
+  overlay?: OverlayMode;
   /** When true, preserve current route filters and calculate position within filtered view */
   preserveFilters?: boolean;
   /** Fallback requests to try when the target is not found in filtered results */

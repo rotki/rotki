@@ -10,7 +10,10 @@ const RouterLinkStub = defineComponent({
   template: '<a><slot /></a>',
 });
 
-function mountBlocked(stop: HistoricalBalanceStop): VueWrapper {
+const STOPPING_EVENT = 7;
+const LATER_EVENT = 9;
+
+function mountBlocked(stop: HistoricalBalanceStop, eventIdentifier: number = LATER_EVENT): VueWrapper {
   return mount(AccountingOverlayBlocked, {
     global: {
       stubs: {
@@ -19,33 +22,53 @@ function mountBlocked(stop: HistoricalBalanceStop): VueWrapper {
         RuiTooltip: { template: '<div><slot name="activator" /><span data-testid="explanation"><slot /></span></div>' },
       },
     },
-    props: { asset: 'ETH', stop },
+    props: { asset: 'ETH', eventIdentifier, stop },
   });
 }
 
 describe('accountingOverlayBlocked.vue', () => {
-  it('should link to the data issue of the stop when it has one', () => {
-    const wrapper = mountBlocked({ eventIdentifier: 7, groupIdentifier: 'group', issueId: 3 });
-    expect(wrapper.findComponent({ name: 'RouterLink' }).props('to')).toEqual({
-      name: '/history/data-issues/[[tab]]',
-      params: { tab: 'issues' },
-      query: { issue: '3' },
+  describe('on a row after the stopping event', () => {
+    it('should link to the data issue of the stop when it has one', () => {
+      const wrapper = mountBlocked({ eventIdentifier: STOPPING_EVENT, groupIdentifier: 'group', issueId: 3 });
+      expect(wrapper.findComponent({ name: 'RouterLink' }).props('to')).toEqual({
+        name: '/history/data-issues/[[tab]]',
+        params: { tab: 'issues' },
+        query: { issue: '3' },
+      });
+      expect(wrapper.get('[data-testid=explanation]').text()).toBe('accounting_overlay.blocked.open_issue');
     });
-    expect(wrapper.get('[data-testid=explanation]').text()).toBe('accounting_overlay.blocked.open_issue');
+
+    it('should link to the stopping event with the overlay kept on when the stop has no data issue', () => {
+      const wrapper = mountBlocked({ eventIdentifier: STOPPING_EVENT, groupIdentifier: 'group', issueId: null });
+      expect(wrapper.findComponent({ name: 'RouterLink' }).props('to')).toEqual({
+        name: '/history/events/',
+        query: { asset: 'ETH', highlightedNegativeBalanceEvent: '7', overlay: 'balance', targetGroupIdentifier: 'group' },
+      });
+      expect(wrapper.get('[data-testid=explanation]').text()).toBe('accounting_overlay.blocked.view_event');
+    });
+
+    it('should render no link when the stop has neither an issue nor a surviving event', () => {
+      const wrapper = mountBlocked({ eventIdentifier: STOPPING_EVENT, groupIdentifier: null, issueId: null });
+      expect(wrapper.findComponent({ name: 'RouterLink' }).exists()).toBe(false);
+      expect(wrapper.get('[data-testid=explanation]').text()).toBe('accounting_overlay.blocked.no_link');
+    });
   });
 
-  it('should link to the stopping event when the stop has no data issue', () => {
-    const wrapper = mountBlocked({ eventIdentifier: 7, groupIdentifier: 'group', issueId: null });
-    expect(wrapper.findComponent({ name: 'RouterLink' }).props('to')).toEqual({
-      name: '/history/events/',
-      query: { asset: 'ETH', highlightedNegativeBalanceEvent: '7', targetGroupIdentifier: 'group' },
+  describe('on the stopping event row itself', () => {
+    it('should link to the data issue and blame this event when the stop has an issue', () => {
+      const wrapper = mountBlocked({ eventIdentifier: STOPPING_EVENT, groupIdentifier: 'group', issueId: 3 }, STOPPING_EVENT);
+      expect(wrapper.findComponent({ name: 'RouterLink' }).props('to')).toEqual({
+        name: '/history/data-issues/[[tab]]',
+        params: { tab: 'issues' },
+        query: { issue: '3' },
+      });
+      expect(wrapper.get('[data-testid=explanation]').text()).toBe('accounting_overlay.blocked.self_open_issue');
     });
-    expect(wrapper.get('[data-testid=explanation]').text()).toBe('accounting_overlay.blocked.view_event');
-  });
 
-  it('should render no link when the stop has neither an issue nor a surviving event', () => {
-    const wrapper = mountBlocked({ eventIdentifier: 7, groupIdentifier: null, issueId: null });
-    expect(wrapper.findComponent({ name: 'RouterLink' }).exists()).toBe(false);
-    expect(wrapper.get('[data-testid=explanation]').text()).toBe('accounting_overlay.blocked.no_link');
+    it('should not link back to itself and blame this event when the stop has no issue', () => {
+      const wrapper = mountBlocked({ eventIdentifier: STOPPING_EVENT, groupIdentifier: 'group', issueId: null }, STOPPING_EVENT);
+      expect(wrapper.findComponent({ name: 'RouterLink' }).exists()).toBe(false);
+      expect(wrapper.get('[data-testid=explanation]').text()).toBe('accounting_overlay.blocked.self_no_link');
+    });
   });
 });

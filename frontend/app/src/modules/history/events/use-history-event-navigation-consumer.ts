@@ -4,6 +4,7 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
+import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 import {
   HIGHLIGHT_LOADING_START_TIMEOUT,
   HighlightTargetTypes,
@@ -59,7 +60,7 @@ export function useHistoryEventNavigationConsumer(
   const { notifyError } = useNotifications();
 
   watchImmediate(route, ({ query }) => {
-    const { targetGroupIdentifier, highlightedAccountingEvent, highlightedNegativeBalanceEvent, asset } = query;
+    const { targetGroupIdentifier, highlightedAccountingEvent, highlightedNegativeBalanceEvent, asset, overlay } = query;
     if (!targetGroupIdentifier)
       return;
 
@@ -79,6 +80,7 @@ export function useHistoryEventNavigationConsumer(
       assetFilter: typeof asset === 'string' ? asset : undefined,
       ...(highlightedAccountingEvent ? { highlightedAccountingEvent: Number(highlightedAccountingEvent) } : {}),
       ...(highlightedNegativeBalanceEvent ? { highlightedNegativeBalanceEvent: Number(highlightedNegativeBalanceEvent) } : {}),
+      ...(overlay === OverlayMode.BALANCE ? { overlay: OverlayMode.BALANCE } : {}),
       targetGroupIdentifier: targetGroupIdentifier.toString(),
     });
   });
@@ -143,6 +145,9 @@ export function useHistoryEventNavigationConsumer(
 
     if (request.assetFilter)
       query.asset = request.assetFilter;
+
+    if (request.overlay === OverlayMode.BALANCE)
+      query.overlay = request.overlay;
 
     return query;
   }
