@@ -45,7 +45,7 @@ clap = "=4.6.7"
 axum = "=0.8.9"
 dirs = "=7.0.0"
 tower = "=0.5.3"
-tower-http = "=0.6.11"
+tower-http = "=0.7.1"
 
 [profile.release]
 strip = true

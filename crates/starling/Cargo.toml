@@ -20,10 +20,6 @@ clap = { workspace = true, features = ["derive", "env"] }
 serde.workspace = true
 serde_json.workspace = true
 
-# Cross-platform advisory file locking for the single-instance data-directory
-# guard (flock / LockFileEx). Held for the supervised lifetime; OS-released on exit.
-fs4 = { version = "=0.13.1", features = ["sync"] }
-
 # The in-process HTTP server + reverse proxy served in docker mode (replaces
 # nginx). Lives in its own crate: it takes a config and serves, knowing nothing
 # about the supervisor or service state.
