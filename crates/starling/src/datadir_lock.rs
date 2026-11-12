@@ -16,11 +16,9 @@
 //! this deliberately avoids.
 
 use std::fmt;
-use std::fs::{self, File, OpenOptions};
+use std::fs::{self, File, OpenOptions, TryLockError};
 use std::io;
 use std::path::Path;
-
-use fs4::fs_std::FileExt;
 
 /// Lock file name created inside the data directory. The file is never deleted;
 /// only the advisory lock on its open handle is load-bearing.
@@ -109,10 +107,10 @@ pub fn acquire(data_dir: &Path) -> Result<DataDirLock, Error> {
 
     let file = options.open(&path).map_err(Error::Io)?;
 
-    match FileExt::try_lock_exclusive(&file) {
-        Ok(true) => Ok(DataDirLock { _file: file }),
-        Ok(false) => Err(Error::Held),
-        Err(err) => Err(Error::Io(err)),
+    match file.try_lock() {
+        Ok(()) => Ok(DataDirLock { _file: file }),
+        Err(TryLockError::WouldBlock) => Err(Error::Held),
+        Err(TryLockError::Error(err)) => Err(Error::Io(err)),
     }
 }
 
