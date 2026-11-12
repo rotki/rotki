@@ -94,8 +94,8 @@ pub async fn logout_user(State(state): State<Arc<AppState>>) -> impl IntoRespons
 
     // Await the close so the response guarantees SQLite has released the file: the
     // frontend restores/replaces the DB right after logout, and close() is a lazy
-    // future that does nothing unless polled. The worker runs commands in order, so
-    // this also waits for any queued query to finish first.
+    // future that does nothing unless polled. It takes the connection lock, so it
+    // also waits for a running query to finish first.
     if let Some(client) = &db.client {
         if let Err(err) = client.close().await {
             // The connection stays open on failure, so keep the handle and refuse the

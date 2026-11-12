@@ -1,3 +1,4 @@
+pub mod client;
 mod errors;
 pub mod sql_utils;
 pub mod user_db;
