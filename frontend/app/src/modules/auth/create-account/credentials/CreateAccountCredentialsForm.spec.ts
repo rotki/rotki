@@ -278,5 +278,16 @@ describe('createAccountCredentialsForm', () => {
 
       expect(meter()).toBe('strong');
     });
+
+    it('should name the profile name as the problem when the password contains it', async () => {
+      const harness = createHarness(blank());
+      const meter = harness.wrapper.find('[data-testid=create-account-password-strength]');
+
+      await edit(harness, USERNAME, 'kelpie_fan');
+      await edit(harness, PASSWORD, 'xK9#kelpie_fan#L7');
+
+      expect(meter.attributes('data-issue')).toBe('contains_username');
+      expect(meter.text()).toContain('create_account.password_strength.issue.contains_username');
+    });
   });
 });
