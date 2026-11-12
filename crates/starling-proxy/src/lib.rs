@@ -2157,7 +2157,7 @@ mod tests {
 
         let url = format!("ws://127.0.0.1:{proxy_port}/ws/");
         let (mut ws, _resp) = tokio_tungstenite::connect_async(url).await.unwrap();
-        ws.send(Message::Binary(b"hello".to_vec())).await.unwrap();
+        ws.send(Message::binary(b"hello".as_slice())).await.unwrap();
         let reply = ws.next().await.unwrap().unwrap();
         assert_eq!(&reply.into_data()[..], b"hello");
     }

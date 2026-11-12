@@ -44,5 +44,5 @@ socket2 = "=0.6.5"
 [dev-dependencies]
 serde_json.workspace = true
 tower = { workspace = true, features = ["util"] }
-tokio-tungstenite = "=0.24.0"
+tokio-tungstenite = "=0.30.0"
 futures-util = "=0.3.34"

@@ -440,7 +440,7 @@ mod platform {
         // matches the class being queried.
         unsafe {
             QueryInformationJobObject(
-                job.raw(),
+                Some(job.raw()),
                 JobObjectBasicAccountingInformation,
                 &mut info as *mut _ as *mut _,
                 std::mem::size_of::<JOBOBJECT_BASIC_ACCOUNTING_INFORMATION>() as u32,

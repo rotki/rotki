@@ -8,7 +8,7 @@ repository.workspace = true
 
 [dependencies]
 # For logging
-log = "=0.4.34"
+log = "=0.4.35"
 # For the asynchronous Rest API
 reqwest = { version = "=0.13.5", default-features = false, features = ["json", "query", "rustls-no-provider"]}
 rustls = { version = "=0.23.46", default-features = false, features = ["ring", "std", "tls12"] }
@@ -44,15 +44,15 @@ file-rotate = "=0.8.0"
 glob = "=0.3.4"
 # for hex encoding/decoding in ABI calls
 hex = "=0.4.3"
-base64 = "=0.22.1"
+base64 = "=0.23.1"
 thiserror.workspace = true
 # Used for Levenshtein distance in asset search to mirror Python's behavior.
 strsim = "=0.11.1"
 # HMAC-SHA256 to validate the signed session cookie (Docker), minted by core
-hmac = "=0.12.1"
-sha2 = "=0.10.9"
+hmac = "=0.13.0"
+sha2 = "=0.11.1"
 # EIP-55 checksum validation for EVM addresses
-sha3 = "=0.10.9"
+sha3 = "=0.12.0"
 # constant-time comparison for the session-cookie signature check
 subtle = "=2.6.1"
 
