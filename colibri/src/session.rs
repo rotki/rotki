@@ -24,7 +24,7 @@ use axum::{
     response::Response,
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use rusqlite::{Connection, OpenFlags};
 use serde::Deserialize;
 use sha2::Sha256;

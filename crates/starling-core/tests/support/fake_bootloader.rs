@@ -54,7 +54,7 @@ fn ignore_graceful_termination() {
 
 #[cfg(windows)]
 fn ignore_graceful_termination() {
-    use windows::Win32::Foundation::BOOL;
+    use windows::core::BOOL;
     use windows::Win32::System::Console::SetConsoleCtrlHandler;
 
     unsafe extern "system" fn handler(_ctrl_type: u32) -> BOOL {
@@ -120,7 +120,7 @@ fn exit_on_graceful_termination() {
 
 #[cfg(windows)]
 fn exit_on_graceful_termination() {
-    use windows::Win32::Foundation::BOOL;
+    use windows::core::BOOL;
     use windows::Win32::System::Console::SetConsoleCtrlHandler;
 
     unsafe extern "system" fn handler(_ctrl_type: u32) -> BOOL {

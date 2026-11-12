@@ -24,10 +24,10 @@ serde_json.workspace = true
 tokio = { workspace = true, features = ["test-util"] }
 
 [target.'cfg(unix)'.dependencies]
-nix = { version = "=0.30.1", features = ["signal", "process", "user"] }
+nix = { version = "=0.31.3", features = ["signal", "process", "user"] }
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "=0.58.0", features = [
+windows = { version = "=0.62.2", features = [
     "Win32_Foundation",
     "Win32_Security",
     "Win32_System_Console",
