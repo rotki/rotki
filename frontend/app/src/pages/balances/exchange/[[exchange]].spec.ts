@@ -1,3 +1,4 @@
+import type { ExchangeAccountOption, useExchangeAccountSelection } from '@/modules/balances/exchanges/use-exchange-account-selection';
 import type { useExchangeBalancesPage } from '@/pages/balances/exchange/use-exchange-balances-page';
 import { type AssetBalanceWithPrice, bigNumberify } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
@@ -27,6 +28,35 @@ const pageState = vi.hoisted((): PageState => ({
   used: [],
   view: 'balances',
 }));
+
+const selectionState = vi.hoisted((): { account?: string; accountBalances?: AssetBalanceWithPrice[]; accounts: ExchangeAccountOption[] } => ({
+  accounts: [],
+}));
+
+const PickerStub = defineComponent({
+  name: 'ExchangeAccountPickerStub',
+  props: {
+    accounts: { default: () => [], type: Array },
+    modelValue: { default: undefined, type: String },
+    total: { default: undefined, type: Object },
+  },
+  template: '<div data-testid="account-picker" />',
+});
+
+vi.mock('@/modules/balances/exchanges/use-exchange-account-selection', async () => {
+  const { computed, shallowRef } = await import('vue');
+  return {
+    useExchangeAccountSelection: (): ReturnType<typeof useExchangeAccountSelection> => {
+      const account = shallowRef<string | undefined>(selectionState.account);
+      return {
+        accountBalances: computed(() => selectionState.accountBalances),
+        accounts: computed(() => selectionState.accounts),
+        modelAccount: computed<string | undefined>({ get: () => account.value, set: (value) => { account.value = value; } }),
+        picked: computed(() => selectionState.accounts.find(option => option.identifier === account.value)),
+      };
+    },
+  };
+});
 
 const RefreshButtonStub = defineComponent({
   emits: ['refresh', 'refresh-all', 'refresh-exchange'],
@@ -99,6 +129,7 @@ describe('pages/balances/exchange/[[exchange]]', () => {
         stubs: {
           AssetBalances: AssetBalancesStub,
           BinanceSavingDetail: { props: ['exchange'], template: '<div data-testid="binance-savings" />' },
+          ExchangeAccountPicker: PickerStub,
           ExchangeBalanceCards: CardsStub,
           ExchangeBalancesEmpty: EmptyStub,
           ExchangeBalancesRefreshButton: RefreshButtonStub,
@@ -118,6 +149,9 @@ describe('pages/balances/exchange/[[exchange]]', () => {
     pageState.loading = false;
     pageState.used = [];
     pageState.view = 'balances';
+    selectionState.account = undefined;
+    selectionState.accountBalances = undefined;
+    selectionState.accounts = [];
   });
 
   afterEach(() => {
@@ -229,6 +263,68 @@ describe('pages/balances/exchange/[[exchange]]', () => {
 
       expect(wrapper.find('[data-testid=binance-savings]').exists()).toBe(true);
       expect(wrapper.findComponent(AssetBalancesStub).exists()).toBe(false);
+    });
+  });
+
+  describe('account picker', () => {
+    beforeEach(() => {
+      pageState.used = ['kraken', 'binance'];
+    });
+
+    const accounts: ExchangeAccountOption[] = [
+      { identifier: 'kraken-Main', loaded: true, name: 'Main', share: '66.67', value: bigNumberify(10) },
+      { error: 'Invalid key', identifier: 'kraken-Bot', loaded: false, name: 'Bot', share: '0.00', value: bigNumberify(0) },
+    ];
+
+    it('should hide the picker when the exchange has nothing to pick between', () => {
+      wrapper = mountPage('kraken');
+
+      expect(wrapper.findComponent(PickerStub).exists()).toBe(false);
+    });
+
+    it('should offer the picker for an exchange with several connections', () => {
+      selectionState.accounts = accounts;
+      wrapper = mountPage('kraken');
+
+      expect(wrapper.findComponent(PickerStub).props('accounts')).toEqual(accounts);
+    });
+
+    it('should hide the picker on the binance savings view', () => {
+      selectionState.accounts = accounts;
+      pageState.view = 'savings';
+      wrapper = mountPage('binance');
+
+      expect(wrapper.findComponent(PickerStub).exists()).toBe(false);
+    });
+
+    it('should feed the table the picked account balances instead of the exchange total', () => {
+      pageState.balances = [{ amount: bigNumberify(1), asset: 'ETH', price: bigNumberify(2), value: bigNumberify(2) }];
+      selectionState.accounts = accounts;
+      selectionState.accountBalances = [{ amount: bigNumberify(3), asset: 'SOL', price: bigNumberify(1), value: bigNumberify(3) }];
+      wrapper = mountPage('kraken');
+
+      expect(wrapper.findComponent(AssetBalancesStub).props('balances')).toEqual(selectionState.accountBalances);
+    });
+
+    it('should hand the picker the exchange total its card shows', () => {
+      selectionState.accounts = accounts;
+      wrapper = mountPage('kraken');
+
+      expect(wrapper.findComponent(PickerStub).props('total')).toEqual(bigNumberify(100));
+    });
+
+    it.each([
+      { case: 'that refreshed fine is empty, though another account failed', failed: false, options: accounts, picked: 'kraken-Main' },
+      { case: 'whose refresh failed is unknown', failed: true, options: accounts, picked: 'kraken-Bot' },
+      { case: 'no refresh has loaded is unknown, with no error of its own', failed: true, options: [accounts[0], { ...accounts[1], error: undefined }], picked: 'kraken-Bot' },
+    ])('should say a picked account $case', ({ failed, options, picked }) => {
+      pageState.failed = true;
+      selectionState.accounts = options;
+      selectionState.account = picked;
+      selectionState.accountBalances = [];
+      wrapper = mountPage('kraken');
+
+      expect(wrapper.find('[data-testid=exchange-balances-refresh-failed]').exists()).toBe(failed);
     });
   });
 });

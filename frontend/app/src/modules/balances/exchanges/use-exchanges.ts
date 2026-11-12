@@ -51,7 +51,7 @@ export function useExchanges(): UseExchangesReturn {
   const { t } = useI18n({ useScope: 'global' });
 
   const { submitTask } = useNativeTask();
-  const { exchangeAccountBalances, exchangeBalances } = storeToRefs(useBalancesStore());
+  const { exchangeAccountBalances, exchangeBalances, exchangeFailedAccounts } = storeToRefs(useBalancesStore());
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const { setConnectedExchanges } = useConnectedExchangesStore();
   const { queryExchangeBalances } = useExchangeApi();
@@ -94,6 +94,10 @@ export function useExchanges(): UseExchangesReturn {
             [location]: failures.length > 0
               ? { ...get(exchangeAccountBalances)[location], ...perAccount[location] }
               : perAccount[location] ?? {},
+          });
+          set(exchangeFailedAccounts, {
+            ...get(exchangeFailedAccounts),
+            [location]: Object.fromEntries(failedConnections.map(([identifier, { message }]) => [identifier, message])),
           });
           if (failures.length > 0) {
             return err(TaskFailed({

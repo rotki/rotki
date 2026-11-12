@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { type AssetBalanceWithPrice, type BigNumber, Zero } from '@rotki/common';
 import { msg } from '@/message-key';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
 import BinanceSavingDetail from '@/modules/balances/exchanges/BinanceSavingDetail.vue';
+import ExchangeAccountPicker from '@/modules/balances/exchanges/ExchangeAccountPicker.vue';
 import ExchangeBalanceCards from '@/modules/balances/exchanges/ExchangeBalanceCards.vue';
 import ExchangeBalancesEmpty from '@/modules/balances/exchanges/ExchangeBalancesEmpty.vue';
 import ExchangeBalancesRefreshButton from '@/modules/balances/exchanges/ExchangeBalancesRefreshButton.vue';
+import { useExchangeAccountSelection } from '@/modules/balances/exchanges/use-exchange-account-selection';
 import { NoteLocation } from '@/modules/core/common/notes';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
@@ -41,6 +44,19 @@ const {
   sortedExchanges,
   totalBalance,
 } = useExchangeBalancesPage(() => exchange);
+
+const { accountBalances, accounts, modelAccount, picked } = useExchangeAccountSelection(() => exchange);
+
+const shownBalances = computed<AssetBalanceWithPrice[]>(() => get(accountBalances) ?? get(balances));
+
+/** With one account picked, its empty table is unknown when its own refresh failed or none has loaded it. */
+const shownRefreshFailed = computed<boolean>(() => {
+  const account = get(picked);
+  return account ? account.error !== undefined || !account.loaded : get(lastRefreshFailed);
+});
+
+/** The whole exchange's total, as its card shows it, for the picker's all accounts option. */
+const exchangeTotal = computed<BigNumber>(() => (exchange ? exchangeBalance(exchange) : Zero));
 
 const binance = computed<'binance' | 'binanceus' | undefined>(() => (isBinance(exchange) ? exchange : undefined));
 </script>
@@ -98,6 +114,12 @@ const binance = computed<'binance' | 'binanceus' | undefined>(() => (isBinance(e
               {{ t('exchange_balances.tabs.savings_interest_history') }}
             </RuiButton>
           </RuiButtonGroup>
+          <ExchangeAccountPicker
+            v-if="modelView === 'balances' && accounts.length > 0"
+            v-model="modelAccount"
+            :accounts="accounts"
+            :total="exchangeTotal"
+          />
           <TableSearchField
             v-if="modelView === 'balances'"
             v-model="search"
@@ -115,13 +137,13 @@ const binance = computed<'binance' | 'binanceus' | undefined>(() => (isBinance(e
           v-model:search="search"
           data-testid="exchange-asset-balances"
           :breakdown="{ hide: true }"
-          :loading="isExchangeLoading && balances.length === 0"
-          :balances="balances"
+          :loading="isExchangeLoading && shownBalances.length === 0"
+          :balances="shownBalances"
           :display="{ showPerProtocol: !exchange, stickyHeader: true }"
         >
           <template #empty>
             <TableEmptyNotice
-              v-if="lastRefreshFailed"
+              v-if="shownRefreshFailed"
               icon="lu-circle-alert"
               :title="t('exchange_balances.empty_table.failed_title')"
               :description="t('exchange_balances.empty_table.failed_description')"
@@ -132,6 +154,7 @@ const binance = computed<'binance' | 'binanceus' | undefined>(() => (isBinance(e
               icon="lu-coins-exchange"
               :title="t('exchange_balances.empty_table.title')"
               :description="t('exchange_balances.empty_table.description')"
+              data-testid="exchange-balances-empty"
             />
           </template>
         </AssetBalances>
