@@ -173,13 +173,18 @@ describe('composables/api/balances/historical-balances', () => {
     server.use(http.post(`${backendUrl}/api/1/balances/historical/events`, async ({ request }) => {
       capturedBody = await request.json();
       return HttpResponse.json({ message: '', result: { entries: {
-        123: { processing_required: false, buckets: [{ location: 'ethereum', protocol: null, balance: '0.1234567890123456789' }] },
+        123: {
+          processing_required: false,
+          buckets: [{ location: 'ethereum', protocol: null, balance: '0.1234567890123456789' }],
+          stop: { event_identifier: 9, group_identifier: null, issue_id: 4 },
+        },
       } } });
     }));
     const { fetchHistoricalBalancesAtEvents } = await getApi();
     const result = await fetchHistoricalBalancesAtEvents([123]);
     expect(capturedBody).toEqual({ event_identifiers: [123] });
     expect(result.entries['123'].processingRequired).toBe(false);
+    expect(result.entries['123'].stop).toEqual({ eventIdentifier: 9, groupIdentifier: null, issueId: 4 });
     expect(result.entries['123'].buckets[0].balance.toString()).toBe('0.1234567890123456789');
   });
 });

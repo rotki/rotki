@@ -2,6 +2,7 @@ import { type BigNumber, Zero } from '@rotki/common';
 
 /** Availability of the bucket snapshot for an event. */
 export const EventOverlayStatus = {
+  BLOCKED: 'blocked',
   EMPTY: 'empty',
   ERROR: 'error',
   LOADING: 'loading',

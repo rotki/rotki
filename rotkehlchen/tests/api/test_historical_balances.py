@@ -249,6 +249,9 @@ def test_historical_balances_at_events(rotkehlchen_api_server: APIServer) -> Non
             (LOCATION_ETHEREUM, account, 10, 0, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '5', None),  # noqa: E501
             (LOCATION_ETHEREUM, account, 10, 1, HistoryEventType.SPEND, HistoryEventSubType.NONE, '5', None),  # noqa: E501
             (LOCATION_ETHEREUM, account, 20, 0, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '7', None),  # noqa: E501
+            (LOCATION_ETHEREUM, account, 30, 0, HistoryEventType.SPEND, HistoryEventSubType.NONE, '100', None),  # noqa: E501
+            (LOCATION_ETHEREUM, account, 40, 0, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '1', None),  # noqa: E501
+            (LOCATION_ETHEREUM, other_account, 40, 1, HistoryEventType.RECEIVE, HistoryEventSubType.NONE, '1', None),  # noqa: E501
         ):
             identifier = DBHistoryEvents(db).add_history_event(
                 write_cursor=cursor,
@@ -275,7 +278,7 @@ def test_historical_balances_at_events(rotkehlchen_api_server: APIServer) -> Non
         url, json={'event_identifiers': requested},
     ))
     assert result == {'entries': {
-        str(identifier): {'processing_required': True, 'buckets': []}
+        str(identifier): {'processing_required': True, 'buckets': [], 'stop': None}
         for identifier in requested
     }}
 
@@ -296,11 +299,30 @@ def test_historical_balances_at_events(rotkehlchen_api_server: APIServer) -> Non
     for identifier, wallet_balance in ((identifiers[4], '5'), (identifiers[5], '0')):
         entry = result['entries'][str(identifier)]
         assert entry['processing_required'] is False
+        assert entry['stop'] is None
         assert sorted(entry['buckets'], key=lambda bucket: (bucket['location'], bucket['protocol'] or '')) == [  # noqa: E501
             {'location': 'base', 'protocol': None, 'balance': '2'},
             {'location': 'ethereum', 'protocol': None, 'balance': wallet_balance},
             {'location': 'ethereum', 'protocol': 'aave', 'balance': '3'},
         ]
+
+    # the spend drives the wallet bucket negative: it and the later events of the same account
+    # and asset report the stop, while earlier events and other accounts do not
+    entries = assert_proper_sync_response_with_result(requests.post(
+        url, json={'event_identifiers': identifiers[6:]},
+    ))['entries']
+    with db.conn.read_ctx() as cursor:
+        group_identifier, issue_id = cursor.execute(
+            'SELECT he.group_identifier, di.id FROM history_events he '
+            'JOIN data_issues di ON di.event_identifier = he.identifier WHERE he.identifier = ?',
+            (identifiers[7],),
+        ).fetchone()
+    stop = {
+        'event_identifier': identifiers[7],
+        'group_identifier': group_identifier,
+        'issue_id': issue_id,
+    }
+    assert [entries[str(identifier)]['stop'] for identifier in identifiers[6:]] == [None, stop, stop, None]  # noqa: E501
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

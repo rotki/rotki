@@ -15,6 +15,7 @@ vi.mock('@/modules/balances/api/use-historical-balances-api', () => ({
 function response(ids: number[], balance = '5'): HistoricalBalancesAtEventsResponse {
   return { entries: Object.fromEntries(ids.map(id => [String(id), {
     processingRequired: false,
+    stop: null,
     buckets: [{ location: 'ethereum', protocol: null, balance: bigNumberify(balance) }],
   }])) };
 }
@@ -51,6 +52,7 @@ describe('useAccountingOverlay event batches', () => {
       ...response([1], '0').entries,
       2: {
         processingRequired: false,
+        stop: null,
         buckets: [
           { location: 'base', protocol: null, balance: bigNumberify('0.1234567890123456789') },
           { location: 'ethereum', protocol: 'aave', balance: bigNumberify('2') },
@@ -102,7 +104,7 @@ describe('useAccountingOverlay event batches', () => {
 
   it('should distinguish empty, incomplete and missing results without displaying incomplete totals', async () => {
     fetchSnapshots.mockResolvedValue({ entries: {
-      1: { processingRequired: false, buckets: [] },
+      1: { processingRequired: false, stop: null, buckets: [] },
       2: { ...response([2]).entries['2'], processingRequired: true },
     } });
     const { overlay } = create([1, 2, 3]);
@@ -111,6 +113,24 @@ describe('useAccountingOverlay event batches', () => {
     expect(overlay.statusFor(2)).toBe('processing');
     expect(overlay.statusFor(3)).toBe('error');
     expect(overlay.balanceAfter(2)).toBeUndefined();
+  });
+
+  it('should report an event at or after a stop as blocked, with its stop and no balance', async () => {
+    const stop = { eventIdentifier: 7, groupIdentifier: 'group', issueId: 3 };
+    fetchSnapshots.mockResolvedValue({ entries: {
+      1: response([1]).entries['1'],
+      2: { ...response([2]).entries['2'], stop },
+      3: { ...response([3]).entries['3'], processingRequired: true, stop },
+    } });
+    const { overlay } = create([1, 2, 3]);
+    await vi.advanceTimersByTimeAsync(60);
+    expect(overlay.statusFor(1)).toBe('ready');
+    expect(overlay.stopFor(1)).toBeUndefined();
+    expect(overlay.statusFor(2)).toBe('blocked');
+    expect(overlay.stopFor(2)).toEqual(stop);
+    expect(overlay.balanceAfter(2)).toBeUndefined();
+    expect(overlay.statusFor(3)).toBe('processing');
+    expect(overlay.stopFor(3)).toBeUndefined();
   });
 
   it('should mark all events in a failed batch as errors', async () => {

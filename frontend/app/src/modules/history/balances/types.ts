@@ -1,9 +1,22 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 
+/** The event from which the balances of an account and asset stopped being processed. */
+const HistoricalBalanceStop = z.object({
+  eventIdentifier: z.number(),
+  /** Null when the stopping event was deleted after the stop was recorded. */
+  groupIdentifier: z.string().nullable(),
+  /** The negative balance data issue of the stop, null when it has none. */
+  issueId: z.number().nullable(),
+});
+
+export type HistoricalBalanceStop = z.infer<typeof HistoricalBalanceStop>;
+
 export const HistoricalBalancesAtEventsResponse = z.object({
   entries: z.record(z.string(), z.object({
     processingRequired: z.boolean(),
+    /** Set for an event at or after a stop: its buckets then hold the balance before the stop. */
+    stop: HistoricalBalanceStop.nullable(),
     buckets: z.array(z.object({
       location: z.string(),
       protocol: z.string().nullable(),

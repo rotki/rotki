@@ -4261,7 +4261,7 @@ class RestAPI:
     @accounting_update_required('Historical balances at events is disabled')
     def get_historical_balances_at_events(self, event_identifiers: list[int]) -> ApiResult:
         try:
-            processing, balances = HistoricalBalancesManager(
+            processing, balances, stops = HistoricalBalancesManager(
                 self.rotkehlchen.data.db,
             ).get_balances_at_events(event_identifiers)
         except NotFoundError as e:
@@ -4276,6 +4276,11 @@ class RestAPI:
                         'protocol': bucket.protocol,
                         'balance': str(bucket.amount),
                     } for bucket in buckets],
+                    'stop': None if (stop := stops.get(identifier)) is None else {
+                        'event_identifier': stop.event_identifier,
+                        'group_identifier': stop.group_identifier,
+                        'issue_id': stop.issue_id,
+                    },
                 } for identifier, buckets in balances.items()
             },
         })

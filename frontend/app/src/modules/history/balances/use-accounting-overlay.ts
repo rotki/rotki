@@ -1,5 +1,5 @@
 import type { MaybeRefOrGetter } from 'vue';
-import type { HistoricalBalancesAtEventsResponse } from '@/modules/history/balances/types';
+import type { HistoricalBalancesAtEventsResponse, HistoricalBalanceStop } from '@/modules/history/balances/types';
 import { type BigNumber, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
@@ -31,6 +31,7 @@ export interface SparklinePoint {
 interface EventSnapshot {
   status: EventOverlayStatus;
   buckets: AccountingOverlayBucket[];
+  stop?: HistoricalBalanceStop;
 }
 
 function snapshotFromEntry(entry: HistoricalBalancesAtEventsResponse['entries'][string] | undefined): EventSnapshot {
@@ -38,6 +39,8 @@ function snapshotFromEntry(entry: HistoricalBalancesAtEventsResponse['entries'][
     return { status: EventOverlayStatus.ERROR, buckets: [] };
   if (entry.processingRequired)
     return { status: EventOverlayStatus.PROCESSING, buckets: entry.buckets };
+  if (entry.stop)
+    return { status: EventOverlayStatus.BLOCKED, buckets: entry.buckets, stop: entry.stop };
   return {
     status: entry.buckets.length > 0 ? EventOverlayStatus.READY : EventOverlayStatus.EMPTY,
     buckets: entry.buckets,
@@ -53,6 +56,8 @@ export interface UseAccountingOverlayReturn {
   statusFor: (identifier: number) => EventOverlayStatus;
   balanceAfter: (identifier: number) => BigNumber | undefined;
   bucketsAt: (identifier: number) => AccountingOverlayBucket[];
+  /** The stop that makes the event's balance unknown, set only for a blocked event. */
+  stopFor: (identifier: number) => HistoricalBalanceStop | undefined;
   /** Register a rendered event absent from the page groups; returns its cleanup function. */
   registerEvent: (identifier: number) => () => void;
   refresh: () => Promise<void>;
@@ -155,6 +160,10 @@ export function useAccountingOverlay({ enabled, eventIdentifiers }: AccountingOv
     return get(cache).get(identifier)?.buckets ?? [];
   }
 
+  function stopFor(identifier: number): HistoricalBalanceStop | undefined {
+    return get(cache).get(identifier)?.stop;
+  }
+
   watch((): boolean => toValue(enabled), () => {
     generation++;
     set(cache, new Map());
@@ -166,5 +175,5 @@ export function useAccountingOverlay({ enabled, eventIdentifiers }: AccountingOv
     generation++;
   });
 
-  return { statusFor, balanceAfter, bucketsAt, registerEvent, refresh };
+  return { statusFor, balanceAfter, bucketsAt, stopFor, registerEvent, refresh };
 }

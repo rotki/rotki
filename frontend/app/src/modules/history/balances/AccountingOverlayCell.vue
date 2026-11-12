@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
+import type { HistoricalBalanceStop } from '@/modules/history/balances/types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
+import AccountingOverlayBlocked from '@/modules/history/balances/AccountingOverlayBlocked.vue';
 import AccountingOverlayBuckets from '@/modules/history/balances/AccountingOverlayBuckets.vue';
 import AccountingOverlaySparkline from '@/modules/history/balances/AccountingOverlaySparkline.vue';
 import { type AccountingOverlayBucket, EventOverlayStatus } from '@/modules/history/balances/use-accounting-overlay';
@@ -48,6 +50,13 @@ const balance = computed<BigNumber | undefined>(() => {
   if (!context || !acct)
     return undefined;
   return context.overlay.balanceAfter(event.identifier);
+});
+
+const stop = computed<HistoricalBalanceStop | undefined>(() => {
+  const acct = get(account);
+  if (!context || !acct)
+    return undefined;
+  return context.overlay.stopFor(event.identifier);
 });
 
 const buckets = computed<AccountingOverlayBucket[]>(() => {
@@ -110,6 +119,12 @@ const placeholder = computed<string | undefined>(() => {
       </template>
       {{ t('accounting_overlay.error') }}
     </RuiTooltip>
+
+    <AccountingOverlayBlocked
+      v-else-if="status === EventOverlayStatus.BLOCKED && stop"
+      :stop="stop"
+      :asset="event.asset"
+    />
 
     <div
       v-else-if="placeholder"
