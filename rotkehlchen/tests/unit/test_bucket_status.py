@@ -496,6 +496,23 @@ def test_checks_survive_a_setting_write_that_does_not_change_the_mapping(
     assert len(_checks(database)) == 1
 
 
+@with_accounts
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_checks_survive_writing_the_stored_mapping_when_the_cache_differs(
+        database: DBHandler,
+) -> None:
+    """As right after a premium restore replaced the DB, before the cache is loaded from it"""
+    _save(database, _check())
+    stored = CachedSettings().get_entry('treat_eth2_as_eth') is not True
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            "INSERT OR REPLACE INTO settings(name, value) VALUES('treat_eth2_as_eth', ?)",
+            (str(stored),),
+        )
+        database.set_settings(write_cursor, ModifiableDBSettings(treat_eth2_as_eth=stored))
+    assert len(_checks(database)) == 1
+
+
 # --- the ordered classifier ---------------------------------------------------------------
 
 

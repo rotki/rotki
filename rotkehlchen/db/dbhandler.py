@@ -93,6 +93,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY,
     DEFAULT_LAST_DATA_MIGRATION,
     DEFAULT_PREMIUM_SHOULD_SYNC,
+    DEFAULT_TREAT_ETH2_AS_ETH,
     ROTKEHLCHEN_DB_VERSION,
     ROTKEHLCHEN_TRANSIENT_DB_VERSION,
     STRING_KEYS_REMOVE_IF_EMPTY,
@@ -304,6 +305,7 @@ class DBHandler:
             'beacon_rpc_endpoint': (str, None),
             'btc_mempool_api': (str, None),
             'ask_user_upon_size_discrepancy': (str_to_bool, DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY),  # noqa: E501
+            'treat_eth2_as_eth': (str_to_bool, DEFAULT_TREAT_ETH2_AS_ETH),
         }
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
@@ -546,6 +548,10 @@ class DBHandler:
     def get_setting(self, cursor: DBCursor, name: Literal['ask_user_upon_size_discrepancy']) -> bool:  # noqa: E501
         ...
 
+    @overload
+    def get_setting(self, cursor: DBCursor, name: Literal['treat_eth2_as_eth']) -> bool:
+        ...
+
     def get_setting(
             self,
             cursor: DBCursor,
@@ -560,6 +566,7 @@ class DBHandler:
                 'beacon_rpc_endpoint',
                 'btc_mempool_api',
                 'ask_user_upon_size_discrepancy',
+                'treat_eth2_as_eth',
             ],
     ) -> int | Timestamp | bool | Asset | frozenset[ConnectionIdentifier] | str | None:
         deserializer, default_value = self.setting_to_default_type[name]
@@ -821,6 +828,12 @@ class DBHandler:
         return db_settings_from_dict(settings_dict, self.msg_aggregator)
 
     def set_settings(self, write_cursor: DBCursor, settings: ModifiableDBSettings) -> None:
+        # Compared to the stored value, not CachedSettings, which may not describe this DB yet,
+        # as right after a premium restore replaced it
+        eth2_mapping_changed = (
+            settings.treat_eth2_as_eth is not None and
+            settings.treat_eth2_as_eth != self.get_setting(write_cursor, 'treat_eth2_as_eth')
+        )
         settings_dict = settings.serialize()
         # Settings whose value is an empty string and which support being unset
         # are removed from the DB (instead of stored as ''), so the dataclass
@@ -843,10 +856,7 @@ class DBHandler:
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                 to_upsert,
             )
-        if (
-            settings.treat_eth2_as_eth is not None and
-            settings.treat_eth2_as_eth != CachedSettings().get_entry('treat_eth2_as_eth')
-        ):  # the saved comparisons of ETH and ETH2 were aggregated under the previous mapping
+        if eth2_mapping_changed:  # the saved ETH and ETH2 comparisons used the previous mapping
             delete_balance_checks(write_cursor=write_cursor, assets=(A_ETH.identifier, A_ETH2.identifier))  # noqa: E501
             delete_wallet_observations(write_cursor=write_cursor, assets=(A_ETH.identifier, A_ETH2.identifier))  # noqa: E501
         CachedSettings().update_entries(settings)
