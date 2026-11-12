@@ -1914,21 +1914,6 @@
   "backend_settings_button": {
     "tooltip": "Change the backend settings. Changing the settings will restart the rotki backend"
   },
-  "balance_display_mode": {
-    "attention": "Discrepancies",
-    "attention_tooltip": "The balances queried from the chain or exchange differ from the balances derived from your history events.",
-    "comparison_from_history": "From history",
-    "comparison_queried": "Queried",
-    "difference": "Difference",
-    "history": "From history",
-    "history_tooltip": "From history: balances computed by replaying your history events.",
-    "label": "Balance display mode",
-    "process_now": "Process now",
-    "queried": "Queried",
-    "queried_tooltip": "Queried: balances as currently reported by the blockchain or exchange.",
-    "reconciliation": "Balance reconciliation",
-    "stale_notice": "History-derived balances are behind recent events. Re-run processing to bring them up to date."
-  },
   "balance_divergence": {
     "action": "Find divergence",
     "apart": {
@@ -1970,6 +1955,38 @@
     "tracked_higher": "At the first diverged event, the tracked balance is higher than on-chain.",
     "tracked_lower": "At the first diverged event, the tracked balance is lower than on-chain.",
     "view_event": "View event"
+  },
+  "balance_view": {
+    "all_manual": "all manual",
+    "attention": "History differs from queried",
+    "basis_derived": "derived",
+    "basis_queried": "queried in both",
+    "behind": "Behind recent event edits",
+    "by_source": "Where the difference comes from",
+    "chart_queried": "The chart shows queried snapshots",
+    "difference": "Difference",
+    "from_history": "From history",
+    "history": "History",
+    "history_vs_queried": "History vs queried",
+    "label": "Balance view",
+    "largest_gaps": "Largest asset gaps",
+    "load_failed": "Couldn't load history balances",
+    "loading": "Loading history balances…",
+    "manual_amount": "{amount} manual",
+    "net_worth": "Net worth",
+    "no_events": "No history events to derive balances from yet",
+    "not_in_history": "not in history",
+    "not_processed": "History hasn't been processed yet",
+    "only_in_history": "only in history",
+    "process_now": "Process now",
+    "processing": "Processing history events…",
+    "queried": "Queried",
+    "reconciliation_clear": "Reconciliation: no issues",
+    "reconciliation_issues": "Reconciliation: {mismatched} mismatched, {blocked} blocked",
+    "refresh_failed": "Couldn't refresh history balances, showing the last loaded ones",
+    "review": "Review",
+    "up_to_date": "History is up to date",
+    "vs_queried": "vs queried"
   },
   "bank_balances": {
     "accounts": {

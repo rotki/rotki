@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LegendJump, SourceKind } from '@/modules/dashboard/holdings/core/holdings-types';
+import type { LegendJump, SourceKind, SourceTotal } from '@/modules/dashboard/holdings/core/holdings-types';
 import { useTrackedAccountsRow } from '@/modules/accounts/use-tracked-accounts-row';
 import ActionEmptyState from '@/modules/core/action-center/ActionEmptyState.vue';
 import SourceBar from '@/modules/dashboard/holdings/components/SourceBar.vue';
@@ -33,8 +33,11 @@ const kindLabel = useSourceKindLabel();
  */
 const { raised: isEmpty, row: trackedAccountsRow } = useTrackedAccountsRow();
 
+/** Sources counted in the view on show; an excluded one keeps its legend row but has no share. */
+const barSources = computed<SourceTotal[]>(() => get(summary).sources.filter(source => !source.excluded));
+
 const barLabel = computed<string>(() => {
-  const parts = get(summary).sources.map(source => `${kindLabel(source.kind)} ${source.share.multipliedBy(100).toFixed(1)}%`);
+  const parts = get(barSources).map(source => `${kindLabel(source.kind)} ${source.share.multipliedBy(100).toFixed(1)}%`);
   return t('dashboard.holdings.legend_label', { parts: parts.join(', ') });
 });
 
@@ -61,7 +64,7 @@ function jump(target: LegendJump): void {
     </div>
     <SourceBar
       v-else-if="!isInitialLoading && !summary.loading && summary.sources.length > 0"
-      :sources="summary.sources"
+      :sources="barSources"
       :show-shares="shouldShowPercentage"
       :selected-kind="selectedKind"
       :label="shouldShowPercentage ? barLabel : t('dashboard.holdings.title')"

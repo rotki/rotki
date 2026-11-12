@@ -5,7 +5,9 @@ import AssetExternalLinks from '@/modules/assets/AssetExternalLinks.vue';
 import AssetLocations from '@/modules/assets/AssetLocations.vue';
 import AssetValueRow from '@/modules/assets/AssetValueRow.vue';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
-import BalanceDisplayModeSwitch from '@/modules/balances/components/BalanceDisplayModeSwitch.vue';
+import BalanceViewPicker from '@/modules/balances/components/BalanceViewPicker.vue';
+import { provideHistoryView } from '@/modules/balances/view/balance-view';
+import { useBalanceView } from '@/modules/balances/view/use-balance-view';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
@@ -36,6 +38,9 @@ const { identifier } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+const { isHistory } = useBalanceView();
+provideHistoryView(isHistory);
+
 const {
   asset,
   collectionAssetWithPrice,
@@ -52,7 +57,7 @@ const {
   toggleIgnoreAsset,
   toggleSpam,
   toggleWhitelistAsset,
-} = useAssetDetail(() => identifier);
+} = useAssetDetail(() => identifier, isHistory);
 
 const { getChainName } = useSupportedChains();
 
@@ -111,7 +116,7 @@ const chainName = computed<string | undefined>(() => {
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <BalanceDisplayModeSwitch />
+        <BalanceViewPicker />
         <div
           v-if="!isCustomAsset"
           class="flex items-center gap-2"

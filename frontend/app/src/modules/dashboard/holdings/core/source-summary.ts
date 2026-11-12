@@ -16,6 +16,7 @@ interface SummaryExtras {
   /** NFT value in the main currency, or `undefined` when NFTs do not count toward net worth. */
   readonly nfts: BigNumber | undefined;
   readonly liabilities: BigNumber;
+  readonly liabilitiesExcluded?: boolean;
 }
 
 /**
@@ -25,18 +26,24 @@ interface SummaryExtras {
  * Shares are of gross assets, not of net worth, so they add up to 100% and never pass it however
  * large the liabilities are. Kinds holding nothing are left out of `sources` and listed in
  * `emptyKinds` instead, unless they are still being priced: a chain whose prices have not
- * arrived sums to zero, and dropping it would read as the user holding nothing there.
+ * arrived sums to zero, and dropping it would read as the user holding nothing there. Excluded
+ * contributions count toward nothing, but a kind holding only those keeps its row, marked excluded.
  */
-export function summarizeSources(contributions: readonly SourceContribution[], { liabilities, nfts }: SummaryExtras): HoldingsSummary {
+export function summarizeSources(
+  contributions: readonly SourceContribution[],
+  { liabilities, liabilitiesExcluded = false, nfts }: SummaryExtras,
+): HoldingsSummary {
   const ofKind = (kind: SourceKind): SourceContribution[] => contributions.filter(contribution => contribution.kind === kind);
+  const counted = (kind: SourceKind): SourceContribution[] => ofKind(kind).filter(contribution => !contribution.excluded);
 
-  const kindTotals: { kind: SummaryKind; value: BigNumber; loading: boolean }[] = [
+  const kindTotals: { kind: SummaryKind; value: BigNumber; loading: boolean; excluded: boolean }[] = [
     ...SOURCE_KIND_ORDER.map(kind => ({
+      excluded: ofKind(kind).length > 0 && counted(kind).length === 0,
       kind,
-      loading: ofKind(kind).some(contribution => contribution.loading),
-      value: bigNumberSum(ofKind(kind).map(contribution => contribution.value)),
+      loading: counted(kind).some(contribution => contribution.loading),
+      value: bigNumberSum(counted(kind).map(contribution => contribution.value)),
     })),
-    ...(nfts ? [{ kind: ExtraKind.NFT, loading: false, value: nfts }] : []),
+    ...(nfts ? [{ excluded: false, kind: ExtraKind.NFT, loading: false, value: nfts }] : []),
   ];
   const gross = bigNumberSum(kindTotals.map(({ value }) => value));
 
@@ -44,11 +51,18 @@ export function summarizeSources(contributions: readonly SourceContribution[], {
     emptyKinds: SOURCE_KIND_ORDER.filter(kind => ofKind(kind).length === 0),
     gross,
     liabilities,
+    liabilitiesExcluded,
     loading: kindTotals.some(({ loading }) => loading),
     sources: pipe(
       kindTotals,
-      filter(({ loading, value }) => loading || !value.isZero()),
-      map(({ kind, loading, value }): SourceTotal => ({ kind, loading, share: gross.isZero() ? gross : value.div(gross), value })),
+      filter(({ excluded, loading, value }) => excluded || loading || !value.isZero()),
+      map(({ excluded, kind, loading, value }): SourceTotal => ({
+        ...(excluded ? { excluded } : {}),
+        kind,
+        loading,
+        share: gross.isZero() ? gross : value.div(gross),
+        value,
+      })),
     ),
   };
 }

@@ -25,9 +25,15 @@ interface Props {
   balances: AssetBalanceWithPrice[];
   tableType: DashboardTableType;
   loading?: boolean;
+  /** Add a column the page fills through the `comparison` slot, as the history view does. */
+  showComparison?: boolean;
 }
 
-const { balances, loading = false, tableType, title } = defineProps<Props & /* @vue-ignore */ Omit<HTMLAttributes, keyof Props>>();
+const { balances, loading = false, showComparison = false, tableType, title } = defineProps<Props & /* @vue-ignore */ Omit<HTMLAttributes, keyof Props>>();
+
+defineSlots<{
+  comparison: (props: { row: AssetBalanceWithPrice }) => unknown;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -40,6 +46,7 @@ const { modelSort, pagination, setPage, setTablePagination, tableHeaders } = use
   () => tableType,
   () => title,
   totalNetWorth,
+  () => showComparison,
 );
 
 const {
@@ -181,6 +188,12 @@ watch(modelSearch, () => setPage(1));
           :price="row.price"
           :value="row.value"
           :loading="isValuePending(row)"
+        />
+      </template>
+      <template #item.comparison="{ row }">
+        <slot
+          name="comparison"
+          :row="row"
         />
       </template>
       <template #item.percentageOfTotalNetValue="{ row }">

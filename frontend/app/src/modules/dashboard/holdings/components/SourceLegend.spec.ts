@@ -98,4 +98,21 @@ describe('sourceLegend', () => {
     expect(wrapper.findAll('[data-testid=legend-skeleton]')).toHaveLength(4);
     expect(wrapper.find('[data-testid=add-source-menu]').exists()).toBe(false);
   });
+
+  it('should keep an excluded kind in its place, saying it is not in history instead of a value', () => {
+    const wrapper = createWrapper(summarizeSources([
+      ...contributions,
+      { excluded: true, kind: SourceKind.MANUAL, loading: false, location: 'external', value: bigNumberify(50) },
+    ], { liabilities: Zero, nfts: undefined }));
+
+    expect(rows(wrapper)).toEqual(['blockchain', 'exchange', 'manual']);
+    expect(wrapper.find('[data-kind=manual] [data-testid=dashboard-source-legend-row-excluded]').exists()).toBe(true);
+    expect(wrapper.find('[data-kind=manual] [data-testid=fiat]').exists()).toBe(false);
+  });
+
+  it('should keep the liabilities row when the liabilities are excluded and none are counted', () => {
+    const wrapper = createWrapper(summarizeSources(contributions, { liabilities: Zero, liabilitiesExcluded: true, nfts: undefined }));
+
+    expect(wrapper.find('[data-testid=dashboard-source-legend-liabilities-excluded]').exists()).toBe(true);
+  });
 });

@@ -4,12 +4,16 @@ import { bigNumberify, type Blockchain } from '@rotki/common';
 import { createTestExchange, createTestManualBalance } from '@test/utils/create-data';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { testAccounts, testEthereumBalances, testExchangeBalances, testManualBalances } from '@test/utils/test-data';
+import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, defineComponent, h, type VNode } from 'vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useHistoricalSnapshotStore } from '@/modules/balances/use-historical-snapshot-store';
+import { provideHistoryView } from '@/modules/balances/view/balance-view';
 import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN, TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
 
 vi.mock('@/modules/core/common/use-supported-chains', async () => {
@@ -23,6 +27,7 @@ vi.mock('@/modules/core/common/use-supported-chains', async () => {
       getEvmChainName: (_chain: string) => 'ethereum',
       getNativeAsset: (chain: Blockchain) => chain,
       isEvmLikeChains: (_chain: string) => false,
+      matchChain: (location: string) => (location === 'ethereum' ? Blockchain.ETH : undefined),
       txChains: computed(() => [{
         evmChainName: 'ethereum',
         id: Blockchain.ETH,
@@ -176,6 +181,51 @@ describe('useAssetBalancesBreakdown', () => {
         tags: undefined,
         value: bigNumberify(150),
       }]);
+    });
+  });
+
+  describe('balance view', () => {
+    /** Runs the breakdown inside a page that provides the history view, as the dashboard does. */
+    function breakdownInHistoryView(asset: string, liabilities = false): AssetBreakdown[] {
+      let rows: AssetBreakdown[] = [];
+      const Child = defineComponent({
+        setup(): () => null {
+          rows = useAssetBalancesBreakdown().getAssetBreakdown(asset, liabilities);
+          return (): null => null;
+        },
+      });
+      mount(defineComponent({
+        setup(): () => VNode {
+          provideHistoryView(computed<boolean>(() => true));
+          return () => h(Child);
+        },
+      }));
+      return rows;
+    }
+
+    beforeEach(() => {
+      useHistoricalSnapshotStore().setSnapshot({
+        entries: [{ amount: bigNumberify(5), asset: 'GNO', location: 'ethereum', locationLabel: '0xaddress1', protocol: null }],
+        processingRequired: false,
+        stale: false,
+      });
+    });
+
+    it('should stay queried outside a page that provides the history view, even with history loaded', () => {
+      const locations = useAssetBalancesBreakdown().getAssetBreakdown('GNO').map(row => row.location);
+
+      expect(locations).toContain('kraken');
+    });
+
+    it('should list the history buckets, without queried exchanges or manual balances, in the history view', () => {
+      expect(breakdownInHistoryView('GNO')).toMatchObject([{ address: '0xaddress1', amount: bigNumberify(5), location: 'ethereum' }]);
+    });
+
+    it('should keep liabilities queried and leave manual liabilities out in the history view', () => {
+      const { manualLiabilities } = storeToRefs(useBalancesStore());
+      set(manualLiabilities, [createTestManualBalance('GNO', 7, 7, TRADE_LOCATION_EXTERNAL, BalanceType.LIABILITY)]);
+
+      expect(breakdownInHistoryView('GNO', true).map(row => row.location)).not.toContain(TRADE_LOCATION_EXTERNAL);
     });
   });
 });

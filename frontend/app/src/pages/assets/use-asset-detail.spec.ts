@@ -43,11 +43,11 @@ vi.mock('@/modules/assets/use-asset-info-retrieval', async () => {
   };
 });
 
-vi.mock('@/modules/balances/use-aggregated-balances', async () => {
+vi.mock('@/modules/balances/view/use-balance-view-data', async () => {
   const { computed: computedFn } = await import('vue');
   return {
-    useAggregatedBalances: (): { useBalances: () => ComputedRef<AssetBalanceWithPrice[]> } => ({
-      useBalances: (): ComputedRef<AssetBalanceWithPrice[]> => computedFn(() => balances.current),
+    useBalanceViewData: (): { balances: ComputedRef<AssetBalanceWithPrice[]> } => ({
+      balances: computedFn(() => balances.current),
     }),
   };
 });

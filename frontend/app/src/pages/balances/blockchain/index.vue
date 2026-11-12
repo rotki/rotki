@@ -6,7 +6,6 @@ import AssetBalances from '@/modules/balances/AssetBalances.vue';
 import BlockchainBalanceFilter from '@/modules/balances/BlockchainBalanceFilter.vue';
 import BlockchainBalancesRefreshButton from '@/modules/balances/BlockchainBalancesRefreshButton.vue';
 import BlockchainBalanceStalenessIndicator from '@/modules/balances/BlockchainBalanceStalenessIndicator.vue';
-import BalanceDisplayModeSwitch from '@/modules/balances/components/BalanceDisplayModeSwitch.vue';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { NoteLocation } from '@/modules/core/common/notes';
@@ -61,7 +60,6 @@ onMounted(async () => {
   >
     <template #buttons>
       <BlockchainBalanceStalenessIndicator class="self-center" />
-      <BalanceDisplayModeSwitch />
       <BlockchainBalancesRefreshButton />
       <HideSmallBalances :source="BalanceSource.BLOCKCHAIN" />
     </template>

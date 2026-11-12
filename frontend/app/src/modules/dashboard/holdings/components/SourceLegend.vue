@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import { useIsHistoryView } from '@/modules/balances/view/balance-view';
 import AddSourceMenu from '@/modules/dashboard/holdings/components/AddSourceMenu.vue';
 import {
   ExtraKind,
@@ -26,6 +27,10 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const kindLabel = useSourceKindLabel();
+const isHistory = useIsHistoryView();
+
+/** What an excluded row holds instead of a value: the kind is only in the view not on show. */
+const excludedLabel = computed<string>(() => (get(isHistory) ? t('balance_view.not_in_history') : t('balance_view.only_in_history')));
 
 const LOADING_ROWS = 4;
 
@@ -63,7 +68,7 @@ function choose(source: SourceTotal): void {
         <button
           type="button"
           class="grid grid-cols-[10px_1fr_auto_4.5rem] items-center gap-2.5 w-full px-1.5 py-1 rounded-sm text-left text-sm hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800"
-          :class="{ 'bg-rui-primary/10!': selectedKind === source.kind }"
+          :class="{ 'bg-rui-primary/10!': selectedKind === source.kind, 'text-rui-text-secondary': source.excluded }"
           :aria-pressed="source.kind === ExtraKind.NFT ? undefined : selectedKind === source.kind"
           :data-kind="source.kind"
           data-testid="dashboard-source-legend-row"
@@ -82,7 +87,14 @@ function choose(source: SourceTotal): void {
               class="text-rui-text-secondary"
             />
           </span>
-          <template v-if="source.loading">
+          <span
+            v-if="source.excluded"
+            class="col-span-2 text-right text-xs leading-5 text-rui-text-secondary"
+            data-testid="dashboard-source-legend-row-excluded"
+          >
+            {{ excludedLabel }}
+          </span>
+          <template v-else-if="source.loading">
             <RuiSkeletonLoader
               class="h-4 w-20 justify-self-end"
               data-testid="dashboard-source-legend-row-loading"
@@ -103,7 +115,7 @@ function choose(source: SourceTotal): void {
         </button>
       </li>
       <li
-        v-if="!summary.liabilities.isZero()"
+        v-if="!summary.liabilities.isZero() || summary.liabilitiesExcluded"
         class="border-t border-default mt-1 pt-1"
       >
         <button
@@ -121,11 +133,20 @@ function choose(source: SourceTotal): void {
               class="text-rui-text-secondary"
             />
           </span>
-          <FiatDisplay
-            class="text-right"
-            :value="summary.liabilities.negated()"
-          />
-          <span />
+          <span
+            v-if="summary.liabilities.isZero() && summary.liabilitiesExcluded"
+            class="col-span-2 text-right text-xs leading-5 text-rui-text-secondary"
+            data-testid="dashboard-source-legend-liabilities-excluded"
+          >
+            {{ excludedLabel }}
+          </span>
+          <template v-else>
+            <FiatDisplay
+              class="text-right"
+              :value="summary.liabilities.negated()"
+            />
+            <span />
+          </template>
         </button>
       </li>
       <li v-if="summary.emptyKinds.length > 0">

@@ -4,6 +4,7 @@ import type { SourceKind } from '@/modules/dashboard/holdings/core/holdings-type
 import { assert, type BigNumber, TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSetting, TimeUnit } from '@rotki/common';
 import dayjs from 'dayjs';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
+import { useBalanceView } from '@/modules/balances/view/use-balance-view';
 import { computeNetValueDelta, type NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import NetWorthChart from '@/modules/dashboard/graph/NetWorthChart.vue';
 import AssetsBySource from '@/modules/dashboard/holdings/components/AssetsBySource.vue';
@@ -34,6 +35,7 @@ const { getNetValue } = statisticsStore;
 
 const premium = usePremium();
 const { updateFrontendSetting } = useSettingsOperations();
+const { available: viewAvailable, isHistory } = useBalanceView();
 const { loadingBlockchainBalances: isLoading } = useBalancesLoading();
 
 const loadingNetWorth = useNetWorthLoading();
@@ -103,11 +105,11 @@ onMounted(() => {
 <template>
   <RuiCard
     class="overall-balances"
+    :class="{ 'border-rui-primary!': isHistory }"
     :class-names="{ content: 'grid grid-cols-1 lg:grid-cols-12 p-2 gap-4 overflow-hidden' }"
   >
     <NetWorthHeadline
       class="lg:col-span-4 lg:px-4 lg:pt-4"
-      :net-worth="totalNetWorth"
       :balance-delta="balanceDelta"
       :percentage="percentage"
       :loading-net-worth="loadingNetWorth"
@@ -164,6 +166,17 @@ onMounted(() => {
           </RuiButton>
         </div>
       </div>
+      <p
+        v-if="viewAvailable"
+        class="flex items-center gap-1 px-2 text-xs text-rui-text-secondary"
+        data-testid="overall-balances-chart-queried"
+      >
+        <RuiIcon
+          name="lu-info"
+          size="14"
+        />
+        {{ t('balance_view.chart_queried') }}
+      </p>
     </div>
     <AssetsBySource
       v-model:selected-kind="selectedKind"
