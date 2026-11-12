@@ -47,6 +47,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'thegraph',
     'octant',
     'eigenlayer',
+    'ethena',
     'gmx',
     'compound-v3',
     'aave',
