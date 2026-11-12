@@ -91,6 +91,16 @@ describe('balanceViewPanel', () => {
     expect(h.setView).toHaveBeenCalledExactlyOnceWith('history');
   });
 
+  it('should describe both views in one cell, showing the selected one, so the panel keeps its height', () => {
+    const description = mountPanel().get('[data-testid="balance-view-panel-description"]');
+    const [queried, history] = description.findAll('span');
+
+    expect(queried.text()).toBe('balance_view.live_description');
+    expect(queried.classes()).not.toContain('invisible');
+    expect(history.text()).toBe('balance_view.history_description');
+    expect(history.classes()).toContain('invisible');
+  });
+
   it('should disable History and offer processing before history has been processed', async () => {
     useHistoricalSnapshotStore().setSnapshot({ entries: [], processingRequired: true, stale: false });
     const wrapper = mountPanel();
@@ -148,7 +158,7 @@ describe('balanceViewPanel', () => {
 
     const bases = mountPanel().get('[data-testid="balance-view-panel-sources"]').findAll('[data-basis]').map(cell => cell.text());
 
-    expect(bases).toStrictEqual(['balance_view.basis_derived', 'balance_view.basis_queried', 'balance_view.not_in_history']);
+    expect(bases).toStrictEqual(['balance_view.basis_derived', 'balance_view.basis_live', 'balance_view.not_in_history']);
   });
 
   it('should offer processing when the snapshot is behind recent event edits', async () => {

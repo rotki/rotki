@@ -87,7 +87,7 @@ export function useDashboardTableConfig(
         cellClass: 'py-0',
         class: 'text-no-wrap',
         key: 'comparison',
-        label: t('balance_view.history_vs_queried'),
+        label: t('balance_view.history_vs_live'),
       });
     }
 

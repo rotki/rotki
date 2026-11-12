@@ -175,7 +175,7 @@ onMounted(() => {
           name="lu-info"
           size="14"
         />
-        {{ t('balance_view.chart_queried') }}
+        {{ t('balance_view.chart_live') }}
       </p>
     </div>
     <AssetsBySource

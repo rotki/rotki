@@ -86,7 +86,7 @@ const balanceClass = computed<string>(() => {
         size="16"
         class="text-rui-text-secondary"
       />
-      <span class="text-rui-text-secondary font-normal">{{ t('balance_view.vs_queried') }}</span>
+      <span class="text-rui-text-secondary font-normal">{{ t('balance_view.vs_live') }}</span>
       <FiatDisplay
         :class="{ 'text-rui-warning': !netWorthDifference.isZero() }"
         :value="netWorthDifference"

@@ -35,7 +35,7 @@ const hasManual = computed<boolean>(() => get(differs) && get(comparison).manual
     data-testid="asset-view-comparison"
   >
     <div class="flex flex-wrap items-center gap-x-1">
-      <span>{{ isHistory ? t('balance_view.queried') : t('balance_view.from_history') }}</span>
+      <span>{{ isHistory ? t('balance_view.live') : t('balance_view.from_history') }}</span>
       <AssetAmountDisplay
         :amount="otherAmount"
         :asset="identifier"
