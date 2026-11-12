@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.ethereum.modules.lido_csm.constants import CPT_LIDO_CSM
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -234,7 +233,4 @@ class LidoDecoder(EvmDecoderInterface):
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (
-            CounterpartyDetails(identifier=CPT_LIDO, label='Lido eth', image='lido.svg'),
-            CounterpartyDetails(identifier=CPT_LIDO_CSM, label='Lido CSM', image='lido_csm.svg'),
-        )
+        return (CounterpartyDetails(identifier=CPT_LIDO, label='Lido eth', image='lido.svg'),)
