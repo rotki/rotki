@@ -39,11 +39,9 @@ jobs:
         with:
           env_file: .github/.env.ci
 
-      # Pinned like CI, so a release is built with the toolchain CI lints and tests.
+      # Installs the version rust-toolchain.toml pins, the one CI lints and tests with.
       - name: Setup Rust
-        run: |
-          rustup toolchain install 1.99 --profile minimal --no-self-update
-          rustup default 1.99
+        run: rustup toolchain install --no-self-update
 
       - name: Setup python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.0.0
@@ -133,11 +131,9 @@ jobs:
         with:
           env_file: .github/.env.ci
 
-      # Pinned like CI, so a release is built with the toolchain CI lints and tests.
+      # Installs the version rust-toolchain.toml pins, the one CI lints and tests with.
       - name: Setup Rust
-        run: |
-          rustup toolchain install 1.99 --profile minimal --no-self-update
-          rustup default 1.99
+        run: rustup toolchain install --no-self-update
 
       - name: Add rust target for building deps
         if: ${{ matrix.os.arch == 'arm64' }}
@@ -221,11 +217,9 @@ jobs:
         with:
           env_file: .github/.env.ci
 
-      # Pinned like CI, so a release is built with the toolchain CI lints and tests.
+      # Installs the version rust-toolchain.toml pins, the one CI lints and tests with.
       - name: Setup Rust
-        run: |
-          rustup toolchain install 1.99 --profile minimal --no-self-update
-          rustup default 1.99
+        run: rustup toolchain install --no-self-update
 
       - name: Set up python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.0.0

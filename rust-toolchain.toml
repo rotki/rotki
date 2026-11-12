@@ -1,0 +1,7 @@
+# The one place the Rust version is pinned. CI, the release and dev builds and
+# the Docker image install it with `rustup toolchain install`, and rustup picks
+# it for every cargo command run inside the repository. Bump it here only.
+[toolchain]
+channel = "1.99"
+profile = "minimal"
+components = ["clippy", "rustfmt"]

@@ -91,13 +91,11 @@ jobs:
           path: |
             target/release/colibri
             target/release/starling
-          key: ${{ runner.os }}-rust-services-${{ hashFiles('Cargo.lock', 'Cargo.toml', 'colibri/Cargo.toml', 'colibri/src/**', 'crates/*/Cargo.toml', 'crates/*/src/**') }}
+          key: ${{ runner.os }}-rust-services-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock', 'Cargo.toml', 'colibri/Cargo.toml', 'colibri/src/**', 'crates/*/Cargo.toml', 'crates/*/src/**') }}
 
       - name: Setup Rust
         if: steps.rust-cache.outputs.cache-hit != 'true'
-        run: |
-          rustup toolchain install 1.99 --profile minimal --no-self-update
-          rustup default 1.99
+        run: rustup toolchain install --no-self-update
 
       - name: Build Rust services
         if: steps.rust-cache.outputs.cache-hit != 'true'
