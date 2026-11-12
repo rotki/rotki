@@ -90,6 +90,18 @@ describe('useExchanges', () => {
       });
     });
 
+    it('should clear a connection failure once a refresh of its location succeeds', async () => {
+      store.exchangeFailedAccounts = { binance: { 'binance-main': 'down' }, kraken: { 'key-main': 'API request failed' } };
+      runTaskMock.mockResolvedValue(ok({
+        perAccount: { kraken: { 'key-main': { BTC: { amount: '1', value: '50000' } } } },
+        totals: { kraken: { BTC: { amount: '1', value: '50000' } } },
+      }));
+
+      await exchanges.fetchExchangeBalances({ ignoreCache: false, location: 'kraken' });
+
+      expect(store.exchangeFailedAccounts).toEqual({ binance: { 'binance-main': 'down' }, kraken: {} });
+    });
+
     it('should bypass the backend cache on a rerun, which would replay a cached failure', async () => {
       runTaskMock.mockResolvedValue(err(TaskFailed({ message: 'API request failed' })));
       await exchanges.fetchExchangeBalances({ ignoreCache: false, location: 'kraken' });
@@ -120,6 +132,7 @@ describe('useExchanges', () => {
         'kraken-main': { BTC: { amount: bigNumberify(2), value: bigNumberify(100000) } },
         'other': { BTC: { amount: bigNumberify(1), value: bigNumberify(50000) } },
       });
+      expect(store.exchangeFailedAccounts.kraken).toEqual({ 'kraken-main': 'API request failed' });
     });
 
     it('should store healthy connection balances on a fresh login despite another connection failing', async () => {

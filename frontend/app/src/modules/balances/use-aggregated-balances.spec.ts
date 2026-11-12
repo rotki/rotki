@@ -167,6 +167,45 @@ describe('useAggregatedBalances', () => {
     expect(actualResult).toMatchObject(expectedResult);
   });
 
+  describe('getExchangeAccountBalances', () => {
+    function seedKrakenAccounts(): void {
+      const { exchangeAccountBalances, exchangeBalances } = storeToRefs(useBalancesStore());
+      set(exchangeAccountBalances, {
+        kraken: {
+          'kraken-Bot': { SOL: createTestBalance(20, 3000) },
+          'kraken-Main': { BTC: createTestBalance(1, 40000), ETH: createTestBalance(2, 6000) },
+        },
+      });
+      set(exchangeBalances, {
+        kraken: { BTC: createTestBalance(1, 40000), ETH: createTestBalance(2, 6000), SOL: createTestBalance(20, 3000) },
+      });
+    }
+
+    it('should return only the assets of the connection asked for', () => {
+      seedKrakenAccounts();
+      const { getExchangeAccountBalances } = useAggregatedBalances();
+
+      expect(getExchangeAccountBalances('kraken', 'kraken-Bot').map(({ asset }) => asset)).toEqual(['SOL']);
+      expect(sortBy(getExchangeAccountBalances('kraken', 'kraken-Main'), ['asset']).map(({ asset }) => asset)).toEqual(['BTC', 'ETH']);
+    });
+
+    it('should leave out ignored assets', () => {
+      seedKrakenAccounts();
+      useAssetsStore().ignoredAssets.push('BTC');
+      const { getExchangeAccountBalances } = useAggregatedBalances();
+
+      expect(getExchangeAccountBalances('kraken', 'kraken-Main').map(({ asset }) => asset)).toEqual(['ETH']);
+    });
+
+    it('should return nothing for a connection with no reported balances', () => {
+      seedKrakenAccounts();
+      const { getExchangeAccountBalances } = useAggregatedBalances();
+
+      expect(getExchangeAccountBalances('kraken', 'kraken-Gone')).toEqual([]);
+      expect(getExchangeAccountBalances('binance', 'kraken-Main')).toEqual([]);
+    });
+  });
+
   describe('balances', () => {
     it('should return empty array when no balances exist', () => {
       const { getBalances } = useAggregatedBalances();
