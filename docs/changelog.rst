@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Bitpanda history queries now save each page as it arrives, so a failure part way through no longer throws away the history already fetched.
 * :feature:`13144` The rotki container can now listen on IPv6 by setting the ``ROTKI_HTTP_HOST`` environment variable. ``::`` accepts both IPv6 and IPv4 connections, for example in dual-stack Kubernetes clusters, and a single address listens on that address only. The default stays ``0.0.0.0``, and the container's health check follows the address automatically.
 * :bug:`12578` The backend now keeps answering health checks and reporting finished tasks while many slow requests are running at once, for example several sessions of a docker deployment or scripts using the API. Before, it could look dead until those requests finished.
 * :feature:`13287` Deleting a token balance from a balance snapshot can now also mark the token as spam, so it is not queried again and does not come back in the next snapshot. The mark is applied when the snapshot is saved, and undoing the delete or discarding the changes drops it.
