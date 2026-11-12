@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetFlag
+from rotkehlchen.chain.evm.decoding.compound.v3.constants import CPT_COMPOUND_V3
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.concurrency import TaskCancelledError, checkpoint
@@ -101,6 +102,10 @@ type MetricRow = tuple[
     int,
     int,
 ]
+
+# Counterparties whose liquidations seize collateral that was booked as a deposit to the
+# protocol, so the liquidation loss has to leave the protocol bucket instead of the wallet.
+PROTOCOL_BUCKET_LIQUIDATION_COUNTERPARTIES: Final = {CPT_COMPOUND_V3}
 
 # Protocol withdrawals that can trigger synthetic interest events when withdrawal exceeds deposit.
 PROTOCOL_WITHDRAWAL_EVENTS: Final[EventTypeSubtypePairs] = {
@@ -209,6 +214,7 @@ class Bucket(NamedTuple):
         - Wrapped token deposits/redemptions: tracked as wallet-held asset conversions
         - Borrowing/repaying debt: the borrowed assets are held by the wallet, so these are
           tracked in the wallet bucket like any other receive/spend
+        - Liquidations of protocol held collateral: tracked in protocol bucket
         - Everything else: tracked in wallet bucket, which for HyperCore activity is its own
           hyperliquid bucket (see _get_wallet_protocol)
         """
@@ -299,6 +305,17 @@ class Bucket(NamedTuple):
             direction == EventDirection.NEUTRAL
         ):
             return []
+
+        if (
+            event_key == (HistoryEventType.LOSS, HistoryEventSubType.LIQUIDATE) and
+            counterparty in PROTOCOL_BUCKET_LIQUIDATION_COUNTERPARTIES
+        ):
+            return [(cls(
+                location=location,
+                location_label=event.location_label,
+                protocol=counterparty,
+                asset=asset,
+            ), direction)]
 
         # Everything else: wallet bucket. Token protocol metadata describes asset identity,
         # not custody.

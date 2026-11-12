@@ -1,7 +1,5 @@
 import logging
 from functools import partial, wraps
-from http import HTTPStatus
-from json.decoder import JSONDecodeError
 from time import monotonic
 from typing import TYPE_CHECKING, Any, NamedTuple, cast
 from urllib.parse import urlparse
@@ -22,16 +20,13 @@ from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
-from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.locations.constants import LOCATION_KUSAMA, LOCATION_POLKADOT
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_int_from_str
 from rotkehlchen.types import SUPPORTED_SUBSTRATE_CHAINS_TYPE, SupportedBlockchain
 from rotkehlchen.user_messages import NetworkFailure
-from rotkehlchen.utils.serialization import jsonloads_dict
 
 from .types import (
     BlockNumber,
@@ -143,7 +138,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
         """An interface to any Substrate chain supported by rotki.
 
         It uses Polkascan py-substrate-interface for interacting with the
-        substrate blockchains and the Subscan API as a chain explorer.
+        substrate blockchains.
 
         Official substrate chains documentation:
         https://substrate.dev/rustdocs/v2.0.0/sc_service/index.html
@@ -159,9 +154,6 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
         Polkascan py-substrate-interface:
         https://github.com/polkascan/py-substrate-interface
         https://jamdottech.github.io/py-polkadot-sdk/reference/base/
-
-        Subscan API documentation:
-        https://docs.api.subscan.io
         """
         log.debug(f'Initializing {chain} manager')
         self.chain = chain
@@ -200,49 +192,23 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
             raise RemoteError(message, cause=FailureCause.BAD_DATA)
 
     def _check_node_synchronization(self, node_interface: SubstrateInterface) -> BlockNumber:
-        """Check the node synchronization comparing the last block obtained via
-        the node interface against the last block obtained via Subscan API.
-        Return the last block obtained via the node interface.
+        """Check the node synchronization comparing its last block against the
+        highest last block of the nodes already connected. Return the last block
+        obtained via the node interface.
 
         May raise:
-        - RemoteError: the last block/chain metadata requests fail or
-        there is an error deserializing the chain metadata.
+        - RemoteError: the last block request fails.
         """
-        # Last block via node interface
         last_block = self._get_last_block(node_interface=node_interface)
-
-        # Last block via Subscan API
-        try:
-            chain_metadata = self._request_chain_metadata()
-        except RemoteError:
-            log.warning(
-                f'Unable to verify that {self.chain} node at endpoint {node_interface.url} '
-                f'is synced with the chain. Balances and other queries may be incorrect.',
-            )
-            return last_block
-
-        # Check node synchronization
-        try:
-            metadata_last_block = BlockNumber(
-                deserialize_int_from_str(
-                    symbol=chain_metadata['data']['blockNum'],
-                    location='subscan api',
-                ),
-            )
-        except (KeyError, DeserializationError) as e:
-            message = f'{self.chain} failed to deserialize the chain metadata response: {e!s}.'
-            log.error(message, chain_metadata=chain_metadata)
-            raise RemoteError(message, cause=FailureCause.BAD_DATA) from e
-
-        log.debug(
-            f'{self.chain} subscan API metadata last block',
-            metadata_last_block=metadata_last_block,
+        highest_block = max(
+            (x.weight_block for x in self.available_node_attributes_map.copy().values()),
+            default=last_block,
         )
-        if metadata_last_block - last_block > SUBSTRATE_BLOCKS_THRESHOLD:
+        if highest_block - last_block > SUBSTRATE_BLOCKS_THRESHOLD:
             self.msg_aggregator.add_warning(
                 f'Found that {self.chain} node at endpoint {node_interface.url} '
                 f'is not synced with the chain. Node last block is {last_block}, '
-                f'expected last block is {metadata_last_block}. '
+                f'while other connected nodes are at block {highest_block}. '
                 f'Balances and other queries may be incorrect.',
                 classification=NetworkFailure(
                     record=UserMessageRecord.NODE,
@@ -487,43 +453,6 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
             ) from e
 
         return node_interface
-
-    def _request_chain_metadata(self) -> dict[str, Any]:
-        """Subscan API metadata documentation:
-        https://docs.api.subscan.io/#metadata
-
-        May raise:
-          - Remote Error
-        """
-        url = f'https://assethub-{self.chain.name.lower()}.api.subscan.io/api/scan/metadata'
-        log.debug(f'{self.chain} subscan API request', request_url=url)
-        try:
-            response = requests.post(url=url, timeout=CachedSettings().get_timeout_tuple())
-        except requests.exceptions.RequestException as e:
-            message = f'{self.chain} failed to post request at {url}. Connection error: {e!s}.'
-            log.error(message)
-            raise RemoteError(message, cause=FailureCause.NETWORK) from e
-
-        if response.status_code != HTTPStatus.OK:
-            message = (
-                f'{self.chain} chain metadata request was not successful. '
-                f'Response status code: {response.status_code}. '
-                f'Response text: {response.text}.'
-            )
-            log.error(message)
-            raise RemoteError(message, cause=cause_for_status(response.status_code))
-        try:
-            result = jsonloads_dict(response.text)
-        except JSONDecodeError as e:
-            message = (
-                f'{self.chain} chain metadata request returned invalid JSON '
-                f'response: {response.text}.'
-            )
-            log.error(message)
-            raise RemoteError(message, cause=FailureCause.BAD_DATA) from e
-
-        log.debug(f'{self.chain} subscan API metadata', result=result)
-        return result
 
     def _set_available_nodes_call_order(self) -> None:
         """Set `available_nodes_call_order` with a list of items (tuple of node

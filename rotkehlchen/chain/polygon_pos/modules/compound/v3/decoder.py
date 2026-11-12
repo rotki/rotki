@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.compound.v3.decoder import Compoundv3CommonDecoder
+from rotkehlchen.chain.polygon_pos.modules.wmatic.constants import CPT_WMATIC
 
 from .constants import COMPOUND_BULKER_ADDRESS, COMPOUND_REWARDS_ADDRESS
 
@@ -24,4 +25,5 @@ class Compoundv3Decoder(Compoundv3CommonDecoder):
             msg_aggregator=msg_aggregator,
             rewards_address=COMPOUND_REWARDS_ADDRESS,
             bulker_address=COMPOUND_BULKER_ADDRESS,
+            wrapped_native_counterparty=CPT_WMATIC,
         )

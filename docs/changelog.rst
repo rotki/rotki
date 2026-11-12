@@ -91,8 +91,12 @@ Changelog
 * :feature:`12914` Beets pool joins and exits on Sonic are now decoded, and gauge balances for Beets v2 and v3 pools are queried.
 * :feature:`9110` Sonic is now a fully supported EVM chain. Transactions and balances can be tracked on it.
 * :feature:`13089` Venice.ai is now supported. VVV, sVVV and DIEM balances will be queried and events involving VVV and DIEM are now decoded.
+* :release:`1.44.3 <2026-11-11>`
+* :bug:`-` Restoring a premium backup while creating an account now keeps the settings chosen at account creation, such as the usage analytics choice, instead of replacing them with the ones in the backup.
+* :bug:`13640` Compound v3 liquidations are now properly decoded, showing the seized collateral and the repaid debt.
 * :bug:`-` Fiat exchange rates will be queried properly again. Frankfurter (ECB rates) is now used as a fallback source for fiat exchange rates.
 * :bug:`13643` Curve lend repay events should no longer decode borrowed-token refunds as protocol withdrawals.
+* :bug:`13640` Native ETH and POL collateral deposits into and withdrawals from Compound v3 through the bulker now show the wrapping to WETH/WPOL. Existing transactions are redecoded automatically.
 * :bug:`13642` CoW Swap trades no longer get a duplicate fee event when the same settlement contains an identical trade of an untracked address.
 * :bug:`13513` When premium is turned off because the plan's device limit is reached, rotki now points to where you can remove devices you no longer use, both on login and in the notification shown while running.
 * :bug:`-` Morpho Blue collateral, lending positions and debt are now shown on every supported chain and include accrued interest. Previously, Morpho Blue balances were only queried on Base and were reconstructed from historical principal amounts.

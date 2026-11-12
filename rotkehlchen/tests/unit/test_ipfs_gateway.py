@@ -1,4 +1,5 @@
 import socket
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -12,8 +13,11 @@ from rotkehlchen.externalapis.ipfs import (
     redact_ipfs_gateway_url,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
-def _fake_query_file(working: set[str]):
+
+def _fake_query_file(working: set[str]) -> tuple[list[str], Callable[..., dict[str, str]]]:
     """query_file replacement that records the urls asked and only serves the working gateways"""
     asked: list[str] = []
 
@@ -29,7 +33,7 @@ def _fake_query_file(working: set[str]):
     return asked, query_file
 
 
-def test_ipfs_gateway_order_and_fallback():
+def test_ipfs_gateway_order_and_fallback() -> None:
     """The custom gateway is tried first, failing ones are skipped and the first to serve wins"""
     asked, query_file = _fake_query_file(working={DEFAULT_IPFS_GATEWAYS[1]})
     with patch('rotkehlchen.externalapis.ipfs.query_file', side_effect=query_file):
@@ -43,7 +47,7 @@ def test_ipfs_gateway_order_and_fallback():
     ]
 
 
-def test_ipfs_gateway_all_gateways_fail():
+def test_ipfs_gateway_all_gateways_fail() -> None:
     """If no gateway serves the content a single error names every failure"""
     asked, query_file = _fake_query_file(working=set())
     with (
@@ -67,7 +71,7 @@ def test_ipfs_gateway_all_gateways_fail():
     ('https://my.node/ipfs?a=1&b=2', 'https://my.node/ipfs/?a=1&b=2'),
     ('https://my.node?token=s%20e%2Fc', 'https://my.node/ipfs/?token=s%20e%2Fc'),
 ])
-def test_normalize_ipfs_gateway_url(url: str, expected: str):
+def test_normalize_ipfs_gateway_url(url: str, expected: str) -> None:
     assert normalize_ipfs_gateway_url(url) == expected
 
 
@@ -85,7 +89,7 @@ def test_normalize_ipfs_gateway_url(url: str, expected: str):
     'https://my.node?token=secr%74',
     'https://my.node?token=secrét',
 ])
-def test_normalize_ipfs_gateway_url_rejects_invalid(url: str):
+def test_normalize_ipfs_gateway_url_rejects_invalid(url: str) -> None:
     """Non http(s) urls, credentials, fragments, path params and queries that are not
     in canonical percent-encoded form are refused without being echoed"""
     with pytest.raises(ValueError, match='IPFS gateway') as exc_info:
@@ -99,11 +103,11 @@ def test_normalize_ipfs_gateway_url_rejects_invalid(url: str):
     ('https://my.node/ipfs/', 'https://my.node/ipfs/'),
     (' https://my.node/ipfs?token=secret ', 'https://my.node/ipfs'),
 ])
-def test_redact_ipfs_gateway_url(url: str, expected: str):
+def test_redact_ipfs_gateway_url(url: str, expected: str) -> None:
     assert redact_ipfs_gateway_url(url) == expected
 
 
-def test_ipfs_gateway_query_is_sent_but_never_logged():
+def test_ipfs_gateway_query_is_sent_but_never_logged() -> None:
     """The cid goes into the path before the query, and the token is redacted from errors"""
     asked: list[str] = []
 
@@ -127,7 +131,7 @@ def test_ipfs_gateway_query_is_sent_but_never_logged():
     assert 'https://my.node/ipfs/' in str(exc_info.value)
 
 
-def test_ipfs_gateway_query_redacted_from_real_connection_error():
+def test_ipfs_gateway_query_redacted_from_real_connection_error() -> None:
     """The connection error of requests holds the url as sent, which must match the query
     that is redacted. Uses a closed local port so the request fails without the network."""
     with socket.socket() as sock:
