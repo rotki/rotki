@@ -113,6 +113,14 @@ describe('modules/amount-display/composables/use-amount-formatter', () => {
 
       expect(get(formatter.comparisonSymbol)).toBe('>');
     });
+
+    it('should leave out the mark when asked, and keep the exact value in the tooltip', () => {
+      const value = ref(bigNumberify(0.123456));
+      const formatter = useAmountFormatter({ noRoundingMark: true, value });
+
+      expect(get(formatter.comparisonSymbol)).toBe('');
+      expect(get(formatter.tooltip)).not.toBeNull();
+    });
   });
 
   describe('abbreviation', () => {

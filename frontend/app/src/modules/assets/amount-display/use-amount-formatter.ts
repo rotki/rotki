@@ -26,6 +26,8 @@ export interface AmountFormatterOptions {
    * - 'amount': Uses amountRoundingMode setting (typically ROUND_UP)
    */
   rounding?: MaybeRefOrGetter<RoundingType>;
+  /** Leave out the `<` or `>` that marks a rounded value; the tooltip still shows it exactly. */
+  noRoundingMark?: MaybeRefOrGetter<boolean>;
 }
 
 export interface AmountFormatterReturn {
@@ -80,7 +82,7 @@ function fixExponentialSeparators(value: string, thousands: string, decimals: st
 }
 
 export function useAmountFormatter(options: AmountFormatterOptions): AmountFormatterReturn {
-  const { decimals, integer = false, rounding = 'value', value } = options;
+  const { decimals, integer = false, noRoundingMark = false, rounding = 'value', value } = options;
 
   const {
     abbreviateNumber,
@@ -155,7 +157,7 @@ export function useAmountFormatter(options: AmountFormatterOptions): AmountForma
   });
 
   const comparisonSymbol = computed<'' | '<' | '>'>(() => {
-    if (get(subscriptDecimals)) {
+    if (get(subscriptDecimals) || toValue(noRoundingMark)) {
       return '';
     }
 

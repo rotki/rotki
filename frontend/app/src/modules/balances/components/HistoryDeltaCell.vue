@@ -24,6 +24,7 @@ const allManual = computed<boolean>(() => !!comparison && get(hasManual) && comp
     <ValueDisplay
       class="text-rui-warning font-medium"
       :value="comparison.delta"
+      :format="{ noRoundingMark: true }"
     />
     <span
       v-if="allManual"
@@ -44,6 +45,7 @@ const allManual = computed<boolean>(() => !!comparison && get(hasManual) && comp
         <ValueDisplay
           class="inline"
           :value="comparison.manual"
+          :format="{ noRoundingMark: true }"
         />
       </template>
     </i18n-t>

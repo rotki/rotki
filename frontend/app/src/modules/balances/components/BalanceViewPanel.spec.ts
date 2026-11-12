@@ -143,7 +143,7 @@ describe('balanceViewPanel', () => {
       ['USDC', comparison(0, 0)],
     ]);
 
-    const assets = mountPanel().get('[data-testid="balance-view-panel-gaps"]').findAll('a').map(link => link.text());
+    const assets = mountPanel().findAll('[data-testid="balance-view-panel-gap"]').map(link => link.text());
 
     expect(assets).toStrictEqual(['BTC', 'ETH', 'DAI']);
   });
@@ -156,7 +156,7 @@ describe('balanceViewPanel', () => {
       { basis: 'excluded', delta: bigNumberify(-112160), kind: 'manual' },
     ];
 
-    const bases = mountPanel().get('[data-testid="balance-view-panel-sources"]').findAll('[data-basis]').map(cell => cell.text());
+    const bases = mountPanel().get('[data-testid="balance-view-panel-figures"]').findAll('[data-basis]').map(cell => cell.text());
 
     expect(bases).toStrictEqual(['balance_view.basis_derived', 'balance_view.basis_live', 'balance_view.not_in_history']);
   });
