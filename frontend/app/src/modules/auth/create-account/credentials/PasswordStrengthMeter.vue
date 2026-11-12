@@ -1,12 +1,15 @@
 <script setup lang="ts">
+import { PasswordIssue } from '@/modules/auth/create-account/credentials/password-patterns';
 import {
+  type PasswordRating,
   PasswordStrength,
-  passwordStrength,
+  ratePassword,
   strengthScore,
 } from '@/modules/auth/create-account/credentials/password-strength';
 
-const { password } = defineProps<{
+const { password, username = '' } = defineProps<{
   password: string;
+  username?: string;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -21,12 +24,14 @@ const FILL: Record<PasswordStrength, string> = {
   weak: 'bg-rui-error',
 };
 
-const strength = computed<PasswordStrength>(() => passwordStrength(password));
+const rating = computed<PasswordRating>(() => ratePassword(password, username));
+
+const strength = computed<PasswordStrength>(() => get(rating).strength);
 
 const score = computed<number>(() => strengthScore(get(strength)));
 
-const advice = computed<string>(() => {
-  switch (get(strength)) {
+function strengthAdvice(strength: PasswordStrength): string {
+  switch (strength) {
     case PasswordStrength.WEAK:
       return t('create_account.password_strength.weak');
     case PasswordStrength.FAIR:
@@ -38,6 +43,39 @@ const advice = computed<string>(() => {
     default:
       return t('create_account.password_strength.empty');
   }
+}
+
+function strengthLabel(strength: PasswordStrength): string {
+  switch (strength) {
+    case PasswordStrength.FAIR:
+      return t('create_account.password_strength.label.fair');
+    case PasswordStrength.GOOD:
+      return t('create_account.password_strength.label.good');
+    default:
+      return t('create_account.password_strength.label.weak');
+  }
+}
+
+function issueTip(issue: PasswordIssue): string {
+  switch (issue) {
+    case PasswordIssue.COMMON_WORD:
+      return t('create_account.password_strength.issue.common_word');
+    case PasswordIssue.CONTAINS_USERNAME:
+      return t('create_account.password_strength.issue.contains_username');
+    case PasswordIssue.DIGITS_ONLY:
+      return t('create_account.password_strength.issue.digits_only');
+    case PasswordIssue.REPEATS:
+      return t('create_account.password_strength.issue.repeats');
+    case PasswordIssue.SEQUENCE:
+      return t('create_account.password_strength.issue.sequence');
+  }
+}
+
+const advice = computed<string>(() => {
+  const { issue, strength } = get(rating);
+  if (!issue)
+    return strengthAdvice(strength);
+  return t('create_account.password_strength.rated', { strength: strengthLabel(strength), tip: issueTip(issue) });
 });
 
 function segmentClass(segment: number): string {
@@ -50,6 +88,7 @@ function segmentClass(segment: number): string {
     class="flex flex-col gap-1.5"
     data-testid="create-account-password-strength"
     :data-strength="strength"
+    :data-issue="rating.issue"
   >
     <div
       class="flex gap-1"

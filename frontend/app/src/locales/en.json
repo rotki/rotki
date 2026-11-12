@@ -2565,6 +2565,19 @@
       "empty": "A passphrase of four or more unrelated words is easy to remember and hard to guess.",
       "fair": "Fair. A few more characters make it much harder to guess.",
       "good": "Good.",
+      "issue": {
+        "common_word": "Common words like \"password\" are guessed first.",
+        "contains_username": "Leave the profile name out of the password.",
+        "digits_only": "Numbers alone are quick to guess. Add some words.",
+        "repeats": "Repeats like \"aaa\" or \"abcabc\" add little.",
+        "sequence": "Sequences like \"abc\", \"321\" or \"qwerty\" are easy to guess."
+      },
+      "label": {
+        "fair": "Fair.",
+        "good": "Good.",
+        "weak": "Weak."
+      },
+      "rated": "{strength} {tip}",
       "strong": "Strong.",
       "weak": "Weak. Use at least 8 characters, ideally a passphrase. You can still continue."
     },

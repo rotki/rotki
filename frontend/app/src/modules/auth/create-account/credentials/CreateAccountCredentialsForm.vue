@@ -132,6 +132,7 @@ defineExpose({ errorCount, validate });
     <PasswordStrengthMeter
       class="mb-4"
       :password="state.password"
+      :username="state.username"
     />
     <RuiTextField
       v-if="!revealed"
