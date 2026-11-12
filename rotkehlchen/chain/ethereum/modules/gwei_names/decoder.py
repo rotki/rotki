@@ -133,9 +133,9 @@ class GweiNamesDecoder(EnsCommonDecoder):
     def _get_name(self, token_id: int, context: DecoderContext) -> str | None:
         return self._get_name_to_show(node=token_id.to_bytes(32), context=context)
 
-    def _get_new_contenthash(self, context: DecoderContext) -> str | None:
+    def _get_new_contenthash(self, context: DecoderContext) -> bytes | None:
         """The GNS contract is not in the contracts DB, so decode the log data directly"""
-        return decode_abi(['bytes'], context.tx_log.data)[0].hex()  # pylint: disable=no-member
+        return decode_abi(['bytes'], context.tx_log.data)[0]  # pylint: disable=no-member
 
     def _token_identifier(self, token_id: int) -> str:
         return evm_address_to_identifier(

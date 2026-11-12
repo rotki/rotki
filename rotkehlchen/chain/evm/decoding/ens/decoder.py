@@ -185,8 +185,8 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _get_new_contenthash(self, context: DecoderContext) -> str | None:
-        """Extract the new content hash hex string from a ContenthashChanged log.
+    def _get_new_contenthash(self, context: DecoderContext) -> bytes | None:
+        """Extract the new content hash bytes from a ContenthashChanged log.
 
         Subclasses whose resolver contract is not in the contracts DB override this.
         Returns None if the hash can't be extracted.
@@ -204,7 +204,7 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
             return None
 
         result = contract.decode_event(context.tx_log, 'ContenthashChanged', argument_names=None)
-        return result[1][0].hex()
+        return result[1][0]
 
     def _decode_ens_public_resolver_content_hash(self, context: DecoderContext) -> EvmDecodingOutput:  # noqa: E501
         """Decode an event that modifies a content hash for the public ENS resolver"""
@@ -223,8 +223,11 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
             msg = str(e)
             if isinstance(e, KeyError):
                 msg = f'Inability to find key {msg}'
-            log.error(f'Failed to decode content hash {new_hash} in {context.transaction} due to {msg}')  # noqa: E501
-            value = f'unknown type hash {new_hash}'
+            log.error(
+                'Failed to decode content hash %s in %s due to %s',
+                new_hash.hex(), context.transaction, msg,
+            )
+            value = f'unknown type hash {new_hash.hex()}'
 
         notes = f'Change {self.display_name} content hash to {value}'
         if name_to_show is not None:
