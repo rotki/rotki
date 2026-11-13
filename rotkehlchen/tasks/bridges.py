@@ -31,8 +31,9 @@ sunset claims and on demand via the create-counterpart resolution of the API.
 """
 import logging
 from collections import defaultdict
+from enum import StrEnum
 from time import perf_counter
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
@@ -340,30 +341,48 @@ def _get_bridge_target_asset(event: HistoryBaseEntry) -> Asset | None:
     return Asset(evm_address_to_identifier(address=asset_address, chain_id=chain_id))
 
 
-def _bridge_candidate_tier(
+class BridgeCandidateRejection(StrEnum):
+    """Why a candidate event cannot be the counterpart of a bridge leg."""
+    ALREADY_LINKED_OR_IGNORED = 'already_linked_or_ignored'
+    SAME_LOCATION = 'same_location'
+    AMOUNT_MISMATCH = 'amount_mismatch'
+    BRIDGE_DATA_CONFLICT = 'bridge_data_conflict'
+    COUNTERPARTY_MISMATCH = 'counterparty_mismatch'
+    NOT_A_COUNTERPART_EVENT = 'not_a_counterpart_event'
+    ZKSYNC_EXIT_REQUIRES_BRIDGE_LEG = 'zksync_exit_requires_bridge_leg'
+
+
+type BridgeCandidateTier = Literal['close', 'other']
+
+
+def classify_bridge_candidate(
         bridge_event: HistoryBaseEntry,
         candidate: HistoryBaseEntry,
         assets_in_collection: tuple[Asset, ...],
         tolerance: FVal,
         excluded_ids: set[int],
-) -> str | None:
+) -> tuple[BridgeCandidateTier | None, BridgeCandidateRejection | None]:
     """Classify a candidate event for the given bridge leg (deposit or withdrawal).
 
-    Returns 'close' for counterpart bridge legs, 'other' for plain
-    receives/spends that could be an undecoded counterpart leg, or None if the
-    candidate cannot be the counterpart.
+    Returns ('close', None) for counterpart bridge legs, ('other', None) for plain
+    receives/spends that could be an undecoded counterpart leg, or (None, reason) if the
+    candidate cannot be the counterpart. The first failing check is the reported reason.
     """
     if is_zksync_lite_exit(bridge_event):
         # The exit states no amount, so only its asset and recipient can identify the
         # payout. Nothing weaker than an identified bridge leg is accepted, since the
         # match is what the exit's amount gets taken from.
-        return 'close' if (
-            candidate.identifier not in excluded_ids and
-            candidate.location != bridge_event.location and
+        if candidate.identifier in excluded_ids:
+            return None, BridgeCandidateRejection.ALREADY_LINKED_OR_IGNORED
+        if candidate.location == bridge_event.location:
+            return None, BridgeCandidateRejection.SAME_LOCATION
+        if not (
             _is_bridge_withdrawal(candidate) and
             candidate.asset == bridge_event.asset and
             candidate.location_label == bridge_event.location_label
-        ) else None
+        ):
+            return None, BridgeCandidateRejection.ZKSYNC_EXIT_REQUIRES_BRIDGE_LEG
+        return 'close', None
 
     anchor_is_withdrawal = _is_bridge_withdrawal(bridge_event)
     deposit_side, withdrawal_side = (
@@ -379,21 +398,22 @@ def _bridge_candidate_tier(
         bridge_event.asset not in assets_in_collection and
         candidate.asset in assets_in_collection
     )
+    if candidate.identifier in excluded_ids:
+        return None, BridgeCandidateRejection.ALREADY_LINKED_OR_IGNORED
+    if candidate.location == bridge_event.location:  # bridging is always cross-chain
+        return None, BridgeCandidateRejection.SAME_LOCATION
     if (
-        candidate.identifier in excluded_ids or
-        candidate.location == bridge_event.location or  # bridging is always cross-chain
-        (
-            has_exact_transfer_id is False and
-            is_cross_asset_route is False and
-            not _match_amount(
-                movement_amount=bridge_event.amount,
-                event_amount=candidate.amount,
-                tolerance=tolerance,
-            )
-        ) or
-        _events_conflict_on_bridge_data(deposit=deposit_side, candidate=withdrawal_side)
+        has_exact_transfer_id is False and
+        is_cross_asset_route is False and
+        not _match_amount(
+            movement_amount=bridge_event.amount,
+            event_amount=candidate.amount,
+            tolerance=tolerance,
+        )
     ):
-        return None
+        return None, BridgeCandidateRejection.AMOUNT_MISMATCH
+    if _events_conflict_on_bridge_data(deposit=deposit_side, candidate=withdrawal_side):
+        return None, BridgeCandidateRejection.BRIDGE_DATA_CONFLICT
 
     anchor_counterparty = getattr(bridge_event, 'counterparty', None)
     candidate_counterparty = getattr(candidate, 'counterparty', None)
@@ -409,9 +429,9 @@ def _bridge_candidate_tier(
                 first_counterparty=anchor_counterparty,
                 second_counterparty=candidate_counterparty,
             )
-        ):
-            return None  # different bridge protocols cannot be the two legs of one transfer
-        return 'close'
+        ):  # different bridge protocols cannot be the two legs of one transfer
+            return None, BridgeCandidateRejection.COUNTERPARTY_MISMATCH
+        return 'close', None
 
     if (
         candidate.event_type == (
@@ -420,9 +440,9 @@ def _bridge_candidate_tier(
         candidate.event_subtype == HistoryEventSubType.NONE and
         candidate_counterparty is None
     ):
-        return 'other'
+        return 'other', None
 
-    return None
+    return None, BridgeCandidateRejection.NOT_A_COUNTERPART_EVENT
 
 
 def find_bridge_transaction_exact_matches(
@@ -544,7 +564,7 @@ def find_bridge_transaction_matches(
     close_matches: list[HistoryBaseEntry] = []
     other_matches: list[HistoryBaseEntry] = []
     for candidate in possible_matches:
-        tier = _bridge_candidate_tier(
+        tier, _ = classify_bridge_candidate(
             bridge_event=bridge_event,
             candidate=candidate,
             assets_in_collection=assets_in_collection,
@@ -580,20 +600,20 @@ def get_bridge_leg_timestamp_range_ms(
     )
 
 
-def update_bridge_matched_event(
-        events_db: DBHistoryEvents,
+def apply_bridge_match_to_events(
         bridge_event: HistoryBaseEntry,
         matched_event: HistoryBaseEntry,
-) -> None:
-    """Persist a confirmed bridge match between the given bridge leg and its counterpart.
+) -> tuple[HistoryBaseEntry, HistoryBaseEntry]:
+    """Rewrite the two given events in memory as the linked legs of one bridge transfer.
 
     When the counterpart is not already decoded as the opposite bridge leg it is
     rewritten into one: a deposit anchor turns its match (a plain receive) into
     the destination withdrawal and a withdrawal anchor turns its match (a plain
     spend) into the source deposit. Both events get stamped with the
-    matched_bridge metadata (including the implied bridge fee) and linked in the
-    DB. A fee is inferred only when both legs use economically equivalent assets.
-    Both edits keep backups so unlinking can restore them.
+    matched_bridge metadata (including the implied bridge fee). A fee is inferred
+    only when both legs use economically equivalent assets.
+
+    Nothing is written. Returns the (deposit, withdrawal) pair.
     """
     if is_zksync_lite_exit(bridge_event):  # promote it now that its payout is known
         bridge_event.amount = matched_event.amount
@@ -662,6 +682,23 @@ def update_bridge_matched_event(
             matched_bridge_data['fee_amount'] = str(fee_amount)
         event.extra_data[MATCHED_BRIDGE_KEY] = matched_bridge_data
 
+    return deposit, withdrawal
+
+
+def update_bridge_matched_event(
+        events_db: DBHistoryEvents,
+        bridge_event: HistoryBaseEntry,
+        matched_event: HistoryBaseEntry,
+) -> None:
+    """Persist a confirmed bridge match between the given bridge leg and its counterpart.
+
+    The events are rewritten by apply_bridge_match_to_events and linked in the DB.
+    Both edits keep backups so unlinking can restore them.
+    """
+    deposit, withdrawal = apply_bridge_match_to_events(
+        bridge_event=bridge_event,
+        matched_event=matched_event,
+    )
     with events_db.db.conn.write_ctx() as write_cursor:
         for event in (deposit, withdrawal):
             events_db.edit_history_event(
