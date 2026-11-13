@@ -617,6 +617,61 @@ def test_get_historical_balance_with_filters(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
+def test_get_historical_balance_assets(rotkehlchen_api_server: APIServer) -> None:
+    """Assets the account fully exited are listed, ignored and other accounts' assets are not."""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    addr1, addr2 = make_evm_address(), make_evm_address()
+    with db.user_write() as write_cursor:
+        DBHistoryEvents(database=db).add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(Timestamp(START_TS + idx)),
+                location=location,
+                event_type=event_type,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=asset,
+                amount=ONE,
+                location_label=label,
+                address=label,
+            ) for idx, (location, event_type, asset, label) in enumerate((
+                (LOCATION_ETHEREUM, HistoryEventType.RECEIVE, A_ETH, addr1),
+                (LOCATION_ETHEREUM, HistoryEventType.RECEIVE, A_BTC, addr1),
+                (LOCATION_ETHEREUM, HistoryEventType.SPEND, A_BTC, addr1),  # fully exited
+                (LOCATION_BASE, HistoryEventType.RECEIVE, A_EUR, addr1),
+                (LOCATION_ETHEREUM, HistoryEventType.RECEIVE, A_DASH, addr1),
+                (LOCATION_ETHEREUM, HistoryEventType.RECEIVE, A_USD, addr2),
+            ))],
+        )
+
+    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
+    with db.user_write() as write_cursor:
+        db.add_to_ignored_assets(write_cursor=write_cursor, asset=A_DASH)
+
+    for filters, expected in (
+        ({'location_label': addr1}, ['BTC', 'ETH', 'EUR']),
+        ({'location_label': addr1, 'location': 'ethereum'}, ['BTC', 'ETH']),
+        ({'location_label': addr2}, ['USD']),
+        ({'location_label': addr1, 'include_ignored': True}, ['BTC', 'DASH', 'ETH', 'EUR']),
+        ({'location_label': make_evm_address()}, []),
+    ):
+        assert assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'historicalbalanceassetsresource'),
+            json=filters,
+        )) == expected, f'Failed for filters: {filters}'
+
+    assert_error_response(
+        response=requests.post(
+            api_url_for(rotkehlchen_api_server, 'historicalbalanceassetsresource'),
+            json={'location': 'ethereum'},
+        ),
+        contained_in_msg='location_label',
+    )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('have_decoders', [True])
 def test_find_onchain_historical_balance_divergence(
         rotkehlchen_api_server: APIServer,
 ) -> None:

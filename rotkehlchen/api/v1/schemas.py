@@ -5205,6 +5205,26 @@ class HistoricalBalanceSeriesSchema(TimestampRangeSchema, AsyncQueryArgumentSche
         }
 
 
+class HistoricalBalanceAssetsSchema(Schema):
+    location_label = EmptyAsNoneStringField(required=True)
+    location = LocationField(load_default=None)
+    include_ignored = fields.Boolean(load_default=False)
+
+    @post_load
+    def make_historical_balance_query(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        return {
+            'filter_query': HistoricalBalancesFilterQuery.make(
+                location=data['location'],
+                location_label=data['location_label'],
+            ),
+            'include_ignored': data['include_ignored'],
+        }
+
+
 class HistoricalPricesPerAssetSchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
     interval = fields.Integer(
         strict=True,
