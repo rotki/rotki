@@ -15,8 +15,10 @@ import PercentageDisplay from '@/modules/shell/components/display/PercentageDisp
  * the delta measures against queried snapshots, so against a history total it would be meaningless.
  * Both occupy the same one-line slot, so switching views moves nothing below it.
  */
-const { balanceDelta, busy, loadingNetWorth, percentage } = defineProps<{
+const { approximate = false, balanceDelta, busy, loadingNetWorth, percentage } = defineProps<{
   balanceDelta: BigNumber;
+  /** Part of the chart behind the delta rests on a stand-in rate, so the delta may still move. */
+  approximate?: boolean;
   /** The delta as a percentage string, or `-` when there is no starting value. */
   percentage: string;
   /** The first load has not produced a net worth yet. */
@@ -106,6 +108,13 @@ const balanceClass = computed<string>(() => {
         :name="indicator"
         size="16"
       />
+      <span
+        v-if="approximate"
+        :title="t('overall_balances.approximate')"
+        data-testid="overall-balances-delta-approximate"
+      >
+        {{ t('overall_balances.approximate_mark') }}
+      </span>
       <PercentageDisplay
         class="pr-4"
         :value="percentage"

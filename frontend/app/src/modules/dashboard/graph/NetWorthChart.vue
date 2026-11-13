@@ -5,6 +5,7 @@ import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { startPromise } from '@shared/utils';
 import VChart from 'vue-echarts';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import NetValueRateStatus from '@/modules/dashboard/graph/NetValueRateStatus.vue';
 import { useNetValueChartConfig } from '@/modules/dashboard/graph/use-net-value-chart-config';
 import { useNetValueEventHandlers } from '@/modules/dashboard/graph/use-net-value-event-handlers';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -55,6 +56,12 @@ watchImmediate(chartOption, () => {
   setupZoomToolHandler();
 });
 
+/** The hovered point's index in `chartData`; the axis pointer snaps to a point, so times match. */
+const hoveredIndex = computed<number>(() => chartData.times.indexOf(Math.round(get(tooltipData).timestamp / 1000)));
+const hoveredEstimated = computed<boolean>(() => chartData.estimated?.[get(hoveredIndex)] === true);
+/** When the stand-in rate of the hovered point was quoted; undefined when it is today's rate. */
+const hoveredRateTime = computed<number | undefined>(() => chartData.rateTimes?.[get(hoveredIndex)]);
+
 function resetZoom(): void {
   get(chartInstance)?.chart?.dispatchAction({ end: 100, start: 0, type: 'dataZoom' });
 }
@@ -88,9 +95,43 @@ defineExpose({ resetZoom });
         {{ t('net_worth_chart.current_balance') }}
       </template>
     </div>
-    <FiatDisplay
-      class="font-bold"
-      :value="tooltipData.value"
-    />
+    <div class="flex items-center gap-1">
+      <FiatDisplay
+        class="font-bold"
+        :value="tooltipData.value"
+      />
+      <RuiIcon
+        v-if="hoveredEstimated"
+        name="lu-triangle-alert"
+        size="14"
+        color="warning"
+        data-testid="net-worth-chart-tooltip-estimated-icon"
+      />
+    </div>
+    <template v-if="hoveredEstimated">
+      <i18n-t
+        v-if="hoveredRateTime !== undefined"
+        scope="global"
+        keypath="net_worth_chart.estimated_at"
+        tag="div"
+        class="text-rui-text-secondary text-xs mt-1"
+        data-testid="net-worth-chart-tooltip-estimated"
+      >
+        <template #date>
+          <DateDisplay
+            :timestamp="hoveredRateTime"
+            no-time
+          />
+        </template>
+      </i18n-t>
+      <div
+        v-else
+        class="text-rui-text-secondary text-xs mt-1"
+        data-testid="net-worth-chart-tooltip-estimated"
+      >
+        {{ t('net_worth_chart.estimated_today') }}
+      </div>
+    </template>
   </NewGraphTooltipWrapper>
+  <NetValueRateStatus />
 </template>

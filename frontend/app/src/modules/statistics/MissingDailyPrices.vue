@@ -37,15 +37,11 @@ const missingPrices = computed<MissingPrice[]>(() => get(failedPrices).noPricesT
 })));
 
 function markResolved(item: EditableMissingPrice): void {
-  const resolved = { ...get(resolvedFailedDailyPrices) };
-  const assetResolved = resolved[item.fromAsset];
-  if (assetResolved) {
-    assetResolved.push(item.time);
-  }
-  else {
-    resolved[item.fromAsset] = [item.time];
-  }
-  set(resolvedFailedDailyPrices, resolved);
+  const resolved = get(resolvedFailedDailyPrices);
+  set(resolvedFailedDailyPrices, {
+    ...resolved,
+    [item.fromAsset]: [...(resolved[item.fromAsset] ?? []), item.time],
+  });
 }
 
 const {

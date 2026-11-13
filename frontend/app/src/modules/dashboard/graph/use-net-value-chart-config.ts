@@ -10,6 +10,7 @@ import type { DataZoomComponentOption, GridComponentOption } from 'echarts/compo
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
+import { estimatedBands } from '@/modules/dashboard/graph/net-value-estimated-bands';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useGraph } from '@/modules/statistics/use-graph';
 
@@ -170,11 +171,31 @@ export function useNetValueChartConfig(
     };
   };
 
+  /**
+   * Shaded bands over the stretches whose values rest on a stand-in price or rate.
+   *
+   * @remarks
+   * The dashed edges keep a band visible over the area gradient, which a fill alone did not.
+   */
+  const createEstimatedMarkArea = (): LineSeriesOption['markArea'] => {
+    const { estimated, times } = toValue(chartData);
+    const bands = estimatedBands(times, estimated);
+    if (bands.length === 0)
+      return undefined;
+    const secondary = get(secondaryColor);
+    return {
+      data: bands.map(band => [{ xAxis: band.start * MS }, { xAxis: band.end * MS }]),
+      itemStyle: { borderColor: secondary, borderType: 'dashed', borderWidth: 1, color: secondary, opacity: 0.18 },
+      silent: true,
+    };
+  };
+
   const createSeriesConfig = (): LineSeriesOption[] => [{
     areaStyle: get(gradient),
     data: get(data),
     itemStyle: { color: get(baseColor) },
     lineStyle: { color: get(baseColor) },
+    markArea: createEstimatedMarkArea(),
     showSymbol: false,
     smooth: false,
     symbol: 'circle',

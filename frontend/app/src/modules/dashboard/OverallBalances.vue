@@ -65,6 +65,9 @@ const timeframeData = computed<NetValueChartData>(() => {
   return getNetValue(startingDate);
 });
 
+/** Some snapshots are converted at a stand-in rate while their own day's rate is not known yet. */
+const hasEstimates = computed<boolean>(() => get(timeframeData).estimated?.some(Boolean) === true);
+
 const stats = computed(() => {
   const { data, times } = get(timeframeData);
   return computeNetValueDelta(data, times, get(totalNetWorth), get(zoomRange));
@@ -114,6 +117,7 @@ onMounted(() => {
       :percentage="percentage"
       :loading-net-worth="loadingNetWorth"
       :busy="isBusy"
+      :approximate="hasEstimates"
     />
     <div class="lg:col-span-8 lg:row-span-2 flex flex-col">
       <div class="flex justify-start lg:justify-end items-center md:pt-4 gap-4">

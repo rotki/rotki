@@ -1,5 +1,4 @@
-import type { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
-import { type AssetBalanceWithPriceAndChains, BigNumber } from '@rotki/common';
+import { type AssetBalanceWithPriceAndChains, BigNumber, PriceQuality } from '@rotki/common';
 import { get } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,7 +13,10 @@ let generalSettingsStore: ReturnType<typeof useSettingsRepo> | null = null;
 const JPY_RATE = 150;
 const EUR_RATE = 0.9;
 
-function getExchangeRate(currency: string): BigNumber {
+/** CHF stands for a currency whose rate has not loaded yet. */
+function getExchangeRate(currency: string): BigNumber | undefined {
+  if (currency === 'CHF')
+    return undefined;
   if (currency === 'JPY')
     return new BigNumber(JPY_RATE);
   if (currency === 'EUR')
@@ -31,7 +33,7 @@ function createBalanceWithPrice(
   const priceBN = new BigNumber(price);
   const usdValue = amountBN.multipliedBy(priceBN);
   const currency = generalSettingsStore ? generalSettingsStore.general.mainCurrency.tickerSymbol : 'USD';
-  const rate = getExchangeRate(currency);
+  const rate = getExchangeRate(currency) ?? new BigNumber('1');
   const value = asset === currency ? amountBN : usdValue.multipliedBy(rate);
 
   return {
@@ -60,8 +62,8 @@ vi.mock('@/modules/assets/amount-display/use-number-scrambler', () => ({
 }));
 
 vi.mock('@/modules/assets/prices/use-price-utils', () => ({
-  usePriceUtils: (): Pick<ReturnType<typeof usePriceUtils>, 'getExchangeRate'> => ({
-    getExchangeRate: (currency: string): BigNumber => getExchangeRate(currency),
+  usePriceUtils: (): { getExchangeRate: (currency: string, defaultValue?: BigNumber) => BigNumber | undefined } => ({
+    getExchangeRate: (currency: string, defaultValue?: BigNumber): BigNumber | undefined => getExchangeRate(currency) ?? defaultValue,
   }),
 }));
 
@@ -204,6 +206,68 @@ describe('useStatisticsStore', () => {
       expect(result.snapshotCount).toBe(1);
       // 1 real snapshot + 1 appended current balance
       expect(result.data).toHaveLength(2);
+    });
+  });
+  describe('getNetValue conversion', () => {
+    const now = Math.floor(Date.now() / 1000);
+    const times = [now - 300, now - 200, now - 100];
+
+    function withSnapshots(): ReturnType<typeof useStatisticsStore> {
+      const store = useStatisticsStore();
+      store.netValue = { data: [new BigNumber('100'), new BigNumber('100'), new BigNumber('100')], times };
+      return store;
+    }
+
+    it('should convert each snapshot at the rate of its own time', () => {
+      setMainCurrency('EUR');
+      const store = withSnapshots();
+      store.setSnapshotRates(new Map([
+        [times[0], { price: new BigNumber('0.8'), quality: PriceQuality.EXACT }],
+        [times[1], { price: new BigNumber('0.85'), quality: PriceQuality.EXACT }],
+        [times[2], { price: new BigNumber('0.95'), quality: PriceQuality.EXACT }],
+      ]));
+
+      const result = store.getNetValue(0);
+
+      expect(result.data.slice(0, 3).map(value => value.toFixed())).toEqual(['80', '85', '95']);
+      expect(result.estimated).toEqual([false, false, false, false]);
+    });
+
+    it('should mark a snapshot estimated when its rate is a stand-in or unknown', () => {
+      setMainCurrency('EUR');
+      const store = withSnapshots();
+      store.setSnapshotRates(new Map([
+        [times[0], { price: new BigNumber('0.8'), quality: PriceQuality.CARRIED, time: times[0] - 86_400 }],
+        [times[1], { price: new BigNumber('0.85'), quality: PriceQuality.EXACT }],
+      ]));
+
+      const result = store.getNetValue(0);
+
+      expect(result.data.slice(0, 3).map(value => value.toFixed())).toEqual(['80', '85', String(100 * EUR_RATE)]);
+      expect(result.estimated).toEqual([true, false, true, false]);
+      expect(result.rateTimes?.slice(0, 3)).toEqual([times[0] - 86_400, undefined, undefined]);
+    });
+
+    it('should leave out a snapshot it cannot convert yet rather than draw it in USD', () => {
+      setMainCurrency('CHF');
+      const store = withSnapshots();
+      store.setSnapshotRates(new Map([[times[1], { price: new BigNumber('0.8'), quality: PriceQuality.EXACT }]]));
+
+      const result = store.getNetValue(0);
+
+      expect(result.times.slice(0, -1)).toEqual([times[1]]);
+      expect(result.data[0].toFixed()).toBe('80');
+      expect(result.snapshotCount).toBe(1);
+    });
+
+    it('should leave USD snapshots as they are', () => {
+      const store = withSnapshots();
+      store.setSnapshotRates(new Map([[times[0], { price: new BigNumber('2'), quality: PriceQuality.EXACT }]]));
+
+      const result = store.getNetValue(0);
+
+      expect(result.data.slice(0, 3).map(value => value.toFixed())).toEqual(['100', '100', '100']);
+      expect(result.estimated).toEqual([false, false, false, false]);
     });
   });
 });

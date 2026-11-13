@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AssetEntry } from '../balances';
-import { NumericString } from '../numbers';
+import { type BigNumber, NumericString } from '../numbers';
 
 const TimedEntry = z.object({ time: z.number().positive() });
 
@@ -96,3 +96,29 @@ export const CommonQueryStatusData = z.object({
 });
 
 export type CommonQueryStatusData = z.infer<typeof CommonQueryStatusData>;
+
+/**
+ * Where a resolved historic price came from, best first.
+ *
+ * @remarks
+ * Only `exact` is a real price for that time. The rest are stand-ins a chart must flag, and
+ * `missing` means no price at all: the value is left out, never counted as zero.
+ */
+export const PriceQuality = {
+  EXACT: 'exact',
+  CARRIED: 'carried',
+  BACK_FILLED: 'back-filled',
+  CURRENT: 'current',
+  MISSING: 'missing',
+} as const;
+
+export type PriceQuality = typeof PriceQuality[keyof typeof PriceQuality];
+
+/** A historic price in the main currency, with where it came from. */
+export interface ResolvedPrice {
+  /** Undefined only when `quality` is missing. */
+  readonly price: BigNumber | undefined;
+  readonly quality: PriceQuality;
+  /** When the price used was quoted, unix seconds; absent for today's price and a missing one. */
+  readonly time?: number;
+}

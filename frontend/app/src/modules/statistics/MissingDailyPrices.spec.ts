@@ -87,6 +87,25 @@ describe('modules/statistics/MissingDailyPrices.vue', () => {
     expect(wrapper.findAll('[data-testid=missing-daily-price-input]')).toHaveLength(2);
   });
 
+  it('should hand out a new list of resolved days on every saved price, so watchers see each one', async () => {
+    const wrapper = await createWrapper(failures({ noPricesTimestamps: [1_700_000_000, 1_700_086_400] }));
+    const inputs = wrapper.findAll('[data-testid=missing-daily-price-input] input');
+
+    await inputs[0].setValue('0.5');
+    await inputs[0].trigger('blur');
+    await flushPromises();
+    const afterFirst = get(resolvedFailedDailyPrices).ETH;
+
+    await inputs[1].setValue('0.6');
+    await inputs[1].trigger('blur');
+    await flushPromises();
+    const afterSecond = get(resolvedFailedDailyPrices).ETH;
+
+    expect(afterFirst).toHaveLength(1);
+    expect(afterSecond).toHaveLength(2);
+    expect(afterSecond).not.toBe(afterFirst);
+  });
+
   it('should offer a rate-limited tab only when days were rate limited', async () => {
     const withoutLimit = await createWrapper(failures({ noPricesTimestamps: [1_700_000_000] }));
     expect(withoutLimit.text()).not.toContain('failed_daily_prices.rate_limited.title');

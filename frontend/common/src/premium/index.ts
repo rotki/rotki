@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { AssetBalanceWithPrice } from '../balances';
 import type { AssetInfoWithId } from '../data';
 import type { BigNumber } from '../numbers';
@@ -12,6 +12,7 @@ import type {
   LocationData,
   NetValue,
   OwnedAssets,
+  ResolvedPrice,
   TimedAssetBalances,
   TimedAssetHistoricalBalances,
   TimedBalances,
@@ -19,19 +20,40 @@ import type {
 
 export type ExclusionSource = 'exchange' | 'manual' | 'blockchain';
 
+/** A net value series in the main currency. */
+export interface EstimatedNetValue extends NetValue {
+  /** Per point, whether it was converted at a stand-in rate; absent means none was. */
+  readonly estimated?: readonly boolean[];
+  /** Per point, when the rate it was converted at was quoted, unix seconds; undefined for today's rate. */
+  readonly rateTimes?: readonly (number | undefined)[];
+}
+
 export interface StatisticsApi {
   assetValueDistribution: () => Promise<TimedAssetBalances>;
   locationValueDistribution: () => Promise<LocationData>;
   ownedAssets: () => Promise<OwnedAssets>;
   timedBalances: (asset: string, start: number, end: number, collectionId?: number) => Promise<TimedBalances>;
   timedHistoricalBalances: (asset: string, start: number, end: number, collectionId?: number) => Promise<TimedAssetHistoricalBalances>;
-  netValue: (startingData: number) => Ref<NetValue>;
+  netValue: (startingData: number) => Ref<EstimatedNetValue>;
   isQueryingDailyPrices: ComputedRef<boolean>;
   failedDailyPrices: Ref<Record<string, FailedHistoricalAssetPriceResponse>>;
   queryHistoricalAssetPrices: (payload: HistoricalAssetPricePayload) => Promise<HistoricalAssetPriceResponse>;
   historicalDailyPriceStatus: Ref<CommonQueryStatusData | undefined>;
   cancelHistoricPriceTask: () => Promise<void>;
   cancelDailyHistoricPriceTask: () => Promise<void>;
+  /**
+   * The USD to main currency rate at each of `times`, for converting values stored in USD such as
+   * snapshots.
+   *
+   * @remarks
+   * Call once per graph during setup, with every time it needs: each call reads the cache and
+   * fetches what is missing as one series. A rate missing from the cache resolves as a flagged
+   * stand-in and is fetched in the background while the calling scope lives.
+   *
+   * @param times - unix seconds
+   * @returns one rate per entry of `times`, in the same order
+   */
+  usdRatesAt: (times: MaybeRefOrGetter<readonly number[]>) => ComputedRef<readonly ResolvedPrice[]>;
 }
 
 export interface DateUtilities {

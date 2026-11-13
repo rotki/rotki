@@ -5692,8 +5692,16 @@
     },
     "tag_manager": "Tag Manager"
   },
+  "net_value_rate_status": {
+    "add_rates": "Add rates",
+    "pending": "Fetching the historical exchange rate of {count} point | Fetching the historical exchange rates of {count} points",
+    "rate_limited": "The price oracles are rate limiting requests, so exchange rates will be fetched again in a few minutes",
+    "unavailable": "No historical exchange rate for {count} point, so it uses an estimated rate | No historical exchange rate for {count} points, so they use an estimated rate"
+  },
   "net_worth_chart": {
-    "current_balance": "Current balance"
+    "current_balance": "Current balance",
+    "estimated_at": "Estimated with the {date} exchange rate",
+    "estimated_today": "Estimated with today's exchange rate"
   },
   "nft_balance_table": {
     "column": {
@@ -5958,6 +5966,8 @@
     "uniswap_v3": "Uniswap V3"
   },
   "overall_balances": {
+    "approximate": "Approximate: some points use an estimated exchange rate",
+    "approximate_mark": "≈",
     "loading": "LOADING",
     "net_value_error": "The net worth graph could not be loaded",
     "premium_hint": "Get the full experience by upgrading to rotki premium",
@@ -6109,6 +6119,7 @@
         },
         "title": "There is a mismatch between the amount of asset in the last event and the amount in the current balance."
       },
+      "estimated_rate": "Converted at an estimated exchange rate",
       "failed_daily_prices": {
         "dialog_title": "Some prices were not retrieved for the asset: {name}",
         "missing_prices": {
@@ -7228,6 +7239,7 @@
         "import": "Importing report data"
       },
       "prices": {
+        "backfill": "Filling missing historical prices for {asset}",
         "daily": "Filling daily prices for {asset}",
         "exchange_rates": "Updating exchange rates for {currency}",
         "historic": "Looking up {fromAsset} to {toAsset} on {date}",

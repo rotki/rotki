@@ -25,6 +25,8 @@ export const ActivityPart = {
   MANUAL: 'manual',
   HISTORIC: 'historic',
   DAILY: 'daily',
+  /** Filling missing historic prices of the graphs a little at a time. */
+  BACKFILL: 'backfill',
   BATCH: 'batch',
   UNISWAP_V2: 'uniswap-v2',
   SUSHISWAP: 'sushiswap',

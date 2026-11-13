@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import OverallBalances from '@/modules/dashboard/OverallBalances.vue';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
-const state = vi.hoisted(() => ({ loading: false, netWorthLoading: false }));
+const state = vi.hoisted((): { chart: NetValueChartData | undefined; loading: boolean; netWorthLoading: boolean } => ({ chart: undefined, loading: false, netWorthLoading: false }));
 const { mockFetchNetValue } = vi.hoisted(() => ({ mockFetchNetValue: vi.fn() }));
 
 vi.mock('@/modules/statistics/use-statistics-data-fetching', () => ({
@@ -37,7 +37,7 @@ vi.mock('@/modules/statistics/use-statistics-store', async () => {
     useStatisticsStore: defineStore('statistics', () => {
       const totalNetWorth = createRef(bigNumberify('1500.5'));
       const netValueError = createRef<string | undefined>(undefined);
-      const getNetValue = vi.fn(() => emptyNetValue);
+      const getNetValue = vi.fn(() => state.chart ?? emptyNetValue);
       return { getNetValue, netValueError, totalNetWorth };
     }),
   };
@@ -71,6 +71,7 @@ describe('overallBalances', () => {
 
   beforeEach(() => {
     setActivePinia(createPinia());
+    state.chart = undefined;
     state.loading = false;
     state.netWorthLoading = false;
     vi.clearAllMocks();
@@ -115,6 +116,22 @@ describe('overallBalances', () => {
     expect(wrapper.find(skeletonSelector).exists()).toBe(false);
     expect(wrapper.find(netWorthSelector).text()).toBe('1500.5');
     expect(wrapper.find(deltaSkeletonSelector).exists()).toBe(false);
+  });
+
+  it('should mark the delta approximate only when a point uses an estimated rate', async () => {
+    wrapper = createWrapper();
+    expect(wrapper.find('[data-testid=overall-balances-delta-approximate]').exists()).toBe(false);
+    wrapper.unmount();
+
+    state.chart = {
+      data: [bigNumberify(1), bigNumberify(2)],
+      estimated: [true, false],
+      snapshotCount: 1,
+      times: [1, 2],
+    };
+    wrapper = createWrapper();
+    await nextTick();
+    expect(wrapper.find('[data-testid=overall-balances-delta-approximate]').exists()).toBe(true);
   });
 
   describe('when the net value read failed', () => {
