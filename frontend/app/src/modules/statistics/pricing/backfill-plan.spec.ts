@@ -15,7 +15,7 @@ function price(day: number): KnownPrice {
 }
 
 function usd(times: number[], known: KnownPrice[] = [], failed: number[] = []): BackfillAsset {
-  return { asset: 'USD', failed: new Set(failed), known, times };
+  return { asset: 'USD', known, skipped: new Set(failed), times };
 }
 
 /** The days a request asks for, as day numbers. */
