@@ -24,6 +24,8 @@ export type ExclusionSource = 'exchange' | 'manual' | 'blockchain';
 export interface EstimatedNetValue extends NetValue {
   /** Per point, whether it was converted at a stand-in rate; absent means none was. */
   readonly estimated?: readonly boolean[];
+  /** Per point, when the rate it was converted at was quoted, unix seconds; undefined for today's rate. */
+  readonly rateTimes?: readonly (number | undefined)[];
 }
 
 export interface StatisticsApi {
