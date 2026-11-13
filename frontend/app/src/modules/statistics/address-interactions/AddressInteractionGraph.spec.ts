@@ -277,6 +277,16 @@ describe('address interaction graph', () => {
     expect(scrambleAddress).toHaveBeenCalledWith('0xkraken');
   });
 
+  it('should label a bridge leg that also used a shared deposit address as both', async () => {
+    const both = { ...interaction('eth', '0xboth', TARGET, OTHER), depositAddress: '0xkraken', targetChain: 'optimism', targetTxHash: '0xwithdrawal' };
+    const wrapper = createWrapper([interaction(), both]);
+
+    await wrapper.findAll('[data-testid=interaction-connection]').find(row => row.find('[data-testid=interaction-connection-shared-deposit]').exists())?.trigger('click');
+    const row = wrapper.findAll('[data-testid=interaction-chain-activity][data-chain=eth] li')[0];
+    expect(row.find('[data-testid=interaction-tx-bridge]').exists()).toBe(true);
+    expect(row.find('[data-testid=interaction-tx-shared-deposit]').exists()).toBe(true);
+  });
+
   it('should not offer bridges only while no pair is bridged', () => {
     expect(createWrapper([interaction()]).find('[data-testid=interaction-bridges]').exists()).toBe(false);
   });

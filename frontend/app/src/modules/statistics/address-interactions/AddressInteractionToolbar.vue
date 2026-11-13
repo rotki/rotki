@@ -14,8 +14,9 @@ interface Props {
   maxTransactions: number;
   /** Shows Reset filters at the end of the row while a chain or a minimum is set. */
   hasFilters?: boolean;
-  /** Offers the bridges-only switch; hidden while no pair is linked by a bridge. */
+  /** Offers the bridges filter; hidden while no pair is linked by a bridge. */
   hasBridges?: boolean;
+  /** Offers the shared deposits filter; hidden while no pair shares an exchange deposit address. */
   hasSharedDeposits?: boolean;
 }
 
@@ -123,14 +124,13 @@ function chipClass(selected: boolean): string {
           aria-hidden="true"
         />
       </template>
-      <template v-if="hasBridges">
-        <InteractionModeSwitch
-          v-model="bridges"
-          icon="lu-arrow-left-right"
-          :label="t('address_interactions.bridges')"
-          data-testid="interaction-bridges"
-        />
-      </template>
+      <InteractionModeSwitch
+        v-if="hasBridges"
+        v-model="bridges"
+        icon="lu-arrow-left-right"
+        :label="t('address_interactions.bridges')"
+        data-testid="interaction-bridges"
+      />
       <InteractionModeSwitch
         v-if="hasSharedDeposits"
         v-model="sharedDeposits"
