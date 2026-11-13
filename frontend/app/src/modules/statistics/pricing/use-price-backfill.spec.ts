@@ -3,19 +3,22 @@ import type { ComputedRef } from 'vue';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { withSetup } from '@test/utils/with-setup';
 import { setActivePinia } from 'pinia';
-import { ok } from 'plainfp/result';
+import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useCurrencies } from '@/modules/assets/amount-display/currencies';
+import { defaultGeneralSettings } from '@/modules/settings/factories';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { BACKOFF_START_MS, REQUEST_DELAY_MS } from '@/modules/statistics/pricing/backfill-pacing';
 import { DAY_SECONDS } from '@/modules/statistics/pricing/price-series';
 import { type BackfillDemand, usePriceBackfill } from '@/modules/statistics/pricing/use-price-backfill';
 import { usePriceSeriesStore } from '@/modules/statistics/pricing/use-price-series-store';
 
-/** The response as the backend sends it, before parsing. */
-interface RawPriceResponse {
+/** The response as the backend sends it, before parsing, or `fail` for a request that fails outright. */
+type RawPriceResponse = {
   noPricesTimestamps: number[];
   prices: Record<string, string>;
   rateLimitedPricesTimestamps: number[];
-}
+} | 'fail';
 
 const { cancelByPrefix, failedDailyPrices, focused, queryHistoricalAssetPrices, responses } = await vi.hoisted(async () => {
   const { ref, shallowRef } = await import('vue');
@@ -53,20 +56,24 @@ vi.mock('@/modules/task-center/use-task-center', async (): Promise<unknown> => {
   };
 });
 
-vi.mock('@/modules/task-center/use-native-task', () => ({
-  useNativeTask: (): { cancelByPrefix: typeof cancelByPrefix; submitTask: (spec: { run: (ctx: unknown) => Promise<unknown> }) => Promise<unknown> } => ({
-    cancelByPrefix,
-    submitTask: async (spec: { run: (ctx: unknown) => Promise<unknown> }): Promise<unknown> => spec.run({
-      cancelled: (): boolean => false,
-      report: vi.fn(),
-      rerun: false,
-      runTask: async (task: () => Promise<unknown>): Promise<unknown> => {
-        await task();
-        return ok(responses.shift() ?? { noPricesTimestamps: [], prices: {}, rateLimitedPricesTimestamps: [] });
-      },
+vi.mock('@/modules/task-center/use-native-task', async (): Promise<unknown> => {
+  const { TaskFailed } = await import('@/modules/core/tasks/task-result');
+  return {
+    useNativeTask: (): { cancelByPrefix: typeof cancelByPrefix; submitTask: (spec: { run: (ctx: unknown) => Promise<unknown> }) => Promise<unknown> } => ({
+      cancelByPrefix,
+      submitTask: async (spec: { run: (ctx: unknown) => Promise<unknown> }): Promise<unknown> => spec.run({
+        cancelled: (): boolean => false,
+        report: vi.fn(),
+        rerun: false,
+        runTask: async (task: () => Promise<unknown>): Promise<unknown> => {
+          await task();
+          const next = responses.shift() ?? { noPricesTimestamps: [], prices: {}, rateLimitedPricesTimestamps: [] };
+          return next === 'fail' ? err(TaskFailed({ message: 'the backend rejected the request' })) : ok(next);
+        },
+      }),
     }),
-  }),
-}));
+  };
+});
 
 const days = [0, 1, 2, 3].map(day => day * DAY_SECONDS);
 
@@ -142,6 +149,34 @@ describe('modules/statistics/pricing/use-price-backfill', () => {
 
     await vi.advanceTimersByTimeAsync(1);
     expect(queryHistoricalAssetPrices).toHaveBeenCalledTimes(2);
+  });
+
+  it('should record the days of a request that failed outright and not ask for them again', async () => {
+    responses.push('fail');
+    const { result } = withSetup(() => {
+      const backfill = usePriceBackfill();
+      backfill.register('rates', demand());
+      return backfill;
+    });
+    await vi.advanceTimersByTimeAsync(REQUEST_DELAY_MS * 5);
+
+    expect(queryHistoricalAssetPrices).toHaveBeenCalledOnce();
+    expect(get(failedDailyPrices).BTC?.noPricesTimestamps).toEqual(days);
+    expect(get(result.rateLimited)).toBe(false);
+  });
+
+  it('should start over in a new main currency instead of skipping days it tried in the old one', async () => {
+    responses.push({ noPricesTimestamps: [], prices: flatPrices(days), rateLimitedPricesTimestamps: [] });
+    withSetup(() => usePriceBackfill().register('rates', demand()));
+    await vi.advanceTimersByTimeAsync(REQUEST_DELAY_MS);
+    expect(queryHistoricalAssetPrices).toHaveBeenCalledOnce();
+
+    const { findCurrency } = useCurrencies();
+    useSettingsRepo().updateGeneral({ ...defaultGeneralSettings(findCurrency('EUR')), mainCurrency: findCurrency('EUR') });
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(queryHistoricalAssetPrices).toHaveBeenCalledTimes(2);
+    expect(cancelByPrefix).toHaveBeenCalled();
   });
 
   it('should pause while the window is unfocused and resume when it comes back', async () => {

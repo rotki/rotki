@@ -63,7 +63,15 @@ export function usePriceCacheReader(): UsePriceCacheReaderReturn {
   const currencySymbol = useSetting('currencySymbol');
   const { queryOnlyCacheHistoricalRates } = usePriceApi();
 
+  /**
+   * Reads one chunk into the store.
+   *
+   * @remarks
+   * A read that answers after the main currency changed is dropped: the store was emptied for the
+   * new currency, and the series asks again in it.
+   */
   async function readChunk(query: CacheQuery, pairs: readonly [string, number][]): Promise<void> {
+    const currency = get(currencySymbol);
     const keys = pairs.map(([asset, time]) => requestKey(query.pair, asset, time));
     store.markRequested(keys);
     try {
@@ -72,6 +80,8 @@ export function usePriceCacheReader(): UsePriceCacheReaderReturn {
         onlyCachePeriod: DAY_SECONDS,
         targetAsset: query.target,
       });
+      if (get(currencySymbol) !== currency)
+        return;
       for (const [asset, prices] of Object.entries(result.assets)) {
         const points: KnownPrice[] = Object.entries(prices)
           .filter(([, price]) => price.gt(0))
