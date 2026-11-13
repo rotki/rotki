@@ -3,9 +3,9 @@ import { withSetup } from '@test/utils/with-setup';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
+import { SECONDS_PER_DAY } from '@/modules/core/common/constraints';
 import { defaultGeneralSettings } from '@/modules/settings/factories';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
-import { DAY_SECONDS } from '@/modules/statistics/pricing/price-series';
 import { useSnapshotRateStatus } from '@/modules/statistics/pricing/use-snapshot-rate-status';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
@@ -26,7 +26,7 @@ vi.mock('@/modules/statistics/pricing/use-price-backfill', () => ({
   usePriceBackfill: (): Record<string, unknown> => ({ rateLimited }),
 }));
 
-const times = [10, 20, 30].map(day => day * DAY_SECONDS + 3600);
+const times = [10, 20, 30].map(day => day * SECONDS_PER_DAY + 3600);
 
 function setMainCurrency(symbol: string): void {
   const { findCurrency } = useCurrencies();
@@ -57,14 +57,14 @@ describe('modules/statistics/pricing/use-snapshot-rate-status', () => {
     const { result } = withSetup(() => useSnapshotRateStatus());
     expect(get(result.status)).toMatchObject({ pending: 2, unavailable: 0 });
 
-    set(failedDailyPrices, { USD: { noPricesTimestamps: [20 * DAY_SECONDS], rateLimitedPricesTimestamps: [] } });
+    set(failedDailyPrices, { USD: { noPricesTimestamps: [20 * SECONDS_PER_DAY], rateLimitedPricesTimestamps: [] } });
     expect(get(result.status)).toMatchObject({ pending: 1, unavailable: 1 });
   });
 
   it('should count a day as pending again once a rate was added for it by hand', () => {
     setMainCurrency('EUR');
-    set(failedDailyPrices, { USD: { noPricesTimestamps: [20 * DAY_SECONDS], rateLimitedPricesTimestamps: [] } });
-    set(resolvedFailedDailyPrices, { USD: [20 * DAY_SECONDS] });
+    set(failedDailyPrices, { USD: { noPricesTimestamps: [20 * SECONDS_PER_DAY], rateLimitedPricesTimestamps: [] } });
+    set(resolvedFailedDailyPrices, { USD: [20 * SECONDS_PER_DAY] });
     const { result } = withSetup(() => useSnapshotRateStatus());
     expect(get(result.status)).toMatchObject({ pending: 2, unavailable: 0 });
   });

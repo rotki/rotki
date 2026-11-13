@@ -1,4 +1,5 @@
-import { DAY_SECONDS, type KnownPrice, nearestWithin } from '@/modules/statistics/pricing/price-series';
+import { SECONDS_PER_DAY } from '@/modules/core/common/constraints';
+import { type KnownPrice, nearestWithin } from '@/modules/statistics/pricing/price-series';
 
 /** The most days one request asks for, so a long history is fetched a few days at a time. */
 export const DAYS_PER_REQUEST = 8;
@@ -7,36 +8,35 @@ export interface BackfillAsset {
   readonly asset: string;
   /** Prices of the asset in the main currency already cached, in time order. */
   readonly known: readonly KnownPrice[];
-  /** Times the backend reported as having no price, never asked again; any order. */
-  readonly failed: readonly number[];
+  /** Days (UTC day starts) the backend reported as having no price, never asked again. */
+  readonly failed: ReadonlySet<number>;
   /** The times that need a price, unix seconds. */
   readonly times: readonly number[];
 }
 
 /**
- * One request for `/balances/historical/asset/prices`: the backend prices
- * `fromTimestamp + i * interval` up to `toTimestamp`, skipping `excludeTimestamps`.
+ * One request for `/balances/historical/asset/prices`: the backend prices each day from
+ * `fromTimestamp` up to `toTimestamp`, skipping `excludeTimestamps`.
  */
 export interface BackfillRequest {
   readonly asset: string;
   readonly fromTimestamp: number;
   readonly toTimestamp: number;
-  readonly interval: number;
   readonly excludeTimestamps: number[];
 }
 
 /** The start of the UTC day `time` falls in; the oracles keep one price per day. */
 export function dayStart(time: number): number {
-  return Math.floor(time / DAY_SECONDS) * DAY_SECONDS;
+  return Math.floor(time / SECONDS_PER_DAY) * SECONDS_PER_DAY;
 }
 
 /** The days still to fetch for an asset, earliest first: those of times with no price within a day. */
 function openDays(entry: BackfillAsset): number[] {
-  const failed = [...entry.failed].sort((a, b) => a - b).map(time => ({ time }));
   const days = new Set<number>();
   for (const time of entry.times) {
-    if (!nearestWithin(entry.known, time, DAY_SECONDS) && !nearestWithin(failed, time, DAY_SECONDS))
-      days.add(dayStart(time));
+    const day = dayStart(time);
+    if (!entry.failed.has(day) && !nearestWithin(entry.known, time, SECONDS_PER_DAY))
+      days.add(day);
   }
   return [...days].sort((a, b) => a - b);
 }
@@ -54,19 +54,19 @@ function nextRequest(entry: BackfillAsset): BackfillRequest | undefined {
   const first = days[0];
   if (first === undefined)
     return undefined;
-  const windowEnd = first + (DAYS_PER_REQUEST - 1) * DAY_SECONDS;
+  const windowEnd = first + (DAYS_PER_REQUEST - 1) * SECONDS_PER_DAY;
   const wanted = new Set(days.filter(day => day <= windowEnd));
   const last = Math.max(...wanted);
   const excludeTimestamps: number[] = [];
-  for (let day = first; day <= last; day += DAY_SECONDS) {
+  for (let day = first; day <= last; day += SECONDS_PER_DAY) {
     if (!wanted.has(day))
       excludeTimestamps.push(day);
   }
   const singleDay = last === first;
-  const toTimestamp = singleDay ? first + DAY_SECONDS : last;
+  const toTimestamp = singleDay ? first + SECONDS_PER_DAY : last;
   if (singleDay)
     excludeTimestamps.push(toTimestamp);
-  return { asset: entry.asset, excludeTimestamps, fromTimestamp: first, interval: DAY_SECONDS, toTimestamp };
+  return { asset: entry.asset, excludeTimestamps, fromTimestamp: first, toTimestamp };
 }
 
 /**
