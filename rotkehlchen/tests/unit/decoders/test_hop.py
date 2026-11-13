@@ -7,11 +7,13 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.hop.constants import HOP_GOVERNOR
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import (
     A_ARB,
     A_ETH,
     A_OP,
+    A_POL,
     A_USDC,
     A_WETH_ARB,
     A_WETH_BASE,
@@ -37,6 +39,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     CacheType,
     ChecksumEvmAddress,
+    SupportedBlockchain,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
@@ -419,6 +422,92 @@ def test_hop_eth_bridge_polygon_pos(polygon_pos_inquirer: PolygonPOSInquirer, po
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='polygon-publicnode',
+            endpoint='https://polygon-bor-rpc.publicnode.com',
+            owned=False,
+            blockchain=SupportedBlockchain.POLYGON_POS,
+        ),
+        active=True,
+        weight=ONE,
+    ),
+)])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_hop_usdc_bridge_polygon_pos_amm_wrapper_to_optimism(
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
+):
+    """The bonder fee is in 6-decimal hUSDC units and the deposit is the wallet's USDC debit
+    minus that fee, not the hUSDC amount the AMM wrapper swap returned."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xb72fa596f722d159cf5b2566386464a7a439d5987634c04ea3a5dc1fd41ce0ea')),  # noqa: E501
+    )
+    usdc, wrapper = Asset('eip155:137/erc20:0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'), string_to_evm_address('0x76b22b8C1079A44F1211D867D68b1eda76a635A7')  # noqa: E501
+    bridge_amount, hop_fee, user_address = '316.247868', '2.473123', polygon_pos_accounts[0]
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1643123729000)),
+            location=LOCATION_POLYGON_POS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_POL,
+            amount=FVal('0.057888076370682252'),
+            location_label=user_address,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=242,
+            timestamp=timestamp,
+            location=LOCATION_POLYGON_POS,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=usdc,
+            amount=ZERO,
+            location_label=user_address,
+            address=wrapper,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=243,
+            timestamp=timestamp,
+            location=LOCATION_POLYGON_POS,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=usdc,
+            amount=FVal(bridge_amount),
+            location_label=user_address,
+            notes=f'Bridge {bridge_amount} USDC to Optimism via Hop protocol',
+            counterparty=CPT_HOP,
+            address=wrapper,
+            extra_data={'bridge': {
+                'from_chain': 137,
+                'to_chain': 10,
+                'from_address': user_address,
+                'to_address': user_address,
+                'transfer_id': '0x056c226a8c9d28c7d5e0eacc5a1c4b57ed13c8b65954c14271ef7d9aae4e2b9a',  # noqa: E501
+            }},
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=244,
+            timestamp=timestamp,
+            location=LOCATION_POLYGON_POS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=usdc,
+            amount=FVal(hop_fee),
+            location_label=user_address,
+            notes=f'Spend {hop_fee} USDC as a hop fee',
+            counterparty=CPT_HOP,
+            address=wrapper,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xC0b263b8315FAABC27BC0479a5A547281c049C1c']])
 def test_hop_eth_bridge_base(base_inquirer: BaseInquirer, base_accounts):
@@ -457,7 +546,7 @@ def test_hop_eth_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: ArbitrumOne
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x4fb91812763e6af24465ee014a306b8322beb612aa51f26b657772447744ae94')),  # noqa: E501
     )
-    bridge_amount, gas_fee, hop_fee, user_address = '0.194877831029822766', '0.00000323542', '0.004034870881159123', arbitrum_one_accounts[0]  # noqa: E501
+    bridge_amount, gas_fee, hop_fee, user_address = '0.194965129118840877', '0.00000323542', '0.004034870881159123', arbitrum_one_accounts[0]  # noqa: E501
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
@@ -543,7 +632,7 @@ def test_hop_magic_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: ArbitrumO
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x05c2c5f18e9acc193f34c611e176d9e65f34d420ba80c7546e0ba0c124d510e3')),  # noqa: E501
     )
-    bridge_amount, gas_fee, bridge_fee, user_address = '690.64074354910030513', '0.00000257294', '5.136762511171047454', arbitrum_one_accounts[0]  # noqa: E501
+    bridge_amount, gas_fee, bridge_fee, user_address = '689.623959406243950561', '0.00000257294', '5.136762511171047454', arbitrum_one_accounts[0]  # noqa: E501
     approval_amount = '115792089237316195423570985008687907853269984665640563953113.341386879395299329'  # noqa: E501
     assert events == [
         EvmEvent(
@@ -708,7 +797,7 @@ def test_hop_eth_bridge_arbitrum_custom_recipient(arbitrum_one_inquirer: Arbitru
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
-            amount=FVal(bridge_amount := '0.000880551717232904'),
+            amount=FVal(bridge_amount := '0.000881137381385877'),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} ETH to Base at address {arbitrum_one_accounts[1]} via Hop protocol',  # noqa: E501
             counterparty=CPT_HOP,
