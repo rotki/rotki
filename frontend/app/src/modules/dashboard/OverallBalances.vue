@@ -29,7 +29,7 @@ const netWorthChart = useTemplateRef<InstanceType<typeof NetWorthChart>>('netWor
 const settingsRepo = useSettingsRepo();
 const statisticsStore = useStatisticsStore();
 const timeframe = useSetting('timeframe');
-const { netValueError, totalNetWorth } = storeToRefs(statisticsStore);
+const { exchangeRateReady, netValueError, totalNetWorth } = storeToRefs(statisticsStore);
 const visibleTimeframes = useSetting('visibleTimeframes');
 const { getNetValue } = statisticsStore;
 
@@ -47,8 +47,9 @@ const loadingNetWorth = useNetWorthLoading();
  * Wider than the header's own latch, which waits for the first load only. A delta computed from a
  * half-loaded total is a number that is wrong while it moves, so these two wait for every load. The
  * latch is what carries them through the first frames, before any balance activity is submitted.
+ * They also wait for today's exchange rate, without which snapshots would be drawn in USD.
  */
-const isBusy = computed<boolean>(() => get(loadingNetWorth) || get(isLoading));
+const isBusy = computed<boolean>(() => get(loadingNetWorth) || get(isLoading) || !get(exchangeRateReady));
 
 const { fetchNetValue } = useStatisticsDataFetching();
 
@@ -117,6 +118,7 @@ onMounted(() => {
       :percentage="percentage"
       :loading-net-worth="loadingNetWorth"
       :busy="isBusy"
+      :approximate="hasEstimates"
     />
     <div class="lg:col-span-8 lg:row-span-2 flex flex-col">
       <div class="flex justify-start lg:justify-end items-center md:pt-4 gap-4">
@@ -179,13 +181,6 @@ onMounted(() => {
           size="14"
         />
         {{ t('balance_view.chart_live') }}
-      </p>
-      <p
-        v-if="hasEstimates"
-        class="px-2 text-xs text-rui-text-secondary"
-        data-testid="overall-balances-estimated-rate"
-      >
-        {{ t('overall_balances.estimated_rate') }}
       </p>
     </div>
     <AssetsBySource

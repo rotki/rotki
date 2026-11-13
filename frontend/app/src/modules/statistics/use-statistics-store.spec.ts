@@ -235,7 +235,7 @@ describe('useStatisticsStore', () => {
       setMainCurrency('EUR');
       const store = withSnapshots();
       store.setSnapshotRates(new Map([
-        [times[0], { price: new BigNumber('0.8'), quality: PriceQuality.CARRIED }],
+        [times[0], { price: new BigNumber('0.8'), quality: PriceQuality.CARRIED, time: times[0] - 86_400 }],
         [times[1], { price: new BigNumber('0.85'), quality: PriceQuality.EXACT }],
       ]));
 
@@ -243,6 +243,7 @@ describe('useStatisticsStore', () => {
 
       expect(result.data.slice(0, 3).map(value => value.toFixed())).toEqual(['80', '85', String(100 * EUR_RATE)]);
       expect(result.estimated).toEqual([true, false, true, false]);
+      expect(result.rateTimes?.slice(0, 3)).toEqual([times[0] - 86_400, undefined, undefined]);
     });
 
     it('should leave USD snapshots as they are', () => {

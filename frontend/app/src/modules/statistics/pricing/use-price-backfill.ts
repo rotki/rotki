@@ -1,5 +1,5 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
-import { type BigNumber, HistoricalAssetPriceResponse } from '@rotki/common';
+import { HistoricalAssetPriceResponse } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { map as mapResult } from 'plainfp/result';
 import { msg } from '@/message-key';
@@ -10,7 +10,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
 import { nextPacing } from '@/modules/statistics/pricing/backfill-pacing';
-import { type BackfillAsset, type BackfillRange, type BackfillRequest, planBackfill } from '@/modules/statistics/pricing/backfill-plan';
+import { type BackfillAsset, type BackfillRequest, planBackfill } from '@/modules/statistics/pricing/backfill-plan';
 import { knownPrices } from '@/modules/statistics/pricing/price-series';
 import { PricePair, usePriceSeriesStore } from '@/modules/statistics/pricing/use-price-series-store';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
@@ -18,13 +18,11 @@ import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
-/** How many planned requests are looked at to find one not tried yet. */
-const PLAN_LOOKAHEAD = 20;
-
-/** What needs pricing: a range and the largest value of each asset over it, in the main currency. */
+/** What needs pricing: an asset at a set of times, in the main currency. */
 export interface BackfillDemand {
-  readonly range: BackfillRange;
-  readonly holdings: readonly { readonly asset: string; readonly heldValue: BigNumber }[];
+  readonly asset: string;
+  /** Unix seconds. */
+  readonly times: readonly number[];
 }
 
 type RequestResult = 'ok' | 'rate-limited';
@@ -43,6 +41,8 @@ interface UsePriceBackfillReturn {
   /** Stops the current run; it resumes when its conditions next change. */
   readonly stop: () => void;
   readonly running: Readonly<Ref<boolean>>;
+  /** The last request hit a rate limit, so the next one waits longer. */
+  readonly rateLimited: Readonly<Ref<boolean>>;
 }
 
 function requestKey(request: BackfillRequest): string {
@@ -57,10 +57,10 @@ async function sleep(ms: number): Promise<void> {
  * Fetches missing historic rates from the oracles in the background, one small request at a time.
  *
  * @remarks
- * One queue serves every registered demand. Each step asks {@link planBackfill} for the request
- * most worth making (anchors first, then the gap whose rate moved most) and waits between requests:
- * {@link nextPacing} sets the pace and backs off on rate limits. It pauses while the window is in
- * the background or a sync or a daily price fetch runs.
+ * One queue serves every registered demand. Each step asks {@link planBackfill} for the next few
+ * days still open and waits between requests: {@link nextPacing} sets the pace and backs off on
+ * rate limits. It pauses while the window is in the background or a sync or a daily price fetch
+ * runs.
  *
  * Prices it gets go to the price series store, so every series of the asset sharpens. Times the
  * backend has no price for join `failedDailyPrices` and are not asked again this session.
@@ -79,6 +79,7 @@ export const usePriceBackfill = createSharedComposable((): UsePriceBackfillRetur
 
   const demands = shallowRef<ReadonlyMap<string, MaybeRefOrGetter<BackfillDemand | undefined>>>(new Map());
   const running = shallowRef<boolean>(false);
+  const rateLimited = shallowRef<boolean>(false);
   const attempted = new Set<string>();
   let generation = 0;
   let backoff = 0;
@@ -89,29 +90,21 @@ export const usePriceBackfill = createSharedComposable((): UsePriceBackfillRetur
   const canRun = computed<boolean>(() =>
     get(demandValues).some(isDefined) && get(focused) && !get(syncing) && !get(fetchingDaily));
 
-  function backfillAssets(demand: BackfillDemand): BackfillAsset[] {
+  /** The demands' assets with what is cached and known missing, leaving out the main currency. */
+  function backfillAssets(): BackfillAsset[] {
     const failed = get(failedDailyPrices);
     const currency = get(currencySymbol);
     const usdToMain = get(mainPrices).USD;
-    return demand.holdings.filter(({ asset }) => asset !== currency).map(({ asset, heldValue }) => ({
+    return get(demandValues).flatMap(demand => (demand && demand.asset !== currency ? [demand] : [])).map(({ asset, times }) => ({
       asset,
       failed: failed[asset]?.noPricesTimestamps ?? [],
-      heldValue,
       known: knownPrices({ direct: get(mainPrices)[asset] ?? [], usdToMain, viaUsd: get(usdPrices)[asset] }),
+      times,
     }));
   }
 
   function nextRequest(): BackfillRequest | undefined {
-    const candidates: BackfillRequest[] = [];
-    for (const demand of get(demandValues)) {
-      if (!demand)
-        continue;
-      const fresh = planBackfill(backfillAssets(demand), demand.range, PLAN_LOOKAHEAD)
-        .find(request => !attempted.has(requestKey(request)));
-      if (fresh)
-        candidates.push(fresh);
-    }
-    return candidates.sort((a, b) => b.score - a.score)[0];
+    return planBackfill(backfillAssets()).find(request => !attempted.has(requestKey(request)));
   }
 
   function recordFailures(asset: string, response: HistoricalAssetPriceResponse): void {
@@ -178,6 +171,7 @@ export const usePriceBackfill = createSharedComposable((): UsePriceBackfillRetur
         attempted.delete(key);
       const pacing = nextPacing(result === 'rate-limited', backoff);
       backoff = pacing.backoff;
+      set(rateLimited, backoff > 0);
       await sleep(pacing.delay);
     }
     if (isCurrent(run))
@@ -209,6 +203,7 @@ export const usePriceBackfill = createSharedComposable((): UsePriceBackfillRetur
   watch([canRun, demandValues], wake);
 
   return {
+    rateLimited: readonly(rateLimited),
     register,
     running: readonly(running),
     stop,

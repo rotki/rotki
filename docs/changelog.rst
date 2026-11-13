@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :bug:`4031` For a main currency other than USD, the net worth graph now converts each balance snapshot at the exchange rate of its own day instead of today's rate, so it no longer moves with the exchange rate. Rates that are not known yet are fetched a few at a time in the background, and the graph marks the points shown at an estimated rate until they arrive.
+* :bug:`4031` For a main currency other than USD, the net worth graph now converts each balance snapshot at the exchange rate of its own day instead of today's rate, so it no longer moves with the exchange rate. Rates that are not known yet are fetched a few days at a time in the background. Until they arrive, the graph shades the points shown at an estimated rate, names the rate each one uses and marks the change as approximate, and a day with no rate available can be filled in by hand.
 * :bug:`-` With a crypto main currency such as ETH or BTC, historical fiat prices in that currency are now found by inverting the crypto price in fiat. Before, fiat received in a profit and loss report was valued at zero, fiat spent was reported as a missing price, and snapshot exports used a rate of one.
 * :bug:`-` Bitpanda history queries now save each page as it arrives, so a failure part way through no longer throws away the history already fetched.
 * :bug:`-` Refreshing exchange balances now queries each exchange once. Before, an exchange with several connected accounts was queried again for every account, so balances took longer to load the more accounts it had.

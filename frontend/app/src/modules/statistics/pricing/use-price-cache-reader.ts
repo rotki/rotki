@@ -2,7 +2,7 @@ import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSetting } from '@/modules/settings/use-setting';
-import { EXACT_TOLERANCE_SECONDS, type KnownPrice } from '@/modules/statistics/pricing/price-series';
+import { DAY_SECONDS, type KnownPrice } from '@/modules/statistics/pricing/price-series';
 import { PricePair, usePriceSeriesStore } from '@/modules/statistics/pricing/use-price-series-store';
 
 /** Asset and time pairs per cache request, so one chart never sends one huge payload. */
@@ -15,8 +15,13 @@ interface CacheQuery {
 }
 
 interface UsePriceCacheReaderReturn {
-  /** Reads every not yet requested price of `assets` at `times` from the backend cache. */
-  readCached: (assets: readonly string[], times: readonly number[]) => Promise<void>;
+  /**
+   * Reads every not yet requested price of `assets` at `times` from the backend cache.
+   *
+   * @remarks
+   * `force` reads again what was already requested, for after a price was added by hand.
+   */
+  readCached: (assets: readonly string[], times: readonly number[], force?: boolean) => Promise<void>;
 }
 
 function requestKey(pair: PricePair, asset: string, time: number): string {
@@ -64,7 +69,7 @@ export function usePriceCacheReader(): UsePriceCacheReaderReturn {
     try {
       const result = await queryOnlyCacheHistoricalRates({
         assetsTimestamp: pairs.map(([asset, time]) => [asset, time.toString()]),
-        onlyCachePeriod: EXACT_TOLERANCE_SECONDS,
+        onlyCachePeriod: DAY_SECONDS,
         targetAsset: query.target,
       });
       for (const [asset, prices] of Object.entries(result.assets)) {
@@ -80,8 +85,8 @@ export function usePriceCacheReader(): UsePriceCacheReaderReturn {
     }
   }
 
-  async function readCached(assets: readonly string[], times: readonly number[]): Promise<void> {
-    const seen = get(requested);
+  async function readCached(assets: readonly string[], times: readonly number[], force = false): Promise<void> {
+    const seen: ReadonlySet<string> = force ? new Set() : get(requested);
     for (const query of queriesFor(assets, get(currencySymbol))) {
       const pairs = query.assets
         .flatMap(asset => times.map((time): [string, number] => [asset, time]))

@@ -61,10 +61,7 @@ describe('modules/statistics/pricing/use-snapshot-rates', () => {
     withSetup(() => useSnapshotRates());
 
     expect(get(requested)).toEqual({ assets: ['USD'], times });
-    expect(registeredDemand()).toEqual({
-      holdings: [{ asset: 'USD', heldValue: new BigNumber('50') }],
-      range: { end: 3000, start: 1000 },
-    });
+    expect(registeredDemand()).toEqual({ asset: 'USD', times });
   });
 
   it('should hand the resolved rates to the statistics store by snapshot time', async () => {

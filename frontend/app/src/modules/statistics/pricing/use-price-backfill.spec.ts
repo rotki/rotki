@@ -1,12 +1,11 @@
+import type { FailedHistoricalAssetPriceResponse, HistoricalAssetPricePayload } from '@rotki/common';
 import type { ComputedRef } from 'vue';
-import { bigNumberify, type FailedHistoricalAssetPriceResponse, type HistoricalAssetPricePayload } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { withSetup } from '@test/utils/with-setup';
 import { setActivePinia } from 'pinia';
 import { ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BACKOFF_START_MS, REQUEST_DELAY_MS } from '@/modules/statistics/pricing/backfill-pacing';
-import { ANCHOR_COUNT } from '@/modules/statistics/pricing/backfill-plan';
 import { DAY_SECONDS } from '@/modules/statistics/pricing/price-series';
 import { type BackfillDemand, usePriceBackfill } from '@/modules/statistics/pricing/use-price-backfill';
 import { usePriceSeriesStore } from '@/modules/statistics/pricing/use-price-series-store';
@@ -69,15 +68,14 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
   }),
 }));
 
-const range = { end: 70 * DAY_SECONDS, start: 0 };
-const anchorTimes = Array.from({ length: ANCHOR_COUNT }, (_, index) => index * 10 * DAY_SECONDS);
+const days = [0, 1, 2, 3].map(day => day * DAY_SECONDS);
 
 function flatPrices(times: number[], price = '10'): Record<string, string> {
   return Object.fromEntries(times.map(time => [time.toString(), price]));
 }
 
 function demand(): BackfillDemand {
-  return { holdings: [{ asset: 'BTC', heldValue: bigNumberify(100) }], range };
+  return { asset: 'BTC', times: days.map(day => day + DAY_SECONDS / 2) };
 }
 
 describe('modules/statistics/pricing/use-price-backfill', () => {
@@ -101,8 +99,8 @@ describe('modules/statistics/pricing/use-price-backfill', () => {
     expect(queryHistoricalAssetPrices).not.toHaveBeenCalled();
   });
 
-  it('should fetch a demand\'s anchors in the background, store the prices and stop once refined', async () => {
-    responses.push({ noPricesTimestamps: [], prices: flatPrices(anchorTimes), rateLimitedPricesTimestamps: [] });
+  it('should fetch the demand\'s days in the background, store the prices and stop once settled', async () => {
+    responses.push({ noPricesTimestamps: [], prices: flatPrices(days), rateLimitedPricesTimestamps: [] });
     const { result } = withSetup(() => {
       const backfill = usePriceBackfill();
       backfill.register('rates', demand());
@@ -111,36 +109,36 @@ describe('modules/statistics/pricing/use-price-backfill', () => {
     await vi.advanceTimersByTimeAsync(REQUEST_DELAY_MS);
 
     expect(queryHistoricalAssetPrices).toHaveBeenCalledOnce();
-    expect(queryHistoricalAssetPrices).toHaveBeenCalledWith(expect.objectContaining({ asset: 'BTC', fromTimestamp: 0, interval: 10 * DAY_SECONDS }));
-    expect(usePriceSeriesStore().mainPrices.BTC).toHaveLength(ANCHOR_COUNT);
+    expect(queryHistoricalAssetPrices).toHaveBeenCalledWith(expect.objectContaining({
+      asset: 'BTC',
+      fromTimestamp: 0,
+      interval: DAY_SECONDS,
+      toTimestamp: 3 * DAY_SECONDS,
+    }));
+    expect(usePriceSeriesStore().mainPrices.BTC).toHaveLength(days.length);
     expect(get(result.running)).toBe(false);
   });
 
-  it('should remember times with no price and not ask for them again', async () => {
-    const failed = anchorTimes[3];
-    responses.push({
-      noPricesTimestamps: [failed],
-      prices: flatPrices(anchorTimes.filter(time => time !== failed)),
-      rateLimitedPricesTimestamps: [],
-    });
+  it('should remember days with no price and not ask for them again', async () => {
+    const failed = days[2];
+    responses.push({ noPricesTimestamps: [failed], prices: flatPrices(days.filter(day => day !== failed)), rateLimitedPricesTimestamps: [] });
     withSetup(() => usePriceBackfill().register('rates', demand()));
-    await vi.advanceTimersByTimeAsync(REQUEST_DELAY_MS * 20);
+    await vi.advanceTimersByTimeAsync(REQUEST_DELAY_MS * 5);
 
     expect(get(failedDailyPrices).BTC?.noPricesTimestamps).toEqual([failed]);
-    const later = queryHistoricalAssetPrices.mock.calls.slice(1).map(([payload]) => payload);
-    expect(later.length).toBeGreaterThan(0);
-    for (const { excludeTimestamps = [], fromTimestamp, interval, toTimestamp } of later) {
-      const asked = Array.from({ length: Math.floor((toTimestamp - fromTimestamp) / interval) + 1 }, (_, index) => fromTimestamp + index * interval)
-        .filter(time => !excludeTimestamps.includes(time));
-      expect(asked).not.toContain(failed);
-    }
+    expect(queryHistoricalAssetPrices).toHaveBeenCalledOnce();
   });
 
-  it('should back off after a rate limit before asking again', async () => {
-    responses.push({ noPricesTimestamps: [], prices: {}, rateLimitedPricesTimestamps: anchorTimes });
-    withSetup(() => usePriceBackfill().register('rates', demand()));
+  it('should back off after a rate limit before asking again, and say so', async () => {
+    responses.push({ noPricesTimestamps: [], prices: {}, rateLimitedPricesTimestamps: days });
+    const { result } = withSetup(() => {
+      const backfill = usePriceBackfill();
+      backfill.register('rates', demand());
+      return backfill;
+    });
     await vi.advanceTimersByTimeAsync(BACKOFF_START_MS - 1);
     expect(queryHistoricalAssetPrices).toHaveBeenCalledOnce();
+    expect(get(result.rateLimited)).toBe(true);
 
     await vi.advanceTimersByTimeAsync(1);
     expect(queryHistoricalAssetPrices).toHaveBeenCalledTimes(2);

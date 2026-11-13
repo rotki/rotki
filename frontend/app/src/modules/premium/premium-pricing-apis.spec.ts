@@ -1,6 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { BackfillDemand } from '@/modules/statistics/pricing/use-price-backfill';
-import { BigNumber, One, PriceQuality, type ResolvedPrice } from '@rotki/common';
+import { BigNumber, PriceQuality, type ResolvedPrice } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usdRateAt } from '@/modules/premium/premium-pricing-apis';
@@ -52,6 +52,6 @@ describe('modules/premium/premium-pricing-apis', () => {
     withSetup(() => [usdRateAt(5000), usdRateAt(6000)]);
     const [[firstId, firstDemand], [secondId]] = register.mock.calls;
     expect(firstId).not.toBe(secondId);
-    expect(toValue(firstDemand)).toEqual({ holdings: [{ asset: 'USD', heldValue: One }], range: { end: 5000, start: 5000 } });
+    expect(toValue(firstDemand)).toEqual({ asset: 'USD', times: [5000] });
   });
 });

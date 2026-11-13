@@ -45,7 +45,7 @@ describe('modules/statistics/pricing/use-price-series', () => {
     const { result } = withSetup(() => usePriceSeries(['ETH', 'BTC', 'SPAM'], [DAY_SECONDS]));
 
     const series = get(result.series);
-    expect(series.get('ETH')).toEqual([{ price: new BigNumber('3000'), quality: PriceQuality.EXACT }]);
+    expect(series.get('ETH')).toEqual([{ price: new BigNumber('3000'), quality: PriceQuality.EXACT, time: DAY_SECONDS }]);
     expect(series.get('BTC')).toEqual([{ price: new BigNumber('50000'), quality: PriceQuality.CURRENT }]);
     expect(series.get('SPAM')).toEqual([{ price: undefined, quality: PriceQuality.MISSING }]);
   });

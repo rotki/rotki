@@ -120,4 +120,6 @@ export interface ResolvedPrice {
   /** Undefined only when `quality` is missing. */
   readonly price: BigNumber | undefined;
   readonly quality: PriceQuality;
+  /** When the price used was quoted, unix seconds; absent for today's price and a missing one. */
+  readonly time?: number;
 }

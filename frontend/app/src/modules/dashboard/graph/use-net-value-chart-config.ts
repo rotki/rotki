@@ -171,15 +171,21 @@ export function useNetValueChartConfig(
     };
   };
 
-  /** Shaded bands over the stretches whose values rest on a stand-in price or rate. */
+  /**
+   * Shaded bands over the stretches whose values rest on a stand-in price or rate.
+   *
+   * @remarks
+   * The dashed edges keep a band visible over the area gradient, which a fill alone did not.
+   */
   const createEstimatedMarkArea = (): LineSeriesOption['markArea'] => {
     const { estimated, times } = toValue(chartData);
     const bands = estimatedBands(times, estimated);
     if (bands.length === 0)
       return undefined;
+    const secondary = get(secondaryColor);
     return {
       data: bands.map(band => [{ xAxis: band.start * MS }, { xAxis: band.end * MS }]),
-      itemStyle: { color: get(secondaryColor), opacity: 0.08 },
+      itemStyle: { borderColor: secondary, borderType: 'dashed', borderWidth: 1, color: secondary, opacity: 0.18 },
       silent: true,
     };
   };
