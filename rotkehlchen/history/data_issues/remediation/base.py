@@ -13,13 +13,15 @@ from rotkehlchen.concurrency import (
     checkpoint,
     result_of,
 )
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import InputError, NotFoundError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.data_issues.constants import IssueState
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.history.data_issues.manager import DataIssuesManager
     from rotkehlchen.history.data_issues.types import DataIssue
 
@@ -32,6 +34,27 @@ CANCELLATION_GRACE_PERIOD: Final = 10
 
 class RemediationWorkerStuckError(RuntimeError):
     """A cancelled remediation worker is still running after the cancellation grace period."""
+
+
+class _IssueChangedError(Exception):
+    """The issue was dismissed or deleted by someone else while the pipeline worked on it."""
+
+
+def _write[**P](
+        method: Callable[P, DataIssue],
+        *args: P.args,
+        **kwargs: P.kwargs,
+) -> DataIssue:
+    """Call a manager write, reporting a rejected one as `_IssueChangedError`.
+
+    The manager raises `InputError` for a transition the current state does not allow and
+    `NotFoundError` for a missing row. Both mean the issue changed underneath the pipeline,
+    which must skip that issue rather than abort the whole run.
+    """
+    try:
+        return method(*args, **kwargs)
+    except (InputError, NotFoundError) as e:
+        raise _IssueChangedError(str(e)) from e
 
 
 @dataclass(frozen=True)
@@ -168,15 +191,30 @@ class RemediationPipeline:
 
         An issue for which no strategy recorded an attempt returns to the state it had
         before the run, so it is picked up again by the next one.
+
+        An issue the user dismisses or deletes while a strategy works on it is skipped:
+        the write it rejects is logged and the run continues with the next issue.
         """
         if issue.state in {IssueState.RESOLVED, IssueState.DISMISSED}:
             return
         strategies = tuple(strategy for strategy in self.strategies if strategy.applies_to(issue))
         if len(strategies) == 0:
             return
+        try:
+            self._run_strategies(issue, strategies)
+        except _IssueChangedError as e:
+            log.warning(
+                'Data issue %s changed during its remediation, skipping it: %s', issue.id, e,
+            )
+
+    def _run_strategies(
+            self,
+            issue: DataIssue,
+            strategies: tuple[BaseRemediationStrategy, ...],
+    ) -> None:
         state_before_run = IssueState(issue.state)
         if state_before_run in {IssueState.OPEN, IssueState.UNRESOLVED}:
-            issue = self.manager.update_state(issue.id, IssueState.AUTO_REMEDIATING)
+            issue = _write(self.manager.update_state, issue.id, IssueState.AUTO_REMEDIATING)
 
         attempt_recorded, retryable = False, False
         try:
@@ -205,7 +243,8 @@ class RemediationPipeline:
                         attempt['reason'] = outcome.notes
                 if outcome.resolved:
                     log.debug('Data issue remediation attempt: %s', attempt)
-                    self.manager.update_state(
+                    _write(
+                        self.manager.update_state,
                         issue_id=issue.id,
                         state=IssueState.RESOLVED,
                         attempt=attempt if outcome.record_attempt else None,
@@ -218,7 +257,10 @@ class RemediationPipeline:
                     return
                 if outcome.record_attempt:
                     log.debug('Data issue remediation attempt: %s', attempt)
-                    self.manager.append_auto_remediation_attempt(issue.id, attempt)
+                    if _write(
+                        self.manager.append_auto_remediation_attempt, issue.id, attempt,
+                    ).state != IssueState.AUTO_REMEDIATING:
+                        raise _IssueChangedError('it left the auto-remediating state')
                     attempt_recorded = True
 
                 sleep(0)
@@ -228,12 +270,27 @@ class RemediationPipeline:
             retryable = attempt_recorded is False
             raise
         finally:
-            if self.manager.get_issue(issue.id).state == IssueState.AUTO_REMEDIATING:
-                self.manager.update_state(
-                    issue_id=issue.id,
-                    state=(
-                        state_before_run
-                        if retryable and state_before_run == IssueState.OPEN
-                        else IssueState.UNRESOLVED
-                    ),
-                )
+            self._leave_auto_remediating(
+                issue_id=issue.id,
+                state=(
+                    state_before_run
+                    if retryable and state_before_run == IssueState.OPEN
+                    else IssueState.UNRESOLVED
+                ),
+            )
+
+    def _leave_auto_remediating(self, issue_id: int, state: IssueState) -> None:
+        """Move an issue the run left in `AUTO_REMEDIATING` to `state`.
+
+        Runs while the pipeline unwinds, so it never raises for an issue that was dismissed
+        or deleted meanwhile: that would replace the exception already propagating.
+        """
+        try:
+            if self.manager.get_issue(issue_id).state == IssueState.AUTO_REMEDIATING:
+                self.manager.update_state(issue_id=issue_id, state=state)
+        except (InputError, NotFoundError) as e:
+            log.warning(
+                'Data issue %s changed during its remediation, leaving its state as is: %s',
+                issue_id,
+                e,
+            )

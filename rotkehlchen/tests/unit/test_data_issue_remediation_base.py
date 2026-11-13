@@ -422,3 +422,42 @@ def test_pipeline_timeout_cancels_decoder_lock_wait(
     assert issue.auto_remediation_attempts[0]['attribution'] == 'timeout'
     assert decoder.undecoded_tx_query_lock.acquire(blocking=False)
     decoder.undecoded_tx_query_lock.release()
+
+
+def _dismiss(manager: DataIssuesManager, issue_id: int) -> None:
+    manager.dismiss(issue_id)
+
+
+def _delete(manager: DataIssuesManager, issue_id: int) -> None:
+    with manager.db.user_write() as write_cursor:
+        write_cursor.execute('DELETE FROM data_issues WHERE id = ?', (issue_id,))
+
+
+@pytest.mark.parametrize('resolved', [False, True])
+@pytest.mark.parametrize('change', [_dismiss, _delete])
+def test_pipeline_skips_issue_changed_while_a_strategy_runs(
+        database: DBHandler,
+        change: Callable[[DataIssuesManager, int], None],
+        resolved: bool,
+) -> None:
+    """A user dismissing or deleting the issue mid-attempt must not abort the run."""
+    calls: list[str] = []
+    manager = DataIssuesManager(database)
+    issue = _make_issue(database)
+    changing = StubStrategy('changing', RemediationOutcome(resolved, 'system', ''), calls)
+
+    def change_then_finish(issue: DataIssue) -> RemediationOutcome:
+        change(manager, issue.id)
+        return changing.outcome
+
+    with patch.object(changing, 'attempt', side_effect=change_then_finish):
+        RemediationPipeline(manager, (
+            changing,
+            StubStrategy('fallback', RemediationOutcome(True, 'system', ''), calls),
+        )).run(issue)
+
+    assert calls == []
+    if change is _dismiss:
+        assert manager.get_issue(issue.id).state == IssueState.DISMISSED
+    else:
+        assert manager.list_issues() == []
