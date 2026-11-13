@@ -510,10 +510,20 @@ class DataIssuesManager:
 
     def get_issue(self, issue_id: int) -> DataIssue:
         with self.db.conn.read_ctx() as cursor:
-            row = cursor.execute(
-                f'SELECT * FROM ({DATA_ISSUE_SELECT_QUERY}) WHERE id = ?',
-                (issue_id,),
-            ).fetchone()
+            return self._get_issue_with_cursor(cursor, issue_id)
+
+    @staticmethod
+    def _get_issue_with_cursor(cursor: DBCursor, issue_id: int) -> DataIssue:
+        """Read an issue through `cursor`.
+
+        A writer that derives its update from the stored row must pass its own write
+        cursor: read under a separate read context, the row can be changed by another
+        writer before the update executes, which then overwrites that change.
+        """
+        row = cursor.execute(
+            f'SELECT * FROM ({DATA_ISSUE_SELECT_QUERY}) WHERE id = ?',
+            (issue_id,),
+        ).fetchone()
         if row is None:
             raise NotFoundError(f'Data issue with id {issue_id} not found')
         return _row_to_data_issue(row)
@@ -524,18 +534,35 @@ class DataIssuesManager:
             state: IssueState,
             attempt: Mapping[str, Any] | None = None,
             resolution: dict[str, Any] | None = None,
+            expected_state: IssueState | None = None,
     ) -> DataIssue:
-        _validate_state_transition((issue := self.get_issue(issue_id)).state, state)
+        """Move an issue to `state`, optionally recording an attempt and a resolution.
 
-        attempts = issue.auto_remediation_attempts
-        if attempt is not None:
-            attempts = _with_remediation_attempt(attempts, attempt)
+        The stored row is read, validated and updated in one write transaction, so the
+        transition is always checked against the state it replaces.
 
-        payload = issue.payload
-        if resolution is not None:
-            payload = {**payload, 'resolution': resolution}
-
+        May raise:
+        - NotFoundError if the issue does not exist
+        - InputError if the transition is not allowed, or if `expected_state` is given
+        and the issue is no longer in it
+        """
         with self.db.user_write() as write_cursor:
+            issue = self._get_issue_with_cursor(write_cursor, issue_id)
+            if expected_state is not None and issue.state != expected_state:
+                raise InputError(
+                    f'Data issue {issue_id} is {issue.state} instead of the expected '
+                    f'{expected_state}',
+                )
+            _validate_state_transition(issue.state, state)
+
+            attempts = issue.auto_remediation_attempts
+            if attempt is not None:
+                attempts = _with_remediation_attempt(attempts, attempt)
+
+            payload = issue.payload
+            if resolution is not None:
+                payload = {**payload, 'resolution': resolution}
+
             row = write_cursor.execute(
                 'UPDATE data_issues SET state = ?, auto_remediation_attempts_json = ?, '
                 'payload_json = ?, resolved_at = ? WHERE id = ? RETURNING '
@@ -548,8 +575,6 @@ class DataIssuesManager:
                     issue_id,
                 ),
             ).fetchone()
-        if row is None:
-            raise NotFoundError(f'Data issue with id {issue_id} not found')
         return _row_to_data_issue(row, group_identifier=issue.group_identifier)
 
     def append_auto_remediation_attempt(
@@ -558,12 +583,12 @@ class DataIssuesManager:
             attempt: Mapping[str, Any],
             resolution: dict[str, Any] | None = None,
     ) -> DataIssue:
-        issue = self.get_issue(issue_id)
-        payload = (
-            issue.payload if resolution is None else
-            {**issue.payload, 'resolution': resolution}
-        )
         with self.db.user_write() as write_cursor:
+            issue = self._get_issue_with_cursor(write_cursor, issue_id)
+            payload = (
+                issue.payload if resolution is None else
+                {**issue.payload, 'resolution': resolution}
+            )
             row = write_cursor.execute(
                 'UPDATE data_issues SET auto_remediation_attempts_json = ?, payload_json = ? '
                 'WHERE id = ? '
@@ -577,19 +602,17 @@ class DataIssuesManager:
                     issue_id,
                 ),
             ).fetchone()
-        if row is None:
-            raise NotFoundError(f'Data issue with id {issue_id} not found')
         return _row_to_data_issue(row, group_identifier=issue.group_identifier)
 
     def dismiss(self, issue_id: int) -> DataIssue:
-        issue = self.get_issue(issue_id)
-        if issue.state == IssueState.DISMISSED:
-            return issue
-
-        _validate_state_transition(issue.state, IssueState.DISMISSED)
-        payload = dict(issue.payload)
-        payload.pop('resolution', None)
         with self.db.user_write() as write_cursor:
+            issue = self._get_issue_with_cursor(write_cursor, issue_id)
+            if issue.state == IssueState.DISMISSED:
+                return issue
+
+            _validate_state_transition(issue.state, IssueState.DISMISSED)
+            payload = dict(issue.payload)
+            payload.pop('resolution', None)
             row = write_cursor.execute(
                 'UPDATE data_issues SET state = ?, payload_json = ?, resolved_at = ? '
                 f'WHERE id = ? RETURNING {DATA_ISSUE_COLUMNS}',
@@ -600,41 +623,36 @@ class DataIssuesManager:
                     issue_id,
                 ),
             ).fetchone()
-        if row is None:
-            raise NotFoundError(f'Data issue with id {issue_id} not found')
         return _row_to_data_issue(row, group_identifier=issue.group_identifier)
 
     def resolve_manually(self, issue_id: int, note: str | None = None) -> DataIssue:
-        issue = self.get_issue(issue_id)
-        if issue.state == IssueState.DISMISSED:
-            raise InputError(
-                f'Cannot resolve a dismissed data issue. Current state is {issue.state}',
-            )
-        if issue.state == IssueState.RESOLVED:
-            raise InputError(
-                f'Cannot resolve an already resolved data issue. Current state is {issue.state}',
-            )
-
-        payload = issue.payload
         resolution: dict[str, Any] = {'manual': True}
         if note is not None:
             resolution['note'] = note
-        payload = {**payload, 'resolution': resolution}
 
-        _validate_state_transition(issue.state, IssueState.RESOLVED)
         with self.db.user_write() as write_cursor:
+            issue = self._get_issue_with_cursor(write_cursor, issue_id)
+            if issue.state == IssueState.DISMISSED:
+                raise InputError(
+                    f'Cannot resolve a dismissed data issue. Current state is {issue.state}',
+                )
+            if issue.state == IssueState.RESOLVED:
+                raise InputError(
+                    'Cannot resolve an already resolved data issue. '
+                    f'Current state is {issue.state}',
+                )
+
+            _validate_state_transition(issue.state, IssueState.RESOLVED)
             row = write_cursor.execute(
                 'UPDATE data_issues SET state = ?, payload_json = ?, resolved_at = ? '
                 f'WHERE id = ? RETURNING {DATA_ISSUE_COLUMNS}',
                 (
                     IssueState.RESOLVED,
-                    json.dumps(payload, separators=(',', ':')),
+                    json.dumps({**issue.payload, 'resolution': resolution}, separators=(',', ':')),
                     _resolved_at_for(IssueState.RESOLVED),
                     issue_id,
                 ),
             ).fetchone()
-        if row is None:
-            raise NotFoundError(f'Data issue with id {issue_id} not found')
         return _row_to_data_issue(row, group_identifier=issue.group_identifier)
 
     def retry_auto_remediation(self, issue_id: int) -> tuple[DataIssue, bool]:

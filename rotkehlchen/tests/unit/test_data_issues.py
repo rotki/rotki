@@ -1,4 +1,6 @@
+import threading
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
@@ -11,6 +13,7 @@ from rotkehlchen.history.data_issues.constants import (
 from rotkehlchen.history.data_issues.manager import (
     MAX_REMEDIATION_ATTEMPTS,
     DataIssuesManager,
+    _validate_state_transition,
 )
 from rotkehlchen.history.data_issues.types import DataIssueFilters
 from rotkehlchen.locations.constants import (
@@ -157,6 +160,63 @@ def test_state_transitions(database: DBHandler) -> None:
 
     with pytest.raises(InputError):
         manager.update_state(issue_id, IssueState.UNRESOLVED)
+
+
+def test_update_state_rejects_unexpected_state(database: DBHandler) -> None:
+    """An update conditional on the state must not act on an issue that left that state."""
+    manager = DataIssuesManager(database)
+    manager.update_state(
+        issue_id := _write_negative_balance_issue(manager),
+        IssueState.AUTO_REMEDIATING,
+        expected_state=IssueState.OPEN,
+    )
+    manager.resolve_manually(issue_id, note='done')
+
+    with pytest.raises(InputError):  # resolved -> open is an allowed transition by itself
+        manager.update_state(
+            issue_id, IssueState.OPEN, expected_state=IssueState.AUTO_REMEDIATING,
+        )
+    assert (issue := manager.get_issue(issue_id)).state == IssueState.RESOLVED
+    assert issue.payload['resolution'] == {'manual': True, 'note': 'done'}
+
+
+def test_update_state_does_not_overwrite_concurrent_dismissal(database: DBHandler) -> None:
+    """A dismissal attempted after update_state read the row, but before it wrote, must win.
+
+    The dismissal is started from inside update_state, right after its read, and given
+    time to land in that window. The issue must end up dismissed, never flipped back
+    to resolved by the update's write.
+    """
+    manager = DataIssuesManager(database)
+    manager.update_state(
+        issue_id := _write_negative_balance_issue(manager),
+        IssueState.AUTO_REMEDIATING,
+    )
+    dismissal_started = threading.Event()
+
+    def dismiss() -> None:
+        dismissal_started.set()
+        manager.dismiss(issue_id)
+
+    dismissal = threading.Thread(target=dismiss)
+
+    def dismiss_after_read(current_state: str | IssueState, new_state: IssueState) -> None:
+        if dismissal.ident is None:  # only the update's own validation opens the window
+            dismissal.start()
+            assert dismissal_started.wait(5)
+            dismissal.join(0.5)
+        _validate_state_transition(current_state, new_state)
+
+    with patch(
+        'rotkehlchen.history.data_issues.manager._validate_state_transition',
+        side_effect=dismiss_after_read,
+    ):
+        manager.update_state(issue_id, IssueState.RESOLVED, resolution={'result': 'ok'})
+        dismissal.join(5)
+
+    assert dismissal.is_alive() is False
+    assert (issue := manager.get_issue(issue_id)).state == IssueState.DISMISSED
+    assert 'resolution' not in issue.payload
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

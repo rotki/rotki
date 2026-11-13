@@ -47,8 +47,9 @@ def _write[**P](
 ) -> DataIssue:
     """Call a manager write, reporting a rejected one as `_IssueChangedError`.
 
-    The manager raises `InputError` for a transition the current state does not allow and
-    `NotFoundError` for a missing row. Both mean the issue changed underneath the pipeline,
+    The manager raises `InputError` for a transition the current state does not allow, or
+    for an issue that left the state the pipeline expects, and `NotFoundError` for a
+    missing row. Both mean the issue changed underneath the pipeline,
     which must skip that issue rather than abort the whole run.
     """
     try:
@@ -214,9 +215,14 @@ class RemediationPipeline:
     ) -> None:
         state_before_run = IssueState(issue.state)
         if state_before_run in {IssueState.OPEN, IssueState.UNRESOLVED}:
-            issue = _write(self.manager.update_state, issue.id, IssueState.AUTO_REMEDIATING)
+            issue = _write(
+                self.manager.update_state,
+                issue_id=issue.id,
+                state=IssueState.AUTO_REMEDIATING,
+                expected_state=state_before_run,
+            )
 
-        attempt_recorded, retryable = False, False
+        attempt_recorded, retryable, resolved = False, False, False
         try:
             for strategy in strategies:
                 try:
@@ -253,7 +259,9 @@ class RemediationPipeline:
                             'notes': outcome.notes,
                             'strategy': strategy.name,
                         },
+                        expected_state=IssueState.AUTO_REMEDIATING,
                     )
+                    resolved = True
                     return
                 if outcome.record_attempt:
                     log.debug('Data issue remediation attempt: %s', attempt)
@@ -270,24 +278,28 @@ class RemediationPipeline:
             retryable = attempt_recorded is False
             raise
         finally:
-            self._leave_auto_remediating(
-                issue_id=issue.id,
-                state=(
-                    state_before_run
-                    if retryable and state_before_run == IssueState.OPEN
-                    else IssueState.UNRESOLVED
-                ),
-            )
+            if resolved is False:
+                self._leave_auto_remediating(
+                    issue_id=issue.id,
+                    state=(
+                        state_before_run
+                        if retryable and state_before_run == IssueState.OPEN
+                        else IssueState.UNRESOLVED
+                    ),
+                )
 
     def _leave_auto_remediating(self, issue_id: int, state: IssueState) -> None:
         """Move an issue the run left in `AUTO_REMEDIATING` to `state`.
 
-        Runs while the pipeline unwinds, so it never raises for an issue that was dismissed
-        or deleted meanwhile: that would replace the exception already propagating.
+        Runs while the pipeline unwinds, so it never raises for an issue that left that
+        state or was deleted meanwhile: that would replace the exception already propagating.
         """
         try:
-            if self.manager.get_issue(issue_id).state == IssueState.AUTO_REMEDIATING:
-                self.manager.update_state(issue_id=issue_id, state=state)
+            self.manager.update_state(
+                issue_id=issue_id,
+                state=state,
+                expected_state=IssueState.AUTO_REMEDIATING,
+            )
         except (InputError, NotFoundError) as e:
             log.warning(
                 'Data issue %s changed during its remediation, leaving its state as is: %s',
