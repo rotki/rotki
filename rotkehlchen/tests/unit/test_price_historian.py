@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
@@ -25,6 +26,8 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.externalapis.alchemy import Alchemy
 from rotkehlchen.externalapis.birdeye import Birdeye
@@ -229,6 +232,52 @@ def test_token_to_fiat_via_second_oracle(fake_price_historian):
     assert price == expected_price
     for oracle_instance in price_historian._oracle_instances[0:2]:
         assert oracle_instance.query_historical_price.call_count == 1
+
+
+def _oracles_only_price_eth_in_usd(price_historian, eth_usd):
+    """Make every oracle answer ETH in USD with `eth_usd` (a price, or an exception to raise)
+    and find no price for anything else."""
+    def query_historical_price(from_asset, to_asset, timestamp):
+        if (from_asset, to_asset) != (A_ETH, A_USD):
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+            )
+        if isinstance(eth_usd, Exception):
+            raise eth_usd
+        return eth_usd
+
+    for oracle_instance in price_historian._oracle_instances:
+        oracle_instance.query_historical_price.side_effect = query_historical_price
+
+
+def test_fiat_to_crypto_inverts_crypto_to_fiat_price(fake_price_historian, inquirer):  # pylint: disable=unused-argument
+    """Oracles price crypto in fiat but not fiat in crypto, so the price of USD in ETH
+    is the inverse of the price of ETH in USD."""
+    _oracles_only_price_eth_in_usd(fake_price_historian, Price(FVal('2000')))
+    assert fake_price_historian.query_historical_price(
+        from_asset=A_USD,
+        to_asset=A_ETH,
+        timestamp=Timestamp(1611595466),
+    ) == Price(FVal('0.0005'))
+
+
+def test_fiat_to_crypto_without_inverse_price_keeps_rate_limit(fake_price_historian, inquirer):  # pylint: disable=unused-argument
+    """When the inverse price can't be found either, the missing price is raised and
+    keeps the rate limit hit on the inverse query, so the user is asked to retry."""
+    _oracles_only_price_eth_in_usd(fake_price_historian, RemoteError(
+        'rate limited',
+        cause=FailureCause.NETWORK,
+        error_code=HTTPStatus.TOO_MANY_REQUESTS,
+    ))
+    with pytest.raises(NoPriceForGivenTimestamp) as error:
+        fake_price_historian.query_historical_price(
+            from_asset=A_USD,
+            to_asset=A_ETH,
+            timestamp=Timestamp(1611595466),
+        )
+    assert error.value.rate_limited is True
 
 
 def test_cached_price_returns_without_oracle_calls(globaldb, fake_price_historian):
