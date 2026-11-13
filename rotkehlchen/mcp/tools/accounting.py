@@ -235,3 +235,27 @@ async def verify_remediation(plan_id: str) -> dict[str, Any]:
     or job completion: a resolved or dismissed issue does not mean repaired data.
     """
     return await asyncio.to_thread(accounting.verify_remediation_plan, plan_id=plan_id)
+
+
+@register_tool(name='get_remediation_task')
+async def get_remediation_task(task_id: int) -> dict[str, Any]:
+    """Check on a ``preview_remediation`` or ``apply_remediation`` that was still running.
+
+    Those tools return a ``still_running`` error with a ``task_id`` when the backend needs
+    longer than they wait. Call this with it: while the task runs the same error comes back,
+    and once it finished you get the result the original tool would have returned. Only tasks
+    these tools started can be checked.
+    """
+    return await asyncio.to_thread(accounting.get_remediation_task, task_id=task_id)
+
+
+@register_tool(name='cancel_remediation_task')
+async def cancel_remediation_task(task_id: int) -> dict[str, Any]:
+    """Cancel a ``preview_remediation`` or ``apply_remediation`` that is still running.
+
+    Cancelling an apply stops it between transactions. Transactions already redecoded stay
+    redecoded, and the plan is marked ``partially_applied`` (or ``cancelled`` when nothing was
+    applied); ``verify_remediation`` still judges what was applied once rotki reprocesses it.
+    Only tasks these tools started can be cancelled.
+    """
+    return await asyncio.to_thread(accounting.cancel_remediation_task, task_id=task_id)

@@ -190,6 +190,25 @@ def _count_pending_decoding(cursor: DBCursor) -> dict[str, int]:
     }
 
 
+def _archive_node_capabilities(cursor: DBCursor) -> dict[str, dict[str, int]]:
+    """Active RPC nodes per chain by whether they serve archive state, from their saved probe.
+
+    Rebasing token reconciliation and the divergence search query past balances, which only an
+    archive node serves. ``unknown`` counts nodes whose capabilities were not probed yet.
+    """
+    capabilities: dict[str, dict[str, int]] = defaultdict(
+        lambda: {'archive': 0, 'not_archive': 0, 'unknown': 0},
+    )
+    for blockchain, is_archive, count in cursor.execute(
+        'SELECT blockchain, is_archive, COUNT(*) FROM rpc_nodes WHERE active = 1 '
+        'GROUP BY blockchain, is_archive',
+    ):
+        capabilities[blockchain][
+            'unknown' if is_archive is None else 'archive' if is_archive else 'not_archive'
+        ] += count
+    return dict(sorted(capabilities.items()))
+
+
 def _serialize_stop(key: tuple[str, str, str, str], stop: BucketStop) -> dict[str, Any]:
     location, label, protocol, asset = key
     return {
@@ -233,6 +252,7 @@ def get_accounting_health(database: DBHandler) -> dict[str, Any]:
             cursor=cursor,
             name=DBCacheStatic.LAST_CURRENT_BALANCE_DETECTION_TS,
         )
+        archive_nodes = _archive_node_capabilities(cursor)
 
     report = get_reconciliation_report(database=database)
     reason_counts: dict[str, Counter[str]] = defaultdict(Counter)
@@ -305,6 +325,10 @@ def get_accounting_health(database: DBHandler) -> dict[str, Any]:
             # Diagnosis never queries a node. Rebasing reconciliation and divergence search do,
             # and need an archive node; their results show up as issues and observations.
             'diagnosis_uses_network': False,
+            'archive_nodes_by_chain': archive_nodes,
+            'archive_queries_possible_for': [
+                chain for chain, counts in archive_nodes.items() if counts['archive'] != 0
+            ],
         },
     }
 

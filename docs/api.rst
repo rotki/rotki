@@ -16176,10 +16176,19 @@ All of them require the accounting update feature and return 404 when it is disa
           }]},
           "pending_decoding": {"transactions_by_chain_id": {}, "total": 0},
           "issues": {"counts": [{"kind": "negative_balance", "state": "open", "count": 1}], "open_total": 1},
-          "capabilities": {"diagnosis_uses_network": false}
+          "capabilities": {
+            "diagnosis_uses_network": false,
+            "archive_nodes_by_chain": {"ETH": {"archive": 1, "not_archive": 2, "unknown": 0}},
+            "archive_queries_possible_for": ["ETH"]
+          }
         },
         "message": ""
       }
+
+    ``capabilities.archive_nodes_by_chain`` counts the active RPC nodes of each chain by their
+    saved archive probe (``unknown`` when not probed yet). Rebasing token reconciliation and the
+    balance divergence search need an archive node; ``archive_queries_possible_for`` lists the
+    chains that have one.
 
     :statuscode 200: Health returned.
     :statuscode 401: No user is currently logged in.
@@ -16356,7 +16365,8 @@ eligible counterpart).
   .. http:get:: /api/(version)/data_issues/remediation_plans/(plan_id)
 
     Returns a plan in the same format, with its current ``state`` (``pending``, ``applying``,
-    ``applied``, ``partially_applied``, ``failed``, ``rejected``, ``expired`` or ``stale``),
+    ``applied``, ``partially_applied``, ``failed``, ``rejected``, ``cancelled``, ``expired`` or
+    ``stale``),
     its ``result`` once applied and its full ``audit`` trail.
 
     :statuscode 200: The plan.
@@ -16368,6 +16378,10 @@ eligible counterpart).
     Applies a pending plan, reprocesses the affected range and verifies the outcome. The
     response is the plan with a ``verification`` object, as returned by the verification
     endpoint. Applying an applied plan is refused, so a repeated request applies nothing.
+
+    An asynchronous apply can be cancelled with ``DELETE /tasks/(task_id)``. It stops between
+    transactions: those already redecoded stay so, the plan becomes ``partially_applied`` (or
+    ``cancelled`` if nothing was applied) and the affected range stays marked for reprocessing.
 
     :reqjson string approval_method: How the user approved the plan. Only ``mcp_elicitation`` is accepted.
     :reqjson int approved_at: When the user approved it, in seconds.

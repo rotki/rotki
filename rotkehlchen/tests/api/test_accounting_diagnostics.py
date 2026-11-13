@@ -32,7 +32,8 @@ def test_diagnosis_endpoints(rotkehlchen_api_server: APIServer) -> None:
         api_url_for(rotkehlchen_api_server, 'accountinghealthresource'),
     ))
     assert health['status'] == 'unprocessed'
-    assert health['capabilities'] == {'diagnosis_uses_network': False}
+    assert health['capabilities']['diagnosis_uses_network'] is False
+    assert 'archive_nodes_by_chain' in health['capabilities']
 
     trace = assert_proper_sync_response_with_result(requests.post(
         api_url_for(rotkehlchen_api_server, 'buckettraceresource'),

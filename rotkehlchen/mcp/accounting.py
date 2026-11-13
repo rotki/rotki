@@ -14,6 +14,7 @@ from rotkehlchen.mcp.backend import (
     BackendOutcome,
     BackendQueryError,
     get_backend_config,
+    poll_backend_task,
     query_backend,
     run_backend_task,
 )
@@ -27,6 +28,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 PLAN_ID_RE: Final = re.compile(r'[0-9a-f]{32}')
+# Backend tasks this server started and has not collected the outcome of. Only these can be
+# polled or cancelled, so an agent can't touch tasks the user started in rotki.
+_pending_tasks: set[int] = set()
 DIAGNOSIS_TIMEOUT_SECONDS: Final = 120
 PREVIEW_WAIT_SECONDS: Final = 300
 APPLY_WAIT_SECONDS: Final = 600
@@ -44,9 +48,11 @@ def _privacy_mode() -> Any:
 
 def _outcome(outcome: BackendOutcome, privacy_mode: Any) -> dict[str, Any]:
     if outcome.pending_task_id is not None:
+        _pending_tasks.add(outcome.pending_task_id)
         return error_result(
             'still_running',
-            'The backend is still working on it. Call the verification tool later',
+            'The backend is still working on it. Check it with get_remediation_task, or stop '
+            'it with cancel_remediation_task',
             task_id=outcome.pending_task_id,
         )
     if not outcome.ok:
@@ -224,6 +230,34 @@ def verify_remediation_plan(plan_id: str) -> dict[str, Any]:
         endpoint=f'data_issues/remediation_plans/{plan_id}/verification',
         timeout=DIAGNOSIS_TIMEOUT_SECONDS,
     ), privacy_mode), plan_id=plan_id)
+
+
+def get_remediation_task(task_id: int) -> dict[str, Any]:
+    """The outcome of a preview or apply that outlasted its wait, once it finished."""
+    if task_id not in _pending_tasks:
+        return error_result('unknown_task', 'Not a pending task started by these tools')
+
+    def run(privacy_mode: Any) -> dict[str, Any]:
+        if (outcome := poll_backend_task(task_id)).pending_task_id is None:
+            _pending_tasks.discard(task_id)
+        return _outcome(outcome, privacy_mode)
+
+    return _call(run)
+
+
+def cancel_remediation_task(task_id: int) -> dict[str, Any]:
+    """Ask the backend to cancel a pending preview or apply started by these tools."""
+    if task_id not in _pending_tasks:
+        return error_result('unknown_task', 'Not a pending task started by these tools')
+
+    def run(privacy_mode: Any) -> dict[str, Any]:
+        outcome = query_backend(endpoint=f'tasks/{task_id}', method='DELETE')
+        if outcome.ok:
+            _pending_tasks.discard(task_id)
+            return {'result': {'cancellation_requested': True}, 'privacy_mode': privacy_mode}
+        return _outcome(outcome, privacy_mode)
+
+    return _call(run)
 
 
 def describe_plan_for_approval(plan: dict[str, Any]) -> str:

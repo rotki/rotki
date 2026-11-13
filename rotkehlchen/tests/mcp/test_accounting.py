@@ -7,9 +7,13 @@ import pytest
 from mcp import types
 from mcp.shared.memory import create_connected_server_and_client_session
 
-from rotkehlchen.mcp import accounting, server
+from rotkehlchen.mcp import accounting, analytics, server
 from rotkehlchen.mcp.backend import BackendOutcome
-from rotkehlchen.mcp.references import get_reference_registry, sanitize
+from rotkehlchen.mcp.references import (
+    UnknownReferenceError,
+    get_reference_registry,
+    sanitize,
+)
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1
 
 USDC = 'eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
@@ -186,3 +190,65 @@ def test_apply_remediation_requires_user_approval(
         assert result['error']['type'] == 'approval_unavailable'
         assert backend_calls == []
     assert all(call[:2] != applied for call in backend_calls) or client_answer == 'approve'
+
+
+def test_long_running_task_can_be_checked_and_cancelled(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Only tasks these tools started can be polled or cancelled, and a finished task's
+    result is handed out sanitized."""
+    task_id = 42
+    pending = BackendOutcome(
+        ok=False,
+        result=None,
+        message='still running',
+        status_code=HTTPStatus.ACCEPTED,
+        pending_task_id=task_id,
+    )
+    monkeypatch.setattr(accounting, '_privacy_mode', lambda: 'balanced')
+    monkeypatch.setattr(accounting, 'run_backend_task', lambda **kwargs: pending)
+    assert accounting.apply_remediation_plan(plan_id=PLAN_ID, approved_at=1)['error'] == {
+        'type': 'still_running',
+        'message': 'The backend is still working on it. Check it with get_remediation_task, or '
+                   'stop it with cancel_remediation_task',
+        'task_id': task_id,
+    }
+    assert accounting.get_remediation_task(7)['error']['type'] == 'unknown_task'
+    assert accounting.cancel_remediation_task(7)['error']['type'] == 'unknown_task'
+
+    polls = iter((
+        pending,
+        BackendOutcome(ok=True, result=DIAGNOSIS, message='', status_code=HTTPStatus.OK),
+    ))
+    monkeypatch.setattr(accounting, 'poll_backend_task', lambda task: next(polls))
+    assert accounting.get_remediation_task(task_id)['error']['type'] == 'still_running'
+    finished = accounting.get_remediation_task(task_id)
+    assert finished['result']['event_identifier'] == 5
+    assert TEST_ADDR1 not in str(finished)
+    assert accounting.get_remediation_task(task_id)['error']['type'] == 'unknown_task'
+
+    requests: list[str] = []
+
+    def query_backend(endpoint: str, method: str) -> BackendOutcome:
+        requests.append(f'{method} {endpoint}')
+        return BackendOutcome(ok=True, result=True, message='', status_code=HTTPStatus.OK)
+
+    monkeypatch.setattr(accounting, 'query_backend', query_backend)
+    monkeypatch.setattr(accounting, 'run_backend_task', lambda **kwargs: pending)
+    accounting.apply_remediation_plan(plan_id=PLAN_ID, approved_at=1)
+    assert accounting.cancel_remediation_task(task_id)['result'] == {
+        'cancellation_requested': True,
+    }
+    assert requests == [f'DELETE tasks/{task_id}']
+    assert accounting.cancel_remediation_task(task_id)['error']['type'] == 'unknown_task'
+
+
+def test_bucket_references_are_dropped_when_the_user_changes(monkeypatch: pytest.MonkeyPatch) -> None:  # noqa: E501
+    monkeypatch.setattr(analytics, 'query_settings', lambda: {'mcp_privacy_mode': 'balanced'})
+    monkeypatch.setattr(analytics, 'query_logged_in_user', lambda: 'alice')
+    analytics.sync_privacy_mode()
+    bucket_ref = sanitize(DIAGNOSIS, privacy_mode='balanced')['bucket']['bucket_ref']
+    assert get_reference_registry().resolve_bucket(bucket_ref) == DIAGNOSIS['bucket']
+
+    monkeypatch.setattr(analytics, 'query_logged_in_user', lambda: 'bob')
+    analytics.sync_privacy_mode()
+    with pytest.raises(UnknownReferenceError):
+        get_reference_registry().resolve_bucket(bucket_ref)
