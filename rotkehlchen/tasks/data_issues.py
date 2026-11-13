@@ -56,6 +56,10 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 REDECODE_CUSTOMIZED_TRANSACTIONS: Final = 'redecode_customized_transactions'
+CUSTOMIZED_COMPARISON_TIMEOUT: Final = 300
+"""Seconds one issue's comparison may take. It decodes every customized transaction of the
+account and may first wait for the decoder lock a background decoding batch holds, so the
+default strategy budget would time out the accounts with the most customized history."""
 
 type BucketEffect = tuple[TimestampMS, EventDirection, FVal]
 type PreviewCache = dict[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash], list[EvmEvent]]
@@ -305,6 +309,7 @@ class RedecodeCustomizedTransactionsStrategy(BaseRemediationStrategy):
     """
 
     name: Final = REDECODE_CUSTOMIZED_TRANSACTIONS
+    timeout: float = CUSTOMIZED_COMPARISON_TIMEOUT
 
     def __init__(self, database: DBHandler, chains_aggregator: ChainsAggregator) -> None:
         self.database = database
