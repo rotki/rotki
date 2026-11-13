@@ -127,6 +127,7 @@ from rotkehlchen.api.v1.schemas import (
     GetUnmatchedAssetMovementsSchema,
     GnosisPaySiweChallengeSchema,
     HistoricalAssetsPriceSchema,
+    HistoricalBalanceAssetsSchema,
     HistoricalBalanceReconciliationSchema,
     HistoricalBalancesAtEventsSchema,
     HistoricalBalanceSeriesSchema,
@@ -4141,6 +4142,20 @@ class HistoricalBalanceSeriesResource(BaseMethodView):
         return self.rest_api.get_historical_balance_series(
             filter_query=filter_query,
             async_query=async_query,
+        )
+
+
+class HistoricalBalanceAssetsResource(BaseMethodView):
+
+    def make_post_schema(self) -> HistoricalBalanceAssetsSchema:
+        return HistoricalBalanceAssetsSchema(db=self.rest_api.rotkehlchen.data.db)
+
+    @require_premium_user(active_check=False)
+    @resource_parser.use_kwargs(make_post_schema, location='json')
+    def post(self, filter_query: HistoricalBalancesFilterQuery, include_ignored: bool) -> Response:
+        return self.rest_api.get_historical_balance_assets(
+            filter_query=filter_query,
+            include_ignored=include_ignored,
         )
 
 

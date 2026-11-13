@@ -2206,33 +2206,59 @@ def test_notify_reauthentication_on_redecode(
         # refresh already notified the user, so the redecode must not notify again.
         authenticated['monerium'] = True
         notify_mock.reset_mock()
-        websocket_connection.messages.clear()
         redecode(CPT_MONERIUM, HistoryEventSubType.NONE, 'Mint 1 EURe', lose_monerium_session)
         assert notify_mock.call_count == 0
 
-    websocket_connection.wait_until_messages_num(num=1, timeout=5)
-    assert websocket_connection.pop_message() == {
-        'type': 'monerium_sessionkey_expired',
-        'data': {
-            'error': 'Please sign in with Monerium again to refresh your data',
-            'reason': 'expired',
-            'reminder': False,  # sent by the refresh when it finds the session expired
-        },
-    }
-
-    websocket_connection.messages.clear()
     with rotki.data.db.conn.write_ctx() as write_cursor:
         write_cursor.execute(
             'DELETE FROM key_value_cache WHERE name=?',
             (DBCacheStatic.LAST_MONERIUM_QUERY_TS.value,),
         )
     redecode(CPT_MONERIUM, HistoryEventSubType.NONE, 'Mint 1 EURe')
-    websocket_connection.wait_until_messages_num(num=1, timeout=5)
-    assert websocket_connection.pop_message() == {
-        'type': 'monerium_sessionkey_expired',
-        'data': {
-            'error': 'Sign in with Monerium to add bank transfer details to your Monerium events',
-            'reason': 'not_connected',
-            'reminder': True,
+
+    # Every notification reaches the websocket from another thread, so nothing below may
+    # assume a message is already queued: wait for the total this test produces before
+    # popping, which keeps each message attributable to the redecode that produced it.
+    websocket_connection.wait_until_messages_num(num=5, timeout=5)
+    assert [websocket_connection.pop_message() for _ in range(5)] == [
+        {
+            'type': 'gnosispay_sessionkey_expired',
+            'data': {
+                'error': 'Sign in with Gnosis Pay to add merchant details to your Gnosis Pay events',  # noqa: E501
+                'reason': 'not_connected',
+                'reminder': True,
+            },
         },
-    }
+        {
+            'type': 'monerium_sessionkey_expired',
+            'data': {
+                'error': 'Sign in with Monerium to add bank transfer details to your Monerium events',  # noqa: E501
+                'reason': 'not_connected',
+                'reminder': True,
+            },
+        },
+        {
+            'type': 'monerium_sessionkey_expired',
+            'data': {
+                'error': 'Please sign in with Monerium again to refresh your data',
+                'reason': 'expired',
+                'reminder': True,
+            },
+        },
+        {
+            'type': 'monerium_sessionkey_expired',
+            'data': {
+                'error': 'Please sign in with Monerium again to refresh your data',
+                'reason': 'expired',
+                'reminder': False,  # sent by the refresh when it finds the session expired
+            },
+        },
+        {
+            'type': 'monerium_sessionkey_expired',
+            'data': {
+                'error': 'Sign in with Monerium to add bank transfer details to your Monerium events',  # noqa: E501
+                'reason': 'not_connected',
+                'reminder': True,
+            },
+        },
+    ]

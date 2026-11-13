@@ -4262,6 +4262,20 @@ class RestAPI:
 
         return OkResult(result)
 
+    @accounting_update_required('Historical balance assets are disabled', response=True)
+    def get_historical_balance_assets(
+            self,
+            filter_query: HistoricalBalancesFilterQuery,
+            include_ignored: bool,
+    ) -> Response:
+        processing_required, assets = HistoricalBalancesManager(
+            self.rotkehlchen.data.db,
+        ).get_held_assets(filter_query=filter_query, include_ignored=include_ignored)
+        return api_response(OkResult({
+            'processing_required': processing_required,
+            'entries': assets,
+        }))
+
     @async_api_call()
     @accounting_update_required('Historical balances at events is disabled')
     def get_historical_balances_at_events(self, event_identifiers: list[int]) -> ApiResult:

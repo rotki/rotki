@@ -16389,6 +16389,56 @@ Historical Balance Queries
       :statuscode 409: User is not logged in
       :statuscode 500: Internal Rotki error
 
+  .. http:post:: /api/(version)/balances/historical/assets
+
+    Lists every asset an account had a positive balance in at any time, according to the processed
+    historical events. Unlike ``/balances/historical/current``, assets whose latest balance is zero
+    are included. Ignored assets are excluded unless ``include_ignored`` is true. This endpoint requires premium access and the
+    accounting-update feature flag. It reads previously computed metrics; it does not run
+    historical balance processing.
+
+    **Example Request:**
+
+      .. http:example:: curl wget httpie python-requests
+
+      POST /api/(version)/balances/historical/assets HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "location_label": "0x1234567890AbcdEF1234567890aBcdef12345678",
+        "location": "ethereum"
+      }
+
+      :reqjson string location_label: The account/address label to query.
+      :reqjson string location: (Optional) Only list assets held in this location.
+      :reqjson bool include_ignored: (Optional, default false) Also list ignored assets.
+
+    **Example Response:**
+
+      .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "message": "",
+        "result": {
+          "processing_required": false,
+          "entries": ["ETH", "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"]
+        },
+        "status_code": 200
+      }
+
+      :resjson bool processing_required: Whether there are events matching the filters that have not been processed yet.
+      :resjson list entries: Asset identifiers sorted by identifier. Empty when the account has no processed balances.
+      :statuscode 200: Assets returned
+      :statuscode 400: Malformed query or unknown location label
+      :statuscode 403: User does not have premium access
+      :statuscode 404: Accounting-update feature flag disabled
+      :statuscode 409: User is not logged in
+      :statuscode 500: Internal Rotki error
+
   .. http:post:: /api/(version)/balances/historical/events
 
     Gets bucket balances after each requested history event in a single batch. This

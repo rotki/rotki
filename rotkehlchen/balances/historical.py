@@ -251,6 +251,37 @@ class HistoricalBalancesManager:
             bindings=filter_query.unprocessed_bindings,
         ), entries or None
 
+    def get_held_assets(
+            self,
+            filter_query: HistoricalBalancesFilterQuery,
+            include_ignored: bool = False,
+    ) -> tuple[bool, list[str]]:
+        """Return the sorted identifiers of every asset with a positive balance at any point
+        in the matching buckets, including buckets whose latest balance is zero.
+        Ignored assets are left out unless `include_ignored` is True.
+
+        Returns a tuple of (processing_required, assets) where processing_required is True
+        if matching events exist that haven't been processed yet.
+        """
+        filter_str, filter_bindings = filter_query.prepare()
+        ignored_filter = '' if include_ignored else (
+            "AND asset NOT IN (SELECT value FROM multisettings WHERE name='ignored_asset')"
+        )
+        with self.db.conn.read_ctx() as cursor:
+            assets = [row[0] for row in cursor.execute(
+                f"""SELECT DISTINCT asset FROM event_metrics em
+                WHERE metric_key = ? {filter_str} {ignored_filter}
+                AND metric_value > 0
+                ORDER BY asset
+                """,
+                [EventMetricKey.BALANCE.serialize(), *filter_bindings],
+            )]
+
+        return self._has_unprocessed_events(
+            where_clause=filter_query.unprocessed_where_clause,
+            bindings=filter_query.unprocessed_bindings,
+        ), assets
+
     def get_balances_at_events(
             self,
             event_identifiers: list[int],
