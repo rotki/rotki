@@ -7219,6 +7219,7 @@
         "import": "Importing report data"
       },
       "prices": {
+        "backfill": "Filling missing historical prices for {asset}",
         "daily": "Filling daily prices for {asset}",
         "exchange_rates": "Updating exchange rates for {currency}",
         "historic": "Looking up {fromAsset} to {toAsset} on {date}",
