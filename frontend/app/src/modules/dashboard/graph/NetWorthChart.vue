@@ -95,10 +95,19 @@ defineExpose({ resetZoom });
         {{ t('net_worth_chart.current_balance') }}
       </template>
     </div>
-    <FiatDisplay
-      class="font-bold"
-      :value="tooltipData.value"
-    />
+    <div class="flex items-center gap-1">
+      <FiatDisplay
+        class="font-bold"
+        :value="tooltipData.value"
+      />
+      <RuiIcon
+        v-if="hoveredEstimated"
+        name="lu-triangle-alert"
+        size="14"
+        color="warning"
+        data-testid="net-worth-chart-tooltip-estimated-icon"
+      />
+    </div>
     <template v-if="hoveredEstimated">
       <i18n-t
         v-if="hoveredRateTime !== undefined"
