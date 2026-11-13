@@ -26,7 +26,15 @@ async def get_accounting_health() -> dict[str, Any]:
 
     Also returns the relevant settings, processing freshness, comparison coverage with reason
     codes per status, the stopped buckets (each with a ``bucket_ref`` for ``trace_bucket``),
-    pending decoding and issue counts. Read-only: nothing is refreshed or reprocessed.
+    pending decoding, issue counts and which chains have an archive node. Read-only: nothing is
+    refreshed or reprocessed.
+
+    About every accounting tool: asset names, symbols and notes are never returned, since a
+    scam token controls them. ``asset_signals`` instead flags assets whose metadata looks
+    deceptive (``spam_flagged``, ``mixed_scripts``, ``invisible_characters``,
+    ``link_in_metadata``, ``unknown_asset``). A flag is evidence, not a verdict, and an asset
+    without flags is not vouched for. In ``raw`` privacy mode results naming a transaction carry
+    a ``ui_route`` that opens it in rotki; in other modes point the user at ``ui``.
     """
     return await asyncio.to_thread(accounting.get_accounting_health)
 

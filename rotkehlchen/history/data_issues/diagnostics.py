@@ -10,11 +10,14 @@ queries a remote: a diagnosis only reads the evidence already in the database, a
 when that evidence is missing, stale or incomplete instead of treating it as zero.
 """
 import logging
+import re
+import unicodedata
 from collections import Counter, defaultdict
 from itertools import starmap
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetFlag
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
@@ -22,6 +25,7 @@ from rotkehlchen.db.constants import TX_DECODED, HistoryMappingState
 from rotkehlchen.db.filtering import DataIssuesFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -39,7 +43,7 @@ from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.locations.chains import EVM_LOCATIONS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.historical_balances import Bucket
-from rotkehlchen.types import EventMetricKey, TimestampMS
+from rotkehlchen.types import SPAM_PROTOCOL, EventMetricKey, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -60,12 +64,65 @@ MAX_LISTED_STOPS: Final = 50
 # rounded amount on one leg) than missing history.
 RESIDUE_RELATIVE_THRESHOLD: Final = FVal('0.000001')
 
+# A link or domain inside an asset's name or symbol, a common phishing lure in airdropped tokens.
+LINK_IN_TEXT_RE: Final = re.compile(
+    r'https?://|www\.|t\.me/|\b[a-z0-9-]+\.(?:com|io|org|net|xyz|app|finance|site|top|me|co|gift|claims?|vip|pro)\b',
+    re.IGNORECASE,
+)
+
 type TraceRowStatus = Literal[
     'applied',
     'stop',
     'negative_awaiting_rebase_reconciliation',
     'skipped_after_stop',
 ]
+
+
+def _letter_scripts(text: str) -> set[str]:
+    """The scripts of the text's letters, e.g. LATIN and CYRILLIC, from their Unicode names."""
+    return {
+        unicodedata.name(char, 'UNKNOWN').split(' ', 1)[0]
+        for char in text if char.isalpha()
+    }
+
+
+def asset_signals(identifiers: Iterable[str]) -> dict[str, list[str]]:
+    """Structural warning signs of the assets' metadata, for the assets that have any.
+
+    Only flags are returned, never the name or symbol: those are attacker-controlled on a scam
+    token and must not reach an agent as text it could read as instructions. The flags are
+    evidence, not a verdict: an unfamiliar or unpriced asset is not flagged at all, and a
+    flagged one is not necessarily spam.
+
+    - ``spam_flagged``: rotki or the user already marked the token as spam.
+    - ``mixed_scripts``: the name or symbol mixes letters of several scripts, like a Cyrillic
+      letter inside a Latin word, which is how lookalikes of known tokens are made.
+    - ``invisible_characters``: zero-width, bidirectional or other format characters.
+    - ``link_in_metadata``: a URL or domain in the name or symbol.
+    - ``unknown_asset``: the identifier does not resolve to an asset.
+    """
+    signals: dict[str, list[str]] = {}
+    for identifier in dict.fromkeys(identifiers):
+        try:
+            asset = AssetResolver.resolve_asset(identifier)
+        except (UnknownAsset, WrongAssetType):
+            signals[identifier] = ['unknown_asset']
+            continue
+
+        texts = [text for text in (asset.name, getattr(asset, 'symbol', None)) if text]
+        flags = []
+        if getattr(asset, 'protocol', None) == SPAM_PROTOCOL:
+            flags.append('spam_flagged')
+        if any(len(_letter_scripts(text)) > 1 for text in texts):
+            flags.append('mixed_scripts')
+        if any(unicodedata.category(char) == 'Cf' for text in texts for char in text):
+            flags.append('invisible_characters')
+        if any(LINK_IN_TEXT_RE.search(text) for text in texts):
+            flags.append('link_in_metadata')
+        if len(flags) != 0:
+            signals[identifier] = flags
+
+    return signals
 
 
 def serialize_bucket(bucket: Bucket) -> dict[str, Any]:
@@ -515,6 +572,9 @@ def trace_bucket(
             stop=stop,
         ),
         'rows': rows[offset:offset + limit],
+        'asset_signals': asset_signals(
+            [bucket.asset, *(row['event_asset'] for row in rows[offset:offset + limit])],
+        ),
         'pagination': {
             'offset': offset,
             'limit': limit,
@@ -878,4 +938,7 @@ def explain_data_issue(database: DBHandler, issue_id: int) -> dict[str, Any]:
             key: value for key, value in issue.payload['resolution'].items() if key != 'note'
         }
 
+    explanation['asset_signals'] = asset_signals([issue.asset] + (
+        [trigger['asset']] if (trigger := explanation.get('trigger_event')) is not None else []
+    ))
     return explanation

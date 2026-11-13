@@ -28,6 +28,7 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.diagnostics import (
+    asset_signals,
     get_group_events,
     get_mapping_states,
     get_processing_state,
@@ -216,6 +217,7 @@ def inspect_transaction(database: DBHandler, group_identifier: str) -> dict[str,
             for bucket, amount in net_by_bucket.items()
         ],
         'receipt_comparison': None,
+        'asset_signals': asset_signals(event.asset.identifier for event in events),
     }
     if not isinstance(first := events[0], EvmEvent) or first.location not in EVM_LOCATIONS:
         return result
@@ -271,6 +273,11 @@ def inspect_transaction(database: DBHandler, group_identifier: str) -> dict[str,
                           'fee-on-transfer and spam tokens legitimately differ from the raw '
                           'transfers',
     }
+    result['asset_signals'] = asset_signals([
+        *(event.asset.identifier for event in events),
+        *(asset for _, asset in observed),
+        *(entry['asset'] for entry in unvalued),
+    ])
     return result
 
 
@@ -447,6 +454,10 @@ def explain_bridge_match(database: DBHandler, event_identifier: int) -> dict[str
         'eligible_count': len(eligible),
         'rejection_counts': dict(sorted(rejection_counts.items())),
         'candidates': candidates[:MAX_LISTED_CANDIDATES],
+        'asset_signals': asset_signals([
+            bridge_event.asset.identifier,
+            *(x['asset'] for x in candidates[:MAX_LISTED_CANDIDATES]),
+        ]),
         'candidates_truncated': len(candidates) > MAX_LISTED_CANDIDATES,
         'interpretation': (
             'Zero eligible candidates means none of the saved events qualifies, not that no '

@@ -23,6 +23,7 @@ import json
 import threading
 from hashlib import sha256
 from typing import TYPE_CHECKING, Any, Final
+from urllib.parse import quote
 
 from rotkehlchen.mcp.analytics import (
     READABLE_LOCATION_LABELS,
@@ -50,6 +51,9 @@ TRANSACTION_KEYS: Final = frozenset({'group_identifier', 'tx_hash', 'tx_ref', 't
 # that the scrubber would otherwise mistake for an account.
 PASSTHROUGH_KEYS: Final = frozenset({'asset', 'assets_considered', 'event_asset'})
 BUCKET_KEYS: Final = frozenset({'location', 'location_label', 'protocol', 'asset'})
+# The rotki app route listing a transaction's events. It names the transaction, so it is only
+# handed out in raw mode; otherwise the agent points the user at the Data issues page.
+HISTORY_EVENTS_ROUTE: Final = '/history/events?groupIdentifiers='
 
 
 class UnknownReferenceError(Exception):
@@ -130,7 +134,8 @@ def _sanitize_account(value: Any, privacy_mode: PrivacyMode) -> Any:
 def sanitize(value: Any, privacy_mode: PrivacyMode, key: str | None = None) -> Any:
     """Return a copy of a diagnosis payload that is safe to hand to the agent.
 
-    Every bucket gets a ``bucket_ref`` the agent can pass back, in every privacy mode.
+    Every bucket gets a ``bucket_ref`` the agent can pass back, in every privacy mode. In raw
+    mode everything naming a transaction also gets the ``ui_route`` that opens it in rotki.
     """
     if isinstance(value, dict):
         sanitized = {
@@ -139,6 +144,8 @@ def sanitize(value: Any, privacy_mode: PrivacyMode, key: str | None = None) -> A
         }
         if value.keys() >= BUCKET_KEYS:
             sanitized['bucket_ref'] = _registry.bucket_reference(value)
+        if privacy_mode == 'raw' and isinstance(group := value.get('group_identifier'), str):
+            sanitized['ui_route'] = HISTORY_EVENTS_ROUTE + quote(group, safe='')
         return sanitized
     if isinstance(value, list):
         return [sanitize(item, privacy_mode=privacy_mode, key=key) for item in value]
