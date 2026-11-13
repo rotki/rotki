@@ -22,6 +22,7 @@ from rotkehlchen.mcp.backend import (
     query_all_balances,
     query_historical_prices,
     query_history_events_page,
+    query_logged_in_user,
     query_settings,
     set_privacy_mode,
 )
@@ -913,6 +914,7 @@ class AnalyticsSession:
 
 _analytics_session = AnalyticsSession()
 _privacy_mode_lock = threading.Lock()
+_session_user: str | None = None
 
 
 def get_analytics_session() -> AnalyticsSession:
@@ -920,23 +922,33 @@ def get_analytics_session() -> AnalyticsSession:
 
 
 def sync_privacy_mode() -> AnalyticsSession:
-    """Apply the persisted UI mode and clear older data as one serialized operation."""
+    """Apply the persisted UI mode and clear older data as one serialized operation.
+
+    The loaded tables, the hashed identifiers and every reference built from them belong to
+    one user under one privacy mode, so they are all dropped when either changes. Otherwise a
+    reference handed out for one user could resolve against another user's database.
+    """
+    global _session_user  # noqa: PLW0603  -- the user the session state was built for
     with _privacy_mode_lock:
+        user = query_logged_in_user()
         privacy_mode = query_settings().get('mcp_privacy_mode')
         if not isinstance(privacy_mode, str) or privacy_mode not in VALID_PRIVACY_MODES:
             raise BackendQueryError('rotki backend returned an invalid MCP privacy mode')
 
-        if set_privacy_mode(cast('PrivacyMode', privacy_mode)):
+        mode_changed = set_privacy_mode(cast('PrivacyMode', privacy_mode))
+        if mode_changed or user != _session_user:
+            _session_user = user
             _analytics_session.clear()
             _hashed_values.clear()
-            for callback in _privacy_mode_change_callbacks:
+            for callback in _session_change_callbacks:
                 callback()
         return _analytics_session
 
 
-_privacy_mode_change_callbacks: list[Callable[[], None]] = []
+_session_change_callbacks: list[Callable[[], None]] = []
 
 
-def on_privacy_mode_change(callback: Callable[[], None]) -> None:
-    """Run callback whenever the privacy mode changes, to drop state built under the old one."""
-    _privacy_mode_change_callbacks.append(callback)
+def on_session_change(callback: Callable[[], None]) -> None:
+    """Run callback whenever the privacy mode or the user changes, to drop state built for the
+    old ones."""
+    _session_change_callbacks.append(callback)

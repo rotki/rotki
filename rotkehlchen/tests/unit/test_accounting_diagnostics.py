@@ -6,6 +6,7 @@ import pytest
 
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.concurrency import TaskCancelledError
 from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -430,3 +431,81 @@ def test_inspect_transaction_compares_receipt_transfers(database: DBHandler) -> 
         'difference': '10',
     }]
     assert inspect_transaction(database, 'missing') is None
+
+
+def test_cancelled_apply_keeps_what_was_applied(database: DBHandler) -> None:
+    """Cancelling stops between transactions: the first stays redecoded and is recorded, the
+    plan leaves the applying state and verification still has something to judge."""
+    tx_hashes = [make_evm_tx_hash(), make_evm_tx_hash()]
+    saved_ids = _add(database, [
+        _event(1_000 * idx, HistoryEventType.SPEND, '1', tx_hash=tx_hash)
+        for idx, tx_hash in enumerate(tx_hashes, start=1)
+    ])
+    decoded = {
+        tx_hash: _event(1_000 * idx, HistoryEventType.RECEIVE, '1', tx_hash=tx_hash)
+        for idx, tx_hash in enumerate(tx_hashes, start=1)
+    }
+
+    def fake_redecode(ignore_cache: bool, tx_hashes: list, delete_customized: bool) -> None:
+        with database.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM history_events WHERE identifier = ?',
+                (saved_ids[0],),
+            )
+            DBHistoryEvents(database).add_history_events(
+                write_cursor,
+                [copy.deepcopy(decoded[tx_hashes[0]])],
+            )
+
+    chains_aggregator = MagicMock()
+    decoder = chains_aggregator.get_evm_manager.return_value.transactions_decoder
+    decoder.possible_decoding_exceptions = ()
+    decoder.decode_transaction_hashes.side_effect = fake_redecode
+    with patch(
+        'rotkehlchen.history.data_issues.remediation.preview_transaction',
+        side_effect=lambda tx_hash, **kwargs: [copy.deepcopy(decoded[tx_hash])],
+    ):
+        plan = preview_redecode(
+            database=database,
+            chains_aggregator=chains_aggregator,
+            group_identifiers=[event.group_identifier for event in decoded.values()],
+            replace_customized=False,
+        )
+
+    with (
+        patch(
+            'rotkehlchen.history.data_issues.remediation.checkpoint',
+            side_effect=[None, TaskCancelledError('cancelled')],
+        ),
+        pytest.raises(TaskCancelledError),
+    ):
+        apply_plan(database, chains_aggregator, plan['plan_id'], 'mcp_elicitation', ts_now())
+
+    cancelled = get_plan(database, plan['plan_id'])
+    assert cancelled['state'] == PlanState.PARTIALLY_APPLIED
+    assert cancelled['audit'][-1]['action'] == 'cancelled'
+    assert [x['outcome'] for x in cancelled['result']['items']] == ['applied']
+    assert cancelled['result']['reprocessing'] == 'cancelled'
+    assert decoder.decode_transaction_hashes.call_count == 1
+
+
+def test_health_reports_archive_node_capabilities(database: DBHandler) -> None:
+    with database.user_write() as write_cursor:
+        write_cursor.execute('DELETE FROM rpc_nodes')
+        write_cursor.executemany(
+            'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain, '
+            'is_archive) VALUES (?, ?, 0, ?, 1, ?, ?)',
+            [
+                ('archive', 'https://a', 1, 'ETH', 1),
+                ('pruned', 'https://b', 1, 'ETH', 0),
+                ('unprobed', 'https://c', 1, 'OPTIMISM', None),
+                ('inactive', 'https://d', 0, 'OPTIMISM', 1),
+            ],
+        )
+
+    capabilities = get_accounting_health(database)['capabilities']
+    assert capabilities['archive_nodes_by_chain'] == {
+        'ETH': {'archive': 1, 'not_archive': 1, 'unknown': 0},
+        'OPTIMISM': {'archive': 0, 'not_archive': 0, 'unknown': 1},
+    }
+    assert capabilities['archive_queries_possible_for'] == ['ETH']

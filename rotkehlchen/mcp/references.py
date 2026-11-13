@@ -7,9 +7,9 @@ diagnosis can be joined with ``query_sql`` results, and the hash is remembered s
 can hand it back to another tool, which resolves it here. Buckets get a ``bucket_…``
 reference the same way.
 
-References live in this process only. They are dropped whenever the privacy mode changes,
-and the backend rejects any that outlived the data they point to, so a stale reference fails
-instead of resolving to something else. An unknown reference is reported as such and never
+References live in this process only. They are dropped whenever the privacy mode or the
+logged-in user changes, so a reference handed out for one user never resolves against another
+user's data. An unknown reference is reported as such and never
 echoed into an error message together with a raw value.
 
 Event and issue identifiers are database row numbers, not personal data, and pass through so
@@ -29,7 +29,7 @@ from rotkehlchen.mcp.analytics import (
     _hash_identifier,
     _scrub_identifiers,
     _session_seed,
-    on_privacy_mode_change,
+    on_session_change,
     resolve_hashed_value,
 )
 
@@ -112,7 +112,7 @@ class ReferenceRegistry:
 
 
 _registry = ReferenceRegistry()
-on_privacy_mode_change(_registry.clear)
+on_session_change(_registry.clear)
 
 
 def get_reference_registry() -> ReferenceRegistry:

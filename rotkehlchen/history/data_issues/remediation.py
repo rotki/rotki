@@ -30,6 +30,7 @@ from enum import StrEnum
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Final, cast
 
+from rotkehlchen.concurrency import TaskCancelledError, checkpoint
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.constants import HistoryEventLinkType, HistoryMappingState
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -93,6 +94,7 @@ class PlanState(StrEnum):
     PARTIALLY_APPLIED = 'partially_applied'
     FAILED = 'failed'
     REJECTED = 'rejected'
+    CANCELLED = 'cancelled'
     EXPIRED = 'expired'
     STALE = 'stale'
 
@@ -654,25 +656,40 @@ def apply_plan(
     ):
         raise RemediationError('plan_not_pending', 'The plan is already being applied')
 
-    outcomes = (
-        _apply_redecode(database, chains_aggregator, plan) if plan['kind'] == PlanKind.REDECODE
-        else _apply_bridge_link(database, plan)
-    )
-    applied = [x for x in outcomes if x['outcome'] in ('applied', 'applied_with_differences')]
-    timestamps = [item['timestamp_ms'] for item in plan['plan']['items'] if 'timestamp_ms' in item]
+    outcomes: list[dict[str, Any]] = []
     reprocessing = 'not_needed'
-    if len(applied) != 0 and len(timestamps) != 0:
-        try:
-            reprocessing = 'completed' if process_historical_balances(
-                database=database,
-                msg_aggregator=database.msg_aggregator,
-                from_ts=TimestampMS(min(timestamps)),
-                chains_aggregator=chains_aggregator,
-            ) is True else 'deferred_another_pass_running'
-        except (RemoteError, DeserializationError) as e:
-            log.error('Reprocessing after applying remediation plan failed', plan_id=plan_id, error=str(e))  # noqa: E501
-            reprocessing = 'failed'
+    try:
+        if plan['kind'] == PlanKind.REDECODE:
+            _apply_redecode(database, chains_aggregator, plan, outcomes)
+        else:
+            _apply_bridge_link(database, plan, outcomes)
+        applied = _applied(outcomes)
+        timestamps = [x['timestamp_ms'] for x in plan['plan']['items'] if 'timestamp_ms' in x]
+        if len(applied) != 0 and len(timestamps) != 0:
+            try:
+                reprocessing = 'completed' if process_historical_balances(
+                    database=database,
+                    msg_aggregator=database.msg_aggregator,
+                    from_ts=TimestampMS(min(timestamps)),
+                    chains_aggregator=chains_aggregator,
+                ) is True else 'deferred_another_pass_running'
+            except (RemoteError, DeserializationError) as e:
+                log.error('Reprocessing after applying remediation plan failed', plan_id=plan_id, error=str(e))  # noqa: E501
+                reprocessing = 'failed'
+    except TaskCancelledError:
+        # What was applied stays applied and its range stays marked stale, so the next
+        # scheduled processing pass re-evaluates it and verify_plan can still judge it.
+        _set_state(
+            database=database,
+            plan_id=plan_id,
+            state=PlanState.PARTIALLY_APPLIED if _applied(outcomes) else PlanState.CANCELLED,
+            action='cancelled',
+            details={'outcomes': [x['outcome'] for x in outcomes]},
+            result={'items': outcomes, 'reprocessing': 'cancelled'},
+        )
+        raise
 
+    applied = _applied(outcomes)
     state = (
         PlanState.APPLIED if len(applied) == len(outcomes) and len(outcomes) != 0 else
         PlanState.PARTIALLY_APPLIED if len(applied) != 0 else PlanState.FAILED
@@ -689,13 +706,19 @@ def apply_plan(
     return verify_plan(database, plan_id)
 
 
+def _applied(outcomes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [x for x in outcomes if x['outcome'] in ('applied', 'applied_with_differences')]
+
+
 def _apply_redecode(
         database: DBHandler,
         chains_aggregator: ChainsAggregator,
         plan: dict[str, Any],
-) -> list[dict[str, Any]]:
-    outcomes = []
+        outcomes: list[dict[str, Any]],
+) -> None:
+    """Redecode the plan's ready items, appending each outcome as soon as it is known."""
     for item in plan['plan']['items']:
+        checkpoint()  # a cancelled apply stops between transactions
         if item['status'] != 'ready':
             outcomes.append({
                 'group_identifier': item['group_identifier'],
@@ -734,10 +757,13 @@ def _apply_redecode(
                 else 'applied_with_differences'
             ),
         })
-    return outcomes
 
 
-def _apply_bridge_link(database: DBHandler, plan: dict[str, Any]) -> list[dict[str, Any]]:
+def _apply_bridge_link(
+        database: DBHandler,
+        plan: dict[str, Any],
+        outcomes: list[dict[str, Any]],
+) -> None:
     item = plan['plan']['items'][0]
     events = _load_events(database, [
         item['bridge_event_identifier'],
@@ -748,11 +774,11 @@ def _apply_bridge_link(database: DBHandler, plan: dict[str, Any]) -> list[dict[s
         bridge_event=events[item['bridge_event_identifier']],
         matched_event=events[item['matched_event_identifier']],
     )
-    return [{
+    outcomes.append({
         'bridge_event_identifier': item['bridge_event_identifier'],
         'matched_event_identifier': item['matched_event_identifier'],
         'outcome': 'applied',
-    }]
+    })
 
 
 def verify_plan(database: DBHandler, plan_id: str) -> dict[str, Any]:
