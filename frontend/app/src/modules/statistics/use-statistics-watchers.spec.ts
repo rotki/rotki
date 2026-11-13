@@ -19,6 +19,10 @@ vi.mock('@/modules/auth/use-session-auth-store', () => ({
   })),
 }));
 
+vi.mock('@/modules/statistics/pricing/use-snapshot-rates', () => ({
+  useSnapshotRates: vi.fn(),
+}));
+
 vi.mock('@/modules/statistics/use-statistics-data-fetching', () => ({
   useStatisticsDataFetching: vi.fn(() => ({
     fetchNetValue: mockFetchNetValue,
