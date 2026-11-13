@@ -3,7 +3,7 @@ from contextlib import ExitStack
 from datetime import UTC, datetime
 from http import HTTPStatus
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import patch
 
 import pytest
@@ -13,6 +13,7 @@ from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.constants import BRIDGE_ADDRESS
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
@@ -23,6 +24,7 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import DBAssetBalance
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.bitcoin_event import BitcoinEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -55,6 +57,7 @@ from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,
     UNIT_BTC_ADDRESS2,
+    UNIT_BTC_ADDRESS3,
     make_btc_tx_id,
     make_evm_address,
     make_evm_tx_hash,
@@ -79,6 +82,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.locations.types import LocationIdentifier
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -1154,6 +1158,208 @@ def test_address_interactions_solana_bridges(
         'target_chain': target_leg[0],
         'target_tx_hash': target_leg[2],
     }]
+
+
+def test_address_interactions_shared_deposit_address(rotkehlchen_api_server: APIServer) -> None:
+    """Tracked accounts transacting with one exchange deposit address are linked, per chain."""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    url = api_url_for(rotkehlchen_api_server, 'statisticsaddressinteractionsresource')
+    first, second, third, fourth = (to_checksum_address(f'0x{x * 40}') for x in 'abcd')
+    matched_deposit = to_checksum_address('0x00000000000000000000000000000000000000d1')
+    reported_deposit = to_checksum_address('0x00000000000000000000000000000000000000d2')
+    unproven = to_checksum_address('0x00000000000000000000000000000000000000d3')
+    withdrawal_source = to_checksum_address('0x00000000000000000000000000000000000000d4')
+    ambiguous_deposit = to_checksum_address('0x00000000000000000000000000000000000000d5')
+    conflicting_deposit = to_checksum_address('0x00000000000000000000000000000000000000d6')
+    tx_hashes = [deserialize_evm_tx_hash(bytes([index + 1]) * 32) for index in range(16)]
+    history: list[HistoryBaseEntry] = [EvmEvent(
+        tx_ref=tx_hashes[index],
+        sequence_index=0,
+        timestamp=TimestampMS(1700000000000),
+        location=location,
+        event_type=event_type,
+        event_subtype=(
+            HistoryEventSubType.SPEND if event_type == HistoryEventType.EXCHANGE_TRANSFER
+            else HistoryEventSubType.NONE
+        ),
+        asset=A_ETH,
+        amount=ONE,
+        location_label=label,
+        address=ChecksumEvmAddress(HexAddress(HexStr(address))),
+        counterparty=counterparty,
+    ) for index, (label, address, event_type, location, counterparty) in enumerate([
+        # A matched exchange deposit marks the address and names its exchange; the other
+        # send stays a plain spend.
+        (first, matched_deposit, HistoryEventType.EXCHANGE_TRANSFER, LOCATION_ETHEREUM, 'kraken'),
+        (str(second).lower(), str(matched_deposit).lower(), HistoryEventType.SPEND, LOCATION_ETHEREUM, None),  # noqa: E501
+        (first, matched_deposit, HistoryEventType.SPEND, LOCATION_ETHEREUM, None),  # another tx
+        # The exchange reports the address of a deposit, no event is matched.
+        (third, reported_deposit, HistoryEventType.SPEND, LOCATION_ETHEREUM, None),
+        (fourth, reported_deposit, HistoryEventType.SPEND, LOCATION_ETHEREUM, None),
+        # Two accounts sending to an address nothing says belongs to an exchange.
+        (first, unproven, HistoryEventType.SPEND, LOCATION_ETHEREUM, None),
+        (second, unproven, HistoryEventType.SPEND, LOCATION_ETHEREUM, None),
+        # An exchange withdrawal source address is not a deposit address.
+        (first, withdrawal_source, HistoryEventType.SPEND, LOCATION_ETHEREUM, None),
+        (second, withdrawal_source, HistoryEventType.SPEND, LOCATION_ETHEREUM, None),
+        # The deposit address is only shared on Ethereum, Optimism has one account using it.
+        (first, matched_deposit, HistoryEventType.SPEND, LOCATION_OPTIMISM, None),
+        # Tracked addresses are direct transfers, never deposit addresses.
+        (first, third, HistoryEventType.EXCHANGE_TRANSFER, LOCATION_ETHEREUM, None),
+        (second, third, HistoryEventType.SPEND, LOCATION_ETHEREUM, None),
+        # Two exchanges report the same deposit address, so it stays unattributed.
+        (first, ambiguous_deposit, HistoryEventType.SPEND, LOCATION_ETHEREUM, None),
+        (second, ambiguous_deposit, HistoryEventType.SPEND, LOCATION_ETHEREUM, None),
+        # The onchain transfer and the reported movement disagree on the exchange.
+        (first, conflicting_deposit, HistoryEventType.EXCHANGE_TRANSFER, LOCATION_ETHEREUM, 'kraken'),  # noqa: E501
+        (second, conflicting_deposit, HistoryEventType.SPEND, LOCATION_ETHEREUM, None),
+    ])]
+    movement_specs: tuple[tuple[
+        Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND], str, LocationIdentifier,
+    ], ...] = (
+        (HistoryEventSubType.RECEIVE, str(reported_deposit).lower(), LOCATION_KRAKEN),
+        (HistoryEventSubType.SPEND, withdrawal_source, LOCATION_KRAKEN),
+        (HistoryEventSubType.RECEIVE, str(ambiguous_deposit).lower(), LOCATION_KRAKEN),
+        (HistoryEventSubType.RECEIVE, str(ambiguous_deposit).lower(), LOCATION_BINANCE),
+        (HistoryEventSubType.RECEIVE, str(conflicting_deposit).lower(), LOCATION_BINANCE),
+        (HistoryEventSubType.RECEIVE, UNIT_BTC_ADDRESS3, LOCATION_KRAKEN),
+    )
+    history.extend(AssetMovement(
+        timestamp=TimestampMS(1700000000000),
+        location=movement_location,
+        event_subtype=subtype,
+        asset=A_ETH,
+        amount=ONE,
+        unique_id=address,
+        extra_data={'address': address},
+    ) for subtype, address, movement_location in movement_specs)
+    btc_hashes = [BitcoinEvent._deserialize_tx_ref(bytes([index + 1]) * 32) for index in range(2)]
+    history.extend(BitcoinEvent(
+        timestamp=TimestampMS(1700000000000),
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        amount=ONE,
+        tx_ref=btc_hash,
+        sequence_index=0,
+        asset=A_BTC,
+        location_label=label,
+        counterparty_addresses=[UNIT_BTC_ADDRESS3],
+    ) for btc_hash, label in zip(btc_hashes, (UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2), strict=True))
+    with db.conn.write_ctx() as cursor:
+        cursor.executemany(
+            'INSERT OR IGNORE INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
+            [
+                ('ETH', first), ('ETH', second), ('ETH', third), ('ETH', fourth),
+                ('OPTIMISM', first), ('OPTIMISM', second),
+                ('BTC', UNIT_BTC_ADDRESS1), ('BTC', UNIT_BTC_ADDRESS2),
+            ],
+        )
+        DBHistoryEvents(db).add_history_events(write_cursor=cursor, history=history)
+
+    eth, btc = SupportedBlockchain.ETHEREUM.serialize(), SupportedBlockchain.BITCOIN.serialize()
+    direct_rows = [
+        {'chain': eth, 'source': min(first, third), 'target': max(first, third), 'tx_hash': str(tx_hashes[10])},  # noqa: E501
+        {'chain': eth, 'source': min(second, third), 'target': max(second, third), 'tx_hash': str(tx_hashes[11])},  # noqa: E501
+    ]
+    deposit_rows = [{
+        'chain': chain,
+        'source': min(source, target),
+        'target': max(source, target),
+        'tx_hash': str(tx_hash),
+        'deposit_address': deposit_address,
+        **({'deposit_exchange': exchange} if exchange is not None else {}),
+    } for chain, source, target, tx_hash, deposit_address, exchange in (
+        (eth, first, second, tx_hashes[0], matched_deposit, 'kraken'),
+        (eth, first, second, tx_hashes[1], str(matched_deposit).lower(), 'kraken'),
+        (eth, first, second, tx_hashes[2], matched_deposit, 'kraken'),
+        (eth, third, fourth, tx_hashes[3], reported_deposit, 'kraken'),
+        (eth, third, fourth, tx_hashes[4], reported_deposit, 'kraken'),
+        (eth, first, second, tx_hashes[12], ambiguous_deposit, None),
+        (eth, first, second, tx_hashes[13], ambiguous_deposit, None),
+        (eth, first, second, tx_hashes[14], conflicting_deposit, None),
+        (eth, first, second, tx_hashes[15], conflicting_deposit, None),
+        (btc, UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2, btc_hashes[0], UNIT_BTC_ADDRESS3, 'kraken'),
+        (btc, UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2, btc_hashes[1], UNIT_BTC_ADDRESS3, 'kraken'),
+    )]
+    key = itemgetter('chain', 'source', 'target', 'tx_hash')
+    assert assert_proper_sync_response_with_result(requests.get(url)) == sorted(
+        direct_rows + deposit_rows, key=key,
+    )
+
+    # Untracking one side drops the link, while the deposit address stays known.
+    with db.conn.write_ctx() as cursor:
+        cursor.execute(
+            'DELETE FROM blockchain_accounts WHERE blockchain=? AND account=?',
+            ('ETH', second),
+        )
+    assert assert_proper_sync_response_with_result(requests.get(url)) == sorted([
+        direct_rows[0],
+        *(row for row in deposit_rows if second not in (row['source'], row['target'])),
+    ], key=key)
+
+
+@pytest.mark.parametrize('reported_deposit', [True, False])
+@pytest.mark.parametrize('lowercase_address', [True, False])
+@pytest.mark.parametrize('location', [LOCATION_ARBITRUM_ONE, LOCATION_ETHEREUM])
+def test_address_interactions_hyperliquid_bridge(
+        rotkehlchen_api_server: APIServer,
+        reported_deposit: bool,
+        lowercase_address: bool,
+        location: LocationIdentifier,
+) -> None:
+    """The public Arbitrum bridge must not link unrelated Hyperliquid depositors."""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    first, second = (to_checksum_address(f'0x{x * 40}') for x in 'ab')
+    address = str(BRIDGE_ADDRESS).lower() if lowercase_address else BRIDGE_ADDRESS
+    chain = (
+        SupportedBlockchain.ARBITRUM_ONE if location == LOCATION_ARBITRUM_ONE
+        else SupportedBlockchain.ETHEREUM
+    )
+    history: list[HistoryBaseEntry] = [EvmEvent(
+        tx_ref=deserialize_evm_tx_hash(bytes([index + 1]) * 32),
+        sequence_index=0,
+        timestamp=TimestampMS(1700000000000),
+        location=location,
+        event_type=(
+            HistoryEventType.SPEND if reported_deposit else HistoryEventType.EXCHANGE_TRANSFER
+        ),
+        event_subtype=(
+            HistoryEventSubType.NONE if reported_deposit else HistoryEventSubType.SPEND
+        ),
+        asset=A_USDC,
+        amount=ONE,
+        location_label=account,
+        address=ChecksumEvmAddress(HexAddress(HexStr(address))),
+        counterparty='hyperliquid',
+    ) for index, account in enumerate((first, second))]
+    if reported_deposit:
+        history.append(AssetMovement(
+            timestamp=TimestampMS(1700000000000),
+            location=LOCATION_EXTERNAL,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USDC,
+            amount=ONE,
+            unique_id='hyperliquid-deposit',
+            extra_data={'address': address},
+        ))
+
+    with db.conn.write_ctx() as cursor:
+        cursor.executemany(
+            'INSERT OR IGNORE INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
+            [(chain.value, first), (chain.value, second)],
+        )
+        DBHistoryEvents(db).add_history_events(write_cursor=cursor, history=history)
+
+    result = assert_proper_sync_response_with_result(requests.get(api_url_for(
+        rotkehlchen_api_server, 'statisticsaddressinteractionsresource',
+    )))
+    assert result == ([] if location == LOCATION_ARBITRUM_ONE else [{
+        'chain': chain.serialize(),
+        'source': min(first, second),
+        'target': max(first, second),
+        'tx_hash': str(EvmEvent._deserialize_tx_ref(event.tx_ref)),
+        'deposit_address': address,
+    } for event in history if isinstance(event, EvmEvent)])
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])

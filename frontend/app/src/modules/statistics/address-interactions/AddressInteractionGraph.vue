@@ -27,11 +27,13 @@ const {
   graph,
   hasBridges,
   hasFilters,
+  hasSharedDeposits,
   maxTransactions,
   modelAddress,
-  modelBridgesOnly,
+  modelBridges,
   modelChain,
   modelMinTransactions,
+  modelSharedDeposits,
   pickingPath,
   resetFilters,
   scene,
@@ -57,14 +59,16 @@ const {
       />
       <AddressInteractionToolbar
         v-model:address="modelAddress"
-        v-model:bridges-only="modelBridgesOnly"
+        v-model:bridges="modelBridges"
         v-model:chain="modelChain"
         v-model:min-transactions="modelMinTransactions"
+        v-model:shared-deposits="modelSharedDeposits"
         :address-options="addressOptions"
         :chains="chains"
         :max-transactions="maxTransactions"
         :has-bridges="hasBridges"
         :has-filters="hasFilters"
+        :has-shared-deposits="hasSharedDeposits"
         @reset="resetFilters()"
       />
     </template>

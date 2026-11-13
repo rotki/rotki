@@ -74,6 +74,12 @@ function createWrapper(interactions: readonly AddressInteraction[]): VueWrapper<
         LocationIcon: true,
         LocationLabelSelector: true,
         RuiButton: ClickButtonStub,
+        RuiButtonGroup: {
+          emits: ['update:modelValue'],
+          name: 'RuiButtonGroup',
+          props: ['modelValue'],
+          template: '<div><button v-for="value in [\'include\', \'exclude\', \'only\']" :key="value" :data-testid="\'interaction-mode-\' + value" @click="$emit(\'update:modelValue\', value)" /></div>',
+        },
         RuiSlider: { emits: ['update:modelValue'], name: 'RuiSlider', props: ['modelValue', 'max'], template: '<div data-testid="slider" />' },
         TagDisplay: true,
       },
@@ -206,15 +212,39 @@ describe('address interaction graph', () => {
     expect(listedConnections(wrapper)).toBe(2);
   });
 
-  it('should grey out pairs that are not bridges when bridges only is switched on', async () => {
+  it('should grey out pairs that are not bridges when bridges is set to only', async () => {
     const bridge = { ...interaction('eth', '0xdeposit', TARGET, OTHER), targetChain: 'optimism', targetTxHash: '0xwithdrawal' };
     const wrapper = createWrapper([interaction(), bridge]);
     expect(listedConnections(wrapper)).toBe(2);
 
-    await wrapper.get('[data-testid=interaction-bridges-only]').trigger('click');
+    await wrapper.get('[data-testid=interaction-bridges] [data-testid=interaction-mode-only]').trigger('click');
 
     expect(listedConnections(wrapper)).toBe(1);
     expect(wrapper.get('[data-testid=interaction-muted]').text()).toContain('1');
+  });
+
+  it('should grey out bridges when bridges is set to exclude', async () => {
+    const bridge = { ...interaction('eth', '0xdeposit', TARGET, OTHER), targetChain: 'optimism', targetTxHash: '0xwithdrawal' };
+    const wrapper = createWrapper([interaction(), bridge]);
+
+    await wrapper.get('[data-testid=interaction-bridges] [data-testid=interaction-mode-exclude]').trigger('click');
+
+    expect(listedConnections(wrapper)).toBe(1);
+    expect(wrapper.get('[data-testid=interaction-muted]').text()).toContain('1');
+  });
+
+  it('should filter to shared deposits and restore all pairs when filters are reset', async () => {
+    const deposit = { ...interaction('eth', '0xdeposit', TARGET, OTHER), depositAddress: '0xkraken' };
+    const wrapper = createWrapper([interaction(), deposit]);
+    expect(listedConnections(wrapper)).toBe(2);
+    await wrapper.get('[data-testid=interaction-shared-deposits] [data-testid=interaction-mode-only]').trigger('click');
+    expect(listedConnections(wrapper)).toBe(1);
+    await wrapper.get('[data-testid=interaction-reset-filters]').trigger('click');
+    expect(listedConnections(wrapper)).toBe(2);
+  });
+
+  it('should hide the shared deposits filter when no pairs share a deposit address', () => {
+    expect(createWrapper([interaction()]).find('[data-testid=interaction-shared-deposits]').exists()).toBe(false);
   });
 
   it('should label a bridged pair in the list and each bridge leg beside its transaction, and leave ordinary ones unlabeled', async () => {
@@ -227,8 +257,28 @@ describe('address interaction graph', () => {
     expect(wrapper.findAll('[data-testid=interaction-tx-bridge]')).toHaveLength(2);
   });
 
+  it('should label a pair sharing a deposit address in the list and name that address beside each of its transactions', async () => {
+    const deposits = [
+      { ...interaction('eth', '0xfirst', TARGET, OTHER), depositAddress: '0xkraken', depositExchange: 'kraken' },
+      { ...interaction('eth', '0xsecond', TARGET, OTHER), depositAddress: '0xkraken' },
+    ];
+    const wrapper = createWrapper([interaction(), ...deposits]);
+
+    const badges = wrapper.findAll('[data-testid=interaction-connection-shared-deposit]');
+    expect(badges).toHaveLength(1);
+    expect(badges[0].text()).toMatch(/address_interactions\.shared_deposit_count::2$/);
+
+    await wrapper.findAll('[data-testid=interaction-connection]').find(row => row.find('[data-testid=interaction-connection-shared-deposit]').exists())?.trigger('click');
+    expect(wrapper.findAll('[data-testid=interaction-tx-shared-deposit]').map(chip => chip.attributes('title'))).toEqual([
+      'address_interactions.shared_deposit_address::0xkraken',
+      'address_interactions.shared_deposit_address::0xkraken',
+    ]);
+    expect(wrapper.findAllComponents({ name: 'LocationIcon' }).some(icon => icon.props('item') === 'kraken')).toBe(true);
+    expect(scrambleAddress).toHaveBeenCalledWith('0xkraken');
+  });
+
   it('should not offer bridges only while no pair is bridged', () => {
-    expect(createWrapper([interaction()]).find('[data-testid=interaction-bridges-only]').exists()).toBe(false);
+    expect(createWrapper([interaction()]).find('[data-testid=interaction-bridges]').exists()).toBe(false);
   });
 
   it('should grey out pairs below the minimum number of shared transactions', async () => {

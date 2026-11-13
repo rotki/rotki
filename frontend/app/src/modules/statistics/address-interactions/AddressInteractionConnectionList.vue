@@ -44,13 +44,17 @@ interface ConnectionRow {
   count: number;
   /** Transactions of the pair that are a leg of a matched bridge, on the shown chain or on all of them. */
   bridgeCount: number;
+  /** Transactions of the pair with an exchange deposit address both use, on the shown chain or on all of them. */
+  sharedDepositCount: number;
 }
 
 const rows = computed<ConnectionRow[]>(() => get(shown).map((connection) => {
   const counterpart = counterpartOf(connection, focusNodeId);
+  const shownActivity = connection.activity.filter(entry => !chain || entry.chain === chain);
   return {
     nodes: counterpart ? [counterpart] : [connection.source, connection.target],
-    bridgeCount: connection.activity.filter(entry => !chain || entry.chain === chain).reduce((sum, entry) => sum + entry.bridgeTxHashes.length, 0),
+    bridgeCount: shownActivity.reduce((sum, entry) => sum + entry.bridgeTxHashes.length, 0),
+    sharedDepositCount: shownActivity.reduce((sum, entry) => sum + entry.sharedDeposits.length, 0),
     chains: chain ? [chain] : connection.activity.map(entry => entry.chain),
     connection,
     count: transactionsOn(connection, chain),
@@ -128,6 +132,17 @@ const rows = computed<ConnectionRow[]>(() => get(shown).map((connection) => {
                 size="12"
               />
               {{ t('address_interactions.bridge_count', { count: row.bridgeCount }, row.bridgeCount) }}
+            </span>
+            <span
+              v-if="row.sharedDepositCount > 0"
+              class="ml-1 inline-flex items-center gap-1 rounded-full bg-rui-warning/10 px-1.5 py-0.5 font-medium text-rui-warning"
+              data-testid="interaction-connection-shared-deposit"
+            >
+              <RuiIcon
+                name="lu-landmark"
+                size="12"
+              />
+              {{ t('address_interactions.shared_deposit_count', { count: row.sharedDepositCount }, row.sharedDepositCount) }}
             </span>
           </span>
         </span>

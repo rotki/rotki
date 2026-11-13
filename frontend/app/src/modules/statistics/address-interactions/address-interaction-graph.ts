@@ -6,11 +6,20 @@ export interface InteractionNode {
   address: string;
 }
 
+/** A transaction of one address of the pair with an exchange deposit address the other one also used. */
+export interface SharedDeposit {
+  txHash: string;
+  depositAddress: string;
+  depositExchange?: string;
+}
+
 export interface ChainActivity {
   chain: string;
   txHashes: string[];
   /** The transactions among `txHashes` that are a leg of a matched bridge. */
   bridgeTxHashes: string[];
+  /** The transactions among `txHashes` that use a deposit address the pair shares, ordered by hash. */
+  sharedDeposits: SharedDeposit[];
 }
 
 /** Every transaction two addresses share, on any chain. */
@@ -42,6 +51,11 @@ export function touches(connection: InteractionConnection, nodeId?: string): boo
   return connection.source.id === nodeId || connection.target.id === nodeId;
 }
 
+function recordDeposit(addresses: Map<string, SharedDeposit>, id: string, chain: string, txHash: string, address?: string, exchange?: string): void {
+  if (address !== undefined)
+    addresses.set(JSON.stringify([id, chain, txHash]), { depositAddress: address, ...(exchange === undefined ? {} : { depositExchange: exchange }), txHash });
+}
+
 /** How many connections each address has among `connections`. */
 export function degreesOf(connections: Iterable<InteractionConnection>): Map<string, number> {
   const degrees = new Map<string, number>();
@@ -59,7 +73,8 @@ export function degreesOf(connections: Iterable<InteractionConnection>): Map<str
  * The API reports one row per chain, pair and transaction. Folding the chains into one connection
  * keeps a pair active on five chains as one relation, while `activity` keeps the per-chain detail.
  * A matched bridge puts each address on its own chain and records each leg's transaction under the
- * chain it happened on.
+ * chain it happened on. A shared deposit address links the pair through each one's own transactions
+ * with it, so those count among the pair's transactions too.
  * Nodes and connections come back sorted, so the same input always gives the same order.
  */
 export function createAddressInteractionGraph(interactions: readonly AddressInteraction[]): InteractionGraph {
@@ -67,6 +82,7 @@ export function createAddressInteractionGraph(interactions: readonly AddressInte
   const connections = new Map<string, InteractionConnection>();
   const txHashes = new Map<string, Map<string, Set<string>>>();
   const bridgeHashes = new Set<string>();
+  const depositAddresses = new Map<string, SharedDeposit>();
 
   function node(chain: string, address: string): InteractionNode {
     let result = nodes.get(address);
@@ -88,7 +104,7 @@ export function createAddressInteractionGraph(interactions: readonly AddressInte
       bridgeHashes.add(JSON.stringify([id, chain, txHash]));
   }
 
-  for (const { chain, source: from, target: to, targetChain, targetTxHash, txHash } of interactions) {
+  for (const { chain, depositAddress, depositExchange, source: from, target: to, targetChain, targetTxHash, txHash } of interactions) {
     if (from === to)
       continue;
 
@@ -102,6 +118,7 @@ export function createAddressInteractionGraph(interactions: readonly AddressInte
     }
     const isBridge = targetChain !== undefined && targetTxHash !== undefined;
     record(id, chain, txHash, isBridge);
+    recordDeposit(depositAddresses, id, chain, txHash, depositAddress, depositExchange);
     if (isBridge) {
       record(id, targetChain, targetTxHash, true);
       connections.get(id)!.isBridge = true;
@@ -114,7 +131,11 @@ export function createAddressInteractionGraph(interactions: readonly AddressInte
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([chain, hashes]) => {
         const sorted = [...hashes].sort();
-        return { bridgeTxHashes: sorted.filter(hash => bridgeHashes.has(JSON.stringify([id, chain, hash]))), chain, txHashes: sorted };
+        const sharedDeposits = sorted.flatMap((hash) => {
+          const deposit = depositAddresses.get(JSON.stringify([id, chain, hash]));
+          return deposit === undefined ? [] : [deposit];
+        });
+        return { bridgeTxHashes: sorted.filter(hash => bridgeHashes.has(JSON.stringify([id, chain, hash]))), chain, sharedDeposits, txHashes: sorted };
       });
     connection.txCount = connection.activity.reduce((sum, entry) => sum + entry.txHashes.length, 0);
   }

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import type { ChainActivity } from './address-interaction-graph';
+import type { ChainActivity, SharedDeposit } from './address-interaction-graph';
 import { startPromise } from '@shared/utils';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useScramble } from '@/modules/settings/use-scramble';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import { historyEventsRoute, useChainLocation, usePagedList } from './address-interaction-panel';
@@ -12,10 +13,18 @@ const { activity, color } = defineProps<{ activity: ChainActivity; color: string
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const { getChainName } = useSupportedChains();
+const { scrambleAddress } = useScramble();
 const chainLocation = useChainLocation();
 
 const { nextCount, showMore, shown } = usePagedList(() => activity.txHashes);
 const bridgeTxHashes = computed<Set<string>>(() => new Set(activity.bridgeTxHashes));
+const deposits = computed<Map<string, SharedDeposit>>(() => new Map(activity.sharedDeposits.map(deposit => [deposit.txHash, deposit])));
+
+/** Names the deposit address the pair shares in the transaction, or `undefined` when it uses none. */
+function sharedDepositTitle(txHash: string): string | undefined {
+  const address = get(deposits).get(txHash)?.depositAddress;
+  return address === undefined ? undefined : t('address_interactions.shared_deposit_address', { address: scrambleAddress(address) });
+}
 
 function openInHistory(txHashes: readonly string[]): void {
   startPromise(router.push(historyEventsRoute(chainLocation(activity.chain), txHashes)));
@@ -69,40 +78,57 @@ function openInHistory(txHashes: readonly string[]): void {
       <li
         v-for="hash in shown"
         :key="hash"
-        class="group/row flex min-w-0 items-center justify-between gap-2 py-1 pl-3 pr-1"
+        class="group/row flex min-w-0 flex-col py-1 pl-3 pr-1"
       >
-        <HashLink
-          :text="hash"
-          :location="activity.chain"
-          :truncate-length="8"
-          :size="14"
-          type="transaction"
-          reveal-actions
-        />
-        <RuiChip
-          v-if="bridgeTxHashes.has(hash)"
-          size="sm"
-          color="primary"
-          class="ml-auto shrink-0"
-          data-testid="interaction-tx-bridge"
-        >
-          {{ t('address_interactions.bridge') }}
-        </RuiChip>
-        <RuiButton
-          variant="text"
-          icon
-          size="sm"
-          class="shrink-0"
-          :aria-label="t('address_interactions.open_tx_in_history')"
-          :title="t('address_interactions.open_tx_in_history')"
-          data-testid="interaction-tx-history"
-          @click="openInHistory([hash])"
-        >
-          <RuiIcon
-            name="lu-arrow-up-right"
-            size="16"
+        <div class="flex min-w-0 items-center justify-between gap-2">
+          <HashLink
+            :text="hash"
+            :location="activity.chain"
+            :truncate-length="8"
+            :size="14"
+            type="transaction"
+            reveal-actions
           />
-        </RuiButton>
+          <RuiChip
+            v-if="bridgeTxHashes.has(hash)"
+            size="sm"
+            color="primary"
+            class="ml-auto shrink-0"
+            data-testid="interaction-tx-bridge"
+          >
+            {{ t('address_interactions.bridge') }}
+          </RuiChip>
+          <RuiButton
+            variant="text"
+            icon
+            size="sm"
+            class="ml-auto shrink-0"
+            :aria-label="t('address_interactions.open_tx_in_history')"
+            :title="t('address_interactions.open_tx_in_history')"
+            data-testid="interaction-tx-history"
+            @click="openInHistory([hash])"
+          >
+            <RuiIcon
+              name="lu-arrow-up-right"
+              size="16"
+            />
+          </RuiButton>
+        </div>
+        <div
+          v-if="!bridgeTxHashes.has(hash) && sharedDepositTitle(hash)"
+          class="flex min-w-0 items-center gap-2 pb-1 text-caption text-rui-warning"
+          :title="sharedDepositTitle(hash)"
+          data-testid="interaction-tx-shared-deposit"
+        >
+          <LocationIcon
+            v-if="deposits.get(hash)?.depositExchange"
+            :item="deposits.get(hash)?.depositExchange ?? ''"
+            horizontal
+            size="24px"
+            data-testid="interaction-deposit-exchange"
+          />
+          <span class="truncate">{{ t('address_interactions.shared_deposit') }}</span>
+        </div>
       </li>
     </ul>
     <RuiButton

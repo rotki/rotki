@@ -10,6 +10,8 @@ import { getErrorMessage } from '@/modules/core/notifications/use-notifications'
 
 const AddressInteractions = z.array(z.object({
   chain: z.string(),
+  depositAddress: z.string().optional(),
+  depositExchange: z.string().optional(),
   source: z.string(),
   target: z.string(),
   targetChain: z.string().optional(),

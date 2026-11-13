@@ -46,4 +46,17 @@ describe('use address interactions', () => {
 
     expect(get(interactions)).toEqual(rows);
   });
+
+  it('should retain the exchange identifying a shared deposit', async () => {
+    const rows = [
+      { chain: 'eth', depositAddress: '0xdeposit', depositExchange: 'kraken', source: '0xa', target: '0xb', txHash: '0x1' },
+      { chain: 'eth', depositAddress: '0xunknown', source: '0xa', target: '0xc', txHash: '0x2' },
+    ];
+    apiGet.mockResolvedValue(rows);
+    const { interactions, refresh } = useAddressInteractions();
+
+    await refresh();
+
+    expect(get(interactions)).toEqual(rows);
+  });
 });

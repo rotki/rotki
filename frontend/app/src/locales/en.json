@@ -1044,7 +1044,7 @@
     "all_chains": "All chains",
     "bridge": "Bridge",
     "bridge_count": "1 bridge tx | {count} bridge txs",
-    "bridges_only": "Bridges only",
+    "bridges": "Bridges",
     "canvas_hint": "Scroll to zoom, drag to pan. Select an address or connection to explore.",
     "clear_selection": "Clear selection",
     "cluster": {
@@ -1063,9 +1063,14 @@
     "empty": "No interactions found between your tracked addresses. Sync and decode your transaction history, then refresh this graph.",
     "error": "Could not load address interactions.",
     "filter_chain": "Filter by chain",
+    "filter_mode": {
+      "exclude": "Exclude",
+      "include": "Include",
+      "only": "Only"
+    },
     "filtered_out": "No pairs match these filters",
     "fit_graph": "Fit graph",
-    "graph_help": "Each address appears once. A line joins two addresses that share a transaction on any chain; thicker lines share more.",
+    "graph_help": "Each address appears once. A line joins two addresses that share a transaction, or that both used one exchange deposit address, on any chain; thicker lines share more.",
     "graph_label": "Address network",
     "hide": "Hide from graph",
     "legend": {
@@ -1094,6 +1099,10 @@
     "select_connection": "Select connection between {source} and {target}",
     "selected_address": "Selected address",
     "selected_connection": "Connection details",
+    "shared_deposit": "Shared deposit",
+    "shared_deposit_address": "Both addresses used the exchange deposit address {address}",
+    "shared_deposit_count": "1 shared deposit tx | {count} shared deposit txs",
+    "shared_deposits": "Shared deposits",
     "show_hidden": "Show {count} hidden address | Show {count} hidden addresses",
     "show_more": "Show {count} more",
     "sorted_by_activity": "Most shared transactions first",
