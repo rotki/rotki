@@ -254,6 +254,11 @@ def test_stuck_worker_ends_run_and_sends_completed(database: DBHandler) -> None:
     issue = DataIssuesManager(database).get_issue(issue_id)
     assert issue.state == IssueState.OPEN
     assert issue.auto_remediation_attempts == []
+    with database.conn.read_ctx() as cursor:  # recorded, so the scheduler does not rerun it
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+        ) is not None
 
 
 @pytest.mark.parametrize('state', [IssueState.RESOLVED, IssueState.DISMISSED])
@@ -714,6 +719,11 @@ def test_cancelled_comparison_records_no_attempt_and_is_retried(database: DBHand
         issue = DataIssuesManager(database).get_issue(issue_id)
         assert issue.state == IssueState.OPEN
         assert issue.auto_remediation_attempts == []
+        with database.conn.read_ctx() as cursor:  # unrecorded, so the scheduler reruns it
+            assert database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+            ) is None
 
         run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
 
