@@ -5120,6 +5120,8 @@ def test_upgrade_db_53_to_54(
 
         assert not table_exists(cursor=write_cursor, name='bucket_processing_stops')
         assert not table_exists(cursor=write_cursor, name='bucket_balance_checks')
+        assert not table_exists(cursor=write_cursor, name='remediation_plans')
+        assert not table_exists(cursor=write_cursor, name='remediation_plan_audit')
         write_cursor.execute(  # a negative balance issue asks for the stops to be rebuilt
             'INSERT INTO data_issues(kind, location, asset, ts_start, ts_end, severity, state, payload_json, created_at) '  # noqa: E501
             "VALUES ('negative_balance', 'f', 'ETH', 1, 1, 'warning', 'open', '{}', 1)",
@@ -5168,6 +5170,8 @@ def test_upgrade_db_53_to_54(
         assert table_exists(cursor=cursor, name='bucket_processing_stops')
         assert table_exists(cursor=cursor, name='bucket_balance_checks')
         assert table_exists(cursor=cursor, name='wallet_balance_observations')
+        assert table_exists(cursor=cursor, name='remediation_plans')
+        assert table_exists(cursor=cursor, name='remediation_plan_audit')
         assert column_exists(cursor, 'bucket_balance_checks', 'observation_id')
         assert cursor.execute(  # processing is asked to run again to find the stopped buckets
             'SELECT value FROM key_value_cache WHERE name=?',

@@ -1034,6 +1034,36 @@ CREATE TABLE IF NOT EXISTS wallet_balance_observations (
 ) WITHOUT ROWID;
 """
 
+# Repair plans an agent or user previewed for the historical balance engine. A plan records the
+# exact proposed changes and digests of the evidence they were computed from; it can only be
+# applied while that evidence is unchanged and before it expires. See
+# rotkehlchen/history/data_issues/remediation.py.
+DB_CREATE_REMEDIATION_PLANS = """
+CREATE TABLE IF NOT EXISTS remediation_plans (
+    identifier TEXT NOT NULL PRIMARY KEY,
+    kind TEXT NOT NULL,
+    state TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL,
+    evidence_revision TEXT NOT NULL,
+    plan TEXT NOT NULL,
+    result TEXT,
+    applied_at INTEGER
+);
+"""
+
+# Durable audit trail of every remediation plan transition: creation, approval, application and
+# verification, with the details of each.
+DB_CREATE_REMEDIATION_PLAN_AUDIT = """
+CREATE TABLE IF NOT EXISTS remediation_plan_audit (
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    plan_identifier TEXT NOT NULL REFERENCES remediation_plans(identifier) ON DELETE CASCADE,
+    timestamp INTEGER NOT NULL,
+    action TEXT NOT NULL,
+    details TEXT NOT NULL
+);
+"""
+
 DB_CREATE_EVENT_METRICS = """
 CREATE TABLE IF NOT EXISTS event_metrics (
     id INTEGER NOT NULL PRIMARY KEY,
@@ -1193,6 +1223,8 @@ BEGIN TRANSACTION;
 {DB_CREATE_BUCKET_PROCESSING_STOPS}
 {DB_CREATE_BUCKET_BALANCE_CHECKS}
 {DB_CREATE_WALLET_BALANCE_OBSERVATIONS}
+{DB_CREATE_REMEDIATION_PLANS}
+{DB_CREATE_REMEDIATION_PLAN_AUDIT}
 {DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;

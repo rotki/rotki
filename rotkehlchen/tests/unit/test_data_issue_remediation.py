@@ -468,7 +468,7 @@ def test_customized_transaction_redecode_comparison_preserves_saved_events(
     saved_rows = _get_saved_event_rows(database)
 
     with patch(
-        'rotkehlchen.tasks.data_issues._preview_transaction',
+        'rotkehlchen.tasks.data_issues.preview_transaction',
         return_value=[_make_event(tx_hash=tx_hash, amount=preview_amount)],
     ) as preview:
         run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
@@ -508,7 +508,7 @@ def test_redecode_comparison_ignores_sequence_index_changes(database: DBHandler)
     preview_event.sequence_index = 7
 
     with patch(
-        'rotkehlchen.tasks.data_issues._preview_transaction',
+        'rotkehlchen.tasks.data_issues.preview_transaction',
         return_value=[preview_event],
     ):
         run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
@@ -596,7 +596,7 @@ def test_earlier_customized_transaction_in_negative_bucket_is_compared(
     )
 
     with patch(
-        'rotkehlchen.tasks.data_issues._preview_transaction',
+        'rotkehlchen.tasks.data_issues.preview_transaction',
         return_value=[_make_event(
             tx_hash=customized_tx_hash,
             amount='2',
@@ -644,7 +644,7 @@ def test_customized_transaction_with_changed_bucket_scope_is_compared(
         )
 
     with patch(
-        'rotkehlchen.tasks.data_issues._preview_transaction',
+        'rotkehlchen.tasks.data_issues.preview_transaction',
         return_value=[_make_event(
             tx_hash=customized_tx_hash,
             amount='1',
@@ -684,7 +684,7 @@ def test_customized_transaction_for_unrelated_account_is_not_compared(
             mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED},
         )
 
-    with patch('rotkehlchen.tasks.data_issues._preview_transaction') as preview:
+    with patch('rotkehlchen.tasks.data_issues.preview_transaction') as preview:
         run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
 
     preview.assert_not_called()
@@ -697,7 +697,7 @@ def test_failed_redecode_comparison_preserves_saved_events(database: DBHandler) 
     issue_id, _tx_hash = _add_negative_balance_issue(database=database, customized=True)
     saved_rows = _get_saved_event_rows(database)
     with patch(
-        'rotkehlchen.tasks.data_issues._preview_transaction',
+        'rotkehlchen.tasks.data_issues.preview_transaction',
         side_effect=RuntimeError('receipt unavailable'),
     ):
         run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
@@ -719,7 +719,7 @@ def test_failed_redecode_comparison_preserves_saved_events(database: DBHandler) 
 def test_repeated_failed_comparison_records_every_attempt(database: DBHandler) -> None:
     issue_id, _tx_hash = _add_negative_balance_issue(database=database, customized=True)
     with patch(
-        'rotkehlchen.tasks.data_issues._preview_transaction',
+        'rotkehlchen.tasks.data_issues.preview_transaction',
         side_effect=RuntimeError('receipt unavailable'),
     ) as preview:
         run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
@@ -737,7 +737,7 @@ def test_repeated_failed_comparison_records_every_attempt(database: DBHandler) -
 def test_cancelled_comparison_records_no_attempt_and_is_retried(database: DBHandler) -> None:
     issue_id, tx_hash = _add_negative_balance_issue(database=database, customized=True)
     with patch(
-        'rotkehlchen.tasks.data_issues._preview_transaction',
+        'rotkehlchen.tasks.data_issues.preview_transaction',
         side_effect=(
             TaskCancelledError(),
             [_make_event(tx_hash=tx_hash, amount='2')],

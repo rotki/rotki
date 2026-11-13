@@ -227,6 +227,8 @@ TABLES_AT_INIT = [
     'cowswap_orders',
     'data_issues',
     'bucket_processing_stops',
+    'remediation_plans',
+    'remediation_plan_audit',
     'bucket_balance_checks',
     'wallet_balance_observations',
     'gnosispay_data',

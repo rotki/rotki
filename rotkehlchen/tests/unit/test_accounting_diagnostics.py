@@ -1,4 +1,6 @@
+import copy
 from typing import TYPE_CHECKING
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -10,7 +12,7 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import DataIssuesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.data_issues.constants import IssueKind
+from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.diagnostics import (
     explain_data_issue,
     get_accounting_health,
@@ -18,6 +20,15 @@ from rotkehlchen.history.data_issues.diagnostics import (
     trace_bucket,
 )
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.remediation import (
+    PlanState,
+    RemediationError,
+    apply_plan,
+    get_plan,
+    preview_bridge_link,
+    preview_redecode,
+    reject_plan,
+)
 from rotkehlchen.history.data_issues.transaction_diagnostics import (
     explain_bridge_match,
     inspect_transaction,
@@ -34,6 +45,7 @@ from rotkehlchen.tasks.historical_balances import (
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import ChainID, EvmTransaction, Timestamp, TimestampMS
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -229,6 +241,130 @@ def test_explain_bridge_match_reports_rejections(database: DBHandler) -> None:
     }
     assert 'transfer_id' in result['missing_metadata']
     assert explain_bridge_match(database, eligible_id) is None  # not a bridge leg
+
+
+def test_bridge_link_plan_lifecycle(database: DBHandler) -> None:
+    """Preview, refuse without approval, apply once, verify and refuse a second apply."""
+    bridge_id, eligible_id, rejected = _add_bridge_scenario(database)
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+    unmatched_issue, = _issues(database, IssueKind.UNMATCHED_BRIDGE)
+
+    with pytest.raises(RemediationError, match='rejects this candidate') as error:
+        preview_bridge_link(database, bridge_id, rejected['amount_mismatch'])
+    assert error.value.code == 'candidate_rejected'
+
+    plan = preview_bridge_link(database, bridge_id, eligible_id)
+    assert plan['state'] == PlanState.PENDING
+    assert plan['plan']['baseline']['open_issue_ids'] == [unmatched_issue]
+    assert [x['action'] for x in plan['audit']] == ['created']
+
+    with pytest.raises(RemediationError) as error:
+        apply_plan(database, MagicMock(), plan['plan_id'], 'agent_says_yes', ts_now())
+    assert error.value.code == 'approval_required'
+
+    result = apply_plan(database, MagicMock(), plan['plan_id'], 'mcp_elicitation', ts_now())
+    assert result['state'] == PlanState.APPLIED
+    assert result['result']['items'][0]['outcome'] == 'applied'
+    assert result['result']['reprocessing'] == 'completed'
+    assert result['verification']['reevaluated'] is True
+    assert result['verification']['baseline_issues'] == [
+        {'issue_id': unmatched_issue, 'state': IssueState.RESOLVED},
+    ]
+    assert [x['action'] for x in result['audit']] == ['created', 'approved', 'applied', 'verified']
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT left_event_id, right_event_id FROM history_event_links',
+        ).fetchall() == [(bridge_id, eligible_id)]
+
+    with pytest.raises(RemediationError) as error:
+        apply_plan(database, MagicMock(), plan['plan_id'], 'mcp_elicitation', ts_now())
+    assert error.value.code == 'plan_not_pending'
+
+
+def test_plan_refused_when_stale_expired_or_rejected(database: DBHandler) -> None:
+    bridge_id, eligible_id, _ = _add_bridge_scenario(database)
+    stale_plan = preview_bridge_link(database, bridge_id, eligible_id)
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'UPDATE history_events SET amount = ? WHERE identifier = ?',
+            ('0.996', eligible_id),
+        )
+    with pytest.raises(RemediationError) as error:
+        apply_plan(database, MagicMock(), stale_plan['plan_id'], 'mcp_elicitation', ts_now())
+    assert error.value.code == 'plan_stale'
+    assert get_plan(database, stale_plan['plan_id'])['state'] == PlanState.STALE
+
+    expired_plan = preview_bridge_link(database, bridge_id, eligible_id)
+    with patch('rotkehlchen.history.data_issues.remediation.ts_now', return_value=ts_now() + 3600):
+        assert get_plan(database, expired_plan['plan_id'])['state'] == PlanState.EXPIRED
+        with pytest.raises(RemediationError) as error:
+            apply_plan(database, MagicMock(), expired_plan['plan_id'], 'mcp_elicitation', ts_now())
+    assert error.value.code == 'plan_expired'
+
+    rejected_plan = preview_bridge_link(database, bridge_id, eligible_id)
+    assert reject_plan(database, rejected_plan['plan_id'], 'user_decline')['state'] == PlanState.REJECTED  # noqa: E501
+    with pytest.raises(RemediationError) as error:
+        apply_plan(database, MagicMock(), rejected_plan['plan_id'], 'mcp_elicitation', ts_now())
+    assert error.value.code == 'plan_not_pending'
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM history_event_links').fetchone()[0] == 0
+
+
+@pytest.mark.parametrize('customized', [False, True])
+def test_redecode_plan_repairs_a_wrong_direction(database: DBHandler, customized: bool) -> None:
+    """A receive saved as a spend stops the bucket. Redecoding it clears the stop, which the
+    verification reads from the stops. A customized transaction is only replaced on request."""
+    tx_hash = make_evm_tx_hash()
+    saved_id, = _add(database, [
+        _event(1_000, HistoryEventType.SPEND, '1', tx_hash=tx_hash),
+    ], customized=customized)
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+    issue_id, = _issues(database, IssueKind.NEGATIVE_BALANCE)
+    decoded = [_event(1_000, HistoryEventType.RECEIVE, '1', tx_hash=tx_hash)]
+
+    def fake_redecode(ignore_cache: bool, tx_hashes: list, delete_customized: bool) -> None:
+        assert (ignore_cache, tx_hashes, delete_customized) == (True, [tx_hash], customized)
+        with database.user_write() as write_cursor:
+            write_cursor.execute('DELETE FROM history_events WHERE identifier = ?', (saved_id,))
+            DBHistoryEvents(database).add_history_events(write_cursor, copy.deepcopy(decoded))
+
+    chains_aggregator = MagicMock()
+    decoder = chains_aggregator.get_evm_manager.return_value.transactions_decoder
+    decoder.possible_decoding_exceptions = ()
+    decoder.decode_transaction_hashes.side_effect = fake_redecode
+    group = decoded[0].group_identifier
+    with patch(
+        'rotkehlchen.history.data_issues.remediation.preview_transaction',
+        return_value=copy.deepcopy(decoded),
+    ):
+        blocked = preview_redecode(database, chains_aggregator, [group], replace_customized=False)
+        plan = preview_redecode(database, chains_aggregator, [group], replace_customized=True)
+
+    item, = blocked['plan']['items']
+    assert item['status'] == ('blocked_by_customization' if customized else 'ready')
+    assert item['bucket_effect_diff'] == [{
+        'bucket': {
+            'location': LOCATION_ETHEREUM,
+            'location_label': TEST_ADDR1,
+            'protocol': None,
+            'asset': A_ETH.identifier,
+        },
+        'current_net': '-1',
+        'proposed_net': '1',
+        'difference': '2',
+    }]
+    assert item['event_diff']['changed'][0]['changed_fields'] == ['event_type']
+    assert blocked['plan']['baseline']['open_issue_ids'] == [issue_id]
+    if customized:
+        with pytest.raises(RemediationError) as error:
+            apply_plan(database, chains_aggregator, blocked['plan_id'], 'mcp_elicitation', ts_now())  # noqa: E501
+        assert error.value.code == 'nothing_to_apply'
+
+    result = apply_plan(database, chains_aggregator, plan['plan_id'], 'mcp_elicitation', ts_now())
+    assert result['result']['items'] == [{'group_identifier': group, 'outcome': 'applied'}]
+    assert result['verification']['verdict'] == 'repaired'
+    assert result['verification']['buckets'][0]['outcome'] == 'stop_cleared'
+    assert get_accounting_health(database)['stops']['count'] == 0
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
