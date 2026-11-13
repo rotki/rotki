@@ -1,21 +1,14 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
-import { HistoricalAssetPriceResponse } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { map as mapResult } from 'plainfp/result';
-import { msg } from '@/message-key';
-import { priceBackfillActivity } from '@/modules/assets/prices/prices.activity';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
-import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
-import { logger } from '@/modules/core/common/logging/logging';
+import { onSessionCleared } from '@/modules/core/session/session-lifecycle';
 import { useSetting } from '@/modules/settings/use-setting';
-import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
 import { nextPacing } from '@/modules/statistics/pricing/backfill-pacing';
 import { type BackfillAsset, type BackfillRequest, planBackfill } from '@/modules/statistics/pricing/backfill-plan';
 import { knownPrices } from '@/modules/statistics/pricing/price-series';
-import { PricePair, usePriceSeriesStore } from '@/modules/statistics/pricing/use-price-series-store';
-import { activityLabelFor } from '@/modules/task-center/activity-labels';
+import { useBackfillRequests } from '@/modules/statistics/pricing/use-backfill-requests';
+import { usePriceSeriesStore } from '@/modules/statistics/pricing/use-price-series-store';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
-import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 /** What needs pricing: an asset at a set of times, in the main currency. */
@@ -24,8 +17,6 @@ export interface BackfillDemand {
   /** Unix seconds. */
   readonly times: readonly number[];
 }
-
-type RequestResult = 'ok' | 'rate-limited';
 
 interface UsePriceBackfillReturn {
   /**
@@ -41,7 +32,7 @@ interface UsePriceBackfillReturn {
   /** Stops the current run; it resumes when its conditions next change. */
   readonly stop: () => void;
   readonly running: Readonly<Ref<boolean>>;
-  /** The last request hit a rate limit, so the next one waits longer. */
+  /** An oracle rate limited the last request, so the next one waits longer. */
   readonly rateLimited: Readonly<Ref<boolean>>;
 }
 
@@ -66,15 +57,11 @@ async function sleep(ms: number): Promise<void> {
  * backend has no price for join `failedDailyPrices` and are not asked again this session.
  */
 export const usePriceBackfill = createSharedComposable((): UsePriceBackfillReturn => {
-  const { t } = useI18n({ useScope: 'global' });
   const currencySymbol = useSetting('currencySymbol');
-  const store = usePriceSeriesStore();
-  const { mainPrices, usdPrices } = storeToRefs(store);
+  const { mainPrices, usdPrices } = storeToRefs(usePriceSeriesStore());
   const { failedDailyPrices } = useHistoricPriceCache();
-  const { queryHistoricalAssetPrices } = useStatisticsApi();
-  const { cancelByPrefix, submitTask } = useNativeTask();
+  const { cancelAll, runRequest } = useBackfillRequests();
   const { useIsActivePrefix } = useTaskCenter();
-  const { getAssetField } = useAssetInfoRetrieval();
   const focused = useWindowFocus();
 
   const demands = shallowRef<ReadonlyMap<string, MaybeRefOrGetter<BackfillDemand | undefined>>>(new Map());
@@ -90,12 +77,22 @@ export const usePriceBackfill = createSharedComposable((): UsePriceBackfillRetur
   const canRun = computed<boolean>(() =>
     get(demandValues).some(isDefined) && get(focused) && !get(syncing) && !get(fetchingDaily));
 
-  /** The demands' assets with what is cached and known missing, leaving out the main currency. */
+  /** The times each asset needs across all demands, leaving out the main currency itself. */
+  function timesByAsset(): Map<string, number[]> {
+    const currency = get(currencySymbol);
+    const byAsset = new Map<string, number[]>();
+    for (const demand of get(demandValues)) {
+      if (demand && demand.asset !== currency)
+        byAsset.set(demand.asset, [...(byAsset.get(demand.asset) ?? []), ...demand.times]);
+    }
+    return byAsset;
+  }
+
+  /** The demanded assets with what is cached and known missing. */
   function backfillAssets(): BackfillAsset[] {
     const failed = get(failedDailyPrices);
-    const currency = get(currencySymbol);
     const usdToMain = get(mainPrices).USD;
-    return get(demandValues).flatMap(demand => (demand && demand.asset !== currency ? [demand] : [])).map(({ asset, times }) => ({
+    return Array.from(timesByAsset(), ([asset, times]) => ({
       asset,
       failed: failed[asset]?.noPricesTimestamps ?? [],
       known: knownPrices({ direct: get(mainPrices)[asset] ?? [], usdToMain, viaUsd: get(usdPrices)[asset] }),
@@ -105,53 +102,6 @@ export const usePriceBackfill = createSharedComposable((): UsePriceBackfillRetur
 
   function nextRequest(): BackfillRequest | undefined {
     return planBackfill(backfillAssets()).find(request => !attempted.has(requestKey(request)));
-  }
-
-  function recordFailures(asset: string, response: HistoricalAssetPriceResponse): void {
-    if (response.noPricesTimestamps.length === 0)
-      return;
-    const current = get(failedDailyPrices);
-    const previous = current[asset];
-    set(failedDailyPrices, {
-      ...current,
-      [asset]: {
-        noPricesTimestamps: [...new Set([...(previous?.noPricesTimestamps ?? []), ...response.noPricesTimestamps])],
-        rateLimitedPricesTimestamps: response.rateLimitedPricesTimestamps,
-      },
-    });
-  }
-
-  async function runRequest(request: BackfillRequest): Promise<RequestResult> {
-    const subject = {
-      asset: request.asset,
-      fromTimestamp: request.fromTimestamp,
-      interval: request.interval,
-      toTimestamp: request.toTimestamp,
-    };
-    const outcome = await submitTask<HistoricalAssetPriceResponse>({
-      id: priceBackfillActivity.id(subject),
-      kind: priceBackfillActivity.kind,
-      run: async ({ runTask }) => mapResult(
-        await runTask<HistoricalAssetPriceResponse>(async () => queryHistoricalAssetPrices({
-          ...subject,
-          excludeTimestamps: request.excludeTimestamps,
-        })),
-        result => HistoricalAssetPriceResponse.parse(result),
-      ),
-      subtitle: activityLabelFor(msg.$t('task_center.activity.prices.backfill'), { asset: getAssetField(request.asset, 'name') }),
-      title: t('task_center.group.prices'),
-    });
-
-    if (!outcome.ok) {
-      logger.error(outcome.error.message);
-      return 'rate-limited';
-    }
-    const response = outcome.value;
-    store.addPrices(PricePair.MAIN, request.asset, Object.entries(response.prices)
-      .filter(([, price]) => price.gt(0))
-      .map(([time, price]) => ({ price, time: Number(time) })));
-    recordFailures(request.asset, response);
-    return response.rateLimitedPricesTimestamps.length > 0 ? 'rate-limited' : 'ok';
   }
 
   /** Whether `run` is still the live loop; `stop` retires older ones. */
@@ -167,15 +117,19 @@ export const usePriceBackfill = createSharedComposable((): UsePriceBackfillRetur
       const key = requestKey(request);
       attempted.add(key);
       const result = await runRequest(request);
-      if (result === 'rate-limited')
+      if (!isCurrent(run))
+        return;
+      if (result === 'rate-limited' || result === 'cancelled')
         attempted.delete(key);
       const pacing = nextPacing(result === 'rate-limited', backoff);
       backoff = pacing.backoff;
-      set(rateLimited, backoff > 0);
+      set(rateLimited, result === 'rate-limited');
       await sleep(pacing.delay);
     }
-    if (isCurrent(run))
+    if (isCurrent(run)) {
       set(running, false);
+      set(rateLimited, false);
+    }
   }
 
   function wake(): void {
@@ -188,7 +142,18 @@ export const usePriceBackfill = createSharedComposable((): UsePriceBackfillRetur
   function stop(): void {
     generation += 1;
     set(running, false);
-    cancelByPrefix(priceBackfillActivity.kind, ...priceBackfillActivity.partsWithin([]));
+    set(rateLimited, false);
+    cancelAll();
+  }
+
+  /**
+   * Starts over for a new main currency or session: the tried requests and the backoff belong to
+   * the old one, and a request still in flight would answer in the old currency.
+   */
+  function reset(): void {
+    stop();
+    attempted.clear();
+    backoff = 0;
   }
 
   function register(id: string, demand: MaybeRefOrGetter<BackfillDemand | undefined>): void {
@@ -200,6 +165,11 @@ export const usePriceBackfill = createSharedComposable((): UsePriceBackfillRetur
     });
   }
 
+  watch(currencySymbol, () => {
+    reset();
+    wake();
+  });
+  onSessionCleared('price-backfill', reset);
   watch([canRun, demandValues], wake);
 
   return {

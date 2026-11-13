@@ -1,13 +1,13 @@
-import { DAY_SECONDS, type KnownPrice } from '@/modules/statistics/pricing/price-series';
+import { DAY_SECONDS, type KnownPrice, nearestWithin } from '@/modules/statistics/pricing/price-series';
 
 /** The most days one request asks for, so a long history is fetched a few days at a time. */
 export const DAYS_PER_REQUEST = 8;
 
 export interface BackfillAsset {
   readonly asset: string;
-  /** Prices of the asset in the main currency already cached. */
+  /** Prices of the asset in the main currency already cached, in time order. */
   readonly known: readonly KnownPrice[];
-  /** Times the backend reported as having no price; never asked again. */
+  /** Times the backend reported as having no price, never asked again; any order. */
   readonly failed: readonly number[];
   /** The times that need a price, unix seconds. */
   readonly times: readonly number[];
@@ -30,17 +30,12 @@ export function dayStart(time: number): number {
   return Math.floor(time / DAY_SECONDS) * DAY_SECONDS;
 }
 
-/** Whether a known price, or a time known to have none, lies close enough to `time` to settle it. */
-function isSettled(entry: Pick<BackfillAsset, 'failed' | 'known'>, time: number): boolean {
-  return entry.known.some(point => Math.abs(point.time - time) <= DAY_SECONDS)
-    || entry.failed.some(failed => Math.abs(failed - time) <= DAY_SECONDS);
-}
-
-/** The days still to fetch for an asset, earliest first. */
+/** The days still to fetch for an asset, earliest first: those of times with no price within a day. */
 function openDays(entry: BackfillAsset): number[] {
+  const failed = [...entry.failed].sort((a, b) => a - b).map(time => ({ time }));
   const days = new Set<number>();
   for (const time of entry.times) {
-    if (!isSettled(entry, time))
+    if (!nearestWithin(entry.known, time, DAY_SECONDS) && !nearestWithin(failed, time, DAY_SECONDS))
       days.add(dayStart(time));
   }
   return [...days].sort((a, b) => a - b);
@@ -49,6 +44,10 @@ function openDays(entry: BackfillAsset): number[] {
 /**
  * The next request for an asset: its earliest open day and the open days after it, up to
  * {@link DAYS_PER_REQUEST} days later, asked for on a daily grid that skips the days in between.
+ *
+ * @remarks
+ * The backend rejects a range that does not end after it starts, so a single open day is asked
+ * as a two-day grid with the second day excluded.
  */
 function nextRequest(entry: BackfillAsset): BackfillRequest | undefined {
   const days = openDays(entry);
@@ -63,7 +62,11 @@ function nextRequest(entry: BackfillAsset): BackfillRequest | undefined {
     if (!wanted.has(day))
       excludeTimestamps.push(day);
   }
-  return { asset: entry.asset, excludeTimestamps, fromTimestamp: first, interval: DAY_SECONDS, toTimestamp: last };
+  const singleDay = last === first;
+  const toTimestamp = singleDay ? first + DAY_SECONDS : last;
+  if (singleDay)
+    excludeTimestamps.push(toTimestamp);
+  return { asset: entry.asset, excludeTimestamps, fromTimestamp: first, interval: DAY_SECONDS, toTimestamp };
 }
 
 /**

@@ -29,7 +29,7 @@ const netWorthChart = useTemplateRef<InstanceType<typeof NetWorthChart>>('netWor
 const settingsRepo = useSettingsRepo();
 const statisticsStore = useStatisticsStore();
 const timeframe = useSetting('timeframe');
-const { exchangeRateReady, netValueError, totalNetWorth } = storeToRefs(statisticsStore);
+const { netValueError, totalNetWorth } = storeToRefs(statisticsStore);
 const visibleTimeframes = useSetting('visibleTimeframes');
 const { getNetValue } = statisticsStore;
 
@@ -47,9 +47,8 @@ const loadingNetWorth = useNetWorthLoading();
  * Wider than the header's own latch, which waits for the first load only. A delta computed from a
  * half-loaded total is a number that is wrong while it moves, so these two wait for every load. The
  * latch is what carries them through the first frames, before any balance activity is submitted.
- * They also wait for today's exchange rate, without which snapshots would be drawn in USD.
  */
-const isBusy = computed<boolean>(() => get(loadingNetWorth) || get(isLoading) || !get(exchangeRateReady));
+const isBusy = computed<boolean>(() => get(loadingNetWorth) || get(isLoading));
 
 const { fetchNetValue } = useStatisticsDataFetching();
 

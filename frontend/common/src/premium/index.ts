@@ -40,15 +40,18 @@ export interface StatisticsApi {
   cancelHistoricPriceTask: () => Promise<void>;
   cancelDailyHistoricPriceTask: () => Promise<void>;
   /**
-   * The USD to main currency rate at a time, for converting values stored in USD such as snapshots.
+   * The USD to main currency rate at each of `times`, for converting values stored in USD such as
+   * snapshots.
    *
    * @remarks
-   * Call during setup. A rate missing from the cache resolves as a flagged stand-in and is fetched
-   * in the background while the calling scope lives.
+   * Call once per graph during setup, with every time it needs: each call reads the cache and
+   * fetches what is missing as one series. A rate missing from the cache resolves as a flagged
+   * stand-in and is fetched in the background while the calling scope lives.
    *
-   * @param timestamp - unix seconds
+   * @param times - unix seconds
+   * @returns one rate per entry of `times`, in the same order
    */
-  usdRateAt: (timestamp: MaybeRefOrGetter<number>) => ComputedRef<ResolvedPrice>;
+  usdRatesAt: (times: MaybeRefOrGetter<readonly number[]>) => ComputedRef<readonly ResolvedPrice[]>;
 }
 
 export interface DateUtilities {

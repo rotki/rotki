@@ -38,8 +38,7 @@ vi.mock('@/modules/statistics/use-statistics-store', async () => {
       const totalNetWorth = createRef(bigNumberify('1500.5'));
       const netValueError = createRef<string | undefined>(undefined);
       const getNetValue = vi.fn(() => state.chart ?? emptyNetValue);
-      const exchangeRateReady = createRef<boolean>(true);
-      return { exchangeRateReady, getNetValue, netValueError, totalNetWorth };
+      return { getNetValue, netValueError, totalNetWorth };
     }),
   };
 });
@@ -133,13 +132,6 @@ describe('overallBalances', () => {
     wrapper = createWrapper();
     await nextTick();
     expect(wrapper.find('[data-testid=overall-balances-delta-approximate]').exists()).toBe(true);
-  });
-
-  it('should wait for today\'s exchange rate before drawing the chart', async () => {
-    wrapper = createWrapper();
-    set(storeToRefs(useStatisticsStore()).exchangeRateReady, false);
-    await nextTick();
-    expect(wrapper.find('[data-testid=overall-balances-delta-loading]').exists()).toBe(true);
   });
 
   describe('when the net value read failed', () => {

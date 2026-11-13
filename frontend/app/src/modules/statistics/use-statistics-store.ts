@@ -145,17 +145,21 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   function getNetValue(startingDate: number): NetValueChartData {
     const currency = get(currencySymbol);
-    const currentRate = getExchangeRate(currency, One);
+    const currentRate = getExchangeRate(currency);
     const rates = get(snapshotRates);
 
-    /** A snapshot's value in the main currency, at the rate of its own time when one is known. */
-    const convert = (value: BigNumber, time: number): { value: BigNumber; estimated: boolean; rateTime?: number } => {
+    /**
+     * A snapshot's value in the main currency, at the rate of its own time when one is known and at
+     * today's rate otherwise. Undefined when neither rate is known yet: the snapshot is left out
+     * rather than drawn in USD on a chart labelled in the main currency.
+     */
+    const convert = (value: BigNumber, time: number): { value: BigNumber; estimated: boolean; rateTime?: number } | undefined => {
       if (currency === CURRENCY_USD)
         return { estimated: false, value };
       const resolved = rates.get(time);
-      if (!resolved?.price)
-        return { estimated: true, value: value.multipliedBy(currentRate) };
-      return { estimated: isFallbackQuality(resolved.quality), rateTime: resolved.time, value: value.multipliedBy(resolved.price) };
+      if (resolved?.price)
+        return { estimated: isFallbackQuality(resolved.quality), rateTime: resolved.time, value: value.multipliedBy(resolved.price) };
+      return currentRate ? { estimated: true, value: value.multipliedBy(currentRate) } : undefined;
     };
 
     const { data, times } = get(netValue);
@@ -182,6 +186,8 @@ export const useStatisticsStore = defineStore('statistics', () => {
         continue;
 
       const converted = convert(data[i], time);
+      if (!converted)
+        continue;
       nv.times.push(time);
       nv.data.push(converted.value);
       estimated.push(converted.estimated);
@@ -197,18 +203,6 @@ export const useStatisticsStore = defineStore('statistics', () => {
     };
   }
 
-  /**
-   * Whether today's USD rate of the main currency has loaded.
-   *
-   * @remarks
-   * Until it has, a snapshot without its own rate would be drawn at a rate of one, putting USD
-   * figures on a chart labelled in the main currency, so the chart waits for it.
-   */
-  const exchangeRateReady = computed<boolean>(() => {
-    const currency = get(currencySymbol);
-    return currency === CURRENCY_USD || getExchangeRate(currency) !== undefined;
-  });
-
   function setSnapshotRates(rates: ReadonlyMap<number, ResolvedPrice>): void {
     set(snapshotRates, rates);
   }
@@ -223,7 +217,6 @@ export const useStatisticsStore = defineStore('statistics', () => {
   }
 
   return {
-    exchangeRateReady,
     getNetValue,
     netValue,
     netValueError,

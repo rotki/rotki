@@ -3,7 +3,7 @@ import type { BackfillDemand } from '@/modules/statistics/pricing/use-price-back
 import { BigNumber, PriceQuality, type ResolvedPrice } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { usdRateAt } from '@/modules/premium/premium-pricing-apis';
+import { usdRatesAt } from '@/modules/premium/premium-pricing-apis';
 
 interface SeriesCall {
   assets: readonly string[];
@@ -42,16 +42,19 @@ describe('modules/premium/premium-pricing-apis', () => {
     register.mockClear();
   });
 
-  it('should give the USD rate at the time, with its quality', () => {
-    const { result } = withSetup(() => usdRateAt(5000));
-    expect(seriesCalls).toEqual([{ assets: ['USD'], times: [5000] }]);
-    expect(get(result)).toEqual({ price: new BigNumber('0.9'), quality: PriceQuality.CARRIED });
+  it('should give the USD rate at every requested time through one series', () => {
+    const { result } = withSetup(() => usdRatesAt([5000, 6000]));
+    expect(seriesCalls).toEqual([{ assets: ['USD'], times: [5000, 6000] }]);
+    expect(get(result)).toEqual([
+      { price: new BigNumber('0.9'), quality: PriceQuality.CARRIED },
+      { price: new BigNumber('0.9'), quality: PriceQuality.CARRIED },
+    ]);
   });
 
-  it('should ask the background backfill for that one rate, under its own demand per call', () => {
-    withSetup(() => [usdRateAt(5000), usdRateAt(6000)]);
+  it('should ask the background backfill for those times as one demand per call', () => {
+    withSetup(() => [usdRatesAt([5000, 6000]), usdRatesAt([7000])]);
     const [[firstId, firstDemand], [secondId]] = register.mock.calls;
     expect(firstId).not.toBe(secondId);
-    expect(toValue(firstDemand)).toEqual({ asset: 'USD', times: [5000] });
+    expect(toValue(firstDemand)).toEqual({ asset: 'USD', times: [5000, 6000] });
   });
 });
