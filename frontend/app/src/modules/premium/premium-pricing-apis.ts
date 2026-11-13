@@ -1,8 +1,6 @@
 import type { ResolvedPrice, StatisticsApi } from '@rotki/common';
 import type { ComputedRef } from 'vue';
-import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
-import { type BackfillDemand, usePriceBackfill } from '@/modules/statistics/pricing/use-price-backfill';
-import { usePriceSeries } from '@/modules/statistics/pricing/use-price-series';
+import { useUsdRates } from '@/modules/statistics/pricing/use-usd-rates';
 
 let rateDemands = 0;
 
@@ -11,13 +9,9 @@ let rateDemands = 0;
  * values.
  *
  * @remarks
- * Goes through the same price series and background backfill as the dashboard net value, so a rate
+ * Goes through the same rates and background backfill as the dashboard net value, so a rate
  * missing from the cache is flagged until it is fetched, and fetching it sharpens both. Each call is
- * one series and one backfill demand, whatever the number of times.
+ * one backfill demand, whatever the number of times.
  */
-export const usdRatesAt: StatisticsApi['usdRatesAt'] = (times): ComputedRef<readonly ResolvedPrice[]> => {
-  const { series } = usePriceSeries([CURRENCY_USD], times);
-  const demand = computed<BackfillDemand>(() => ({ asset: CURRENCY_USD, times: toValue(times) }));
-  usePriceBackfill().register(`premium-usd-rates-${++rateDemands}`, demand);
-  return computed<readonly ResolvedPrice[]>(() => get(series).get(CURRENCY_USD) ?? []);
-};
+export const usdRatesAt: StatisticsApi['usdRatesAt'] = (times): ComputedRef<readonly ResolvedPrice[]> =>
+  useUsdRates(`premium-usd-rates-${++rateDemands}`, times).rates;

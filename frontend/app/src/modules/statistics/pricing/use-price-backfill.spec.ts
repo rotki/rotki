@@ -6,10 +6,10 @@ import { setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
+import { SECONDS_PER_DAY } from '@/modules/core/common/constraints';
 import { defaultGeneralSettings } from '@/modules/settings/factories';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { BACKOFF_START_MS, REQUEST_DELAY_MS } from '@/modules/statistics/pricing/backfill-pacing';
-import { DAY_SECONDS } from '@/modules/statistics/pricing/price-series';
 import { type BackfillDemand, usePriceBackfill } from '@/modules/statistics/pricing/use-price-backfill';
 import { usePriceSeriesStore } from '@/modules/statistics/pricing/use-price-series-store';
 
@@ -75,14 +75,14 @@ vi.mock('@/modules/task-center/use-native-task', async (): Promise<unknown> => {
   };
 });
 
-const days = [0, 1, 2, 3].map(day => day * DAY_SECONDS);
+const days = [0, 1, 2, 3].map(day => day * SECONDS_PER_DAY);
 
 function flatPrices(times: number[], price = '10'): Record<string, string> {
   return Object.fromEntries(times.map(time => [time.toString(), price]));
 }
 
 function demand(): BackfillDemand {
-  return { asset: 'BTC', times: days.map(day => day + DAY_SECONDS / 2) };
+  return { asset: 'BTC', times: days.map(day => day + SECONDS_PER_DAY / 2) };
 }
 
 describe('modules/statistics/pricing/use-price-backfill', () => {
@@ -108,22 +108,17 @@ describe('modules/statistics/pricing/use-price-backfill', () => {
 
   it('should fetch the demand\'s days in the background, store the prices and stop once settled', async () => {
     responses.push({ noPricesTimestamps: [], prices: flatPrices(days), rateLimitedPricesTimestamps: [] });
-    const { result } = withSetup(() => {
-      const backfill = usePriceBackfill();
-      backfill.register('rates', demand());
-      return backfill;
-    });
+    withSetup(() => usePriceBackfill().register('rates', demand()));
     await vi.advanceTimersByTimeAsync(REQUEST_DELAY_MS);
 
     expect(queryHistoricalAssetPrices).toHaveBeenCalledOnce();
     expect(queryHistoricalAssetPrices).toHaveBeenCalledWith(expect.objectContaining({
       asset: 'BTC',
       fromTimestamp: 0,
-      interval: DAY_SECONDS,
-      toTimestamp: 3 * DAY_SECONDS,
+      interval: SECONDS_PER_DAY,
+      toTimestamp: 3 * SECONDS_PER_DAY,
     }));
-    expect(usePriceSeriesStore().mainPrices.BTC).toHaveLength(days.length);
-    expect(get(result.running)).toBe(false);
+    expect(usePriceSeriesStore().prices.BTC).toHaveLength(days.length);
   });
 
   it('should remember days with no price and not ask for them again', async () => {
@@ -176,7 +171,7 @@ describe('modules/statistics/pricing/use-price-backfill', () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(queryHistoricalAssetPrices).toHaveBeenCalledTimes(2);
-    expect(cancelByPrefix).toHaveBeenCalled();
+    expect(cancelByPrefix).toHaveBeenCalledWith('prices', 'backfill');
   });
 
   it('should pause while the window is unfocused and resume when it comes back', async () => {
@@ -188,11 +183,5 @@ describe('modules/statistics/pricing/use-price-backfill', () => {
     set(focused, true);
     await vi.advanceTimersByTimeAsync(0);
     expect(queryHistoricalAssetPrices).toHaveBeenCalledOnce();
-  });
-
-  it('should cancel the in-flight request on stop', () => {
-    const { result } = withSetup(() => usePriceBackfill());
-    result.stop();
-    expect(cancelByPrefix).toHaveBeenCalledWith('prices', 'backfill');
   });
 });

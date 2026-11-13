@@ -101,12 +101,11 @@ export type CommonQueryStatusData = z.infer<typeof CommonQueryStatusData>;
  * Where a resolved historic price came from, best first.
  *
  * @remarks
- * Only `exact` and `derived` are real prices for that time. The rest are stand-ins a chart must
- * flag, and `missing` means no price at all: the value is left out, never counted as zero.
+ * Only `exact` is a real price for that time. The rest are stand-ins a chart must flag, and
+ * `missing` means no price at all: the value is left out, never counted as zero.
  */
 export const PriceQuality = {
   EXACT: 'exact',
-  DERIVED: 'derived',
   CARRIED: 'carried',
   BACK_FILLED: 'back-filled',
   CURRENT: 'current',
