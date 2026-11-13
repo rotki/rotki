@@ -1,5 +1,7 @@
 import type { KnownPrice } from '@/modules/statistics/pricing/price-series';
 import { chunk } from 'es-toolkit';
+import { pipe } from 'plainfp';
+import { fromPromise, getOr, map, tapError } from 'plainfp/result-async';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { SECONDS_PER_DAY } from '@/modules/core/common/constraints';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -37,22 +39,23 @@ export function usePriceCacheReader(): UsePriceCacheReaderReturn {
   const currencySymbol = useSetting('currencySymbol');
   const { queryOnlyCacheHistoricalRates } = usePriceApi();
 
+  /** Reads one chunk; a failed read is logged and let go, so the times can be asked again. */
   async function readChunk(asset: string, currency: string, times: readonly number[]): Promise<KnownPrice[]> {
     const keys = times.map(time => requestKey(asset, time));
     store.markRequested(keys);
-    try {
-      const result = await queryOnlyCacheHistoricalRates({
+    return pipe(
+      fromPromise(queryOnlyCacheHistoricalRates({
         assetsTimestamp: times.map(time => [asset, time.toString()]),
         onlyCachePeriod: SECONDS_PER_DAY,
         targetAsset: currency,
-      });
-      return Object.entries(result.assets[asset] ?? {}).map(([time, price]) => ({ price, time: Number(time) }));
-    }
-    catch (error: unknown) {
-      logger.error(error);
-      store.forgetRequested(keys);
-      return [];
-    }
+      }), (error: unknown) => error),
+      map(result => Object.entries(result.assets[asset] ?? {}).map(([time, price]): KnownPrice => ({ price, time: Number(time) }))),
+      tapError((error) => {
+        logger.error(error);
+        store.forgetRequested(keys);
+      }),
+      getOr<KnownPrice[]>([]),
+    );
   }
 
   async function readCached(asset: string, times: readonly number[], force = false): Promise<void> {
