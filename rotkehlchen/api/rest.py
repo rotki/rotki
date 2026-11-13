@@ -180,6 +180,13 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.constants import IssueState
+from rotkehlchen.history.data_issues.diagnostics import (
+    explain_data_issue,
+    get_accounting_health,
+    list_data_issues as list_data_issues_diagnosis,
+    make_bucket,
+    trace_bucket,
+)
 from rotkehlchen.history.data_issues.manager import (
     DataIssuesManager,
     make_auto_remediation_attempt,
@@ -188,6 +195,20 @@ from rotkehlchen.history.data_issues.reconciliation import (
     ReconciliationBucket,
     ReconciliationReport,
     get_reconciliation_report,
+)
+from rotkehlchen.history.data_issues.remediation import (
+    PlanKind,
+    RemediationError,
+    apply_plan as apply_remediation_plan,
+    get_plan as get_remediation_plan,
+    preview_bridge_link,
+    preview_redecode,
+    reject_plan as reject_remediation_plan,
+    verify_plan as verify_remediation_plan,
+)
+from rotkehlchen.history.data_issues.transaction_diagnostics import (
+    explain_bridge_match,
+    inspect_transaction,
 )
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import (
@@ -4125,6 +4146,173 @@ class RestAPI:
                 'group_identifier': bucket.stop.group_identifier,
             },
         }
+
+    @accounting_update_required('Data issues are disabled', response=True)
+    def get_accounting_health(self) -> Response:
+        return api_response(OkResult(get_accounting_health(self.rotkehlchen.data.db)))
+
+    @accounting_update_required('Data issues are disabled', response=True)
+    def get_data_issues_diagnosis(self, filter_query: DataIssuesFilterQuery) -> Response:
+        return api_response(OkResult(list_data_issues_diagnosis(
+            database=self.rotkehlchen.data.db,
+            filter_query=filter_query,
+        )))
+
+    @accounting_update_required('Data issues are disabled', response=True)
+    def explain_data_issue(self, issue_id: int) -> Response:
+        try:
+            result = explain_data_issue(database=self.rotkehlchen.data.db, issue_id=issue_id)
+        except NotFoundError as e:
+            return api_response(FailResult(str(e), HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND))
+
+        return api_response(OkResult(result))
+
+    @accounting_update_required('Data issues are disabled', response=True)
+    def trace_bucket(
+            self,
+            location: LocationIdentifier,
+            location_label: str | None,
+            protocol: str | None,
+            asset: str,
+            from_ts: TimestampMS | None,
+            limit: int,
+            offset: int | None,
+    ) -> Response:
+        return api_response(OkResult(trace_bucket(
+            database=self.rotkehlchen.data.db,
+            bucket=make_bucket(
+                location=location,
+                location_label=location_label,
+                protocol=protocol,
+                asset=asset,
+            ),
+            from_ts=from_ts,
+            limit=limit,
+            offset=offset,
+        )))
+
+    @accounting_update_required('Data issues are disabled', response=True)
+    def inspect_transaction(self, group_identifier: str) -> Response:
+        if (result := inspect_transaction(
+            database=self.rotkehlchen.data.db,
+            group_identifier=group_identifier,
+        )) is None:
+            return api_response(FailResult(
+                'No events found for the given group identifier',
+                HTTPStatus.NOT_FOUND,
+                FailureCause.NOT_FOUND,
+            ))
+
+        return api_response(OkResult(result))
+
+    @accounting_update_required('Data issues are disabled', response=True)
+    def explain_bridge_match(self, event_identifier: int) -> Response:
+        if (result := explain_bridge_match(
+            database=self.rotkehlchen.data.db,
+            event_identifier=event_identifier,
+        )) is None:
+            return api_response(FailResult(
+                f'Event {event_identifier} does not exist or is not a bridge leg',
+                HTTPStatus.NOT_FOUND,
+                FailureCause.NOT_FOUND,
+            ))
+
+        return api_response(OkResult(result))
+
+    @staticmethod
+    def _remediation_failure(error: RemediationError | NotFoundError) -> FailResult:
+        if isinstance(error, NotFoundError):
+            return FailResult(str(error), HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND)
+        return FailResult(
+            str(error),
+            HTTPStatus.CONFLICT,
+            FailureCause.CONFLICT,
+            result={'code': error.code},
+        )
+
+    @async_api_call()
+    @accounting_update_required('Data issues are disabled')
+    def create_remediation_plan(
+            self,
+            kind: PlanKind,
+            group_identifiers: list[str] | None,
+            replace_customized: bool,
+            bridge_event_identifier: int | None,
+            matched_event_identifier: int | None,
+    ) -> ApiResult:
+        try:
+            if kind == PlanKind.REDECODE:
+                assert group_identifiers is not None  # checked by the schema
+                plan = preview_redecode(
+                    database=self.rotkehlchen.data.db,
+                    chains_aggregator=self.rotkehlchen.chains_aggregator,
+                    group_identifiers=group_identifiers,
+                    replace_customized=replace_customized,
+                )
+            else:
+                assert bridge_event_identifier is not None  # checked by the schema
+                assert matched_event_identifier is not None
+                plan = preview_bridge_link(
+                    database=self.rotkehlchen.data.db,
+                    bridge_event_identifier=bridge_event_identifier,
+                    matched_event_identifier=matched_event_identifier,
+                )
+        except RemediationError as e:
+            return self._remediation_failure(e)
+
+        return OkResult(plan)
+
+    @accounting_update_required('Data issues are disabled', response=True)
+    def get_remediation_plan(self, plan_id: str) -> Response:
+        try:
+            result = get_remediation_plan(database=self.rotkehlchen.data.db, plan_id=plan_id)
+        except NotFoundError as e:
+            return api_response(self._remediation_failure(e))
+
+        return api_response(OkResult(result))
+
+    @async_api_call()
+    @accounting_update_required('Data issues are disabled')
+    def apply_remediation_plan(
+            self,
+            plan_id: str,
+            approval_method: str,
+            approved_at: Timestamp,
+    ) -> ApiResult:
+        try:
+            result = apply_remediation_plan(
+                database=self.rotkehlchen.data.db,
+                chains_aggregator=self.rotkehlchen.chains_aggregator,
+                plan_id=plan_id,
+                approval_method=approval_method,
+                approved_at=approved_at,
+            )
+        except (RemediationError, NotFoundError) as e:
+            return self._remediation_failure(e)
+
+        return OkResult(result)
+
+    @accounting_update_required('Data issues are disabled', response=True)
+    def reject_remediation_plan(self, plan_id: str, reason: str) -> Response:
+        try:
+            result = reject_remediation_plan(
+                database=self.rotkehlchen.data.db,
+                plan_id=plan_id,
+                reason=reason,
+            )
+        except (RemediationError, NotFoundError) as e:
+            return api_response(self._remediation_failure(e))
+
+        return api_response(OkResult(result))
+
+    @accounting_update_required('Data issues are disabled', response=True)
+    def verify_remediation_plan(self, plan_id: str) -> Response:
+        try:
+            result = verify_remediation_plan(database=self.rotkehlchen.data.db, plan_id=plan_id)
+        except NotFoundError as e:
+            return api_response(self._remediation_failure(e))
+
+        return api_response(OkResult(result))
 
     def _serialize_reconciliation_report(self, report: ReconciliationReport) -> dict[str, Any]:
         accounts = []

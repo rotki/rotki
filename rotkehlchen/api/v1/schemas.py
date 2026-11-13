@@ -118,10 +118,15 @@ from rotkehlchen.externalapis.ipfs import normalize_ipfs_gateway_url
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.bucket_checks import BucketStatus
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
+from rotkehlchen.history.data_issues.diagnostics import (
+    DEFAULT_TRACE_PAGE_SIZE,
+    MAX_TRACE_PAGE_SIZE,
+)
 from rotkehlchen.history.data_issues.reconciliation import (
     DEFAULT_PAGE_SIZE as DEFAULT_RECONCILIATION_PAGE_SIZE,
     MAX_PAGE_SIZE as MAX_RECONCILIATION_PAGE_SIZE,
 )
+from rotkehlchen.history.data_issues.remediation import APPROVAL_METHODS, PlanKind
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     AssetMovementExtraData,
@@ -5022,6 +5027,56 @@ class DataIssuesFilterSchema(DBPaginationSchema):
 
 class DataIssueManualResolveSchema(Schema):
     note = EmptyAsNoneStringField(load_default=None)
+
+
+class BucketTraceSchema(Schema):
+    location = LocationField(required=True)
+    location_label = EmptyAsNoneStringField(load_default=None)
+    protocol = EmptyAsNoneStringField(load_default=None)
+    asset = NonEmptyStringField(required=True)
+    from_timestamp = TimestampMSField(load_default=None)
+    limit = fields.Integer(load_default=DEFAULT_TRACE_PAGE_SIZE, validate=validate.Range(min=1, max=MAX_TRACE_PAGE_SIZE))  # noqa: E501
+    offset = fields.Integer(load_default=None, validate=validate.Range(min=0))
+
+
+class TransactionDiagnosisSchema(Schema):
+    group_identifier = NonEmptyStringField(required=True)
+
+
+class BridgeMatchDiagnosisSchema(Schema):
+    event_identifier = fields.Integer(required=True, validate=validate.Range(min=1))
+
+
+class RemediationPlanCreateSchema(AsyncQueryArgumentSchema):
+    kind = StrEnumField(enum_class=PlanKind, required=True)
+    group_identifiers = fields.List(NonEmptyStringField(), load_default=None)
+    replace_customized = fields.Boolean(load_default=False)
+    bridge_event_identifier = fields.Integer(load_default=None, validate=validate.Range(min=1))
+    matched_event_identifier = fields.Integer(load_default=None, validate=validate.Range(min=1))
+
+    @validates_schema
+    def validate_kind_arguments(self, data: dict[str, Any], **_kwargs: Any) -> None:
+        if data['kind'] == PlanKind.REDECODE and not data['group_identifiers']:
+            raise ValidationError(
+                message='A redecode plan needs group_identifiers',
+                field_name='group_identifiers',
+            )
+        if data['kind'] == PlanKind.BRIDGE_LINK and (
+            data['bridge_event_identifier'] is None or data['matched_event_identifier'] is None
+        ):
+            raise ValidationError(
+                message='A bridge link plan needs bridge_event_identifier and matched_event_identifier',  # noqa: E501
+                field_name='bridge_event_identifier',
+            )
+
+
+class RemediationPlanApplySchema(AsyncQueryArgumentSchema):
+    approval_method = fields.String(required=True, validate=validate.OneOf(APPROVAL_METHODS))
+    approved_at = TimestampField(required=True)
+
+
+class RemediationPlanRejectSchema(Schema):
+    reason = NonEmptyStringField(load_default='declined')
 
 
 class HistoricalBalanceReconciliationSchema(DBPaginationSchema):
