@@ -1,6 +1,4 @@
 import type { ResolvedPrice } from '@rotki/common';
-import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
-import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useUsdRates } from '@/modules/statistics/pricing/use-usd-rates';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
@@ -24,13 +22,9 @@ function sameRate(a: ResolvedPrice | undefined, b: ResolvedPrice): boolean {
 export function useSnapshotRates(): void {
   const store = useStatisticsStore();
   const { netValue, snapshotRates } = storeToRefs(store);
-  const { resolvedFailedDailyPrices } = useHistoricPriceCache();
 
   const times = computed<number[]>(() => get(netValue).times);
-  const { rates, reload } = useUsdRates(SNAPSHOT_RATES_DEMAND, times);
-
-  /** A rate entered by hand for a day the oracles had none is in the cache now, so read it. */
-  watch(() => get(resolvedFailedDailyPrices)[CURRENCY_USD], async () => reload());
+  const { rates } = useUsdRates(SNAPSHOT_RATES_DEMAND, times);
 
   watchImmediate(rates, (resolved) => {
     const next = new Map<number, ResolvedPrice>();

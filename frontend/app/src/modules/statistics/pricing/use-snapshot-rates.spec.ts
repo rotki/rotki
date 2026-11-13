@@ -15,9 +15,9 @@ const { rates, requested } = await vi.hoisted(async () => {
 });
 
 vi.mock('@/modules/statistics/pricing/use-usd-rates', () => ({
-  useUsdRates: (id: string, times: MaybeRefOrGetter<readonly number[]>): { rates: typeof rates; reload: () => Promise<void> } => {
+  useUsdRates: (id: string, times: MaybeRefOrGetter<readonly number[]>): { rates: typeof rates } => {
     watchImmediate((): readonly number[] => toValue(times), (nextTimes): void => set(requested, { id, times: nextTimes }));
-    return { rates, reload: async (): Promise<void> => {} };
+    return { rates };
   },
 }));
 

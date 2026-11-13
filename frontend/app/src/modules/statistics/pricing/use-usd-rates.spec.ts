@@ -11,9 +11,17 @@ import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { usePriceSeriesStore } from '@/modules/statistics/pricing/use-price-series-store';
 import { useUsdRates } from '@/modules/statistics/pricing/use-usd-rates';
 
-const { readCached, register } = vi.hoisted(() => ({
-  readCached: vi.fn<(asset: string, times: readonly number[], force?: boolean) => Promise<void>>(async () => {}),
-  register: vi.fn<(id: string, demand: MaybeRefOrGetter<BackfillDemand | undefined>) => void>(),
+const { readCached, register, resolvedFailedDailyPrices } = await vi.hoisted(async () => {
+  const { shallowRef: createShallowRef } = await import('vue');
+  return {
+    readCached: vi.fn<(asset: string, times: readonly number[], force?: boolean) => Promise<void>>(async () => {}),
+    register: vi.fn<(id: string, demand: MaybeRefOrGetter<BackfillDemand | undefined>) => void>(),
+    resolvedFailedDailyPrices: createShallowRef<Record<string, number[]>>({}),
+  };
+});
+
+vi.mock('@/modules/assets/prices/use-historic-price-cache', () => ({
+  useHistoricPriceCache: (): { resolvedFailedDailyPrices: typeof resolvedFailedDailyPrices } => ({ resolvedFailedDailyPrices }),
 }));
 
 vi.mock('@/modules/statistics/pricing/use-price-cache-reader', () => ({
@@ -46,6 +54,7 @@ describe('modules/statistics/pricing/use-usd-rates', () => {
     setActivePinia(createPinia());
     readCached.mockClear();
     register.mockClear();
+    set(resolvedFailedDailyPrices, {});
   });
 
   afterEach(() => {
@@ -100,5 +109,29 @@ describe('modules/statistics/pricing/use-usd-rates', () => {
 
     expect(store.prices).toEqual({});
     expect(store.isRequested('USD:86400')).toBe(false);
+  });
+
+  it('should read the cache again in a new non-USD currency', async () => {
+    setMainCurrency('EUR');
+    withSetup(() => useUsdRates('rates', [SECONDS_PER_DAY]));
+    await vi.advanceTimersByTimeAsync(400);
+    readCached.mockClear();
+
+    setMainCurrency('GBP');
+    await vi.advanceTimersByTimeAsync(400);
+
+    expect(readCached).toHaveBeenCalledWith('USD', [SECONDS_PER_DAY]);
+  });
+
+  it('should read the cache again after a rate is added by hand', async () => {
+    setMainCurrency('EUR');
+    withSetup(() => useUsdRates('rates', [SECONDS_PER_DAY]));
+    await vi.advanceTimersByTimeAsync(400);
+    readCached.mockClear();
+
+    set(resolvedFailedDailyPrices, { USD: [SECONDS_PER_DAY] });
+    await nextTick();
+
+    expect(readCached).toHaveBeenCalledWith('USD', [SECONDS_PER_DAY], true);
   });
 });
