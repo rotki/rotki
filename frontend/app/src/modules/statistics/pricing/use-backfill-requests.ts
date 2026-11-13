@@ -20,9 +20,10 @@ import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 /**
  * How a request ended: priced (ok), throttled by an oracle (retried after a backoff), failed
- * outright (its days are recorded as having no price), answered with a response that does not
- * match the schema (a bug on our side, so its days are not blamed on the oracles), cancelled, or
- * overtaken by a currency switch.
+ * outright (the backend or the network, so its days are skipped this session after a backoff),
+ * answered with a response that does not match the schema (a bug on our side), cancelled, or
+ * overtaken by a currency switch. Only days the backend reports as having no price are recorded
+ * as such; a failure says nothing about the oracles.
  */
 export type RequestResult = 'ok' | 'rate-limited' | 'failed' | 'invalid' | 'cancelled' | 'stale';
 
@@ -33,17 +34,6 @@ interface UseBackfillRequestsReturn {
   readonly runRequest: (request: BackfillRequest) => Promise<RequestResult>;
   /** Cancels every backfill request in flight. */
   readonly cancelAll: () => void;
-}
-
-/** The days a request asks for. */
-function requestedDays(request: BackfillRequest): number[] {
-  const excluded = new Set(request.excludeTimestamps);
-  const days: number[] = [];
-  for (let day = request.fromTimestamp; day <= request.toTimestamp; day += SECONDS_PER_DAY) {
-    if (!excluded.has(day))
-      days.push(day);
-  }
-  return days;
 }
 
 /** Whether a task failed because the backend's answer did not match the response schema. */
@@ -68,10 +58,9 @@ export function classifyOutcome(outcome: Result<HistoricalAssetPriceResponse, Ta
  *
  * @remarks
  * The backend prices in whatever main currency is set when it answers, so a response that arrives
- * after a currency switch is dropped rather than filed under the new currency. A request that fails
- * outright records its days as having no price: the backfill does not retry them this session, and
- * the user can add them by hand. The response is parsed inside the task, so a malformed one shows as
- * a failed activity, but its days are left open.
+ * after a currency switch is dropped rather than filed under the new currency. Days the backend
+ * reports as having no price are recorded, so the user can add them by hand. The response is parsed
+ * inside the task, so a malformed one shows as a failed activity.
  */
 export function useBackfillRequests(): UseBackfillRequestsReturn {
   const { t } = useI18n({ useScope: 'global' });
@@ -128,11 +117,8 @@ export function useBackfillRequests(): UseBackfillRequestsReturn {
         recordFailures(request.asset, response.noPricesTimestamps, response.rateLimitedPricesTimestamps);
       }),
       tapError((error) => {
-        if (result === 'cancelled')
-          return;
-        logger.error(error.message);
-        if (result === 'failed')
-          recordFailures(request.asset, requestedDays(request), []);
+        if (result !== 'cancelled')
+          logger.error(error.message);
       }),
     );
     return result;
