@@ -5042,6 +5042,18 @@ class HistoricalBalanceReconciliationSchema(DBPaginationSchema):
     offset = fields.Integer(load_default=0, validate=validate.Range(min=0))
 
 
+def _validate_known_location_label(db: DBHandler, location_label: str | None) -> None:
+    with db.conn.read_ctx() as cursor:
+        if cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE location_label = ?',
+            (location_label,),
+        ).fetchone()[0] == 0:
+            raise ValidationError(
+                message=f'Unknown location label "{location_label}" provided',
+                field_name='location_label',
+            )
+
+
 class HistoricalBalanceFilterValidationSchemaMixin(Schema):
     def __init__(self, db: DBHandler, known_counterparties: set[str]) -> None:
         super().__init__()
@@ -5064,15 +5076,7 @@ class HistoricalBalanceFilterValidationSchemaMixin(Schema):
             )
 
         if (location_label := data['location_label']) is not None:
-            with self.db.conn.read_ctx() as cursor:
-                if cursor.execute(
-                    'SELECT COUNT(*) FROM history_events WHERE location_label = ?',
-                    (location_label,),
-                ).fetchone()[0] == 0:
-                    raise ValidationError(
-                        message=f'Unknown location label "{location_label}" provided',
-                        field_name='location_label',
-                    )
+            _validate_known_location_label(db=self.db, location_label=location_label)
 
 
 class HistoricalPerAssetBalanceSchema(
@@ -5175,15 +5179,7 @@ class HistoricalBalanceSeriesSchema(TimestampRangeSchema, AsyncQueryArgumentSche
                 field_name='protocol',
             )
 
-        with self.db.conn.read_ctx() as cursor:
-            if cursor.execute(
-                'SELECT COUNT(*) FROM history_events WHERE location_label = ?',
-                (data['location_label'],),
-            ).fetchone()[0] == 0:
-                raise ValidationError(
-                    message=f'Unknown location label "{data["location_label"]}" provided',
-                    field_name='location_label',
-                )
+        _validate_known_location_label(db=self.db, location_label=data['location_label'])
 
     @post_load
     def make_historical_balance_query(
@@ -5209,6 +5205,18 @@ class HistoricalBalanceAssetsSchema(Schema):
     location_label = EmptyAsNoneStringField(required=True)
     location = LocationField(load_default=None)
     include_ignored = fields.Boolean(load_default=False)
+
+    def __init__(self, db: DBHandler) -> None:
+        super().__init__()
+        self.db = db
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        _validate_known_location_label(db=self.db, location_label=data['location_label'])
 
     @post_load
     def make_historical_balance_query(

@@ -4146,10 +4146,12 @@ class HistoricalBalanceSeriesResource(BaseMethodView):
 
 
 class HistoricalBalanceAssetsResource(BaseMethodView):
-    post_schema = HistoricalBalanceAssetsSchema()
+
+    def make_post_schema(self) -> HistoricalBalanceAssetsSchema:
+        return HistoricalBalanceAssetsSchema(db=self.rest_api.rotkehlchen.data.db)
 
     @require_premium_user(active_check=False)
-    @use_kwargs(post_schema, location='json')
+    @resource_parser.use_kwargs(make_post_schema, location='json')
     def post(self, filter_query: HistoricalBalancesFilterQuery, include_ignored: bool) -> Response:
         return self.rest_api.get_historical_balance_assets(
             filter_query=filter_query,

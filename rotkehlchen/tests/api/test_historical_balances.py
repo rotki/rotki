@@ -618,7 +618,8 @@ def test_get_historical_balance_with_filters(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_balance_assets(rotkehlchen_api_server: APIServer) -> None:
-    """Assets the account fully exited are listed, ignored and other accounts' assets are not."""
+    """Assets the account fully exited are listed, ignored and other accounts' assets are not.
+    Unprocessed events are flagged and unknown location labels are rejected."""
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     addr1, addr2 = make_evm_address(), make_evm_address()
     with db.user_write() as write_cursor:
@@ -645,6 +646,11 @@ def test_get_historical_balance_assets(rotkehlchen_api_server: APIServer) -> Non
             ))],
         )
 
+    assert assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'historicalbalanceassetsresource'),
+        json={'location_label': addr1},
+    )) == {'processing_required': True, 'entries': []}
+
     process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
     with db.user_write() as write_cursor:
         db.add_to_ignored_assets(write_cursor=write_cursor, asset=A_DASH)
@@ -654,20 +660,23 @@ def test_get_historical_balance_assets(rotkehlchen_api_server: APIServer) -> Non
         ({'location_label': addr1, 'location': 'ethereum'}, ['BTC', 'ETH']),
         ({'location_label': addr2}, ['USD']),
         ({'location_label': addr1, 'include_ignored': True}, ['BTC', 'DASH', 'ETH', 'EUR']),
-        ({'location_label': make_evm_address()}, []),
     ):
         assert assert_proper_sync_response_with_result(requests.post(
             api_url_for(rotkehlchen_api_server, 'historicalbalanceassetsresource'),
             json=filters,
-        )) == expected, f'Failed for filters: {filters}'
+        )) == {'processing_required': False, 'entries': expected}, f'Failed for filters: {filters}'
 
-    assert_error_response(
-        response=requests.post(
-            api_url_for(rotkehlchen_api_server, 'historicalbalanceassetsresource'),
-            json={'location': 'ethereum'},
-        ),
-        contained_in_msg='location_label',
-    )
+    for payload, error_msg in (
+        ({'location': 'ethereum'}, 'location_label'),
+        ({'location_label': make_evm_address()}, 'Unknown location label'),
+    ):
+        assert_error_response(
+            response=requests.post(
+                api_url_for(rotkehlchen_api_server, 'historicalbalanceassetsresource'),
+                json=payload,
+            ),
+            contained_in_msg=error_msg,
+        )
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

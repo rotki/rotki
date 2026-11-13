@@ -16423,13 +16423,17 @@ Historical Balance Queries
 
       {
         "message": "",
-        "result": ["ETH", "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"],
+        "result": {
+          "processing_required": false,
+          "entries": ["ETH", "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"]
+        },
         "status_code": 200
       }
 
-      :resjson list result: Asset identifiers sorted by identifier. Empty when the account has no processed balances.
+      :resjson bool processing_required: Whether there are events matching the filters that have not been processed yet.
+      :resjson list entries: Asset identifiers sorted by identifier. Empty when the account has no processed balances.
       :statuscode 200: Assets returned
-      :statuscode 400: Malformed query
+      :statuscode 400: Malformed query or unknown location label
       :statuscode 403: User does not have premium access
       :statuscode 404: Accounting-update feature flag disabled
       :statuscode 409: User is not logged in
