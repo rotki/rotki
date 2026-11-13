@@ -116,7 +116,7 @@ def _get_customized_transactions_for_issue(
     return dict(events_by_transaction)
 
 
-def _preview_transaction(
+def preview_transaction(
         database: DBHandler,
         chains_aggregator: ChainsAggregator,
         chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
@@ -241,7 +241,7 @@ def _check_issue(
             if len(saved_effects) != 0:
                 customized_transaction_count += 1
             if (preview_events := preview_cache.get((chain_id, tx_hash))) is None:
-                preview_events = _preview_transaction(
+                preview_events = preview_transaction(
                     database=database,
                     chains_aggregator=chains_aggregator,
                     chain_id=chain_id,

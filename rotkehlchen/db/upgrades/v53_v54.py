@@ -771,4 +771,27 @@ CREATE TABLE IF NOT EXISTS lido_csm_node_operator_metrics (
             'ON chain_events_info(counterparty)',
         )
 
+    @progress_step(description='Add remediation plans and their audit trail.')
+    def _add_remediation_plans(write_cursor: DBCursor) -> None:
+        write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS remediation_plans (
+    identifier TEXT NOT NULL PRIMARY KEY,
+    kind TEXT NOT NULL,
+    state TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL,
+    evidence_revision TEXT NOT NULL,
+    plan TEXT NOT NULL,
+    result TEXT,
+    applied_at INTEGER
+);""")
+        write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS remediation_plan_audit (
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    plan_identifier TEXT NOT NULL REFERENCES remediation_plans(identifier) ON DELETE CASCADE,
+    timestamp INTEGER NOT NULL,
+    action TEXT NOT NULL,
+    details TEXT NOT NULL
+);""")
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

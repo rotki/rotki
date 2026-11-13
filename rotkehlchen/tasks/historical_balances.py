@@ -2,6 +2,7 @@ import logging
 import time
 from collections import defaultdict
 from contextlib import suppress
+from enum import StrEnum
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
@@ -173,6 +174,25 @@ def _get_wallet_protocol(event: HistoryBaseEntry) -> str | None:
     return None
 
 
+class BucketEffectRule(StrEnum):
+    """The branch of Bucket.effects_with_rule that decided an event's bucket effects.
+
+    Diagnostics report it next to every effect so an effect can be traced to the rule that
+    produced it. The ``IGNORED_*`` rules and ``NO_BALANCE_DIRECTION`` produce no effect.
+    """
+    IGNORED_COWSWAP_ESCROW = 'ignored_cowswap_escrow'
+    IGNORED_EXCHANGE_INTERNAL_STAKING = 'ignored_exchange_internal_staking'
+    IGNORED_EXCHANGE_TRANSFER = 'ignored_exchange_transfer'
+    PROTOCOL_DEPOSIT_WITHDRAWAL = 'protocol_deposit_withdrawal'
+    OWNED_ADDRESS_TRANSFER = 'owned_address_transfer'
+    NO_BALANCE_DIRECTION = 'no_balance_direction'
+    PROTOCOL_LIQUIDATION = 'protocol_liquidation'
+    WALLET = 'wallet'
+
+
+type BucketEffects = list[tuple[Bucket, Literal[EventDirection.IN, EventDirection.OUT]]]
+
+
 class Bucket(NamedTuple):
     """Represents a unique bucket for tracking historical balances.
 
@@ -204,8 +224,20 @@ class Bucket(NamedTuple):
             cls,
             event: HistoryBaseEntry,
             treat_eth2_as_eth: bool = False,
-    ) -> list[tuple[Bucket, Literal[EventDirection.IN, EventDirection.OUT]]]:
+    ) -> BucketEffects:
         """Returns list of (Bucket, direction) pairs affected by this event.
+
+        See effects_with_rule for the cases handled.
+        """
+        return cls.effects_with_rule(event=event, treat_eth2_as_eth=treat_eth2_as_eth)[1]
+
+    @classmethod
+    def effects_with_rule(
+            cls,
+            event: HistoryBaseEntry,
+            treat_eth2_as_eth: bool = False,
+    ) -> tuple[BucketEffectRule, BucketEffects]:
+        """Returns the rule deciding the event's effects and the (Bucket, direction) pairs.
 
         Handles the following cases:
         - CowSwap native asset order deposits/refunds/cancellations: ignored as escrow transfers
@@ -244,7 +276,7 @@ class Bucket(NamedTuple):
             event_key in COWSWAP_ORDER_EVENTS_TO_IGNORE and
             counterparty == CPT_COWSWAP
         ):
-            return []
+            return BucketEffectRule.IGNORED_COWSWAP_ESCROW, []
 
         if (  # Only exchange-side events, which have no counterparty. HyperEVM events share
             # the hyperliquid location, but a staking deposit there has a protocol counterparty.
@@ -252,13 +284,13 @@ class Bucket(NamedTuple):
             event_key in INTERNAL_STAKING_EVENTS and
             counterparty is None
         ):
-            return []
+            return BucketEffectRule.IGNORED_EXCHANGE_INTERNAL_STAKING, []
 
         if (
             event.event_type == HistoryEventType.TRANSFER and
             event.location in ALL_SUPPORTED_EXCHANGES
         ):
-            return []
+            return BucketEffectRule.IGNORED_EXCHANGE_TRANSFER, []
 
         if (  # Depositing/withdrawing to protocols affects both wallet and protocol buckets
             event_key in DUAL_BUCKET_PROTOCOL_EVENTS and
@@ -266,7 +298,7 @@ class Bucket(NamedTuple):
             counterparty not in (None, '') and
             (wallet_direction := event.maybe_get_direction(for_balance_tracking=True)) is not None
         ):
-            return [
+            return BucketEffectRule.PROTOCOL_DEPOSIT_WITHDRAWAL, [
                 (cls(  # type: ignore[list-item]  # wallet_direction will not be neutral for dual bucket protocol events.
                     location=location,
                     location_label=event.location_label,
@@ -285,7 +317,7 @@ class Bucket(NamedTuple):
             event_key in DUAL_BUCKET_TRANSFER_EVENTS and
             address is not None
         ):
-            return [
+            return BucketEffectRule.OWNED_ADDRESS_TRANSFER, [
                 (cls(
                     location=location,
                     location_label=event.location_label,
@@ -304,13 +336,13 @@ class Bucket(NamedTuple):
             (direction := event.maybe_get_direction(for_balance_tracking=True)) is None or
             direction == EventDirection.NEUTRAL
         ):
-            return []
+            return BucketEffectRule.NO_BALANCE_DIRECTION, []
 
         if (
             event_key == (HistoryEventType.LOSS, HistoryEventSubType.LIQUIDATE) and
             counterparty in PROTOCOL_BUCKET_LIQUIDATION_COUNTERPARTIES
         ):
-            return [(cls(
+            return BucketEffectRule.PROTOCOL_LIQUIDATION, [(cls(
                 location=location,
                 location_label=event.location_label,
                 protocol=counterparty,
@@ -319,7 +351,7 @@ class Bucket(NamedTuple):
 
         # Everything else: wallet bucket. Token protocol metadata describes asset identity,
         # not custody.
-        return [(cls(
+        return BucketEffectRule.WALLET, [(cls(
             location=location,
             location_label=event.location_label,
             protocol=wallet_protocol,

@@ -151,6 +151,7 @@ class ReconciliationReport:
     limit: int = DEFAULT_PAGE_SIZE
     offset: int = 0
     scoped: bool = False
+    all_buckets: tuple[ReconciliationBucket, ...] = ()  # every bucket in scope, unpaginated
 
 
 def _read_latest_metrics(
@@ -604,6 +605,7 @@ def get_reconciliation_report(  # one branch per scope rule
             processing=processing,
             totals=totals,
             accounts=tuple(accounts),
+            all_buckets=tuple(sorted(accounted.values(), key=_bucket_sort_key)),
         )
 
     return ReconciliationReport(
@@ -617,6 +619,7 @@ def get_reconciliation_report(  # one branch per scope rule
         limit=limit,
         offset=offset,
         scoped=True,
+        all_buckets=tuple(sorted(accounted.values(), key=_bucket_sort_key)),
     )
 
 

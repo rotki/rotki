@@ -16123,6 +16123,305 @@ Data Issues
     :statuscode 404: The issue id does not exist.
     :statuscode 409: The issue cannot be retried from its current state.
 
+Accounting Diagnosis
+====================
+
+These endpoints explain the state of the historical balance engine: why a balance bucket
+stopped, what each event did to it and what the data issues rest on. They are read-only,
+never query a remote, and compute every amount with decimal arithmetic, returned as a decimal
+string. Timestamps carry their unit in the key name (``_ms`` for milliseconds, ``_s`` for
+seconds). Every diagnosis includes a ``processing`` object with ``last_processing_ts_s``,
+``stale_from_ts_ms`` (the earliest event whose derived balances are out of date, ``null`` if
+none), ``revision`` (changes whenever events change) and ``observed_at_ts_s``.
+
+A bucket is one ``(location, location_label, protocol, asset)`` balance. Each balance effect
+reports the ``rule`` that produced it: ``wallet``, ``owned_address_transfer``,
+``protocol_deposit_withdrawal``, ``protocol_liquidation``, or one of the rules that produce no
+effect: ``no_balance_direction``, ``ignored_cowswap_escrow``, ``ignored_exchange_transfer``,
+``ignored_exchange_internal_staking``.
+
+The issue explanation, bucket trace, transaction and bridge match diagnoses include
+``asset_signals``: for each involved asset whose metadata looks deceptive, a list of flags out
+of ``spam_flagged``, ``mixed_scripts`` (letters of several scripts, as in lookalike tokens),
+``invisible_characters``, ``link_in_metadata`` and ``unknown_asset``. Asset names and symbols
+themselves are not returned. A flag is evidence, not a verdict, and an asset without flags is not
+vouched for.
+
+All of them require the accounting update feature and return 404 when it is disabled.
+
+  .. http:get:: /api/(version)/data_issues/diagnostics/health
+
+    Whether the derived balances can be trusted. ``status`` is the first that applies of
+    ``unprocessed``, ``processing_pending``, ``blocked`` (a bucket stopped), ``mismatch``,
+    ``unverified`` (buckets not compared or transactions pending decoding) and ``healthy``.
+
+    **Example Request**:
+
+    .. sourcecode:: http
+
+      GET /api/1/data_issues/diagnostics/health HTTP/1.1
+      Host: localhost:5042
+
+    **Example Response**:
+
+    .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "status": "blocked",
+          "feature_enabled": true,
+          "settings": {"treat_eth2_as_eth": false, "auto_create_profit_events": true, "bridge_match_time_range_s": 14400, "bridge_match_amount_tolerance": "0.01", "reconciliation_tolerance": "0.000001"},
+          "processing": {"last_processing_ts_s": 1710000100, "stale_from_ts_ms": null, "revision": "1710000100:0", "observed_at_ts_s": 1710000200, "has_unprocessed_events": false, "last_remediation_ts_s": null, "last_current_balance_detection_ts_s": null},
+          "comparison_coverage": {"buckets_total": 3, "counts": {"blocked": 1, "not_compared": 0, "pending": 2, "reconciled": 0, "mismatch": 0}, "reason_counts": {"pending": {"never_compared": 2}}},
+          "stops": {"count": 1, "truncated": false, "entries": [{
+            "bucket": {"location": "ethereum", "location_label": "0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea", "protocol": null, "asset": "ETH"},
+            "event_identifier": 3, "group_identifier": "10x64f1...", "event_timestamp_ms": 3000,
+            "derived_balance_before_event": "0.6", "negative_amount": "-0.000000000000000001", "event_deleted": false
+          }]},
+          "pending_decoding": {"transactions_by_chain_id": {}, "total": 0},
+          "issues": {"counts": [{"kind": "negative_balance", "state": "open", "count": 1}], "open_total": 1},
+          "capabilities": {
+            "diagnosis_uses_network": false,
+            "archive_nodes_by_chain": {"ETH": {"archive": 1, "not_archive": 2, "unknown": 0}},
+            "archive_queries_possible_for": ["ETH"]
+          }
+        },
+        "message": ""
+      }
+
+    ``capabilities.archive_nodes_by_chain`` counts the active RPC nodes of each chain by their
+    saved archive probe (``unknown`` when not probed yet). Rebasing token reconciliation and the
+    balance divergence search need an archive node; ``archive_queries_possible_for`` lists the
+    chains that have one.
+
+    :statuscode 200: Health returned.
+    :statuscode 401: No user is currently logged in.
+
+  .. http:get:: /api/(version)/data_issues/diagnostics/issues
+
+    Lists data issues like ``GET /data_issues``, accepting the same filters, in a compact form.
+    ``groups`` gathers issues raised on the same transaction; that they share a cause is a
+    hypothesis (``"shared_cause": "hypothesis"``).
+
+    :statuscode 200: Issues returned, as ``{"entries": [...], "entries_found": 2, "groups": [{"group_identifier": "...", "issue_ids": [1, 2], "shared_cause": "hypothesis"}]}``.
+    :statuscode 401: No user is currently logged in.
+
+  .. http:get:: /api/(version)/data_issues/(issue_id)/explanation
+
+    Explains one issue. ``facts`` holds what the evidence establishes (for a negative balance
+    ``derived_balance_before_event``, ``balance_after_event``, ``shortfall`` and
+    ``bucket_stopped_at_this_event``), ``hypotheses`` possible causes with their ``basis``
+    (``missing_inflow_history``, ``decimal_residue``, ``customized_transaction`` …),
+    ``confirmed_conflicts`` contradictions between the issue and the bucket's real state (for
+    example ``closed_issue_but_bucket_still_stopped``), plus ``trigger_event``,
+    ``same_transaction_effects_on_bucket``, ``affected_later_history``,
+    ``missing_prerequisites``, ``remediation_history`` and ``next_actions``.
+
+    :statuscode 200: Explanation returned.
+    :statuscode 401: No user is currently logged in.
+    :statuscode 404: The issue id does not exist.
+
+  .. http:post:: /api/(version)/data_issues/diagnostics/bucket_trace
+
+    Replays the events of one bucket the way processing applies them, without writing.
+
+    :reqjson string location: The bucket's location.
+    :reqjson string location_label: The bucket's account. Optional.
+    :reqjson string protocol: The bucket's protocol. Optional, omitted for a wallet bucket.
+    :reqjson string asset: The bucket's asset identifier.
+    :reqjson int from_timestamp: Only return rows from this timestamp in milliseconds on. Optional.
+    :reqjson int limit: Rows per page, 1 to 1000. Defaults to 200.
+    :reqjson int offset: Row offset. When omitted the page starts a few rows before the stop.
+
+    **Example Request**:
+
+    .. sourcecode:: http
+
+      POST /api/1/data_issues/diagnostics/bucket_trace HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"location": "ethereum", "location_label": "0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea", "asset": "ETH"}
+
+    **Example Response**:
+
+    .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "bucket": {"location": "ethereum", "location_label": "0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea", "protocol": null, "asset": "ETH"},
+          "processing": {"last_processing_ts_s": 1710000100, "stale_from_ts_ms": null, "revision": "1710000100:0", "observed_at_ts_s": 1710000200},
+          "summary": {"rebasing_asset": false, "awaiting_rebase_reconciliation": false, "final_balance": "-0.000000000000000001", "stored_balance_mismatches": 0, "effects_total": 2, "stop_row_index": 1, "skipped_after_stop": 0, "derived_balances_stale": false},
+          "stop": {"event_identifier": 3, "event_timestamp_ms": 3000, "negative_amount": "-0.000000000000000001", "...": "..."},
+          "rows": [{
+            "event_identifier": 3, "group_identifier": "10x64f1...", "timestamp_ms": 3000, "sequence_index": 0,
+            "event_type": "spend", "event_subtype": "none", "event_asset": "ETH", "counterparty": null,
+            "rule": "wallet", "direction": "out", "signed_amount": "-0.600000000000000001",
+            "balance_before": "0.6", "balance_after": "-0.000000000000000001", "rebase_yield": null,
+            "stored_balance": null, "status": "stop", "customized": false
+          }],
+          "pagination": {"offset": 0, "limit": 200, "total": 2, "truncated": false}
+        },
+        "message": ""
+      }
+
+    ``status`` is ``applied``, ``stop``, ``negative_awaiting_rebase_reconciliation`` or
+    ``skipped_after_stop``. ``stored_balance`` is the balance the last processing pass stored
+    for the event; one that differs from ``balance_after`` reveals out of date metrics.
+
+    :statuscode 200: Trace returned.
+    :statuscode 400: Invalid arguments.
+    :statuscode 401: No user is currently logged in.
+
+  .. http:post:: /api/(version)/data_issues/diagnostics/transaction
+
+    Returns every event of a transaction with its mapping states, balance effects and their rule,
+    the net effect per bucket and, for EVM transactions, a ``receipt_comparison`` of the net
+    movement per account and asset shown by the saved receipt (ERC20 transfer logs, native
+    value and internal transactions) against the decoded events. Gas fees are left out of the
+    comparison. Only saved data is used.
+
+    :reqjson string group_identifier: The transaction's event group identifier.
+    :statuscode 200: The transaction diagnosis.
+    :statuscode 401: No user is currently logged in.
+    :statuscode 404: No events for the group identifier.
+
+  .. http:post:: /api/(version)/data_issues/diagnostics/bridge_match
+
+    Explains the matching of a bridge leg: every candidate counterpart in the searched range with
+    its ``tier`` or its ``rejection`` (``already_linked_or_ignored``, ``same_location``,
+    ``amount_mismatch``, ``bridge_data_conflict``, ``counterparty_mismatch``,
+    ``not_a_counterpart_event``, ``zksync_exit_requires_bridge_leg`` or
+    ``outside_time_window``), the ``link_state``, ``missing_metadata`` and a ``conclusion`` of
+    ``already_linked``, ``ignored``, ``unique_eligible_candidate``, ``ambiguous`` or
+    ``zero_eligible_candidates``. Candidates up to three match windows away are listed as
+    outside the window.
+
+    :reqjson int event_identifier: The bridge leg's event identifier.
+    :statuscode 200: The bridge match explanation.
+    :statuscode 401: No user is currently logged in.
+    :statuscode 404: The event does not exist or is not a bridge leg.
+
+Remediation Plans
+=================
+
+A remediation plan is a previewed, bounded repair of the history. Creating it writes nothing
+but the plan. Applying it is refused unless the plan is pending, unexpired (plans expire 30
+minutes after creation) and its events unchanged since the preview, and only after an approval
+whose method is recorded in the plan's audit trail. Two kinds exist: ``redecode`` (redecode
+EVM transactions with the current decoders) and ``bridge_link`` (link a bridge leg with an
+eligible counterpart).
+
+  .. http:post:: /api/(version)/data_issues/remediation_plans
+
+    Previews a repair and saves it as a pending plan.
+
+    :reqjson string kind: ``redecode`` or ``bridge_link``.
+    :reqjson list group_identifiers: For ``redecode``, the transactions to redecode, 1 to 20.
+    :reqjson bool replace_customized: For ``redecode``, whether transactions with customized events are replaced. Otherwise they are previewed but marked ``blocked_by_customization``. Defaults to false.
+    :reqjson int bridge_event_identifier: For ``bridge_link``, the bridge leg.
+    :reqjson int matched_event_identifier: For ``bridge_link``, the counterpart. It must be an eligible candidate.
+    :reqjson bool async_query: Whether to run the preview as an asynchronous task.
+
+    **Example Response**:
+
+    .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "plan_id": "4f7a9d0c2b1e4c6a8d3f5e7b9a1c3d5e",
+          "kind": "redecode",
+          "state": "pending",
+          "created_at_ts_s": 1710000000,
+          "expires_at_ts_s": 1710001800,
+          "evidence_revision": "9c1d...",
+          "plan": {
+            "items": [{
+              "group_identifier": "10x64f1...", "status": "ready", "customized": false, "replace_customized": false,
+              "event_diff": {"removed": [], "added": [], "changed": [{"sequence_index": 0, "changed_fields": ["event_type"], "current": {"event_type": "spend"}, "proposed": {"event_type": "receive"}}]},
+              "bucket_effect_diff": [{"bucket": {"location": "ethereum", "location_label": "0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea", "protocol": null, "asset": "ETH"}, "current_net": "-1", "proposed_net": "1", "difference": "2"}],
+              "...": "..."
+            }],
+            "affected_buckets": [{"location": "ethereum", "location_label": "0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea", "protocol": null, "asset": "ETH"}],
+            "baseline": {"stops": [{"bucket": {"...": "..."}, "event_identifier": 1, "event_timestamp_ms": 1000}], "open_issue_ids": [1]},
+            "expected_issue_impact": [{"issue_id": 1, "expectation": "may_change"}],
+            "uncertainty": [{"code": "outcome_established_by_verification", "detail": "..."}],
+            "applicable_items": 1
+          },
+          "result": null,
+          "applied_at_ts_s": null,
+          "audit": [{"timestamp_s": 1710000000, "action": "created", "details": {"kind": "redecode"}}]
+        },
+        "message": ""
+      }
+
+    :statuscode 200: The plan was created.
+    :statuscode 400: Invalid arguments.
+    :statuscode 401: No user is currently logged in.
+    :statuscode 409: The plan cannot be created. ``result.code`` says why: ``invalid_scope``, ``unknown_group``, ``unknown_event``, ``already_linked`` or ``candidate_rejected``.
+
+  .. http:get:: /api/(version)/data_issues/remediation_plans/(plan_id)
+
+    Returns a plan in the same format, with its current ``state`` (``pending``, ``applying``,
+    ``applied``, ``partially_applied``, ``failed``, ``rejected``, ``cancelled``, ``expired`` or
+    ``stale``),
+    its ``result`` once applied and its full ``audit`` trail.
+
+    :statuscode 200: The plan.
+    :statuscode 401: No user is currently logged in.
+    :statuscode 404: No such plan.
+
+  .. http:post:: /api/(version)/data_issues/remediation_plans/(plan_id)/apply
+
+    Applies a pending plan, reprocesses the affected range and verifies the outcome. The
+    response is the plan with a ``verification`` object, as returned by the verification
+    endpoint. Applying an applied plan is refused, so a repeated request applies nothing.
+
+    An asynchronous apply can be cancelled with ``DELETE /tasks/(task_id)``. It stops between
+    transactions: those already redecoded stay so, the plan becomes ``partially_applied`` (or
+    ``cancelled`` if nothing was applied) and the affected range stays marked for reprocessing.
+
+    :reqjson string approval_method: How the user approved the plan. Only ``mcp_elicitation`` is accepted.
+    :reqjson int approved_at: When the user approved it, in seconds.
+    :reqjson bool async_query: Whether to apply it as an asynchronous task.
+    :statuscode 200: The plan was applied. Per item outcomes are in ``result.items``.
+    :statuscode 400: Invalid arguments, including an unknown approval method.
+    :statuscode 401: No user is currently logged in.
+    :statuscode 404: No such plan.
+    :statuscode 409: The plan cannot be applied. ``result.code`` is ``approval_required``, ``plan_expired``, ``plan_not_pending``, ``plan_stale`` or ``nothing_to_apply``.
+
+  .. http:patch:: /api/(version)/data_issues/remediation_plans/(plan_id)/reject
+
+    Records that the user declined a pending plan, which can then never be applied.
+
+    :reqjson string reason: Why it was declined. Defaults to ``declined``.
+    :statuscode 200: The rejected plan.
+    :statuscode 401: No user is currently logged in.
+    :statuscode 404: No such plan.
+    :statuscode 409: The plan is not pending.
+
+  .. http:get:: /api/(version)/data_issues/remediation_plans/(plan_id)/verification
+
+    Reports whether an applied plan repaired what it targeted, read from the bucket processing
+    stops rather than from issue states or job completion. ``verification.verdict`` is
+    ``repaired``, ``partially_repaired``, ``not_repaired``, ``new_problems_revealed``,
+    ``not_reevaluated`` (no processing pass has covered the change yet) or ``not_applied``.
+    ``verification.buckets`` holds each affected bucket's outcome: ``stop_cleared``,
+    ``stop_persisted``, ``stop_moved``, ``new_stop``, ``no_stop`` or ``not_reevaluated``.
+
+    :statuscode 200: The plan with its verification.
+    :statuscode 401: No user is currently logged in.
+    :statuscode 404: No such plan.
+
 Historical Balance Queries
 ==============================
 
