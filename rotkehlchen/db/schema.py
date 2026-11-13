@@ -1091,6 +1091,7 @@ CREATE INDEX IF NOT EXISTS idx_history_event_links_right ON history_event_links(
 CREATE INDEX IF NOT EXISTS idx_history_event_links_composite ON history_event_links(link_type, left_event_id, right_event_id);
 CREATE INDEX IF NOT EXISTS idx_history_event_link_ignores_type ON history_event_link_ignores(link_type);
 CREATE INDEX IF NOT EXISTS idx_chain_events_info_tx_ref ON chain_events_info(tx_ref);
+CREATE INDEX IF NOT EXISTS idx_chain_events_info_counterparty ON chain_events_info(counterparty);
 CREATE UNIQUE INDEX IF NOT EXISTS unique_generic_accounting_rules ON accounting_rules(type, subtype, counterparty) WHERE is_event_specific = 0;
 CREATE INDEX IF NOT EXISTS idx_event_metrics_event ON event_metrics(event_identifier);
 CREATE INDEX IF NOT EXISTS idx_event_metrics_location_label ON event_metrics(location_label);

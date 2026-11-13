@@ -74,6 +74,10 @@ ALL_EVENTS_DATA_JOIN: Final = """FROM history_events
 LEFT JOIN chain_events_info ON history_events.identifier=chain_events_info.identifier
 LEFT JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier """  # noqa: E501
 EVENTS_WITH_COUNTERPARTY_JOIN: Final = 'FROM history_events INNER JOIN chain_events_info ON history_events.identifier=chain_events_info.identifier '  # noqa: E501
+# Without table statistics sqlite sees every single column index as equally selective and
+# would search history_events by a low cardinality column like entry_type. CROSS JOIN pins
+# chain_events_info as the outer loop so that idx_chain_events_info_counterparty is used.
+EVENTS_BY_COUNTERPARTY_JOIN: Final = 'FROM chain_events_info CROSS JOIN history_events ON history_events.identifier=chain_events_info.identifier '  # noqa: E501
 ETH_STAKING_EVENT_JOIN: Final = 'FROM history_events INNER JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier '  # noqa: E501
 ETH_DEPOSIT_EVENT_JOIN = ALL_EVENTS_DATA_JOIN
 
@@ -1182,9 +1186,21 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
         filter_query.filters = filters
         return filter_query
 
-    @staticmethod
+    def requires_counterparty(self) -> bool:
+        """True if only events of specific counterparties can match this filter.
+
+        A counterparty usually narrows the events down far more than any of the
+        history_events columns, so such queries are driven from chain_events_info.
+        """
+        return self.and_op and any(
+            isinstance(filter_, DBMultiStringFilter) and
+            filter_.column == 'counterparty' and
+            filter_.operator == 'IN'
+            for filter_ in self.filters
+        )
+
     @abstractmethod
-    def get_join_query() -> str:
+    def get_join_query(self) -> str:
         """Returns the join query needed for this particular type of history event filter"""
 
     @staticmethod
@@ -1210,8 +1226,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
 class HistoryEventFilterQuery(HistoryBaseEntryFilterQuery):
     """This is the event query for all types of events"""
 
-    @staticmethod
-    def get_join_query() -> str:
+    def get_join_query(self) -> str:
         return 'FROM history_events '
 
     @staticmethod
@@ -1385,8 +1400,10 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
 
         return filter_query
 
-    @staticmethod
-    def get_join_query() -> str:
+    def get_join_query(self) -> str:
+        if self.requires_counterparty():
+            return EVENTS_BY_COUNTERPARTY_JOIN
+
         return EVENTS_WITH_COUNTERPARTY_JOIN
 
     @staticmethod
@@ -1601,10 +1618,6 @@ class SolanaEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
         return filter_query
 
     @staticmethod
-    def get_join_query() -> str:
-        return EVENTS_WITH_COUNTERPARTY_JOIN
-
-    @staticmethod
     def get_columns() -> str:
         return f'{HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}'
 
@@ -1724,10 +1737,6 @@ class EvmEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
         return filter_query
 
     @staticmethod
-    def get_join_query() -> str:
-        return EVENTS_WITH_COUNTERPARTY_JOIN
-
-    @staticmethod
     def get_columns() -> str:
         return f'{HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}'
 
@@ -1828,8 +1837,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
 
         return filter_query
 
-    @staticmethod
-    def get_join_query() -> str:
+    def get_join_query(self) -> str:
         return ETH_STAKING_EVENT_JOIN
 
     @staticmethod
@@ -1919,8 +1927,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
 
         return filter_query
 
-    @staticmethod
-    def get_join_query() -> str:
+    def get_join_query(self) -> str:
         return ETH_STAKING_EVENT_JOIN
 
 
@@ -1994,8 +2001,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
 
         return filter_query  # type: ignore  # we are creating an EthDepositEventFilterQuery
 
-    @staticmethod
-    def get_join_query() -> str:
+    def get_join_query(self) -> str:
         return ETH_DEPOSIT_EVENT_JOIN
 
     @staticmethod
