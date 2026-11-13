@@ -762,4 +762,13 @@ CREATE TABLE IF NOT EXISTS lido_csm_node_operator_metrics (
         write_cursor.execute('DROP TABLE lido_csm_node_operator_metrics_old')
         write_cursor.execute('DROP TABLE lido_csm_node_operators_old')
 
+    @progress_step(description='Index chain events by counterparty.')
+    def _add_counterparty_index(write_cursor: DBCursor) -> None:
+        """Lets the event queries that filter by counterparty start from the few events
+        of that counterparty instead of searching through all of history_events."""
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_chain_events_info_counterparty '
+            'ON chain_events_info(counterparty)',
+        )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

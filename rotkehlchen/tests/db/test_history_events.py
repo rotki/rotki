@@ -1079,6 +1079,72 @@ def test_match_exact_events(database: DBHandler, start_with_valid_premium: bool)
         assert result_match_grouped[0][1].asset == A_DAI
 
 
+def test_counterparty_filter_starts_from_counterparty_index(database: DBHandler) -> None:
+    """Queries filtering by counterparty search chain_events_info by its counterparty index
+    instead of history_events by a low cardinality column, without losing the events of a
+    matching group that have no chain info when whole groups are requested."""
+    db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        db.add_history_events(
+            write_cursor=write_cursor,
+            history=[
+                (evm_event := EvmEvent(
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=0,
+                    timestamp=TimestampMS(0),
+                    location=LOCATION_ETHEREUM,
+                    event_type=HistoryEventType.DEPOSIT,
+                    event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                    asset=A_DAI,
+                    amount=ONE,
+                    location_label=(account := make_evm_address()),
+                    counterparty=CPT_AAVE_V3,
+                )), HistoryEvent(
+                    group_identifier=evm_event.group_identifier,
+                    sequence_index=1,
+                    timestamp=TimestampMS(0),
+                    location=LOCATION_ETHEREUM,
+                    event_type=HistoryEventType.INFORMATIONAL,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=A_ETH,
+                    amount=ZERO,
+                ),
+            ],
+        )
+
+    def make_filter() -> EvmEventFilterQuery:
+        return EvmEventFilterQuery.make(  # same shape as the protocol balances queries
+            counterparties=[CPT_AAVE_V3],
+            location=LOCATION_ETHEREUM,
+            location_labels=[account],
+            type_and_subtype_combinations={
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
+            },
+            entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.EVM_EVENT]),
+        )
+
+    with database.conn.read_ctx() as cursor:
+        for query, bindings in (
+            db._create_history_events_query(filter_query=make_filter(), entries_limit=None),
+            db._create_history_events_count_query(filter_query=make_filter(), entries_limit=None),
+        ):
+            assert 'USING INDEX idx_chain_events_info_counterparty' in ' '.join(
+                row[3] for row in cursor.execute(f'EXPLAIN QUERY PLAN {query}', bindings)
+            )
+
+        assert [event.sequence_index for event in db.get_history_events(
+            cursor=cursor,
+            filter_query=make_filter(),
+            entries_limit=None,
+        )] == [0]
+        assert [event.sequence_index for event in db.get_history_events(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(counterparties=[CPT_AAVE_V3]),
+            entries_limit=None,
+            match_exact_events=False,
+        )] == [0, 1]
+
+
 @pytest.mark.accounting_update
 def test_event_modification_tracks_earliest_timestamp(database: DBHandler) -> None:
     db = DBHistoryEvents(database)

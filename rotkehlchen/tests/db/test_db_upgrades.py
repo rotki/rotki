@@ -4983,6 +4983,7 @@ def test_upgrade_db_53_to_54(
     with db_v53.conn.write_ctx() as write_cursor:
         assert not column_exists(write_cursor, 'rpc_nodes', 'is_archive')
         assert not column_exists(write_cursor, 'rpc_nodes', 'is_pruned')
+        assert not index_exists(cursor=write_cursor, name='idx_chain_events_info_counterparty')
         # v52->v53 already removed the obsolete unsupported-assets update setting
         assert write_cursor.execute(
             "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
@@ -5174,6 +5175,7 @@ def test_upgrade_db_53_to_54(
         ).fetchone()[0] == '0'
         assert column_exists(cursor, 'rpc_nodes', 'is_archive')
         assert column_exists(cursor, 'rpc_nodes', 'is_pruned')
+        assert index_exists(cursor=cursor, name='idx_chain_events_info_counterparty')
         assert cursor.execute(
             'SELECT COUNT(*) FROM rpc_nodes WHERE is_archive IS NOT NULL OR is_pruned IS NOT NULL',
         ).fetchone()[0] == 0

@@ -40,6 +40,7 @@ from rotkehlchen.db.constants import (
 )
 from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
+    EVENTS_BY_COUNTERPARTY_JOIN,
     EVENTS_WITH_COUNTERPARTY_JOIN,
     DBMultiIntegerFilter,
     EthDepositEventFilterQuery,
@@ -1497,6 +1498,9 @@ class DBHistoryEvents:
         """Returns the sql queries and bindings for the history events without pagination."""
         chain_fields, staking_fields, join_clause = DBHistoryEvents._build_events_query_parts(
             filter_query=filter_query,
+            # when whole groups are returned the filters only pick the groups, and the
+            # events of a matching group do not need to have the counterparty themselves
+            filters_select_events=match_exact_events,
         )
         # group_has_ignored_assets is NOT included here. It used to be a window function
         # (MAX(ignored) OVER (PARTITION BY group_identifier)) which forced a full table scan
@@ -1574,6 +1578,7 @@ class DBHistoryEvents:
     @staticmethod
     def _build_events_query_parts(
             filter_query: HistoryBaseEntryFilterQuery,
+            filters_select_events: bool,
     ) -> tuple[str, str, str]:
         entry_type_filter_values: Sequence[int] | None = None
         for filter_ in filter_query.filters:
@@ -1613,11 +1618,12 @@ class DBHistoryEvents:
             staking_fields = ETH_STAKING_EVENT_NULL_FIELDS
             staking_join = ''
 
-        return (
-            chain_fields,
-            staking_fields,
-            f'FROM history_events {chain_join}{staking_join}',
-        )
+        if include_chain and filters_select_events and filter_query.requires_counterparty():
+            events_join = EVENTS_BY_COUNTERPARTY_JOIN
+        else:
+            events_join = f'FROM history_events {chain_join}'
+
+        return chain_fields, staking_fields, f'{events_join}{staking_join}'
 
     @staticmethod
     def _create_history_events_count_query(
