@@ -18,7 +18,7 @@ type RawPriceResponse = {
   noPricesTimestamps: number[];
   prices: Record<string, string>;
   rateLimitedPricesTimestamps: number[];
-} | 'fail';
+} | 'fail' | 'malformed';
 
 const { cancelByPrefix, failedDailyPrices, focused, queryHistoricalAssetPrices, responses } = await vi.hoisted(async () => {
   const { ref, shallowRef } = await import('vue');
@@ -68,6 +68,8 @@ vi.mock('@/modules/task-center/use-native-task', async (): Promise<unknown> => {
         runTask: async (task: () => Promise<unknown>): Promise<unknown> => {
           await task();
           const next = responses.shift() ?? { noPricesTimestamps: [], prices: {}, rateLimitedPricesTimestamps: [] };
+          if (next === 'malformed')
+            return ok({ prices: 'not a price map' });
           return next === 'fail' ? err(TaskFailed({ message: 'the backend rejected the request' })) : ok(next);
         },
       }),
@@ -160,6 +162,16 @@ describe('modules/statistics/pricing/use-price-backfill', () => {
     expect(queryHistoricalAssetPrices).toHaveBeenCalledTimes(2);
     expect(queryHistoricalAssetPrices).toHaveBeenLastCalledWith(expect.objectContaining({ fromTimestamp: days[1], toTimestamp: days[3] }));
     expect(get(result.rateLimited)).toBe(false);
+  });
+
+  it('should leave the days of a malformed response open rather than blame the oracles', async () => {
+    responses.push('malformed');
+    withSetup(() => usePriceBackfill().register('rates', demand()));
+    await vi.advanceTimersByTimeAsync(REQUEST_DELAY_MS);
+
+    expect(queryHistoricalAssetPrices).toHaveBeenCalled();
+    expect(get(failedDailyPrices).BTC).toBeUndefined();
+    expect(usePriceSeriesStore().prices.BTC).toBeUndefined();
   });
 
   it('should start over in a new main currency instead of skipping days it tried in the old one', async () => {
