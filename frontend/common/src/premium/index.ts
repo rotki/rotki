@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { AssetBalanceWithPrice } from '../balances';
 import type { AssetInfoWithId } from '../data';
 import type { BigNumber } from '../numbers';
@@ -12,6 +12,7 @@ import type {
   LocationData,
   NetValue,
   OwnedAssets,
+  ResolvedPrice,
   TimedAssetBalances,
   TimedAssetHistoricalBalances,
   TimedBalances,
@@ -19,19 +20,35 @@ import type {
 
 export type ExclusionSource = 'exchange' | 'manual' | 'blockchain';
 
+/** A net value series in the main currency. */
+export interface EstimatedNetValue extends NetValue {
+  /** Per point, whether it was converted at a stand-in rate; absent means none was. */
+  readonly estimated?: readonly boolean[];
+}
+
 export interface StatisticsApi {
   assetValueDistribution: () => Promise<TimedAssetBalances>;
   locationValueDistribution: () => Promise<LocationData>;
   ownedAssets: () => Promise<OwnedAssets>;
   timedBalances: (asset: string, start: number, end: number, collectionId?: number) => Promise<TimedBalances>;
   timedHistoricalBalances: (asset: string, start: number, end: number, collectionId?: number) => Promise<TimedAssetHistoricalBalances>;
-  netValue: (startingData: number) => Ref<NetValue>;
+  netValue: (startingData: number) => Ref<EstimatedNetValue>;
   isQueryingDailyPrices: ComputedRef<boolean>;
   failedDailyPrices: Ref<Record<string, FailedHistoricalAssetPriceResponse>>;
   queryHistoricalAssetPrices: (payload: HistoricalAssetPricePayload) => Promise<HistoricalAssetPriceResponse>;
   historicalDailyPriceStatus: Ref<CommonQueryStatusData | undefined>;
   cancelHistoricPriceTask: () => Promise<void>;
   cancelDailyHistoricPriceTask: () => Promise<void>;
+  /**
+   * The USD to main currency rate at a time, for converting values stored in USD such as snapshots.
+   *
+   * @remarks
+   * Call during setup. A rate missing from the cache resolves as a flagged stand-in and is fetched
+   * in the background while the calling scope lives.
+   *
+   * @param timestamp - unix seconds
+   */
+  usdRateAt: (timestamp: MaybeRefOrGetter<number>) => ComputedRef<ResolvedPrice>;
 }
 
 export interface DateUtilities {
