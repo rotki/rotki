@@ -65,6 +65,8 @@ from rotkehlchen.api.v1.schemas import (
     BlockchainBalanceRefreshSchema,
     BlockchainTransactionDeletionSchema,
     BlockchainTypeAccountsDeleteSchema,
+    BridgeMatchDiagnosisSchema,
+    BucketTraceSchema,
     ChainTypeAccountSchema,
     ClearAvatarsCacheSchema,
     ClearCacheSchema,
@@ -182,6 +184,9 @@ from rotkehlchen.api.v1.schemas import (
     RefetchStakingEventsSchema,
     RefetchTransactionsSchema,
     RefreshProtocolDataSchema,
+    RemediationPlanApplySchema,
+    RemediationPlanCreateSchema,
+    RemediationPlanRejectSchema,
     ResolveEnsSchema,
     ReverseEnsSchema,
     RpcAddNodeSchema,
@@ -209,6 +214,7 @@ from rotkehlchen.api.v1.schemas import (
     TimedHistoricalPriceSchema,
     TimestampRangeSchema,
     TransactionDecodingSchema,
+    TransactionDiagnosisSchema,
     TransactionQuerySchema,
     TransactionReferenceAdditionSchema,
     TriggerTaskSchema,
@@ -285,6 +291,7 @@ from rotkehlchen.types import (
     SolanaAddress,
     SupportedBlockchain,
     Timestamp,
+    TimestampMS,
     UserNote,
 )
 
@@ -346,6 +353,7 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.okx import OkxLocation
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.data_issues.bucket_checks import BucketStatus
+    from rotkehlchen.history.data_issues.remediation import PlanKind
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
     from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
     from rotkehlchen.history.types import HistoricalPriceOracle
@@ -4041,6 +4049,147 @@ class DataIssueRetryAutoRemediationResource(BaseMethodView):
     @require_loggedin_user()
     def post(self, issue_id: int) -> Response:
         return self.rest_api.retry_data_issue_auto_remediation(issue_id=issue_id)
+
+
+class AccountingHealthResource(BaseMethodView):
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_accounting_health()
+
+
+class DataIssuesDiagnosisResource(BaseMethodView):
+
+    get_schema = DataIssuesFilterSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, filter_query: DataIssuesFilterQuery) -> Response:
+        return self.rest_api.get_data_issues_diagnosis(filter_query=filter_query)
+
+
+class DataIssueExplanationResource(BaseMethodView):
+
+    @require_loggedin_user()
+    def get(self, issue_id: int) -> Response:
+        return self.rest_api.explain_data_issue(issue_id=issue_id)
+
+
+class BucketTraceResource(BaseMethodView):
+
+    post_schema = BucketTraceSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            location: LocationIdentifier,
+            location_label: str | None,
+            protocol: str | None,
+            asset: str,
+            from_timestamp: TimestampMS | None,
+            limit: int,
+            offset: int | None,
+    ) -> Response:
+        return self.rest_api.trace_bucket(
+            location=location,
+            location_label=location_label,
+            protocol=protocol,
+            asset=asset,
+            from_ts=from_timestamp,
+            limit=limit,
+            offset=offset,
+        )
+
+
+class TransactionDiagnosisResource(BaseMethodView):
+
+    post_schema = TransactionDiagnosisSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(self, group_identifier: str) -> Response:
+        return self.rest_api.inspect_transaction(group_identifier=group_identifier)
+
+
+class BridgeMatchDiagnosisResource(BaseMethodView):
+
+    post_schema = BridgeMatchDiagnosisSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(self, event_identifier: int) -> Response:
+        return self.rest_api.explain_bridge_match(event_identifier=event_identifier)
+
+
+class RemediationPlansResource(BaseMethodView):
+
+    post_schema = RemediationPlanCreateSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            async_query: bool,
+            kind: PlanKind,
+            group_identifiers: list[str] | None,
+            replace_customized: bool,
+            bridge_event_identifier: int | None,
+            matched_event_identifier: int | None,
+    ) -> Response:
+        return self.rest_api.create_remediation_plan(
+            async_query=async_query,
+            kind=kind,
+            group_identifiers=group_identifiers,
+            replace_customized=replace_customized,
+            bridge_event_identifier=bridge_event_identifier,
+            matched_event_identifier=matched_event_identifier,
+        )
+
+
+class RemediationPlanResource(BaseMethodView):
+
+    @require_loggedin_user()
+    def get(self, plan_id: str) -> Response:
+        return self.rest_api.get_remediation_plan(plan_id=plan_id)
+
+
+class RemediationPlanApplyResource(BaseMethodView):
+
+    post_schema = RemediationPlanApplySchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            plan_id: str,
+            async_query: bool,
+            approval_method: str,
+            approved_at: Timestamp,
+    ) -> Response:
+        return self.rest_api.apply_remediation_plan(
+            async_query=async_query,
+            plan_id=plan_id,
+            approval_method=approval_method,
+            approved_at=approved_at,
+        )
+
+
+class RemediationPlanRejectResource(BaseMethodView):
+
+    patch_schema = RemediationPlanRejectSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(patch_schema, location='json')
+    def patch(self, plan_id: str, reason: str) -> Response:
+        return self.rest_api.reject_remediation_plan(plan_id=plan_id, reason=reason)
+
+
+class RemediationPlanVerificationResource(BaseMethodView):
+
+    @require_loggedin_user()
+    def get(self, plan_id: str) -> Response:
+        return self.rest_api.verify_remediation_plan(plan_id=plan_id)
 
 
 class HistoricalBalancesReconciliationResource(BaseMethodView):
