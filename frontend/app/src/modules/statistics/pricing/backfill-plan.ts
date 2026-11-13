@@ -8,8 +8,11 @@ export interface BackfillAsset {
   readonly asset: string;
   /** Prices of the asset in the main currency already cached, in time order. */
   readonly known: readonly KnownPrice[];
-  /** Days (UTC day starts) the backend reported as having no price, never asked again. */
-  readonly failed: ReadonlySet<number>;
+  /**
+   * Days (UTC day starts) not to ask for: the backend reported no price for them, or they were
+   * already asked this session and are still open.
+   */
+  readonly skipped: ReadonlySet<number>;
   /** The times that need a price, unix seconds. */
   readonly times: readonly number[];
 }
@@ -30,6 +33,17 @@ export function dayStart(time: number): number {
   return Math.floor(time / SECONDS_PER_DAY) * SECONDS_PER_DAY;
 }
 
+/** The days a request asks for. */
+export function requestedDays(request: BackfillRequest): number[] {
+  const excluded = new Set(request.excludeTimestamps);
+  const days: number[] = [];
+  for (let day = request.fromTimestamp; day <= request.toTimestamp; day += SECONDS_PER_DAY) {
+    if (!excluded.has(day))
+      days.push(day);
+  }
+  return days;
+}
+
 /**
  * How far apart the days of each pass are, coarsest first: one rate a month, then one a week, then
  * every day. A long history gets a rough rate everywhere within minutes, and the daily backfill
@@ -42,15 +56,15 @@ function openDays(entry: BackfillAsset): number[] {
   const days = new Set<number>();
   for (const time of entry.times) {
     const day = dayStart(time);
-    if (!entry.failed.has(day) && !nearestWithin(entry.known, time, SECONDS_PER_DAY))
+    if (!entry.skipped.has(day) && !nearestWithin(entry.known, time, SECONDS_PER_DAY))
       days.add(day);
   }
   return [...days].sort((a, b) => a - b);
 }
 
-/** The days that already have a price or are known to have none, in order. */
+/** The days that already have a price or are skipped, in order. */
 function settledDays(entry: BackfillAsset): { time: number }[] {
-  const days = new Set([...entry.known.map(point => dayStart(point.time)), ...entry.failed]);
+  const days = new Set([...entry.known.map(point => dayStart(point.time)), ...entry.skipped]);
   return [...days].sort((a, b) => a - b).map(time => ({ time }));
 }
 
