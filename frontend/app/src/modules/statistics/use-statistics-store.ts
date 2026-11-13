@@ -1,6 +1,6 @@
 import type { MaybeRef } from 'vue';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
-import { type AssetBalanceWithPriceAndChains, type BigNumber, type NetValue, One, type TimeFramePeriod, timeframes, TimeUnit, Zero } from '@rotki/common';
+import { type AssetBalanceWithPriceAndChains, type BigNumber, type NetValue, One, type ResolvedPrice, type TimeFramePeriod, timeframes, TimeUnit, Zero } from '@rotki/common';
 import dayjs from 'dayjs';
 import { CURRENCY_USD, type SupportedCurrency } from '@/modules/assets/amount-display/currencies';
 import { useAmountDisplaySettings } from '@/modules/assets/amount-display/use-amount-display-settings';
@@ -10,6 +10,7 @@ import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balance
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { millisecondsToSeconds } from '@/modules/core/common/data/date';
 import { useSetting } from '@/modules/settings/use-setting';
+import { isFallbackQuality } from '@/modules/statistics/pricing/price-series';
 
 function defaultNetValue(): NetValue {
   return {
@@ -38,6 +39,14 @@ export const useStatisticsStore = defineStore('statistics', () => {
    * has to render the failure is none of them.
    */
   const netValueError = ref<string>();
+  /**
+   * The USD to main currency rate at each snapshot time, resolved by `useSnapshotRates`.
+   *
+   * @remarks
+   * Snapshots are stored in USD. A snapshot missing here is converted at today's rate and marked
+   * estimated, which is also what happens before the rates are first read.
+   */
+  const snapshotRates = shallowRef<ReadonlyMap<number, ResolvedPrice>>(new Map());
 
   const nftsInNetValue = useSetting('nftsInNetValue');
   const timeframe = useSetting('timeframe');
@@ -136,9 +145,18 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   function getNetValue(startingDate: number): NetValueChartData {
     const currency = get(currencySymbol);
-    const rate = getExchangeRate(currency, One);
+    const currentRate = getExchangeRate(currency, One);
+    const rates = get(snapshotRates);
 
-    const convert = (value: BigNumber): BigNumber => (currency === CURRENCY_USD ? value : value.multipliedBy(rate));
+    /** A snapshot's value in the main currency, at the rate of its own time when one is known. */
+    const convert = (value: BigNumber, time: number): { value: BigNumber; estimated: boolean } => {
+      if (currency === CURRENCY_USD)
+        return { estimated: false, value };
+      const resolved = rates.get(time);
+      if (!resolved?.price)
+        return { estimated: true, value: value.multipliedBy(currentRate) };
+      return { estimated: isFallbackQuality(resolved.quality), value: value.multipliedBy(resolved.price) };
+    };
 
     const { data, times } = get(netValue);
 
@@ -156,20 +174,28 @@ export const useStatisticsStore = defineStore('statistics', () => {
     }
 
     const nv: NetValue = { data: [], times: [] };
+    const estimated: boolean[] = [];
 
     for (const [i, time] of times.entries()) {
       if (time < startingDate)
         continue;
 
+      const converted = convert(data[i], time);
       nv.times.push(time);
-      nv.data.push(convert(data[i]));
+      nv.data.push(converted.value);
+      estimated.push(converted.estimated);
     }
 
     return {
       data: [...nv.data, netWorth],
+      estimated: [...estimated, false],
       snapshotCount: nv.data.length,
       times: [...nv.times, now],
     };
+  }
+
+  function setSnapshotRates(rates: ReadonlyMap<number, ResolvedPrice>): void {
+    set(snapshotRates, rates);
   }
 
   function useNetValue(startingDate: number): ComputedRef<NetValueChartData> {
@@ -187,6 +213,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
     netValueError,
     nftValue,
     setNetValueError,
+    setSnapshotRates,
     useNetValue,
     overall,
     totalNetWorth,

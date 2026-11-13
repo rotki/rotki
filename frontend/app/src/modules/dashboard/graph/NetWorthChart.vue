@@ -55,6 +55,10 @@ watchImmediate(chartOption, () => {
   setupZoomToolHandler();
 });
 
+/** The hovered point's index in `chartData`; the axis pointer snaps to a point, so times match. */
+const hoveredIndex = computed<number>(() => chartData.times.indexOf(Math.round(get(tooltipData).timestamp / 1000)));
+const hoveredEstimated = computed<boolean>(() => chartData.estimated?.[get(hoveredIndex)] === true);
+
 function resetZoom(): void {
   get(chartInstance)?.chart?.dispatchAction({ end: 100, start: 0, type: 'dataZoom' });
 }
@@ -92,5 +96,12 @@ defineExpose({ resetZoom });
       class="font-bold"
       :value="tooltipData.value"
     />
+    <div
+      v-if="hoveredEstimated"
+      class="text-rui-text-secondary text-xs mt-1"
+      data-testid="net-worth-chart-tooltip-estimated"
+    >
+      {{ t('net_worth_chart.estimated') }}
+    </div>
   </NewGraphTooltipWrapper>
 </template>

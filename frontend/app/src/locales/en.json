@@ -5684,7 +5684,8 @@
     "tag_manager": "Tag Manager"
   },
   "net_worth_chart": {
-    "current_balance": "Current balance"
+    "current_balance": "Current balance",
+    "estimated": "Estimated: this day's exchange rate is not known yet"
   },
   "nft_balance_table": {
     "column": {
@@ -5949,6 +5950,7 @@
     "uniswap_v3": "Uniswap V3"
   },
   "overall_balances": {
+    "estimated_rate": "Some points use an estimated exchange rate until the historical rates are fetched",
     "loading": "LOADING",
     "net_value_error": "The net worth graph could not be loaded",
     "premium_hint": "Get the full experience by upgrading to rotki premium",

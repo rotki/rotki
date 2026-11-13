@@ -65,6 +65,9 @@ const timeframeData = computed<NetValueChartData>(() => {
   return getNetValue(startingDate);
 });
 
+/** Some snapshots are converted at a stand-in rate while their own day's rate is not known yet. */
+const hasEstimates = computed<boolean>(() => get(timeframeData).estimated?.some(Boolean) === true);
+
 const stats = computed(() => {
   const { data, times } = get(timeframeData);
   return computeNetValueDelta(data, times, get(totalNetWorth), get(zoomRange));
@@ -176,6 +179,13 @@ onMounted(() => {
           size="14"
         />
         {{ t('balance_view.chart_live') }}
+      </p>
+      <p
+        v-if="hasEstimates"
+        class="px-2 text-xs text-rui-text-secondary"
+        data-testid="overall-balances-estimated-rate"
+      >
+        {{ t('overall_balances.estimated_rate') }}
       </p>
     </div>
     <AssetsBySource

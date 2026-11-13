@@ -49,6 +49,12 @@ function seriesData(option: ReturnType<typeof useNetValueChartConfig>): unknown 
   return first && 'data' in first ? first.data : undefined;
 }
 
+function markArea(option: ReturnType<typeof useNetValueChartConfig>): unknown {
+  const series = get(option.chartOption).series;
+  const first = Array.isArray(series) ? series[0] : series;
+  return first && 'markArea' in first ? first.markArea : undefined;
+}
+
 function dataZoom(option: ReturnType<typeof useNetValueChartConfig>): DataZoomComponentOption[] {
   const zoom = get(option.chartOption).dataZoom;
   if (Array.isArray(zoom))
@@ -67,6 +73,17 @@ describe('useNetValueChartConfig', () => {
   it('should map times and values into millisecond data points', () => {
     const option = useNetValueChartConfig(() => chartData());
     expect(seriesData(option)).toEqual([[1000, 10], [2000, 20]]);
+  });
+
+  it('should shade the stretches whose values are estimated, and nothing otherwise', () => {
+    expect(markArea(useNetValueChartConfig(() => chartData()))).toBeUndefined();
+
+    const option = useNetValueChartConfig(() => chartData({
+      data: [bigNumberify(1), bigNumberify(2), bigNumberify(3)],
+      estimated: [false, true, false],
+      times: [10, 20, 30],
+    }));
+    expect(markArea(option)).toMatchObject({ data: [[{ xAxis: 15_000 }, { xAxis: 25_000 }]] });
   });
 
   it('should return an empty series when there is no data', () => {
