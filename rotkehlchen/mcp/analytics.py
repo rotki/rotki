@@ -186,10 +186,23 @@ class AnalyticsScope:
     aggregate_by_group_ids: bool = False
 
 
+# Every value hashed in this process, by its hash, so the accounting tools can resolve a hash
+# the agent took from an analytics table back to the identifier it stands for. Cleared with
+# the analytics data whenever the privacy mode changes.
+_hashed_values: dict[str, str] = {}
+
+
 def _hash_identifier(value: Any) -> str | None:
     if value is None:
         return None
-    return f'anon_{hmac.new(_session_seed, str(value).encode(), sha256).hexdigest()[:16]}'
+    hashed = f'anon_{hmac.new(_session_seed, str(value).encode(), sha256).hexdigest()[:16]}'
+    _hashed_values[hashed] = str(value)
+    return hashed
+
+
+def resolve_hashed_value(hashed: str) -> str | None:
+    """The identifier a hash handed out in this process stands for, None if unknown."""
+    return _hashed_values.get(hashed)
 
 
 def _scrub_identifiers(value: str) -> str:
@@ -915,4 +928,15 @@ def sync_privacy_mode() -> AnalyticsSession:
 
         if set_privacy_mode(cast('PrivacyMode', privacy_mode)):
             _analytics_session.clear()
+            _hashed_values.clear()
+            for callback in _privacy_mode_change_callbacks:
+                callback()
         return _analytics_session
+
+
+_privacy_mode_change_callbacks: list[Callable[[], None]] = []
+
+
+def on_privacy_mode_change(callback: Callable[[], None]) -> None:
+    """Run callback whenever the privacy mode changes, to drop state built under the old one."""
+    _privacy_mode_change_callbacks.append(callback)

@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` With a crypto main currency such as ETH or BTC, historical fiat prices in that currency are now found by inverting the crypto price in fiat. Before, fiat received in a profit and loss report was valued at zero, fiat spent was reported as a missing price, and snapshot exports used a rate of one.
+* :feature:`13672` AI agents connected through rotki's MCP server can now diagnose accounting issues (why a balance stopped, exact per-event balance traces, transaction and bridge-match explanations) and propose bounded repairs that are applied only after you approve them in your MCP client.
 * :bug:`-` Bitpanda history queries now save each page as it arrives, so a failure part way through no longer throws away the history already fetched.
 * :bug:`-` Refreshing exchange balances now queries each exchange once. Before, an exchange with several connected accounts was queried again for every account, so balances took longer to load the more accounts it had.
 * :feature:`8019` Balances > Exchanges can now show the assets of one account at a time when an exchange has several connected accounts. Pick the account from the account menu above the table, which shows each account's value and share and marks one whose last refresh failed, or pick All accounts for the whole exchange.
