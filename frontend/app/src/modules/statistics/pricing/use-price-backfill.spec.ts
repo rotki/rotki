@@ -106,7 +106,7 @@ describe('modules/statistics/pricing/use-price-backfill', () => {
     expect(queryHistoricalAssetPrices).not.toHaveBeenCalled();
   });
 
-  it('should fetch the demand\'s days in the background, store the prices and stop once settled', async () => {
+  it('should start with a coarse rate, store the prices and stop once settled', async () => {
     responses.push({ noPricesTimestamps: [], prices: flatPrices(days), rateLimitedPricesTimestamps: [] });
     withSetup(() => usePriceBackfill().register('rates', demand()));
     await vi.advanceTimersByTimeAsync(REQUEST_DELAY_MS);
@@ -114,9 +114,10 @@ describe('modules/statistics/pricing/use-price-backfill', () => {
     expect(queryHistoricalAssetPrices).toHaveBeenCalledOnce();
     expect(queryHistoricalAssetPrices).toHaveBeenCalledWith(expect.objectContaining({
       asset: 'BTC',
+      excludeTimestamps: [SECONDS_PER_DAY],
       fromTimestamp: 0,
       interval: SECONDS_PER_DAY,
-      toTimestamp: 3 * SECONDS_PER_DAY,
+      toTimestamp: SECONDS_PER_DAY,
     }));
     expect(usePriceSeriesStore().prices.BTC).toHaveLength(days.length);
   });
@@ -155,8 +156,9 @@ describe('modules/statistics/pricing/use-price-backfill', () => {
     });
     await vi.advanceTimersByTimeAsync(REQUEST_DELAY_MS * 5);
 
-    expect(queryHistoricalAssetPrices).toHaveBeenCalledOnce();
-    expect(get(failedDailyPrices).BTC?.noPricesTimestamps).toEqual(days);
+    expect(get(failedDailyPrices).BTC?.noPricesTimestamps).toEqual([days[0]]);
+    expect(queryHistoricalAssetPrices).toHaveBeenCalledTimes(2);
+    expect(queryHistoricalAssetPrices).toHaveBeenLastCalledWith(expect.objectContaining({ fromTimestamp: days[1], toTimestamp: days[3] }));
     expect(get(result.rateLimited)).toBe(false);
   });
 

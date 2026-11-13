@@ -29,9 +29,10 @@ interface UseBackfillRequestsReturn {
 
 /** The days a request asks for. */
 function requestedDays(request: BackfillRequest): number[] {
+  const excluded = new Set(request.excludeTimestamps);
   const days: number[] = [];
   for (let day = request.fromTimestamp; day <= request.toTimestamp; day += SECONDS_PER_DAY) {
-    if (!request.excludeTimestamps.includes(day))
+    if (!excluded.has(day))
       days.push(day);
   }
   return days;

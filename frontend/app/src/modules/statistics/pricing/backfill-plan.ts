@@ -30,6 +30,13 @@ export function dayStart(time: number): number {
   return Math.floor(time / SECONDS_PER_DAY) * SECONDS_PER_DAY;
 }
 
+/**
+ * How far apart the days of each pass are, coarsest first: one rate a month, then one a week, then
+ * every day. A long history gets a rough rate everywhere within minutes, and the daily backfill
+ * only refines it.
+ */
+const PASS_STEPS = [30, 7, 1].map(days => days * SECONDS_PER_DAY);
+
 /** The days still to fetch for an asset, earliest first: those of times with no price within a day. */
 function openDays(entry: BackfillAsset): number[] {
   const days = new Set<number>();
@@ -41,22 +48,55 @@ function openDays(entry: BackfillAsset): number[] {
   return [...days].sort((a, b) => a - b);
 }
 
+/** The days that already have a price or are known to have none, in order. */
+function settledDays(entry: BackfillAsset): { time: number }[] {
+  const days = new Set([...entry.known.map(point => dayStart(point.time)), ...entry.failed]);
+  return [...days].sort((a, b) => a - b).map(time => ({ time }));
+}
+
 /**
- * The next request for an asset: its earliest open day and the open days after it, up to
- * {@link DAYS_PER_REQUEST} days later, asked for on a daily grid that skips the days in between.
+ * The open days a pass picks: walking from the earliest, a day at least `step` away from every
+ * settled day and from the day picked before it.
+ */
+function passDays(open: readonly number[], settled: readonly { time: number }[], step: number): number[] {
+  const tolerance = step - SECONDS_PER_DAY;
+  const picked: number[] = [];
+  for (const day of open) {
+    const previous = picked.at(-1);
+    if ((previous === undefined || day - previous > tolerance) && !nearestWithin(settled, day, tolerance))
+      picked.push(day);
+  }
+  return picked;
+}
+
+/** The days of the next request: the first {@link DAYS_PER_REQUEST} picked by the coarsest pass with any left. */
+function nextDays(entry: BackfillAsset): number[] {
+  const open = openDays(entry);
+  if (open.length === 0)
+    return [];
+  const settled = settledDays(entry);
+  for (const step of PASS_STEPS) {
+    const picked = passDays(open, settled, step);
+    if (picked.length > 0)
+      return picked.slice(0, DAYS_PER_REQUEST);
+  }
+  return [];
+}
+
+/**
+ * The next request for an asset, asked for on a daily grid that skips the days in between.
  *
  * @remarks
- * The backend rejects a range that does not end after it starts, so a single open day is asked
- * as a two-day grid with the second day excluded.
+ * The backend rejects a range that does not end after it starts, so a single day is asked as a
+ * two-day grid with the second day excluded.
  */
 function nextRequest(entry: BackfillAsset): BackfillRequest | undefined {
-  const days = openDays(entry);
+  const days = nextDays(entry);
   const first = days[0];
   if (first === undefined)
     return undefined;
-  const windowEnd = first + (DAYS_PER_REQUEST - 1) * SECONDS_PER_DAY;
-  const wanted = new Set(days.filter(day => day <= windowEnd));
-  const last = Math.max(...wanted);
+  const wanted = new Set(days);
+  const last = days.at(-1) ?? first;
   const excludeTimestamps: number[] = [];
   for (let day = first; day <= last; day += SECONDS_PER_DAY) {
     if (!wanted.has(day))
@@ -74,8 +114,9 @@ function nextRequest(entry: BackfillAsset): BackfillRequest | undefined {
  *
  * @remarks
  * Each request covers a few days, so the backfill moves forward at the pace the caller sets
- * instead of handing the oracles a whole history at once. A time settles once a price lies within a
- * day of it, or the backend has said it has none.
+ * instead of handing the oracles a whole history at once. It works in passes, a day a month, then a
+ * week, then every day, so the rates the graph falls back on are never far off. A time settles once
+ * a price lies within a day of it, or the backend has said it has none.
  *
  * @returns an empty list once every requested time is settled
  */
