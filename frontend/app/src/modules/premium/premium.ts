@@ -12,7 +12,7 @@ import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
  * A bundle refuses to render below this rather than failing halfway through, so raising it is what
  * turns an incompatibility into a message instead of a broken page.
  */
-const PREMIUM_COMPONENTS_VERSION = 30;
+const PREMIUM_COMPONENTS_VERSION = 31;
 
 type PremiumLibrary = {
   install: (app: App) => void;

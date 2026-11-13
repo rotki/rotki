@@ -22,6 +22,7 @@ import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
+import { usdRateAt } from '@/modules/premium/premium-pricing-apis';
 import { rankOwnedAssets } from '@/modules/premium/rank-owned-assets';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
@@ -87,6 +88,7 @@ export function statisticsApi(): StatisticsApi {
     async timedBalances(asset: string, start: number, end: number, collectionId?: number): Promise<TimedBalances> {
       return queryTimedBalancesData(asset, start, end, collectionId);
     },
+    usdRateAt,
     async timedHistoricalBalances(asset: string, start: number, end: number, collectionId?: number): Promise<TimedAssetHistoricalBalances> {
       return queryTimedHistoricalBalancesData(asset, start, end, collectionId);
     },
