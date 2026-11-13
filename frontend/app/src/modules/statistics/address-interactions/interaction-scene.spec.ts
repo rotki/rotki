@@ -2,6 +2,7 @@ import type { AddressInteraction } from './address-interaction-types';
 import { graphOf, sceneOf } from '@test/utils/address-interactions';
 import { describe, expect, it } from 'vitest';
 import { findPath } from './interaction-clusters';
+import { InteractionFilterMode } from './interaction-filter-mode';
 import { focusOf, type InteractionFilters, type InteractionScene } from './interaction-scene';
 
 const graph = graphOf([
@@ -32,7 +33,7 @@ describe('interaction scene', () => {
     const bridged = sceneOf(graphOf([
       { chain: 'eth', source: 'a', target: 'b', txHash: '0x1' },
       { chain: 'eth', source: 'b', target: 'c', targetChain: 'optimism', targetTxHash: '0x2', txHash: '0x3' },
-    ]), { bridgesOnly: true });
+    ]), { bridges: InteractionFilterMode.ONLY });
 
     expect(bridged.connections).toHaveLength(2);
     expect([...bridged.activeConnectionIds]).toEqual([JSON.stringify(['b', 'c'])]);
@@ -45,8 +46,31 @@ describe('interaction scene', () => {
       { chain: 'gnosis', source: 'a', target: 'b', txHash: '0x3' },
     ]);
 
-    expect(sceneOf(pair, { bridgesOnly: true, chain: 'optimism' }).activeConnectionIds.size).toBe(1);
-    expect(sceneOf(pair, { bridgesOnly: true, chain: 'gnosis' }).activeConnectionIds.size).toBe(0);
+    expect(sceneOf(pair, { bridges: InteractionFilterMode.ONLY, chain: 'optimism' }).activeConnectionIds.size).toBe(1);
+    expect(sceneOf(pair, { bridges: InteractionFilterMode.ONLY, chain: 'gnosis' }).activeConnectionIds.size).toBe(0);
+  });
+
+  it('should filter shared deposits on the selected chain and combine with the bridge filter', () => {
+    const pair = graphOf([
+      { chain: 'eth', source: 'a', target: 'b', depositAddress: 'deposit', txHash: '0x1' },
+      { chain: 'gnosis', source: 'a', target: 'b', txHash: '0x2' },
+      { chain: 'eth', source: 'b', target: 'c', targetChain: 'optimism', targetTxHash: '0x4', txHash: '0x3' },
+    ]);
+
+    expect([...sceneOf(pair, { chain: 'eth', sharedDeposits: InteractionFilterMode.ONLY }).activeConnectionIds]).toEqual([AB]);
+    expect(sceneOf(pair, { chain: 'gnosis', sharedDeposits: InteractionFilterMode.ONLY }).activeConnectionIds.size).toBe(0);
+    expect(sceneOf(pair, { bridges: InteractionFilterMode.ONLY, sharedDeposits: InteractionFilterMode.ONLY }).activeConnectionIds.size).toBe(0);
+  });
+
+  it('should drop the pairs a filter describes when it is set to exclude', () => {
+    const pair = graphOf([
+      { chain: 'eth', source: 'a', target: 'b', depositAddress: 'deposit', txHash: '0x1' },
+      { chain: 'eth', source: 'b', target: 'c', targetChain: 'optimism', targetTxHash: '0x4', txHash: '0x3' },
+      { chain: 'eth', source: 'c', target: 'd', txHash: '0x5' },
+    ]);
+
+    expect([...sceneOf(pair, { bridges: InteractionFilterMode.EXCLUDE }).activeConnectionIds]).toEqual([AB, CD]);
+    expect([...sceneOf(pair, { sharedDeposits: InteractionFilterMode.EXCLUDE }).activeConnectionIds]).toEqual([BC, CD]);
   });
 
   it('should keep a connection below the minimum drawn but inactive', () => {

@@ -51,6 +51,31 @@ describe('address interaction explorer', () => {
     expect(get(explorer.stats).connections).toBe(1);
   });
 
+  it('should drop a bridges or shared deposits mode once refreshed data no longer offers that filter', async () => {
+    const [plain] = links(['a', 'b']);
+    const bridge: AddressInteraction = { ...plain, source: 'c', target: 'd', targetChain: 'optimism', targetTxHash: '0xwithdrawal', txHash: '0xbridge' };
+    const deposit: AddressInteraction = { ...plain, depositAddress: '0xkraken', source: 'e', target: 'f', txHash: '0xdeposit' };
+    const source = ref<AddressInteraction[]>([plain, bridge, deposit]);
+    const explorer = useAddressInteractionExplorer(source);
+    set(explorer.modelBridges, 'only');
+    set(explorer.modelSharedDeposits, 'exclude');
+    expect(get(explorer.hasFilters)).toBe(true);
+
+    set(source, [plain]);
+    await nextTick();
+
+    expect(get(explorer.modelBridges)).toBe('include');
+    expect(get(explorer.modelSharedDeposits)).toBe('include');
+    expect(get(explorer.hasFilters)).toBe(false);
+    expect(get(explorer.stats).connections).toBe(1);
+
+    set(source, [plain, bridge, deposit]);
+    await nextTick();
+
+    expect(get(explorer.modelBridges)).toBe('only');
+    expect(get(explorer.modelSharedDeposits)).toBe('exclude');
+  });
+
   it('should keep focus on the same cluster when refreshed clusters re-sort', async () => {
     const source = ref<AddressInteraction[]>(links(['a', 'b'], ['b', 'c'], ['x', 'y']));
     const explorer = useAddressInteractionExplorer(source);

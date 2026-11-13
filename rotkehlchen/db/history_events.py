@@ -14,6 +14,9 @@ from rotkehlchen.api.websockets.typedefs import (
     WSMessageType,
 )
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.constants import (
+    BRIDGE_ADDRESS as HYPERLIQUID_BRIDGE_ADDRESS,
+)
 from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_address
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -91,6 +94,7 @@ from rotkehlchen.locations.chains import (
     location_to_chain,
 )
 from rotkehlchen.locations.constants import (
+    LOCATION_ARBITRUM_ONE,
     LOCATION_BITCOIN,
     LOCATION_BITCOIN_CASH,
     LOCATION_EXTERNAL,
@@ -230,15 +234,30 @@ class DBHistoryEvents:
         self.db = database
 
     def get_address_interactions(self) -> list[dict[str, str]]:
-        """Return tracked-account interactions, including directed matched bridge legs.
+        """Return tracked-account interactions, including directed matched bridge legs
+        and deposits to a shared exchange deposit address.
 
         Ordinary event pairs are unordered and chain-local. Bridge links retain their
         deposit-to-withdrawal direction and require a transaction reference on both legs;
         synthetic plain history counterparts cannot provide a transaction interaction.
+
+        A shared exchange deposit address can reveal a link between accounts, although
+        exchanges may reuse addresses across customers. An address is recognized from an
+        onchain exchange transfer or an exchange-reported deposit. Each transaction to
+        that address is reported separately, within its chain.
+        The public Hyperliquid bridge on Arbitrum is excluded: all users share it,
+        so deposits to it do not provide evidence of common account ownership.
+
+        The exchange behind a recognized address is reported only when the evidence names
+        exactly one exchange: the counterparty of an onchain exchange transfer or the
+        location of the exchange asset movement that reported the address. Conflicting or
+        missing evidence still links the accounts but leaves the exchange out.
         """
         interactions: list[dict[str, str]] = []
         chain_data = {}
         bridge_chain_bindings: list[str | int] = []
+        exchange_locations = tuple(sorted({str(location) for location in ALL_SUPPORTED_EXCHANGES}))
+        exchange_placeholders = ','.join('?' for _ in exchange_locations)
         with self.db.conn.read_ctx() as cursor:
             for chain in CHAINS_WITH_TRANSACTIONS:
                 location = location_from_chain(chain)
@@ -277,6 +296,71 @@ class DBHistoryEvents:
                     'target': target,
                     'tx_hash': str(event_class._deserialize_tx_ref(tx_ref)),
                 } for source, target, tx_ref in rows)
+
+                rows = cursor.execute(
+                    'WITH evidence(address, exchange) AS ('
+                    'SELECT a.address, '
+                    f'CASE WHEN c.counterparty IN ({exchange_placeholders}) '
+                    'THEN c.counterparty END FROM history_events h '
+                    f'JOIN ({addresses}) a ON a.identifier=h.identifier '
+                    'JOIN chain_events_info c ON c.identifier=h.identifier '
+                    'WHERE h.location=? AND h.type=? AND h.subtype=? '
+                    "UNION SELECT json_extract(h.extra_data, '$.address'), "
+                    f'CASE WHEN h.location IN ({exchange_placeholders}) THEN h.location END '
+                    'FROM history_events h WHERE h.entry_type=? AND h.subtype=? '
+                    "AND json_extract(h.extra_data, '$.address') IS NOT NULL "
+                    "AND (json_extract(h.extra_data, '$.blockchain') IS NULL OR "
+                    "json_extract(h.extra_data, '$.blockchain')=?)"
+                    '), deposit_addresses(address, exchange) AS ('
+                    f'SELECT address, CASE WHEN COUNT(DISTINCT exchange)=1 THEN MIN(exchange) END '
+                    f'FROM evidence GROUP BY address COLLATE {collation}'
+                    '), deposits(account, address, tx_ref, exchange) AS ('
+                    'SELECT DISTINCT account.account, a.address, c.tx_ref, d.exchange '
+                    'FROM history_events h '
+                    'JOIN chain_events_info c ON c.identifier=h.identifier '
+                    f'JOIN ({addresses}) a ON a.identifier=h.identifier '
+                    'JOIN blockchain_accounts account ON account.blockchain=? '
+                    f'AND account.account=h.location_label COLLATE {collation} '
+                    f'JOIN deposit_addresses d ON d.address=a.address COLLATE {collation} '
+                    'WHERE h.location=? AND ((h.type=? AND h.subtype=?) '
+                    'OR (h.type=? AND h.subtype=?)) '
+                    'AND NOT (h.location=? AND a.address=? COLLATE NOCASE) '
+                    'AND NOT EXISTS (SELECT 1 FROM blockchain_accounts tracked '
+                    f'WHERE tracked.blockchain=? AND tracked.account=a.address COLLATE {collation})'  # noqa: E501
+                    ') SELECT DISTINCT MIN(own.account, other.account) AS source, '
+                    'MAX(own.account, other.account) AS target, own.address, own.tx_ref, '
+                    'own.exchange FROM deposits own JOIN deposits other '
+                    f'ON other.address=own.address COLLATE {collation} '
+                    f'AND other.account!=own.account COLLATE {collation} '
+                    'ORDER BY source, target, own.tx_ref',
+                    (
+                        *exchange_locations,
+                        location,
+                        HistoryEventType.EXCHANGE_TRANSFER.serialize(),
+                        HistoryEventSubType.SPEND.serialize(),
+                        *exchange_locations,
+                        HistoryBaseEntryType.ASSET_MOVEMENT_EVENT.serialize_for_db(),
+                        HistoryEventSubType.RECEIVE.serialize(),
+                        chain.serialize(),
+                        chain.value,
+                        location,
+                        HistoryEventType.SPEND.serialize(),
+                        HistoryEventSubType.NONE.serialize(),
+                        HistoryEventType.EXCHANGE_TRANSFER.serialize(),
+                        HistoryEventSubType.SPEND.serialize(),
+                        LOCATION_ARBITRUM_ONE,
+                        HYPERLIQUID_BRIDGE_ADDRESS,
+                        chain.value,
+                    ),
+                )
+                interactions.extend({
+                    'chain': chain.serialize(),
+                    'source': source,
+                    'target': target,
+                    'tx_hash': str(event_class._deserialize_tx_ref(tx_ref)),
+                    'deposit_address': deposit_address,
+                    **({'deposit_exchange': exchange} if exchange is not None else {}),
+                } for source, target, deposit_address, tx_ref, exchange in rows)
 
             # Resolve each leg against accounts on its own chain in one query. The
             # link, not event metadata or a shared transaction hash, establishes the pair.
@@ -321,6 +405,7 @@ class DBHistoryEvents:
             key=lambda row: (
                 row['chain'], row['source'], row['target'], row['tx_hash'],
                 row.get('target_chain', ''), row.get('target_tx_hash', ''),
+                row.get('deposit_address', ''),
             ),
         )
 

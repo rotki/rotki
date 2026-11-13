@@ -22,8 +22,8 @@ describe('address interaction graph model', () => {
     expect(graph.connections).toHaveLength(1);
     const [connection] = graph.connections;
     expect(connection.activity).toEqual([
-      { bridgeTxHashes: [], chain: 'eth', txHashes: ['0x1', '0x2'] },
-      { bridgeTxHashes: [], chain: 'optimism', txHashes: ['0x3'] },
+      { bridgeTxHashes: [], chain: 'eth', sharedDeposits: [], txHashes: ['0x1', '0x2'] },
+      { bridgeTxHashes: [], chain: 'optimism', sharedDeposits: [], txHashes: ['0x3'] },
     ]);
     expect(connection.txCount).toBe(3);
   });
@@ -41,8 +41,8 @@ describe('address interaction graph model', () => {
 
     const [connection] = graph.connections;
     expect(connection.activity).toEqual([
-      { bridgeTxHashes: ['0xdeposit'], chain: 'eth', txHashes: ['0xdeposit'] },
-      { bridgeTxHashes: ['0xwithdrawal'], chain: 'optimism', txHashes: ['0xwithdrawal'] },
+      { bridgeTxHashes: ['0xdeposit'], chain: 'eth', sharedDeposits: [], txHashes: ['0xdeposit'] },
+      { bridgeTxHashes: ['0xwithdrawal'], chain: 'optimism', sharedDeposits: [], txHashes: ['0xwithdrawal'] },
     ]);
     expect(connection.txCount).toBe(2);
     expect(graph.nodes.find(node => node.id === B)?.chains).toEqual(['eth']);
@@ -54,8 +54,8 @@ describe('address interaction graph model', () => {
     const [connection] = createAddressInteractionGraph([bridge, bridge, interaction('eth', '0x1')]).connections;
 
     expect(connection.activity).toEqual([
-      { bridgeTxHashes: ['0xdeposit'], chain: 'eth', txHashes: ['0x1', '0xdeposit'] },
-      { bridgeTxHashes: ['0xwithdrawal'], chain: 'optimism', txHashes: ['0xwithdrawal'] },
+      { bridgeTxHashes: ['0xdeposit'], chain: 'eth', sharedDeposits: [], txHashes: ['0x1', '0xdeposit'] },
+      { bridgeTxHashes: ['0xwithdrawal'], chain: 'optimism', sharedDeposits: [], txHashes: ['0xwithdrawal'] },
     ]);
   });
 
@@ -69,6 +69,28 @@ describe('address interaction graph model', () => {
       [A, B, true],
       [A, C, false],
     ]);
+  });
+
+  it('should list each transaction with a shared deposit address among the pair transactions, on its chain', () => {
+    const graph = createAddressInteractionGraph([
+      interaction('eth', '0x1'),
+      { ...interaction('eth', '0x3', B, A), depositAddress: '0xkraken' },
+      { ...interaction('eth', '0x2'), depositAddress: '0xkraken' },
+      { ...interaction('optimism', '0x2'), depositAddress: '0xbinance' },
+    ]);
+
+    const [connection] = graph.connections;
+    expect(connection.activity).toEqual([
+      {
+        bridgeTxHashes: [],
+        chain: 'eth',
+        sharedDeposits: [{ depositAddress: '0xkraken', txHash: '0x2' }, { depositAddress: '0xkraken', txHash: '0x3' }],
+        txHashes: ['0x1', '0x2', '0x3'],
+      },
+      { bridgeTxHashes: [], chain: 'optimism', sharedDeposits: [{ depositAddress: '0xbinance', txHash: '0x2' }], txHashes: ['0x2'] },
+    ]);
+    expect(connection.txCount).toBe(4);
+    expect(connection.isBridge).toBe(false);
   });
 
   it('should skip an address interacting with itself', () => {

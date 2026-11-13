@@ -1,9 +1,12 @@
 import type { InteractionPath } from './interaction-clusters';
 import { type InteractionConnection, type InteractionGraph, type InteractionNode, touches, transactionsOn } from './address-interaction-graph';
+import { InteractionFilterMode, passesMode } from './interaction-filter-mode';
 
 export interface InteractionFilters {
-  /** Keeps only the pairs linked by a matched bridge. */
-  bridgesOnly?: boolean;
+  /** Keeps all pairs, drops the ones linked by a matched bridge, or keeps only those. */
+  bridges?: InteractionFilterMode;
+  /** Keeps all pairs, drops the ones that used a shared exchange deposit address, or keeps only those. */
+  sharedDeposits?: InteractionFilterMode;
   chain?: string;
   minTransactions: number;
 }
@@ -11,6 +14,11 @@ export interface InteractionFilters {
 /** Whether the pair has a bridge leg, on `chain` when one is picked. */
 function hasBridgeLegOn(connection: InteractionConnection, chain?: string): boolean {
   return connection.activity.some(entry => (!chain || entry.chain === chain) && entry.bridgeTxHashes.length > 0);
+}
+
+/** Whether the pair shares an exchange deposit address, on `chain` when one is picked. */
+function hasSharedDepositOn(connection: InteractionConnection, chain?: string): boolean {
+  return connection.activity.some(entry => (!chain || entry.chain === chain) && entry.sharedDeposits.length > 0);
 }
 
 /** The addresses and connections the graph draws: everything but hidden addresses. */
@@ -60,13 +68,13 @@ export function drawGraph(graph: InteractionGraph, hiddenIds: ReadonlySet<string
  * inactive, so changing a filter never moves the layout. The drawn arrays are passed through
  * unchanged, so anything derived from them alone survives a filter change.
  */
-export function activateScene(drawn: DrawnGraph, { bridgesOnly = false, chain, minTransactions }: InteractionFilters): InteractionScene {
+export function activateScene(drawn: DrawnGraph, { bridges = InteractionFilterMode.INCLUDE, chain, minTransactions, sharedDeposits = InteractionFilterMode.INCLUDE }: InteractionFilters): InteractionScene {
   const { connections, nodes } = drawn;
   const activeConnectionIds = new Set<string>();
   const activeNodeIds = new Set<string>();
   for (const connection of connections) {
     const transactions = transactionsOn(connection, chain);
-    if (transactions > 0 && transactions >= minTransactions && (!bridgesOnly || hasBridgeLegOn(connection, chain))) {
+    if (transactions > 0 && transactions >= minTransactions && passesMode(bridges, hasBridgeLegOn(connection, chain)) && passesMode(sharedDeposits, hasSharedDepositOn(connection, chain))) {
       activeConnectionIds.add(connection.id);
       activeNodeIds.add(connection.source.id);
       activeNodeIds.add(connection.target.id);

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import type { InteractionFilterMode } from './interaction-filter-mode';
 import type { LocationLabel } from '@/modules/core/common/location';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import LocationLabelSelector from '@/modules/history/LocationLabelSelector.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
-
+import InteractionModeSwitch from './InteractionModeSwitch.vue';
 import { useChainColors } from './use-chain-colors';
 
 interface Props {
@@ -13,16 +14,19 @@ interface Props {
   maxTransactions: number;
   /** Shows Reset filters at the end of the row while a chain or a minimum is set. */
   hasFilters?: boolean;
-  /** Offers the bridges-only switch; hidden while no pair is linked by a bridge. */
+  /** Offers the bridges filter; hidden while no pair is linked by a bridge. */
   hasBridges?: boolean;
+  /** Offers the shared deposits filter; hidden while no pair shares an exchange deposit address. */
+  hasSharedDeposits?: boolean;
 }
 
 const address = defineModel<string>('address', { required: true });
-const bridgesOnly = defineModel<boolean>('bridgesOnly', { required: true });
+const bridges = defineModel<InteractionFilterMode>('bridges', { required: true });
 const chain = defineModel<string>('chain', { required: true });
 const minTransactions = defineModel<number>('minTransactions', { required: true });
+const sharedDeposits = defineModel<InteractionFilterMode>('sharedDeposits', { required: true });
 
-const { addressOptions, chains, hasBridges = false, maxTransactions, hasFilters = false } = defineProps<Props & /* @vue-ignore */ Omit<HTMLAttributes, keyof Props | 'onReset'>>();
+const { addressOptions, chains, hasBridges = false, hasSharedDeposits = false, maxTransactions, hasFilters = false } = defineProps<Props & /* @vue-ignore */ Omit<HTMLAttributes, keyof Props | 'onReset'>>();
 
 const emit = defineEmits<{
   reset: [];
@@ -114,26 +118,26 @@ function chipClass(selected: boolean): string {
         </span>
         {{ getChainName(item) }}
       </button>
-      <template v-if="hasBridges">
+      <template v-if="hasBridges || hasSharedDeposits">
         <span
           class="mx-1 h-5 w-px bg-rui-grey-300 dark:bg-rui-grey-700"
           aria-hidden="true"
         />
-        <button
-          type="button"
-          class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-rui-primary"
-          :class="chipClass(bridgesOnly)"
-          :aria-pressed="bridgesOnly"
-          data-testid="interaction-bridges-only"
-          @click="bridgesOnly = !bridgesOnly"
-        >
-          <RuiIcon
-            name="lu-arrow-left-right"
-            size="14"
-          />
-          {{ t('address_interactions.bridges_only') }}
-        </button>
       </template>
+      <InteractionModeSwitch
+        v-if="hasBridges"
+        v-model="bridges"
+        icon="lu-arrow-left-right"
+        :label="t('address_interactions.bridges')"
+        data-testid="interaction-bridges"
+      />
+      <InteractionModeSwitch
+        v-if="hasSharedDeposits"
+        v-model="sharedDeposits"
+        icon="lu-landmark"
+        :label="t('address_interactions.shared_deposits')"
+        data-testid="interaction-shared-deposits"
+      />
     </div>
   </div>
 </template>

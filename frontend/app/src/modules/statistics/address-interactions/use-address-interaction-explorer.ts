@@ -5,6 +5,7 @@ import { isEqual } from 'es-toolkit';
 import { type ChainActivity, createAddressInteractionGraph, type InteractionConnection, type InteractionGraph, type InteractionNode, touches, transactionsOn } from './address-interaction-graph';
 import { sortByActivity } from './address-interaction-panel';
 import { findClusters, findPath, type InteractionCluster, type InteractionPath } from './interaction-clusters';
+import { InteractionFilterMode } from './interaction-filter-mode';
 import { activateScene, drawGraph, type DrawnGraph, focusOf, type InteractionIds, type InteractionScene } from './interaction-scene';
 import { useInteractionLabels } from './use-interaction-labels';
 
@@ -20,9 +21,12 @@ interface InteractionStats {
 export interface AddressInteractionExplorer {
   modelAddress: Ref<string>;
   modelChain: Ref<string>;
-  modelBridgesOnly: Ref<boolean>;
+  modelBridges: Ref<InteractionFilterMode>;
+  modelSharedDeposits: Ref<InteractionFilterMode>;
   /** Whether any pair is linked by a matched bridge, so the filter is worth offering. */
   hasBridges: ComputedRef<boolean>;
+  /** Whether any pair shares an exchange deposit address, so the filter is worth offering. */
+  hasSharedDeposits: ComputedRef<boolean>;
   /** The picked chain, or `undefined` for all chains. */
   activeChain: ComputedRef<string | undefined>;
   modelMinTransactions: Ref<number>;
@@ -85,7 +89,8 @@ function isSameScene(a: InteractionScene, b: InteractionScene): boolean {
 export function useAddressInteractionExplorer(interactions: MaybeRefOrGetter<readonly AddressInteraction[]>): AddressInteractionExplorer {
   const { namedChain } = useInteractionLabels();
   const modelChain = shallowRef<string>('');
-  const modelBridgesOnly = shallowRef<boolean>(false);
+  const bridgesMode = shallowRef<InteractionFilterMode>(InteractionFilterMode.INCLUDE);
+  const sharedDepositsMode = shallowRef<InteractionFilterMode>(InteractionFilterMode.INCLUDE);
   const minTransactions = shallowRef<number>(1);
   const selectedNodeId = shallowRef<string>();
   const selectedConnectionId = shallowRef<string>();
@@ -107,6 +112,7 @@ export function useAddressInteractionExplorer(interactions: MaybeRefOrGetter<rea
   });
   const chains = computed<string[]>(() => [...new Set(get(graph).connections.flatMap(({ activity }) => activity.map(({ chain }) => chain)))].sort());
   const hasBridges = computed<boolean>(() => get(graph).connections.some(({ isBridge }) => isBridge));
+  const hasSharedDeposits = computed<boolean>(() => get(graph).connections.some(({ activity }) => activity.some(entry => entry.sharedDeposits.length > 0)));
   const activeChain = computed<string | undefined>(() => get(modelChain) || undefined);
   const maxTransactions = computed<number>(() => Math.min(MAX_MIN_TRANSACTIONS, Math.max(1, ...get(graph).connections.map(({ txCount }) => txCount))));
   /** The chosen minimum, capped by what the data allows, so a smaller refresh never greys out everything. */
@@ -114,10 +120,20 @@ export function useAddressInteractionExplorer(interactions: MaybeRefOrGetter<rea
     get: () => Math.min(get(minTransactions), get(maxTransactions)),
     set: value => set(minTransactions, value),
   });
-  const hasFilters = computed<boolean>(() => !!get(activeChain) || get(modelBridgesOnly) || get(modelMinTransactions) > 1);
+  /** The chosen bridges mode, back to include while no pair has a bridge, so a hidden filter never greys out everything. */
+  const modelBridges = computed<InteractionFilterMode>({
+    get: () => (get(hasBridges) ? get(bridgesMode) : InteractionFilterMode.INCLUDE),
+    set: value => set(bridgesMode, value),
+  });
+  /** The chosen shared deposits mode, back to include while no pair shares a deposit address. */
+  const modelSharedDeposits = computed<InteractionFilterMode>({
+    get: () => (get(hasSharedDeposits) ? get(sharedDepositsMode) : InteractionFilterMode.INCLUDE),
+    set: value => set(sharedDepositsMode, value),
+  });
+  const hasFilters = computed<boolean>(() => !!get(activeChain) || get(modelBridges) !== InteractionFilterMode.INCLUDE || get(modelSharedDeposits) !== InteractionFilterMode.INCLUDE || get(modelMinTransactions) > 1);
   const drawn = computed<DrawnGraph>(() => drawGraph(get(graph), get(hiddenIds)));
   const scene = computed<InteractionScene>((previous) => {
-    const next = activateScene(get(drawn), { bridgesOnly: get(modelBridgesOnly), chain: get(activeChain), minTransactions: get(modelMinTransactions) });
+    const next = activateScene(get(drawn), { bridges: get(modelBridges), chain: get(activeChain), minTransactions: get(modelMinTransactions), sharedDeposits: get(modelSharedDeposits) });
     return previous && isSameScene(previous, next) ? previous : next;
   });
   const clusters = computed<InteractionCluster[]>(() => findClusters(get(drawn).connections));
@@ -269,7 +285,8 @@ export function useAddressInteractionExplorer(interactions: MaybeRefOrGetter<rea
 
   function resetFilters(): void {
     set(modelChain, '');
-    set(modelBridgesOnly, false);
+    set(bridgesMode, InteractionFilterMode.INCLUDE);
+    set(sharedDepositsMode, InteractionFilterMode.INCLUDE);
     set(minTransactions, 1);
   }
 
@@ -287,12 +304,14 @@ export function useAddressInteractionExplorer(interactions: MaybeRefOrGetter<rea
     graph,
     hasBridges,
     hasFilters,
+    hasSharedDeposits,
     hideNode,
     maxTransactions,
     modelAddress,
-    modelBridgesOnly,
+    modelBridges,
     modelChain,
     modelMinTransactions,
+    modelSharedDeposits,
     path,
     pathTarget,
     pickingPath: readonly(pickingPath),
