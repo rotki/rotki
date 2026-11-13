@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.concurrency import TaskCancelledError
@@ -15,6 +16,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.diagnostics import (
+    asset_signals,
     explain_data_issue,
     get_accounting_health,
     list_data_issues,
@@ -44,8 +46,8 @@ from rotkehlchen.tasks.historical_balances import (
     process_historical_balances,
 )
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
-from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import ChainID, EvmTransaction, Timestamp, TimestampMS
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.types import SPAM_PROTOCOL, ChainID, EvmTransaction, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -509,3 +511,31 @@ def test_health_reports_archive_node_capabilities(database: DBHandler) -> None:
         'OPTIMISM': {'archive': 0, 'not_archive': 0, 'unknown': 1},
     }
     assert capabilities['archive_queries_possible_for'] == ['ETH']
+
+
+def test_asset_signals_flag_deceptive_metadata_only(database: DBHandler) -> None:
+    """Lookalike, link and spam tokens are flagged by structure, without returning their
+    name, while an ordinary unfamiliar token is not flagged at all."""
+    tokens = {
+        flags: get_or_create_evm_token(
+            userdb=database,
+            evm_address=make_evm_address(),
+            chain_id=ChainID.ETHEREUM,
+            name=name,
+            symbol=symbol,
+            protocol=protocol,
+        ).identifier
+        for flags, name, symbol, protocol in (
+            (('mixed_scripts',), 'USD Coin', 'U\u0405DC', None),  # a Cyrillic lookalike
+            # rotki already marks a token with a link in its name as spam on creation
+            (('spam_flagged', 'link_in_metadata'), 'Claim at usdc-airdrop.com', 'CLAIM', None),
+            (('invisible_characters',), 'Tether\u200b', 'USDT', None),
+            (('spam_flagged',), 'Some token', 'SOME', SPAM_PROTOCOL),
+            ((), 'Obscure Protocol Token', 'OPT', None),
+        )
+    }
+    signals = asset_signals([*tokens.values(), 'eip155:1/erc20:0xnope'])
+    assert signals == {
+        identifier: list(flags) for flags, identifier in tokens.items() if flags
+    } | {'eip155:1/erc20:0xnope': ['unknown_asset']}
+    assert 'Claim' not in str(signals)

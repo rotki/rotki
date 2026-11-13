@@ -34,7 +34,7 @@ _pending_tasks: set[int] = set()
 DIAGNOSIS_TIMEOUT_SECONDS: Final = 120
 PREVIEW_WAIT_SECONDS: Final = 300
 APPLY_WAIT_SECONDS: Final = 600
-DATA_ISSUES_PAGE: Final = 'rotki: History > Data issues'
+DATA_ISSUES_PAGE: Final = 'rotki: History > Data issues (route /history/data-issues)'
 
 
 def error_result(error_type: str, message: str, **details: Any) -> dict[str, Any]:

@@ -252,3 +252,14 @@ def test_bucket_references_are_dropped_when_the_user_changes(monkeypatch: pytest
     analytics.sync_privacy_mode()
     with pytest.raises(UnknownReferenceError):
         get_reference_registry().resolve_bucket(bucket_ref)
+
+
+def test_ui_route_is_only_handed_out_in_raw_mode() -> None:
+    assert sanitize(DIAGNOSIS, privacy_mode='raw')['ui_route'] == (
+        f'/history/events?groupIdentifiers=1{TX_HASH}'
+    )
+    for privacy_mode in ('balanced', 'strict'):
+        assert 'ui_route' not in sanitize(DIAGNOSIS, privacy_mode=privacy_mode)
+
+    flags = {'asset_signals': {USDC: ['mixed_scripts', 'link_in_metadata']}}
+    assert sanitize(flags, privacy_mode='balanced') == flags

@@ -16140,6 +16140,13 @@ reports the ``rule`` that produced it: ``wallet``, ``owned_address_transfer``,
 effect: ``no_balance_direction``, ``ignored_cowswap_escrow``, ``ignored_exchange_transfer``,
 ``ignored_exchange_internal_staking``.
 
+The issue explanation, bucket trace, transaction and bridge match diagnoses include
+``asset_signals``: for each involved asset whose metadata looks deceptive, a list of flags out
+of ``spam_flagged``, ``mixed_scripts`` (letters of several scripts, as in lookalike tokens),
+``invisible_characters``, ``link_in_metadata`` and ``unknown_asset``. Asset names and symbols
+themselves are not returned. A flag is evidence, not a verdict, and an asset without flags is not
+vouched for.
+
 All of them require the accounting update feature and return 404 when it is disabled.
 
   .. http:get:: /api/(version)/data_issues/diagnostics/health
