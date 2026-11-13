@@ -1,5 +1,6 @@
-import { type BigNumber, type ResolvedPrice, Zero } from '@rotki/common';
+import type { ResolvedPrice } from '@rotki/common';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
+import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useSetting } from '@/modules/settings/use-setting';
 import { type BackfillDemand, usePriceBackfill } from '@/modules/statistics/pricing/use-price-backfill';
 import { usePriceSeries } from '@/modules/statistics/pricing/use-price-series';
@@ -26,20 +27,16 @@ export function useSnapshotRates(): void {
 
   const times = computed<number[]>(() => get(netValue).times);
   const assets = computed<string[]>(() => (get(currencySymbol) === CURRENCY_USD || get(times).length === 0 ? [] : [CURRENCY_USD]));
-  const { series } = usePriceSeries(assets, times);
+  const { reload, series } = usePriceSeries(assets, times);
+  const { resolvedFailedDailyPrices } = useHistoricPriceCache();
 
-  const demand = computed<BackfillDemand | undefined>(() => {
-    const { data, times: snapshotTimes } = get(netValue);
-    if (get(assets).length === 0 || snapshotTimes.length < 2)
-      return undefined;
-    const largest = data.reduce<BigNumber>((max, value) => (value.gt(max) ? value : max), Zero);
-    return {
-      holdings: [{ asset: CURRENCY_USD, heldValue: largest }],
-      range: { end: Math.max(...snapshotTimes), start: Math.min(...snapshotTimes) },
-    };
-  });
+  const demand = computed<BackfillDemand | undefined>(() =>
+    (get(assets).length === 0 ? undefined : { asset: CURRENCY_USD, times: get(times) }));
 
   usePriceBackfill().register(SNAPSHOT_RATES_DEMAND, demand);
+
+  /** A rate entered by hand for a day the oracles had none is in the cache now, so read it. */
+  watch(() => get(resolvedFailedDailyPrices)[CURRENCY_USD], async () => reload());
 
   watchImmediate(series, (resolved) => {
     const rates = resolved.get(CURRENCY_USD) ?? [];

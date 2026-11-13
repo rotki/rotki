@@ -1,5 +1,5 @@
 import type { ComputedRef } from 'vue';
-import { One, PriceQuality, type ResolvedPrice, type StatisticsApi } from '@rotki/common';
+import { PriceQuality, type ResolvedPrice, type StatisticsApi } from '@rotki/common';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { type BackfillDemand, usePriceBackfill } from '@/modules/statistics/pricing/use-price-backfill';
 import { usePriceSeries } from '@/modules/statistics/pricing/use-price-series';
@@ -17,10 +17,7 @@ let rateDemands = 0;
  */
 export const usdRateAt: StatisticsApi['usdRateAt'] = (timestamp): ComputedRef<ResolvedPrice> => {
   const { series } = usePriceSeries([CURRENCY_USD], () => [toValue(timestamp)]);
-  const demand = computed<BackfillDemand>(() => {
-    const time = toValue(timestamp);
-    return { holdings: [{ asset: CURRENCY_USD, heldValue: One }], range: { end: time, start: time } };
-  });
+  const demand = computed<BackfillDemand>(() => ({ asset: CURRENCY_USD, times: [toValue(timestamp)] }));
   usePriceBackfill().register(`premium-usd-rate-${++rateDemands}`, demand);
   return computed<ResolvedPrice>(() => get(series).get(CURRENCY_USD)?.[0] ?? MISSING);
 };

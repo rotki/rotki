@@ -1,10 +1,10 @@
 import { type BigNumber, PriceQuality, type ResolvedPrice } from '@rotki/common';
 
-/** Seconds in a day. */
+/**
+ * Seconds in a day, which is also how far a cached price may sit from a time and still count as
+ * that time's price: the oracles keep one price per day.
+ */
 export const DAY_SECONDS = 86_400;
-
-/** How far a cached price may sit from the requested time and still count as that time's price. */
-export const EXACT_TOLERANCE_SECONDS = DAY_SECONDS / 2;
 
 export interface KnownPrice {
   /** Unix seconds. */
@@ -71,7 +71,7 @@ export function nearestWithin<T extends KnownPrice>(points: readonly T[], time: 
  * Every price the cache can stand behind: direct prices, plus USD prices converted at a USD rate
  * from the same time where no direct price is close.
  */
-export function knownPrices(sources: PriceSources, tolerance: number = EXACT_TOLERANCE_SECONDS): EffectivePrice[] {
+export function knownPrices(sources: PriceSources, tolerance: number = DAY_SECONDS): EffectivePrice[] {
   const direct = usable(sources.direct);
   const usdRates = usable(sources.usdToMain);
   const derived: EffectivePrice[] = [];
@@ -102,7 +102,7 @@ export function knownPrices(sources: PriceSources, tolerance: number = EXACT_TOL
 export function resolvePriceSeries(
   sources: PriceSources,
   times: readonly number[],
-  tolerance: number = EXACT_TOLERANCE_SECONDS,
+  tolerance: number = DAY_SECONDS,
 ): ResolvedPrice[] {
   const known = knownPrices(sources, tolerance);
   const current = sources.current?.isFinite() && sources.current.gt(0) ? sources.current : undefined;
@@ -110,13 +110,13 @@ export function resolvePriceSeries(
   return times.map((time) => {
     const close = nearestWithin(known, time, tolerance);
     if (close)
-      return { price: close.price, quality: close.derived ? PriceQuality.DERIVED : PriceQuality.EXACT };
+      return { price: close.price, quality: close.derived ? PriceQuality.DERIVED : PriceQuality.EXACT, time: close.time };
 
     const index = lowerBound(known, time);
     if (index > 0)
-      return { price: known[index - 1].price, quality: PriceQuality.CARRIED };
+      return { price: known[index - 1].price, quality: PriceQuality.CARRIED, time: known[index - 1].time };
     if (index < known.length)
-      return { price: known[index].price, quality: PriceQuality.BACK_FILLED };
+      return { price: known[index].price, quality: PriceQuality.BACK_FILLED, time: known[index].time };
     if (current)
       return { price: current, quality: PriceQuality.CURRENT };
     return MISSING;

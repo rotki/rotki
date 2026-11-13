@@ -38,7 +38,8 @@ vi.mock('@/modules/statistics/use-statistics-store', async () => {
       const totalNetWorth = createRef(bigNumberify('1500.5'));
       const netValueError = createRef<string | undefined>(undefined);
       const getNetValue = vi.fn(() => state.chart ?? emptyNetValue);
-      return { getNetValue, netValueError, totalNetWorth };
+      const exchangeRateReady = createRef<boolean>(true);
+      return { exchangeRateReady, getNetValue, netValueError, totalNetWorth };
     }),
   };
 });
@@ -118,9 +119,9 @@ describe('overallBalances', () => {
     expect(wrapper.find(deltaSkeletonSelector).exists()).toBe(false);
   });
 
-  it('should explain estimated exchange rates only when a point uses one', async () => {
+  it('should mark the delta approximate only when a point uses an estimated rate', async () => {
     wrapper = createWrapper();
-    expect(wrapper.find('[data-testid=overall-balances-estimated-rate]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=overall-balances-delta-approximate]').exists()).toBe(false);
     wrapper.unmount();
 
     state.chart = {
@@ -131,7 +132,14 @@ describe('overallBalances', () => {
     };
     wrapper = createWrapper();
     await nextTick();
-    expect(wrapper.find('[data-testid=overall-balances-estimated-rate]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=overall-balances-delta-approximate]').exists()).toBe(true);
+  });
+
+  it('should wait for today\'s exchange rate before drawing the chart', async () => {
+    wrapper = createWrapper();
+    set(storeToRefs(useStatisticsStore()).exchangeRateReady, false);
+    await nextTick();
+    expect(wrapper.find('[data-testid=overall-balances-delta-loading]').exists()).toBe(true);
   });
 
   describe('when the net value read failed', () => {

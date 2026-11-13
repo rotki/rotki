@@ -14,6 +14,8 @@ const READ_DEBOUNCE_MS = 300;
 interface UsePriceSeriesReturn {
   /** Per asset, one resolved price in the main currency per requested time. */
   readonly series: ComputedRef<ReadonlyMap<string, readonly ResolvedPrice[]>>;
+  /** Reads the cache again for every asset and time, for after a price was added by hand. */
+  readonly reload: () => Promise<void>;
 }
 
 /**
@@ -65,5 +67,9 @@ export function usePriceSeries(
     { debounce: READ_DEBOUNCE_MS, immediate: true },
   );
 
-  return { series };
+  async function reload(): Promise<void> {
+    await readCached(toValue(assets), toValue(times), true);
+  }
+
+  return { reload, series };
 }
