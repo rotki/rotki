@@ -1400,6 +1400,11 @@
       "title": "Auto Match Settings",
       "tooltip": "Configure automatic matching settings"
     },
+    "small_value": {
+      "error": "Error setting whether small movements are hidden",
+      "hidden": "{count} movement under {value} is hidden | {count} movements under {value} are hidden",
+      "hide": "Hide small movements"
+    },
     "tabs": {
       "ignored": "Ignored",
       "unmatched": "Unmatched"
@@ -4352,6 +4357,22 @@
       "skipped_events": {
         "subtitle": "View and manage skipped external events",
         "title": "Skipped External Events"
+      },
+      "small_value_events": {
+        "label": "Dim events worth less than the threshold",
+        "subtitle": "Show history events worth less than the threshold at the time they happened dimmed and marked, so the ones that matter stand out. Events whose price is not known yet are shown normally.",
+        "threshold": {
+          "hint": "The value, in your main currency, below which an event counts as small.",
+          "label": "Threshold ({symbol})",
+          "validation": {
+            "error": "Error setting the small value threshold",
+            "success": "Small value threshold saved"
+          }
+        },
+        "title": "De-emphasize small value events",
+        "validation": {
+          "error": "Error setting whether small value events are de-emphasized"
+        }
       },
       "title": "History events"
     },
@@ -7844,6 +7865,10 @@
             "some": "{successful} of {total} skipped external events have been processed"
           }
         }
+      },
+      "small_value": {
+        "below": "<",
+        "tooltip": "Worth less than your small value threshold"
       },
       "unlink_bridge_error": "Failed to unlink bridge transfer",
       "unlink_error": "Failed to unlink asset movement",

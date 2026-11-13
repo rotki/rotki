@@ -63,6 +63,14 @@ export const frontendRegistry = {
   dashboardTablesVisibleColumns: frontend('dashboardTablesVisibleColumns', { userFacing: false }),
   dateInputFormat: frontend('dateInputFormat'),
   decimalSeparator: frontend('decimalSeparator', { anchor: SettingsHighlightIds.AMOUNT_FORMAT, effects: [applyBigNumberFormat] }),
+  deemphasizeSmallValueEvents: frontend('deemphasizeSmallValueEvents', {
+    anchor: SettingsHighlightIds.SMALL_VALUE_EVENTS,
+    search: {
+      category: SettingsCategoryIds.HISTORY_EVENT,
+      keywords: [msg.$t('general_settings.history_event.small_value_events.subtitle')],
+      titleKey: msg.$t('general_settings.history_event.small_value_events.title'),
+    },
+  }),
   defaultThemeVersion: frontend('defaultThemeVersion'),
   dismissedApiKeyNotices: frontend('dismissedApiKeyNotices', { userFacing: false }),
   dockShowSummary: frontend('dockShowSummary', {
@@ -103,6 +111,7 @@ export const frontendRegistry = {
     anchor: SettingsHighlightIds.GRAPH_BASIS,
     search: { category: SettingsCategoryIds.GRAPH, titleKey: msg.$t('frontend_settings.graph_basis.title') },
   }),
+  hideSmallValueMovements: frontend('hideSmallValueMovements', { userFacing: false }),
   ignoreSnapshotError: frontend('ignoreSnapshotError'),
   itemsPerPage: frontend('itemsPerPage', { mirror: useItemsPerPage }),
   language: frontend('language', {
@@ -181,6 +190,7 @@ export const frontendRegistry = {
   shouldShowPercentage: frontend.projected(settings => settings.privacyMode < PrivacyMode.PRIVATE),
   showGraphRangeSelector: frontend('showGraphRangeSelector'),
   silentNotifications: frontend('silentNotifications'),
+  smallValueEventThreshold: frontend('smallValueEventThreshold', { anchor: SettingsHighlightIds.SMALL_VALUE_EVENTS }),
   subscriptDecimals: frontend('subscriptDecimals', {
     anchor: SettingsHighlightIds.SUBSCRIPT,
     search: {

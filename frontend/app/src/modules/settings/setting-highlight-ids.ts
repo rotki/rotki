@@ -64,6 +64,7 @@ export const SettingsHighlightIds = {
   RPC_NODES: 'setting-rpc-nodes',
   SCRAMBLE: 'setting-scramble',
   SKIPPED_EVENTS: 'setting-skipped-events',
+  SMALL_VALUE_EVENTS: 'setting-small-value-events',
   SUBSCRIPT: 'setting-subscript',
   SUPPRESSED_NO_INDEXER_CHAINS: 'setting-suppressed-no-indexer-chains',
   SUPPRESS_MISSING_KEY: 'setting-suppress-missing-key',

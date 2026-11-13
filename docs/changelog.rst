@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`12027` History events worth less than a threshold can now be shown dimmed and marked, so the events that matter stand out. Turn it on and set the threshold, in your main currency, under Settings > General > History events. An event is only dimmed once its historical price is known. The asset movement and bridge matching panels then also offer to hide the small movements and say how many are hidden.
 * :bug:`-` Bitpanda history queries now save each page as it arrives, so a failure part way through no longer throws away the history already fetched.
 * :bug:`-` Refreshing exchange balances now queries each exchange once. Before, an exchange with several connected accounts was queried again for every account, so balances took longer to load the more accounts it had.
 * :feature:`8019` Balances > Exchanges can now show the assets of one account at a time when an exchange has several connected accounts. Pick the account from the account menu above the table, which shows each account's value and share and marks one whose last refresh failed, or pick All accounts for the whole exchange.

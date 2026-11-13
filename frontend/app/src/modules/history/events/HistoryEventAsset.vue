@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import type { AssetDisplay } from '@/modules/assets/types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
-import { type AssetInfoWithId, Zero } from '@rotki/common';
+import { type AssetInfoWithId, type BigNumber, bigNumberify, Zero } from '@rotki/common';
 import { useTemplateRef } from 'vue';
-import { AssetAmountDisplay, AssetValueDisplay } from '@/modules/assets/amount-display/components';
+import { AssetAmountDisplay, AssetValueDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import AssetDetailsMenuContent from '@/modules/assets/AssetDetailsMenuContent.vue';
 import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
+import { useSmallValueEvents } from '@/modules/history/events/use-small-value-events';
 
 const { event, dense, disableOptions, inline } = defineProps<{
   event: HistoryEventEntry;
@@ -20,14 +21,22 @@ const emit = defineEmits<{
   refresh: [];
 }>();
 
+const { t } = useI18n({ useScope: 'global' });
+
 const menuOpened = ref<boolean>(false);
 const menuContentRef = useTemplateRef<InstanceType<typeof AssetDetailsMenuContent>>('menuContentRef');
 
 const { useAssetInfo } = useAssetInfoRetrieval();
+const { isSmallValue, threshold } = useSmallValueEvents();
 
 const assetDetails = useAssetInfo(() => event.asset, NO_COLLECTION_RESOLVE);
 
 const showBalance = computed<boolean>(() => event.eventType !== 'informational');
+
+/** Whether the event is worth less than the user's threshold, so it is shown dimmed and badged. */
+const smallValue = computed<boolean>(() => get(showBalance) && isSmallValue(event));
+
+const thresholdValue = computed<BigNumber>(() => bigNumberify(get(threshold)));
 
 /**
  * Holds the display options passed to the asset cell.
@@ -75,9 +84,10 @@ watch(menuOpened, (menuOpened) => {
     <template #activator="{ attrs }">
       <div
         data-testid="event-asset"
-        class="flex items-center w-full gap-2 overflow-hidden transition-colors"
+        class="flex items-center w-full gap-2 overflow-hidden transition"
         :class="[
           inline ? 'py-1.5' : 'py-2',
+          smallValue && 'opacity-50',
           !disableOptions && 'cursor-pointer hover:bg-rui-grey-300 dark:hover:bg-rui-grey-900 rounded-md group/asset -ml-1 pl-1 min-h-14 pr-2 relative',
         ]"
         v-bind="attrs"
@@ -106,15 +116,29 @@ watch(menuOpened, (menuOpened) => {
             v-if="inline"
             class="text-rui-text-disabled before:content-['·']"
           />
-          <AssetValueDisplay
-            :key="event.timestamp"
-            :amount="event.amount"
-            :asset="event.asset"
-            :value="Zero"
-            :timestamp="{ ms: event.timestamp }"
-            class="text-rui-text-secondary"
-            :class="dense ? 'text-xs' : 'text-[13px] leading-5'"
-          />
+          <div class="flex items-center gap-1 min-w-0">
+            <AssetValueDisplay
+              :key="event.timestamp"
+              :amount="event.amount"
+              :asset="event.asset"
+              :value="Zero"
+              :timestamp="{ ms: event.timestamp }"
+              class="text-rui-text-secondary"
+              :class="dense ? 'text-xs' : 'text-[13px] leading-5'"
+            />
+            <span
+              v-if="smallValue"
+              data-testid="event-small-value"
+              class="shrink-0 flex items-center gap-0.5 rounded px-1 text-[10px] leading-4 bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-text-secondary"
+              :title="t('transactions.events.small_value.tooltip')"
+            >
+              {{ t('transactions.events.small_value.below') }}
+              <FiatDisplay
+                :value="thresholdValue"
+                no-scramble
+              />
+            </span>
+          </div>
         </div>
         <div
           v-else

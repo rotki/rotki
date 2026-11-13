@@ -210,6 +210,8 @@ export const FrontendSettings = z.object({
   })),
   dateInputFormat: DateFormatEnum.default(Defaults.DEFAULT_DATE_INPUT_FORMAT),
   decimalSeparator: z.string().default(Defaults.DEFAULT_DECIMAL_SEPARATOR),
+  /** Whether history events worth less than `smallValueEventThreshold` are shown dimmed. */
+  deemphasizeSmallValueEvents: z.boolean().default(false),
   defaultThemeVersion: z.number().default(1),
   /** Minutes without input before the session logs out, or -1 when auto-logout is off. */
   autoLogoutPeriod: AutoLogoutPeriod.default(-1),
@@ -229,6 +231,8 @@ export const FrontendSettings = z.object({
   explorers: ExplorersSettings.default({}),
   gnosisPaySafeMigrationNeverNotify: z.boolean().default(false),
   graphZeroBased: z.boolean().default(false),
+  /** Whether the matching panels leave out the movements a dimmed history event would be. */
+  hideSmallValueMovements: z.boolean().default(false),
   ignoreSnapshotError: z.boolean().default(false),
   itemsPerPage: z.number().positive().int().default(10),
   language: SupportedLanguageEnum.default(SupportedLanguage.EN),
@@ -294,6 +298,8 @@ export const FrontendSettings = z.object({
   selectedTheme: ThemeEnum.default(Theme.AUTO),
   showGraphRangeSelector: z.boolean().default(true),
   silentNotifications: z.boolean().default(false),
+  /** The value, in the main currency, below which an event counts as small. */
+  smallValueEventThreshold: z.number().nonnegative().default(Defaults.DEFAULT_SMALL_VALUE_EVENT_THRESHOLD),
   subscriptDecimals: z.boolean().default(false),
   /** Binance connections, by identifier, whose missing market pairs are no longer reported. */
   suppressBinancePairsMissing: z.array(z.string()).default([]),
