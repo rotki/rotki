@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -131,6 +132,23 @@ def _validate_state_transition(current_state: str | IssueState, new_state: Issue
         raise InputError(
             f'Invalid data issue state transition from {current_state} to {new_state}',
         )
+
+
+def _is_unchanged_manual_resolution(stored_payload_json: str, payload: DataIssuePayload) -> bool:
+    """Whether a resolved issue was resolved by the user and `payload` rediscovers it unchanged.
+
+    Only a manual resolution is final: when a scan rediscovers the same unchanged candidate
+    it must keep the user's decision and note. Issues resolved automatically or by system
+    cleanup reopen as soon as the candidate is seen again, even when its content is
+    unchanged. A manual decision is stored in the payload's ``resolution`` entry with
+    ``manual: true``; any other value means the user did not resolve it.
+    """
+    stored_payload = dict(json.loads(stored_payload_json))
+    resolution = stored_payload.pop('resolution', None)
+    if not isinstance(resolution, dict) or resolution.get('manual') is not True:
+        return False
+
+    return stored_payload == payload
 
 
 def _resolved_at_for(state: IssueState) -> int | None:
@@ -247,27 +265,34 @@ class DataIssuesManager:
             if write_cursor.rowcount == 1:
                 return write_cursor.lastrowid, IssueState.OPEN
 
-        issue_id, existing_state = self._get_issue_id_and_state_by_natural_key(
-            kind=kind,
-            location=location,
-            location_label=location_label,
-            protocol=protocol,
-            asset=asset,
-            event_identifier=event_identifier,
-        )
-        if existing_state == IssueState.DISMISSED:
-            return issue_id, existing_state
+            # Read the stored row under the write lock that updates it, so the decision
+            # below cannot act on a state another writer changed in between.
+            (
+                issue_id,
+                existing_state,
+                stored_ts_start,
+                stored_ts_end,
+                stored_payload_json,
+            ) = self._get_stored_issue_by_natural_key(
+                cursor=write_cursor,
+                kind=kind,
+                location=location,
+                location_label=location_label,
+                protocol=protocol,
+                asset=asset,
+                event_identifier=event_identifier,
+            )
+            if existing_state == IssueState.DISMISSED:
+                return issue_id, existing_state
 
-        if existing_state == IssueState.RESOLVED and self._keep_manual_resolution(
-            issue_id=issue_id,
-            ts_start=ts_start,
-            ts_end=ts_end,
-            payload=payload,
-        ):
-            return issue_id, existing_state
-
-        with self.db.user_write() as write_cursor:
             if existing_state == IssueState.RESOLVED:
+                if (
+                    stored_ts_start == ts_start and
+                    stored_ts_end == ts_end and
+                    _is_unchanged_manual_resolution(stored_payload_json, payload)
+                ):
+                    return issue_id, existing_state
+
                 _validate_state_transition(existing_state, IssueState.OPEN)
                 write_cursor.execute(
                     'UPDATE data_issues SET state = ?, ts_start = ?, ts_end = ?, '
@@ -281,52 +306,14 @@ class DataIssuesManager:
                         issue_id,
                     ),
                 )
-            else:
-                write_cursor.execute(
-                    'UPDATE data_issues SET ts_start = ?, ts_end = ?, payload_json = ? '
-                    'WHERE id = ?',
-                    (ts_start, ts_end, payload_json, issue_id),
-                )
-        resulting_state = (
-            IssueState.OPEN if existing_state == IssueState.RESOLVED else existing_state
-        )
-        return issue_id, resulting_state
+                return issue_id, IssueState.OPEN
 
-    def _keep_manual_resolution(
-            self,
-            issue_id: int,
-            ts_start: int,
-            ts_end: int,
-            payload: DataIssuePayload,
-    ) -> bool:
-        """Whether a resolved issue keeps its manual resolution instead of reopening.
-
-        Only a manual resolution is final: when a scan rediscovers the same unchanged
-        candidate it must keep the user's decision and note. Issues resolved automatically
-        or by system cleanup reopen as soon as the candidate is seen again, even when its
-        content is unchanged. A manual decision is stored in the payload's ``resolution``
-        entry with ``manual: true``; any other value means the user did not resolve it.
-        """
-        with self.db.conn.read_ctx() as cursor:
-            row = cursor.execute(
-                'SELECT ts_start, ts_end, payload_json FROM data_issues WHERE id = ?',
-                (issue_id,),
-            ).fetchone()
-        if row is None:
-            return False
-
-        stored_ts_start, stored_ts_end, stored_payload_json = row
-        stored_payload = dict(json.loads(stored_payload_json))
-        resolution = stored_payload.get('resolution')
-        if not isinstance(resolution, dict) or resolution.get('manual') is not True:
-            return False
-
-        stored_payload.pop('resolution')
-        return (
-            stored_ts_start == ts_start and
-            stored_ts_end == ts_end and
-            stored_payload == payload
-        )
+            write_cursor.execute(
+                'UPDATE data_issues SET ts_start = ?, ts_end = ?, payload_json = ? '
+                'WHERE id = ?',
+                (ts_start, ts_end, payload_json, issue_id),
+            )
+            return issue_id, existing_state
 
     def resolve_superseded_negative_balance_issues(self, assets: frozenset[str]) -> None:
         """Resolve negative-balance issues for assets now handled as rebasing tokens."""
@@ -663,30 +650,28 @@ class DataIssuesManager:
 
         return self.update_state(issue_id, IssueState.AUTO_REMEDIATING), True
 
-    def _get_issue_id_and_state_by_natural_key(
-            self,
+    @staticmethod
+    def _get_stored_issue_by_natural_key(
+            cursor: DBCursor,
             kind: str,
             location: str,
             location_label: str,
             protocol: str,
             asset: str,
             event_identifier: int | None,
-    ) -> tuple[int, str]:
+    ) -> tuple[int, str, int, int, str]:
+        """Return the id, state, ts_start, ts_end and payload JSON of the issue with this key."""
+        query = (
+            'SELECT id, state, ts_start, ts_end, payload_json FROM data_issues WHERE kind = ? '
+            'AND location = ? AND location_label = ? AND protocol = ? AND asset = ? AND '
+        )
+        bindings: tuple[Any, ...] = (kind, location, location_label, protocol, asset)
         if event_identifier is None:
-            query = (
-                'SELECT id, state FROM data_issues WHERE kind = ? AND location = ? AND '
-                'location_label = ? AND protocol = ? AND asset = ? AND event_identifier IS NULL'
-            )
-            bindings: tuple[Any, ...] = (kind, location, location_label, protocol, asset)
+            query += 'event_identifier IS NULL'
         else:
-            query = (
-                'SELECT id, state FROM data_issues WHERE kind = ? AND location = ? AND '
-                'location_label = ? AND protocol = ? AND asset = ? AND event_identifier = ?'
-            )
-            bindings = (kind, location, location_label, protocol, asset, event_identifier)
+            query += 'event_identifier = ?'
+            bindings += (event_identifier,)
 
-        with self.db.conn.read_ctx() as cursor:
-            row = cursor.execute(query, bindings).fetchone()
-        if row is None:
+        if (row := cursor.execute(query, bindings).fetchone()) is None:
             raise NotFoundError('Expected existing data issue after upsert conflict')
         return row
