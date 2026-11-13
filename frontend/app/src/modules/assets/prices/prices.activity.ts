@@ -122,6 +122,13 @@ export const dailyPricesActivity = defineActivity<DailyPricesSubject, readonly [
   part: ActivityPart.DAILY,
 });
 
+/** One backfill request: an asset's prices at a few times over a range. */
+export const priceBackfillActivity = defineActivity<DailyPricesSubject, readonly [string, number, number, number]>({
+  key: subject => [subject.asset, subject.interval, subject.fromTimestamp, subject.toTimestamp],
+  kind: ActivityKind.PRICES,
+  part: ActivityPart.BACKFILL,
+});
+
 /**
  * Saving one manual price, keyed by its pair so a save for one asset never joins another's.
  *

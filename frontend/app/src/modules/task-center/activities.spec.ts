@@ -131,6 +131,7 @@ const samples = new Map<string, readonly unknown[]>([
   ['pnlReportActivity', [undefined]],
   ['pnlReportExportActivity', [undefined]],
   ['pnlReportImportActivity', [undefined]],
+  ['priceBackfillActivity', [{ asset: 'ETH', fromTimestamp: 1700000000, interval: 43200, toTimestamp: 1700043200 }]],
   ['protocolCacheActivity', [undefined]],
   ['purgeActivity', [{ purgeable: 'transactions', value: '' }, { purgeable: 'transactions', value: 'eth' }]],
   ['redecodeActivity', [{}, { chains: ['optimism', 'eth'] }]],
