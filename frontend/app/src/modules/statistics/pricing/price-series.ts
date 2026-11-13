@@ -43,7 +43,7 @@ function usable(points: readonly KnownPrice[] | undefined): KnownPrice[] {
 }
 
 /** Index of the first point at or after `time`, or `points.length` when there is none. */
-function lowerBound(points: readonly KnownPrice[], time: number): number {
+function lowerBound(points: readonly { readonly time: number }[], time: number): number {
   let low = 0;
   let high = points.length;
   while (low < high) {
@@ -57,7 +57,7 @@ function lowerBound(points: readonly KnownPrice[], time: number): number {
 }
 
 /** The point closest to `time` within `tolerance`, or undefined. */
-export function nearestWithin<T extends KnownPrice>(points: readonly T[], time: number, tolerance: number): T | undefined {
+export function nearestWithin<T extends { readonly time: number }>(points: readonly T[], time: number, tolerance: number): T | undefined {
   const index = lowerBound(points, time);
   const after = points[index];
   const before = index > 0 ? points[index - 1] : undefined;

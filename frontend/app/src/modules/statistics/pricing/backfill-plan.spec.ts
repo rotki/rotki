@@ -28,13 +28,13 @@ describe('modules/statistics/pricing/backfill-plan', () => {
     }]);
   });
 
-  it('should ask for one day when only one time is requested', () => {
+  it('should ask for a single day as a two-day range without the second day, which the backend accepts', () => {
     expect(planBackfill([usd([at(10)])])).toEqual([{
       asset: 'USD',
-      excludeTimestamps: [],
+      excludeTimestamps: [11 * DAY_SECONDS],
       fromTimestamp: 10 * DAY_SECONDS,
       interval: DAY_SECONDS,
-      toTimestamp: 10 * DAY_SECONDS,
+      toTimestamp: 11 * DAY_SECONDS,
     }]);
   });
 
@@ -47,7 +47,7 @@ describe('modules/statistics/pricing/backfill-plan', () => {
 
   it('should leave out times with a price within a day, or known to have none', () => {
     const [request] = planBackfill([usd([at(10), at(11), at(12)], [price(10)], [11 * DAY_SECONDS])]);
-    expect(request).toMatchObject({ excludeTimestamps: [], fromTimestamp: 12 * DAY_SECONDS, toTimestamp: 12 * DAY_SECONDS });
+    expect(request).toMatchObject({ excludeTimestamps: [13 * DAY_SECONDS], fromTimestamp: 12 * DAY_SECONDS, toTimestamp: 13 * DAY_SECONDS });
   });
 
   it('should ask for nothing once every time is settled', () => {
