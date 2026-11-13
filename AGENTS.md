@@ -1301,6 +1301,10 @@ When reviewing code changes, follow this systematic approach:
    - How are None/null values handled?
    - Are array bounds checked?
 8. **Test coverage** - Verify new functionality has appropriate tests
+9. **VCR coverage**:
+   - For every added or modified backend test, determine whether it performs external HTTP or RPC requests.
+   - If the traffic is supported by VCR, require `@pytest.mark.vcr` and a matching cassette PR in `rotki/test-caching`.
+   - A passing test against a live service is not evidence that the VCR requirement is satisfied.
 
 ## Memories
 - EVM addresses MUST be checksummed:
