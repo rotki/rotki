@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :bug:`4031` For a main currency other than USD, the net worth graph now converts each balance snapshot at the exchange rate of its own day instead of today's rate, so it no longer moves with the exchange rate. Rates that are not known yet are fetched a few at a time in the background, and the graph marks the points shown at an estimated rate until they arrive.
+* :bug:`4031` For a main currency other than USD, the net worth graph now converts each balance snapshot at the exchange rate of its own day instead of today's rate, so it no longer moves with the exchange rate. Rates that are not known yet are fetched a few days at a time in the background. Until they arrive, the graph shades the points shown at an estimated rate, names the rate each one uses and marks the change as approximate, and a day with no rate available can be filled in by hand.
 * :bug:`-` Two obsolete accounting rule conflicts for adjustment events no longer appear after upgrading an older profile. They came from a duplicated remote update and asked for a choice even though the rules had not changed.
 * :bug:`-` Unmapped exchange assets that rotki now recognises are cleared from the Missing CEX Mappings page and the Action Center automatically. Before, they stayed there with no way to remove them. Entries you do not care about can now also be dismissed.
 * :feature:`-` Legacy Zapper.fi swaps on Ethereum are now decoded in transaction history.

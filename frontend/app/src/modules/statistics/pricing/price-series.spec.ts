@@ -82,6 +82,12 @@ describe('modules/statistics/pricing/price-series', () => {
     });
   });
 
+  it('should say when the price it used was quoted, and nothing for today\'s price', () => {
+    const resolved = resolvePriceSeries({ current: bigNumberify(7), direct: [point(1, 10)] }, [DAY_SECONDS, 5 * DAY_SECONDS]);
+    expect(resolved.map(item => item.time)).toEqual([DAY_SECONDS, DAY_SECONDS]);
+    expect(resolvePriceSeries({ current: bigNumberify(7), direct: [] }, [DAY_SECONDS])[0].time).toBeUndefined();
+  });
+
   it('should treat only exact and derived as real prices', () => {
     expect(Object.values(PriceQuality).filter(quality => !isFallbackQuality(quality)))
       .toEqual([PriceQuality.EXACT, PriceQuality.DERIVED]);
