@@ -6110,6 +6110,7 @@
         },
         "title": "There is a mismatch between the amount of asset in the last event and the amount in the current balance."
       },
+      "estimated_rate": "Converted at an estimated exchange rate",
       "failed_daily_prices": {
         "dialog_title": "Some prices were not retrieved for the asset: {name}",
         "missing_prices": {
