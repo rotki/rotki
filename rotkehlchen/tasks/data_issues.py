@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
-from rotkehlchen.concurrency import checkpoint
+from rotkehlchen.concurrency import TaskCancelledError, checkpoint
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
@@ -376,8 +376,13 @@ def run_data_issue_remediation(
 
     Remediation is diagnostic only: a transaction holding a customized event is never touched,
     and the customized-transaction strategy previews decoder output without persisting it.
+
+    A run that aborts is recorded like one that finishes. Otherwise the scheduler would start
+    it again on its next tick, behind the worker that made it abort and may still hold the
+    decoder lock. Only a cancelled run is left unrecorded, since it did not get to do its work.
     """
     _send_remediation_phase(database, PHASE_RUNNING)
+    cancelled = False
     try:
         issues_manager = DataIssuesManager(database)
         pipeline = RemediationPipeline(
@@ -395,15 +400,20 @@ def run_data_issue_remediation(
 
             pipeline.run(issue)
             checkpoint()
-
-        with database.user_write() as write_cursor:
-            database.set_static_cache(
-                write_cursor=write_cursor,
-                name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
-                value=ts_now(),
-            )
+    except TaskCancelledError:
+        cancelled = True
+        raise
     finally:
-        _send_remediation_phase(database, PHASE_COMPLETED)
+        try:
+            if cancelled is False:
+                with database.user_write() as write_cursor:
+                    database.set_static_cache(
+                        write_cursor=write_cursor,
+                        name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+                        value=ts_now(),
+                    )
+        finally:
+            _send_remediation_phase(database, PHASE_COMPLETED)
 
 
 def _last_attempt_failed(issue: DataIssue) -> bool:
