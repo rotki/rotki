@@ -29,6 +29,7 @@ CSM: Final = LIDO_CSM_MODULE_CONTRACTS[LidoCsmStakingModule.CSM]
 CSM_0X02: Final = LIDO_CSM_MODULE_CONTRACTS[LidoCsmStakingModule.CSM_0X02]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x37CfFA4094e7D3437E3D897DD7fa58bFf015e0F0']])
 def test_create_node_operator_from_safe(
         ethereum_inquirer: EthereumInquirer,
@@ -117,6 +118,7 @@ def test_create_node_operator_from_safe(
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0E408140f4Ef8a366D27804219A7939CfD934Ee5']])
 def test_create_node_operator_tracked_reward_address(
         ethereum_inquirer: EthereumInquirer,
@@ -202,6 +204,7 @@ def test_create_node_operator_tracked_reward_address(
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x64B091b347B27e7ccFad1cb16d4461963459f90A']])
 def test_create_csm_0x02_node_operator(
         ethereum_inquirer: EthereumInquirer,
@@ -227,6 +230,7 @@ def test_create_csm_0x02_node_operator(
     )]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x04c0F1e2c25deBbd915eac3a025E6A7c633Ff20d']])
 def test_create_node_operator_eth_bond(
         ethereum_inquirer: EthereumInquirer,
@@ -316,6 +320,7 @@ def test_create_node_operator_eth_bond(
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0B2471F50A1b2dB1f6715b2557D2cA075d6f8bC9']])
 def test_add_keys_with_eth_bond(
         ethereum_inquirer: EthereumInquirer,
@@ -392,6 +397,7 @@ def test_add_keys_with_eth_bond(
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x568AE3743E18B0e384DAE527FD0bD3f69cCEc223']])
 def test_add_keys_with_steth_bond(
         ethereum_inquirer: EthereumInquirer,
@@ -463,6 +469,7 @@ def test_add_keys_with_steth_bond(
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x11bE399af186362Ad1A83C6888c4d144822DD046']])
 def test_add_keys_with_wsteth_bond(
         ethereum_inquirer: EthereumInquirer,
@@ -560,6 +567,7 @@ def test_add_keys_with_wsteth_bond(
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x12c1eF3208de4805Ba4Ac3fEa6A4F132f8D31243']])
 def test_claim_steth(
         ethereum_inquirer: EthereumInquirer,
@@ -596,6 +604,7 @@ def test_claim_steth(
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x983456BD4EA5A881563eeE4455B8982a4347373A']])
 def test_claim_wsteth_with_rewards_distribution(
         ethereum_inquirer: EthereumInquirer,
@@ -662,6 +671,7 @@ def test_claim_wsteth_with_rewards_distribution(
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0522632F660F877b338A5870d243463e24176D83']])
 def test_claim_by_tracked_safe_to_untracked_address(
         ethereum_inquirer: EthereumInquirer,
@@ -715,6 +725,7 @@ def test_claim_by_tracked_safe_to_untracked_address(
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x7AfC67828B64021F4Cfcd2F64e14D828c6659d84']])
 def test_claim_unsteth(
         ethereum_inquirer: EthereumInquirer,
@@ -778,6 +789,7 @@ def test_claim_unsteth(
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3C465D82530315cceC1CAd1Fd20164E09B8E4d1f']])
 def test_reward_address_change(
         ethereum_inquirer: EthereumInquirer,
@@ -814,6 +826,7 @@ def test_reward_address_change(
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3C465D82530315cceC1CAd1Fd20164E09B8E4d1f']])
 def test_manager_address_reset(
         ethereum_inquirer: EthereumInquirer,
@@ -851,6 +864,7 @@ def test_manager_address_reset(
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9B4064C9d9801f062f377512e61bD19484e7F365']])
 def test_manager_address_change_away_from_tracked_address(
         ethereum_inquirer: EthereumInquirer,
@@ -875,6 +889,7 @@ def test_manager_address_change_away_from_tracked_address(
     )]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x556fedf2213A31c7Ab9F8bc8Db5B2254261A5B0b']])
 def test_create_node_operator_csm_v1(
         ethereum_inquirer: EthereumInquirer,
@@ -960,6 +975,7 @@ def test_create_node_operator_csm_v1(
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x68889e98A947501CAe1f7E2FB4B771F0234575A1']])
 def test_claim_unsteth_with_rewards_csm_v1(
         ethereum_inquirer: EthereumInquirer,
