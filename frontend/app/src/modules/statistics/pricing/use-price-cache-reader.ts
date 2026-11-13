@@ -1,4 +1,5 @@
 import type { KnownPrice } from '@/modules/statistics/pricing/price-series';
+import { One } from '@rotki/common';
 import { chunk } from 'es-toolkit';
 import { pipe } from 'plainfp';
 import { fromPromise, getOr, map, tapError } from 'plainfp/result-async';
@@ -39,23 +40,46 @@ export function usePriceCacheReader(): UsePriceCacheReaderReturn {
   const currencySymbol = useSetting('currencySymbol');
   const { queryOnlyCacheHistoricalRates } = usePriceApi();
 
-  /** Reads one chunk; a failed read is logged and let go, so the times can be asked again. */
-  async function readChunk(asset: string, currency: string, times: readonly number[]): Promise<KnownPrice[]> {
-    const keys = times.map(time => requestKey(asset, time));
-    store.markRequested(keys);
+  /** One cache read of `from` priced in `to`, positive prices only; undefined when the read failed. */
+  async function query(from: string, to: string, times: readonly number[]): Promise<KnownPrice[] | undefined> {
     return pipe(
       fromPromise(queryOnlyCacheHistoricalRates({
-        assetsTimestamp: times.map(time => [asset, time.toString()]),
+        assetsTimestamp: times.map(time => [from, time.toString()]),
         onlyCachePeriod: SECONDS_PER_DAY,
-        targetAsset: currency,
+        targetAsset: to,
       }), (error: unknown) => error),
-      map(result => Object.entries(result.assets[asset] ?? {}).map(([time, price]): KnownPrice => ({ price, time: Number(time) }))),
-      tapError((error) => {
-        logger.error(error);
-        store.forgetRequested(keys);
-      }),
-      getOr<KnownPrice[]>([]),
+      map(result => Object.entries(result.assets[from] ?? {})
+        .map(([time, price]): KnownPrice => ({ price, time: Number(time) }))
+        .filter(point => point.price.gt(0))),
+      tapError(error => logger.error(error)),
+      getOr<KnownPrice[] | undefined>(undefined),
     );
+  }
+
+  /**
+   * Reads one chunk: `asset` priced in `currency`, and for the times that misses, `currency` priced
+   * in `asset`, inverted.
+   *
+   * @remarks
+   * The backend prices a fiat in a crypto by inverting the crypto's fiat price and does not store
+   * the inverse, so with a crypto main currency only the second read finds the rates it fetched. A
+   * failed read lets its times be asked again.
+   */
+  async function readChunk(asset: string, currency: string, times: readonly number[]): Promise<KnownPrice[]> {
+    store.markRequested(times.map(time => requestKey(asset, time)));
+    const direct = await query(asset, currency, times);
+    if (!direct) {
+      store.forgetRequested(times.map(time => requestKey(asset, time)));
+      return [];
+    }
+    const found = new Set(direct.map(point => point.time));
+    const missing = times.filter(time => !found.has(time));
+    if (missing.length === 0)
+      return direct;
+    const inverse = await query(currency, asset, missing);
+    if (!inverse)
+      store.forgetRequested(missing.map(time => requestKey(asset, time)));
+    return [...direct, ...(inverse ?? []).map(point => ({ price: One.dividedBy(point.price), time: point.time }))];
   }
 
   async function readCached(asset: string, times: readonly number[], force = false): Promise<void> {
