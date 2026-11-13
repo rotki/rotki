@@ -223,7 +223,7 @@ describe('useStatisticsStore', () => {
       const store = withSnapshots();
       store.setSnapshotRates(new Map([
         [times[0], { price: new BigNumber('0.8'), quality: PriceQuality.EXACT }],
-        [times[1], { price: new BigNumber('0.85'), quality: PriceQuality.DERIVED }],
+        [times[1], { price: new BigNumber('0.85'), quality: PriceQuality.EXACT }],
         [times[2], { price: new BigNumber('0.95'), quality: PriceQuality.EXACT }],
       ]));
 

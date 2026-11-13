@@ -5,11 +5,12 @@ import { msg } from '@/message-key';
 import { priceBackfillActivity } from '@/modules/assets/prices/prices.activity';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
+import { SECONDS_PER_DAY } from '@/modules/core/common/constraints';
 import { logger } from '@/modules/core/common/logging/logging';
 import { isCancellation } from '@/modules/core/tasks/task-result';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
-import { PricePair, usePriceSeriesStore } from '@/modules/statistics/pricing/use-price-series-store';
+import { usePriceSeriesStore } from '@/modules/statistics/pricing/use-price-series-store';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
@@ -29,7 +30,7 @@ interface UseBackfillRequestsReturn {
 /** The days a request asks for. */
 function requestedDays(request: BackfillRequest): number[] {
   const days: number[] = [];
-  for (let day = request.fromTimestamp; day <= request.toTimestamp; day += request.interval) {
+  for (let day = request.fromTimestamp; day <= request.toTimestamp; day += SECONDS_PER_DAY) {
     if (!request.excludeTimestamps.includes(day))
       days.push(day);
   }
@@ -73,7 +74,7 @@ export function useBackfillRequests(): UseBackfillRequestsReturn {
     const subject = {
       asset: request.asset,
       fromTimestamp: request.fromTimestamp,
-      interval: request.interval,
+      interval: SECONDS_PER_DAY,
       toTimestamp: request.toTimestamp,
     };
     const outcome = await submitTask<HistoricalAssetPriceResponse>({
@@ -100,9 +101,7 @@ export function useBackfillRequests(): UseBackfillRequestsReturn {
       return 'failed';
     }
     const response = outcome.value;
-    store.addPrices(PricePair.MAIN, request.asset, Object.entries(response.prices)
-      .filter(([, price]) => price.gt(0))
-      .map(([time, price]) => ({ price, time: Number(time) })));
+    store.addPrices(request.asset, Object.entries(response.prices).map(([time, price]) => ({ price, time: Number(time) })));
     recordFailures(request.asset, response.noPricesTimestamps, response.rateLimitedPricesTimestamps);
     return response.rateLimitedPricesTimestamps.length > 0 ? 'rate-limited' : 'ok';
   }

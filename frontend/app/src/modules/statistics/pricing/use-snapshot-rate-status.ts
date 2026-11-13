@@ -2,7 +2,8 @@ import type { ComputedRef } from 'vue';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useSetting } from '@/modules/settings/use-setting';
-import { DAY_SECONDS, isFallbackQuality, nearestWithin } from '@/modules/statistics/pricing/price-series';
+import { dayStart } from '@/modules/statistics/pricing/backfill-plan';
+import { isFallbackQuality } from '@/modules/statistics/pricing/price-series';
 import { usePriceBackfill } from '@/modules/statistics/pricing/use-price-backfill';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
@@ -33,13 +34,12 @@ export function useSnapshotRateStatus(): UseSnapshotRateStatusReturn {
   const { rateLimited } = usePriceBackfill();
   const currencySymbol = useSetting('currencySymbol');
 
-  /** Days the backend has no USD rate for, leaving out those a rate was added for by hand, in order. */
-  const noRateDays = computed<{ time: number }[]>(() => {
-    const resolved = new Set(get(resolvedFailedDailyPrices)[CURRENCY_USD] ?? []);
-    return (get(failedDailyPrices)[CURRENCY_USD]?.noPricesTimestamps ?? [])
-      .filter(day => !resolved.has(day))
-      .sort((a, b) => a - b)
-      .map(time => ({ time }));
+  /** Days the backend has no USD rate for, leaving out those a rate was added for by hand. */
+  const noRateDays = computed<ReadonlySet<number>>(() => {
+    const days = new Set((get(failedDailyPrices)[CURRENCY_USD]?.noPricesTimestamps ?? []).map(dayStart));
+    for (const day of get(resolvedFailedDailyPrices)[CURRENCY_USD] ?? [])
+      days.delete(dayStart(day));
+    return days;
   });
 
   const status = computed<SnapshotRateStatus>(() => {
@@ -51,7 +51,7 @@ export function useSnapshotRateStatus(): UseSnapshotRateStatusReturn {
         const rate = rates.get(time);
         if (rate && !isFallbackQuality(rate.quality))
           continue;
-        if (nearestWithin(get(noRateDays), time, DAY_SECONDS))
+        if (get(noRateDays).has(dayStart(time)))
           unavailable += 1;
         else
           pending += 1;

@@ -223,7 +223,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
     nftValue,
     setNetValueError,
     setSnapshotRates,
-    snapshotRates: readonly(snapshotRates),
+    snapshotRates: shallowReadonly(snapshotRates),
     useNetValue,
     overall,
     totalNetWorth,

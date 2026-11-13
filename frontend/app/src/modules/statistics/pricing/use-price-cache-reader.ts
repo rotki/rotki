@@ -1,53 +1,27 @@
-import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
+import type { KnownPrice } from '@/modules/statistics/pricing/price-series';
+import { chunk } from 'es-toolkit';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
+import { SECONDS_PER_DAY } from '@/modules/core/common/constraints';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSetting } from '@/modules/settings/use-setting';
-import { DAY_SECONDS, type KnownPrice } from '@/modules/statistics/pricing/price-series';
-import { PricePair, usePriceSeriesStore } from '@/modules/statistics/pricing/use-price-series-store';
+import { usePriceSeriesStore } from '@/modules/statistics/pricing/use-price-series-store';
 
-/** Asset and time pairs per cache request, so one chart never sends one huge payload. */
+/** Times per cache request, so one chart never sends one huge payload. */
 const CACHE_READ_CHUNK = 1000;
-
-interface CacheQuery {
-  readonly pair: PricePair;
-  readonly target: string;
-  readonly assets: readonly string[];
-}
 
 interface UsePriceCacheReaderReturn {
   /**
-   * Reads every not yet requested price of `assets` at `times` from the backend cache.
+   * Reads every not yet requested price of `asset` at `times` from the backend cache, in the main
+   * currency.
    *
    * @remarks
    * `force` reads again what was already requested, for after a price was added by hand.
    */
-  readCached: (assets: readonly string[], times: readonly number[], force?: boolean) => Promise<void>;
+  readCached: (asset: string, times: readonly number[], force?: boolean) => Promise<void>;
 }
 
-function requestKey(pair: PricePair, asset: string, time: number): string {
-  return `${pair}:${asset}:${time}`;
-}
-
-function chunk<T>(items: readonly T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let index = 0; index < items.length; index += size)
-    chunks.push(items.slice(index, index + size));
-  return chunks;
-}
-
-/**
- * The cache reads a price series needs: each asset in the main currency, and, outside USD, each
- * asset in USD plus the USD rate itself, so a USD price cached before a currency switch still
- * prices the series through the rate.
- */
-function queriesFor(assets: readonly string[], currency: string): CacheQuery[] {
-  const priced = assets.filter(asset => asset !== currency);
-  if (currency === CURRENCY_USD)
-    return [{ assets: priced, pair: PricePair.MAIN, target: currency }];
-  return [
-    { assets: [...new Set([...priced, CURRENCY_USD])], pair: PricePair.MAIN, target: currency },
-    { assets: priced.filter(asset => asset !== CURRENCY_USD), pair: PricePair.USD, target: CURRENCY_USD },
-  ];
+function requestKey(asset: string, time: number): string {
+  return `${asset}:${time}`;
 }
 
 /**
@@ -55,55 +29,40 @@ function queriesFor(assets: readonly string[], currency: string): CacheQuery[] {
  *
  * @remarks
  * Nothing leaves the machine, so this runs on every render. A miss is left for the resolver to fill
- * and for the backfill to fetch.
+ * and for the backfill to fetch. A read that answers after the main currency changed is dropped:
+ * the store was emptied for the new currency, and the series asks again in it.
  */
 export function usePriceCacheReader(): UsePriceCacheReaderReturn {
   const store = usePriceSeriesStore();
-  const { requested } = storeToRefs(store);
   const currencySymbol = useSetting('currencySymbol');
   const { queryOnlyCacheHistoricalRates } = usePriceApi();
 
-  /**
-   * Reads one chunk into the store.
-   *
-   * @remarks
-   * A read that answers after the main currency changed is dropped: the store was emptied for the
-   * new currency, and the series asks again in it.
-   */
-  async function readChunk(query: CacheQuery, pairs: readonly [string, number][]): Promise<void> {
-    const currency = get(currencySymbol);
-    const keys = pairs.map(([asset, time]) => requestKey(query.pair, asset, time));
+  async function readChunk(asset: string, currency: string, times: readonly number[]): Promise<KnownPrice[]> {
+    const keys = times.map(time => requestKey(asset, time));
     store.markRequested(keys);
     try {
       const result = await queryOnlyCacheHistoricalRates({
-        assetsTimestamp: pairs.map(([asset, time]) => [asset, time.toString()]),
-        onlyCachePeriod: DAY_SECONDS,
-        targetAsset: query.target,
+        assetsTimestamp: times.map(time => [asset, time.toString()]),
+        onlyCachePeriod: SECONDS_PER_DAY,
+        targetAsset: currency,
       });
-      if (get(currencySymbol) !== currency)
-        return;
-      for (const [asset, prices] of Object.entries(result.assets)) {
-        const points: KnownPrice[] = Object.entries(prices)
-          .filter(([, price]) => price.gt(0))
-          .map(([time, price]) => ({ price, time: Number(time) }));
-        store.addPrices(query.pair, asset, points);
-      }
+      return Object.entries(result.assets[asset] ?? {}).map(([time, price]) => ({ price, time: Number(time) }));
     }
     catch (error: unknown) {
       logger.error(error);
       store.forgetRequested(keys);
+      return [];
     }
   }
 
-  async function readCached(assets: readonly string[], times: readonly number[], force = false): Promise<void> {
-    const seen: ReadonlySet<string> = force ? new Set() : get(requested);
-    for (const query of queriesFor(assets, get(currencySymbol))) {
-      const pairs = query.assets
-        .flatMap(asset => times.map((time): [string, number] => [asset, time]))
-        .filter(([asset, time]) => !seen.has(requestKey(query.pair, asset, time)));
-      for (const part of chunk(pairs, CACHE_READ_CHUNK))
-        await readChunk(query, part);
-    }
+  async function readCached(asset: string, times: readonly number[], force = false): Promise<void> {
+    const currency = get(currencySymbol);
+    const pending = force ? [...times] : times.filter(time => !store.isRequested(requestKey(asset, time)));
+    const points: KnownPrice[] = [];
+    for (const part of chunk(pending, CACHE_READ_CHUNK))
+      points.push(...await readChunk(asset, currency, part));
+    if (get(currencySymbol) === currency)
+      store.addPrices(asset, points);
   }
 
   return { readCached };
