@@ -5,7 +5,7 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken, FiatAsset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import get_uniswap_v3_position_price
@@ -489,6 +489,19 @@ class PriceHistorian:
                 price=price,
             )])
             return price
+
+        # oracles price crypto in fiat but not fiat in crypto, so invert the crypto to fiat price.
+        # The forex block above already resolved a fiat `from_asset` to a FiatAsset.
+        if isinstance(from_asset, FiatAsset) and not isinstance(to_asset, FiatAsset):
+            try:
+                if (inverse_price := PriceHistorian.query_historical_price(
+                    from_asset=to_asset,
+                    to_asset=from_asset,
+                    timestamp=timestamp,
+                )) != ZERO:
+                    return Price(ONE / inverse_price)
+            except NoPriceForGivenTimestamp as e:
+                rate_limited = rate_limited or e.rate_limited
 
         raise NoPriceForGivenTimestamp(
             from_asset=from_asset,
