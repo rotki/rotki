@@ -166,4 +166,29 @@ mod test {
             IconQuery::NotFound
         );
     }
+
+    /// An asset stored with an empty coingecko id has no coingecko icon. Querying it would
+    /// ask coingecko for /coins/, which is refused, and the refusal counts as a failure that
+    /// makes the icon be queried again every time it is shown.
+    #[tokio::test]
+    async fn test_coingecko_empty_id_is_not_queried() {
+        let (globaldb, _tmp_dir) = create_globaldb!()
+            .await
+            .expect("Failed to create globaldb for coingecko");
+        let mut server = mockito::Server::new_async().await;
+        let coingecko = Coingecko::new(Arc::new(globaldb), server.url());
+        let query = server
+            .mock("GET", mockito::Matcher::Any)
+            .with_status(403)
+            .expect(0)
+            .create();
+
+        assert_eq!(
+            coingecko
+                .query_asset_image("eip155:1/erc20:0x00907f9921424583e7ffBfEdf84F92B7B2Be4977")
+                .await,
+            IconQuery::NotFound
+        );
+        query.assert();
+    }
 }
