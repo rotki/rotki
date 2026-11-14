@@ -232,5 +232,9 @@ class ChainNotSupported(RemoteError):
     """Raised when a chain is not supported by a service/api/etc"""
 
 
+class ChainNotSupportedForAnyKey(ChainNotSupported):
+    """Raised when a service does not support a chain at all, so no API key can enable it"""
+
+
 class MissingAPIKey(Exception):
     """Raised when an API key is missing for a service"""

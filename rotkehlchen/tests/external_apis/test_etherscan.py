@@ -1,6 +1,7 @@
 import datetime
 import os
 from http import HTTPStatus
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -16,7 +17,7 @@ from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
-from rotkehlchen.errors.misc import RemoteError, RequestTooLargeError
+from rotkehlchen.errors.misc import ChainNotSupportedForAnyKey, RemoteError, RequestTooLargeError
 from rotkehlchen.externalapis.etherscan import (
     ETHERSCAN_PAGINATION_LIMIT,
     ETHERSCAN_TIER_BY_DAILY_LIMIT,
@@ -36,6 +37,9 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
+
+if TYPE_CHECKING:
+    from unittest.mock import _patch
 
 
 @pytest.fixture(name='temp_etherscan')
@@ -66,10 +70,10 @@ def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, s
         return Etherscan(database=db, msg_aggregator=function_scope_messages_aggregator)
 
 
-def patch_etherscan(etherscan, response_msg):
+def patch_etherscan(etherscan: Etherscan, response_msg: str) -> _patch[Any]:
     count = 0
 
-    def mock_requests_get(*args, **kwargs):  # pylint: disable=unused-argument
+    def mock_requests_get(*args: Any, **kwargs: Any) -> MockResponse:  # pylint: disable=unused-argument
         nonlocal count
         if count == 0:
             response = f'{{"status":"0","message":"NOTOK","result":"{response_msg}"}}'
@@ -116,6 +120,16 @@ def test_maximum_daily_rate_limit_reached(temp_etherscan, **kwargs):  # pylint: 
             '0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4',
             '0xc455279100000000000000000000000027a2eaaa8bebea8d23db486fb49627c165baacb5',
         )
+
+
+def test_unsupported_chainid(temp_etherscan: Etherscan) -> None:
+    """Etherscan answers a chain it dropped (such as scroll) with an unsupported chainid error.
+    No API key can change that, so it must not be reported as a plain RemoteError."""
+    with pytest.raises(ChainNotSupportedForAnyKey), patch_etherscan(
+        etherscan=temp_etherscan,
+        response_msg='Missing or unsupported chainid parameter (required for v2 api)',
+    ):
+        temp_etherscan.get_blocknumber_by_time(chain_id=ChainID.SCROLL, ts=Timestamp(1700000000))
 
 
 def test_detect_api_key_tier_caches_and_reuses_value(temp_etherscan: Etherscan) -> None:
