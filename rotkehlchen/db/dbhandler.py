@@ -3590,8 +3590,9 @@ class DBHandler:
                     'UNION ALL '
                     'SELECT timestamp, category, usd_value '
                     'FROM timed_balances AS nft_balances '
-                    'WHERE timestamp >= ? AND '
-                    '(currency GLOB ? OR currency GLOB ? OR currency GLOB ?) AND NOT EXISTS ('
+                    'WHERE timestamp >= ? AND currency IN ('
+                    'SELECT identifier FROM assets WHERE identifier GLOB ? OR identifier GLOB ? '
+                    'OR identifier GLOB ?) AND NOT EXISTS ('
                     'SELECT 1 FROM multisettings '
                     "WHERE name='ignored_asset' AND value=nft_balances.currency)) "
                     'GROUP BY timestamp, category'

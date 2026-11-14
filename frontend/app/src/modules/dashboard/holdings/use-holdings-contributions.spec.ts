@@ -122,6 +122,33 @@ describe('useHoldingsContributions', () => {
     ]);
   });
 
+  it('should exclude chain NFTs when they do not count toward net worth', () => {
+    const { balances } = storeToRefs(useBalancesStore());
+    const seeded = get(balances);
+    set(balances, {
+      ...seeded,
+      eth: {
+        ...seeded.eth,
+        '0xA': {
+          ...seeded.eth['0xA'],
+          assets: {
+            ...seeded.eth['0xA'].assets,
+            'eip155:1/erc721:0x0000000000000000000000000000000000000000/1': { address: createTestBalance(1, 500) },
+            'solana/nft:Mint111111111111111111111111111111111111111': { address: createTestBalance(1, 300) },
+          },
+        },
+      },
+    });
+
+    useSettingsRepo().updateFrontend({ nftsInNetValue: true });
+    const withNfts = useHoldingsContributions();
+    expect(get(withNfts.contributions).find(contribution => contribution.kind === SourceKind.BLOCKCHAIN && contribution.chain === 'eth')?.value.toFixed()).toBe('7300');
+
+    useSettingsRepo().updateFrontend({ nftsInNetValue: false });
+    const withoutNfts = useHoldingsContributions();
+    expect(get(withoutNfts.contributions).find(contribution => contribution.kind === SourceKind.BLOCKCHAIN && contribution.chain === 'eth')?.value.toFixed()).toBe('6500');
+  });
+
   it('should count every bank connection as one banks contribution that still adds up to the net worth', () => {
     useSettingsRepo().updateFrontend({ nftsInNetValue: true });
     const connection = (connector: string, name: string): BankConnection => ({

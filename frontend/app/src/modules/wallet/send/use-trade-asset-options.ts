@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { TradableAsset } from '@/modules/wallet/types';
 import { getAddressFromEvmIdentifier, isEvmIdentifier, Zero } from '@rotki/common';
-import { isNft } from '@/modules/assets/nft-utils';
+import { isNonFungible } from '@/modules/assets/nft-utils';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -34,7 +34,7 @@ export const ALL_CHAINS = 'all';
  * identifiers and the CAIP `eip155:1/erc721:0x…/123` form are both in circulation.
  */
 function isCollectible(identifier: string): boolean {
-  return isNft(identifier) || identifier.includes('/erc721:') || identifier.includes('/erc1155:');
+  return isNonFungible(identifier);
 }
 
 function shortenAddress(identifier: string): string {

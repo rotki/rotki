@@ -1,6 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import { isNft } from '@/modules/assets/nft-utils';
+import { isNonFungible } from '@/modules/assets/nft-utils';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { type BalanceSnapshot, ZeroValueFilter } from '@/modules/dashboard/snapshots';
@@ -29,11 +29,11 @@ interface UseSnapshotBalanceRowsReturn {
 function matchesCategory(item: IndexedBalanceSnapshot, category?: SnapshotCategory): boolean {
   switch (category) {
     case SnapshotCategories.ASSET:
-      return item.category === BalanceType.ASSET && !isNft(item.assetIdentifier);
+      return item.category === BalanceType.ASSET && !isNonFungible(item.assetIdentifier);
     case SnapshotCategories.LIABILITY:
       return item.category === BalanceType.LIABILITY;
     case SnapshotCategories.NFT:
-      return isNft(item.assetIdentifier);
+      return isNonFungible(item.assetIdentifier);
     // No category pill: every kind of row qualifies.
     case undefined:
     default:

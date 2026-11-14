@@ -214,6 +214,18 @@ describe('useAssetSearch', () => {
     expect(selectionLost).not.toHaveBeenCalled();
   });
 
+  it.each([
+    'eip155:1/erc721:0x123/1',
+    'solana/nft:Mint111',
+  ])('should admit %s in an NFT-only search', async (identifier) => {
+    const { nftHandling, selectionLost } = setup({ modelValue: identifier, nftHandling: 'include' });
+
+    set(nftHandling, 'show_only');
+    await flushPromises();
+
+    expect(selectionLost).not.toHaveBeenCalled();
+  });
+
   // The statistics graph passes the user's own assets; the picker must be a closed list of them.
   describe('with an allow-list', () => {
     beforeEach(() => {

@@ -2,7 +2,7 @@ import type { BigNumber } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { BalanceSnapshot, Snapshot } from '@/modules/dashboard/snapshots';
 import type { IndexedBalanceSnapshot } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-rows';
-import { isNft } from '@/modules/assets/nft-utils';
+import { isNonFungible } from '@/modules/assets/nft-utils';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { formatPercent } from '@/modules/dashboard/snapshots/utils/snapshot-percent';
 import { getTotalValue } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
@@ -40,7 +40,7 @@ export function useSnapshotBalanceDisplay(
   const data = computed<IndexedBalanceSnapshot[]>(() =>
     toValue(snapshot).balancesSnapshot.map((item: BalanceSnapshot, index: number) => ({
       ...item,
-      categoryLabel: isNft(item.assetIdentifier)
+      categoryLabel: isNonFungible(item.assetIdentifier)
         ? `${item.category} (${t('dashboard.snapshot.detail.balances.nft')})`
         : item.category,
       index,
@@ -103,7 +103,7 @@ export function useSnapshotBalanceDisplay(
   function categoryChipColor(item: IndexedBalanceSnapshot): 'error' | 'info' | 'grey' {
     if (isLiability(item))
       return 'error';
-    if (isNft(item.assetIdentifier))
+    if (isNonFungible(item.assetIdentifier))
       return 'info';
     return 'grey';
   }
@@ -113,7 +113,7 @@ export function useSnapshotBalanceDisplay(
     data,
     describeWarning,
     isLiability,
-    isNftRow: (item: IndexedBalanceSnapshot): boolean => isNft(item.assetIdentifier),
+    isNftRow: (item: IndexedBalanceSnapshot): boolean => isNonFungible(item.assetIdentifier),
     sharePercent,
     total,
     warningsByIndex,

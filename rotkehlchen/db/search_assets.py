@@ -7,7 +7,7 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.globaldb.handler import ALL_ASSETS_TABLES_QUERY, GlobalDBHandler
-from rotkehlchen.types import SupportedBlockchain
+from rotkehlchen.types import SupportedBlockchain, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -56,6 +56,7 @@ def _search_only_assets_levenstein(
         userdb_cursor: DBCursor,
         userdb: DBHandler,
         filter_query: LevenshteinFilterQuery,
+        only_non_fungible: bool = False,
 ) -> list[tuple[int, dict[str, Any]]]:
     search_result: list[tuple[int, dict[str, Any]]] = []
     should_skip = filter_query.ignored_assets_handling.get_should_skip_handler()
@@ -64,6 +65,16 @@ def _search_only_assets_levenstein(
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         query, bindings = filter_query.prepare('assets')
+        if only_non_fungible:
+            token_kind_filter = '(evm_tokens.token_kind=? OR solana_tokens.token_kind=?)'
+            query = (
+                f'WHERE ({query.removeprefix("WHERE ")}) AND {token_kind_filter}'
+                if query else f'WHERE {token_kind_filter}'
+            )
+            bindings.extend((
+                TokenKind.ERC721.serialize_for_db(),
+                TokenKind.SPL_NFT.serialize_for_db(),
+            ))
         query = ALL_ASSETS_TABLES_QUERY + query
         cursor.execute(query, bindings)
         found_eth = False
@@ -119,12 +130,12 @@ def search_assets_levenshtein(
     """Returns a list of asset details that match the search keyword using the Levenshtein distance approach."""  # noqa: E501
     search_result = []
     with db.conn.read_ctx() as cursor:
-        if nft_handling != NftHandling.SHOW_ONLY:
-            search_result = _search_only_assets_levenstein(
-                userdb_cursor=cursor,
-                userdb=db,
-                filter_query=filter_query,
-            )
+        search_result = _search_only_assets_levenstein(
+            userdb_cursor=cursor,
+            userdb=db,
+            filter_query=filter_query,
+            only_non_fungible=nft_handling == NftHandling.SHOW_ONLY,
+        )
         if nft_handling != NftHandling.EXCLUDE:
             search_result += _search_only_nfts_levenstein(cursor=cursor, filter_query=filter_query)
 

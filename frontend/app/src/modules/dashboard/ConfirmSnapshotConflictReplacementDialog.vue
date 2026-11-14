@@ -2,7 +2,7 @@
 import type { BalanceSnapshot } from '@/modules/dashboard/snapshots';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
-import { isNft } from '@/modules/assets/nft-utils';
+import { isNonFungible } from '@/modules/assets/nft-utils';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
@@ -49,7 +49,7 @@ const asset = computed<string>(() => snapshot?.assetIdentifier ?? '');
       </div>
 
       <NftDetails
-        v-if="isNft(asset)"
+        v-if="isNonFungible(asset)"
         :identifier="asset"
         class="max-w-160"
       />

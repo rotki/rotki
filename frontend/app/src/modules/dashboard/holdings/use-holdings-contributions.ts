@@ -1,6 +1,7 @@
 import type { BigNumber } from '@rotki/common';
 import type { ComputedRef } from 'vue';
 import type { Balances } from '@/modules/accounts/blockchain-accounts';
+import { isErc721OrSolanaNft } from '@/modules/assets/nft-utils';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { blockchainValue } from '@/modules/balances/aggregation/core/location-totals';
@@ -62,12 +63,16 @@ export function useHoldingsContributions(): HoldingsInputs {
       .some(asset => !isAssetIgnored(asset) && isPricePending(asset)));
   }
 
+  function isEffectivelyIgnored(asset: string): boolean {
+    return isAssetIgnored(asset) || (!get(nftsInNetValue) && isErc721OrSolanaNft(asset));
+  }
+
   function chainContribution(chain: string, accounts: Balances[string]): SourceContribution {
     return {
       chain,
       kind: SourceKind.BLOCKCHAIN,
       loading: isChainPricePending(accounts),
-      value: blockchainValue({ [chain]: accounts }, isAssetIgnored),
+      value: blockchainValue({ [chain]: accounts }, isEffectivelyIgnored),
     };
   }
 

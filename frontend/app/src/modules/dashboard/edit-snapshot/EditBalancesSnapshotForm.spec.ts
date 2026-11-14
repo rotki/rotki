@@ -239,10 +239,14 @@ describe('edit-snapshot/EditBalancesSnapshotForm.vue', () => {
     expect(() => wrapper.vm.submitPrice()).not.toThrow();
   });
 
-  it('should force amount to 1 when the model carries an NFT identifier', async () => {
+  it.each([
+    '_nft_0xabc/123',
+    'eip155:1/erc721:0xabc/123',
+    'solana/nft:Mint111',
+  ])('should force amount to 1 when the model carries NFT identifier %s', async (identifier) => {
     vi.useRealTimers();
     const model = baseModel();
-    model.assetIdentifier = '_nft_0xabc/123';
+    model.assetIdentifier = identifier;
     model.amount = '42';
     wrapper = createWrapper(model);
     await flushPromises();
@@ -251,6 +255,6 @@ describe('edit-snapshot/EditBalancesSnapshotForm.vue', () => {
     const updates = wrapper.emitted<[BalanceSnapshotPayloadAndLocation]>('update:modelValue');
     const nftUpdate = updates?.find(([payload]) => payload.amount === '1');
     expect(nftUpdate).toBeDefined();
-    expect(nftUpdate?.[0].assetIdentifier).toBe('_nft_0xabc/123');
+    expect(nftUpdate?.[0].assetIdentifier).toBe(identifier);
   });
 });

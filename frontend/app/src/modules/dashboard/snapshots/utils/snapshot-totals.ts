@@ -1,6 +1,6 @@
 import type { BalanceSnapshot, LocationDataSnapshot, Snapshot } from '@/modules/dashboard/snapshots';
 import { type BigNumber, Zero } from '@rotki/common';
-import { isNft } from '@/modules/assets/nft-utils';
+import { isNonFungible } from '@/modules/assets/nft-utils';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { bigNumberSum } from '@/modules/core/common/data/calculation';
 
@@ -42,7 +42,7 @@ export function assetsTotal(balancesSnapshot: BalanceSnapshot[]): BigNumber {
 /** Net USD total of the NFT balances only (assets minus liabilities). */
 export function nftsTotal(balancesSnapshot: BalanceSnapshot[]): BigNumber {
   return bigNumberSum(
-    balancesSnapshot.map(item => (isNft(item.assetIdentifier) ? signedUsdValue(item) : Zero)),
+    balancesSnapshot.map(item => (isNonFungible(item.assetIdentifier) ? signedUsdValue(item) : Zero)),
   );
 }
 
@@ -92,7 +92,7 @@ export function listedNetWorth(
   const nfts = includeNfts
     ? Zero
     : bigNumberSum(snapshot.balancesSnapshot.map(item =>
-        isNft(item.assetIdentifier) && !isIgnored(item.assetIdentifier) ? signedUsdValue(item) : Zero,
+        isNonFungible(item.assetIdentifier) && !isIgnored(item.assetIdentifier) ? signedUsdValue(item) : Zero,
       ));
   const value = getTotalValue(snapshot.locationDataSnapshot).minus(ignored).minus(nfts);
   return { ignored, nfts, value };

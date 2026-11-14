@@ -3,7 +3,7 @@ import type { NftAsset } from '@/modules/assets/nfts';
 import { assert, type AssetInfoWithId, transformCase } from '@rotki/common';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { NftHandling } from '@/modules/assets/nft-handling';
-import { isNft } from '@/modules/assets/nft-utils';
+import { isNft, isNonFungible } from '@/modules/assets/nft-utils';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { uniqueObjects } from '@/modules/core/common/data/data';
 import { getAssetSearchTypeParams, getSanitizedChain, parseAssetSearchKeyword } from '@/modules/core/common/display/assets';
@@ -279,7 +279,7 @@ export function useAssetSearch(options: UseAssetSearchOptions): UseAssetSearchRe
   function admitsSelection(identifier: string): boolean {
     const handling = toValue(nftHandling) ?? NftHandling.EXCLUDE;
     if (handling === NftHandling.SHOW_ONLY)
-      return isNft(identifier);
+      return isNonFungible(identifier);
     if (handling === NftHandling.EXCLUDE)
       return !isNft(identifier);
     return true;

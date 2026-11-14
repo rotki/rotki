@@ -1,5 +1,6 @@
 import type { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { type AssetBalanceWithPriceAndChains, BigNumber } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { get } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -166,14 +167,14 @@ describe('useStatisticsStore', () => {
       const settingsStore = useSettingsRepo();
       settingsStore.updateFrontend({ nftsInNetValue: false });
 
-      vi.mocked(useAggregatedBalances).mockReturnValueOnce({
+      vi.mocked(useAggregatedBalances).mockReturnValueOnce(createMock<ReturnType<typeof useAggregatedBalances>>({
         getBalances: (): AssetBalanceWithPriceAndChains[] => [
           createBalanceWithPrice('1', 'ETH', '2000'),
           createBalanceWithPrice('1', 'eip155:1/erc721:0x1234/1', '500'),
           createBalanceWithPrice('1', 'solana/nft:SoL111111', '300'),
         ],
         getLiabilities: (): AssetBalanceWithPriceAndChains[] => [],
-      } as any);
+      }));
 
       const store = useStatisticsStore();
       const totalValue = get(store.totalNetWorth);

@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import { CURRENCY_USD, type SupportedCurrency } from '@/modules/assets/amount-display/currencies';
 import { useAmountDisplaySettings } from '@/modules/assets/amount-display/use-amount-display-settings';
 import { useNumberScrambler } from '@/modules/assets/amount-display/use-number-scrambler';
+import { isErc721OrSolanaNft } from '@/modules/assets/nft-utils';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -68,9 +69,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
     const nftTotal = get(includeNft) ? get(nftValue) : Zero;
     const balances = get(includeNft)
       ? getBalances()
-      : getBalances().filter(
-          item => !item.asset.includes('/erc721:') && !item.asset.startsWith('solana/nft:'),
-        );
+      : getBalances().filter(item => !isErc721OrSolanaNft(item.asset));
     return calculateSum(balances).plus(nftTotal).minus(calculateSum(getLiabilities()));
   });
 

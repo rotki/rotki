@@ -57,8 +57,10 @@ describe('modules/dashboard/snapshots/utils/snapshot-totals', () => {
       balance({ assetIdentifier: 'ETH', usdValue: '100' }),
       balance({ assetIdentifier: '_nft_0xabc_1', usdValue: '40' }),
       balance({ assetIdentifier: '_nft_0xabc_2', category: BalanceType.LIABILITY, usdValue: '10' }),
+      balance({ assetIdentifier: 'eip155:1/erc721:0xabc/1', usdValue: '20' }),
+      balance({ assetIdentifier: 'solana/nft:Mint111', usdValue: '10' }),
     ];
-    expect(nftsTotal(snapshot).toNumber()).toBe(30);
+    expect(nftsTotal(snapshot).toNumber()).toBe(60);
   });
 
   it('should sum only non-total rows in locationsTotal', () => {

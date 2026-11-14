@@ -142,7 +142,7 @@ describe('snapshotSummary', () => {
 
   it('should offer the exclude-NFTs toggle only when the snapshot has NFTs', () => {
     expect(mountSummary().find('[data-testid=snapshot-summary-exclude-nfts]').exists()).toBe(false);
-    const withNft = snapshot([balance('_nft_0xabc_1', 40)], [location('total', 40)]);
+    const withNft = snapshot([balance('eip155:1/erc721:0xabc/1', 40)], [location('total', 40)]);
     expect(mountSummary({ snapshot: withNft }).find('[data-testid=snapshot-summary-exclude-nfts]').exists()).toBe(true);
   });
 
