@@ -70,10 +70,12 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
+    BlockRangeOutsideBounds,
     BlockscoutIncompleteResponse,
     ChainNotSupported,
     ContractReverted,
     EventNotInABI,
+    IndexerHistoryStartsAt,
     IndexerRangeNotCovered,
     InputError,
     NoAvailableIndexers,
@@ -82,6 +84,7 @@ from rotkehlchen.errors.misc import (
     RecoverableRemoteError,
     RemoteError,
     RequestTooLargeError,
+    TimestampLookupUnsupported,
     TokenQueryFailed,
     alternatives_cause,
     cause_of,
@@ -122,6 +125,7 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
     from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
+    from rotkehlchen.externalapis.nuthatch import Nuthatch
     from rotkehlchen.externalapis.routescan import Routescan
     from rotkehlchen.tasks.supervisor import TaskSupervisor
 
@@ -156,6 +160,12 @@ def _is_contract_revert(error: ContractLogicError) -> bool:
 DEGRADED_INDEXERS: Final[ContextVar[frozenset[EvmIndexer]]] = ContextVar(
     'evm_degraded_indexers',
     default=frozenset(),
+)
+# The lowest and highest block the ranges being queried may reach, None for no limit. Scoped to
+# the body of blocks_within, to keep each side of an indexer's history start to its own indexers.
+BLOCK_BOUNDS: Final[ContextVar[tuple[int | None, int | None]]] = ContextVar(
+    'evm_block_bounds',
+    default=(None, None),
 )
 
 
@@ -323,7 +333,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         self.etherscan = etherscan
         self.routescan = routescan
         self.blockscout = blockscout
-        self.available_indexers: dict[EvmIndexer, Blockscout | Etherscan | Routescan | None] = {
+        self.available_indexers: dict[EvmIndexer, Blockscout | Etherscan | Routescan | Nuthatch | None] = {  # noqa: E501
             EvmIndexer.ETHERSCAN: self.etherscan,
             EvmIndexer.BLOCKSCOUT: self.blockscout,
             EvmIndexer.ROUTESCAN: self.routescan,
@@ -2103,6 +2113,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         than an error, which reads as "the address had no activity" and gets the range
         recorded as fully queried. That is how a stale indexer silently costs a user a day
         of history that only a manual repull brings back.
+
+        May raise:
+        - BlockRangeOutsideBounds if none of the period's blocks lie within blocks_within
         """
         if period.range_type != 'timestamps':
             yield period  # already blocks, nothing was resolved and nothing can be stale
@@ -2121,6 +2134,16 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 period.from_value, period.to_value,
             )
 
+        lowest, highest = BLOCK_BOUNDS.get()
+        if lowest is not None:
+            from_block = max(from_block, lowest)
+        if highest is not None:
+            to_block = min(to_block, highest)
+        if from_block > to_block:
+            raise BlockRangeOutsideBounds(
+                f'The {self.chain_name} range {period.from_value} - {period.to_value} has no '
+                f'block between {lowest} and {highest}',
+            )
         token = DEGRADED_INDEXERS.set(DEGRADED_INDEXERS.get() | failed)
         try:
             yield TimestampOrBlockRange(
@@ -2130,6 +2153,17 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             )
         finally:
             DEGRADED_INDEXERS.reset(token)
+
+    @staticmethod
+    @contextmanager
+    def blocks_within(lowest: int | None, highest: int | None) -> Generator[None]:
+        """Keep the block ranges block_range_skipping_stale_indexers resolves in the body
+        between lowest and highest."""
+        token = BLOCK_BOUNDS.set((lowest, highest))
+        try:
+            yield
+        finally:
+            BLOCK_BOUNDS.reset(token)
 
     def maybe_timestamp_to_block_range(
             self,
@@ -2523,6 +2557,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
     def _try_indexers(self, func: Callable[[EtherscanLikeApi], T]) -> T:
         """Tries to call the given function on the indexers in order until one succeeds.
         May raise:
+        - IndexerHistoryStartsAt if an indexer's history starts inside the range
         - IndexerRangeNotCovered if every indexer that serves the chain cannot serve the range
         - RemoteError if all indexers fail
         - NoAvailableIndexers if there are no indexers available
@@ -2570,12 +2605,17 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     failed.add(indexer_name)
             except RequestTooLargeError:
                 raise  # Let RequestTooLargeError bubble up for retry logic in callers
+            except IndexerHistoryStartsAt:
+                # The indexer serves the range from its history start. Asking the next one for
+                # all of it would hand that part to a third party, so the caller splits it.
+                raise
             except (RemoteError, DeserializationError) as e:
                 log.warning(f'Failed to query {indexer.name} due to {e!s}. Trying next indexer.')
                 if isinstance(e, BlockscoutIncompleteResponse):
                     blockscout_incomplete_response = True
                 errors.append((indexer.name, e))
-                failed.add(indexer_name)
+                if not isinstance(e, TimestampLookupUnsupported):
+                    failed.add(indexer_name)
             else:
                 return result, indexer_name, frozenset(failed)
 

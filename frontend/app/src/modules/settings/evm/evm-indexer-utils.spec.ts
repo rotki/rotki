@@ -47,6 +47,11 @@ describe('evm-indexer-utils', () => {
       expect(optimism.itemDataForId(EvmIndexer.ROUTESCAN)).toBeUndefined();
     });
 
+    it('should offer a self-hosted nuthatch nest on every chain', () => {
+      for (const chain of [null, 'eth', 'optimism', 'scroll', 'binance_sc', 'monad'])
+        expect(getAvailableIndexersForChain(chain).itemDataForId(EvmIndexer.NUTHATCH)).toBeDefined();
+    });
+
     it('should offer only blockscout on scroll', () => {
       const available = getAvailableIndexersForChain('scroll');
 

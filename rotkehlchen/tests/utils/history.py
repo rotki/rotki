@@ -858,7 +858,7 @@ def assert_pnl_debug_import(filepath: Path, database: DBHandler) -> None:
             settings_from_file[key] = getattr(default_settings, key)
 
     # Older debug files do not contain settings introduced after they were created.
-    for key in ('mcp_privacy_mode', 'ipfs_gateway'):
+    for key in ('mcp_privacy_mode', 'ipfs_gateway', 'nuthatch_api_endpoint'):
         if key not in settings_from_file:
             settings_from_file[key] = getattr(default_settings, key)
 

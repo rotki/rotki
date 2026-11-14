@@ -9,7 +9,7 @@ import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
 const { setting } = defineProps<{
-  setting: 'ksmRpcEndpoint' | 'dotRpcEndpoint' | 'beaconRpcEndpoint' | 'btcMempoolApi';
+  setting: 'ksmRpcEndpoint' | 'dotRpcEndpoint' | 'beaconRpcEndpoint' | 'btcMempoolApi' | 'nuthatchApiEndpoint';
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
