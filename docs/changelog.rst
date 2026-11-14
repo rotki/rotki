@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` The history sync banner no longer reports that synchronization is complete while long-running work such as refreshing Ethereum block production is still running.
 * :bug:`-` Saving a custom indexer order for one chain no longer makes the other chains ignore their own default order. Scroll and Gnosis use Blockscout first again, so account detection and transaction queries no longer fail an Etherscan request for Scroll, which Etherscan does not support. If Etherscan does not support a chain at all, rotki no longer asks for a paid Etherscan API key for it.
 * :bug:`-` API keys of Etherscan, Blockscout, Routescan, Cryptocompare and Helius are no longer written to the logs or included in error messages, so logs can be shared when reporting an issue without leaking them.
 * :release:`1.44.3 <2026-11-11>`
