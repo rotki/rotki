@@ -3,6 +3,7 @@ import type { LogService } from '@electron/main/log-service';
 import type { ProgressInfo } from 'electron-builder';
 import type { AppUpdater } from 'electron-updater';
 import { IpcCommands } from '@electron/ipc-commands';
+import { summarizeUpdaterError } from '@electron/main/updater-error';
 import { startPromise } from '@shared/utils';
 
 interface UpdateHandlersCallbacks {
@@ -46,10 +47,10 @@ export class UpdateHandlers {
     const { autoUpdater } = (await import('electron-updater')).default;
     autoUpdater.autoDownload = false;
     autoUpdater.logger = {
-      error: (message?: any) => this.logger.error(message),
-      info: (message?: any) => this.logger.info(message),
+      error: (message?: unknown) => this.logger.error(summarizeUpdaterError(message)),
+      info: (message?: unknown) => this.logger.info(message),
       debug: (message: string) => this.logger.debug(message),
-      warn: (message?: any) => this.logger.warn(message),
+      warn: (message?: unknown) => this.logger.warn(summarizeUpdaterError(message)),
     };
     return autoUpdater;
   }
@@ -65,13 +66,11 @@ export class UpdateHandlers {
     return new Promise<boolean>((resolve) => {
       autoUpdater.once('update-available', () => resolve(true));
       autoUpdater.once('update-not-available', () => resolve(false));
-      autoUpdater.once('error', (error: Error) => {
-        this.logger.error(error);
-        resolve(false);
-      });
+      // the same failure also rejects checkForUpdates below, which logs it
+      autoUpdater.once('error', () => resolve(false));
 
-      autoUpdater.checkForUpdates().catch((error: any) => {
-        this.logger.error(error);
+      autoUpdater.checkForUpdates().catch((error: unknown) => {
+        this.logger.error(`Update check failed: ${summarizeUpdaterError(error)}`);
         resolve(false);
       });
     });
@@ -89,8 +88,8 @@ export class UpdateHandlers {
       autoUpdater.on('download-progress', progress);
       autoUpdater.downloadUpdate()
         .then(() => resolve(true))
-        .catch((error) => {
-          this.logger.error(error);
+        .catch((error: unknown) => {
+          this.logger.error(`Update download failed: ${summarizeUpdaterError(error)}`);
           resolve(false);
         })
         .finally(() => {
