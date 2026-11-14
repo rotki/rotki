@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Final, cast
 
 from rotkehlchen.db.filtering import DataIssuesFilterQuery
 from rotkehlchen.db.utils import get_query_chunks
@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -77,6 +78,27 @@ INSERT OR IGNORE INTO data_issues (
 """
 
 
+MAX_REMEDIATION_ATTEMPTS: Final = 20
+"""How many remediation attempts a data issue keeps. They are a diagnostic timeline, not an
+audit log, and unbounded growth would bloat every read of the issue."""
+
+
+def _with_remediation_attempt(
+        attempts: list[Any],
+        attempt: Mapping[str, Any],
+) -> list[Any]:
+    """Return `attempts` plus `attempt`, capped to the most recent MAX_REMEDIATION_ATTEMPTS.
+
+    Only the newest attempt keeps its full payload; older ones drop the bulky transaction
+    comparison.
+    """
+    return [
+        *({key: value for key, value in old.items() if key != 'transactions'}
+          for old in attempts),
+        attempt,
+    ][-MAX_REMEDIATION_ATTEMPTS:]
+
+
 def _row_to_data_issue(
         row: tuple[Any, ...],
         group_identifier: str | None = None,
@@ -110,6 +132,23 @@ def _validate_state_transition(current_state: str | IssueState, new_state: Issue
         raise InputError(
             f'Invalid data issue state transition from {current_state} to {new_state}',
         )
+
+
+def _is_unchanged_manual_resolution(stored_payload_json: str, payload: DataIssuePayload) -> bool:
+    """Whether a resolved issue was resolved by the user and `payload` rediscovers it unchanged.
+
+    Only a manual resolution is final: when a scan rediscovers the same unchanged candidate
+    it must keep the user's decision and note. Issues resolved automatically or by system
+    cleanup reopen as soon as the candidate is seen again, even when its content is
+    unchanged. A manual decision is stored in the payload's ``resolution`` entry with
+    ``manual: true``; any other value means the user did not resolve it.
+    """
+    stored_payload = dict(json.loads(stored_payload_json))
+    resolution = stored_payload.pop('resolution', None)
+    if not isinstance(resolution, dict) or resolution.get('manual') is not True:
+        return False
+
+    return stored_payload == payload
 
 
 def _resolved_at_for(state: IssueState) -> int | None:
@@ -181,7 +220,12 @@ class DataIssuesManager:
             ts_end: int,
             severity: IssueSeverity | None = None,
     ) -> tuple[int, str | IssueState]:
-        """Write an issue idempotently and return its id and resulting state."""
+        """Write an issue idempotently and return its id and resulting state.
+
+        A dismissed issue is never revived. A resolved issue keeps a *manual* resolution
+        when the rediscovered candidate is unchanged, while issues resolved automatically
+        or by system cleanup reopen as soon as the candidate is seen again.
+        """
         location_label = '' if location_label is None else location_label
         protocol = '' if protocol is None else protocol
         asset = '' if asset is None else asset
@@ -221,19 +265,34 @@ class DataIssuesManager:
             if write_cursor.rowcount == 1:
                 return write_cursor.lastrowid, IssueState.OPEN
 
-        issue_id, existing_state = self._get_issue_id_and_state_by_natural_key(
-            kind=kind,
-            location=location,
-            location_label=location_label,
-            protocol=protocol,
-            asset=asset,
-            event_identifier=event_identifier,
-        )
-        if existing_state == IssueState.DISMISSED:
-            return issue_id, existing_state
+            # Read the stored row under the write lock that updates it, so the decision
+            # below cannot act on a state another writer changed in between.
+            (
+                issue_id,
+                existing_state,
+                stored_ts_start,
+                stored_ts_end,
+                stored_payload_json,
+            ) = self._get_stored_issue_by_natural_key(
+                cursor=write_cursor,
+                kind=kind,
+                location=location,
+                location_label=location_label,
+                protocol=protocol,
+                asset=asset,
+                event_identifier=event_identifier,
+            )
+            if existing_state == IssueState.DISMISSED:
+                return issue_id, existing_state
 
-        with self.db.user_write() as write_cursor:
             if existing_state == IssueState.RESOLVED:
+                if (
+                    stored_ts_start == ts_start and
+                    stored_ts_end == ts_end and
+                    _is_unchanged_manual_resolution(stored_payload_json, payload)
+                ):
+                    return issue_id, existing_state
+
                 _validate_state_transition(existing_state, IssueState.OPEN)
                 write_cursor.execute(
                     'UPDATE data_issues SET state = ?, ts_start = ?, ts_end = ?, '
@@ -247,16 +306,14 @@ class DataIssuesManager:
                         issue_id,
                     ),
                 )
-            else:
-                write_cursor.execute(
-                    'UPDATE data_issues SET ts_start = ?, ts_end = ?, payload_json = ? '
-                    'WHERE id = ?',
-                    (ts_start, ts_end, payload_json, issue_id),
-                )
-        resulting_state = (
-            IssueState.OPEN if existing_state == IssueState.RESOLVED else existing_state
-        )
-        return issue_id, resulting_state
+                return issue_id, IssueState.OPEN
+
+            write_cursor.execute(
+                'UPDATE data_issues SET ts_start = ?, ts_end = ?, payload_json = ? '
+                'WHERE id = ?',
+                (ts_start, ts_end, payload_json, issue_id),
+            )
+            return issue_id, existing_state
 
     def resolve_superseded_negative_balance_issues(self, assets: frozenset[str]) -> None:
         """Resolve negative-balance issues for assets now handled as rebasing tokens."""
@@ -453,10 +510,20 @@ class DataIssuesManager:
 
     def get_issue(self, issue_id: int) -> DataIssue:
         with self.db.conn.read_ctx() as cursor:
-            row = cursor.execute(
-                f'SELECT * FROM ({DATA_ISSUE_SELECT_QUERY}) WHERE id = ?',
-                (issue_id,),
-            ).fetchone()
+            return self._get_issue_with_cursor(cursor, issue_id)
+
+    @staticmethod
+    def _get_issue_with_cursor(cursor: DBCursor, issue_id: int) -> DataIssue:
+        """Read an issue through `cursor`.
+
+        A writer that derives its update from the stored row must pass its own write
+        cursor: read under a separate read context, the row can be changed by another
+        writer before the update executes, which then overwrites that change.
+        """
+        row = cursor.execute(
+            f'SELECT * FROM ({DATA_ISSUE_SELECT_QUERY}) WHERE id = ?',
+            (issue_id,),
+        ).fetchone()
         if row is None:
             raise NotFoundError(f'Data issue with id {issue_id} not found')
         return _row_to_data_issue(row)
@@ -467,22 +534,35 @@ class DataIssuesManager:
             state: IssueState,
             attempt: Mapping[str, Any] | None = None,
             resolution: dict[str, Any] | None = None,
+            expected_state: IssueState | None = None,
     ) -> DataIssue:
-        _validate_state_transition((issue := self.get_issue(issue_id)).state, state)
+        """Move an issue to `state`, optionally recording an attempt and a resolution.
 
-        attempts = issue.auto_remediation_attempts
-        if attempt is not None:
-            attempts = [
-                *({key: value for key, value in old.items() if key != 'transactions'}
-                  for old in attempts),
-                attempt,
-            ]
+        The stored row is read, validated and updated in one write transaction, so the
+        transition is always checked against the state it replaces.
 
-        payload = issue.payload
-        if resolution is not None:
-            payload = {**payload, 'resolution': resolution}
-
+        May raise:
+        - NotFoundError if the issue does not exist
+        - InputError if the transition is not allowed, or if `expected_state` is given
+        and the issue is no longer in it
+        """
         with self.db.user_write() as write_cursor:
+            issue = self._get_issue_with_cursor(write_cursor, issue_id)
+            if expected_state is not None and issue.state != expected_state:
+                raise InputError(
+                    f'Data issue {issue_id} is {issue.state} instead of the expected '
+                    f'{expected_state}',
+                )
+            _validate_state_transition(issue.state, state)
+
+            attempts = issue.auto_remediation_attempts
+            if attempt is not None:
+                attempts = _with_remediation_attempt(attempts, attempt)
+
+            payload = issue.payload
+            if resolution is not None:
+                payload = {**payload, 'resolution': resolution}
+
             row = write_cursor.execute(
                 'UPDATE data_issues SET state = ?, auto_remediation_attempts_json = ?, '
                 'payload_json = ?, resolved_at = ? WHERE id = ? RETURNING '
@@ -495,8 +575,6 @@ class DataIssuesManager:
                     issue_id,
                 ),
             ).fetchone()
-        if row is None:
-            raise NotFoundError(f'Data issue with id {issue_id} not found')
         return _row_to_data_issue(row, group_identifier=issue.group_identifier)
 
     def append_auto_remediation_attempt(
@@ -505,39 +583,36 @@ class DataIssuesManager:
             attempt: Mapping[str, Any],
             resolution: dict[str, Any] | None = None,
     ) -> DataIssue:
-        issue = self.get_issue(issue_id)
-        payload = (
-            issue.payload if resolution is None else
-            {**issue.payload, 'resolution': resolution}
-        )
         with self.db.user_write() as write_cursor:
+            issue = self._get_issue_with_cursor(write_cursor, issue_id)
+            payload = (
+                issue.payload if resolution is None else
+                {**issue.payload, 'resolution': resolution}
+            )
             row = write_cursor.execute(
                 'UPDATE data_issues SET auto_remediation_attempts_json = ?, payload_json = ? '
                 'WHERE id = ? '
                 f'RETURNING {DATA_ISSUE_COLUMNS}',
                 (
-                    json.dumps([
-                        *({key: value for key, value in old.items() if key != 'transactions'}
-                          for old in issue.auto_remediation_attempts),
-                        attempt,
-                    ], separators=(',', ':')),
+                    json.dumps(
+                        _with_remediation_attempt(issue.auto_remediation_attempts, attempt),
+                        separators=(',', ':'),
+                    ),
                     json.dumps(payload, separators=(',', ':')),
                     issue_id,
                 ),
             ).fetchone()
-        if row is None:
-            raise NotFoundError(f'Data issue with id {issue_id} not found')
         return _row_to_data_issue(row, group_identifier=issue.group_identifier)
 
     def dismiss(self, issue_id: int) -> DataIssue:
-        issue = self.get_issue(issue_id)
-        if issue.state == IssueState.DISMISSED:
-            return issue
-
-        _validate_state_transition(issue.state, IssueState.DISMISSED)
-        payload = dict(issue.payload)
-        payload.pop('resolution', None)
         with self.db.user_write() as write_cursor:
+            issue = self._get_issue_with_cursor(write_cursor, issue_id)
+            if issue.state == IssueState.DISMISSED:
+                return issue
+
+            _validate_state_transition(issue.state, IssueState.DISMISSED)
+            payload = dict(issue.payload)
+            payload.pop('resolution', None)
             row = write_cursor.execute(
                 'UPDATE data_issues SET state = ?, payload_json = ?, resolved_at = ? '
                 f'WHERE id = ? RETURNING {DATA_ISSUE_COLUMNS}',
@@ -548,41 +623,36 @@ class DataIssuesManager:
                     issue_id,
                 ),
             ).fetchone()
-        if row is None:
-            raise NotFoundError(f'Data issue with id {issue_id} not found')
         return _row_to_data_issue(row, group_identifier=issue.group_identifier)
 
     def resolve_manually(self, issue_id: int, note: str | None = None) -> DataIssue:
-        issue = self.get_issue(issue_id)
-        if issue.state == IssueState.DISMISSED:
-            raise InputError(
-                f'Cannot resolve a dismissed data issue. Current state is {issue.state}',
-            )
-        if issue.state == IssueState.RESOLVED:
-            raise InputError(
-                f'Cannot resolve an already resolved data issue. Current state is {issue.state}',
-            )
-
-        payload = issue.payload
         resolution: dict[str, Any] = {'manual': True}
         if note is not None:
             resolution['note'] = note
-        payload = {**payload, 'resolution': resolution}
 
-        _validate_state_transition(issue.state, IssueState.RESOLVED)
         with self.db.user_write() as write_cursor:
+            issue = self._get_issue_with_cursor(write_cursor, issue_id)
+            if issue.state == IssueState.DISMISSED:
+                raise InputError(
+                    f'Cannot resolve a dismissed data issue. Current state is {issue.state}',
+                )
+            if issue.state == IssueState.RESOLVED:
+                raise InputError(
+                    'Cannot resolve an already resolved data issue. '
+                    f'Current state is {issue.state}',
+                )
+
+            _validate_state_transition(issue.state, IssueState.RESOLVED)
             row = write_cursor.execute(
                 'UPDATE data_issues SET state = ?, payload_json = ?, resolved_at = ? '
                 f'WHERE id = ? RETURNING {DATA_ISSUE_COLUMNS}',
                 (
                     IssueState.RESOLVED,
-                    json.dumps(payload, separators=(',', ':')),
+                    json.dumps({**issue.payload, 'resolution': resolution}, separators=(',', ':')),
                     _resolved_at_for(IssueState.RESOLVED),
                     issue_id,
                 ),
             ).fetchone()
-        if row is None:
-            raise NotFoundError(f'Data issue with id {issue_id} not found')
         return _row_to_data_issue(row, group_identifier=issue.group_identifier)
 
     def retry_auto_remediation(self, issue_id: int) -> tuple[DataIssue, bool]:
@@ -598,30 +668,28 @@ class DataIssuesManager:
 
         return self.update_state(issue_id, IssueState.AUTO_REMEDIATING), True
 
-    def _get_issue_id_and_state_by_natural_key(
-            self,
+    @staticmethod
+    def _get_stored_issue_by_natural_key(
+            cursor: DBCursor,
             kind: str,
             location: str,
             location_label: str,
             protocol: str,
             asset: str,
             event_identifier: int | None,
-    ) -> tuple[int, str]:
+    ) -> tuple[int, str, int, int, str]:
+        """Return the id, state, ts_start, ts_end and payload JSON of the issue with this key."""
+        query = (
+            'SELECT id, state, ts_start, ts_end, payload_json FROM data_issues WHERE kind = ? '
+            'AND location = ? AND location_label = ? AND protocol = ? AND asset = ? AND '
+        )
+        bindings: tuple[Any, ...] = (kind, location, location_label, protocol, asset)
         if event_identifier is None:
-            query = (
-                'SELECT id, state FROM data_issues WHERE kind = ? AND location = ? AND '
-                'location_label = ? AND protocol = ? AND asset = ? AND event_identifier IS NULL'
-            )
-            bindings: tuple[Any, ...] = (kind, location, location_label, protocol, asset)
+            query += 'event_identifier IS NULL'
         else:
-            query = (
-                'SELECT id, state FROM data_issues WHERE kind = ? AND location = ? AND '
-                'location_label = ? AND protocol = ? AND asset = ? AND event_identifier = ?'
-            )
-            bindings = (kind, location, location_label, protocol, asset, event_identifier)
+            query += 'event_identifier = ?'
+            bindings += (event_identifier,)
 
-        with self.db.conn.read_ctx() as cursor:
-            row = cursor.execute(query, bindings).fetchone()
-        if row is None:
+        if (row := cursor.execute(query, bindings).fetchone()) is None:
             raise NotFoundError('Expected existing data issue after upsert conflict')
         return row

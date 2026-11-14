@@ -203,7 +203,6 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
         )) is not None:
             return events, False, None
 
-        # else we should decode now
         return self._decode_transaction(transaction=context, write_buffer=write_buffer)
 
     def _make_event_filter_query(self, tx_ref: Signature) -> SolanaEventFilterQuery:

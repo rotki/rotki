@@ -1,16 +1,22 @@
 from dataclasses import replace
-from typing import TYPE_CHECKING
+from threading import Event
+from time import sleep
+from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from freezegun import freeze_time
 
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.concurrency import TaskCancelledError
+from rotkehlchen.concurrency import TaskCancelledError, checkpoint
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_STATE,
+    HistoryMappingState,
+)
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.cause import FailureCause
@@ -18,16 +24,31 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.remediation.base import (
+    RemediationOutcome,
+    RemediationWorkerStuckError,
+)
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.locations.constants import (
     LOCATION_ETHEREUM,
 )
-from rotkehlchen.tasks.data_issues import run_data_issue_remediation
+from rotkehlchen.tasks.data_issues import (
+    RedecodeCustomizedTransactionsStrategy,
+    run_data_issue_remediation,
+)
+from rotkehlchen.tests.fixtures.messages import MockedWsMessage, MockRotkiNotifier
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.messages import consume_errors
-from rotkehlchen.types import ChainID, EvmTransaction, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumAddress,
+    EvmTransaction,
+    EVMTxHash,
+    Timestamp,
+    TimestampMS,
+)
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -35,7 +56,6 @@ if TYPE_CHECKING:
     from rotkehlchen.concurrency import Task
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.tasks.manager import TaskManager
-    from rotkehlchen.types import EVMTxHash
 
 pytestmark = [
     pytest.mark.accounting_update,
@@ -49,10 +69,12 @@ def _make_event(
         timestamp: int = 1_000,
         event_type: HistoryEventType = HistoryEventType.SPEND,
         location_label: str = TEST_ADDR1,
+        address: ChecksumAddress | None = None,
+        sequence_index: int = 0,
 ) -> EvmEvent:
     return EvmEvent(
         tx_ref=tx_hash,
-        sequence_index=0,
+        sequence_index=sequence_index,
         timestamp=TimestampMS(timestamp),
         location=LOCATION_ETHEREUM,
         event_type=event_type,
@@ -60,6 +82,7 @@ def _make_event(
         asset=A_ETH,
         amount=FVal(amount),
         location_label=location_label,
+        address=address,
         notes='saved customized event',
     )
 
@@ -136,6 +159,123 @@ def _wait_for_background_task(tasks: list[Task] | None) -> None:
     task.join(timeout=10)
     assert task.dead, f'{task.task_name} did not finish'
     task.get()
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_remediation_sends_phase_websocket_updates(database: DBHandler) -> None:
+    run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+    notifier = cast('MockRotkiNotifier', database.msg_aggregator.rotki_notifier)
+    assert notifier.pop_message() == MockedWsMessage(
+        message_type=WSMessageType.PROGRESS_UPDATES,
+        data={
+            'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
+            'phase': 'running',
+        },
+    )
+    assert notifier.pop_message() == MockedWsMessage(
+        message_type=WSMessageType.PROGRESS_UPDATES,
+        data={
+            'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
+            'phase': 'completed',
+        },
+    )
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_remediation_sends_completed_websocket_update_on_failure(database: DBHandler) -> None:
+    with (
+        patch.object(
+            DataIssuesManager,
+            'list_issues',
+            side_effect=RuntimeError('boom'),
+        ),
+        pytest.raises(RuntimeError),
+    ):
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+    notifier = cast('MockRotkiNotifier', database.msg_aggregator.rotki_notifier)
+    assert notifier.pop_message() == MockedWsMessage(
+        message_type=WSMessageType.PROGRESS_UPDATES,
+        data={
+            'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
+            'phase': 'running',
+        },
+    )
+    assert notifier.pop_message() == MockedWsMessage(
+        message_type=WSMessageType.PROGRESS_UPDATES,
+        data={
+            'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
+            'phase': 'completed',
+        },
+    )
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_stuck_worker_ends_run_and_sends_completed(database: DBHandler) -> None:
+    """A worker ignoring cancellation must end the scheduled run, not keep it alive."""
+    issue_id, _tx_hash = _add_negative_balance_issue(database=database, customized=True)
+    release = Event()
+    try:
+        with (
+            patch(
+                'rotkehlchen.history.data_issues.remediation.base.CANCELLATION_GRACE_PERIOD',
+                0.05,
+            ),
+            patch(
+                'rotkehlchen.tasks.data_issues.RedecodeCustomizedTransactionsStrategy.timeout',
+                0.2,
+            ),
+            patch(
+                'rotkehlchen.tasks.data_issues.RedecodeCustomizedTransactionsStrategy.attempt',
+                side_effect=lambda issue: release.wait(10),
+            ),
+            pytest.raises(RemediationWorkerStuckError, match='redecode_customized_transactions'),
+        ):
+            run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+    finally:
+        release.set()
+
+    notifier = cast('MockRotkiNotifier', database.msg_aggregator.rotki_notifier)
+    assert notifier.pop_message() == MockedWsMessage(
+        message_type=WSMessageType.PROGRESS_UPDATES,
+        data={
+            'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
+            'phase': 'running',
+        },
+    )
+    assert notifier.pop_message() == MockedWsMessage(
+        message_type=WSMessageType.PROGRESS_UPDATES,
+        data={
+            'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
+            'phase': 'completed',
+        },
+    )
+    issue = DataIssuesManager(database).get_issue(issue_id)
+    assert issue.state == IssueState.OPEN
+    assert issue.auto_remediation_attempts == []
+    with database.conn.read_ctx() as cursor:  # recorded, so the scheduler does not rerun it
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+        ) is not None
+
+
+@pytest.mark.parametrize('state', [IssueState.RESOLVED, IssueState.DISMISSED])
+def test_remediation_skips_final_issues(database: DBHandler, state: IssueState) -> None:
+    manager = DataIssuesManager(database)
+    issue_id, _ = _add_negative_balance_issue(database=database, customized=True)
+    if state == IssueState.RESOLVED:
+        manager.update_state(issue_id, IssueState.AUTO_REMEDIATING)
+        manager.update_state(issue_id, IssueState.RESOLVED)
+    else:
+        manager.dismiss(issue_id)
+
+    run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+    issue = manager.get_issue(issue_id)
+    assert issue.state == state
+    assert issue.auto_remediation_attempts == []
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
@@ -366,15 +506,21 @@ def test_redecode_comparison_ignores_sequence_index_changes(database: DBHandler)
     assert attempt['changed_transaction_count'] == 0
 
 
-def test_normal_transaction_is_not_redecoded_for_negative_balance(database: DBHandler) -> None:
+def test_normal_transaction_records_not_applicable_attempt(database: DBHandler) -> None:
     issue_id, _tx_hash = _add_negative_balance_issue(database=database, customized=False)
     with patch('rotkehlchen.tasks.data_issues._preview_transaction') as preview:
         run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
 
     preview.assert_not_called()
     issue = DataIssuesManager(database).get_issue(issue_id)
-    assert issue.state == IssueState.OPEN
-    assert issue.auto_remediation_attempts == []
+    assert issue.state == IssueState.UNRESOLVED
+    assert issue.auto_remediation_attempts == [{
+        'attribution': 'not_applicable',
+        'strategy': 'redecode_customized_transactions',
+        'timestamp': issue.auto_remediation_attempts[0]['timestamp'],
+        'success': False,
+        'reason': 'The issue account has no customized transaction to compare',
+    }]
 
 
 def test_earlier_customized_transaction_in_negative_bucket_is_compared(
@@ -511,8 +657,10 @@ def test_customized_transaction_for_unrelated_account_is_not_compared(
 
     preview.assert_not_called()
     issue = DataIssuesManager(database).get_issue(issue_id)
-    assert issue.state == IssueState.OPEN
-    assert issue.auto_remediation_attempts == []
+    assert issue.state == IssueState.UNRESOLVED
+    assert [attempt['attribution'] for attempt in issue.auto_remediation_attempts] == [
+        'not_applicable',
+    ]
 
 
 def test_failed_redecode_comparison_preserves_saved_events(database: DBHandler) -> None:
@@ -538,7 +686,7 @@ def test_failed_redecode_comparison_preserves_saved_events(database: DBHandler) 
     assert _get_saved_event_rows(database) == saved_rows
 
 
-def test_repeated_failed_comparison_keeps_one_attempt(database: DBHandler) -> None:
+def test_repeated_failed_comparison_records_every_attempt(database: DBHandler) -> None:
     issue_id, _tx_hash = _add_negative_balance_issue(database=database, customized=True)
     with patch(
         'rotkehlchen.tasks.data_issues._preview_transaction',
@@ -550,10 +698,13 @@ def test_repeated_failed_comparison_keeps_one_attempt(database: DBHandler) -> No
     assert preview.call_count == 2
     issue = DataIssuesManager(database).get_issue(issue_id)
     assert issue.state == IssueState.UNRESOLVED
-    assert len(issue.auto_remediation_attempts) == 1
+    assert len(issue.auto_remediation_attempts) == 2
+    assert all(
+        attempt['result'] == 'redecoding_failed' for attempt in issue.auto_remediation_attempts
+    )
 
 
-def test_cancelled_comparison_is_retried(database: DBHandler) -> None:
+def test_cancelled_comparison_records_no_attempt_and_is_retried(database: DBHandler) -> None:
     issue_id, tx_hash = _add_negative_balance_issue(database=database, customized=True)
     with patch(
         'rotkehlchen.tasks.data_issues._preview_transaction',
@@ -566,22 +717,41 @@ def test_cancelled_comparison_is_retried(database: DBHandler) -> None:
             run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
 
         issue = DataIssuesManager(database).get_issue(issue_id)
-        assert issue.state == IssueState.UNRESOLVED
-        assert len(issue.auto_remediation_attempts) == 1
-        assert issue.auto_remediation_attempts[0]['result'] == 'redecoding_failed'
-        assert issue.auto_remediation_attempts[0]['reason'] == (
-            'Remediation was cancelled before the comparison finished'
-        )
+        assert issue.state == IssueState.OPEN
+        assert issue.auto_remediation_attempts == []
+        with database.conn.read_ctx() as cursor:  # unrecorded, so the scheduler reruns it
+            assert database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+            ) is None
 
         run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
 
     assert preview.call_count == 2
     issue = DataIssuesManager(database).get_issue(issue_id)
     assert issue.state == IssueState.UNRESOLVED
-    assert len(issue.auto_remediation_attempts) == 2
-    assert issue.auto_remediation_attempts[1]['result'] == (
-        'redecoding_would_not_change_balance'
-    )
+    assert [attempt['result'] for attempt in issue.auto_remediation_attempts] == [
+        'redecoding_would_not_change_balance',
+    ]
+
+
+def test_budget_timeout_records_a_single_attempt(database: DBHandler) -> None:
+    issue_id, _ = _add_negative_balance_issue(database=database, customized=True)
+
+    def never_finishes(**_kwargs: object) -> list[EvmEvent]:
+        while True:
+            checkpoint()
+            sleep(0.01)
+
+    with (
+        patch('rotkehlchen.tasks.data_issues._preview_transaction', side_effect=never_finishes),
+        patch.object(RedecodeCustomizedTransactionsStrategy, 'timeout', 0.2),
+    ):
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+    issue = DataIssuesManager(database).get_issue(issue_id)
+    assert issue.state == IssueState.UNRESOLVED
+    assert [attempt['attribution'] for attempt in issue.auto_remediation_attempts] == ['timeout']
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
@@ -672,3 +842,111 @@ def test_decoder_rule_failure_is_reported_as_failed_comparison(
         assert failing_rule.call_count == 2
         assert len(events) != 0
         assert any('failed' in message for message in consume_errors(decoder.msg_aggregator))
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_remediation_continues_to_next_issue_after_strategy_failure(
+        database: DBHandler,
+) -> None:
+    """Continue after a strategy failure and retry only the failed issue on the next run."""
+    _add_negative_balance_issue(database=database, customized=True)
+    _add_negative_balance_issue(database=database, customized=True)
+    with patch(
+        'rotkehlchen.tasks.data_issues.RedecodeCustomizedTransactionsStrategy.attempt',
+        side_effect=[
+            RemoteError('receipt unavailable', cause=FailureCause.NETWORK),
+            RemediationOutcome(False, 'system', 'No change needed'),
+            RemediationOutcome(False, 'system', 'No change needed'),
+        ],
+    ) as attempt:
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+        assert attempt.call_count == 2
+        issues = DataIssuesManager(database).list_issues()
+        assert len(issues) == 2
+        assert all(issue.state == IssueState.UNRESOLVED for issue in issues)
+        assert all(len(issue.auto_remediation_attempts) == 1 for issue in issues)
+        assert issues[0].auto_remediation_attempts[0]['reason'] == 'receipt unavailable'
+        with database.conn.read_ctx() as cursor:
+            assert database.get_static_cache(
+                cursor, DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+            ) is not None
+
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+        assert attempt.call_count == 3
+        issues = DataIssuesManager(database).list_issues()
+        assert [len(issue.auto_remediation_attempts) for issue in issues] == [2, 1]
+        assert issues[0].auto_remediation_attempts[0]['attribution'] == 'strategy_failed'
+        assert issues[0].auto_remediation_attempts[-1]['attribution'] == 'system'
+
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+        assert attempt.call_count == 3
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_timed_out_remediation_is_retried(database: DBHandler) -> None:
+    """Retry after a timeout, but stop retrying after a completed attempt."""
+    _add_negative_balance_issue(database=database, customized=True)
+    with patch(
+        'rotkehlchen.history.data_issues.remediation.base.RemediationPipeline._attempt_with_budget',
+        side_effect=[
+            RemediationOutcome(False, 'timeout', 'Time budget exceeded'),
+            RemediationOutcome(False, 'system', 'No change needed'),
+        ],
+    ) as attempt:
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+        issue = DataIssuesManager(database).list_issues()[0]
+        assert issue.state == IssueState.UNRESOLVED
+        assert issue.auto_remediation_attempts[-1]['attribution'] == 'timeout'
+
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+        assert attempt.call_count == 2
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+        assert attempt.call_count == 2
+
+    issue = DataIssuesManager(database).get_issue(issue.id)
+    assert issue.state == IssueState.UNRESOLVED
+    assert len(issue.auto_remediation_attempts) == 2
+    assert issue.auto_remediation_attempts[-1]['attribution'] == 'system'
+
+
+def test_not_applicable_attempt_is_recorded_once_and_retried(database: DBHandler) -> None:
+    """An account with nothing to compare records why once, and is examined again next run."""
+    issue_id, _tx_hash = _add_negative_balance_issue(database=database, customized=False)
+    manager = DataIssuesManager(database)
+    with patch('rotkehlchen.tasks.data_issues._preview_transaction') as preview:
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+        issue = manager.get_issue(issue_id)
+        assert issue.state == IssueState.UNRESOLVED
+        assert issue.auto_remediation_attempts == [{
+            'attribution': 'not_applicable',
+            'strategy': 'redecode_customized_transactions',
+            'timestamp': issue.auto_remediation_attempts[0]['timestamp'],
+            'success': False,
+            'reason': 'The issue account has no customized transaction to compare',
+        }]
+
+        run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+    preview.assert_not_called()
+    # still retried, so it is picked up once the user customizes a transaction, but the
+    # unchanged explanation is not appended again
+    assert manager.get_issue(issue_id).state == IssueState.UNRESOLVED
+    assert len(manager.get_issue(issue_id).auto_remediation_attempts) == 1
+
+
+def test_unresolved_issue_without_attempts_is_retried(database: DBHandler) -> None:
+    """An unresolved issue parked with no attempt at all must still be examined again."""
+    issue_id, _tx_hash = _add_negative_balance_issue(database=database, customized=False)
+    manager = DataIssuesManager(database)
+    manager.update_state(issue_id, IssueState.AUTO_REMEDIATING)
+    manager.update_state(issue_id, IssueState.UNRESOLVED)
+
+    run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
+
+    issue = manager.get_issue(issue_id)
+    assert issue.state == IssueState.UNRESOLVED
+    assert [attempt['attribution'] for attempt in issue.auto_remediation_attempts] == [
+        'not_applicable',
+    ]

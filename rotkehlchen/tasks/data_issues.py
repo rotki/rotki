@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Final, cast
 
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.concurrency import TaskCancelledError, checkpoint
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
@@ -14,10 +15,14 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.remediation.base import (
+    BaseRemediationStrategy,
+    RemediationOutcome,
+    RemediationPipeline,
+)
 from rotkehlchen.history.data_issues.types import (
     AutoRemediationAttempt,
     DataIssue,
@@ -51,6 +56,10 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 REDECODE_CUSTOMIZED_TRANSACTIONS: Final = 'redecode_customized_transactions'
+CUSTOMIZED_COMPARISON_TIMEOUT: Final = 300
+"""Seconds one issue's comparison may take. It decodes every customized transaction of the
+account and may first wait for the decoder lock a background decoding batch holds, so the
+default strategy budget would time out the accounts with the most customized history."""
 
 type BucketEffect = tuple[TimestampMS, EventDirection, FVal]
 type PreviewCache = dict[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash], list[EvmEvent]]
@@ -80,6 +89,7 @@ def _get_customized_transactions_for_issue(
         location: LocationIdentifier,
 ) -> dict[EVMTxHash, list[EvmEvent]]:
     """Return customized transactions associated with the issue account."""
+    checkpoint()  # loading runs inside the cancellable budget, like the comparison
     dbevents = DBHistoryEvents(database)
     with database.conn.read_ctx() as cursor:
         customized_group_identifiers = [row[0] for row in cursor.execute(
@@ -183,16 +193,13 @@ def _serialize_comparison_events(
 def _check_issue(
         database: DBHandler,
         chains_aggregator: ChainsAggregator,
-        issues_manager: DataIssuesManager,
         issue: DataIssue,
+        transactions: dict[EVMTxHash, list[EvmEvent]],
         treat_eth2_as_eth: bool,
         preview_cache: PreviewCache,
         reloaded_chains: set[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
-) -> None:
+) -> RemediationOutcome:
     location = LocationIdentifier(issue.location)
-    if location not in EVM_LOCATIONS or issue.location_label == '':
-        return
-
     chain_id = cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', ChainID(location_to_chain_id(location)))  # noqa: E501
     bucket = Bucket(
         location=issue.location,
@@ -200,19 +207,6 @@ def _check_issue(
         protocol=issue.protocol or None,
         asset=issue.asset,
     )
-    if len(transactions := _get_customized_transactions_for_issue(
-        database=database,
-        issue=issue,
-        chain_id=chain_id,
-        location=location,
-    )) == 0:
-        return
-
-    try:
-        issues_manager.update_state(issue.id, IssueState.AUTO_REMEDIATING)
-    except InputError:
-        return
-
     decoder = chains_aggregator.get_evm_manager(chain_id).transactions_decoder
     preview_exceptions: tuple[type[Exception], ...] = (
         RuntimeError,
@@ -282,19 +276,6 @@ def _check_issue(
             changed_transaction_count=changed_transaction_count,
             reason=str(e),
         )
-    except TaskCancelledError:
-        attempt = _make_comparison_attempt(
-            result='redecoding_failed',
-            customized_transaction_count=customized_transaction_count,
-            changed_transaction_count=changed_transaction_count,
-            reason='Remediation was cancelled before the comparison finished',
-        )
-        issues_manager.update_state(
-            issue_id=issue.id,
-            state=IssueState.UNRESOLVED,
-            attempt=None if _is_repeated_failure(issue, attempt) else attempt,
-        )
-        raise
     else:
         attempt = _make_comparison_attempt(
             result=(
@@ -307,10 +288,85 @@ def _check_issue(
 
     if comparisons:
         attempt['transactions'] = comparisons
-    issues_manager.update_state(
-        issue_id=issue.id,
-        state=IssueState.UNRESOLVED,
-        attempt=None if _is_repeated_failure(issue, attempt) else attempt,
+    return RemediationOutcome(
+        resolved=False,
+        attribution=attempt['attribution'],
+        notes=attempt.get('reason', attempt.get('result', '')),
+        attempt_data={
+            key: value for key, value in attempt.items()
+            if key not in {'attribution', 'strategy', 'timestamp'}
+        },
+    )
+
+
+class RedecodeCustomizedTransactionsStrategy(BaseRemediationStrategy):
+    """Compare customized negative-balance transactions with current decoder output.
+
+    This is diagnostic by design: a customized transaction holds the user's own edits, so the
+    strategy only previews what the current decoder would produce without persisting it, and
+    never overwrites, reclassifies or deletes the saved events. A balance mismatch it finds is
+    reported to the user to review, not repaired automatically.
+    """
+
+    name: Final = REDECODE_CUSTOMIZED_TRANSACTIONS
+    timeout: float = CUSTOMIZED_COMPARISON_TIMEOUT
+
+    def __init__(self, database: DBHandler, chains_aggregator: ChainsAggregator) -> None:
+        self.database = database
+        self.chains_aggregator = chains_aggregator
+        self.treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
+        self.preview_cache: PreviewCache = {}
+        self.reloaded_chains: set[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE] = set()
+
+    def applies_to(self, issue: DataIssue) -> bool:
+        return (
+            issue.kind == IssueKind.NEGATIVE_BALANCE and
+            issue.location_label != '' and
+            LocationIdentifier(issue.location) in EVM_LOCATIONS
+        )
+
+    def attempt(self, issue: DataIssue) -> RemediationOutcome:
+        location = LocationIdentifier(issue.location)
+        chain_id = cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', ChainID(location_to_chain_id(location)))  # noqa: E501
+        transactions = _get_customized_transactions_for_issue(
+            database=self.database,
+            issue=issue,
+            chain_id=chain_id,
+            location=location,
+        )
+        if len(transactions) == 0:
+            return RemediationOutcome(
+                resolved=False,
+                attribution='not_applicable',
+                notes='The issue account has no customized transaction to compare',
+                record_attempt=(
+                    len(issue.auto_remediation_attempts) == 0 or
+                    issue.auto_remediation_attempts[-1].get('attribution') != 'not_applicable'
+                ),
+            )
+
+        return _check_issue(
+            database=self.database,
+            chains_aggregator=self.chains_aggregator,
+            issue=issue,
+            transactions=transactions,
+            treat_eth2_as_eth=self.treat_eth2_as_eth,
+            preview_cache=self.preview_cache,
+            reloaded_chains=self.reloaded_chains,
+        )
+
+
+PHASE_RUNNING: Final = 'running'
+PHASE_COMPLETED: Final = 'completed'
+
+
+def _send_remediation_phase(database: DBHandler, phase: str) -> None:
+    database.msg_aggregator.add_message(
+        message_type=WSMessageType.PROGRESS_UPDATES,
+        data={
+            'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
+            'phase': phase,
+        },
     )
 
 
@@ -318,60 +374,70 @@ def run_data_issue_remediation(
         database: DBHandler,
         chains_aggregator: ChainsAggregator,
 ) -> None:
-    """Check whether current decoders would change customized negative-balance transactions.
-
-    Saved events are never removed or replaced. Each applicable issue receives a diagnostic
-    timeline entry and remains unresolved for the user to review.
+    """Run the diagnostic remediation pipeline for negative-balance data issues.
 
     Current balance mismatches are deliberately not handled. Re-decoding can't add the history
     they usually lack, so they are left to the user's on-demand divergence search.
+
+    Remediation is diagnostic only: a transaction holding a customized event is never touched,
+    and the customized-transaction strategy previews decoder output without persisting it.
+
+    A run that aborts is recorded like one that finishes. Otherwise the scheduler would start
+    it again on its next tick, behind the worker that made it abort and may still hold the
+    decoder lock. Only a cancelled run is left unrecorded, since it did not get to do its work.
     """
-    issues_manager = DataIssuesManager(database)
-    treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
-    preview_cache: PreviewCache = {}
-    reloaded_chains: set[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE] = set()
-    for issue in issues_manager.list_issues(DataIssuesFilterQuery.make(
-        kinds=[IssueKind.NEGATIVE_BALANCE],
-        states=[IssueState.OPEN, IssueState.UNRESOLVED],
-    )):
-        if issue.state != IssueState.OPEN and _last_attempt_failed(issue) is False:
-            continue
-
-        _check_issue(
-            database=database,
-            chains_aggregator=chains_aggregator,
-            issues_manager=issues_manager,
-            issue=issue,
-            treat_eth2_as_eth=treat_eth2_as_eth,
-            preview_cache=preview_cache,
-            reloaded_chains=reloaded_chains,
+    _send_remediation_phase(database, PHASE_RUNNING)
+    cancelled = False
+    try:
+        issues_manager = DataIssuesManager(database)
+        pipeline = RemediationPipeline(
+            manager=issues_manager,
+            strategies=(
+                RedecodeCustomizedTransactionsStrategy(database, chains_aggregator),
+            ),
         )
-        checkpoint()
+        for issue in issues_manager.list_issues(DataIssuesFilterQuery.make(
+            kinds=[IssueKind.NEGATIVE_BALANCE],
+            states=[IssueState.OPEN, IssueState.UNRESOLVED],
+        )):
+            if issue.state != IssueState.OPEN and _last_attempt_failed(issue) is False:
+                continue
 
-    with database.user_write() as write_cursor:
-        database.set_static_cache(
-            write_cursor=write_cursor,
-            name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
-            value=ts_now(),
-        )
+            pipeline.run(issue)
+            checkpoint()
+    except TaskCancelledError:
+        cancelled = True
+        raise
+    finally:
+        try:
+            if cancelled is False:
+                with database.user_write() as write_cursor:
+                    database.set_static_cache(
+                        write_cursor=write_cursor,
+                        name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+                        value=ts_now(),
+                    )
+        finally:
+            _send_remediation_phase(database, PHASE_COMPLETED)
 
 
 def _last_attempt_failed(issue: DataIssue) -> bool:
-    """Return whether a failed comparison should be retried on the next scheduled run."""
-    return (
-        issue.state == IssueState.UNRESOLVED and
-        len(issue.auto_remediation_attempts) != 0 and
-        issue.auto_remediation_attempts[-1].get('strategy') == REDECODE_CUSTOMIZED_TRANSACTIONS and
-        issue.auto_remediation_attempts[-1].get('result') == 'redecoding_failed'
-    )
+    """Retry operational failures, timeouts, failed comparisons and attempts that know
+    they cannot make progress, on the next scheduled run.
 
+    An unresolved issue with no attempt at all is retried too: nothing else would ever
+    advance it.
+    """
+    if issue.state != IssueState.UNRESOLVED:
+        return False
+    if len(issue.auto_remediation_attempts) == 0:
+        return True
 
-def _is_repeated_failure(issue: DataIssue, attempt: AutoRemediationAttempt) -> bool:
-    """Return whether the previous timeline entry records the same failure."""
+    attempt = issue.auto_remediation_attempts[-1]
     return (
-        attempt.get('result') == 'redecoding_failed' and
-        len(issue.auto_remediation_attempts) != 0 and
-        {key: value for key, value in issue.auto_remediation_attempts[-1].items()
-         if key != 'timestamp'} ==
-        {key: value for key, value in attempt.items() if key != 'timestamp'}
+        attempt.get('attribution') in {'timeout', 'strategy_failed', 'not_applicable'} or
+        (
+            attempt.get('strategy') == REDECODE_CUSTOMIZED_TRANSACTIONS and
+            attempt.get('result') == 'redecoding_failed'
+        )
     )

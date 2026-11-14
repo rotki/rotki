@@ -972,7 +972,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
         Rule failures propagate instead of returning partially decoded events.
         """
-        with self.undecoded_tx_query_lock:
+        with self._decoding_lock():
             if reload:
                 with self.database.conn.read_ctx() as cursor:
                     self.reload_data(cursor)
@@ -1038,7 +1038,6 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         )) is not None:
             return events, False, None
 
-        # else we should decode now
         events, refresh_balances, reload_decoders = self._decode_transaction(
             transaction=transaction,
             tx_receipt=tx_receipt,

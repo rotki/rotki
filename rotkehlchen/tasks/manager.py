@@ -93,6 +93,7 @@ from .events import process_eth2_events
 HISTORICAL_BALANCE_PROCESSING_REFRESH: Final = DAY_IN_SECONDS
 HISTORICAL_BALANCE_PROCESSING_TASK_NAME: Final = 'Process historical balances'
 DATA_ISSUE_REMEDIATION_REFRESH: Final = DAY_IN_SECONDS
+TX_DECODING_TASK_NAME_PREFIX: Final = 'decode '
 DATA_ISSUE_REMEDIATION_TASK_NAME: Final = 'Auto-remediate data issues'
 CURRENT_BALANCE_DETECTION_REFRESH: Final = DAY_IN_SECONDS
 CURRENT_BALANCE_DETECTION_TASK_NAME: Final = 'Detect current balance mismatches'
@@ -549,7 +550,7 @@ class TaskManager:
                 continue
 
             tx_to_decode = min(number_of_tx_to_decode, TX_DECODING_LIMIT)
-            task_name = f'decode {blockchain!s} transactions'
+            task_name = f'{TX_DECODING_TASK_NAME_PREFIX}{blockchain!s} transactions'
             log.debug(
                 'Scheduling periodic task to %s for %s transactions',
                 task_name,
@@ -780,9 +781,15 @@ class TaskManager:
 
     @_admitting_balance_work
     def _maybe_run_data_issue_remediation(self, force: bool = False) -> list[Task] | None:
-        """Schedule remediation, optionally bypassing the daily cooldown."""
+        """Schedule remediation, optionally bypassing the daily cooldown.
+
+        It waits for a running transaction decoding batch, which holds the decoder lock the
+        remediation previews need: started alongside it, every issue would spend its time
+        budget waiting for that lock.
+        """
         if (
             self.history_processing_coordinator.is_history_fetching() or
+            self.task_supervisor.has_task(TX_DECODING_TASK_NAME_PREFIX) or
             self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME) or
             self.task_supervisor.has_task(DATA_ISSUE_REMEDIATION_TASK_NAME) or
             self.task_supervisor.has_task(CURRENT_BALANCE_DETECTION_TASK_NAME)

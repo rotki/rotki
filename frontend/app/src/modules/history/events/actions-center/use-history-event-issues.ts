@@ -1,8 +1,10 @@
 import type { ComputedRef } from 'vue';
+import { startPromise } from '@shared/utils';
 import { TRACKED_ACCOUNTS_ROW_ID, useTrackedAccountsRow } from '@/modules/accounts/use-tracked-accounts-row';
 import { type ActionItem, type ActionItemDefinition, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';
 import { useActionCenter, type UseActionCenterReturn } from '@/modules/core/action-center/use-action-center';
 import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
+import { useDataIssueRemediationStore } from '@/modules/history/data-issues/use-data-issue-remediation-store';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import { DIALOG_TYPES, type DialogShowOptions } from '@/modules/history/events/dialog-types';
@@ -101,6 +103,16 @@ export function useHistoryEventIssues(): UseHistoryEventIssuesReturn {
   const { actionableCount: dataIssuesCount, refreshSummary } = useDataIssuesSummary();
   const { decodeMissing, decoding, fetchUndecodedTransactionsBreakdown, undecodedCount } = useUndecodedTransactionsCount();
   const { row: trackedAccounts } = useTrackedAccountsRow();
+
+  /**
+   * Keeps this badge in step with a remediation run.
+   *
+   * @remarks
+   * The data-issues panel reloads itself on the run's completion; this row is shown outside that
+   * panel, so without this it would keep the count it read before the run.
+   */
+  const { remediationCompleted } = storeToRefs(useDataIssueRemediationStore());
+  watch(remediationCompleted, () => startPromise(refreshSummary()));
 
   const movementsIgnoredOnly = computed<boolean>(() => get(unmatchedMovementsCount) === 0 && get(ignoredMovementsCount) > 0);
   const bridgesIgnoredOnly = computed<boolean>(() => get(unmatchedBridgesCount) === 0 && get(ignoredBridgesCount) > 0);
