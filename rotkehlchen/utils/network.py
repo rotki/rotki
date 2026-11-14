@@ -1,7 +1,8 @@
 import json
 import logging
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, overload
+from urllib.parse import quote
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -18,6 +19,28 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+REDACTED: Final = '<redacted>'
+
+
+def redact_secret(text: str, secret: str | None) -> str:
+    """Return the text with every occurrence of the secret, raw or url encoded, redacted.
+
+    Keeps API keys sent as query parameters out of the logs and of error messages, which
+    include the request url. Users share their logs when reporting issues.
+    """
+    if not secret:
+        return text
+
+    return text.replace(secret, REDACTED).replace(quote(secret, safe=''), REDACTED)
+
+
+def redact_params(params: dict[str, Any] | None, key: str) -> dict[str, Any] | None:
+    """Return a copy of the query params with the value of key redacted, for logging."""
+    if params is None or key not in params:
+        return params
+
+    return params | {key: REDACTED}
 
 
 def create_session(

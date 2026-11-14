@@ -27,6 +27,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import SupportedBlockchain
 from rotkehlchen.utils.misc import get_chunks
+from rotkehlchen.utils.network import redact_secret
 from rotkehlchen.utils.serialization import jsonloads_list
 
 if TYPE_CHECKING:
@@ -80,7 +81,9 @@ class Helius(ExternalServiceWithRecommendedApiKey):
                     timeout=timeout,
                 )
             except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Helius API request failed due to {e!s}') from e
+                raise RemoteError(
+                    f'Helius API request failed due to {redact_secret(str(e), api_key)}',
+                ) from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 if retry_count >= RETRY_LIMIT:
@@ -93,7 +96,7 @@ class Helius(ExternalServiceWithRecommendedApiKey):
 
             if response.status_code != 200:
                 raise RemoteError(
-                    f'Helius API request {response.url} failed '
+                    f'Helius API request {redact_secret(response.url, api_key)} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',
                 )
@@ -105,7 +108,7 @@ class Helius(ExternalServiceWithRecommendedApiKey):
             json_ret = jsonloads_list(response.text)
         except JSONDecodeError as e:
             raise RemoteError(
-                f'Helius API request {response.url} returned invalid '
+                f'Helius API request {redact_secret(response.url, api_key)} returned invalid '
                 f'JSON response: {response.text}',
             ) from e
 

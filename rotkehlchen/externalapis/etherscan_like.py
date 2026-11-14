@@ -48,7 +48,7 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import convert_to_int, hexstr_to_int, set_user_agent, ts_now
-from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.network import create_session, redact_params, redact_secret
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -386,12 +386,22 @@ class EtherscanLikeApi(ABC):
         response = None
         while backoff < backoff_limit:
             self._rate_limiter.acquire()
-            log.debug(f'Querying {self.name} for {chain_id}: {api_url} with params: {params}')
+            log.debug(
+                'Querying indexer',
+                indexer=self.name,
+                chain=chain_id,
+                url=api_url,
+                params=redact_params(params, 'apikey'),
+            )
             self._record_request(chain_id, f'{module}.{action}')
             try:
                 response = self.session.get(url=api_url, params=params, timeout=timeout)
             except requests.exceptions.RequestException as e:
-                raise RecoverableRemoteError(f'{self.name} API request failed due to {e!s}') from e
+                raise RecoverableRemoteError(
+                    f'{self.name} API request failed due to {redact_secret(str(e), api_key)}',
+                ) from e
+
+            request_url = redact_secret(response.url, api_key)
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 self._rate_limiter.shrink_after_429()
@@ -406,7 +416,7 @@ class EtherscanLikeApi(ABC):
                 raise RequestTooLargeError(f'Failed to query {chain_id} due to: request URI too long')  # noqa: E501
             elif response.status_code != 200:
                 raise remote_error_for_status(response.status_code)(
-                    f'{self.name} API request {response.url} failed '
+                    f'{self.name} API request {request_url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',
                 )
@@ -415,7 +425,7 @@ class EtherscanLikeApi(ABC):
                 json_ret = jsonloads_dict(response.text)
             except JSONDecodeError as e:
                 raise RemoteError(
-                    f'{self.name} API request {response.url} returned invalid '
+                    f'{self.name} API request {request_url} returned invalid '
                     f'JSON response: {response.text}',
                 ) from e
 
@@ -456,7 +466,7 @@ class EtherscanLikeApi(ABC):
                         return None
 
                     raise RemoteError(
-                        f'Unexpected format of {self.name} response for request {response.url}. '
+                        f'Unexpected format of {self.name} response for request {request_url}. '
                         f'Missing a result in response. Response was: {response.text}',
                     )
 
@@ -477,7 +487,7 @@ class EtherscanLikeApi(ABC):
 
             except KeyError as e:
                 raise RemoteError(
-                    f'Unexpected format of {chain_id} {self.name} response for request {response.url}. '  # noqa: E501
+                    f'Unexpected format of {chain_id} {self.name} response for request {request_url}. '  # noqa: E501
                     f'Missing key entry for {e!s}. Response was: {response.text}',
                 ) from e
 
@@ -487,8 +497,9 @@ class EtherscanLikeApi(ABC):
         # will only run if we get out of the loop due to backoff limit
         assert response is not None, 'This loop always runs at least once and response is not None'
         msg = (
-            f'{chain_id.name.capitalize()} {self.name} API request to {response.url} failed '
-            f'due to backing off longer than the max backoff of {backoff_limit} seconds.'
+            f'{chain_id.name.capitalize()} {self.name} API request to '
+            f'{redact_secret(response.url, api_key)} failed due to backing off longer than '
+            f'the max backoff of {backoff_limit} seconds.'
         )
         log.error(msg)
         raise RecoverableRemoteError(msg)
