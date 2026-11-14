@@ -54,6 +54,8 @@ impl GlobalDB {
         Ok(GlobalDB { conn })
     }
 
+    /// Returns the coingecko id of the asset, if it has one. The globaldb stores an empty
+    /// string for many assets without one, so that is treated as no id as well.
     pub async fn get_coingecko_id(&self, asset_id: &str) -> Result<Option<String>> {
         let conn = self.conn.lock().await;
         let mut stmt =
@@ -61,7 +63,7 @@ impl GlobalDB {
         let mut rows = stmt.query([asset_id])?;
 
         if let Some(row) = rows.next()? {
-            Ok(row.get(0)?)
+            Ok(row.get::<_, Option<String>>(0)?.filter(|id| !id.is_empty()))
         } else {
             Ok(None)
         }
@@ -363,6 +365,12 @@ mod test {
             Some("wrapped-steth".to_string())
         );
         assert_eq!(globaldb.get_coingecko_id(random_token).await.unwrap(), None);
+        // stored with an empty coingecko id, which must not be used to query coingecko
+        let empty_id_token = "eip155:1/erc20:0x00907f9921424583e7ffBfEdf84F92B7B2Be4977"; // aEthGHO
+        assert_eq!(
+            globaldb.get_coingecko_id(empty_id_token).await.unwrap(),
+            None
+        );
 
         assert_eq!(
             globaldb.get_collection_main_asset(wsteth).await.unwrap(),
