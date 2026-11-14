@@ -6,6 +6,7 @@ import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-st
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
 import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
+import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';
 import {
   type ChainProgress,
   type DecodingProgress,
@@ -105,6 +106,8 @@ export function useSyncProgress(): UseSyncProgressReturn {
   const decodingStatusStore = useDecodingStatusStore();
   const protocolCacheStatusStore = useProtocolCacheStatusStore();
   const warningsStore = useSyncWarningsStore();
+  const { useIsActive } = useTaskCenter();
+  const historySyncActive = useIsActive(ActivityKind.HISTORY_SYNC);
 
   const { warnings: rawWarnings } = storeToRefs(warningsStore);
 
@@ -214,7 +217,7 @@ export function useSyncProgress(): UseSyncProgressReturn {
   const hasDecodingActivity = computed<boolean>(() => get(decoding).length > 0);
 
   /** Only the running phases count, so the bar reflects the work actually in flight. */
-  const overallProgress = computed<number>(() => {
+  const calculatedProgress = computed<number>(() => {
     const running = [
       {
         active: get(hasTxActivity),
@@ -241,13 +244,28 @@ export function useSyncProgress(): UseSyncProgressReturn {
     return Math.round((weighted / totalWeight) * 100);
   });
 
+  // The websocket-backed counters above do not cover online-event children such as block
+  // production. Keep the legacy bar short of completion while the history-sync umbrella still has
+  // work in flight, so it cannot disagree with the task center about whether the refresh is done.
+  const overallProgress = computed<number>(() => get(historySyncActive)
+    ? Math.min(get(calculatedProgress), 99)
+    : get(calculatedProgress));
+
   const isActive = computed<boolean>(() =>
-    get(hasTxActivity) || get(hasEventsActivity) || get(hasDecodingActivity) || get(hasWarnings),
+    get(historySyncActive)
+    || get(hasTxActivity)
+    || get(hasEventsActivity)
+    || get(hasDecodingActivity)
+    || get(hasWarnings),
   );
 
   const phase = computed<SyncPhase>(() => {
     if (!get(isActive))
       return SyncPhase.IDLE;
+
+    // The umbrella settles only after all of its children, including online events, have settled.
+    if (get(historySyncActive))
+      return SyncPhase.SYNCING;
 
     // Use count-based completion checks (same as header display)
     const chainsTotal = get(totalChains);

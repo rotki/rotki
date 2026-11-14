@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type EvmUnDecodedTransactionsData,
   type HistoryEventsQueryData,
@@ -15,10 +15,20 @@ import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { LocationStatus, SyncPhase } from './types';
 import { useSyncProgress } from './use-sync-progress';
 
+const mockHistorySyncActive = ref<boolean>(false);
+
+vi.mock('@/modules/task-center/use-task-center', () => ({
+  ActivityKind: { HISTORY_SYNC: 'history-sync' },
+  useTaskCenter: vi.fn(() => ({
+    useIsActive: vi.fn(() => computed<boolean>(() => get(mockHistorySyncActive))),
+  })),
+}));
+
 describe('useSyncProgress', () => {
   beforeEach(() => {
     const pinia = createPinia();
     setActivePinia(pinia);
+    set(mockHistorySyncActive, false);
   });
 
   const createEvmTxStatus = (
@@ -114,6 +124,26 @@ describe('useSyncProgress', () => {
 
       const { phase } = useSyncProgress();
       expect(get(phase)).toBe(SyncPhase.COMPLETE);
+    });
+
+    it('should keep syncing while the history refresh umbrella is active', () => {
+      // Online-event children such as block production do not write to the legacy progress stores.
+      // The umbrella is therefore the only reliable signal that the whole refresh is still alive.
+      setupTxStore([
+        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+        createEvmTxStatus('0x456', 'polygon_pos', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+      ]);
+      useTxQueryStatusStore().markAddressFailed({ address: '0x456', chain: 'polygon_pos' });
+      setupEventsStore([
+        createEventsStatus('kraken', 'Kraken', HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED),
+      ]);
+      set(mockHistorySyncActive, true);
+
+      const { canDismiss, hasWarnings, overallProgress, phase } = useSyncProgress();
+      expect(get(phase)).toBe(SyncPhase.SYNCING);
+      expect(get(overallProgress)).toBe(99);
+      expect(get(canDismiss)).toBe(false);
+      expect(get(hasWarnings)).toBe(true);
     });
 
     it('should complete when a chain failed rather than sitting short of the end', () => {
