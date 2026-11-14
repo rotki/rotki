@@ -1,10 +1,12 @@
 import datetime
+import logging
 import os
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
+import requests
 from eth_utils import to_checksum_address
 from freezegun import freeze_time
 
@@ -130,6 +132,37 @@ def test_unsupported_chainid(temp_etherscan: Etherscan) -> None:
         response_msg='Missing or unsupported chainid parameter (required for v2 api)',
     ):
         temp_etherscan.get_blocknumber_by_time(chain_id=ChainID.SCROLL, ts=Timestamp(1700000000))
+
+
+@pytest.mark.parametrize('error', ['status', 'connection'])
+def test_api_key_is_redacted_from_logs_and_errors(
+        temp_etherscan: Etherscan,
+        caplog: pytest.LogCaptureFixture,
+        error: str,
+) -> None:
+    """Users share their logs when reporting issues, so the API key sent in the query
+    params must appear neither in the debug log of the request nor in the error raised
+    with the request url."""
+    assert (api_key := temp_etherscan._get_api_key_for_chain(ChainID.ETHEREUM)) is not None
+
+    def mock_get(url: str, params: dict[str, Any], **kwargs: Any) -> MockResponse:
+        request_url = requests.Request('GET', url, params=params).prepare().url
+        if error == 'connection':
+            raise requests.exceptions.ConnectionError(f'Max retries exceeded with url: {request_url}')  # noqa: E501
+        (response := MockResponse(HTTPStatus.INTERNAL_SERVER_ERROR, 'error')).url = str(request_url)  # noqa: E501
+        return response
+
+    caplog.set_level(logging.DEBUG)
+    with (
+        patch.object(temp_etherscan.session, 'get', side_effect=mock_get),
+        pytest.raises(RemoteError) as exc_info,
+    ):
+        temp_etherscan.get_blocknumber_by_time(chain_id=ChainID.ETHEREUM, ts=Timestamp(1700000000))
+
+    assert api_key not in str(exc_info.value)
+    assert '<redacted>' in str(exc_info.value)
+    assert 'Querying indexer' in caplog.text
+    assert api_key not in caplog.text
 
 
 def test_detect_api_key_tier_caches_and_reuses_value(temp_etherscan: Etherscan) -> None:

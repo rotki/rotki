@@ -45,7 +45,7 @@ from rotkehlchen.utils.misc import (
     ts_now,
     ts_sec_to_ms,
 )
-from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.network import create_session, redact_params, redact_secret
 from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -337,7 +337,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             log.debug(
                 'Querying blockscout API for %s with body %s '
                 'and query params %s',
-                query_str, params, query_params,
+                query_str, redact_params(params, 'apikey'), redact_params(query_params, 'apikey'),
             )
             try:
                 request_kwargs: dict[str, Any] = {'timeout': timeout}
@@ -352,13 +352,17 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                     **request_kwargs,
                 )
             except requests.exceptions.RequestException as e:
-                raise RecoverableRemoteError(f'Querying {query_str} failed due to {e!s}') from e
+                raise RecoverableRemoteError(
+                    f'Querying {query_str} failed due to {redact_secret(str(e), api_key)}',
+                ) from e
+
+            request_url = redact_secret(response.url, api_key)
 
             if response.status_code == 429:
                 self._rate_limiter.shrink_after_429()
                 if times == 0:
                     msg = (
-                        f'Blockscout API request {response.url} failed '
+                        f'Blockscout API request {request_url} failed '
                         f'with HTTP status code {response.status_code} and text '
                         f'{response.text} after {retries_num} retries'
                     )
@@ -369,8 +373,10 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 sleep_seconds = backoff_in_seconds * (retries_num - times + 1)
                 times -= 1
                 log.debug(
-                    f'Blockscout API request {response.url} got rate limited. Sleeping for '
-                    f'{sleep_seconds}. We have {times} tries left.',
+                    'Blockscout API request got rate limited',
+                    url=request_url,
+                    sleep_seconds=sleep_seconds,
+                    tries_left=times,
                 )
                 cancellable_sleep(sleep_seconds)
                 continue
@@ -394,14 +400,14 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                         )
 
                 raise RemoteError(
-                    f'Blockscout API request {response.url} could not authorize the configured '
+                    f'Blockscout API request {request_url} could not authorize the configured '
                     f'API key for {chain_id.label()}. It failed with HTTP status code '
                     f'{response.status_code} and text {response.text}',
                 )
 
             if response.status_code != 200:
                 raise remote_error_for_status(response.status_code)(
-                    f'Blockscout API request {response.url} failed '
+                    f'Blockscout API request {request_url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',
                 )
