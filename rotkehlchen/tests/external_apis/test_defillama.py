@@ -1,25 +1,30 @@
+import logging
 from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
 
-from rotkehlchen.assets.utils import get_or_create_solana_token
+from rotkehlchen.assets.utils import get_or_create_evm_token, get_or_create_solana_token
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ARB, A_DAI, A_ETH, A_EUR, A_LINK, A_USD, A_USDC, A_USDT
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     ApiKey,
+    ChainID,
     ExternalService,
     ExternalServiceApiCredentials,
     Price,
     SolanaAddress,
     Timestamp,
+    TokenKind,
 )
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 @pytest.fixture(name='current_price_oracles_order')
@@ -305,3 +310,43 @@ def test_api_key_is_not_read_after_logout():
     db = MagicMock(conn=None)
     assert Defillama(database=db)._get_api_key() is None
     assert db.get_external_service_credentials.called is False
+
+
+def test_missing_current_price_is_not_a_warning(
+        defillama: Defillama,
+        caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Defillama leaves out the coins it has no price for, which is common for small tokens.
+    It is no problem, so it must not fill the logs with a warning per token and refresh."""
+    eth = A_ETH.resolve_to_asset_with_oracles()
+    dai = A_DAI.resolve_to_asset_with_oracles()
+    usd = A_USD.resolve_to_asset_with_oracles()
+    caplog.set_level(logging.DEBUG)
+    with patch.object(defillama, '_query', side_effect=[
+        {'coins': {'coingecko:dai': {'price': 1, 'confidence': 0.99}}},
+        {'coins': {}},
+    ]):
+        assert defillama.query_multiple_current_prices([eth, dai], usd) == {dai: Price(FVal(1))}
+        assert defillama.query_multiple_current_prices_uncached([eth], usd) == {}
+
+    assert 'Defillama has no current price for asset' in caplog.text
+    assert [x for x in caplog.records if x.levelno >= logging.WARNING] == []
+
+
+def test_nft_is_not_queried(defillama: Defillama, database: DBHandler) -> None:
+    """Defillama prices fungible tokens by contract address, so it has no price for an
+    NFT, such as a liquidity position. Asking it is a wasted query."""
+    nft = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC721,
+        collectible_id='1',
+    ).resolve_to_asset_with_oracles()
+    with patch.object(defillama, '_query') as query:
+        assert defillama.query_multiple_current_prices(
+            [nft],
+            A_USD.resolve_to_asset_with_oracles(),
+        ) == {}
+
+    assert query.call_count == 0
