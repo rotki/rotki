@@ -20,7 +20,7 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ApiKey, ChainID, ExternalService, Price, Timestamp
+from rotkehlchen.types import ApiKey, ChainID, ExternalService, Price, Timestamp, TokenKind
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.misc import get_chunks, set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import (
@@ -182,6 +182,10 @@ class Defillama(
             if resolved_token.has_coingecko():
                 return f'coingecko:{resolved_token.to_coingecko()}'
 
+            if resolved_token.token_kind != TokenKind.ERC20:
+                # defillama prices fungible tokens by contract, so it can't price an NFT
+                raise UnsupportedAsset(resolved_token.identifier)
+
             # The evm names for chains that we give don't match what defillama
             # uses in all the cases
             if resolved_token.chain_id == ChainID.POLYGON_POS:
@@ -215,17 +219,27 @@ class Defillama(
         If a price is not available, couldn't be deserialized or the confidence
         is too low, the asset is skipped. Returns an empty dict if no prices were found.
         """
-        if 'coins' not in result or len(coins_result := result['coins']) == 0:
+        if 'coins' not in result or not isinstance(coins_result := result['coins'], dict):
             log.warning(
-                f'Queried Defillama current price from {from_assets} '
-                f'to {to_asset}. But coins is not available in the result {result}',
+                'Defillama current price response is missing its coins',
+                from_assets=[x.identifier for x in from_assets],
+                to_asset=to_asset.identifier,
+                result=result,
             )
             return {}
 
         prices: dict[AssetWithOracles, Price] = {}
         for coin_id, from_asset in coin_id_mapping.items():
+            if (coin_result_raw := coins_result.get(coin_id)) is None:
+                # defillama leaves out the coins it has no price for. Common for small tokens
+                log.debug(
+                    'Defillama has no current price for asset',
+                    from_asset=from_asset.identifier,
+                    to_asset=to_asset.identifier,
+                )
+                continue
+
             try:
-                coin_result_raw = coins_result[coin_id]
                 if (
                     'confidence' in coin_result_raw and
                     FVal(coin_result_raw['confidence']) < MIN_DEFILLAMA_CONFIDENCE
@@ -299,11 +313,11 @@ class Defillama(
         for from_asset in from_assets:
             try:
                 coin_id = self._get_asset_id(from_asset)
-            except UnsupportedAsset:
-                log.warning(
-                    f'Tried to query current price using Defillama from {from_asset} to '
-                    f'{to_asset} but {from_asset} is not an EVM token and is not '
-                    f'supported by defillama',
+            except UnsupportedAsset:  # other oracles are tried next, so this is no problem
+                log.debug(
+                    'Skipping Defillama current price of an asset it does not support',
+                    from_asset=from_asset.identifier,
+                    to_asset=to_asset.identifier,
                 )
                 continue
 
@@ -388,11 +402,12 @@ class Defillama(
 
         try:
             coin_id = self._get_asset_id(from_asset)
-        except UnsupportedAsset as e:
-            log.warning(
-                f'Tried to query historical price using Defillama from {from_asset} to '
-                f'{to_asset} at {timestamp} but {from_asset} is not an EVM token or is not '
-                f'supported by coingecko',
+        except UnsupportedAsset as e:  # other oracles are tried next, so this is no problem
+            log.debug(
+                'Skipping Defillama historical price of an asset it does not support',
+                from_asset=from_asset.identifier,
+                to_asset=to_asset.identifier,
+                timestamp=timestamp,
             )
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
