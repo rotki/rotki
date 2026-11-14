@@ -897,10 +897,8 @@ def detect_tokens_from_decoded_events(
         else:
             fungible_tokens.append((address, token))
 
-    if len(ownership_failed := (ownership := query_owned_erc721_tokens(
-        evm_inquirer=evm_inquirer,
-        candidates=erc721_tokens,
-    )).failed) != 0:
+    ownership = query_owned_erc721_tokens(evm_inquirer=evm_inquirer, candidates=erc721_tokens)
+    if len(ownership_failed := ownership.failed - ownership.reverted) != 0:  # reverted: not owned
         log.error(
             'Failed to check the ownership of %s erc721 tokens in '
             '%s. They will be picked up by the next full token detection.',

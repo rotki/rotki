@@ -1091,21 +1091,26 @@ def test_erc721_token_ownership_verification(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
-@pytest.mark.parametrize('multicall_mock_kwargs', [
-    {'side_effect': RemoteError('node down')},
-    {'return_value': []},  # fewer results than calls
-    {'return_value': [(False, b''), (True, b'')]},  # failed and empty ownerOf results
+@pytest.mark.parametrize(('multicall_mock_kwargs', 'keeps_cached'), [
+    ({'side_effect': RemoteError('node down')}, True),
+    ({'return_value': []}, True),  # fewer results than calls
+    # failed and empty ownerOf results, as for a burned token id
+    ({'return_value': [(False, b''), (True, b'')]}, False),
 ])
 def test_erc721_detection_keeps_cached_tokens_on_failed_ownership_check(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
         database: DBHandler,
         multicall_mock_kwargs: dict[str, Any],
+        keeps_cached: bool,
 ) -> None:
-    """A failed ownerOf check means the ownership is unknown, not that the token was
-    transferred away. The explicit detection replaces the cache, so it must keep the
-    already cached nfts whose check failed instead of dropping them, while not adding
-    the unverified ones that weren't cached."""
+    """An ownerOf check that didn't reach the chain means the ownership is unknown, not
+    that the token was transferred away. The explicit detection replaces the cache, so it
+    must keep the already cached nfts whose check failed instead of dropping them, while
+    not adding the unverified ones that weren't cached.
+
+    A reverted ownerOf reached the chain, which reported no valid owner for the token id,
+    as for a burned one. Keeping it cached would check it again on every balance query."""
     cached_nft, new_nft = (get_or_create_evm_token(
         userdb=database,
         evm_address=make_evm_address(),
@@ -1153,7 +1158,7 @@ def test_erc721_detection_keeps_cached_tokens_on_failed_ownership_check(
             address=user_address,
             blockchain=SupportedBlockchain.ETHEREUM,
             token_exceptions=set(),
-        )[0] or []) == {A_DAI, cached_nft}
+        )[0] or []) == ({A_DAI, cached_nft} if keeps_cached else {A_DAI})
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

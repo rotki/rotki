@@ -228,8 +228,10 @@ def query_owned_erc721_tokens(
 
         for (address, token, collectible_id), (status, output) in zip(chunk, outputs, strict=False):  # noqa: E501
             if status is False or len(output) == 0:  # multicall can return success but with empty data when contract call fails  # noqa: E501
-                log.error(
-                    'Failed ownerOf call for token %s and address %s',
+                # expected for a burned token id, such as a closed position or used option
+                log.debug(
+                    'ownerOf call failed for token %s and address %s. '
+                    'The token id has no valid owner',
                     token,
                     address,
                 )
@@ -557,9 +559,12 @@ class EvmTokens(ABC):  # noqa: B024
                 evm_inquirer=self.evm_inquirer,
                 candidates=[(address, token) for token in token_balances],
             )
-            if len(failed := [token for _, token in ownership.failed]) != 0:
-                # the cache gets replaced with the detected tokens, so keep the cached nfts
-                # whose ownership is unknown instead of dropping them
+            # the cache gets replaced with the detected tokens, so keep the cached nfts whose
+            # ownership is unknown instead of dropping them. A reverted ownerOf is no unknown,
+            # the token id has no valid owner, so keeping it would check it on every refresh.
+            if len(failed := [
+                token for _, token in ownership.failed - ownership.reverted
+            ]) != 0:
                 with self.db.conn.read_ctx() as cursor:
                     cached_ids = self.db.get_cached_token_ids(
                         cursor=cursor,
