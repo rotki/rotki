@@ -3,7 +3,7 @@ import subprocess  # noqa: S404  # is only used to execute rotki code here
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EvmToken, SolanaToken
 from rotkehlchen.assets.nft_handling import NftHandling
 from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.config import default_data_directory
@@ -13,7 +13,8 @@ from rotkehlchen.db.search_assets import search_assets_levenshtein
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
-from rotkehlchen.types import Price
+from rotkehlchen.tests.utils.factories import make_evm_address, make_solana_address
+from rotkehlchen.types import ChainID, Price, TokenKind
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -39,6 +40,45 @@ def test_search_assets_levenshtein_multiple(globaldb, database):  # pylint: disa
 
     wait(tasks)
     assert all(x.exception is None for x in tasks)
+
+
+def test_search_only_non_fungible_tokens(globaldb, database) -> None:
+    expected_identifiers: set[str] = set()
+    for asset in (
+        EvmToken.initialize(
+            address=make_evm_address(),
+            chain_id=ChainID.ETHEREUM,
+            token_kind=TokenKind.ERC721,
+            collectible_id='42',
+            name='Search-only collectible',
+            symbol='SEARCHNFT',
+        ),
+        SolanaToken.initialize(
+            address=make_solana_address(),
+            token_kind=TokenKind.SPL_NFT,
+            name='Search-only collectible',
+            symbol='SEARCHNFT',
+        ),
+    ):
+        globaldb.add_asset(asset)
+        expected_identifiers.add(asset.identifier)
+
+    globaldb.add_asset(EvmToken.initialize(
+        address=make_evm_address(),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        name='Search-only collectible fungible',
+        symbol='SEARCHTOKEN',
+    ))
+
+    result = search_assets_levenshtein(
+        db=database,
+        filter_query=LevenshteinFilterQuery.make(substring_search='search-only'),
+        limit=None,
+        nft_handling=NftHandling.SHOW_ONLY,
+    )
+
+    assert {entry['identifier'] for entry in result} == expected_identifiers
 
 
 def get_identifier_from_stdout(stdout: str) -> str | None:

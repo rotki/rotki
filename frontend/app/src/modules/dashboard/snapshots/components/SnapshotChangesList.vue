@@ -3,7 +3,7 @@ import type { BigNumber } from '@rotki/common';
 import type { SnapshotDraftChange } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { createReusableTemplate, useVirtualList } from '@vueuse/core';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
-import { isNft } from '@/modules/assets/nft-utils';
+import { isNonFungible } from '@/modules/assets/nft-utils';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 
@@ -86,7 +86,7 @@ const { containerProps, list, wrapperProps } = useVirtualList(items, { itemHeigh
 
       <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 min-w-0 leading-tight">
         <AssetDetails
-          v-if="item.asset && !isNft(item.asset)"
+          v-if="item.asset && !isNonFungible(item.asset)"
           :asset="item.asset"
           :display="{ size: '26px' }"
           :resolution="{ enableAssociation: false }"

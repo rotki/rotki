@@ -2,7 +2,7 @@
 import type { ZodType } from 'zod';
 import type { BalanceSnapshotPayload } from '@/modules/dashboard/snapshots';
 import type { LocationBalancePreview } from '@/modules/dashboard/snapshots/utils/snapshot-location-balance';
-import { isNft } from '@/modules/assets/nft-utils';
+import { isNonFungible } from '@/modules/assets/nft-utils';
 import { useModelForm } from '@/modules/core/form/use-model-form';
 import EditBalancesSnapshotAssetPriceForm from '@/modules/dashboard/edit-snapshot/EditBalancesSnapshotAssetPriceForm.vue';
 import EditBalancesSnapshotLocationSelector from '@/modules/dashboard/edit-snapshot/EditBalancesSnapshotLocationSelector.vue';
@@ -66,7 +66,7 @@ function updateAsset(asset: string) {
 }
 
 function checkAssetType() {
-  if (isNft(form.state.assetIdentifier))
+  if (isNonFungible(form.state.assetIdentifier))
     set(assetType, 'nft');
 }
 

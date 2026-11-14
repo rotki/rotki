@@ -143,7 +143,7 @@ describe('useTradeAssetOptions', () => {
     expect(getAssetField).toHaveBeenCalledTimes(4);
   });
 
-  it('should drop collectibles, which this form cannot send', () => {
+  it('should drop supported NFT identifiers without treating unsupported ERC1155 identifiers as NFTs', () => {
     const assets = [
       asset('ETH', 'eth'),
       asset('eip155:1/erc721:0xC0a302e6Ad8EcCC4d7A6c1514F8671D6B79269c7/104', 'eth'),
@@ -153,7 +153,10 @@ describe('useTradeAssetOptions', () => {
 
     const { options } = useTradeAssetOptions(assets, 'eth', '', ['eth']);
 
-    expect(get(options).map(option => option.asset.asset)).toEqual(['ETH']);
+    expect(get(options).map(option => option.asset.asset)).toEqual([
+      'ETH',
+      'eip155:1/erc1155:0xC0a302e6Ad8EcCC4d7A6c1514F8671D6B79269c7/7',
+    ]);
   });
 
   it('should flag a symbol that another row on the chain also uses', () => {

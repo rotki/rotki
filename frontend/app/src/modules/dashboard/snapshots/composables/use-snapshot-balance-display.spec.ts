@@ -99,6 +99,17 @@ describe('useSnapshotBalanceDisplay', () => {
     expect(isNftRow(eth)).toBe(false);
   });
 
+  it.each([
+    'eip155:1/erc721:0xabc/1',
+    'solana/nft:Mint111',
+  ])('should display %s as an nft row', (identifier) => {
+    const snapshot = createSnapshot();
+    snapshot.balancesSnapshot = [balance(identifier, 40)];
+    const { data, isNftRow } = useSnapshotBalanceDisplay(snapshot);
+
+    expect(isNftRow(get(data)[0])).toBe(true);
+  });
+
   it('should describe each row-level warning code', () => {
     const { describeWarning } = useSnapshotBalanceDisplay(createSnapshot());
 

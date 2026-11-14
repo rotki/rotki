@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import type { Snapshot } from '@/modules/dashboard/snapshots';
-import { isNft } from '@/modules/assets/nft-utils';
+import { isNonFungible } from '@/modules/assets/nft-utils';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
@@ -63,7 +63,7 @@ const nftsInNetValue = useSetting('nftsInNetValue');
 const listed = computed<ListedNetWorth>(() =>
   listedNetWorth(snapshot, { includeNfts: get(nftsInNetValue), isIgnored: isIgnoredAsset }),
 );
-const hasNfts = computed<boolean>(() => snapshot.balancesSnapshot.some(item => isNft(item.assetIdentifier)));
+const hasNfts = computed<boolean>(() => snapshot.balancesSnapshot.some(item => isNonFungible(item.assetIdentifier)));
 
 /** Real (non-`total`) location rows, the candidates for absorbing a reconcile. */
 const existingLocations = computed<string[]>(() =>

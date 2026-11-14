@@ -89,6 +89,21 @@ describe('useSnapshotBalanceRows', () => {
     expect(identifiersFor({ [SnapshotBalanceFilterKeys.CATEGORY]: SnapshotCategories.ASSET })).toStrictEqual(['ETH']);
   });
 
+  it('should categorize ERC721 and Solana NFT identifiers as NFTs', () => {
+    const nftRows = [
+      row('eip155:1/erc721:0xabc/1', 40, 0),
+      row('solana/nft:Mint111', 50, 1),
+    ];
+    const { filteredData } = useSnapshotBalanceRows(nftRows, {
+      [SnapshotBalanceFilterKeys.CATEGORY]: SnapshotCategories.NFT,
+    });
+
+    expect(get(filteredData).map(item => item.assetIdentifier)).toStrictEqual([
+      'eip155:1/erc721:0xabc/1',
+      'solana/nft:Mint111',
+    ]);
+  });
+
   it('should narrow on written text', () => {
     expect(identifiersFor({ [SnapshotBalanceFilterKeys.SEARCH]: 'eth' })).toStrictEqual(['ETH']);
   });
