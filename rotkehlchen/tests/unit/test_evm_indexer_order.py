@@ -23,6 +23,7 @@ from rotkehlchen.errors.misc import (
     BlockchainQueryError,
     BlockscoutIncompleteResponse,
     ChainNotSupported,
+    ChainNotSupportedForAnyKey,
     ContractReverted,
     IndexerRangeNotCovered,
     NoAvailableIndexers,
@@ -105,6 +106,63 @@ def test_try_indexers_respects_settings_order() -> None:
 
     assert result == 'ok'
     assert calls == ['Routescan', 'Etherscan', 'Blockscout']
+
+
+def test_unordered_chains_keep_their_builtin_order() -> None:
+    """Saving an order for some chains must not drop the built-in order of the others.
+
+    The saved setting only holds the chains the user changed. A chain missing from it used
+    to get the generic default order, which put etherscan first for scroll, a chain
+    etherscan does not serve at all, and failed one etherscan call per scroll query.
+    """
+    cached_settings = CachedSettings()
+    previous_order = cached_settings.get_entry('evm_indexers_order')
+    cached_settings.update_entry(
+        'evm_indexers_order',
+        {ChainID.OPTIMISM: (EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT)},
+    )
+    try:
+        assert cached_settings.get_evm_indexers_order_for_chain(ChainID.OPTIMISM) == (
+            EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT,
+        )
+        assert cached_settings.get_evm_indexers_order_for_chain(ChainID.SCROLL) == (
+            EvmIndexer.BLOCKSCOUT,
+        )
+        assert cached_settings.get_evm_indexers_order_for_chain(ChainID.GNOSIS) == (
+            EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN,
+        )
+        assert cached_settings.get_evm_indexers_order_for_chain(ChainID.ETHEREUM) == tuple(
+            cached_settings.get_entry('default_evm_indexer_order'),  # type: ignore[arg-type]
+        )
+    finally:
+        cached_settings.update_entry('evm_indexers_order', previous_order)
+
+
+def test_try_indexers_drops_etherscan_for_chain_it_does_not_serve() -> None:
+    """A chain etherscan does not serve at all is dropped for the session without asking
+    the user for a paid etherscan key, since no key can enable it."""
+    inquirer = DummyEvmNodeInquirer()
+    calls: list[str] = []
+
+    def query(indexer: Any) -> str:
+        calls.append(indexer.name)
+        if indexer.name == 'Etherscan':
+            raise ChainNotSupportedForAnyKey('Missing or unsupported chainid parameter')
+        if indexer.name == 'Blockscout':
+            raise RemoteError('boom')
+        return 'ok'
+
+    for _ in range(2):
+        assert inquirer._try_indexers(func=query) == 'ok'
+
+    assert calls == ['Etherscan', 'Blockscout', 'Routescan', 'Blockscout', 'Routescan']
+    assert EvmIndexer.ETHERSCAN not in inquirer.available_indexers
+    assert inquirer._etherscan_refused_chain is False
+
+    inquirer.available_indexers.pop(EvmIndexer.ROUTESCAN)
+    with pytest.raises(RemoteError, match='Failed to query any indexer'):
+        inquirer._try_indexers(func=query)
+    inquirer.database.msg_aggregator.add_message.assert_not_called()  # type: ignore
 
 
 def test_try_indexers_custom_override() -> None:

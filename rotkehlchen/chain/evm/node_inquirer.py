@@ -71,6 +71,7 @@ from rotkehlchen.errors.misc import (
     BlockchainQueryError,
     BlockscoutIncompleteResponse,
     ChainNotSupported,
+    ChainNotSupportedForAnyKey,
     ContractReverted,
     EventNotInABI,
     IndexerRangeNotCovered,
@@ -2444,7 +2445,11 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             try:
                 result = func(indexer)
             except ChainNotSupported as e:
-                if indexer_name == EvmIndexer.ETHERSCAN:
+                # a chain etherscan does not serve at all can't be fixed with another api key
+                if (
+                    indexer_name == EvmIndexer.ETHERSCAN and
+                    not isinstance(e, ChainNotSupportedForAnyKey)
+                ):
                     self._etherscan_refused_chain = True
                 if self.available_indexers.pop(indexer_name, None) is not None:
                     log.warning(  # removed the indexer

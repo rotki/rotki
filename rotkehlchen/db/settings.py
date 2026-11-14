@@ -606,12 +606,16 @@ class CachedSettings:
         return CachedSettings.__instance
 
     def _refresh_indexers_cache(self) -> None:
-        """Normalize indexer order once for quick lookups."""
+        """Normalize indexer order once for quick lookups.
+
+        A chain the user has not ordered keeps its built-in order, since the saved setting
+        only holds the chains the user changed. Only chains without one use the default order.
+        """
         chain_to_indexers: dict[ChainID, tuple[EvmIndexer, ...]] = {}
         for chain in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
             chain_to_indexers[chain] = tuple(self._settings.evm_indexers_order.get(
                 chain,
-                self._settings.default_evm_indexer_order,
+                DEFAULT_INDEXERS_ORDER.get(chain, self._settings.default_evm_indexer_order),
             ))
 
         self.__class__._evm_indexers_order_per_chain = chain_to_indexers
