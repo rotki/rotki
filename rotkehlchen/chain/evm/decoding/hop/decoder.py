@@ -199,17 +199,23 @@ class HopCommonDecoder(EvmDecoderInterface):
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_transfer_sent(self, context: DecoderContext) -> EvmDecodingOutput:
-        """This function is used to decode the TransferSentToL2 events on Hop protocol."""
+        """Decode the TransferSent events of Hop L2 bridges.
+
+        The log amount and bonder fee are in hToken units with the decimals of the bridged
+        token. When sending through the AMM wrapper the log amount is what the swap into
+        hTokens returned, not what left the wallet, so the wallet debit stays the actual token
+        transfer and only the bonder fee is split out of it.
+        """
         if not self.base.is_tracked(recipient := bytes_to_address(context.tx_log.topics[3])):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         if (bridge := self.bridges.get(context.tx_log.address)) is None:
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        amount_raw = int.from_bytes(context.tx_log.data[:32])
-        amount = self._get_bridge_asset_amount(amount_raw=amount_raw, identifier=bridge.identifier)
-        bonder_fee_raw = int.from_bytes(context.tx_log.data[64:96])
-        bonder_fee = token_normalized_value_decimals(bonder_fee_raw, DEFAULT_TOKEN_DECIMALS)
+        bonder_fee = self._get_bridge_asset_amount(
+            amount_raw=int.from_bytes(context.tx_log.data[64:96]),
+            identifier=bridge.identifier,
+        )
         to_chain = int.from_bytes(context.tx_log.topics[2])
         transfer_id = '0x' + context.tx_log.topics[1].hex()
         for event in context.decoded_events:
@@ -224,7 +230,7 @@ class HopCommonDecoder(EvmDecoderInterface):
                 event.counterparty = CPT_HOP
 
                 if bonder_fee > ZERO:
-                    event.amount = amount - bonder_fee
+                    event.amount -= bonder_fee
                     fee_event = self.base.make_event_next_index(
                         tx_ref=event.tx_ref,
                         timestamp=context.transaction.timestamp,
