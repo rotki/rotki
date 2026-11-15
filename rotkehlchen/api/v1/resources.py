@@ -183,6 +183,7 @@ from rotkehlchen.api.v1.schemas import (
     QueriedAddressesSchema,
     QueryAddressbookSchema,
     QueryCalendarSchema,
+    RealizedPnlSchema,
     RefetchStakingEventsSchema,
     RefetchTransactionsSchema,
     RefreshProtocolDataSchema,
@@ -305,6 +306,7 @@ if TYPE_CHECKING:
 
     from werkzeug.datastructures import FileStorage
 
+    from rotkehlchen.accounting.cost_basis.pnl import RealizedPnlGroupBy
     from rotkehlchen.api.rest import RestAPI
     from rotkehlchen.assets.asset import (
         Asset,
@@ -3620,6 +3622,19 @@ class EventGroupPositionResource(BaseMethodView):
             group_identifier=group_identifier,
             filter_query=filter_query,
         )
+
+
+class RealizedPnlResource(BaseMethodView):
+    post_schema = RealizedPnlSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            filter_query: HistoryBaseEntryFilterQuery,
+            group_by: RealizedPnlGroupBy | None,
+    ) -> Response:
+        return self.rest_api.get_realized_pnl(filter_query=filter_query, group_by=group_by)
 
 
 class AllEvmChainsResource(BaseMethodView):

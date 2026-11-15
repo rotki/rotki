@@ -14,6 +14,7 @@ from marshmallow import INCLUDE, Schema, fields, post_load, pre_load, validate, 
 from marshmallow.exceptions import ValidationError
 from werkzeug.datastructures import FileStorage
 
+from rotkehlchen.accounting.cost_basis.pnl import RealizedPnlGroupBy
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import (
@@ -904,6 +905,14 @@ class EventGroupPositionSchema(HistoryEventFilterSchema):
 
     def generate_fields_post_validation(self, data: dict[str, Any]) -> dict[str, Any]:
         return {'group_identifier': data['group_identifier']}
+
+
+class RealizedPnlSchema(HistoryEventFilterSchema):
+    """Schema for querying what the history events matching a filter realized."""
+    group_by = StrEnumField(enum_class=RealizedPnlGroupBy, load_default=None)
+
+    def generate_fields_post_validation(self, data: dict[str, Any]) -> dict[str, Any]:
+        return {'group_by': data['group_by']}
 
 
 class HistoryEventSchema(

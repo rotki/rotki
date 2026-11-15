@@ -14364,6 +14364,62 @@ Event Group Position
    :statuscode 500: Internal rotki error.
 
 
+Realized PnL of history events
+================================
+
+.. http:post:: /api/(version)/history/events/pnl
+
+   Doing a POST on this endpoint will return the realized PnL of the history events that match the given filter, optionally broken down by a grouping. The amounts are read from the cost basis that is materialized on the history events and are not computed by the query, so they are in the profit currency and cost basis method that the materialization ran with. Only spends realize anything. Taxable acquisitions, like airdrops or staking rewards, are not included.
+
+   .. note::
+      This endpoint is only available when the experimental accounting update is enabled.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/history/events/pnl HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"from_timestamp": 1672531200, "to_timestamp": 1704067199, "group_by": "asset"}
+
+   The request takes the same filters as the history events endpoint, documented `here <filter-request-args-label_>`_, other than the ordering and pagination ones. All filters apply to the history event that realized the PnL. The events of the swaps, transfers and basis transfers that realized nothing still count in ``num_events``.
+
+   :reqjson string[optional] group_by: What to break the result down by. One of ``"asset"``, ``"location"``, ``"location_label"``, ``"protocol"``, which are parts of the bucket the spend was made from, or ``"day"``, ``"week"``, ``"month"``, ``"year"``, which are the period of the spend in UTC with weeks starting on Monday. If missing the breakdown has a single entry.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "total_realized_pnl": "1520.5",
+              "breakdown": [
+                  {"group_key": "BTC", "realized_pnl": "1020.5", "basis_removed": "30000", "num_events": 2},
+                  {"group_key": "ETH", "realized_pnl": "500", "basis_removed": "1000", "num_events": 1}
+              ],
+              "stale": false,
+              "method": "fifo"
+          },
+          "message": ""
+      }
+
+   :resjson string total_realized_pnl: The sum of the realized PnL of all matching events.
+   :resjson list breakdown: One entry per group, ordered by ``group_key``. Empty if no event matches. ``group_key`` is the value of the grouping, e.g. the asset identifier or ``"2023-05"`` for a month, and is null when no grouping was requested or when the bucket has no value for it, e.g. no protocol. ``basis_removed`` is the cost basis of what was spent and ``num_events`` the number of events in the group.
+   :resjson bool stale: True if the cost basis has not been processed yet or is waiting to be processed again, in which case the amounts may be incomplete.
+   :resjson string method: The cost basis method of the amounts.
+
+   :statuscode 200: The realized PnL was returned successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 404: The accounting update is not enabled.
+   :statuscode 500: Internal rotki error.
+
+
 Get Binance Savings Interests History
 =======================================
 
