@@ -1,5 +1,6 @@
 import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { assert } from '@rotki/common';
+import { externalLinks } from '@shared/external-links';
 import { type McpServerStatus, StarlingServiceStatus } from '@shared/ipc';
 import { createMock } from '@test/utils/create-mock';
 import { neverSettles } from '@test/utils/never-settles';
@@ -114,8 +115,8 @@ function createWrapper(): VueWrapper<InstanceType<typeof McpServerSetting>> {
           template: '<button v-bind="$attrs" class="rui-switch" :data-model-value="modelValue" :disabled="disabled" @click="$emit(\'update:modelValue\', !modelValue)" />',
         },
         GetPremiumPlaceholder: {
-          props: ['description', 'minimumTier', 'title'],
-          template: '<div class="get-premium-placeholder" :data-minimum-tier="minimumTier">{{ title }}{{ description }}</div>',
+          props: ['description', 'minimumTier', 'premiumUrl', 'title'],
+          template: '<div class="get-premium-placeholder" :data-minimum-tier="minimumTier" :data-premium-url="premiumUrl">{{ title }}{{ description }}</div>',
         },
         SettingsItem: {
           template: '<section><slot name="title" /><slot name="subtitle" /><slot /></section>',
@@ -509,6 +510,9 @@ describe('mcpServerSetting', () => {
     expect(gate.text()).toContain('backend_settings.settings.mcp_server.premium_plan_title');
     expect(gate.text()).not.toContain('backend_settings.settings.mcp_server.premium_title');
     expect(gate.find('.get-premium-placeholder').attributes('data-minimum-tier')).toBe('Basic');
+    expect(gate.find('.get-premium-placeholder').attributes('data-premium-url')).toBe(
+      externalLinks.mcpPremium,
+    );
   });
 
   it('should ask a user without a subscription to subscribe', async () => {

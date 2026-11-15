@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from threading import Lock
 from typing import Any, Final
 
 from rotkehlchen.mcp.backend import BackendQueryError, get_backend_config, request_api
@@ -12,12 +13,16 @@ DEFAULT_TIER: Final = 'Free'
 # writing the paid tiers are ordered Supporter < Basic < Advanced.
 NON_MCP_TIERS: Final = frozenset({DEFAULT_TIER, 'Supporter'})
 PREMIUM_CACHE_TTL: Final = 60.0
-UPGRADE_URL: Final = 'https://rotki.com/products/'
+UPGRADE_URL: Final = (
+    'https://rotki.com/products/?utm_source=rotki_app&utm_medium=mcp&'
+    'utm_campaign=premium_required'
+)
 
-_premium_cache: tuple[float, bool] | None = None
+_premium_cache: tuple[float, str] | None = None
+_premium_cache_lock = Lock()
 
 
-def _query_mcp_access() -> bool:
+def _query_current_tier() -> str:
     backend_config = get_backend_config()
     payload = request_api(
         base_url=backend_config.base_url,
@@ -28,7 +33,28 @@ def _query_mcp_access() -> bool:
         raise BackendQueryError(
             'rotki backend returned an unexpected premium capabilities response',
         )
-    return result.get('current_tier', DEFAULT_TIER) not in NON_MCP_TIERS
+    if not isinstance(current_tier := result.get('current_tier', DEFAULT_TIER), str):
+        raise BackendQueryError(
+            'rotki backend returned an unexpected premium tier',
+        )
+    return current_tier
+
+
+def get_current_tier() -> str:
+    """Return the unlocked backend's cached subscription tier."""
+    global _premium_cache  # noqa: PLW0603 -- short-lived MCP premium status cache
+    now = time.monotonic()
+    if _premium_cache is not None and now - _premium_cache[0] < PREMIUM_CACHE_TTL:
+        return _premium_cache[1]
+
+    with _premium_cache_lock:
+        now = time.monotonic()
+        if _premium_cache is not None and now - _premium_cache[0] < PREMIUM_CACHE_TTL:
+            return _premium_cache[1]
+
+        current_tier = _query_current_tier()
+        _premium_cache = (now, current_tier)
+        return current_tier
 
 
 def has_mcp_access() -> bool:
@@ -39,14 +65,7 @@ def has_mcp_access() -> bool:
     backend on every call, while still noticing a subscription that lapses or starts
     mid-session.
     """
-    global _premium_cache  # noqa: PLW0603 -- short-lived MCP premium status cache
-    now = time.monotonic()
-    if _premium_cache is not None and now - _premium_cache[0] < PREMIUM_CACHE_TTL:
-        return _premium_cache[1]
-
-    allowed = _query_mcp_access()
-    _premium_cache = (now, allowed)
-    return allowed
+    return get_current_tier() not in NON_MCP_TIERS
 
 
 def reset_premium_cache() -> None:

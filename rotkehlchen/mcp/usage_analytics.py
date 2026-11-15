@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Final
-from weakref import WeakKeyDictionary
+from contextlib import suppress
+from typing import TYPE_CHECKING, Any, Final, Literal
+from weakref import WeakKeyDictionary, WeakSet
 
 from rotkehlchen.mcp.backend import BackendQueryError, get_backend_config, query_settings
+from rotkehlchen.mcp.premium import get_current_tier
 from rotkehlchen.sigil import (
     SIGIL_DEVELOPMENT_WEBSITE_ID,
     SIGIL_PRODUCTION_WEBSITE_ID,
@@ -20,6 +22,7 @@ if TYPE_CHECKING:
     from pydantic import BaseModel
 
 MODEL_METADATA_KEYS: Final = ('model', 'modelId', 'model_id')
+McpAnalyticsEvent = Literal['mcp_gated', 'mcp_tool_used', 'mcp_usage']
 
 
 def _model_from_metadata(metadata: BaseModel | None) -> str | None:
@@ -70,30 +73,42 @@ def create_mcp_usage_analytics(
     if client_info.title is not None:
         data['clientTitle'] = client_info.title
 
+    with suppress(BackendQueryError):
+        data['plan'] = get_current_tier()
+
     return data
 
 
 def create_sigil_batch(
         data: dict[str, str],
         website_id: str,
+        event_name: McpAnalyticsEvent = 'mcp_usage',
 ) -> list[SigilBatchEntry]:
     """Create the same batch-entry schema used by the frontend Sigil queue."""
     return create_sigil_events_batch(
-        events=[('mcp_usage', '/mcp', data)],
+        events=[(event_name, '/mcp', data)],
         website_id=website_id,
     )
 
 
-def maybe_submit_mcp_usage_analytics(data: dict[str, str]) -> None:
-    """Submit one MCP client/model event when usage analytics are enabled."""
+def maybe_submit_mcp_analytics(
+        events: list[tuple[McpAnalyticsEvent, dict[str, Any]]],
+        client_params: InitializeRequestParams,
+        request_meta: RequestParams.Meta | None,
+) -> None:
+    """Submit MCP events with non-identifying client details when analytics are enabled."""
     try:
         if query_settings().get('submit_usage_analytics') is not True:
             return
     except BackendQueryError:
         return
 
-    batch = create_sigil_batch(
-        data=data,
+    client_data = create_mcp_usage_analytics(
+        client_params=client_params,
+        request_meta=request_meta,
+    )
+    batch = create_sigil_events_batch(
+        events=[(name, '/mcp', {**client_data, **data}) for name, data in events],
         website_id=SIGIL_PRODUCTION_WEBSITE_ID
         if is_production() else SIGIL_DEVELOPMENT_WEBSITE_ID,
     )
@@ -101,10 +116,12 @@ def maybe_submit_mcp_usage_analytics(data: dict[str, str]) -> None:
 
 
 class McpUsageAnalyticsTracker:
-    """Submit each model at most once during an MCP session."""
+    """Submit bounded usage, gated-access and tool analytics for MCP sessions."""
 
     def __init__(self) -> None:
-        self._reported: WeakKeyDictionary[ServerSession, set[str]] = WeakKeyDictionary()
+        self._reported_models: WeakKeyDictionary[ServerSession, set[str]] = WeakKeyDictionary()
+        self._reported_tools: WeakKeyDictionary[ServerSession, set[str]] = WeakKeyDictionary()
+        self._reported_gates: WeakSet[ServerSession] = WeakSet()
         self._tasks: set[asyncio.Task[None]] = set()
 
     def track(
@@ -112,17 +129,54 @@ class McpUsageAnalyticsTracker:
             session: ServerSession,
             client_params: InitializeRequestParams,
             request_meta: RequestParams.Meta | None,
+            tool_name: str,
     ) -> None:
-        data = create_mcp_usage_analytics(
+        """Record a model and each distinct tool at most once per session."""
+        events: list[tuple[McpAnalyticsEvent, dict[str, Any]]] = []
+        reported_models = self._reported_models.setdefault(session, set())
+        if (model := _model_from_client(client_params, request_meta)) not in reported_models:
+            reported_models.add(model)
+            events.append(('mcp_usage', {}))
+
+        reported_tools = self._reported_tools.setdefault(session, set())
+        if tool_name not in reported_tools:
+            reported_tools.add(tool_name)
+            events.append(('mcp_tool_used', {'toolName': tool_name}))
+
+        self._schedule(events=events, client_params=client_params, request_meta=request_meta)
+
+    def track_gated(
+            self,
+            session: ServerSession,
+            client_params: InitializeRequestParams,
+            request_meta: RequestParams.Meta | None,
+    ) -> None:
+        """Record the first premium wall encountered during a session."""
+        if session in self._reported_gates:
+            return
+
+        self._reported_gates.add(session)
+        self._schedule(
+            events=[('mcp_gated', {})],
             client_params=client_params,
             request_meta=request_meta,
         )
-        reported_models = self._reported.setdefault(session, set())
-        if (model := data['model']) in reported_models:
+
+    def _schedule(
+            self,
+            events: list[tuple[McpAnalyticsEvent, dict[str, Any]]],
+            client_params: InitializeRequestParams,
+            request_meta: RequestParams.Meta | None,
+    ) -> None:
+        if not events:
             return
 
-        reported_models.add(model)
         self._tasks.add(task := asyncio.create_task(
-            asyncio.to_thread(maybe_submit_mcp_usage_analytics, data),
+            asyncio.to_thread(
+                maybe_submit_mcp_analytics,
+                events,
+                client_params,
+                request_meta,
+            ),
         ))
         task.add_done_callback(self._tasks.discard)

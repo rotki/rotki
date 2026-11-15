@@ -6,6 +6,8 @@ const USAGE_GUIDE_URL = `${DOCS_BASE_URL}usage-guides/`;
 const CONTRIBUTE_URL = `${DOCS_BASE_URL}contribution-guides/`;
 const GITHUB_BASE_URL = 'https://github.com/rotki/rotki/';
 const UTM_PARAMS = '?utm_source=rotki_app&utm_medium=desktop&utm_campaign=upgrade';
+const MCP_UTM_PARAMS = '?utm_source=rotki_app&utm_medium=mcp&utm_campaign=mcp_settings';
+const PREMIUM_SETTINGS_UTM_PARAMS = '?utm_source=rotki_app&utm_medium=desktop&utm_campaign=premium_settings';
 
 /**
  * Excluded from the link checker because automated requests are rejected.
@@ -27,7 +29,9 @@ export const blockscoutLink = 'https://dev.blockscout.com/';
 export const externalLinks = {
   dockerSessionAuth: `${DOCS_BASE_URL}requirement-and-installation/docker#session-authentication`,
   integrations: `${BASE_URL}integrations`,
+  mcpPremium: `${BASE_URL}products${MCP_UTM_PARAMS}`,
   premium: `${BASE_URL}products${UTM_PARAMS}`,
+  premiumSettings: `${BASE_URL}products${PREMIUM_SETTINGS_UTM_PARAMS}`,
   premiumDevices: `${DOCS_BASE_URL}premium/devices`,
   sponsor: `${BASE_URL}sponsor/mint`,
   manageSubscriptions: `${BASE_URL}home/subscription${UTM_PARAMS}`,
