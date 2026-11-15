@@ -197,6 +197,7 @@ TABLES_AT_INIT = [
     'eth2_validators',
     'eth_validators_data_cache',
     'event_metrics',
+    'event_cost_basis',
     'ignored_actions',
     'nfts',
     'history_events',
@@ -717,6 +718,28 @@ def test_get_static_caches(database):
                 DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
             ),
         ) == (stale_from_ts, None, last_processing_ts)
+
+
+def test_cost_basis_static_caches(database):
+    """The stale markers are stored as strings, like the balance ones they mirror, and
+    the last processing marker as a timestamp."""
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_caches(cursor=cursor, names=(names := (
+            DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
+            DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
+        ))) == (None, None, None)
+
+    with database.user_write() as write_cursor:
+        for name, value in zip(names, (values := ('456', '789', Timestamp(123))), strict=True):
+            database.set_static_cache(write_cursor=write_cursor, name=name, value=value)
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_caches(cursor=cursor, names=names) == values
+        assert isinstance(database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
+        ), int)
 
 
 def test_balance_save_frequency_check(data_dir, username, sql_vm_instructions_cb):

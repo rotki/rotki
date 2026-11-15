@@ -51,6 +51,11 @@ class DBCacheStatic(Enum):
     # during historical balance processing.
     STALE_BALANCES_MODIFICATION_TS: Final = 'stale_balances_modification_ts'
     LAST_HISTORICAL_BALANCE_PROCESSING_TS: Final = 'last_historical_balance_processing_ts'
+    # Cost basis counterparts of the three balance markers above. They are separate so that
+    # a cost basis method change only invalidates cost basis and not balances.
+    STALE_COST_BASIS_FROM_TS: Final = 'stale_cost_basis_from_ts'
+    STALE_COST_BASIS_MODIFICATION_TS: Final = 'stale_cost_basis_modification_ts'
+    LAST_COST_BASIS_PROCESSING_TS: Final = 'last_cost_basis_processing_ts'
     LAST_DATA_ISSUE_REMEDIATION_TS: Final = 'last_data_issue_remediation_ts'
     LAST_CURRENT_BALANCE_DETECTION_TS: Final = 'last_current_balance_detection_ts'
     PENDING_DETECTION_FROM_TS: Final = 'pending_detection_from_ts'

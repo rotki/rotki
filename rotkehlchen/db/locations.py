@@ -37,6 +37,7 @@ LOCATION_REFERENCES: Final = (
     ('skipped_external_events', 'location'),
     ('bitcoin_transactions', 'location'),
     ('event_metrics', 'location'),
+    ('event_cost_basis', 'location'),
     ('data_issues', 'location'),
     ('bucket_processing_stops', 'location'),
     ('bucket_balance_checks', 'location'),

@@ -922,6 +922,8 @@ class DBHandler:
             DBCacheStatic.EVM_ACCOUNTS_DETECT_RETRIES,
             DBCacheStatic.STALE_BALANCES_FROM_TS,
             DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
+            DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
             DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
             DBCacheStatic.CURRENT_BALANCE_DETECTION_CURSOR,
         ):
@@ -942,6 +944,8 @@ class DBHandler:
                 DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
                 DBCacheStatic.STALE_BALANCES_FROM_TS,
                 DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
+                DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+                DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
             ],
     ) -> str | None:
         ...
@@ -972,6 +976,7 @@ class DBHandler:
                 DBCacheStatic.LAST_SPARK_ASSETS_UPDATE,
                 DBCacheStatic.LAST_DB_UPGRADE,
                 DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+                DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
                 DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
                 DBCacheStatic.PENDING_DETECTION_FROM_TS,
             ],
