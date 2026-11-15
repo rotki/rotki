@@ -2437,6 +2437,11 @@ def test_stale_cost_basis_alone_is_processed_without_the_balances(
         assert task_manager._maybe_process_historical_balances() is None
         spawn_task.assert_not_called()
 
+        # a change after the last pass, like another cost basis method, is picked up at once
+        set_cache(DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS, ts_now() * 1000)
+        assert task_manager._maybe_process_historical_balances() == [spawn_task.return_value]
+        set_cache(DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS, 1)
+
         set_cache(DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS, ts_now() - HOUR_IN_SECONDS)
         assert task_manager._maybe_process_historical_balances() == [spawn_task.return_value]
         assert spawn_task.call_args.kwargs['skip_balances'] is True

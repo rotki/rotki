@@ -17,6 +17,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.locations.constants import LOCATION_ETHEREUM, LOCATION_KRAKEN
 from rotkehlchen.tasks.cost_basis import process_cost_basis
+from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import CostBasisMethod, Price, Timestamp, TimestampMS
@@ -499,3 +500,49 @@ def test_basis_transfer_carries_the_lots_to_another_asset(
     )[2] == (int(received), A_DAI.identifier, 'receive', acquired, '500', 'transfer_in')
     # the DAI is worth 1 and carries a basis of 500 from the ETH
     assert _spend_row(database, spent) == ([(acquired, FVal(1))], FVal(-499), FVal(500), FVal(1500))  # noqa: E501
+
+
+def _set_method(database: DBHandler, method: CostBasisMethod) -> None:
+    with database.user_write() as write_cursor:
+        database.set_settings(write_cursor, ModifiableDBSettings(cost_basis_method=method))
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_method_switch_wipes_and_reprocesses_only_the_cost_basis(database: DBHandler) -> None:
+    def balance_state() -> list[tuple[Any, ...]]:
+        with database.conn.read_ctx() as cursor:
+            return cursor.execute(
+                'SELECT name, value FROM key_value_cache WHERE name LIKE ? '
+                'UNION ALL SELECT metric_key, metric_value FROM event_metrics',
+                ('stale_balances_%',),
+            ).fetchall()
+
+    _process(database=database, method=CostBasisMethod.FIFO, events=_three_lots_and_a_spend())
+    process_historical_balances(database, database.msg_aggregator)
+    fifo_rows, balances = _rows(database), balance_state()
+    assert len(balances) == 4  # one balance per event, and no stale marker
+
+    _set_method(database, CostBasisMethod.FIFO)  # setting the same method changes nothing
+    assert _rows(database) == fifo_rows
+
+    _set_method(database, CostBasisMethod.LIFO)
+    assert _rows(database) == []
+    with database.conn.read_ctx() as cursor:
+        stale_from_ts, modification_ts = database.get_static_caches(cursor=cursor, names=(
+            DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
+        ))
+    assert stale_from_ts == '0'
+    assert modification_ts is not None
+
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    lifo_rows = _rows(database)
+    assert {row[-1] for row in lifo_rows} == {'lifo'}
+    assert len(lifo_rows) == len(fifo_rows)
+
+    # back and forth before the next pass ends up at the method that is set last
+    _set_method(database, CostBasisMethod.HIFO)
+    _set_method(database, CostBasisMethod.FIFO)
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _rows(database) == fifo_rows
+    assert balance_state() == balances

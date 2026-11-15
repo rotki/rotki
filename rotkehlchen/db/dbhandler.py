@@ -67,6 +67,7 @@ from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.constants import (
     BINANCE_HISTORY_START_TS_KEY,
     BINANCE_MARKETS_KEY,
+    COST_BASIS_SETTINGS,
     EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
     EVM_ACCOUNTS_DETAILS_TOKENS,
     EXTRAINTERNALTXPREFIX,
@@ -142,6 +143,7 @@ from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.gate import GateLocation
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.okx import OkxLocation
+from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.bucket_state import (
@@ -827,12 +829,29 @@ class DBHandler:
         settings_dict['have_premium'] = have_premium
         return db_settings_from_dict(settings_dict, self.msg_aggregator)
 
+    def _wipe_cost_basis(self, write_cursor: DBCursor) -> None:
+        """Drop the materialized cost basis and mark it as stale from the start.
+
+        The balances do not depend on what the cost basis depends on and are left as they are.
+        """
+        write_cursor.execute('DELETE FROM event_cost_basis')
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+            [
+                (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, '0'),
+                (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value, str(ts_now_in_ms())),
+            ],
+        )
+
     def set_settings(self, write_cursor: DBCursor, settings: ModifiableDBSettings) -> None:
         # Compared to the stored value, not CachedSettings, which may not describe this DB yet,
         # as right after a premium restore replaced it
         eth2_mapping_changed = (
             settings.treat_eth2_as_eth is not None and
             settings.treat_eth2_as_eth != self.get_setting(write_cursor, 'treat_eth2_as_eth')
+        )
+        previous_settings = (
+            self.get_settings(write_cursor) if is_accounting_update_enabled() else None
         )
         settings_dict = settings.serialize()
         # Settings whose value is an empty string and which support being unset
@@ -859,6 +878,16 @@ class DBHandler:
         if eth2_mapping_changed:  # the saved ETH and ETH2 comparisons used the previous mapping
             delete_balance_checks(write_cursor=write_cursor, assets=(A_ETH.identifier, A_ETH2.identifier))  # noqa: E501
             delete_wallet_observations(write_cursor=write_cursor, assets=(A_ETH.identifier, A_ETH2.identifier))  # noqa: E501
+        if previous_settings is not None and self.get_static_cache(
+            cursor=write_cursor,
+            name=DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
+        ) is not None:  # before the first pass there is nothing to wipe, and it checks by itself
+            new_settings = self.get_settings(write_cursor)
+            if any(
+                getattr(previous_settings, name) != getattr(new_settings, name)
+                for name in COST_BASIS_SETTINGS
+            ):
+                self._wipe_cost_basis(write_cursor)
         CachedSettings().update_entries(settings)
 
     def patch_frontend_settings(

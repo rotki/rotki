@@ -29,6 +29,7 @@ from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.constants import COST_BASIS_SETTINGS
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
@@ -510,14 +511,37 @@ def _write_rows(
     )
 
 
-def _finalize_processing(database: DBHandler, modification_ts_at_start: int | None) -> None:
-    """Record the pass, and clear the stale marker unless events changed while it ran."""
+def _finalize_processing(
+        database: DBHandler,
+        settings: DBSettings,
+        modification_ts_at_start: int | None,
+) -> None:
+    """Record the pass, and clear the stale marker unless something changed while it ran.
+
+    Events that changed keep the marker they set. If it is the settings the pass ran with that
+    changed, e.g. the cost basis method, then all it wrote is to be redone. That is checked
+    here since a change before the first pass completes has nothing to wipe and sets no marker.
+    """
     with database.user_write() as write_cursor:
         database.set_static_cache(
             write_cursor=write_cursor,
             name=DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
             value=ts_now(),
         )
+        current_settings = database.get_settings(write_cursor)
+        if any(
+            getattr(settings, name) != getattr(current_settings, name)
+            for name in COST_BASIS_SETTINGS
+        ):
+            write_cursor.executemany(
+                'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+                [
+                    (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, '0'),
+                    (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value, str(ts_now_in_ms())),
+                ],
+            )
+            return
+
         if (modification_ts := database.get_static_cache(
             cursor=write_cursor,
             name=DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
@@ -678,6 +702,7 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
     )
     _finalize_processing(
         database=database,
+        settings=settings,
         modification_ts_at_start=(
             None if modification_ts_at_start is None else int(modification_ts_at_start)
         ),

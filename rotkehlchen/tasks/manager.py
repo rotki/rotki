@@ -89,8 +89,8 @@ from rotkehlchen.utils.misc import ts_now
 from .events import process_eth2_events
 
 HISTORICAL_BALANCE_PROCESSING_REFRESH: Final = DAY_IN_SECONDS
-# How long to wait before retrying a cost basis pass that could not complete on its own,
-# which is what a stale cost basis next to fresh balances means.
+# How long to wait before retrying a cost basis pass that stopped early, which is what a stale
+# cost basis that nothing changed since its last pass means.
 COST_BASIS_PROCESSING_RETRY: Final = HOUR_IN_SECONDS
 HISTORICAL_BALANCE_PROCESSING_TASK_NAME: Final = 'Process historical balances'
 DATA_ISSUE_REMEDIATION_REFRESH: Final = DAY_IN_SECONDS
@@ -768,6 +768,7 @@ class TaskManager:
                 stale_from_ts,
                 last_processing_ts,
                 stale_cost_basis_from_ts,
+                cost_basis_modification_ts,
                 last_cost_basis_processing_ts,
             ) = self.database.get_static_caches(
                 cursor=cursor,
@@ -775,13 +776,16 @@ class TaskManager:
                     DBCacheStatic.STALE_BALANCES_FROM_TS,
                     DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
                     DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+                    DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
                     DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
                 ),
             )
 
         is_cost_basis_due = last_cost_basis_processing_ts is None or (
-            stale_cost_basis_from_ts is not None and
-            ts_now() - Timestamp(int(last_cost_basis_processing_ts)) >= COST_BASIS_PROCESSING_RETRY
+            stale_cost_basis_from_ts is not None and (
+                int(cost_basis_modification_ts or 0) // 1000 >= int(last_cost_basis_processing_ts) or  # noqa: E501
+                ts_now() - Timestamp(int(last_cost_basis_processing_ts)) >= COST_BASIS_PROCESSING_RETRY  # noqa: E501
+            )
         )
         if (skip_balances := (
             stale_from_ts is None and

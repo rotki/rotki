@@ -65,6 +65,17 @@ LINKABLE_ACCOUNTING_SETTINGS_NAME = Literal[
     'include_gas_costs',
     'include_crypto2crypto',
 ]
+# The settings that the materialized cost basis of the history events is computed with. A
+# change to any of them means all of it has to be computed again. The first two are the ones
+# that accounting rules can be linked to.
+COST_BASIS_SETTINGS: Final = (
+    'include_gas_costs',
+    'include_crypto2crypto',
+    'cost_basis_method',
+    'taxfree_after_period',
+    'main_currency',
+    'treat_eth2_as_eth',
+)
 LINKABLE_ACCOUNTING_PROPERTIES = Literal[
     'taxable',
     'count_entire_amount_spend',
