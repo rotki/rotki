@@ -315,7 +315,9 @@ def invalidate_swapped_asset_identities(
         'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
         [
             (DBCacheStatic.STALE_BALANCES_FROM_TS.value, '0'),
-            (DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value, str(ts_now_in_ms())),
+            (DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value, (now := str(ts_now_in_ms()))),
+            (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, '0'),
+            (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value, now),
         ],
     )
     return True

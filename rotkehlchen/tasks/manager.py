@@ -64,11 +64,9 @@ from rotkehlchen.tasks.calendar import (
     maybe_create_calendar_reminders,
     notify_reminders,
 )
+from rotkehlchen.tasks.cost_basis import process_balances_and_cost_basis
 from rotkehlchen.tasks.data_issues import run_data_issue_remediation
-from rotkehlchen.tasks.historical_balances import (
-    process_historical_balances,
-    retry_rebasing_token_issue,
-)
+from rotkehlchen.tasks.historical_balances import retry_rebasing_token_issue
 from rotkehlchen.tasks.internal_tx_conflicts import (
     repull_internal_tx_conflicts,
 )
@@ -91,6 +89,9 @@ from rotkehlchen.utils.misc import ts_now
 from .events import process_eth2_events
 
 HISTORICAL_BALANCE_PROCESSING_REFRESH: Final = DAY_IN_SECONDS
+# How long to wait before retrying a cost basis pass that could not complete on its own,
+# which is what a stale cost basis next to fresh balances means.
+COST_BASIS_PROCESSING_RETRY: Final = HOUR_IN_SECONDS
 HISTORICAL_BALANCE_PROCESSING_TASK_NAME: Final = 'Process historical balances'
 DATA_ISSUE_REMEDIATION_REFRESH: Final = DAY_IN_SECONDS
 TX_DECODING_TASK_NAME_PREFIX: Final = 'decode '
@@ -650,12 +651,14 @@ class TaskManager:
     def _spawn_historical_balance_processing(
             self,
             from_ts: TimestampMS | None,
+            skip_balances: bool = False,
     ) -> list[Task]:
-        """Schedule historical balance processing with archive-node access.
+        """Schedule historical balance and cost basis processing with archive-node access.
 
         Periodic runs may query configured archive nodes for negative rebasing balances.
         Successful results are cached per address, token, and block, so the first pass over
         uncached history can take longer even without a manual processing request.
+        `skip_balances` is for when only the cost basis is stale.
         """
         log.debug('Scheduling task to %s', HISTORICAL_BALANCE_PROCESSING_TASK_NAME)
         return [self.task_supervisor.spawn_and_track(
@@ -663,11 +666,12 @@ class TaskManager:
             task_name=HISTORICAL_BALANCE_PROCESSING_TASK_NAME,
             exception_is_error=True,
             kind=BackgroundTaskKind.HISTORICAL_BALANCES,
-            method=process_historical_balances,
+            method=process_balances_and_cost_basis,
             database=self.database,
             msg_aggregator=self.msg_aggregator,
             from_ts=from_ts,
             chains_aggregator=self.chains_aggregator,
+            skip_balances=skip_balances,
         )]
 
     def _preempting_current_balance_detection(self, admit: Callable[[], bool | None]) -> bool:
@@ -760,23 +764,35 @@ class TaskManager:
             return None
 
         with self.database.conn.read_ctx() as cursor:
-            stale_from_ts, last_processing_ts = self.database.get_static_caches(
+            (
+                stale_from_ts,
+                last_processing_ts,
+                stale_cost_basis_from_ts,
+                last_cost_basis_processing_ts,
+            ) = self.database.get_static_caches(
                 cursor=cursor,
                 names=(
                     DBCacheStatic.STALE_BALANCES_FROM_TS,
                     DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+                    DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+                    DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
                 ),
             )
 
-        if (
+        is_cost_basis_due = last_cost_basis_processing_ts is None or (
+            stale_cost_basis_from_ts is not None and
+            ts_now() - Timestamp(int(last_cost_basis_processing_ts)) >= COST_BASIS_PROCESSING_RETRY
+        )
+        if (skip_balances := (
             stale_from_ts is None and
             last_processing_ts is not None and
             ts_now() - Timestamp(int(last_processing_ts)) < HISTORICAL_BALANCE_PROCESSING_REFRESH
-        ):
+        )) and not is_cost_basis_due:
             return None
 
         return self._spawn_historical_balance_processing(
             from_ts=TimestampMS(int(stale_from_ts)) if stale_from_ts is not None else None,
+            skip_balances=skip_balances,
         )
 
     @_admitting_balance_work

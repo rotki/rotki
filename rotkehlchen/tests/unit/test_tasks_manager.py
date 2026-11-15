@@ -2412,3 +2412,36 @@ def test_check_if_should_sync_survives_premium_errors() -> None:
         should_sync, reason = sync_manager.check_if_should_sync(force_upload=False)
         assert should_sync is False
         assert reason == f'Could not query your premium plan due to: {error!s}'
+
+
+def test_stale_cost_basis_alone_is_processed_without_the_balances(
+        task_manager: TaskManager,
+) -> None:
+    def set_cache(name: DBCacheStatic, value: int) -> None:
+        with task_manager.database.user_write() as write_cursor:
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+                (name.value, str(value)),
+            )
+
+    with patch.object(task_manager.task_supervisor, 'spawn_and_track') as spawn_task:
+        set_cache(DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS, ts_now())
+        # the cost basis was never processed
+        assert task_manager._maybe_process_historical_balances() == [spawn_task.return_value]
+        assert spawn_task.call_args.kwargs['skip_balances'] is True
+
+        spawn_task.reset_mock()
+        set_cache(DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS, ts_now())
+        assert task_manager._maybe_process_historical_balances() is None
+        set_cache(DBCacheStatic.STALE_COST_BASIS_FROM_TS, 5)  # left by a pass that just stopped
+        assert task_manager._maybe_process_historical_balances() is None
+        spawn_task.assert_not_called()
+
+        set_cache(DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS, ts_now() - HOUR_IN_SECONDS)
+        assert task_manager._maybe_process_historical_balances() == [spawn_task.return_value]
+        assert spawn_task.call_args.kwargs['skip_balances'] is True
+
+        set_cache(DBCacheStatic.STALE_BALANCES_FROM_TS, 7)
+        assert task_manager._maybe_process_historical_balances() == [spawn_task.return_value]
+        processing_kwargs = spawn_task.call_args.kwargs
+        assert (processing_kwargs['skip_balances'], processing_kwargs['from_ts']) == (False, 7)

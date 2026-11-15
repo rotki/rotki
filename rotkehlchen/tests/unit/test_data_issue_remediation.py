@@ -11,6 +11,7 @@ from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessage
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.concurrency import TaskCancelledError, checkpoint
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import (
@@ -291,7 +292,8 @@ def test_remediation_skips_final_issues(database: DBHandler, state: IssueState) 
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
-@pytest.mark.usefixtures('ethereum_transaction_decoder')
+@pytest.mark.parametrize('default_mock_price_value', [ONE])  # for the cost basis pass
+@pytest.mark.usefixtures('ethereum_transaction_decoder', 'price_historian')
 @pytest.mark.parametrize(('decoded_spend', 'missing_receipt', 'expected_result'), [
     (5, False, 'redecoding_would_change_balance'),
     (11, False, 'redecoding_would_not_change_balance'),

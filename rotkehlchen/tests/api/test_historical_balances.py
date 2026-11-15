@@ -2009,6 +2009,7 @@ def test_historical_price_cache_only_special_assets(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])  # for the cost basis pass
 def test_get_historical_asset_amounts_processing_required(
         rotkehlchen_api_server: APIServer,
 ) -> None:

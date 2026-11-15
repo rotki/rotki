@@ -416,29 +416,38 @@ class DBHistoryEvents:
     ) -> None:
         """Track earliest modified event timestamp and when modification occurred.
 
-        Updates two cache entries:
-        - STALE_BALANCES_FROM_TS: the minimum event timestamp that may need re-processing
-        - STALE_BALANCES_MODIFICATION_TS: when the modification occurred (for detecting
+        Updates two cache entries for the balances and the same two for the cost basis, in one
+        statement so that both pipelines always go stale together:
+        - STALE_*_FROM_TS: the minimum event timestamp that may need re-processing
+        - STALE_*_MODIFICATION_TS: when the modification occurred (for detecting
           concurrent modifications during processing)
         """
         if is_accounting_update_enabled() is False:
             return
 
+        from_ts_names = (
+            DBCacheStatic.STALE_BALANCES_FROM_TS.value,
+            DBCacheStatic.STALE_COST_BASIS_FROM_TS.value,
+        )
         write_cursor.execute(
-            'INSERT INTO key_value_cache(name, value) VALUES(?, ?), (?, ?) '
+            'INSERT INTO key_value_cache(name, value) VALUES(?, ?), (?, ?), (?, ?), (?, ?) '
             'ON CONFLICT(name) DO UPDATE SET value=CASE '
-            'WHEN key_value_cache.name = ? THEN '
+            'WHEN key_value_cache.name IN (?, ?) THEN '
             'MIN(CAST(key_value_cache.value AS INTEGER), CAST(excluded.value AS INTEGER)) '
             'ELSE excluded.value END '
-            'WHERE key_value_cache.name != ? OR '
+            'WHERE key_value_cache.name NOT IN (?, ?) OR '
             'CAST(key_value_cache.value AS INTEGER) > CAST(excluded.value AS INTEGER)',
             (
-                DBCacheStatic.STALE_BALANCES_FROM_TS.value,
+                from_ts_names[0],
+                timestamp,
+                from_ts_names[1],
                 timestamp,
                 DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value,
-                ts_now_in_ms(),
-                DBCacheStatic.STALE_BALANCES_FROM_TS.value,
-                DBCacheStatic.STALE_BALANCES_FROM_TS.value,
+                (now := ts_now_in_ms()),
+                DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value,
+                now,
+                *from_ts_names,
+                *from_ts_names,
             ),
         )
 

@@ -563,6 +563,7 @@ def process_historical_balances(
         msg_aggregator: MessagesAggregator,
         from_ts: TimestampMS | None = None,
         chains_aggregator: ChainsAggregator | None = None,
+        notify_completion: bool = True,
 ) -> bool:
     """Process events and compute balance metrics.
 
@@ -570,6 +571,8 @@ def process_historical_balances(
     None instead when another run holds the lock; remediation callers must distinguish that case.
     When a chain aggregator is supplied, negative rebasing balances can make cached or archive-node
     historical balance queries. Results are cached per address, token and block.
+    A caller that has more to do before the processing counts as complete, like the cost basis
+    pass, disables `notify_completion` and sends the completion message itself.
     """
     log.debug(f'Starting historical balance processing from_ts={from_ts}')
     with database.user_write() as write_cursor:
@@ -643,10 +646,11 @@ def process_historical_balances(
             from_ts=from_ts,
             stopped_buckets={},
         )
-        msg_aggregator.add_message(
-            message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
-            data={},
-        )
+        if notify_completion:
+            msg_aggregator.add_message(
+                message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
+                data={},
+            )
         return True
 
     metrics_batch: list[MetricRow] = []
@@ -733,10 +737,11 @@ def process_historical_balances(
         from_ts=from_ts,
         stopped_buckets=run_state.stops,
     )
-    msg_aggregator.add_message(
-        message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
-        data={},
-    )
+    if notify_completion:
+        msg_aggregator.add_message(
+            message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
+            data={},
+        )
     log.debug(
         'Completed historical balance processing for %s events with %s modified buckets',
         total_events,
