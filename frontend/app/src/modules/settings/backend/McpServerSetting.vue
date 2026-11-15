@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { externalLinks } from '@shared/external-links';
 import { StarlingServiceStatus } from '@shared/ipc';
 import { StarlingService } from '@shared/starling/starling-protocol';
 import { startPromise } from '@shared/utils';
@@ -328,6 +329,7 @@ onBeforeMount(() => {
         :title="gateTitle"
         :description="t('backend_settings.settings.mcp_server.premium_description')"
         :minimum-tier="mcpMinimumTier"
+        :premium-url="externalLinks.mcpPremium"
       />
     </div>
 

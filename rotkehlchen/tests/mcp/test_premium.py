@@ -61,6 +61,7 @@ def test_has_mcp_access_should_be_false_for_free_and_supporter(monkeypatch, tier
 def test_has_mcp_access_should_cache_result(monkeypatch) -> None:
     calls = _mock_tier(monkeypatch, 'Advanced')
     assert premium.has_mcp_access() is True
+    assert premium.get_current_tier() == 'Advanced'
     assert premium.has_mcp_access() is True
     assert len(calls) == 1  # second call served from the cache, no extra backend hit
 

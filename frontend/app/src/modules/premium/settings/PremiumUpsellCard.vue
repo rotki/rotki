@@ -66,7 +66,7 @@ const FEATURES: Feature[] = [
         </div>
         <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
           <ExternalLink
-            :url="externalLinks.premium"
+            :url="externalLinks.premiumSettings"
             custom
           >
             <RuiButton

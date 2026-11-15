@@ -67,8 +67,9 @@ def _track_usage_analytics(
         server: FastMCP,
         tracker: McpUsageAnalyticsTracker,
         tool_function: Callable[..., Any],
+        tool_name: str,
 ) -> Callable[..., Any]:
-    """Submit client/model analytics at most once for each MCP session and model."""
+    """Submit bounded client, tool and premium-wall analytics for an MCP session."""
     @functools.wraps(tool_function)
     async def wrapper(*args: Any, **kwargs: Any) -> Any:
         request_context = server.get_context().request_context
@@ -77,10 +78,22 @@ def _track_usage_analytics(
                 session=request_context.session,
                 client_params=client_params,
                 request_meta=request_context.meta,
+                tool_name=tool_name,
             )
 
         result = tool_function(*args, **kwargs)
-        return await result if inspect.isawaitable(result) else result
+        result = await result if inspect.isawaitable(result) else result
+        if (
+            client_params is not None and
+            isinstance(result, dict) and
+            result.get('error') == 'premium_required'
+        ):
+            tracker.track_gated(
+                session=request_context.session,
+                client_params=client_params,
+                request_meta=request_context.meta,
+            )
+        return result
 
     return wrapper
 
@@ -140,6 +153,7 @@ def setup_server(
                 server=server,
                 tracker=usage_analytics,
                 tool_function=registered_function,
+                tool_name=tool_name,
             ),
             name=tool_name,
             description=tool_function.__doc__,

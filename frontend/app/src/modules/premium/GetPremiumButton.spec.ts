@@ -18,11 +18,12 @@ describe('get-premium-button', () => {
     wrapper.unmount();
   });
 
-  const createWrapper = (): VueWrapper<InstanceType<typeof GetPremiumButton>> =>
+  const createWrapper = (url?: string): VueWrapper<InstanceType<typeof GetPremiumButton>> =>
     mount(GetPremiumButton, {
       global: {
         plugins: [pinia],
       },
+      props: { url },
     });
 
   it('should show get premium button for free users', () => {
@@ -42,5 +43,16 @@ describe('get-premium-button', () => {
 
     const button = wrapper.find('[data-testid=get-premium-button]');
     expect(button.exists()).toBeFalsy();
+  });
+
+  it('should render a contextual upgrade link for premium users', () => {
+    store = usePremiumStore();
+    const { premium } = storeToRefs(store);
+    set(premium, true);
+
+    wrapper = createWrapper('https://rotki.com/products?utm_campaign=mcp_settings');
+
+    expect(wrapper.find('[data-testid=get-premium-button]').exists()).toBe(true);
+    expect(wrapper.find('a').attributes('href')).toContain('utm_campaign=mcp_settings');
   });
 });

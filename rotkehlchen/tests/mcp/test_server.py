@@ -9,6 +9,7 @@ import pytest
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.transport_security import TransportSecuritySettings
+from mcp.types import InitializeRequestParams
 from starlette.testclient import TestClient
 
 from rotkehlchen import __main__ as rotkehlchen_main
@@ -263,6 +264,45 @@ def test_setup_server_should_gate_premium_tools(monkeypatch) -> None:
         assert calls == ['ran']
     finally:
         loop.close()
+
+
+@pytest.mark.parametrize(('error', 'expected_gated_calls'), [
+    ('premium_required', 1),
+    ('premium_check_failed', 0),
+])
+def test_usage_analytics_should_only_track_premium_wall(
+        error: str,
+        expected_gated_calls: int,
+) -> None:
+    client_params = InitializeRequestParams.model_validate({
+        'protocolVersion': '2025-06-18',
+        'capabilities': {},
+        'clientInfo': {'name': 'test-client', 'version': '1.0'},
+    })
+    session = MagicMock(client_params=client_params)
+    request_context = MagicMock(session=session, meta=None)
+    mcp_server = MagicMock()
+    mcp_server.get_context.return_value.request_context = request_context
+    tracker = MagicMock()
+
+    def gated_tool() -> dict[str, str]:
+        return {'error': error}
+
+    wrapped = server._track_usage_analytics(
+        server=mcp_server,
+        tracker=tracker,
+        tool_function=gated_tool,
+        tool_name='get_balances',
+    )
+
+    assert asyncio.run(wrapped()) == {'error': error}
+    tracker.track.assert_called_once_with(
+        session=session,
+        client_params=client_params,
+        request_meta=None,
+        tool_name='get_balances',
+    )
+    assert tracker.track_gated.call_count == expected_gated_calls
 
 
 def test_privacy_mode_should_not_be_exposed_as_an_mcp_tool() -> None:

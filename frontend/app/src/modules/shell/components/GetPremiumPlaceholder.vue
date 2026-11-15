@@ -6,6 +6,7 @@ defineProps<{
   title: string;
   description?: string;
   minimumTier?: string | null;
+  premiumUrl?: string;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -55,7 +56,7 @@ const { currentTier, premium } = usePremiumHelper();
       </div>
     </div>
     <div class="flex items-center gap-2 flex-wrap">
-      <GetPremiumButton />
+      <GetPremiumButton :url="premiumUrl" />
       <RouterLink :to="{ name: '/api-keys/premium/' }">
         <RuiButton
           class="lg:py-2!"

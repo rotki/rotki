@@ -2,8 +2,9 @@
 import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
-const { hideOnSmallScreen = false } = defineProps<{
+const { hideOnSmallScreen = false, url } = defineProps<{
   hideOnSmallScreen?: boolean;
+  url?: string;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -13,7 +14,7 @@ const { isLgAndDown } = useBreakpoint();
 
 <template>
   <div
-    v-if="!premium"
+    v-if="!premium || url"
     class="mr-2"
   >
     <RuiTooltip
@@ -25,6 +26,7 @@ const { isLgAndDown } = useBreakpoint();
         <ExternalLink
           custom
           premium
+          :url="url"
         >
           <RuiButton
             :class="{ '[&_span]:hidden! lg:[&_span]:block!': hideOnSmallScreen }"
