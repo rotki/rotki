@@ -5,7 +5,7 @@ import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { type HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
 import { type LocationQuery, RouterLocationLabelsSchema } from '@/modules/core/table/route';
-import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
+import { OverlayMode, parseOverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 import { useEventActionPicker } from '@/modules/history/events/action-picker/use-event-action-picker';
 import { isValidHistoryEventState } from '@/modules/history/events/mapping/use-history-event-state-mapping';
 
@@ -187,8 +187,8 @@ export function buildHistoryEventSources({
             : {}),
           locationLabels: get(usedLocationLabels),
           missingAcquisitionIdentifier: get(missingAcquisitionFromQuery)?.join(','),
-          // Only the 'balance' mode lands in the URL; 'none' is stripped as an empty value.
-          ...(get(overlayMode) === OverlayMode.BALANCE ? { overlay: OverlayMode.BALANCE } : {}),
+          // 'none' never lands in the URL, where it would be stripped as an empty value anyway.
+          ...(get(overlayMode) === OverlayMode.NONE ? {} : { overlay: get(overlayMode) }),
           ...(stateMarkersValue.length > 0 ? { stateMarkers: stateMarkersValue.join(',') } : {}),
         };
       }),
@@ -225,5 +225,5 @@ function applyHistoryEventRouteQuery(
       : [],
   });
 
-  set(target.overlayMode, query.overlay === OverlayMode.BALANCE ? OverlayMode.BALANCE : OverlayMode.NONE);
+  set(target.overlayMode, parseOverlayMode(query.overlay));
 }

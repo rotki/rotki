@@ -8,13 +8,22 @@ import { EventOverlayStatus } from '@/modules/history/balances/accounting-overla
 
 export { EventOverlayStatus };
 
-/** The overlay column toggle: `none` hides it, `balance` shows balance-after-event. */
+/**
+ * The overlay column toggle: `none` hides it, `balance` shows balance-after-event and
+ * `cost_basis` what each event cost or realized.
+ */
 export const OverlayMode = {
   BALANCE: 'balance',
+  COST_BASIS: 'cost_basis',
   NONE: 'none',
 } as const;
 
 export type OverlayMode = typeof OverlayMode[keyof typeof OverlayMode];
+
+/** Reads an overlay mode back from a route query, where anything unknown means it is off. */
+export function parseOverlayMode(value: unknown): OverlayMode {
+  return value === OverlayMode.BALANCE || value === OverlayMode.COST_BASIS ? value : OverlayMode.NONE;
+}
 
 export interface AccountingOverlayBucket {
   location: string;

@@ -5,6 +5,7 @@ import type { HistoryEventNoteContext } from '@/modules/history/events/use-histo
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
+import CostBasisOverlayCell from '@/modules/history/cost-basis/CostBasisOverlayCell.vue';
 import { getMatchedMovementIgnoreIds } from '@/modules/history/event-utils';
 import { getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
 import HistoryEventsExpandButton from '@/modules/history/events/components/HistoryEventsExpandButton.vue';
@@ -213,6 +214,7 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
     />
 
     <AccountingOverlayCell :event="primaryEvent" />
+    <CostBasisOverlayCell :event="primaryEvent" />
 
     <HistoryEventsListItemAction
       v-if="!hideActions"

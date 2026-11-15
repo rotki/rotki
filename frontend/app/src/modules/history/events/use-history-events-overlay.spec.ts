@@ -2,6 +2,8 @@ import type { EffectScope, MaybeRefOrGetter, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { AccountingOverlayContext } from '@/modules/history/balances/use-accounting-overlay-context';
 import type { UseAccountingOverlaySeriesReturn } from '@/modules/history/balances/use-accounting-overlay-series';
+import type { UseCostBasisOverlayReturn } from '@/modules/history/cost-basis/use-cost-basis-overlay';
+import type { CostBasisOverlayContext } from '@/modules/history/cost-basis/use-cost-basis-overlay-context';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
 import flushPromises from 'flush-promises';
@@ -17,17 +19,30 @@ interface OverlayParams {
   eventIdentifiers: MaybeRefOrGetter<number[]>;
 }
 
-const { accountingUpdateEnabled, provideOverlay, refresh, reset, useOverlay } = vi.hoisted(() => ({
+const {
+  accountingUpdateEnabled,
+  provideCostBasis,
+  provideOverlay,
+  refresh,
+  refreshCostBasis,
+  reset,
+  useCostBasis,
+  useOverlay,
+} = vi.hoisted(() => ({
   accountingUpdateEnabled: vi.fn<() => boolean>(),
+  provideCostBasis: vi.fn<(context: CostBasisOverlayContext) => void>(),
   provideOverlay: vi.fn<(context: AccountingOverlayContext) => void>(),
   refresh: vi.fn<() => Promise<void>>(),
+  refreshCostBasis: vi.fn<() => Promise<void>>(),
   reset: vi.fn<() => void>(),
+  useCostBasis: vi.fn<(params: OverlayParams) => UseCostBasisOverlayReturn>(),
   useOverlay: vi.fn<(params: OverlayParams) => UseAccountingOverlayReturn>(),
 }));
 
 const mockSyncCompleted = ref<number>(0);
 const mockOverlay = createMock<UseAccountingOverlayReturn>({ refresh });
 const mockSeries = createMock<UseAccountingOverlaySeriesReturn>({ reset });
+const mockCostBasis = createMock<UseCostBasisOverlayReturn>({ refresh: refreshCostBasis });
 
 vi.mock('@/modules/core/common/feature-flags', async importOriginal => ({
   ...await importOriginal<Record<string, unknown>>(),
@@ -42,6 +57,12 @@ vi.mock('@/modules/history/balances/use-accounting-overlay-series', () => ({
 }));
 vi.mock('@/modules/history/balances/use-accounting-overlay-context', () => ({
   provideAccountingOverlay: provideOverlay,
+}));
+vi.mock('@/modules/history/cost-basis/use-cost-basis-overlay', () => ({
+  useCostBasisOverlay: useCostBasis,
+}));
+vi.mock('@/modules/history/cost-basis/use-cost-basis-overlay-context', () => ({
+  provideCostBasisOverlay: provideCostBasis,
 }));
 vi.mock('@/modules/shell/sync-progress/use-sync-completed', () => ({
   useSyncCompleted: (): { syncCompleted: Ref<number> } => ({ syncCompleted: mockSyncCompleted }),
@@ -72,6 +93,9 @@ describe('useHistoryEventsOverlay', () => {
     reset.mockReset();
     provideOverlay.mockReset();
     useOverlay.mockReset().mockReturnValue(mockOverlay);
+    refreshCostBasis.mockReset().mockResolvedValue(undefined);
+    provideCostBasis.mockReset();
+    useCostBasis.mockReset().mockReturnValue(mockCostBasis);
   });
 
   afterEach(() => scope.stop());
@@ -139,5 +163,60 @@ describe('useHistoryEventsOverlay', () => {
     await flushPromises();
     expect(reset).toHaveBeenCalledOnce();
     expect(refresh).toHaveBeenCalledOnce();
+  });
+
+  describe('the cost basis overlay', () => {
+    function costBasisParams(): OverlayParams {
+      const call = useCostBasis.mock.calls.at(-1);
+      assert(call);
+      return call[0];
+    }
+
+    it('should request every event of the page, with or without an account', () => {
+      setup(ref<OverlayMode>(OverlayMode.COST_BASIS), [
+        event(1, '0xA'),
+        [event(2, null), event(3, '0xB')],
+      ]);
+      expect(toValue(costBasisParams().eventIdentifiers)).toEqual([1, 2, 3]);
+    });
+
+    it('should be on only in cost basis mode, leaving the balance overlay off', () => {
+      const mode = ref<OverlayMode>(OverlayMode.BALANCE);
+      const { params } = setup(mode);
+      expect(toValue(costBasisParams().enabled)).toBe(false);
+
+      set(mode, OverlayMode.COST_BASIS);
+      expect(toValue(costBasisParams().enabled)).toBe(true);
+      expect(toValue(params.enabled)).toBe(false);
+
+      accountingUpdateEnabled.mockReturnValue(false);
+      setup(ref<OverlayMode>(OverlayMode.COST_BASIS));
+      expect(toValue(costBasisParams().enabled)).toBe(false);
+    });
+
+    it('should provide itself to the rows', () => {
+      setup(ref<OverlayMode>(OverlayMode.COST_BASIS));
+      const call = provideCostBasis.mock.calls.at(-1);
+      assert(call);
+      expect(call[0].overlay).toBe(mockCostBasis);
+      expect(get(call[0].enabled)).toBe(true);
+    });
+
+    it('should refresh after a processing completion message only while it is the visible overlay', async () => {
+      const mode = ref<OverlayMode>(OverlayMode.COST_BASIS);
+      setup(mode);
+      const message = WebsocketMessage.parse({ type: 'historical_balance_processing_completed', data: {} });
+      const handler = createHistoricalBalanceProcessingCompletedHandler();
+
+      await handler.handle(message.data);
+      await flushPromises();
+      expect(refreshCostBasis).toHaveBeenCalledOnce();
+      expect(refresh).not.toHaveBeenCalled();
+
+      set(mode, OverlayMode.BALANCE);
+      await handler.handle(message.data);
+      await flushPromises();
+      expect(refreshCostBasis).toHaveBeenCalledOnce();
+    });
   });
 });

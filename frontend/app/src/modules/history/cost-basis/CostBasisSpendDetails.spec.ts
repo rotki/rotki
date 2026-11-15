@@ -1,0 +1,103 @@
+import { bigNumberify } from '@rotki/common';
+import { mount, type VueWrapper } from '@vue/test-utils';
+import { describe, expect, it } from 'vitest';
+import CostBasisSpendDetails from '@/modules/history/cost-basis/CostBasisSpendDetails.vue';
+import { CostBasisDirection, type CostBasisLot, type CostBasisSpend } from '@/modules/history/cost-basis/types';
+
+const stubs = {
+  AssetAmountDisplay: { props: ['amount'], template: '<span class="amount">{{ amount.toString() }}</span>' },
+  CostBasisBucketLabel: { template: '<div class="bucket" />' },
+  DateDisplay: { props: ['timestamp'], template: '<span class="date">{{ timestamp }}</span>' },
+  FiatDisplay: { props: ['value', 'pnl'], template: '<span class="fiat" :data-pnl="pnl">{{ value.toString() }}</span>' },
+  RouterLink: { props: ['to'], template: '<a :data-group="to.query.targetGroupIdentifier" :data-event="to.query.highlightedAccountingEvent" :data-overlay="to.query.overlay"><slot /></a>' },
+  RuiChip: { template: '<span><slot /></span>' },
+  RuiDivider: true,
+  RuiIcon: true,
+};
+
+const lot: CostBasisLot = {
+  acquiredAt: 1000,
+  acquisition: { groupIdentifier: '0xgroup', identifier: 12, location: 'ethereum', locationLabel: '0xA', timestamp: 1_000_000 },
+  amount: bigNumberify('0.5'),
+  basisPerUnit: bigNumberify('1000'),
+  lotId: '12',
+  taxable: true,
+};
+
+function mountDetails(overrides: Partial<CostBasisSpend> = {}): VueWrapper {
+  const entry: CostBasisSpend = {
+    asset: 'ETH',
+    basisRemaining: bigNumberify('250'),
+    basisRemoved: bigNumberify('500'),
+    direction: CostBasisDirection.SPEND,
+    location: 'ethereum',
+    locationLabel: '0xA',
+    lots: [lot],
+    method: 'fifo',
+    proceeds: bigNumberify('900'),
+    protocol: null,
+    realizedPnl: bigNumberify('400'),
+    taxfreePnl: bigNumberify('0'),
+    ...overrides,
+  };
+  return mount(CostBasisSpendDetails, { global: { stubs }, props: { entry } });
+}
+
+function figure(wrapper: VueWrapper, key: string): string | undefined {
+  const row = wrapper.find(`[data-testid=cost-basis-${key}] .fiat`);
+  return row.exists() ? row.text() : undefined;
+}
+
+describe('costBasisSpendDetails.vue', () => {
+  it('should show what a disposal was worth, what it cost, what it realized and what is left', () => {
+    const wrapper = mountDetails();
+    expect(figure(wrapper, 'proceeds')).toBe('900');
+    expect(figure(wrapper, 'basis')).toBe('500');
+    expect(figure(wrapper, 'gain')).toBe('400');
+    expect(figure(wrapper, 'remaining')).toBe('250');
+    expect(wrapper.get('[data-testid=cost-basis-gain] .fiat').attributes('data-pnl')).toBe('true');
+  });
+
+  it('should leave the tax free gain out when there is none and show it when there is', () => {
+    expect(figure(mountDetails(), 'taxfree-gain')).toBeUndefined();
+    expect(figure(mountDetails({ taxfreePnl: null }), 'taxfree-gain')).toBeUndefined();
+    expect(figure(mountDetails({ taxfreePnl: bigNumberify('60') }), 'taxfree-gain')).toBe('60');
+  });
+
+  it('should show neither proceeds nor a gain for a move between own accounts', () => {
+    const wrapper = mountDetails({ proceeds: null, realizedPnl: bigNumberify('0'), taxfreePnl: null });
+    expect(figure(wrapper, 'proceeds')).toBeUndefined();
+    expect(figure(wrapper, 'gain')).toBeUndefined();
+    expect(figure(wrapper, 'basis')).toBe('500');
+  });
+
+  it('should list each lot with its acquisition date, amount and basis per unit', () => {
+    const wrapper = mountDetails({ lots: [lot, { ...lot, acquiredAt: 2000, amount: bigNumberify('2'), basisPerUnit: bigNumberify('30'), lotId: '13' }] });
+    const lots = wrapper.findAll('[data-testid=cost-basis-lot]');
+    expect(lots.map(row => row.get('.date').text())).toEqual(['1000', '2000']);
+    expect(lots.map(row => row.get('.amount').text())).toEqual(['0.5', '2']);
+    expect(lots.map(row => row.get('.fiat').text())).toEqual(['1000', '30']);
+  });
+
+  it('should link a lot to the event that acquired it with this overlay on, and not link one whose event is gone', () => {
+    const wrapper = mountDetails({ lots: [lot, { ...lot, acquisition: null, lotId: '99' }] });
+    const links = wrapper.findAll('[data-testid=cost-basis-lot-link]');
+    expect(links).toHaveLength(1);
+    expect(links[0].attributes()).toMatchObject({ 'data-event': '12', 'data-group': '0xgroup', 'data-overlay': 'cost_basis' });
+  });
+
+  it('should mark only the lots held past the tax free period', () => {
+    const wrapper = mountDetails({ lots: [lot, { ...lot, lotId: '13', taxable: false }] });
+    expect(wrapper.findAll('[data-testid=cost-basis-lot]').map(row => row.find('[data-testid=cost-basis-lot-taxfree]').exists())).toEqual([false, true]);
+  });
+
+  it('should explain the shared basis only for the average cost basis method', () => {
+    expect(mountDetails().find('[data-testid=cost-basis-average-note]').exists()).toBe(false);
+    expect(mountDetails({ method: 'acb' }).find('[data-testid=cost-basis-average-note]').exists()).toBe(true);
+  });
+
+  it('should say that nothing is known about the acquisition when no lot was found', () => {
+    expect(mountDetails().find('[data-testid=cost-basis-no-lots]').exists()).toBe(false);
+    expect(mountDetails({ lots: [] }).find('[data-testid=cost-basis-no-lots]').exists()).toBe(true);
+  });
+});

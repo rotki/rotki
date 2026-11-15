@@ -5,6 +5,7 @@ import type { HistoryEventNoteContext } from '@/modules/history/events/use-histo
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
+import CostBasisOverlayCell from '@/modules/history/cost-basis/CostBasisOverlayCell.vue';
 import { getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
 import HistoryEventsExpandButton from '@/modules/history/events/components/HistoryEventsExpandButton.vue';
 import HistoryEventsGroupToggle from '@/modules/history/events/components/HistoryEventsGroupToggle.vue';
@@ -310,6 +311,10 @@ function unlink(): void {
     <AccountingOverlayCell
       v-if="receiveEvent"
       :event="receiveEvent"
+    />
+    <CostBasisOverlayCell
+      v-if="spendEvent"
+      :event="spendEvent"
     />
 
     <HistoryEventsListItemAction
