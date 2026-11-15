@@ -146,7 +146,7 @@ export function useHistoryEventNavigationConsumer(
     if (request.assetFilter)
       query.asset = request.assetFilter;
 
-    if (request.overlay === OverlayMode.BALANCE)
+    if (request.overlay && request.overlay !== OverlayMode.NONE)
       query.overlay = request.overlay;
 
     return query;

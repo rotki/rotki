@@ -4,6 +4,7 @@ import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventNoteContext } from '@/modules/history/events/use-history-event-note';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
+import CostBasisOverlayCell from '@/modules/history/cost-basis/CostBasisOverlayCell.vue';
 import { getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
@@ -206,6 +207,7 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
     />
 
     <AccountingOverlayCell :event="event" />
+    <CostBasisOverlayCell :event="event" />
 
     <HistoryEventsListItemAction
       v-if="showActions"

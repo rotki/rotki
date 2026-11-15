@@ -2,7 +2,7 @@ import type { EffectScope, Ref } from 'vue';
 import { bigNumberify } from '@rotki/common';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoricalBalancesAtEventsResponse } from './types';
-import { useAccountingOverlay } from './use-accounting-overlay';
+import { OverlayMode, parseOverlayMode, useAccountingOverlay } from './use-accounting-overlay';
 
 const { fetchSnapshots } = vi.hoisted(() => ({
   fetchSnapshots: vi.fn<(ids: number[]) => Promise<HistoricalBalancesAtEventsResponse>>(),
@@ -223,5 +223,16 @@ describe('historicalBalancesAtEventsResponse schema', () => {
     });
 
     expect(parsed.entries['7'].stop?.issueKind).toBe(issueKind);
+  });
+});
+
+describe('parseOverlayMode', () => {
+  it('should read back the modes that show a column and treat anything else as off', () => {
+    expect(parseOverlayMode('balance')).toBe(OverlayMode.BALANCE);
+    expect(parseOverlayMode('cost_basis')).toBe(OverlayMode.COST_BASIS);
+    expect(parseOverlayMode('none')).toBe(OverlayMode.NONE);
+    expect(parseOverlayMode('bogus')).toBe(OverlayMode.NONE);
+    expect(parseOverlayMode(undefined)).toBe(OverlayMode.NONE);
+    expect(parseOverlayMode(['balance'])).toBe(OverlayMode.NONE);
   });
 });

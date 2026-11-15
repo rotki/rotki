@@ -270,6 +270,7 @@
     "high_precision": "This balance has unusually high precision and is shown rounded to {decimals} decimals. The actual value is preserved for calculations.",
     "modes": {
       "balance": "Balance",
+      "cost_basis": "Cost basis",
       "none": "Off"
     },
     "no_account": "This event has no account, so no running balance can be shown.",
@@ -278,7 +279,7 @@
     "over_time": "Balance over time",
     "processing": "Still computing balances for this scope.",
     "show_breakdown": "Show balance breakdown",
-    "tooltip": "Show the known balance after each event",
+    "tooltip": "Show the known balance after each event, or what each event cost or realized",
     "total": "Total",
     "wallet": "Wallet"
   },
@@ -2539,6 +2540,36 @@
       "unauthorized": "Your session is no longer valid. Please log in again.",
       "unavailable": "The rotki backend could not be reached to authorise this action. Please try again shortly."
     }
+  },
+  "cost_basis_overlay": {
+    "at": "at",
+    "average_basis": "With the average cost basis method every unit spent carries the average basis of what the account held at the time.",
+    "basis_per_unit": "Basis per unit",
+    "basis_remaining": "Basis left in this account",
+    "cost_basis": "Cost basis",
+    "error": "Could not load the cost basis of this event.",
+    "gain": "Taxable gain or loss",
+    "labels": {
+      "acquisition": "Cost",
+      "disposal": "Basis",
+      "transfer": "Moved"
+    },
+    "lots": "Lots used",
+    "no_data": "This event does not change the cost basis of any asset.",
+    "no_lots": "No acquisition is known for what was spent, so it has no cost basis.",
+    "proceeds": "Proceeds",
+    "show_details": "Show cost basis details",
+    "source": {
+      "event_amount": "The basis is what was paid for it according to the events of the trade.",
+      "free_acquisition": "This event is marked as not counting as an acquisition.",
+      "price_oracle": "The basis is the market price at the time of the event.",
+      "transfer_in": "The basis was carried over with the asset from another of your accounts.",
+      "zero_cost": "No price was found at the time of the event, so the basis is zero."
+    },
+    "stale": "The cost basis is waiting to be recalculated, so this may be outdated.",
+    "taxfree": "Tax free",
+    "taxfree_gain": "Tax free gain or loss",
+    "view_acquisition": "Go to the event that acquired this lot"
   },
   "cost_basis_table": {
     "complete": "Complete",

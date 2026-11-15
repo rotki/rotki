@@ -9,6 +9,7 @@ const { t } = useI18n({ useScope: 'global' });
 const options = computed<{ value: OverlayMode; label: string; icon: RuiIcons }[]>(() => [
   { icon: 'lu-eye-off', label: t('accounting_overlay.modes.none'), value: OverlayMode.NONE },
   { icon: 'lu-wallet', label: t('accounting_overlay.modes.balance'), value: OverlayMode.BALANCE },
+  { icon: 'lu-receipt', label: t('accounting_overlay.modes.cost_basis'), value: OverlayMode.COST_BASIS },
 ]);
 </script>
 
