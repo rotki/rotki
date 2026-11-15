@@ -12,6 +12,7 @@ from rotkehlchen.chain.evm.accounting.structures import (
     EventsAccountantCallback,
     TxAccountingTreatment,
 )
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_PROPERTIES,
     LINKABLE_ACCOUNTING_SETTINGS_NAME,
@@ -23,11 +24,12 @@ from rotkehlchen.db.settings import DEFAULT_INCLUDE_CRYPTO2CRYPTO, DEFAULT_INCLU
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.history.events.structures.eth2 import EthStakingEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils.misc import get_chunks
+from rotkehlchen.utils.misc import get_chunks, ts_now_in_ms
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -65,6 +67,23 @@ class DBAccountingRules:
 
     def __init__(self, db_handler: DBHandler) -> None:
         self.db = db_handler
+
+    @staticmethod
+    def _mark_cost_basis_stale(write_cursor: DBCursor) -> None:
+        """Mark the whole materialized cost basis as stale, since any rule can affect it.
+
+        The balances are not affected by the accounting rules and stay as they are.
+        """
+        if is_accounting_update_enabled() is False:
+            return
+
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+            [
+                (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, '0'),
+                (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value, str(ts_now_in_ms())),
+            ],
+        )
 
     @classmethod
     def _rule_for_string(
@@ -141,6 +160,7 @@ class DBAccountingRules:
             event_ids: list[int] | None,
     ) -> int:
         """Add a single rule with the provided write cursor. See add_accounting_rule."""
+        self._mark_cost_basis_stale(write_cursor)
         if event_ids is not None and len(event_ids) > 0:
             write_cursor.executemany(  # remove event IDs from any existing rules first
                 'DELETE FROM accounting_rule_events WHERE event_id=?',
@@ -210,6 +230,7 @@ class DBAccountingRules:
         - InputError if the rule doesn't exist
         """  # noqa: E501
         with self.db.conn.write_ctx() as write_cursor:
+            self._mark_cost_basis_stale(write_cursor)
             write_cursor.execute(
                 'SELECT type, subtype, counterparty FROM accounting_rules WHERE identifier=?',
                 (rule_id,),
@@ -262,6 +283,7 @@ class DBAccountingRules:
         - InputError: if no event gets updated
         """
         with self.db.conn.write_ctx() as write_cursor:
+            self._mark_cost_basis_stale(write_cursor)
             try:
                 write_cursor.execute(
                     'UPDATE accounting_rules SET type=?, subtype=?, counterparty=?, taxable=?, '
@@ -500,6 +522,7 @@ class DBAccountingRules:
         import_section = 'accounting rules'
         try:
             with self.db.conn.write_ctx() as write_cursor:
+                self._mark_cost_basis_stale(write_cursor)
                 write_cursor.executemany(
                     'INSERT OR REPLACE INTO accounting_rules(identifier, type, subtype, '
                     'counterparty, taxable, count_entire_amount_spend, count_cost_basis_pnl, '

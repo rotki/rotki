@@ -4,7 +4,9 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_USD
+from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -80,6 +82,31 @@ def _event(
     )
 
 
+def _add_rule(
+        database: DBHandler,
+        event_type: HistoryEventType,
+        event_subtype: HistoryEventSubType = HistoryEventSubType.NONE,
+        taxable: bool = True,
+        count_entire_amount_spend: bool = False,
+        count_cost_basis_pnl: bool = True,
+        accounting_treatment: TxAccountingTreatment | None = None,
+        event_ids: list[int] | None = None,
+) -> None:
+    DBAccountingRules(database).add_accounting_rule(
+        event_type=event_type,
+        event_subtype=event_subtype,
+        counterparty=None,
+        rule=BaseEventSettings(
+            taxable=taxable,
+            count_entire_amount_spend=count_entire_amount_spend,
+            count_cost_basis_pnl=count_cost_basis_pnl,
+            accounting_treatment=accounting_treatment,
+        ),
+        links={},
+        event_ids=event_ids,
+    )
+
+
 def _process(
         database: DBHandler,
         events: list[EvmEvent | HistoryEvent],
@@ -88,8 +115,16 @@ def _process(
 ) -> list[str]:
     """Add the events and process the cost basis.
 
-    Returns the identifiers of the events, as the lots that they create are named.
+    Plain spends realize the difference to their basis and trades are swaps, as by the rules
+    that rotki ships. Returns the identifiers of the events, as the lots they create are named.
     """
+    _add_rule(database, HistoryEventType.SPEND)
+    _add_rule(
+        database=database,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        accounting_treatment=TxAccountingTreatment.SWAP,
+    )
     with database.user_write() as write_cursor:
         database.set_settings(
             write_cursor,
@@ -379,3 +414,88 @@ def test_rate_limited_prices_keep_the_pass_stale(database: DBHandler) -> None:
     assert _rows(database) == []
     assert process_cost_basis(database, database.msg_aggregator) is True  # prices are back
     assert len(_rows(database)) == 1
+
+
+@pytest.mark.parametrize(('rule', 'pnl'), [
+    (None, 0),  # an event without a rule only moves lots
+    ({'taxable': False}, 0),
+    ({}, 3000),  # worth 4000 with a basis of 1000
+    ({'count_cost_basis_pnl': False, 'count_entire_amount_spend': True}, -4000),
+    ({'count_entire_amount_spend': True}, -1000),
+])
+@pytest.mark.usefixtures('queried_prices')
+def test_spend_realizes_what_its_rule_says(
+        database: DBHandler,
+        rule: dict[str, bool] | None,
+        pnl: int,
+) -> None:
+    if rule is not None:
+        _add_rule(
+            database=database,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            taxable=rule.get('taxable', True),
+            count_entire_amount_spend=rule.get('count_entire_amount_spend', False),
+            count_cost_basis_pnl=rule.get('count_cost_basis_pnl', True),
+        )
+
+    acquired, spent = _process(database=database, method=CostBasisMethod.FIFO, events=[
+        _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+        _event(at=4, amount='1', event_type=HistoryEventType.SPEND, event_subtype=HistoryEventSubType.FEE),  # noqa: E501
+    ])
+    assert _spend_row(database, spent) == ([(acquired, FVal(1))], FVal(pnl), FVal(1000), FVal(0))
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_rule_of_an_event_overrides_and_reprocesses(database: DBHandler) -> None:
+    _add_rule(database, HistoryEventType.SPEND, HistoryEventSubType.FEE, taxable=False)
+    _, spent = _process(database=database, method=CostBasisMethod.FIFO, events=[
+        _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+        _event(at=4, amount='1', event_type=HistoryEventType.SPEND, event_subtype=HistoryEventSubType.FEE),  # noqa: E501
+    ])
+    assert _spend_row(database, spent)[1] == FVal(0)
+
+    _add_rule(database, HistoryEventType.SPEND, HistoryEventSubType.FEE, event_ids=[int(spent)])
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _spend_row(database, spent)[1] == FVal(3000)
+    assert len(_rows(database)) == 2
+
+
+@pytest.mark.parametrize('method', list(CostBasisMethod))
+@pytest.mark.usefixtures('queried_prices')
+def test_basis_transfer_carries_the_lots_to_another_asset(
+        database: DBHandler,
+        method: CostBasisMethod,
+) -> None:
+    _add_rule(
+        database=database,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        accounting_treatment=TxAccountingTreatment.BASIS_TRANSFER,
+    )
+    acquired, wrapped, received, spent = _process(database=database, method=method, events=[
+        _event(at=1, amount='2', event_type=HistoryEventType.RECEIVE),
+        _event(
+            at=6,
+            amount='2',
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            tx_ref=(tx_ref := make_evm_tx_hash()),
+        ), _event(  # DAI stands in for the wrapped token, 2 of it for each ETH
+            at=6,
+            amount='4',
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=A_DAI,
+            tx_ref=tx_ref,
+            sequence_index=1,
+        ),
+        _event(at=7, amount='1', event_type=HistoryEventType.SPEND, asset=A_DAI),
+    ])
+    assert _spend_row(database, wrapped) == ([(acquired, FVal(2))], FVal(0), FVal(2000), FVal(0))
+    assert _rows(
+        database=database,
+        columns='event_identifier, asset, direction, lot_created_id, basis_per_unit, basis_source',
+    )[2] == (int(received), A_DAI.identifier, 'receive', acquired, '500', 'transfer_in')
+    # the DAI is worth 1 and carries a basis of 500 from the ETH
+    assert _spend_row(database, spent) == ([(acquired, FVal(1))], FVal(-499), FVal(500), FVal(1500))  # noqa: E501

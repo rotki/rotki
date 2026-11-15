@@ -16,7 +16,7 @@ from rotkehlchen.accounting.cost_basis.base import (
     BaseCostBasisMethod,
     CostBasisEvents,
 )
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.types import Price, Timestamp
 
 if TYPE_CHECKING:
@@ -142,14 +142,26 @@ class BucketLots[K: Hashable]:
             taxfree_basis=info.taxfree_bought_cost,
         )
 
-    def transfer(self, source: K, destination: K, asset: Asset, amount: FVal) -> list[ConsumedLot]:
+    def transfer(
+            self,
+            source: K,
+            destination: K,
+            asset: Asset,
+            amount: FVal,
+            destination_amount: FVal | None = None,
+    ) -> list[ConsumedLot]:
         """Move lots for the given amount from one bucket to another.
 
         The moved lots keep their identity, acquisition time and basis, so nothing is realized.
         A lot that is only partly moved exists in both buckets afterwards. For ACB what moves
-        is the average basis of the source bucket. Returns what was moved, which is less than
-        the amount if the source bucket does not hold enough.
+        is the average basis of the source bucket. Returns what was moved, in units of the
+        source, which is less than the amount if the source bucket does not hold enough.
+
+        `destination_amount` is what the amount turns into when the two buckets hold different
+        assets, e.g. a token and its wrapped version. The lots are scaled to it, so that their
+        total basis stays the same.
         """
+        ratio = ONE if destination_amount is None else destination_amount / amount
         average_basis = self._average_basis(manager := self._get(source))
         remaining, moved = amount, []
         for lot in manager.processing_iterator():
@@ -168,9 +180,9 @@ class BucketLots[K: Hashable]:
         destination_manager = self._get(destination)
         for entry in moved:
             destination_manager.add_in_event(Lot(
-                amount=entry.amount,
+                amount=entry.amount * ratio,
                 timestamp=entry.lot.timestamp,
-                rate=Price(entry.basis_per_unit),
+                rate=Price(entry.basis_per_unit / ratio),
                 index=entry.lot.index,
                 lot_id=entry.lot.lot_id,
             ))

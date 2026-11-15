@@ -6,6 +6,12 @@ withdrawals), and it has to be able to go stale without the cost basis going sta
 other way around, e.g. when the cost basis method changes. So the cost basis walks the events
 on its own, after the balances, with its own stale markers. `process_balances_and_cost_basis`
 is what gets scheduled, so that a single processing pass advances both.
+
+Which buckets an event moves an asset between is decided as for the balances, so that the
+lots of a bucket always add up to what it holds. What the accounting rules decide is what a
+spend realizes, and which events are the two sides of a swap or of a basis transfer. An event
+without a rule still moves lots, but realizes nothing. The per protocol accounting callbacks
+of the PnL report are not applied.
 """
 import json
 import logging
@@ -18,14 +24,17 @@ from rotkehlchen.accounting.cost_basis.lots import (
     CostBasisDirection,
 )
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.filtering import AccountingRulesFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
     HistoryEventSubType,
@@ -76,6 +85,37 @@ type CostBasisRow = tuple[
 COST_BASIS_BATCH_SIZE: Final = 500
 
 
+class _Rules:
+    """The accounting rules of the user, as the PnL report resolves them for an event."""
+
+    def __init__(self, database: DBHandler) -> None:
+        self._by_event: dict[int, BaseEventSettings] = {}
+        self._by_type: dict[
+            tuple[HistoryEventType, HistoryEventSubType, str | None],
+            BaseEventSettings,
+        ] = {}
+        for rule_info in DBAccountingRules(database).query_rules(
+            filter_query=AccountingRulesFilterQuery.make(),
+        )[0]:
+            if rule_info.event_ids is None:
+                self._by_type[rule_info.event_key] = rule_info.rule
+            else:
+                self._by_event.update(dict.fromkeys(rule_info.event_ids, rule_info.rule))
+
+    def get(self, event: HistoryBaseEntry) -> BaseEventSettings | None:
+        """The rule of the event itself, else of its type and counterparty, else of its type."""
+        if event.identifier is not None and (rule := self._by_event.get(event.identifier)) is not None:  # noqa: E501
+            return rule
+
+        event_key = (event.event_type, event.event_subtype)
+        if isinstance(event, OnchainEvent) and (
+            rule := self._by_type.get((*event_key, event.counterparty))
+        ) is not None:
+            return rule
+
+        return self._by_type.get((*event_key, None))
+
+
 class _CostBasisPass:
     """The state of one walk over the events.
 
@@ -87,10 +127,12 @@ class _CostBasisPass:
     def __init__(
             self,
             settings: DBSettings,
+            rules: _Rules,
             from_ts: TimestampMS | None,
             stored_basis: dict[int, FVal],
     ) -> None:
         self.settings = settings
+        self.rules = rules
         self.from_ts = from_ts
         self.stored_basis = stored_basis
         self.method = settings.cost_basis_method.serialize()
@@ -101,6 +143,8 @@ class _CostBasisPass:
         # What a swap gives to each of its sides, keyed by the identifier of the side's event.
         self._swap_basis: dict[int, tuple[FVal, BasisSource]] = {}
         self._swap_proceeds: dict[int, tuple[FVal, bool]] = {}
+        # The receiving side of a basis transfer, which is applied along with its other side.
+        self._basis_transfer_receives: set[int] = set()
 
     def _price(self, asset: Asset, timestamp: Timestamp) -> Price | None:
         """The price of the asset in the profit currency, or None if no oracle knows it.
@@ -134,11 +178,13 @@ class _CostBasisPass:
             out_event: HistoryBaseEntry,
             in_event: HistoryBaseEntry,
             timestamp: Timestamp,
+            is_taxable: bool,
     ) -> None:
         """Value both sides of a swap at what was paid for it.
 
         A fiat side states that value itself. Otherwise it is the market price of what was
-        given, or of what was received if what was given has no price.
+        given, or of what was received if what was given has no price. A swap between two
+        crypto assets realizes nothing if the user does not count those as taxable.
         """
         assert out_event.identifier is not None
         assert in_event.identifier is not None
@@ -159,7 +205,7 @@ class _CostBasisPass:
         self._swap_basis[in_event.identifier] = (total_paid / in_event.amount, source)
         self._swap_proceeds[out_event.identifier] = (
             total_paid / out_event.amount,
-            in_event.asset.is_fiat() or self.settings.include_crypto2crypto,
+            is_taxable and (in_event.asset.is_fiat() or self.settings.include_crypto2crypto),
         )
 
     def _add_row(
@@ -202,25 +248,30 @@ class _CostBasisPass:
             destination: Bucket,
             timestamp: Timestamp,
             is_stale: bool,
+            in_event: HistoryBaseEntry | None = None,
     ) -> None:
         """Move the basis along with an asset that moves between two buckets of the user.
 
-        If the source bucket holds less than what moves then the history of the rest is not
-        known, and it arrives at the destination as a lot of this event with no basis.
+        `in_event` is the receiving side when it is an event of its own, as in a basis transfer
+        to another asset. If the source bucket holds less than what moves then the history of
+        the rest is not known, and it arrives at the destination as a lot of the receiving
+        event with no basis.
         """
+        received = event if in_event is None else in_event
         moved = self.lots.transfer(
             source=source,
             destination=destination,
             asset=event.asset,
             amount=event.amount,
+            destination_amount=received.amount,
         )
         lot_ids = list(dict.fromkeys(entry.lot.lot_id for entry in moved))
         if (unknown_amount := event.amount - sum(entry.amount for entry in moved)) > ZERO:
-            lot_ids.append(lot_id := str(event.identifier))
+            lot_ids.append(lot_id := str(received.identifier))
             self.lots.obtain(
                 bucket=destination,
                 lot_id=lot_id,
-                amount=unknown_amount,
+                amount=unknown_amount * received.amount / event.amount,
                 basis_per_unit=ZERO,
                 timestamp=timestamp,
             )
@@ -238,11 +289,11 @@ class _CostBasisPass:
             basis_removed=basis,
         )
         self._add_row(
-            event=event,
+            event=received,
             bucket=destination,
             direction=CostBasisDirection.RECEIVE,
             lot_created_id=','.join(lot_ids),
-            basis_per_unit=basis / event.amount,
+            basis_per_unit=basis / received.amount,
             basis_source=BasisSource.TRANSFER_IN,
         )
 
@@ -287,7 +338,14 @@ class _CostBasisPass:
             bucket: Bucket,
             timestamp: Timestamp,
             is_stale: bool,
+            rule: BaseEventSettings | None,
     ) -> None:
+        """Consume the lots of what is spent, and realize what the rule of the event says.
+
+        A taxable spend realizes the difference between what the asset is worth and its basis
+        if the rule counts the cost basis, and on top of that the whole amount as an expense if
+        the rule counts the entire amount as spent. The lots are consumed in any case.
+        """
         assert event.identifier is not None
         result = self.lots.spend(
             bucket=bucket,
@@ -298,19 +356,64 @@ class _CostBasisPass:
         if not is_stale:
             return
 
+        realized_pnl = ZERO
         if (proceeds := self._swap_proceeds.pop(event.identifier, None)) is not None:
-            rate, taxable = proceeds
-        else:
-            rate, taxable = self._price(asset=event.asset, timestamp=timestamp) or ZERO, True
+            if proceeds[1]:
+                realized_pnl = result.taxable_amount * proceeds[0] - result.taxable_basis
+        elif rule is not None and rule.taxable:
+            rate = self._price(asset=event.asset, timestamp=timestamp) or ZERO
+            if rule.count_entire_amount_spend:
+                realized_pnl -= event.amount * rate
+            if rule.count_cost_basis_pnl:
+                realized_pnl += result.taxable_amount * rate - result.taxable_basis
 
         self._add_row(
             event=event,
             bucket=bucket,
             direction=CostBasisDirection.SPEND,
             lots_consumed=[entry.serialize() for entry in result.consumed],
-            realized_pnl=result.taxable_amount * rate - result.taxable_basis if taxable else ZERO,
+            realized_pnl=realized_pnl,
             basis_removed=result.basis_removed,
         )
+
+    def _maybe_transfer_basis(
+            self,
+            event: HistoryBaseEntry,
+            in_event: HistoryBaseEntry,
+            timestamp: Timestamp,
+            is_stale: bool,
+            treat_eth2_as_eth: bool,
+    ) -> bool:
+        """Carry the basis from what the event gives to what the next event receives for it.
+
+        Returns False if the two events are not a spend from one bucket and a receive in
+        another, in which case each is left to be applied on its own.
+        """
+        assert in_event.identifier is not None
+        if event.asset.is_fiat() or in_event.asset.is_fiat():
+            return False
+
+        out_buckets = Bucket.from_event(event=event, treat_eth2_as_eth=treat_eth2_as_eth)
+        in_buckets = Bucket.from_event(event=in_event, treat_eth2_as_eth=treat_eth2_as_eth)
+        if (
+            len(out_buckets) != 1 or
+            len(in_buckets) != 1 or
+            out_buckets[0][1] != EventDirection.OUT or
+            in_buckets[0][1] != EventDirection.IN or
+            out_buckets[0][0] == in_buckets[0][0]
+        ):
+            return False
+
+        self._basis_transfer_receives.add(in_event.identifier)
+        self._transfer(
+            event=event,
+            source=out_buckets[0][0],
+            destination=in_buckets[0][0],
+            timestamp=timestamp,
+            is_stale=is_stale,
+            in_event=in_event,
+        )
+        return True
 
     def apply(
             self,
@@ -325,19 +428,37 @@ class _CostBasisPass:
         if event.identifier is None or event.amount == ZERO:
             return
 
+        if event.identifier in self._basis_transfer_receives:
+            self._basis_transfer_receives.remove(event.identifier)
+            return
+
         timestamp = ts_ms_to_sec(event.timestamp)
+        is_stale = self.from_ts is None or event.timestamp >= self.from_ts
+        rule = self.rules.get(event)
         if (
-            (is_stale := self.from_ts is None or event.timestamp >= self.from_ts) and
-            event.event_type == HistoryEventType.TRADE and
-            event.event_subtype == HistoryEventSubType.SPEND and
+            rule is not None and
+            rule.accounting_treatment is not None and
             next_event is not None and
             next_event.identifier is not None and
             next_event.group_identifier == event.group_identifier and
-            next_event.event_type == HistoryEventType.TRADE and
-            next_event.event_subtype == HistoryEventSubType.RECEIVE and
             next_event.amount != ZERO
         ):
-            self._price_swap(out_event=event, in_event=next_event, timestamp=timestamp)
+            if rule.accounting_treatment == TxAccountingTreatment.BASIS_TRANSFER:
+                if self._maybe_transfer_basis(
+                    event=event,
+                    in_event=next_event,
+                    timestamp=timestamp,
+                    is_stale=is_stale,
+                    treat_eth2_as_eth=treat_eth2_as_eth,
+                ):
+                    return
+            elif is_stale:
+                self._price_swap(
+                    out_event=event,
+                    in_event=next_event,
+                    timestamp=timestamp,
+                    is_taxable=rule.taxable,
+                )
 
         if event.asset.is_fiat() or len(bucket_directions := Bucket.from_event(
             event=event,
@@ -349,7 +470,7 @@ class _CostBasisPass:
             if (bucket_direction := bucket_directions[0])[1] == EventDirection.IN:
                 self._receive(event, bucket_direction[0], timestamp, is_stale)
             else:
-                self._spend(event, bucket_direction[0], timestamp, is_stale)
+                self._spend(event, bucket_direction[0], timestamp, is_stale, rule)
             return
 
         source = next((b for b, d in bucket_directions if d == EventDirection.OUT), None)
@@ -499,7 +620,12 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
 
     log.debug('Starting cost basis processing of %s events from_ts=%s', len(events), from_ts)
     treat_eth2_as_eth = settings.treat_eth2_as_eth
-    cost_basis_pass = _CostBasisPass(settings=settings, from_ts=from_ts, stored_basis=stored_basis)
+    cost_basis_pass = _CostBasisPass(
+        settings=settings,
+        rules=_Rules(database),
+        from_ts=from_ts,
+        stored_basis=stored_basis,
+    )
     first_batch_written, total_events = False, len(events)
     send_ws_every = msg_aggregator.how_many_events_per_ws(total_events)
     is_rate_limited = False
