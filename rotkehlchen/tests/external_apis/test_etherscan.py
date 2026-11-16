@@ -1,9 +1,12 @@
 import datetime
+import logging
 import os
 from http import HTTPStatus
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
+import requests
 from eth_utils import to_checksum_address
 from freezegun import freeze_time
 
@@ -16,7 +19,7 @@ from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
-from rotkehlchen.errors.misc import RemoteError, RequestTooLargeError
+from rotkehlchen.errors.misc import ChainNotSupportedForAnyKey, RemoteError, RequestTooLargeError
 from rotkehlchen.externalapis.etherscan import (
     ETHERSCAN_PAGINATION_LIMIT,
     ETHERSCAN_TIER_BY_DAILY_LIMIT,
@@ -36,6 +39,9 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
+
+if TYPE_CHECKING:
+    from unittest.mock import _patch
 
 
 @pytest.fixture(name='temp_etherscan')
@@ -66,10 +72,10 @@ def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, s
         return Etherscan(database=db, msg_aggregator=function_scope_messages_aggregator)
 
 
-def patch_etherscan(etherscan, response_msg):
+def patch_etherscan(etherscan: Etherscan, response_msg: str) -> _patch[Any]:
     count = 0
 
-    def mock_requests_get(*args, **kwargs):  # pylint: disable=unused-argument
+    def mock_requests_get(*args: Any, **kwargs: Any) -> MockResponse:  # pylint: disable=unused-argument
         nonlocal count
         if count == 0:
             response = f'{{"status":"0","message":"NOTOK","result":"{response_msg}"}}'
@@ -116,6 +122,47 @@ def test_maximum_daily_rate_limit_reached(temp_etherscan, **kwargs):  # pylint: 
             '0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4',
             '0xc455279100000000000000000000000027a2eaaa8bebea8d23db486fb49627c165baacb5',
         )
+
+
+def test_unsupported_chainid(temp_etherscan: Etherscan) -> None:
+    """Etherscan answers a chain it dropped (such as scroll) with an unsupported chainid error.
+    No API key can change that, so it must not be reported as a plain RemoteError."""
+    with pytest.raises(ChainNotSupportedForAnyKey), patch_etherscan(
+        etherscan=temp_etherscan,
+        response_msg='Missing or unsupported chainid parameter (required for v2 api)',
+    ):
+        temp_etherscan.get_blocknumber_by_time(chain_id=ChainID.SCROLL, ts=Timestamp(1700000000))
+
+
+@pytest.mark.parametrize('error', ['status', 'connection'])
+def test_api_key_is_redacted_from_logs_and_errors(
+        temp_etherscan: Etherscan,
+        caplog: pytest.LogCaptureFixture,
+        error: str,
+) -> None:
+    """Users share their logs when reporting issues, so the API key sent in the query
+    params must appear neither in the debug log of the request nor in the error raised
+    with the request url."""
+    assert (api_key := temp_etherscan._get_api_key_for_chain(ChainID.ETHEREUM)) is not None
+
+    def mock_get(url: str, params: dict[str, Any], **kwargs: Any) -> MockResponse:
+        request_url = requests.Request('GET', url, params=params).prepare().url
+        if error == 'connection':
+            raise requests.exceptions.ConnectionError(f'Max retries exceeded with url: {request_url}')  # noqa: E501
+        (response := MockResponse(HTTPStatus.INTERNAL_SERVER_ERROR, 'error')).url = str(request_url)  # noqa: E501
+        return response
+
+    caplog.set_level(logging.DEBUG)
+    with (
+        patch.object(temp_etherscan.session, 'get', side_effect=mock_get),
+        pytest.raises(RemoteError) as exc_info,
+    ):
+        temp_etherscan.get_blocknumber_by_time(chain_id=ChainID.ETHEREUM, ts=Timestamp(1700000000))
+
+    assert api_key not in str(exc_info.value)
+    assert '<redacted>' in str(exc_info.value)
+    assert 'Querying indexer' in caplog.text
+    assert api_key not in caplog.text
 
 
 def test_detect_api_key_tier_caches_and_reuses_value(temp_etherscan: Etherscan) -> None:

@@ -8,7 +8,12 @@ from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import ChainNotSupported, RemoteError, RequestTooLargeError
+from rotkehlchen.errors.misc import (
+    ChainNotSupported,
+    ChainNotSupportedForAnyKey,
+    RemoteError,
+    RequestTooLargeError,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
 from rotkehlchen.externalapis.interface import (
@@ -294,6 +299,10 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
 
                 elif result.startswith('Free API access is not supported for this chain'):
                     raise ChainNotSupported(result)
+
+                elif result.startswith('Missing or unsupported chainid'):
+                    # chainid is always sent, so etherscan does not serve this chain at all
+                    raise ChainNotSupportedForAnyKey(result)
 
         transaction_endpoint_and_none_found = (
                 status == 0 and

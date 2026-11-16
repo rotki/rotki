@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Venice DIEM collateral locks and unlocks are now informational events because the locked sVVV remains in the wallet.
 * :feature:`-` A self-hosted nuthatch nest can now be used as an Ethereum indexer. Set its address under Settings > RPC Nodes > Nuthatch nest and put Nuthatch in Ethereum's indexer order. rotki then asks the nest for transactions, internal transactions and token transfers, and falls back to the next indexer for anything the nest has not indexed.
 * :bug:`-` With a crypto main currency such as ETH or BTC, historical fiat prices in that currency are now found by inverting the crypto price in fiat. Before, fiat received in a profit and loss report was valued at zero, fiat spent was reported as a missing price, and snapshot exports used a rate of one.
 * :bug:`-` Bitpanda history queries now save each page as it arrives, so a failure part way through no longer throws away the history already fetched.
@@ -102,6 +103,13 @@ Changelog
 * :feature:`12914` Beets pool joins and exits on Sonic are now decoded, and gauge balances for Beets v2 and v3 pools are queried.
 * :feature:`9110` Sonic is now a fully supported EVM chain. Transactions and balances can be tracked on it.
 * :feature:`13089` Venice.ai is now supported. VVV, sVVV and DIEM balances will be queried and events involving VVV and DIEM are now decoded.
+* :bug:`-` GnosisDAO treasury redemption deposits are now shown as leaving the wallet and the claimed treasury payouts as entering it.
+* :bug:`-` Hop bridge transfers sent from an L2 now record the amount that actually left the wallet and a correctly sized bonder fee. Before, a 6-decimal token such as USDC got a near-zero fee, and transfers through the Hop AMM wrapper recorded the bridged hToken amount instead of the wallet debit.
+* :bug:`-` Jupiter Lend collateral deposits on Solana are now counted as moving from the wallet into Jupiter, and collateral withdrawals as moving back.
+* :bug:`-`  Aave withdrawals sent to a different tracked address are now shown as received transfers for the recipient instead of withdrawals from the recipient's Aave position.
+* :bug:`-` The history sync banner no longer reports that synchronization is complete while long-running work such as refreshing Ethereum block production is still running.
+* :bug:`-` Saving a custom indexer order for one chain no longer makes the other chains ignore their own default order. Scroll and Gnosis use Blockscout first again, so account detection and transaction queries no longer fail an Etherscan request for Scroll, which Etherscan does not support. If Etherscan does not support a chain at all, rotki no longer asks for a paid Etherscan API key for it.
+* :bug:`-` API keys of Etherscan, Blockscout, Routescan, Cryptocompare and Helius are no longer written to the logs or included in error messages, so logs can be shared when reporting an issue without leaking them.
 * :release:`1.44.3 <2026-11-11>`
 * :bug:`-` Restoring a premium backup while creating an account now keeps the settings chosen at account creation, such as the usage analytics choice, instead of replacing them with the ones in the backup.
 * :bug:`13640` Compound v3 liquidations are now properly decoded, showing the seized collateral and the repaid debt.

@@ -20,14 +20,17 @@ MOCK_ROOT = Path(__file__).resolve().parent.parent / 'data' / 'mocks'
 class SignalingLock:
     """A lock that tells when a task starts waiting for it. A test can hold the inner lock,
     wait for the code under test to block on it, and change some state before releasing it,
-    to check what that code does while and after waiting."""
+    to check what that code does while and after waiting.
+
+    Acquisition arguments are forwarded to the underlying semaphore.
+    """
 
     def __init__(self) -> None:
         self.lock, self.waiting = Semaphore(), Event()
 
-    def acquire(self) -> bool:
+    def acquire(self, blocking: bool = True, timeout: float | None = None) -> bool:
         self.waiting.set()
-        return self.lock.acquire()
+        return self.lock.acquire(blocking=blocking, timeout=timeout)
 
     def release(self) -> None:
         self.lock.release()

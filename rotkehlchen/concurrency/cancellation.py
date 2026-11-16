@@ -84,9 +84,16 @@ def current_token() -> CancellationToken | None:
 
 
 def checkpoint() -> None:
-    """Cancellation checkpoint: raise TaskCancelledError if the current task
-    has been cancelled. No-op outside a cancellable task. Cheap enough for
-    per-iteration use in pagination and decoding loops."""
+    """Stop cooperatively if cancellation was requested for the current task.
+
+    Requesting cancellation only sets a token flag; it does not interrupt the worker.
+    This call checks that flag and raises TaskCancelledError when it is set, unwinding
+    the stack through normal finally blocks and context-manager cleanup.
+
+    Otherwise it returns immediately, including outside a cancellable task. It does
+    not sleep, save progress, or commit data. Database transactions provide rollback
+    safety; this call only decides whether execution should continue.
+    """
     if (token := _current_token.get()) is not None:
         token.check()
 

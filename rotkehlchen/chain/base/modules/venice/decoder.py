@@ -141,6 +141,11 @@ class VeniceDecoder(MerkleClaimDecoderInterface):
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_diem_mint(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode locking sVVV to mint DIEM.
+
+        The locked sVVV stays in the wallet's sVVV balance and no transfer happens, so the
+        lock is informational and does not move any balance.
+        """
         if not self.base.is_tracked(user_address := context.transaction.from_address):
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -155,12 +160,12 @@ class VeniceDecoder(MerkleClaimDecoderInterface):
         lock_event = self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
-            event_type=HistoryEventType.DEPOSIT,
+            event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset(SVVV_TOKEN_ID),
             amount=locked_amount,
             location_label=user_address,
-            notes=f'Deposit {locked_amount} sVVV as collateral to mint DIEM',
+            notes=f'Lock {locked_amount} sVVV as collateral to mint DIEM',
             counterparty=CPT_VENICE,
             address=VENICE_STAKING_CONTRACT,
         )
@@ -186,6 +191,7 @@ class VeniceDecoder(MerkleClaimDecoderInterface):
         return EvmDecodingOutput(events=[lock_event])
 
     def _decode_diem_burn(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode burning DIEM to unlock sVVV. The unlock is informational, like the lock."""
         if not self.base.is_tracked(user_address := context.transaction.from_address):
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -200,12 +206,12 @@ class VeniceDecoder(MerkleClaimDecoderInterface):
         unlock_event = self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
-            event_type=HistoryEventType.WITHDRAWAL,
+            event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=Asset(SVVV_TOKEN_ID),
             amount=unlocked_amount,
             location_label=user_address,
-            notes=f'Withdraw {unlocked_amount} sVVV collateral by burning DIEM',
+            notes=f'Unlock {unlocked_amount} sVVV collateral by burning DIEM',
             counterparty=CPT_VENICE,
             address=VENICE_STAKING_CONTRACT,
         )

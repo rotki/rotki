@@ -56,7 +56,7 @@ from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.types import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
-from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.network import create_session, redact_params, redact_secret
 from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -377,14 +377,14 @@ class Cryptocompare(
         timeout = CachedSettings().get_timeout_tuple()
         self._maybe_probe()
         while tries >= 0:
-            log.debug('Querying cryptocompare', url=url, params=params)
+            log.debug('Querying cryptocompare', url=url, params=redact_params(params, 'api_key'))
             self._rate_limiter.acquire()
             try:
                 response = self.session.get(url, timeout=timeout, params=params)
             except requests.exceptions.RequestException as e:
                 self.note_request_failure(e)
                 raise RemoteError(
-                    f'Cryptocompare API request failed due to {e!s}',
+                    f'Cryptocompare API request failed due to {redact_secret(str(e), api_key)}',
                     cause=FailureCause.NETWORK,
                 ) from e
 

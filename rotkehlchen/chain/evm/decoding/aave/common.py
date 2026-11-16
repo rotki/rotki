@@ -193,9 +193,11 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
         user = bytes_to_address(tx_log.topics[2])
         to = bytes_to_address(tx_log.topics[3])
         return_event, withdraw_event = None, None
+        user_is_tracked = self.base.is_tracked(user)
         if (
             not (is_wnative_user := user in self.native_gateways) and
-            not self.base.any_tracked([user, to])
+            not user_is_tracked and
+            not self.base.is_tracked(to)
         ):
             return None, None
         amount = asset_normalized_value(
@@ -222,6 +224,11 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
                     event.event_type == HistoryEventType.RECEIVE and
                     event.address != ZERO_ADDRESS
                 ):
+                    if user_is_tracked is False and is_wnative_user is False:
+                        event.notes = f'Receive {amount} {symbol} from an {self.label} withdrawal by {user}'  # noqa: E501
+                        event.counterparty = self.counterparty
+                        continue
+
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                     if is_wnative_user is False:  # else location label is correctly set by the transfer decoder  # noqa: E501
@@ -231,6 +238,8 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
                     withdraw_event = event
                     event.counterparty = self.counterparty
                 elif (
+                    (user_is_tracked or is_wnative_user) and
+                    (event.location_label == user or is_wnative_user) and
                     event.event_type != HistoryEventType.RECEIVE and
                     (event.address == ZERO_ADDRESS or event.address in self.native_gateways) and
                     self._token_is_aave_contract(event.asset)

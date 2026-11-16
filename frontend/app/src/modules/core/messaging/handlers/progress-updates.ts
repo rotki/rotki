@@ -6,6 +6,7 @@ import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { createConditionalHandler } from '@/modules/core/messaging/utils';
 import { historicalBalancesActivity } from '@/modules/history/balances/historical-balances.activity';
+import { useDataIssueRemediationStore } from '@/modules/history/data-issues/use-data-issue-remediation-store';
 import { decodeActivity, decodeActivityId, type DecodeSubject } from '@/modules/history/events/tx/decode.activity';
 import { protocolCacheActivity, withProtocolCacheFrame } from '@/modules/history/protocol-cache.activity';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
@@ -22,6 +23,7 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
   const { setHistoricalDailyPriceStatus, setHistoricalPriceStatus, setStatsPriceQueryStatus } = useHistoricCachePriceStore();
   const { reportProgress, reportProgressByPrefix, statusOf } = useTaskOrchestrator();
   const { matchChain } = useSupportedChains();
+  const { notifyRemediationCompleted } = useDataIssueRemediationStore();
 
   /**
    * Report a chain's decode progress onto the chain-wide decode activity.
@@ -123,6 +125,17 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
     );
   }
 
+  /**
+   * Record the end of a periodic auto-remediation run.
+   *
+   * Only the completed phase changes anything: a run that has just started has not resolved or
+   * re-stated an issue yet, so the inbox has nothing new to read on it.
+   */
+  function handleRemediationPhase(data: { phase: 'running' | 'completed' }): void {
+    if (data.phase === 'completed')
+      notifyRemediationCompleted();
+  }
+
   return createConditionalHandler<ProgressUpdateResultData>(async (data) => {
     const subtype = data.subtype;
 
@@ -132,6 +145,9 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
     }
 
     switch (subtype) {
+      case SocketMessageProgressUpdateSubType.DATA_ISSUE_REMEDIATION:
+        handleRemediationPhase(data);
+        break;
       case SocketMessageProgressUpdateSubType.UNDECODED_TRANSACTIONS:
         setUndecodedTransactionsStatus(data);
         reportDecodeProgress(data);
