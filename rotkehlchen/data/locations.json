@@ -348,6 +348,12 @@
     "image": "bit2me.png"
   },
   {
+    "identifier": "bitget",
+    "name": "Bitget",
+    "parent_identifier": "exchanges",
+    "image": "bitget.svg"
+  },
+  {
     "identifier": "coinex",
     "name": "CoinEx",
     "parent_identifier": "exchanges",
