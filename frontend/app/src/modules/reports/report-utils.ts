@@ -1,4 +1,4 @@
-import type { ProfitLossEvent, ProfitLossOverviewItem, Report } from '@/modules/reports/report-types';
+import type { MissingPrice, ProfitLossEvent, ProfitLossOverviewItem, Report } from '@/modules/reports/report-types';
 import { Zero } from '@rotki/common';
 
 export function calculateTotalProfitLoss(item: Report): ProfitLossOverviewItem {
@@ -33,4 +33,9 @@ export function isTransactionEvent(item: ProfitLossEvent): boolean {
  */
 export function stoppedAtPlanLimit(report: Pick<Report, 'processedActions' | 'totalActions'>, planLimit: number): boolean {
   return planLimit > 0 && report.processedActions >= planLimit && report.processedActions < report.totalActions;
+}
+
+/** How many of the missing prices were lost to oracle rate limits rather than not existing. */
+export function countRateLimited(missingPrices: MissingPrice[]): number {
+  return missingPrices.filter(missingPrice => missingPrice.rateLimited).length;
 }

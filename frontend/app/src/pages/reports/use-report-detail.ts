@@ -1,6 +1,7 @@
 import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { ProfitLossEvent, Report } from '@/modules/reports/report-types';
+import { countRateLimited } from '@/modules/reports/report-utils';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { defaultReportEvents, useReportsStore } from '@/modules/reports/use-reports-store';
 
@@ -19,6 +20,7 @@ interface UseReportDetailReturn {
   missingAcquisitionsCount: ComputedRef<number>;
   missingPricesCount: ComputedRef<number>;
   modelReportEvents: Ref<Collection<ProfitLossEvent>>;
+  rateLimitedPricesCount: ComputedRef<number>;
   refreshing: DeepReadonly<Ref<boolean>>;
   regenerateReport: () => Promise<void>;
   reportId: number;
@@ -53,6 +55,7 @@ export function useReportDetail(): UseReportDetailReturn {
 
   const missingAcquisitionsCount = computed<number>(() => get(actionableItems)?.missingAcquisitions.length ?? 0);
   const missingPricesCount = computed<number>(() => get(actionableItems)?.missingPrices.length ?? 0);
+  const rateLimitedPricesCount = computed<number>(() => countRateLimited(get(actionableItems)?.missingPrices ?? []));
   const eventsSkippedCount = computed<number>(() => get(actionableItems)?.eventsSkippedNoRule ?? 0);
   const hasActionableIssues = computed<boolean>(() => get(latest) && (get(missingAcquisitionsCount) > 0 || get(missingPricesCount) > 0));
   const showCompletenessWarning = computed<boolean>(() => get(hasActionableIssues) || (get(latest) && get(eventsSkippedCount) > 0));
@@ -107,6 +110,7 @@ export function useReportDetail(): UseReportDetailReturn {
     missingAcquisitionsCount,
     missingPricesCount,
     modelReportEvents,
+    rateLimitedPricesCount,
     refreshing: readonly(refreshing),
     regenerateReport,
     reportId,

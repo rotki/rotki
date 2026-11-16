@@ -22,6 +22,7 @@ const detailState = vi.hoisted(() => ({
   loading: false,
   missingAcquisitions: 0,
   missingPrices: 0,
+  rateLimitedPrices: 0,
   showCompletenessWarning: false,
   showStaleDetails: false,
 }));
@@ -36,6 +37,7 @@ vi.mock('@/pages/reports/use-report-detail', () => ({
     missingAcquisitionsCount: computed(() => detailState.missingAcquisitions),
     missingPricesCount: computed(() => detailState.missingPrices),
     modelReportEvents: ref({ data: [], found: 0, limit: 0, total: 0 }),
+    rateLimitedPricesCount: computed(() => detailState.rateLimitedPrices),
     refreshing: computed(() => false),
     regenerateReport,
     reportId: LATEST_REPORT_ID,
@@ -74,6 +76,7 @@ describe('pages/reports/[id]', () => {
     detailState.loading = false;
     detailState.missingAcquisitions = 0;
     detailState.missingPrices = 0;
+    detailState.rateLimitedPrices = 0;
     detailState.showCompletenessWarning = false;
     detailState.showStaleDetails = false;
   });
@@ -142,5 +145,18 @@ describe('pages/reports/[id]', () => {
     wrapper = mountPage();
 
     expect(wrapper.find('[data-testid=stale-details]').exists()).toBe(true);
+  });
+
+  it('should tell the user when missing prices were rate limited rather than absent', () => {
+    detailState.showCompletenessWarning = true;
+    detailState.missingPrices = 3;
+
+    wrapper = mountPage();
+    expect(wrapper.find('[data-testid=completeness-warning]').text()).not.toContain('rate_limited_hint');
+    wrapper.unmount();
+
+    detailState.rateLimitedPrices = 2;
+    wrapper = mountPage();
+    expect(wrapper.find('[data-testid=completeness-warning]').text()).toContain('rate_limited_hint');
   });
 });

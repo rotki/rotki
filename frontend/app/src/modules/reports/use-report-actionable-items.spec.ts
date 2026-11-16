@@ -168,6 +168,17 @@ describe('useReportActionableStepper', () => {
       expect(get(steps)).toEqual([]);
     });
 
+    it('should add the rate limit hint only when some missing prices were rate limited', () => {
+      const plain = useReportActionableStepper({ missingAcquisitions: [], missingPrices: prices(2) }, selectors);
+      const limited = useReportActionableStepper(
+        { missingAcquisitions: [], missingPrices: [...prices(1), { ...prices(1)[0], rateLimited: true }] },
+        selectors,
+      );
+
+      expect(get(plain.steps)[0].hint).not.toContain('rate_limited_hint');
+      expect(get(limited.steps)[0].hint).toContain('rate_limited_hint');
+    });
+
     it('should give a step the items and the component that shows them', () => {
       const missingPrices = prices(2);
       const { steps } = useReportActionableStepper({ missingAcquisitions: [], missingPrices }, selectors);

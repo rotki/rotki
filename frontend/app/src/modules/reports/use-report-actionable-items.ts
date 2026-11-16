@@ -6,6 +6,7 @@ import type {
   MissingPrice,
 } from '@/modules/reports/report-types';
 import { toSentenceCase } from '@rotki/common';
+import { countRateLimited } from '@/modules/reports/report-utils';
 
 /** The two kinds of issue a report can leave for the user to act on. */
 export type ActionableStepKey = 'missingAcquisitions' | 'missingPrices';
@@ -166,8 +167,12 @@ export function useReportActionableStepper(
     }
 
     if (items && missingPricesLength > 0) {
+      const rateLimitedLength = countRateLimited(items.missingPrices);
+      const hint = t('profit_loss_report.actionable.missing_prices.hint');
       contents.push({
-        hint: t('profit_loss_report.actionable.missing_prices.hint'),
+        hint: rateLimitedLength > 0
+          ? `${hint} ${t('profit_loss_report.actionable.missing_prices.rate_limited_hint', { count: rateLimitedLength })}`
+          : hint,
         items: items.missingPrices,
         key: 'missingPrices',
         selector: selectors.missingPrices,

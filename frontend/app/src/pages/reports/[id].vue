@@ -34,6 +34,7 @@ const {
   missingAcquisitionsCount,
   missingPricesCount,
   modelReportEvents,
+  rateLimitedPricesCount,
   refreshing,
   regenerateReport,
   reportId,
@@ -109,6 +110,9 @@ const {
             </li>
             <li v-if="missingPricesCount > 0">
               {{ t('profit_loss_report.actionable.overview_warning_prices', { count: missingPricesCount }) }}
+              <div v-if="rateLimitedPricesCount > 0">
+                {{ t('profit_loss_report.actionable.missing_prices.rate_limited_hint', { count: rateLimitedPricesCount }) }}
+              </div>
             </li>
           </ul>
           {{ t('profit_loss_report.actionable.overview_warning') }}

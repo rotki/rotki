@@ -6525,6 +6525,7 @@
         "no_filled_prices": "No prices are filled",
         "price_is_saved": "Price is saved",
         "price_not_found": "Price not found",
+        "rate_limited_hint": "The price oracles rate limited rotki for {count} of these, so a price may still exist. Wait a while and regenerate the report before entering them manually.",
         "refresh_price_hint": "Rate limiting detected when rotki tried to fetch the historical price. You can either fetch the historical price again manually, or input manual price.",
         "regenerate_report_nudge": "click button below to re-generate the report.",
         "skipped_all_events_confirmation": "Are you sure you want to skip all events whose asset price is missing?",
