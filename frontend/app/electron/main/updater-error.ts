@@ -7,7 +7,8 @@ const MAX_UPDATER_ERROR_LENGTH = 500;
  */
 export function summarizeUpdaterError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
-  const firstLine = message.split('\n', 1)[0].trim();
+  const lineEnd = message.indexOf('\n');
+  const firstLine = (lineEnd === -1 ? message : message.slice(0, lineEnd)).trim();
   if (firstLine.length > MAX_UPDATER_ERROR_LENGTH)
     return `${firstLine.slice(0, MAX_UPDATER_ERROR_LENGTH)}… (truncated)`;
 
