@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Venice DIEM collateral locks and unlocks are now informational events because the locked sVVV remains in the wallet.
 * :bug:`-` With a crypto main currency such as ETH or BTC, historical fiat prices in that currency are now found by inverting the crypto price in fiat. Before, fiat received in a profit and loss report was valued at zero, fiat spent was reported as a missing price, and snapshot exports used a rate of one.
 * :bug:`-` Bitpanda history queries now save each page as it arrives, so a failure part way through no longer throws away the history already fetched.
 * :bug:`-` Refreshing exchange balances now queries each exchange once. Before, an exchange with several connected accounts was queried again for every account, so balances took longer to load the more accounts it had.
