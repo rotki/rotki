@@ -34,8 +34,8 @@ JUPITER_LEND_EVENT_TYPES: Final = (
     (HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED),
     (HistoryEventType.MINT, HistoryEventSubType.NFT),
     (HistoryEventType.SPEND, HistoryEventSubType.FEE),
-    (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
-    (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
+    (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
+    (HistoryEventType.WITHDRAWAL, HistoryEventSubType.WITHDRAW_FROM_PROTOCOL),
     (HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT),
     (HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT),
 )
