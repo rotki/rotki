@@ -2,6 +2,9 @@
 Changelog
 =========
 
+* :bug:`-` GnosisDAO treasury redemption deposits are now shown as leaving the wallet and the claimed treasury payouts as entering it.
+* :bug:`-` Hop bridge transfers sent from an L2 now record the amount that actually left the wallet and a correctly sized bonder fee. Before, a 6-decimal token such as USDC got a near-zero fee, and transfers through the Hop AMM wrapper recorded the bridged hToken amount instead of the wallet debit.
+* :bug:`-` Jupiter Lend collateral deposits on Solana are now counted as moving from the wallet into Jupiter, and collateral withdrawals as moving back.
 * :bug:`-`  Aave withdrawals sent to a different tracked address are now shown as received transfers for the recipient instead of withdrawals from the recipient's Aave position.
 * :bug:`-` The history sync banner no longer reports that synchronization is complete while long-running work such as refreshing Ethereum block production is still running.
 * :bug:`-` Saving a custom indexer order for one chain no longer makes the other chains ignore their own default order. Scroll and Gnosis use Blockscout first again, so account detection and transaction queries no longer fail an Etherscan request for Scroll, which Etherscan does not support. If Etherscan does not support a chain at all, rotki no longer asks for a paid Etherscan API key for it.

@@ -484,7 +484,7 @@ class JupiterDecoder(SolanaDecoderInterface):
         if is_deposit:
             expected_collateral_event_type = HistoryEventType.SPEND
             new_collateral_event_type = HistoryEventType.DEPOSIT
-            new_collateral_event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+            new_collateral_event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
             new_collateral_notes = f'Deposit {new_collateral} {{asset}} as collateral to Jupiter'
             if wsol_ata_address is not None:
                 expected_token = new_token = A_SOL.resolve_to_asset_with_symbol()
@@ -492,7 +492,7 @@ class JupiterDecoder(SolanaDecoderInterface):
         else:
             expected_collateral_event_type = HistoryEventType.RECEIVE
             new_collateral_event_type = HistoryEventType.WITHDRAWAL
-            new_collateral_event_subtype = HistoryEventSubType.REMOVE_ASSET
+            new_collateral_event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
             new_collateral_notes = f'Withdraw {new_collateral} {{asset}} as collateral from Jupiter'  # noqa: E501
             if wsol_ata_address is not None:
                 expected_token = collateral_token
