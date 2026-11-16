@@ -1,7 +1,7 @@
 import hashlib
 import json
+import logging
 from collections import defaultdict
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.concurrency import checkpoint
@@ -10,6 +10,8 @@ from rotkehlchen.db.constants import HistoryEventLinkType
 from rotkehlchen.db.filtering import DataIssuesFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.misc import InputError, NotFoundError, RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.bucket_checks import balances_match
@@ -22,6 +24,7 @@ from rotkehlchen.history.data_issues.remediation.base import (
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.locations.chains import BLOCKCHAIN_LOCATIONS
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.events import (
     MOVEMENT_MATCHING_BATCH_SIZE,
     MovementMatchingState,
@@ -34,10 +37,10 @@ from rotkehlchen.tasks.events import (
 )
 from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.types import EventMetricKey, Timestamp, TimestampMS
-from rotkehlchen.utils.misc import ts_sec_to_ms
+from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
 
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -47,13 +50,26 @@ if TYPE_CHECKING:
     from rotkehlchen.history.data_issues.types import DataIssue
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
+
 CEX_ONCHAIN_MATCHING: Final = 'cex_onchain_matching'
 CEX_ONCHAIN_MATCHING_TIMEOUT: Final = 300
-"""Seconds one issue's attempt may take. The matching itself is quick, but a match is only
-known to resolve the issue after the balances are reprocessed from the start of the issue's
-window, which for a long history takes far longer than the default strategy budget."""
+"""Seconds one issue's matching may take. Each candidate movement runs the matcher's candidate
+search, and the matches and the attempt owing their verification commit together, so a cut-off
+attempt leaves nothing behind and would time out again on every later run."""
 ATTRIBUTION_MATCHED_DEPOSIT: Final = 'matched_to_cex_deposit'
 ATTRIBUTION_MATCHED_WITHDRAWAL: Final = 'matched_to_cex_withdrawal'
+ATTRIBUTION_REPROCESSING_PENDING: Final = 'reprocessing_pending'
+ATTRIBUTIONS_KEEPING_VERIFICATION_PENDING: Final = frozenset({'timeout', 'strategy_failed'})
+"""Attributions of attempts that end without concluding a pending verification."""
+TRIAL_SNAPSHOT_KEYS: Final = (
+    'amount_tolerance',
+    'time_range',
+    'movement_ids',
+    'window_fingerprint',
+)
+REMEDIATED_ISSUE_KINDS: Final = (IssueKind.NEGATIVE_BALANCE, IssueKind.CURRENT_BALANCE_MISMATCH)
 
 type AssetsInCollectionCache = dict[str, tuple[Asset, ...]]
 
@@ -71,21 +87,23 @@ def _get_issue_window(issue: DataIssue, time_range: int) -> tuple[TimestampMS, T
     )
 
 
-def _get_linked_movements(database: DBHandler) -> list[AssetMovement]:
-    """Load completed matches so an interrupted balance verification can be retried."""
-    with database.conn.read_ctx() as cursor:
-        identifiers = [row[0] for row in cursor.execute(
-            'SELECT DISTINCT left_event_id FROM history_event_links WHERE link_type=?',
-            (HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),),
-        )]
-        if len(identifiers) == 0:
-            return []
-        return [
-            event for event in DBHistoryEvents(database).get_history_events_internal(
-                cursor=cursor,
-                filter_query=HistoryEventFilterQuery.make(identifiers=identifiers),
-            ) if isinstance(event, AssetMovement)
-        ]
+def get_pending_verification(issue: DataIssue) -> dict[str, Any] | None:
+    """The attempt recording this strategy's matches whose balance verification is still owed.
+
+    Matching records it in the transaction that creates the links, so it survives a run that
+    is cancelled or crashes before the verification. It stays owed through operational
+    failures and is settled by any other attempt of this strategy: a verification outcome,
+    or a later trial of the matcher.
+    """
+    pending: dict[str, Any] | None = None
+    for attempt in issue.auto_remediation_attempts:
+        if attempt.get('strategy') != CEX_ONCHAIN_MATCHING:
+            continue
+        if attempt.get('attribution') == ATTRIBUTION_REPROCESSING_PENDING:
+            pending = attempt
+        elif attempt.get('attribution') not in ATTRIBUTIONS_KEEPING_VERIFICATION_PENDING:
+            pending = None
+    return pending
 
 
 def _movement_may_explain_issue(
@@ -120,27 +138,28 @@ def _match_movements(
         database: DBHandler,
         settings: DBSettings,
         movements: list[AssetMovement],
-        all_unmatched_movements: list[AssetMovement],
+        movements_by_asset: dict[Asset, list[AssetMovement]],
         fee_events: dict[str, AssetMovement],
         assets_in_collection_cache: AssetsInCollectionCache,
-) -> list[AssetMovement]:
-    """Run the asset movement matcher on just the given movements and return the matched ones.
+) -> tuple[list[AssetMovement], set[int]]:
+    """Run the asset movement matcher on just the given movements.
 
     This drives the matcher's own per-movement step, so the candidate search, the amount
     tolerance, the match window and the event edits are exactly those of a full matching run.
     Ambiguous movements are retried once another match narrows their candidates, like there.
+    A movement linked since the caller listed it as unmatched is left alone.
+
+    Returns the movements this call matched and the ids of every event linked afterwards.
     """
     events_db = DBHistoryEvents(database)
-    movements_by_asset: defaultdict[Asset, list[AssetMovement]] = defaultdict(list)
-    for movement in all_unmatched_movements:
-        movements_by_asset[movement.asset].append(movement)
-
     with database.conn.read_ctx() as cursor:
         blockchain_accounts = database.get_blockchain_accounts(cursor=cursor)
-        matching_state = MovementMatchingState(
-            already_matched_event_ids=get_already_matched_event_ids(cursor=cursor),
-        )
-        pending, from_retry = list(movements), False
+        initially_linked_ids = get_already_matched_event_ids(cursor=cursor)
+        matching_state = MovementMatchingState(already_matched_event_ids=set(initially_linked_ids))
+        pending, from_retry = [
+            movement for movement in movements
+            if movement.identifier not in initially_linked_ids
+        ], False
         while len(pending) != 0:
             for movement in pending:
                 checkpoint()
@@ -166,8 +185,9 @@ def _match_movements(
 
     return [
         movement for movement in movements
-        if movement.identifier in matching_state.already_matched_event_ids
-    ]
+        if movement.identifier not in initially_linked_ids and
+        movement.identifier in matching_state.already_matched_event_ids
+    ], matching_state.already_matched_event_ids
 
 
 def _get_latest_strategy_attempt(issue: DataIssue, strategy_name: str) -> dict[str, Any] | None:
@@ -176,20 +196,6 @@ def _get_latest_strategy_attempt(issue: DataIssue, strategy_name: str) -> dict[s
         if attempt.get('strategy') == strategy_name:
             latest_attempt = attempt
     return latest_attempt
-
-
-def _is_retrying_verification(issue: DataIssue, strategy_name: str) -> bool:
-    """Whether an interrupted prior attempt for `strategy_name` still needs verification."""
-    if issue.state == IssueState.UNRESOLVED and len(issue.auto_remediation_attempts) == 0:
-        return True
-
-    if (latest_attempt := _get_latest_strategy_attempt(issue, strategy_name)) is None:
-        return False
-    return latest_attempt.get('attribution') in {
-        'timeout',
-        'strategy_failed',
-        'reprocessing_pending',
-    }
 
 
 def _get_tracked_accounts(cursor: DBCursor) -> list[tuple[str, str]]:
@@ -334,34 +340,19 @@ def _attempt_matches_snapshot(
         attempt: Mapping[str, Any],
         snapshot: Mapping[str, Any],
 ) -> bool:
-    return (
-        attempt.get('amount_tolerance') == snapshot['amount_tolerance'] and
-        attempt.get('time_range') == snapshot['time_range'] and
-        attempt.get('movement_ids') == snapshot['movement_ids'] and
-        attempt.get('window_fingerprint') == snapshot['window_fingerprint']
-    )
+    return all(attempt.get(key) == snapshot[key] for key in TRIAL_SNAPSHOT_KEYS)
 
 
 def _make_attempt_data(
         resolved: bool,
         notes: str,
-        trial_snapshot: Mapping[str, Any] | None,
+        trial_snapshot: Mapping[str, Any],
 ) -> dict[str, Any]:
-    if trial_snapshot is None:
-        return {}
     attempt_data: dict[str, Any] = {'success': resolved}
     if notes != '':
         attempt_data['reason'] = notes
     attempt_data.update(trial_snapshot)
     return attempt_data
-
-
-@dataclass(frozen=True, slots=True)
-class _MatchIssueResult:
-    matched_movements: list[AssetMovement]
-    had_candidates: bool
-    trial_snapshot: dict[str, Any] | None = None
-    unchanged_inputs: bool = False
 
 
 def _pick_causal_movement(
@@ -391,13 +382,13 @@ def _pick_causal_movement(
     return matched_movements[0]
 
 
-def _issue_still_reproduces(database: DBHandler, issue: DataIssue, tolerance: FVal) -> bool:
-    """Whether the freshly reprocessed balances still show what the issue reported.
+def _issue_still_reproduces(cursor: DBCursor, issue: DataIssue, tolerance: FVal) -> bool:
+    """Whether the up to date balances still show what the issue reported.
 
     A negative balance is gone once its event got a balance in the bucket: the engine writes
     none for the event that takes a bucket below zero, nor for any event after it. A current
     balance mismatch is gone once the bucket's latest balance is within tolerance of the
-    observed one.
+    observed one. Callers must first make sure no stale balances marker is pending.
     """
     bucket_filter = 'metric_key = ? AND location = ? AND location_label IS ? AND protocol IS ? AND asset = ?'  # noqa: E501
     bucket_bindings = (
@@ -407,29 +398,25 @@ def _issue_still_reproduces(database: DBHandler, issue: DataIssue, tolerance: FV
         issue.protocol or None,
         issue.asset,
     )
-    with database.conn.read_ctx() as cursor:
-        if database.get_static_cache(cursor, DBCacheStatic.STALE_BALANCES_FROM_TS) is not None:
-            return True
-        if issue.kind == IssueKind.NEGATIVE_BALANCE:
-            return cursor.execute(
-                f'SELECT COUNT(*) FROM event_metrics WHERE {bucket_filter} AND event_identifier = ?',  # noqa: E501
-                (*bucket_bindings, issue.payload['event_identifier']),
-            ).fetchone()[0] == 0
+    if issue.kind == IssueKind.NEGATIVE_BALANCE:
+        return cursor.execute(
+            f'SELECT COUNT(*) FROM event_metrics WHERE {bucket_filter} AND event_identifier = ?',
+            (*bucket_bindings, issue.payload['event_identifier']),
+        ).fetchone()[0] == 0
 
-        cutoff = ts_sec_to_ms(Timestamp(issue.payload['queried_at_ts']))
-        if cursor.execute(
-            'SELECT 1 FROM bucket_processing_stops WHERE location=? AND location_label=? '
-            'AND protocol=? AND asset=? AND event_timestamp<=?',
-            (issue.location, issue.location_label, issue.protocol, issue.asset, cutoff),
-        ).fetchone() is not None:
-            return True
+    cutoff = ts_sec_to_ms(Timestamp(issue.payload['queried_at_ts']))
+    if cursor.execute(
+        'SELECT 1 FROM bucket_processing_stops WHERE location=? AND location_label=? '
+        'AND protocol=? AND asset=? AND event_timestamp<=?',
+        (issue.location, issue.location_label, issue.protocol, issue.asset, cutoff),
+    ).fetchone() is not None:
+        return True
 
-        latest_balance = cursor.execute(
-            f'SELECT metric_value FROM event_metrics WHERE {bucket_filter} AND timestamp<=? '
-            'ORDER BY sort_key DESC LIMIT 1',
-            (*bucket_bindings, cutoff),
-        ).fetchone()
-
+    latest_balance = cursor.execute(
+        f'SELECT metric_value FROM event_metrics WHERE {bucket_filter} AND timestamp<=? '
+        'ORDER BY sort_key DESC LIMIT 1',
+        (*bucket_bindings, cutoff),
+    ).fetchone()
     return latest_balance is None or balances_match(
         derived=FVal(latest_balance[0]),
         observed=FVal(issue.payload['observed_balance']),
@@ -437,21 +424,57 @@ def _issue_still_reproduces(database: DBHandler, issue: DataIssue, tolerance: FV
     ) is False
 
 
+def reprocess_balances_for_pending_matches(
+        database: DBHandler,
+        chains_aggregator: ChainsAggregator,
+        issues: Iterable[DataIssue],
+) -> None:
+    """Reprocess the balances once for all the issues whose matches await verification.
+
+    Processing starts at the stale balances marker that the match edits set, which is where a
+    scheduled pass would start too. A pass cut short keeps that marker, so the metrics it
+    deleted are always rebuilt by the next one. Nothing is reprocessed while no issue owes a
+    verification or no marker is pending.
+    """
+    if all(get_pending_verification(issue) is None for issue in issues):
+        return
+
+    with database.conn.read_ctx() as cursor:
+        if (stale_from_ts := database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_BALANCES_FROM_TS,
+        )) is None:
+            return
+
+    try:
+        process_historical_balances(
+            database=database,
+            msg_aggregator=database.msg_aggregator,
+            from_ts=TimestampMS(int(stale_from_ts)),
+            chains_aggregator=chains_aggregator,
+        )
+    except (RemoteError, DeserializationError) as e:
+        log.error('Failed to reprocess balances for exchange movement matches: %s', e)
+
+
 class CexOnchainMatchingStrategy(BaseRemediationStrategy):
     """Pair unmatched exchange deposits/withdrawals around an issue with their onchain leg.
 
     Uses the existing matcher's configured tolerance and time range without remote fetching.
-    A match can reclassify an onchain leg and flip its balance effect. Success requires
-    reprocessing balances and checking the original failing condition. Balance reprocessing
-    can query configured archive nodes for unrelated rebasing assets, like a scheduled pass.
+    A match can reclassify an onchain leg and flip its balance effect, so it only owes a
+    verification: the links and a `reprocessing_pending` attempt naming the matched movements
+    commit together. `reprocess_balances_for_pending_matches` then reprocesses once for every
+    issue of the run, and `CexOnchainMatchVerificationStrategy` checks each issue's condition.
+
+    The unmatched movements are loaded once per run, and the ones a match consumes are dropped.
+    A movement linked by someone else meanwhile is skipped by the matcher.
     """
 
     name: Final = CEX_ONCHAIN_MATCHING
     timeout: float = CEX_ONCHAIN_MATCHING_TIMEOUT
 
-    def __init__(self, database: DBHandler, chains_aggregator: ChainsAggregator) -> None:
+    def __init__(self, database: DBHandler) -> None:
         self.database = database
-        self.chains_aggregator = chains_aggregator
         self.settings = CachedSettings().get_settings()
         self.assets_in_collection_cache: AssetsInCollectionCache = {}
         unmatched, self.fee_events = get_unmatched_asset_movements(database)
@@ -462,81 +485,56 @@ class CexOnchainMatchingStrategy(BaseRemediationStrategy):
         self._unmatched_by_asset: defaultdict[Asset, list[AssetMovement]] = defaultdict(list)
         for movement in unmatched:
             self._unmatched_by_asset[movement.asset].append(movement)
-        self._linked_movements: list[tuple[AssetMovement, tuple[Asset, ...]]] | None = None
-        self._retry_verification_issue_ids: set[int] = set()
         self._unresolved_issue_ids: set[int] = set()
         self._preloaded_possible_matches: dict[int, list[HistoryBaseEntry]] = {}
-        self._preloaded_movement_ids: set[int] = set()
         self._already_matched_event_ids: set[int] | None = None
         self._tracked_accounts: list[tuple[str, str]] | None = None
         self._preload_unresolved_inputs()
 
     def _preload_unresolved_inputs(self) -> None:
-        unresolved_issues = DataIssuesManager(self.database).list_issues(
-            DataIssuesFilterQuery.make(
-                kinds=[IssueKind.NEGATIVE_BALANCE, IssueKind.CURRENT_BALANCE_MISMATCH],
-                states=[IssueState.UNRESOLVED],
-            ),
-        )
+        """Load what `applies_to` compares against the last trial of each unresolved issue."""
         movements_to_preload: dict[int, AssetMovement] = {}
-        needs_linked_movements = False
-        for issue in unresolved_issues:
-            if _is_retrying_verification(issue, self.name):
-                needs_linked_movements = True
-                continue
-            if _get_latest_strategy_attempt(issue, self.name) is None:
-                continue
+        for issue in DataIssuesManager(self.database).list_issues(DataIssuesFilterQuery.make(
+            kinds=list(REMEDIATED_ISSUE_KINDS),
+            states=[IssueState.UNRESOLVED],
+        )):
             if (
-                _is_on_exchange(issue) is False and
-                (issue.location not in BLOCKCHAIN_LOCATIONS or issue.location_label == '')
+                _get_latest_strategy_attempt(issue, self.name) is None or
+                get_pending_verification(issue) is not None
             ):
                 continue
             for movement in self._get_candidate_movements(issue):
                 if movement.identifier is not None:
                     movements_to_preload[movement.identifier] = movement
 
-        if needs_linked_movements:
-            self._get_linked_movements_with_assets()
+        if len(movements_to_preload) == 0:
+            return
 
-        if len(movements_to_preload) != 0:
-            self._preload_snapshot_data_for_movements(list(movements_to_preload.values()))
-
-    def _preload_snapshot_data_for_movements(self, movements: list[AssetMovement]) -> None:
-        events_db = DBHistoryEvents(self.database)
         with self.database.conn.read_ctx() as cursor:
-            if self._already_matched_event_ids is None:
-                self._already_matched_event_ids = get_already_matched_event_ids(cursor=cursor)
-            if self._tracked_accounts is None:
-                self._tracked_accounts = _get_tracked_accounts(cursor=cursor)
-            if len(movements) != 0:
-                self._preloaded_possible_matches.update(_load_possible_matches_for_movements(
-                    events_db=events_db,
-                    movements=movements,
-                    settings=self.settings,
-                    assets_in_collection_cache=self.assets_in_collection_cache,
-                    cursor=cursor,
-                ))
-                for movement in movements:
-                    if movement.identifier is not None:
-                        self._preloaded_movement_ids.add(movement.identifier)
+            self._already_matched_event_ids = get_already_matched_event_ids(cursor=cursor)
+            self._tracked_accounts = _get_tracked_accounts(cursor=cursor)
+            self._preloaded_possible_matches = _load_possible_matches_for_movements(
+                events_db=DBHistoryEvents(self.database),
+                movements=list(movements_to_preload.values()),
+                settings=self.settings,
+                assets_in_collection_cache=self.assets_in_collection_cache,
+                cursor=cursor,
+            )
 
-    def _get_or_compute_snapshot(
+    def _get_preloaded_snapshot(
             self,
             candidate_movements: list[AssetMovement],
-    ) -> dict[str, Any]:
-        missing_movements = [
-            movement for movement in candidate_movements
-            if movement.identifier is not None and
-            movement.identifier not in self._preloaded_movement_ids
-        ]
+    ) -> dict[str, Any] | None:
+        """The trial snapshot from the preloaded inputs, or None if they do not cover it."""
         if (
-            len(missing_movements) != 0 or
             self._already_matched_event_ids is None or
-            self._tracked_accounts is None
+            self._tracked_accounts is None or
+            any(
+                movement.identifier not in self._preloaded_possible_matches
+                for movement in candidate_movements
+            )
         ):
-            self._preload_snapshot_data_for_movements(missing_movements)
-        assert self._already_matched_event_ids is not None
-        assert self._tracked_accounts is not None
+            return None
         return _build_trial_snapshot(
             movements=candidate_movements,
             all_movements_by_asset=self._unmatched_by_asset,
@@ -547,22 +545,12 @@ class CexOnchainMatchingStrategy(BaseRemediationStrategy):
             settings=self.settings,
         )
 
-    def _compute_fresh_snapshot(
-            self,
-            movements: list[AssetMovement],
-            all_unmatched_movements: list[AssetMovement],
-            fee_events: Mapping[str, AssetMovement],
-    ) -> dict[str, Any]:
-        movements_by_asset: defaultdict[Asset, list[AssetMovement]] = defaultdict(list)
-        for movement in all_unmatched_movements:
-            movements_by_asset[movement.asset].append(movement)
-
-        events_db = DBHistoryEvents(self.database)
+    def _compute_fresh_snapshot(self, movements: list[AssetMovement]) -> dict[str, Any]:
         with self.database.conn.read_ctx() as cursor:
             already_matched_event_ids = get_already_matched_event_ids(cursor=cursor)
             tracked_accounts = _get_tracked_accounts(cursor=cursor)
             possible_matches_by_movement_id = _load_possible_matches_for_movements(
-                events_db=events_db,
+                events_db=DBHistoryEvents(self.database),
                 movements=movements,
                 settings=self.settings,
                 assets_in_collection_cache=self.assets_in_collection_cache,
@@ -571,8 +559,8 @@ class CexOnchainMatchingStrategy(BaseRemediationStrategy):
 
         return _build_trial_snapshot(
             movements=movements,
-            all_movements_by_asset=movements_by_asset,
-            fee_events=fee_events,
+            all_movements_by_asset=self._unmatched_by_asset,
+            fee_events=self.fee_events,
             possible_matches_by_movement_id=possible_matches_by_movement_id,
             already_matched_event_ids=already_matched_event_ids,
             tracked_accounts=tracked_accounts,
@@ -590,63 +578,45 @@ class CexOnchainMatchingStrategy(BaseRemediationStrategy):
             )
         ]
 
-    def _get_linked_movements_with_assets(self) -> list[tuple[AssetMovement, tuple[Asset, ...]]]:
-        if self._linked_movements is None:
-            self._linked_movements = [
-                (movement, _get_assets_in_collection(movement, self.assets_in_collection_cache))
-                for movement in _get_linked_movements(self.database)
+    def _forget_linked_movements(self, linked_ids: set[int]) -> None:
+        """Drop the movements now part of a match from the movements loaded for this run."""
+        self.unmatched_movements = [
+            entry for entry in self.unmatched_movements if entry[0].identifier not in linked_ids
+        ]
+        for asset, movements in self._unmatched_by_asset.items():
+            self._unmatched_by_asset[asset] = [
+                movement for movement in movements if movement.identifier not in linked_ids
             ]
-        return self._linked_movements
-
-    def _should_retry_verification(self, issue: DataIssue) -> bool:
-        return _is_retrying_verification(issue, self.name) or (
-            issue.state == IssueState.AUTO_REMEDIATING and
-            len(issue.auto_remediation_attempts) == 0 and
-            issue.id in self._retry_verification_issue_ids
-        )
+        if self._already_matched_event_ids is not None:
+            self._already_matched_event_ids |= linked_ids
 
     def applies_to(self, issue: DataIssue) -> bool:
         """Whether an unmatched exchange movement could be behind the issue.
 
-        Exchange issues qualify by kind when open. Onchain issues additionally need a nearby
-        unmatched movement as documented in `_movement_may_explain_issue`. An unresolved issue
-        qualifies when a prior attempt was interrupted before balance verification completed,
-        when this strategy has never run on it and a candidate movement exists, or when the
-        candidate window inputs changed since its last attempt.
+        The issue needs a nearby unmatched movement as documented in
+        `_movement_may_explain_issue`, and no match of this strategy awaiting verification.
+        An unresolved issue this strategy already tried qualifies again only once the inputs
+        of its last trial changed. When those inputs were not preloaded, `attempt` decides.
         """
-        if issue.kind not in {IssueKind.NEGATIVE_BALANCE, IssueKind.CURRENT_BALANCE_MISMATCH}:
-            return False
-        is_on_exchange = _is_on_exchange(issue)
-        if is_on_exchange is False and (
-            issue.location not in BLOCKCHAIN_LOCATIONS or issue.location_label == ''
+        if (
+            issue.kind not in REMEDIATED_ISSUE_KINDS or
+            get_pending_verification(issue) is not None or (
+                _is_on_exchange(issue) is False and
+                (issue.location not in BLOCKCHAIN_LOCATIONS or issue.location_label == '')
+            ) or
+            len(candidate_movements := self._get_candidate_movements(issue)) == 0
         ):
             return False
 
-        retry_verification = _is_retrying_verification(issue, self.name)
-        if retry_verification:
-            self._retry_verification_issue_ids.add(issue.id)
-        if issue.state == IssueState.UNRESOLVED:
-            self._unresolved_issue_ids.add(issue.id)
-
-        if issue.state != IssueState.UNRESOLVED or retry_verification:
-            if is_on_exchange:
-                return True
-            if len(self._get_candidate_movements(issue)) != 0:
-                return True
-            return retry_verification and any(
-                _movement_may_explain_issue(
-                    issue, movement, assets_in_collection, self.settings.asset_movement_time_range,
-                ) for movement, assets_in_collection in self._get_linked_movements_with_assets()
-            )
-
-        candidate_movements = self._get_candidate_movements(issue)
-        if len(candidate_movements) == 0:
-            return False
-
-        if (latest_attempt := _get_latest_strategy_attempt(issue, self.name)) is None:
+        if issue.state != IssueState.UNRESOLVED:
             return True
 
-        snapshot = self._get_or_compute_snapshot(candidate_movements)
+        self._unresolved_issue_ids.add(issue.id)
+        if (
+            (latest_attempt := _get_latest_strategy_attempt(issue, self.name)) is None or
+            (snapshot := self._get_preloaded_snapshot(candidate_movements)) is None
+        ):
+            return True
         return _attempt_matches_snapshot(latest_attempt, snapshot) is False
 
     def attempt(self, issue: DataIssue) -> RemediationOutcome:
@@ -654,145 +624,160 @@ class CexOnchainMatchingStrategy(BaseRemediationStrategy):
             checkpoint()
         try:
             checkpoint()
-            result = self._match_issue(issue)
+            return self._match_issue(issue)
         finally:
             self.database.match_asset_movements_lock.release()
 
-        if result.unchanged_inputs:
+    def _match_issue(self, issue: DataIssue) -> RemediationOutcome:
+        if len(movements := self._get_candidate_movements(issue)) == 0:
+            return RemediationOutcome(
+                resolved=False,
+                attribution='not_applicable',
+                notes='No unmatched exchange movement in the issue window',
+                record_attempt=False,
+            )
+
+        trial_snapshot = self._compute_fresh_snapshot(movements)
+        if (
+            issue.id in self._unresolved_issue_ids and
+            (latest_attempt := _get_latest_strategy_attempt(issue, self.name)) is not None and
+            _attempt_matches_snapshot(latest_attempt, trial_snapshot)
+        ):
             return RemediationOutcome(
                 resolved=False,
                 attribution='unchanged_inputs',
                 notes='Matching inputs have not changed since the last attempt',
                 record_attempt=False,
             )
-        if len(result.matched_movements) == 0:
-            if result.had_candidates is False:
-                return RemediationOutcome(
-                    resolved=False,
-                    attribution='not_applicable',
-                    notes='No unmatched exchange movement in the issue window',
-                    record_attempt=False,
-                )
-            notes = 'No exchange movement in the issue window could be matched'
+
+        with self.database.conn.write_ctx():
+            matched_movements, linked_ids = _match_movements(
+                database=self.database,
+                settings=self.settings,
+                movements=movements,
+                movements_by_asset=self._unmatched_by_asset,
+                fee_events=self.fee_events,
+                assets_in_collection_cache=self.assets_in_collection_cache,
+            )
+            if len(matched_movements) != 0:
+                self._record_pending_verification(issue, matched_movements, trial_snapshot)
+
+        self._forget_linked_movements(linked_ids)
+        if len(matched_movements) != 0:
             return RemediationOutcome(
                 resolved=False,
-                attribution='no_match',
+                attribution=ATTRIBUTION_REPROCESSING_PENDING,
+                notes='Movements matched; balance reprocessing is still pending',
+                record_attempt=False,
+            )
+
+        notes = 'No exchange movement in the issue window could be matched'
+        return RemediationOutcome(
+            resolved=False,
+            attribution='no_match',
+            notes=notes,
+            attempt_data=_make_attempt_data(
+                resolved=False,
                 notes=notes,
-                attempt_data=_make_attempt_data(
-                    resolved=False,
-                    notes=notes,
-                    trial_snapshot=result.trial_snapshot,
-                ),
-            )
-        return self._verify_matches(issue, result.matched_movements, result.trial_snapshot)
-
-    def _match_issue(self, issue: DataIssue) -> _MatchIssueResult:
-        unmatched_movements, fee_events = get_unmatched_asset_movements(self.database)
-        movements = [
-            movement for movement in unmatched_movements if _movement_may_explain_issue(
-                issue, movement,
-                _get_assets_in_collection(movement, self.assets_in_collection_cache),
-                self.settings.asset_movement_time_range,
-            )
-        ]
-        trial_snapshot: dict[str, Any] | None = None
-        if len(movements) != 0:
-            trial_snapshot = self._compute_fresh_snapshot(
-                movements=movements,
-                all_unmatched_movements=unmatched_movements,
-                fee_events=fee_events,
-            )
-            if (
-                (issue.state == IssueState.UNRESOLVED or issue.id in self._unresolved_issue_ids) and  # noqa: E501
-                self._should_retry_verification(issue) is False and
-                (latest_attempt := _get_latest_strategy_attempt(issue, self.name)) is not None and
-                _attempt_matches_snapshot(latest_attempt, trial_snapshot)
-            ):
-                return _MatchIssueResult(
-                    matched_movements=[],
-                    had_candidates=True,
-                    trial_snapshot=trial_snapshot,
-                    unchanged_inputs=True,
-                )
-
-        newly_matched = _match_movements(
-            database=self.database,
-            settings=self.settings,
-            movements=movements,
-            all_unmatched_movements=unmatched_movements,
-            fee_events=fee_events,
-            assets_in_collection_cache=self.assets_in_collection_cache,
-        ) if len(movements) != 0 else []
-        if len(newly_matched) != 0:
-            return _MatchIssueResult(
-                matched_movements=newly_matched,
-                had_candidates=True,
                 trial_snapshot=trial_snapshot,
-            )
-
-        if self._should_retry_verification(issue):
-            previously_matched = [
-                movement for movement in _get_linked_movements(self.database)
-                if _movement_may_explain_issue(
-                    issue, movement,
-                    _get_assets_in_collection(movement, self.assets_in_collection_cache),
-                    self.settings.asset_movement_time_range,
-                )
-            ]
-            if len(previously_matched) != 0:
-                return _MatchIssueResult(
-                    matched_movements=previously_matched,
-                    had_candidates=len(movements) != 0,
-                    trial_snapshot=trial_snapshot,
-                )
-
-        return _MatchIssueResult(
-            matched_movements=[],
-            had_candidates=len(movements) != 0,
-            trial_snapshot=trial_snapshot,
+            ),
         )
 
-    def _verify_matches(
+    def _record_pending_verification(
             self,
             issue: DataIssue,
             matched_movements: list[AssetMovement],
-            trial_snapshot: Mapping[str, Any] | None,
-    ) -> RemediationOutcome:
-        """Reprocess from the earliest outstanding stale marker, not just this issue's edits."""
-        checkpoint()
-        from_ts = _get_issue_window(issue, self.settings.asset_movement_time_range)[0]
+            trial_snapshot: Mapping[str, Any],
+    ) -> None:
+        """Record the matches owing a verification, inside the transaction that made them.
+
+        An issue dismissed or deleted meanwhile rolls back its matches too. That is reported
+        as an `InputError`, which the pipeline turns into skipping the changed issue.
+        """
+        notes = 'Movements matched; balance reprocessing is still pending'
+        try:
+            DataIssuesManager(self.database).append_auto_remediation_attempt(
+                issue_id=issue.id,
+                attempt={
+                    'attribution': ATTRIBUTION_REPROCESSING_PENDING,
+                    'strategy': self.name,
+                    'timestamp': ts_now(),
+                    **_make_attempt_data(
+                        resolved=False,
+                        notes=notes,
+                        trial_snapshot=trial_snapshot,
+                    ),
+                    'matched_movement_ids': sorted(
+                        movement.identifier for movement in matched_movements
+                        if movement.identifier is not None
+                    ),
+                },
+                expected_state=IssueState.AUTO_REMEDIATING,
+            )
+        except NotFoundError as e:
+            raise InputError(str(e)) from e
+
+
+class CexOnchainMatchVerificationStrategy(BaseRemediationStrategy):
+    """Check whether the matches `CexOnchainMatchingStrategy` made resolved their issue.
+
+    It only considers the movements named by the issue's pending verification, never other
+    links in the issue window, and never reprocesses balances itself: while a stale balances
+    marker is pending, the verification stays owed for a later run.
+    """
+
+    name: Final = CEX_ONCHAIN_MATCHING
+
+    def __init__(self, database: DBHandler) -> None:
+        self.database = database
+        self.settings = CachedSettings().get_settings()
+
+    def applies_to(self, issue: DataIssue) -> bool:
+        return issue.kind in REMEDIATED_ISSUE_KINDS and get_pending_verification(issue) is not None
+
+    def attempt(self, issue: DataIssue) -> RemediationOutcome:
+        if (pending := get_pending_verification(issue)) is None:  # applies_to guarantees one
+            return RemediationOutcome(
+                resolved=False,
+                attribution='not_applicable',
+                notes='No exchange movement match awaits verification',
+                record_attempt=False,
+            )
+
+        trial_snapshot: dict[str, Any] = {
+            key: pending[key] for key in TRIAL_SNAPSHOT_KEYS if key in pending
+        }
         with self.database.conn.read_ctx() as cursor:
-            if (stale_from_ts := self.database.get_static_cache(
+            matched_movements = self._get_still_linked_movements(
                 cursor=cursor,
-                name=DBCacheStatic.STALE_BALANCES_FROM_TS,
-            )) is not None:
-                from_ts = min(from_ts, TimestampMS(int(stale_from_ts)))
+                movement_ids=pending.get('matched_movement_ids', []),
+            )
+            if len(matched_movements) == 0:
+                notes = 'The matched exchange movements were unlinked before their verification'
+                return RemediationOutcome(
+                    resolved=False,
+                    attribution='matches_unlinked',
+                    notes=notes,
+                    attempt_data=_make_attempt_data(
+                        resolved=False,
+                        notes=notes,
+                        trial_snapshot=trial_snapshot,
+                    ),
+                )
 
-        pending_outcome = RemediationOutcome(
-            resolved=False,
-            attribution='reprocessing_pending',
-            notes='Movements matched; balance reprocessing is still pending',
-        )
-        if process_historical_balances(
-            database=self.database,
-            msg_aggregator=self.database.msg_aggregator,
-            from_ts=from_ts,
-            chains_aggregator=self.chains_aggregator,
-        ) is not True:
-            return pending_outcome
-
-        with self.database.conn.read_ctx() as cursor:
             if self.database.get_static_cache(
                 cursor=cursor,
                 name=DBCacheStatic.STALE_BALANCES_FROM_TS,
             ) is not None:
-                return pending_outcome
+                return self._still_pending(issue, pending)
 
-        if _issue_still_reproduces(
-            database=self.database,
-            issue=issue,
-            tolerance=self.settings.asset_movement_amount_tolerance,
-        ):
+            still_reproduces = _issue_still_reproduces(
+                cursor=cursor,
+                issue=issue,
+                tolerance=self.settings.asset_movement_amount_tolerance,
+            )
+
+        if still_reproduces:
             notes = 'Movements matched, but the original balance condition still reproduces'
             return RemediationOutcome(
                 resolved=False,
@@ -817,4 +802,52 @@ class CexOnchainMatchingStrategy(BaseRemediationStrategy):
                 notes=notes,
                 trial_snapshot=trial_snapshot,
             ),
+        )
+
+    def _get_still_linked_movements(
+            self,
+            cursor: DBCursor,
+            movement_ids: list[int],
+    ) -> list[AssetMovement]:
+        if len(movement_ids) == 0:
+            return []
+        placeholders = ','.join('?' * len(movement_ids))
+        if len(linked_ids := [row[0] for row in cursor.execute(
+            'SELECT DISTINCT left_event_id FROM history_event_links '
+            f'WHERE link_type=? AND left_event_id IN ({placeholders})',
+            (HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(), *movement_ids),
+        )]) == 0:
+            return []
+        return sorted(
+            (
+                event for event in DBHistoryEvents(self.database).get_history_events_internal(
+                    cursor=cursor,
+                    filter_query=HistoryEventFilterQuery.make(identifiers=linked_ids),
+                ) if isinstance(event, AssetMovement)
+            ),
+            key=lambda movement: movement.identifier or 0,
+        )
+
+    def _still_pending(self, issue: DataIssue, pending: dict[str, Any]) -> RemediationOutcome:
+        """Keep the verification owed until the balances are up to date.
+
+        The pending attempt is recorded again once other attempts followed it, so the capped
+        attempt history can never drop it while the verification is still owed.
+        """
+        notes = 'Movements matched; balance reprocessing is still pending'
+        if issue.auto_remediation_attempts[-1] is pending:
+            return RemediationOutcome(
+                resolved=False,
+                attribution=ATTRIBUTION_REPROCESSING_PENDING,
+                notes=notes,
+                record_attempt=False,
+            )
+        return RemediationOutcome(
+            resolved=False,
+            attribution=ATTRIBUTION_REPROCESSING_PENDING,
+            notes=notes,
+            attempt_data={
+                key: value for key, value in pending.items()
+                if key not in {'attribution', 'strategy', 'timestamp'}
+            },
         )

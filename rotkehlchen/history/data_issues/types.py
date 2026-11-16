@@ -41,6 +41,7 @@ class AutoRemediationAttempt(TypedDict):
     time_range: NotRequired[int]
     movement_ids: NotRequired[list[int]]
     window_fingerprint: NotRequired[str]
+    matched_movement_ids: NotRequired[list[int]]
 
 
 class NegativeBalanceIssuePayload(BaseIssuePayload):
