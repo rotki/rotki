@@ -1,3 +1,4 @@
+import json
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -8,6 +9,7 @@ from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.nuthatch import Nuthatch
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID
 
@@ -52,15 +54,24 @@ def test_nuthatch_refusal_raises(nuthatch: Nuthatch) -> None:
 def test_nuthatch_internal_trace_index(nuthatch: Nuthatch) -> None:
     """traceId is a depth path that two frames at the same depth share, so the nest's own
     frame index is used instead."""
-    row = (
-        '{"blockNumber":"26366016","timeStamp":"1762900000","hash":"0x366c4f7ee1f8c1a2c4d0f5a3e3b1e1d1c1b1a19181716151413121110f0e0d0c",'  # noqa: E501
-        '"from":"0x000000000004444c5dc75cB358380D2e3dE08A90","to":"0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",'  # noqa: E501
-        '"value":"{value}","gas":"0","gasUsed":"0","isError":"0","type":"call","traceId":"0_1","nuthatchTraceIndex":"{index}"}'  # noqa: E501
-    )
-    rows = ','.join(row.replace('{value}', v).replace('{index}', i) for v, i in (('1', '17'), ('2', '22')))  # noqa: E501
+    parent_hash = str(make_evm_tx_hash())
+    rows = [{
+        'blockNumber': '26366016',
+        'timeStamp': '1762900000',
+        'hash': parent_hash,
+        'from': str(make_evm_address()),
+        'to': ACCOUNT,
+        'value': value,
+        'gas': '0',
+        'gasUsed': '0',
+        'isError': '0',
+        'type': 'call',
+        'traceId': '0_1',
+        'nuthatchTraceIndex': index,
+    } for value, index in (('1', '17'), ('2', '22'))]
     with patch.object(nuthatch.session, 'get', return_value=MockResponse(
         status_code=HTTPStatus.OK,
-        text=f'{{"status":"1","message":"OK","result":[{rows}]}}',
+        text=json.dumps({'status': '1', 'message': 'OK', 'result': rows}),
     )):
         txs = [tx for page in nuthatch.get_transactions(
             chain_id=ChainID.ETHEREUM,
