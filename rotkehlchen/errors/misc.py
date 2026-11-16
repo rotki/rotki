@@ -354,5 +354,9 @@ class ChainNotSupported(RemoteError):
         super().__init__(message, cause=FailureCause.UNSUPPORTED)
 
 
+class ChainNotSupportedForAnyKey(ChainNotSupported):
+    """Raised when a service does not support a chain at all, so no API key can enable it"""
+
+
 class MissingAPIKey(Exception):
     """Raised when an API key is missing for a service"""

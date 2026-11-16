@@ -1,11 +1,13 @@
 import datetime
 import json
+import logging
 import threading
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import ANY, patch
 
 import pytest
+import requests
 from freezegun import freeze_time
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -938,3 +940,39 @@ def test_withdrawals_pagination_items_count(
         blockscout.query_withdrawals(make_evm_address())
 
     assert queries[1] == {'index': 5} | ({'items_count': 50} if sends_items_count else {})
+
+
+@pytest.mark.parametrize('error', ['status', 'connection'])
+def test_api_key_is_redacted_from_logs_and_errors(
+        blockscout: Blockscout,
+        caplog: pytest.LogCaptureFixture,
+        error: str,
+) -> None:
+    """Users share their logs when reporting issues, so the API key sent in the query
+    params must appear neither in the debug log of the request nor in the error raised
+    with the request url."""
+    assert (api_key := blockscout._get_api_key_for_chain(ChainID.POLYGON_POS)) is not None
+
+    def mock_request(method: str, url: str, **kwargs: Any) -> MockResponse:
+        request_url = requests.Request(method, url, params=kwargs['params']).prepare().url
+        if error == 'connection':
+            raise requests.exceptions.ConnectionError(f'Max retries exceeded with url: {request_url}')  # noqa: E501
+        (response := MockResponse(HTTPStatus.INTERNAL_SERVER_ERROR, 'error')).url = str(request_url)  # noqa: E501
+        return response
+
+    caplog.set_level(logging.DEBUG)
+    with (
+        patch.object(blockscout.session, 'request', side_effect=mock_request),
+        pytest.raises(RemoteError) as exc_info,
+    ):
+        blockscout._query_and_process(
+            chain_id=ChainID.POLYGON_POS,
+            endpoint='block.getblocknobytime',
+            query_str='https://api.blockscout.com/137/api',
+            params={'module': 'block', 'action': 'getblocknobytime', 'timestamp': 1},
+        )
+
+    assert api_key not in str(exc_info.value)
+    assert '<redacted>' in str(exc_info.value)
+    assert 'Querying blockscout API' in caplog.text
+    assert api_key not in caplog.text

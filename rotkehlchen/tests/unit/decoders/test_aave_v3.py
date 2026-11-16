@@ -361,6 +361,28 @@ def test_aave_v3_withdraw(ethereum_inquirer, ethereum_accounts) -> None:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_aave_v3_withdraw_to_tracked_recipient(ethereum_inquirer, ethereum_accounts) -> None:
+    """A recipient must not inherit a withdrawal made from an untracked Aave position."""
+    tx_hash = deserialize_evm_tx_hash('0xf0e60e80afbefd59793c14f0d279c3c0436ae64a7073a09a236a0e26e0709905')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=132,
+        timestamp=TimestampMS(1794678251000),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
+        amount=FVal(amount := '20.000006'),
+        location_label=ethereum_accounts[0],
+        notes=f'Receive {amount} USDT from an AAVE v3 withdrawal by 0xDC3D922df81FC7B7f58229431ED91acB0482f3A5',  # noqa: E501
+        counterparty=CPT_AAVE_V3,
+        address=string_to_evm_address('0x23878914EFE38d27C4D67Ab83ed1b93A74D4086a'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xa37478676A7A86a6Fb9e8D57D3e543EAc8140A95']])
 def test_aave_v3_monerium_order(gnosis_inquirer, gnosis_accounts, allow_gnosis_etherscan) -> None:
     """Regression test for https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=129465997

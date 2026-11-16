@@ -16,6 +16,7 @@ from rotkehlchen.chain.ethereum.oracles.constants import (
 )
 from rotkehlchen.chain.ethereum.oracles.uniswap import PoolPrice
 from rotkehlchen.chain.evm.types import (
+    DEFAULT_EVM_INDEXER_ORDER,
     EvmIndexer,
     NodeName,
     SerializableChainIndexerOrder,
@@ -131,7 +132,10 @@ def test_uniswap_oracles_historic_price(inquirer_defi, socket_enabled):  # pylin
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', [{
     'evm_indexers_order': SerializableChainIndexerOrder(
-        order={ChainID.BASE: [EvmIndexer.BLOCKSCOUT]},
+        order={
+            ChainID.BASE: [EvmIndexer.BLOCKSCOUT],
+            ChainID.OPTIMISM: list(DEFAULT_EVM_INDEXER_ORDER),  # the order of the cassette
+        },
     ),
 }])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

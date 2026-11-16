@@ -33,7 +33,12 @@ class GnosisdaoDecoder(EvmDecoderInterface):
     """Decodes the GIP-151 GnosisDAO one-time pro-rata treasury redemption events"""
 
     def _decode_redemption_deposit(self, context: DecoderContext) -> EvmDecodingOutput:
-        """Decode a GNO/osGNO deposit into the redemption deposit contract"""
+        """Decode a GNO/osGNO deposit into the redemption deposit contract.
+
+        The deposit is irreversible: the tokens are handed in for a later pro-rata payout of
+        the treasury, like a withdrawal request against a wrapped asset. It is classified as
+        returning a wrapped asset so it leaves the wallet and is not credited back to it.
+        """
         if context.tx_log.topics[0] != DEPOSITED_TOPIC:
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -53,8 +58,7 @@ class GnosisdaoDecoder(EvmDecoderInterface):
                     event.asset == token and
                     event.amount == amount
             ):
-                event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = CPT_GNOSISDAO
                 event.notes = f'Deposit {amount} {token.symbol} into the GnosisDAO treasury redemption'  # noqa: E501
                 break
@@ -64,7 +68,11 @@ class GnosisdaoDecoder(EvmDecoderInterface):
         return EvmDecodingOutput(matched_counterparty=CPT_GNOSISDAO)
 
     def _decode_redemption_claim(self, context: DecoderContext) -> EvmDecodingOutput:
-        """Decode the payout of the pro-rata share of the treasury to a redeeming user"""
+        """Decode the payout of the pro-rata share of the treasury to a redeeming user.
+
+        The payout redeems the earlier deposit for treasury assets, so it enters the wallet
+        as a redemption of the returned wrapped asset.
+        """
         if context.tx_log.topics[0] != CLAIMED_TOPIC:
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -77,7 +85,7 @@ class GnosisdaoDecoder(EvmDecoderInterface):
                     event.address == GNOSISDAO_TREASURY_SAFE
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = CPT_GNOSISDAO
                 event.notes = f'Claim {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from the GnosisDAO treasury redemption'  # noqa: E501
 

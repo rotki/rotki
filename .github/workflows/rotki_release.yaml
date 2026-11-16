@@ -70,7 +70,9 @@ jobs:
               - x86_64
                 - [DMG](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.dmg)
                 - [ZIP](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.zip)
-              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-macos.zip)
+              - Standalone Backend
+                - [arm64](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-macos-arm64.zip)
+                - [x86_64](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-macos-x64.zip)
             - **Windows**
               - [Windows executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32_x64-${{ env.RELEASE_VERSION }}.exe)
               - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-windows.zip)
@@ -80,7 +82,7 @@ jobs:
             - **Linux**
               - [AppImage checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage.sha512)
               - [Tar with executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x64-${{ env.RELEASE_VERSION }}.tar.xz.sha512)
-              - [deb package](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_amd64-${{ env.RELEASE_VERSION }}.deb.sha512)
+              - [deb package checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_amd64-${{ env.RELEASE_VERSION }}.deb.sha512)
               - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-linux.zip.sha512)
             - **OSX**
               - arm64
@@ -89,7 +91,9 @@ jobs:
               - x86_64
                 - [DMG checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.dmg.sha512)
                 - [ZIP checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.zip.sha512)
-              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-backend-${{ steps.change_log.outputs.version }}-macos.zip.sha512)
+              - Standalone Backend
+                - [arm64 checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-macos-arm64.zip.sha512)
+                - [x86_64 checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-macos-x64.zip.sha512)
             - **Windows**
               - [Windows executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32_x64-${{ env.RELEASE_VERSION }}.exe.sha512)
               - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-windows.zip.sha512)
