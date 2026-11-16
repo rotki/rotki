@@ -6,6 +6,7 @@ import pytest
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
+from rotkehlchen.accounting.types import MissingPrice
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_EUR, A_KFEE, A_USD, A_USDT
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -33,7 +34,7 @@ from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import consume_errors, consume_warnings, no_message_errors
 from rotkehlchen.types import AssetAmount, Price, Timestamp, TimestampMS
-from rotkehlchen.utils.misc import ts_ms_to_sec
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
@@ -453,3 +454,73 @@ def test_get_prices_for_swap_fiat_price_unavailable(accountant: Accountant) -> N
             )
         assert (result is None) == expected_none_result
         call_count += 1
+
+
+@pytest.mark.parametrize('rate_limited', [True, False])
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
+def test_missing_price_keeps_rate_limit(accountant: Accountant, rate_limited: bool) -> None:
+    """A price missing because the oracles rate limited us is reported as rate limited,
+    while a price no oracle has is reported as plainly missing."""
+    ts = Timestamp(1609537953)
+
+    def mock_get_rate(asset, timestamp):
+        raise NoPriceForGivenTimestamp(
+            from_asset=asset,
+            to_asset=A_EUR,
+            time=timestamp,
+            rate_limited=rate_limited,
+        )
+
+    with patch.object(accountant.pots[0], 'get_rate_in_profit_currency', side_effect=mock_get_rate):  # noqa: E501
+        accounting_history_process(
+            accountant=accountant,
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1640493374),
+            history_list=[HistoryEvent(
+                group_identifier='1',
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(ts),
+                location=LOCATION_EXTERNAL,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+            )],
+        )
+
+    assert accountant.pots[0].cost_basis.missing_prices == {
+        MissingPrice(from_asset=A_ETH, to_asset=A_EUR, time=ts, rate_limited=rate_limited),
+    }
+
+
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
+def test_swap_with_rate_limited_out_price_is_reported(accountant: Accountant) -> None:
+    """A swap whose out price was rate limited and whose in price does not exist is
+    reported as rate limited instead of being skipped silently."""
+    ts = Timestamp(1609537953)
+
+    def mock_get_rate(asset, timestamp):
+        raise NoPriceForGivenTimestamp(
+            from_asset=asset,
+            to_asset=A_EUR,
+            time=timestamp,
+            rate_limited=asset == A_ETH,
+        )
+
+    with patch.object(accountant.pots[0], 'get_rate_in_profit_currency', side_effect=mock_get_rate):  # noqa: E501
+        accounting_history_process(
+            accountant=accountant,
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1640493374),
+            history_list=create_swap_events(
+                timestamp=ts_sec_to_ms(ts),
+                location=LOCATION_KRAKEN,
+                group_identifier='1xyz',
+                spend=AssetAmount(asset=A_ETH, amount=ONE),
+                receive=AssetAmount(asset=A_USDT, amount=FVal('598.26')),
+            ),
+        )
+
+    assert accountant.pots[0].cost_basis.missing_prices == {
+        MissingPrice(from_asset=A_ETH, to_asset=A_EUR, time=ts, rate_limited=True),
+    }

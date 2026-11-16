@@ -476,13 +476,18 @@ class AccountingPot(CustomizableDateMixin):
                 f'{asset_out=} {amount_out=}. Skipping ...')
             return None
 
+        out_rate_limited: NoPriceForGivenTimestamp | None = None
         try:
             out_price = self.get_rate_in_profit_currency(
                 asset=asset_out,
                 timestamp=timestamp,
             )
-        except (PriceQueryUnsupportedAsset, NoPriceForGivenTimestamp, RemoteError):
+        except (PriceQueryUnsupportedAsset, RemoteError):
             out_price = None
+        except NoPriceForGivenTimestamp as e:
+            out_price = None
+            if e.rate_limited is True:
+                out_rate_limited = e
 
         try:
             in_price = self.get_rate_in_profit_currency(
@@ -495,6 +500,9 @@ class AccountingPot(CustomizableDateMixin):
             in_price = None
             if e.rate_limited is True and out_price is None:
                 raise  # in_price = out_price = None -> notify user
+
+        if out_rate_limited is not None and in_price is None:
+            raise out_rate_limited  # in_price = out_price = None -> notify user
 
         # when `self.settings.include_fees_in_cost_basis == False` we completely ignore fees in
         # this function since they are not included in the cost basis

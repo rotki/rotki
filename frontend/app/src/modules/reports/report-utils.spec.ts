@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { stoppedAtPlanLimit } from '@/modules/reports/report-utils';
+import { countRateLimited, stoppedAtPlanLimit } from '@/modules/reports/report-utils';
 
 describe('modules/reports/report-utils', () => {
   describe('stoppedAtPlanLimit', () => {
@@ -21,6 +21,16 @@ describe('modules/reports/report-utils', () => {
 
     it('should be false when the plan has no limit', () => {
       expect(stoppedAtPlanLimit({ processedActions: 1000, totalActions: 3000 }, -1)).toBe(false);
+    });
+  });
+
+  describe('countRateLimited', () => {
+    it('should count only the prices that were rate limited', () => {
+      expect(countRateLimited([
+        { fromAsset: 'ETH', rateLimited: true, time: 1, toAsset: 'EUR' },
+        { fromAsset: 'BTC', rateLimited: false, time: 1, toAsset: 'EUR' },
+        { fromAsset: 'DAI', time: 1, toAsset: 'EUR' },
+      ])).toBe(1);
     });
   });
 });
