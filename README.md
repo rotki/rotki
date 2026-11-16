@@ -32,8 +32,9 @@
 ## 📌 **Table of Contents**
 - [📖 Overview](#overview)
 - [✨ Features](#features)
-- [🔧 Requirements](#requirements)
 - [🚀 Installation](#installation)
+- [🤖 Use rotki with AI assistants](#use-rotki-with-ai-assistants)
+- [🛠️ Build on rotki](#build-on-rotki)
 - [📘 Usage](#usage)
 - [📜 Changelog](#changelog)
 - [🤝 Contribute](#contribute)
@@ -67,20 +68,7 @@ For **advanced features**, check out the [Pro Version](https://rotki.com/product
 ✅ **Transaction Decoding**: Readable breakdown of blockchain transactions, exchange events and other history.  
 ✅ **Data Customization**: Personalize UI, main currency, language, and more.  
 ✅ **PnL Reports**: Perform detailed profit/loss analysis using customizable accounting settings.  
-
----
-
-<div id="requirements"></div>
-
-## 🔧 **Requirements**
-Before installing rotki, ensure you have the following dependencies:
-
-📌 **Required Software**:
-- `Node.js`
-- `npm` (Node Package Manager)
-- `Python 3.14`
-- `uv` (Python Package Manager)
-- `Docker`
+✅ **MCP Server**: Give compatible AI assistants read-only, privacy-filtered access to your local financial data.
 
 ---
 
@@ -92,8 +80,50 @@ rotki supports **Windows, macOS, and Linux**.
 📌 **Recommended Installation Method**:
 - [Download Pre-Packaged Binaries](https://docs.rotki.com/requirement-and-installation/packaged-binaries.html)
 
-📌 **Advanced Installation** (for developers):
-- [Build from Source](https://docs.rotki.com/requirement-and-installation/build-from-source.html)
+### Run with Docker
+
+Start rotki at <http://localhost:8080> with one command:
+
+```bash
+docker run -p 8080:80 \
+  -v ~/.rotki/data:/data \
+  -v ~/.rotki/logs:/logs \
+  rotki/rotki
+```
+
+See the [Docker image guide](packaging/docker/README.md) for authentication, configuration and hardened deployments.
+
+### Advanced installation
+
+#### Building from source
+
+Building rotki requires Node.js 22+, pnpm 10+, Python 3.14t, uv and the stable Rust toolchain. Docker is only needed if you want to build or run the container image.
+
+Follow the [build-from-source guide](https://docs.rotki.com/requirement-and-installation/build-from-source.html).
+
+---
+
+<div id="use-rotki-with-ai-assistants"></div>
+
+## 🤖 **Use rotki with AI assistants**
+
+rotki's local MCP server lets compatible AI assistants analyze your balances and history, look up asset details and cached prices, and understand rotki's event taxonomy. Its tools are read-only, and sensitive identifiers are filtered according to your selected privacy level. Follow the [MCP setup guide](https://docs.rotki.com/usage-guides/mcp.html?utm_source=github&utm_medium=readme&utm_campaign=build_on_rotki) to connect an assistant.
+
+MCP tools require a **Basic plan or higher**. See the [available plans](https://rotki.com/products/?utm_source=github&utm_medium=readme&utm_campaign=build_on_rotki) for details.
+
+---
+
+<div id="build-on-rotki"></div>
+
+## 🛠️ **Build on rotki**
+
+Use rotki as the local data layer for your own finance tooling:
+
+- **MCP** at `/mcp` gives AI agents a read-only, privacy-filtered interface to rotki data.
+- **REST API** at `/api/1` gives scripts and applications JSON access to the backend. See the [API reference](docs/api.rst).
+- **AI-readable docs** are published as [`llms.txt`](https://docs.rotki.com/llms.txt?utm_source=github&utm_medium=readme&utm_campaign=build_on_rotki).
+
+MCP tools require a **Basic plan or higher**. REST API endpoints follow rotki's normal feature and plan limits.
 
 ---
 
