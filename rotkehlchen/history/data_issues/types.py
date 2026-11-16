@@ -37,6 +37,10 @@ class AutoRemediationAttempt(TypedDict):
     customized_transaction_count: NotRequired[int]
     changed_transaction_count: NotRequired[int]
     transactions: NotRequired[list[TransactionDecodingComparison]]
+    amount_tolerance: NotRequired[str]
+    time_range: NotRequired[int]
+    movement_ids: NotRequired[list[int]]
+    window_fingerprint: NotRequired[str]
 
 
 class NegativeBalanceIssuePayload(BaseIssuePayload):

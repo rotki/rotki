@@ -23,6 +23,7 @@ from rotkehlchen.history.data_issues.remediation.base import (
     RemediationOutcome,
     RemediationPipeline,
 )
+from rotkehlchen.history.data_issues.remediation.cex_matching import CexOnchainMatchingStrategy
 from rotkehlchen.history.data_issues.types import (
     AutoRemediationAttempt,
     DataIssue,
@@ -36,6 +37,7 @@ from rotkehlchen.locations.chains import (
 )
 from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.premium.premium import ASSET_MOVEMENT_MATCHING_CAPABILITY, has_premium_capability
 from rotkehlchen.tasks.historical_balances import Bucket
 from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
@@ -345,7 +347,9 @@ class RedecodeCustomizedTransactionsStrategy(BaseRemediationStrategy):
         """Whether the issue's account had a customized transaction by the time of the issue.
 
         Most accounts have none. Their issues must keep their state and get no attempt:
-        entering the pipeline would flag every one of them as needing attention.
+        entering the pipeline would flag every one of them as needing attention. An unresolved
+        issue whose customized comparison already finished is skipped unless its last comparison
+        failed or timed out.
         """
         if (
             issue.kind != IssueKind.NEGATIVE_BALANCE or
@@ -353,6 +357,18 @@ class RedecodeCustomizedTransactionsStrategy(BaseRemediationStrategy):
             (location := LocationIdentifier(issue.location)) not in EVM_LOCATIONS
         ):
             return False
+
+        if issue.state == IssueState.UNRESOLVED:
+            latest_attempt: dict[str, Any] | None = None
+            for attempt in issue.auto_remediation_attempts:
+                if attempt.get('strategy') == REDECODE_CUSTOMIZED_TRANSACTIONS:
+                    latest_attempt = attempt
+            if (
+                latest_attempt is not None and
+                latest_attempt.get('attribution') not in {'timeout', 'strategy_failed'} and
+                latest_attempt.get('result') != 'redecoding_failed'
+            ):
+                return False
 
         return (
             earliest := self.earliest_customized_transactions.get(
@@ -406,13 +422,12 @@ def run_data_issue_remediation(
         database: DBHandler,
         chains_aggregator: ChainsAggregator,
 ) -> None:
-    """Run the diagnostic remediation pipeline for negative-balance data issues.
+    """Run the remediation pipeline for the open and retryable data issues.
 
-    Current balance mismatches are deliberately not handled. Re-decoding can't add the history
-    they usually lack, so they are left to the user's on-demand divergence search.
-
-    Remediation is diagnostic only: a transaction holding a customized event is never touched,
-    and the customized-transaction strategy previews decoder output without persisting it.
+    Exchange movement matching goes first since it can resolve an issue, and only for users
+    whose premium tier includes the automatic matching it relies on. The comparison of
+    customized transactions is diagnostic only: a transaction holding a customized event is
+    never touched, and its strategy previews decoder output without persisting it.
 
     A run that aborts is recorded like one that finishes. Otherwise the scheduler would start
     it again on its next tick, behind the worker that made it abort and may still hold the
@@ -422,19 +437,18 @@ def run_data_issue_remediation(
     cancelled = False
     try:
         issues_manager = DataIssuesManager(database)
-        pipeline = RemediationPipeline(
-            manager=issues_manager,
-            strategies=(
-                RedecodeCustomizedTransactionsStrategy(database, chains_aggregator),
-            ),
-        )
+        strategies: list[BaseRemediationStrategy] = []
+        if has_premium_capability(
+            premium=chains_aggregator.premium,
+            capability_name=ASSET_MOVEMENT_MATCHING_CAPABILITY,
+        ):
+            strategies.append(CexOnchainMatchingStrategy(database, chains_aggregator))
+        strategies.append(RedecodeCustomizedTransactionsStrategy(database, chains_aggregator))
+        pipeline = RemediationPipeline(manager=issues_manager, strategies=tuple(strategies))
         for issue in issues_manager.list_issues(DataIssuesFilterQuery.make(
-            kinds=[IssueKind.NEGATIVE_BALANCE],
+            kinds=[IssueKind.NEGATIVE_BALANCE, IssueKind.CURRENT_BALANCE_MISMATCH],
             states=[IssueState.OPEN, IssueState.UNRESOLVED],
         )):
-            if issue.state != IssueState.OPEN and _last_attempt_failed(issue) is False:
-                continue
-
             pipeline.run(issue)
             checkpoint()
     except TaskCancelledError:
@@ -451,24 +465,3 @@ def run_data_issue_remediation(
                     )
         finally:
             _send_remediation_phase(database, PHASE_COMPLETED)
-
-
-def _last_attempt_failed(issue: DataIssue) -> bool:
-    """Retry operational failures, timeouts and failed comparisons on the next scheduled run.
-
-    An unresolved issue with no attempt at all is retried too: nothing else would ever
-    advance it.
-    """
-    if issue.state != IssueState.UNRESOLVED:
-        return False
-    if len(issue.auto_remediation_attempts) == 0:
-        return True
-
-    attempt = issue.auto_remediation_attempts[-1]
-    return (
-        attempt.get('attribution') in {'timeout', 'strategy_failed'} or
-        (
-            attempt.get('strategy') == REDECODE_CUSTOMIZED_TRANSACTIONS and
-            attempt.get('result') == 'redecoding_failed'
-        )
-    )
