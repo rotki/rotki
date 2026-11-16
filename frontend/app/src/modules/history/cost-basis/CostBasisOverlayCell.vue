@@ -63,6 +63,26 @@ watch([enabled, () => event.identifier], ([isEnabled, identifier]) => {
       {{ t('cost_basis_overlay.error') }}
     </RuiTooltip>
 
+    <RuiTooltip
+      v-else-if="!summary && stale"
+      :open-delay="200"
+    >
+      <template #activator>
+        <span
+          class="flex items-center gap-1.5 text-rui-text-secondary"
+          data-testid="cost-basis-pending"
+        >
+          <RuiIcon
+            name="lu-clock-alert"
+            size="14"
+            class="text-rui-warning"
+          />
+          {{ t('cost_basis_overlay.processing') }}
+        </span>
+      </template>
+      {{ t('cost_basis_overlay.stale') }}
+    </RuiTooltip>
+
     <div
       v-else-if="!summary"
       class="flex items-center justify-end gap-1.5"
