@@ -440,7 +440,11 @@ def test_pipeline_skips_issue_changed_while_a_strategy_runs(
         change: Callable[[DataIssuesManager, int], None],
         resolved: bool,
 ) -> None:
-    """A user dismissing or deleting the issue mid-attempt must not abort the run."""
+    """A user dismissing or deleting the issue mid-attempt must not abort the run.
+
+    The changed issue is left exactly as the user left it: no attempt or resolution of
+    the interrupted strategy is written to it.
+    """
     calls: list[str] = []
     manager = DataIssuesManager(database)
     issue = _make_issue(database)
@@ -458,6 +462,9 @@ def test_pipeline_skips_issue_changed_while_a_strategy_runs(
 
     assert calls == []
     if change is _dismiss:
-        assert manager.get_issue(issue.id).state == IssueState.DISMISSED
+        dismissed = manager.get_issue(issue.id)
+        assert dismissed.state == IssueState.DISMISSED
+        assert dismissed.auto_remediation_attempts == issue.auto_remediation_attempts
+        assert dismissed.payload == issue.payload
     else:
         assert manager.list_issues() == []

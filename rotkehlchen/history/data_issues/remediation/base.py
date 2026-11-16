@@ -265,10 +265,12 @@ class RemediationPipeline:
                     return
                 if outcome.record_attempt:
                     log.debug('Data issue remediation attempt: %s', attempt)
-                    if _write(
-                        self.manager.append_auto_remediation_attempt, issue.id, attempt,
-                    ).state != IssueState.AUTO_REMEDIATING:
-                        raise _IssueChangedError('it left the auto-remediating state')
+                    _write(
+                        self.manager.append_auto_remediation_attempt,
+                        issue_id=issue.id,
+                        attempt=attempt,
+                        expected_state=IssueState.AUTO_REMEDIATING,
+                    )
                     attempt_recorded = True
 
                 sleep(0)

@@ -134,6 +134,14 @@ def _validate_state_transition(current_state: str | IssueState, new_state: Issue
         )
 
 
+def _check_expected_state(issue: DataIssue, expected_state: IssueState | None) -> None:
+    """Raise InputError if `expected_state` is given and `issue` is no longer in it."""
+    if expected_state is not None and issue.state != expected_state:
+        raise InputError(
+            f'Data issue {issue.id} is {issue.state} instead of the expected {expected_state}',
+        )
+
+
 def _is_unchanged_manual_resolution(stored_payload_json: str, payload: DataIssuePayload) -> bool:
     """Whether a resolved issue was resolved by the user and `payload` rediscovers it unchanged.
 
@@ -548,11 +556,7 @@ class DataIssuesManager:
         """
         with self.db.user_write() as write_cursor:
             issue = self._get_issue_with_cursor(write_cursor, issue_id)
-            if expected_state is not None and issue.state != expected_state:
-                raise InputError(
-                    f'Data issue {issue_id} is {issue.state} instead of the expected '
-                    f'{expected_state}',
-                )
+            _check_expected_state(issue, expected_state)
             _validate_state_transition(issue.state, state)
 
             attempts = issue.auto_remediation_attempts
@@ -582,9 +586,20 @@ class DataIssuesManager:
             issue_id: int,
             attempt: Mapping[str, Any],
             resolution: dict[str, Any] | None = None,
+            expected_state: IssueState | None = None,
     ) -> DataIssue:
+        """Record an attempt, and optionally a resolution, without changing the state.
+
+        The stored row is read, checked and updated in one write transaction, so nothing
+        is written to an issue that left `expected_state`.
+
+        May raise:
+        - NotFoundError if the issue does not exist
+        - InputError if `expected_state` is given and the issue is no longer in it
+        """
         with self.db.user_write() as write_cursor:
             issue = self._get_issue_with_cursor(write_cursor, issue_id)
+            _check_expected_state(issue, expected_state)
             payload = (
                 issue.payload if resolution is None else
                 {**issue.payload, 'resolution': resolution}
