@@ -7,6 +7,7 @@ from unittest.mock import call, patch
 import pytest
 import requests
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_GUSD, A_LINK, A_USD
@@ -17,8 +18,9 @@ from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.exchanges.gemini import gemini_symbol_to_base_quote
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.locations.constants import (
     LOCATION_GEMINI,
@@ -409,6 +411,70 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     )]
     # The deposits should be returned with the oldest first (so given list is reversed)
     assert movements == expected_movements[::-1]
+
+
+def test_gemini_credit_card_reward(sandbox_gemini):
+    """Test that a credit card reward transfer is saved as a reward instead of being
+    reported as an error, next to a regular deposit.
+
+    Regression test for https://github.com/rotki/rotki/issues/9006
+    """
+    transfers = [{
+        'type': 'Reward',
+        'status': 'Complete',
+        'timestampms': 1733168176629,
+        'eid': 261710778017,
+        'currency': 'ETH',
+        'amount': '0.000161',
+        'method': 'CreditCard',
+    }, {
+        'type': 'Deposit',
+        'status': 'Advanced',
+        'timestampms': 1507913541275,
+        'eid': 320013281,
+        'currency': 'USD',
+        'amount': '36.00',
+        'method': 'ACH',
+    }]
+    with (
+        patch.object(sandbox_gemini, '_get_paginated_query', return_value=transfers),
+        patch.object(sandbox_gemini, '_query_trades', return_value=[]),
+    ):
+        sandbox_gemini.query_history_events()
+
+    with sandbox_gemini.db.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(sandbox_gemini.db).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=LOCATION_GEMINI),
+        )
+
+    assert events == [AssetMovement(
+        identifier=2,
+        location=LOCATION_GEMINI,
+        location_label=sandbox_gemini.name,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        timestamp=TimestampMS(1507913541000),
+        asset=A_USD,
+        amount=FVal('36.00'),
+        unique_id='320013281',
+    ), HistoryEvent(
+        identifier=1,
+        group_identifier=create_group_identifier_from_unique_id(
+            location=LOCATION_GEMINI,
+            unique_id='261710778017',
+        ),
+        sequence_index=0,
+        timestamp=TimestampMS(1733168176000),
+        location=LOCATION_GEMINI,
+        location_label=sandbox_gemini.name,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=A_ETH,
+        amount=FVal('0.000161'),
+        notes='Receive 0.000161 ETH as a Gemini reward',
+    )]
+    held, _ = sandbox_gemini.msg_aggregator.consume_held()
+    assert not any(message['type'] == WSMessageType.USER_MESSAGE for message in held)
 
 
 def test_gemini_symbol_to_base_quote():
