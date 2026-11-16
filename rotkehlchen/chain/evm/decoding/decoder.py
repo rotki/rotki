@@ -34,6 +34,8 @@ from rotkehlchen.chain.evm.decoding.beefy_finance.decoder import BeefyFinanceCom
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_SUPPORTED_CHAINS_WITHOUT_VCOW
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import CowswapCommonDecoder
 from rotkehlchen.chain.evm.decoding.erc4337.decoder import Erc4337Decoder
+from rotkehlchen.chain.evm.decoding.fluid.constants import FLUID_SUPPORTED_CHAINS
+from rotkehlchen.chain.evm.decoding.fluid.decoder import FluidCommonDecoder
 from rotkehlchen.chain.evm.decoding.flying_tulip.ftusd.constants import (
     FLYING_TULIP_FTUSD_DEPLOYMENTS,
 )
@@ -327,6 +329,8 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             self._add_single_decoder(class_name='FlyingTulipLend', decoder_class=FlyingTulipLendCommonDecoder, rules=rules)  # noqa: E501
         if self.evm_inquirer.chain_id in FLYING_TULIP_PUT_DEPLOYMENTS:
             self._add_single_decoder(class_name='FlyingTulipPut', decoder_class=FlyingTulipPutCommonDecoder, rules=rules)  # noqa: E501
+        if self.evm_inquirer.chain_id in FLUID_SUPPORTED_CHAINS:
+            self._add_single_decoder(class_name='Fluid', decoder_class=FluidCommonDecoder, rules=rules)  # noqa: E501
         if self.evm_inquirer.chain_id in KILN_DEFI_VAULT_BEACONS:
             self._add_single_decoder(class_name='KilnDefi', decoder_class=KilnDefiCommonDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Merkl', decoder_class=MerklDecoder, rules=rules)

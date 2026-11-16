@@ -59,6 +59,7 @@ from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.ethereum.modules.yearn.vesting.balances import YearnVestingBalances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve.lend.balances import CurveLendBalances
+from rotkehlchen.chain.evm.decoding.fluid.balances import FluidBalances
 from rotkehlchen.chain.evm.decoding.flying_tulip.ftusd.balances import FlyingTulipStakingBalances
 from rotkehlchen.chain.evm.decoding.flying_tulip.lend.balances import FlyingTulipLendBalances
 from rotkehlchen.chain.evm.decoding.frankencoin.savings.balances import (
@@ -241,6 +242,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         FrankencoinSavingsBalances,
         FlyingTulipLendBalances,
         FlyingTulipStakingBalances,
+        FluidBalances,
     ),
     ChainID.OPTIMISM: (
         VelodromeBalances,
@@ -264,6 +266,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         RunmoneyBalances,
         VeniceBalances,
         FrankencoinSavingsBalances,
+        FluidBalances,
     ),
     ChainID.ARBITRUM_ONE: (
         Compoundv3Balances,
@@ -276,12 +279,14 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         WoofiBalances,
         MorphoBlueBalances,
         FrankencoinSavingsBalances,
+        FluidBalances,
     ),
     ChainID.POLYGON_POS: (
         Compoundv3Balances,
         HopBalances,
         WoofiBalances,
         FrankencoinSavingsBalances,
+        FluidBalances,
     ),
     ChainID.GNOSIS: (
         HopBalances,
@@ -290,7 +295,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
     ),
     ChainID.HYPERLIQUID: (KinetiqBalances, MorphoBlueBalances),
     ChainID.SCROLL: (Compoundv3Balances,),
-    ChainID.BINANCE_SC: (WoofiBalances, FlyingTulipLendBalances),
+    ChainID.BINANCE_SC: (WoofiBalances, FlyingTulipLendBalances, FluidBalances),
     ChainID.MONAD: (MorphoBlueBalances,),
     ChainID.SONIC: (BeetsV2Balances, BeetsV3Balances),
     ChainID.ROBINHOOD: (),
