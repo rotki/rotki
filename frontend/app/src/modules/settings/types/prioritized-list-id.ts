@@ -100,3 +100,8 @@ export const ROUTESCAN_PRIO_LIST_ITEM: PrioritizedListItemData<EvmIndexer> = {
   icon: getPublicServiceImagePath('routescan.svg'),
   identifier: EvmIndexer.ROUTESCAN,
 };
+
+export const NUTHATCH_PRIO_LIST_ITEM: PrioritizedListItemData<EvmIndexer> = {
+  icon: getPublicServiceImagePath('nuthatch.svg'),
+  identifier: EvmIndexer.NUTHATCH,
+};

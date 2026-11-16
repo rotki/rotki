@@ -5,6 +5,7 @@ import { PrioritizedListData, type PrioritizedListItemData } from '@/modules/set
 import {
   BLOCKSCOUT_PRIO_LIST_ITEM,
   ETHERSCAN_PRIO_LIST_ITEM,
+  NUTHATCH_PRIO_LIST_ITEM,
   type PrioritizedListId,
   ROUTESCAN_PRIO_LIST_ITEM,
 } from '@/modules/settings/types/prioritized-list-id';
@@ -34,6 +35,7 @@ const ALL_INDEXER_ITEMS: Array<PrioritizedListItemData<EvmIndexer>> = [
   ETHERSCAN_PRIO_LIST_ITEM,
   BLOCKSCOUT_PRIO_LIST_ITEM,
   ROUTESCAN_PRIO_LIST_ITEM,
+  NUTHATCH_PRIO_LIST_ITEM,
 ];
 
 /** Indexers of a chain absent from `CHAIN_SUPPORTED_INDEXERS`. */

@@ -20,6 +20,7 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     beaconRpcEndpoint: Defaults.BEACON_RPC_ENDPOINT,
     btcDerivationGapLimit: Defaults.BTC_DERIVATION_GAP_LIMIT,
     btcMempoolApi: Defaults.BTC_MEMPOOL_API,
+    nuthatchApiEndpoint: Defaults.NUTHATCH_API_ENDPOINT,
     connectTimeout: Defaults.DEFAULT_CONNECT_TIMEOUT,
     csvExportDelimiter: Defaults.DEFAULT_CSV_EXPORT_DELIMITER,
     currentPriceOracles: [],

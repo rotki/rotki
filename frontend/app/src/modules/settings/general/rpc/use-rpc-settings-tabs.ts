@@ -10,6 +10,7 @@ export const RpcSettingKey = {
   BTC_MEMPOOL: 'btcMempoolApi',
   DOT: 'dotRpcEndpoint',
   KSM: 'ksmRpcEndpoint',
+  NUTHATCH: 'nuthatchApiEndpoint',
 } as const;
 
 export type RpcSettingKey = typeof RpcSettingKey[keyof typeof RpcSettingKey];
@@ -93,6 +94,12 @@ export function useRpcSettingsTabs(): UseRpcSettingsTabsReturn {
       name: 'ETH Beacon Node',
       setting: RpcSettingKey.BEACON,
     },
+    {
+      id: 'nuthatch_nest',
+      image: getPublicServiceImagePath('nuthatch.svg'),
+      name: 'Nuthatch nest',
+      setting: RpcSettingKey.NUTHATCH,
+    },
   ]);
 
   const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
@@ -123,7 +130,7 @@ export function useRpcSettingsTabs(): UseRpcSettingsTabsReturn {
    * Whether this tab's chain can hold more than one node.
    *
    * @remarks
-   * A tab carrying a `setting` key is a single-value endpoint (BTC Mempool, KSM, DOT, Beacon) that
+   * A tab carrying a `setting` key is a single-value endpoint (BTC Mempool, KSM, DOT, Beacon, Nuthatch) that
    * stores one url, so there is nothing for an "Add node" button to add.
    */
   const canAddNode = computed<boolean>(() => {
