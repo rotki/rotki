@@ -83,10 +83,10 @@ class BaseRemediationStrategy(ABC):
     def applies_to(self, issue: DataIssue) -> bool:
         """Return whether this strategy can attempt to remediate the issue.
 
-        Runs outside the time budget and cannot be cancelled, so it must decide from
-        the issue's own fields only: no database or network access. Anything that needs
-        loading belongs in `attempt`, which reports an issue it turns out to have nothing
-        to do for as `not_applicable`.
+        Runs outside the time budget and cannot be cancelled, so it must not access the
+        database or the network: it decides from the issue's own fields and from whatever
+        the strategy loaded when it was created. An issue `attempt` still turns out to have
+        nothing to do for is reported with `record_attempt=False`.
         """
 
     @abstractmethod

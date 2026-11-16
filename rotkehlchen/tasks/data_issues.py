@@ -41,6 +41,7 @@ from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     ChainID,
     EVMTxHash,
+    Timestamp,
     TimestampMS,
 )
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
@@ -63,6 +64,8 @@ default strategy budget would time out the accounts with the most customized his
 
 type BucketEffect = tuple[TimestampMS, EventDirection, FVal]
 type PreviewCache = dict[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash], list[EvmEvent]]
+type EarliestCustomizedTransactions = dict[tuple[str, int, str], Timestamp]
+"""Earliest customized transaction's timestamp by (location, chain id, address)"""
 
 
 def _get_bucket_effects(
@@ -80,6 +83,25 @@ def _get_bucket_effects(
                 effects.append((event.timestamp, direction, event.amount))
 
     return effects
+
+
+def _get_earliest_customized_transactions(database: DBHandler) -> EarliestCustomizedTransactions:
+    """Return, per account, the timestamp of its earliest transaction with a customized event.
+
+    One query for the whole run tells which issues have anything to compare, so the rest are
+    left untouched instead of each paying for a worker and its own lookup.
+    """
+    with database.conn.read_ctx() as cursor:
+        return {(row[0], row[1], row[2]): row[3] for row in cursor.execute(
+            'SELECT H.location, T.chain_id, A.address, MIN(T.timestamp) '
+            'FROM history_events_mappings M '
+            'JOIN history_events H ON H.identifier = M.parent_identifier '
+            'JOIN chain_events_info C ON C.identifier = H.identifier '
+            'JOIN evm_transactions T ON T.tx_hash = C.tx_ref '
+            'JOIN evmtx_address_mappings A ON A.tx_id = T.identifier '
+            'WHERE M.name = ? AND M.value = ? GROUP BY H.location, T.chain_id, A.address',
+            (HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED.serialize_for_db()),
+        )}
 
 
 def _get_customized_transactions_for_issue(
@@ -317,13 +339,26 @@ class RedecodeCustomizedTransactionsStrategy(BaseRemediationStrategy):
         self.treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
         self.preview_cache: PreviewCache = {}
         self.reloaded_chains: set[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE] = set()
+        self.earliest_customized_transactions = _get_earliest_customized_transactions(database)
 
     def applies_to(self, issue: DataIssue) -> bool:
+        """Whether the issue's account had a customized transaction by the time of the issue.
+
+        Most accounts have none. Their issues must keep their state and get no attempt:
+        entering the pipeline would flag every one of them as needing attention.
+        """
+        if (
+            issue.kind != IssueKind.NEGATIVE_BALANCE or
+            issue.location_label == '' or
+            (location := LocationIdentifier(issue.location)) not in EVM_LOCATIONS
+        ):
+            return False
+
         return (
-            issue.kind == IssueKind.NEGATIVE_BALANCE and
-            issue.location_label != '' and
-            LocationIdentifier(issue.location) in EVM_LOCATIONS
-        )
+            earliest := self.earliest_customized_transactions.get(
+                (location, location_to_chain_id(location), issue.location_label),
+            )
+        ) is not None and earliest <= ts_ms_to_sec(TimestampMS(issue.ts_end))
 
     def attempt(self, issue: DataIssue) -> RemediationOutcome:
         location = LocationIdentifier(issue.location)
@@ -334,15 +369,12 @@ class RedecodeCustomizedTransactionsStrategy(BaseRemediationStrategy):
             chain_id=chain_id,
             location=location,
         )
-        if len(transactions) == 0:
+        if len(transactions) == 0:  # the last one was removed or reset since the run started
             return RemediationOutcome(
                 resolved=False,
                 attribution='not_applicable',
                 notes='The issue account has no customized transaction to compare',
-                record_attempt=(
-                    len(issue.auto_remediation_attempts) == 0 or
-                    issue.auto_remediation_attempts[-1].get('attribution') != 'not_applicable'
-                ),
+                record_attempt=False,
             )
 
         return _check_issue(
@@ -422,8 +454,7 @@ def run_data_issue_remediation(
 
 
 def _last_attempt_failed(issue: DataIssue) -> bool:
-    """Retry operational failures, timeouts, failed comparisons and attempts that know
-    they cannot make progress, on the next scheduled run.
+    """Retry operational failures, timeouts and failed comparisons on the next scheduled run.
 
     An unresolved issue with no attempt at all is retried too: nothing else would ever
     advance it.
@@ -435,7 +466,7 @@ def _last_attempt_failed(issue: DataIssue) -> bool:
 
     attempt = issue.auto_remediation_attempts[-1]
     return (
-        attempt.get('attribution') in {'timeout', 'strategy_failed', 'not_applicable'} or
+        attempt.get('attribution') in {'timeout', 'strategy_failed'} or
         (
             attempt.get('strategy') == REDECODE_CUSTOMIZED_TRANSACTIONS and
             attempt.get('result') == 'redecoding_failed'
