@@ -2558,6 +2558,7 @@
     "no_data": "This event does not change the cost basis of any asset.",
     "no_lots": "No acquisition is known for what was spent, so it has no cost basis.",
     "proceeds": "Proceeds",
+    "processing": "Pending",
     "show_details": "Show cost basis details",
     "source": {
       "event_amount": "The basis is what was paid for it according to the events of the trade.",

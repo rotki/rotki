@@ -95,6 +95,24 @@ describe('costBasisOverlayCell.vue', () => {
     expect(wrapper.find('.menu').exists()).toBe(false);
   });
 
+  it('should show pending processing instead of no cost basis impact until stale data is refreshed', async () => {
+    const stale = ref<boolean>(true);
+    const entries = ref<CostBasisEntry[]>([]);
+    const wrapper = mountCell({ overlay: { entriesFor: () => get(entries), stale } });
+
+    expect(wrapper.get('[data-testid=cost-basis-pending]').text()).toContain('cost_basis_overlay.processing');
+    expect(wrapper.text()).not.toContain('cost_basis_overlay.no_data');
+
+    set(stale, false);
+    await nextTick();
+    expect(wrapper.get('[data-testid=cost-basis-empty]').text()).toContain('cost_basis_overlay.no_data');
+
+    set(entries, [spend]);
+    await nextTick();
+    expect(wrapper.get('[data-testid=cost-basis-pnl]').text()).toBe('400');
+    expect(wrapper.find('[data-testid=cost-basis-empty]').exists()).toBe(false);
+  });
+
   it('should show the gain of a disposal above its basis, with the spend details behind it', () => {
     const wrapper = mountCell({ entries: [spend] });
     expect(wrapper.get('[data-testid=cost-basis-pnl]').text()).toBe('400');
