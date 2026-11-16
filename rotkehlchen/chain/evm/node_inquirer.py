@@ -323,7 +323,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         self.etherscan = etherscan
         self.routescan = routescan
         self.blockscout = blockscout
-        self.available_indexers: dict[EvmIndexer, Blockscout | Etherscan | Routescan | None] = {
+        self.available_indexers: dict[EvmIndexer, EtherscanLikeApi | None] = {
             EvmIndexer.ETHERSCAN: self.etherscan,
             EvmIndexer.BLOCKSCOUT: self.blockscout,
             EvmIndexer.ROUTESCAN: self.routescan,
