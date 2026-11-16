@@ -23,7 +23,12 @@ from rotkehlchen.history.data_issues.remediation.base import (
     RemediationOutcome,
     RemediationPipeline,
 )
-from rotkehlchen.history.data_issues.remediation.cex_matching import CexOnchainMatchingStrategy
+from rotkehlchen.history.data_issues.remediation.cex_matching import (
+    REMEDIATED_ISSUE_KINDS,
+    CexOnchainMatchingStrategy,
+    CexOnchainMatchVerificationStrategy,
+    reprocess_balances_for_pending_matches,
+)
 from rotkehlchen.history.data_issues.types import (
     AutoRemediationAttempt,
     DataIssue,
@@ -418,16 +423,35 @@ def _send_remediation_phase(database: DBHandler, phase: str) -> None:
     )
 
 
+def _run_pipeline(
+        issues_manager: DataIssuesManager,
+        strategies: tuple[BaseRemediationStrategy, ...],
+) -> None:
+    pipeline = RemediationPipeline(manager=issues_manager, strategies=strategies)
+    for issue in _list_remediable_issues(issues_manager):
+        pipeline.run(issue)
+        checkpoint()
+
+
+def _list_remediable_issues(issues_manager: DataIssuesManager) -> list[DataIssue]:
+    return issues_manager.list_issues(DataIssuesFilterQuery.make(
+        kinds=list(REMEDIATED_ISSUE_KINDS),
+        states=[IssueState.OPEN, IssueState.UNRESOLVED],
+    ))
+
+
 def run_data_issue_remediation(
         database: DBHandler,
         chains_aggregator: ChainsAggregator,
 ) -> None:
     """Run the remediation pipeline for the open and retryable data issues.
 
-    Exchange movement matching goes first since it can resolve an issue, and only for users
-    whose premium tier includes the automatic matching it relies on. The comparison of
-    customized transactions is diagnostic only: a transaction holding a customized event is
-    never touched, and its strategy previews decoder output without persisting it.
+    Exchange movement matching goes first, over every issue, and only for users whose premium
+    tier includes the automatic matching it relies on. The balances are then reprocessed once
+    for all the matches, and the second pass verifies whether each match resolved its issue
+    before comparing customized transactions. That comparison is diagnostic only: a
+    transaction holding a customized event is never touched, and its strategy previews
+    decoder output without persisting it.
 
     A run that aborts is recorded like one that finishes. Otherwise the scheduler would start
     it again on its next tick, behind the worker that made it abort and may still hold the
@@ -437,20 +461,22 @@ def run_data_issue_remediation(
     cancelled = False
     try:
         issues_manager = DataIssuesManager(database)
-        strategies: list[BaseRemediationStrategy] = []
         if has_premium_capability(
             premium=chains_aggregator.premium,
             capability_name=ASSET_MOVEMENT_MATCHING_CAPABILITY,
         ):
-            strategies.append(CexOnchainMatchingStrategy(database, chains_aggregator))
-        strategies.append(RedecodeCustomizedTransactionsStrategy(database, chains_aggregator))
-        pipeline = RemediationPipeline(manager=issues_manager, strategies=tuple(strategies))
-        for issue in issues_manager.list_issues(DataIssuesFilterQuery.make(
-            kinds=[IssueKind.NEGATIVE_BALANCE, IssueKind.CURRENT_BALANCE_MISMATCH],
-            states=[IssueState.OPEN, IssueState.UNRESOLVED],
-        )):
-            pipeline.run(issue)
-            checkpoint()
+            _run_pipeline(issues_manager, (CexOnchainMatchingStrategy(database),))
+
+        reprocess_balances_for_pending_matches(
+            database=database,
+            chains_aggregator=chains_aggregator,
+            issues=_list_remediable_issues(issues_manager),
+        )
+        checkpoint()
+        _run_pipeline(issues_manager, (
+            CexOnchainMatchVerificationStrategy(database),
+            RedecodeCustomizedTransactionsStrategy(database, chains_aggregator),
+        ))
     except TaskCancelledError:
         cancelled = True
         raise

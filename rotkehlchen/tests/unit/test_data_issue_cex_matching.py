@@ -1,3 +1,4 @@
+from contextlib import suppress
 from dataclasses import replace
 from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import MagicMock, patch
@@ -5,8 +6,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
+from rotkehlchen.concurrency import TaskCancelledError
 from rotkehlchen.constants.assets import A_ETH, A_USDC
-from rotkehlchen.constants.timing import HOUR_IN_SECONDS
+from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -21,6 +23,8 @@ from rotkehlchen.history.data_issues.remediation.cex_matching import (
     ATTRIBUTION_MATCHED_WITHDRAWAL,
     CEX_ONCHAIN_MATCHING,
     CexOnchainMatchingStrategy,
+    CexOnchainMatchVerificationStrategy,
+    reprocess_balances_for_pending_matches,
 )
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
@@ -35,11 +39,18 @@ from rotkehlchen.tasks.data_issues import (
     REDECODE_CUSTOMIZED_TRANSACTIONS,
     run_data_issue_remediation,
 )
-from rotkehlchen.tasks.events import match_asset_movements
+from rotkehlchen.tasks.events import get_unmatched_asset_movements, match_asset_movements
 from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import ChainID, EventMetricKey, EvmTransaction, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    EventMetricKey,
+    EvmTransaction,
+    Timestamp,
+    TimestampMS,
+)
 from rotkehlchen.utils.misc import ts_now_in_ms
 
 if TYPE_CHECKING:
@@ -52,22 +63,25 @@ pytestmark = [
 ]
 
 ONCHAIN_TS: Final = TimestampMS(1_700_000_000_000)
+CEX_MATCHING_MODULE: Final = 'rotkehlchen.history.data_issues.remediation.cex_matching'
 
 
 def _add_kraken_withdrawal_issue(
         database: DBHandler,
         onchain_amount: str = '1',
         seconds_between_legs: int = 60,
+        onchain_ts: TimestampMS = ONCHAIN_TS,
+        address: ChecksumEvmAddress = TEST_ADDR1,
 ) -> tuple[DataIssue, int]:
     """Save a Kraken withdrawal of 1 ETH and its onchain leg, and return the issue it causes.
 
     The onchain leg is saved the way the decoder leaves it before any matching: a withdrawal
     from Kraken, which takes the ETH out of the wallet and so drives its balance negative.
     """
-    movement_ts = ONCHAIN_TS - seconds_between_legs * 1000
+    movement_ts = onchain_ts - seconds_between_legs * 1000
     with database.user_write() as write_cursor:
         (events_db := DBHistoryEvents(database)).add_history_events(write_cursor, [HistoryEvent(
-            group_identifier='kraken-funding',
+            group_identifier=f'kraken-funding-{onchain_ts}',
             sequence_index=0,
             timestamp=TimestampMS(movement_ts - 1000),
             location=LOCATION_KRAKEN,
@@ -77,7 +91,7 @@ def _add_kraken_withdrawal_issue(
             asset=A_ETH,
             amount=FVal(1),
         ), AssetMovement(
-            unique_id='kraken-withdrawal',
+            unique_id=f'kraken-withdrawal-{onchain_ts}',
             timestamp=TimestampMS(movement_ts),
             location=LOCATION_KRAKEN,
             location_label='Kraken',
@@ -88,9 +102,9 @@ def _add_kraken_withdrawal_issue(
         onchain_event_id = events_db.add_history_event(write_cursor, EvmEvent(
             tx_ref=make_evm_tx_hash(),
             sequence_index=0,
-            timestamp=ONCHAIN_TS,
+            timestamp=onchain_ts,
             location=LOCATION_ETHEREUM,
-            location_label=TEST_ADDR1,
+            location_label=address,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_ETH,
@@ -100,9 +114,12 @@ def _add_kraken_withdrawal_issue(
 
     assert onchain_event_id is not None
     process_historical_balances(database, database.msg_aggregator)
-    issues = DataIssuesManager(database).list_issues()
-    assert [(issue.kind, issue.location, issue.payload['event_identifier']) for issue in issues] == [  # noqa: E501
-        (IssueKind.NEGATIVE_BALANCE, LOCATION_ETHEREUM, onchain_event_id),
+    issues = [
+        issue for issue in DataIssuesManager(database).list_issues()
+        if issue.payload.get('event_identifier') == onchain_event_id
+    ]
+    assert [(issue.kind, issue.location) for issue in issues] == [
+        (IssueKind.NEGATIVE_BALANCE, LOCATION_ETHEREUM),
     ]
     return issues[0], onchain_event_id
 
@@ -113,11 +130,26 @@ def _set_matching_settings(database: DBHandler, **settings: Any) -> None:
 
 
 def _run_strategy(database: DBHandler, issue: DataIssue) -> DataIssue:
+    """Run the matching, reprocessing and verification passes of a remediation on one issue."""
+    manager = DataIssuesManager(database)
     RemediationPipeline(
-        manager=(manager := DataIssuesManager(database)),
-        strategies=(CexOnchainMatchingStrategy(database, MagicMock()),),
+        manager=manager,
+        strategies=(CexOnchainMatchingStrategy(database),),
     ).run(issue)
+    reprocess_balances_for_pending_matches(
+        database=database,
+        chains_aggregator=MagicMock(),
+        issues=[manager.get_issue(issue.id)],
+    )
+    RemediationPipeline(
+        manager=manager,
+        strategies=(CexOnchainMatchVerificationStrategy(database),),
+    ).run(manager.get_issue(issue.id))
     return manager.get_issue(issue.id)
+
+
+def _attributions(issue: DataIssue) -> list[str]:
+    return [attempt['attribution'] for attempt in issue.auto_remediation_attempts]
 
 
 def _get_onchain_event_state(database: DBHandler, event_id: int) -> tuple[str, str, list[str]]:
@@ -161,6 +193,7 @@ def test_matching_exchange_withdrawal_resolves_negative_wallet_balance(
     assert issue.payload['resolution']['strategy'] == CEX_ONCHAIN_MATCHING
     assert issue.payload['resolution']['attribution'] == ATTRIBUTION_MATCHED_WITHDRAWAL
     assert [(x['attribution'], x['success']) for x in issue.auto_remediation_attempts] == [
+        ('reprocessing_pending', False),
         (ATTRIBUTION_MATCHED_WITHDRAWAL, True),
     ]
     assert _get_onchain_event_state(database, onchain_event_id) == (
@@ -184,7 +217,7 @@ def test_movement_is_only_considered_within_the_configured_time_range(
     if time_range is not None:
         _set_matching_settings(database, asset_movement_time_range=time_range)
 
-    assert CexOnchainMatchingStrategy(database, MagicMock()).applies_to(issue) is should_resolve
+    assert CexOnchainMatchingStrategy(database).applies_to(issue) is should_resolve
     issue = _run_strategy(database, issue)
     if should_resolve:
         assert issue.state == IssueState.RESOLVED
@@ -212,8 +245,8 @@ def test_movement_is_only_considered_within_the_configured_time_range(
         'location_label': 'Kraken',
         'kind': IssueKind.UNMATCHED_BRIDGE,
     }, False),
-    ({'location': LOCATION_KRAKEN, 'location_label': 'Other Kraken'}, True),
-    ({'location': LOCATION_BINANCE, 'location_label': 'Kraken'}, True),
+    ({'location': LOCATION_KRAKEN, 'location_label': 'Other Kraken'}, False),
+    ({'location': LOCATION_BINANCE, 'location_label': 'Kraken'}, False),
     ({'location': 'external'}, False),
 ])
 def test_applies_only_to_issues_an_unmatched_movement_could_explain(
@@ -222,7 +255,7 @@ def test_applies_only_to_issues_an_unmatched_movement_could_explain(
         applies: bool,
 ) -> None:
     issue, _ = _add_kraken_withdrawal_issue(database)
-    strategy = CexOnchainMatchingStrategy(database, MagicMock())
+    strategy = CexOnchainMatchingStrategy(database)
     assert strategy.applies_to(replace(issue, **issue_changes)) is applies
 
 
@@ -334,23 +367,121 @@ def test_pending_processing_is_retried_after_the_movement_is_already_matched(
         database: DBHandler,
 ) -> None:
     issue, event_id = _add_kraken_withdrawal_issue(database)
-    with patch(
-        'rotkehlchen.history.data_issues.remediation.cex_matching.process_historical_balances',
-        return_value=None,
-    ):
+    with patch(f'{CEX_MATCHING_MODULE}.process_historical_balances', return_value=None):
         run_data_issue_remediation(database, MagicMock())
 
     manager = DataIssuesManager(database)
     pending = manager.get_issue(issue.id)
-    assert pending.state == IssueState.UNRESOLVED
-    assert pending.auto_remediation_attempts[-1]['attribution'] == 'reprocessing_pending'
+    assert pending.state == IssueState.OPEN
+    assert _attributions(pending) == ['reprocessing_pending']
     with database.conn.read_ctx() as cursor:
         assert database.get_static_cache(cursor, DBCacheStatic.STALE_BALANCES_FROM_TS) is not None
     run_data_issue_remediation(database, MagicMock())
     resolved = manager.get_issue(issue.id)
     assert resolved.state == IssueState.RESOLVED
-    assert resolved.auto_remediation_attempts[-1]['attribution'] == ATTRIBUTION_MATCHED_WITHDRAWAL
+    assert _attributions(resolved) == ['reprocessing_pending', ATTRIBUTION_MATCHED_WITHDRAWAL]
     assert _get_onchain_event_state(database, event_id) == ('exchange transfer', 'receive', ['1'])
+
+
+def test_match_cancelled_before_verification_is_verified_on_the_next_run(
+        database: DBHandler,
+) -> None:
+    issue, event_id = _add_kraken_withdrawal_issue(database)
+    with (
+        patch(
+            f'{CEX_MATCHING_MODULE}.process_historical_balances',
+            side_effect=TaskCancelledError('logout'),
+        ),
+        suppress(TaskCancelledError),
+    ):
+        run_data_issue_remediation(database, MagicMock())
+
+    manager = DataIssuesManager(database)
+    assert _get_onchain_event_state(database, event_id)[:2] == ('exchange transfer', 'receive')
+    assert _attributions(cancelled := manager.get_issue(issue.id)) == ['reprocessing_pending']
+    assert cancelled.auto_remediation_attempts[0]['matched_movement_ids'] == (
+        cancelled.auto_remediation_attempts[0]['movement_ids']
+    )
+
+    run_data_issue_remediation(database, MagicMock())
+    resolved = manager.get_issue(issue.id)
+    assert resolved.state == IssueState.RESOLVED
+    assert _attributions(resolved) == ['reprocessing_pending', ATTRIBUTION_MATCHED_WITHDRAWAL]
+
+
+def test_match_orphaned_by_a_crash_is_verified_after_an_earlier_attempt(
+        database: DBHandler,
+) -> None:
+    """A verification owed by an issue that already had attempts survives the orphan reset."""
+    issue, _ = _add_kraken_withdrawal_issue(database, onchain_amount='0.99')
+    manager = DataIssuesManager(database)
+    run_data_issue_remediation(database, MagicMock())
+    assert _attributions(manager.get_issue(issue.id)) == ['no_match']
+
+    _set_matching_settings(database, asset_movement_amount_tolerance=FVal('0.02'))
+    with (
+        patch(
+            f'{CEX_MATCHING_MODULE}.process_historical_balances',
+            side_effect=TaskCancelledError('crash'),
+        ),
+        suppress(TaskCancelledError),
+    ):
+        run_data_issue_remediation(database, MagicMock())
+    with database.user_write() as write_cursor:  # the process died while verifying
+        write_cursor.execute(
+            'UPDATE data_issues SET state = ? WHERE id = ?',
+            (IssueState.AUTO_REMEDIATING, issue.id),
+        )
+    manager.reset_orphaned_remediations()
+    assert manager.get_issue(issue.id).state == IssueState.UNRESOLVED
+
+    run_data_issue_remediation(database, MagicMock())
+    resolved = manager.get_issue(issue.id)
+    assert resolved.state == IssueState.RESOLVED
+    assert _attributions(resolved) == [
+        'no_match',
+        'reprocessing_pending',
+        ATTRIBUTION_MATCHED_WITHDRAWAL,
+    ]
+
+
+def test_verification_retry_without_pending_edits_does_not_reprocess(
+        database: DBHandler,
+) -> None:
+    """A cut-off reprocessing keeps the stale marker, so the balances it deleted are rebuilt.
+
+    Once a scheduled pass rebuilt them, the owed verification only rechecks the condition.
+    """
+    issue, _ = _add_kraken_withdrawal_issue(database)
+    with (
+        patch('rotkehlchen.tasks.historical_balances.METRICS_BATCH_SIZE', 1),
+        patch(
+            'rotkehlchen.tasks.historical_balances.checkpoint',
+            side_effect=TaskCancelledError('budget'),
+        ),
+        suppress(TaskCancelledError),
+    ):
+        run_data_issue_remediation(database, MagicMock())
+
+    with database.conn.read_ctx() as cursor:
+        assert (stale_from_ts := database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_BALANCES_FROM_TS,
+        )) is not None
+    process_historical_balances(
+        database=database,
+        msg_aggregator=database.msg_aggregator,
+        from_ts=TimestampMS(int(stale_from_ts)),
+    )
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(cursor, DBCacheStatic.STALE_BALANCES_FROM_TS) is None
+
+    with patch(f'{CEX_MATCHING_MODULE}.process_historical_balances') as reprocess:
+        run_data_issue_remediation(database, MagicMock())
+    reprocess.assert_not_called()
+    resolved = DataIssuesManager(database).get_issue(issue.id)
+    assert resolved.state == IssueState.RESOLVED
+    assert _attributions(resolved) == ['reprocessing_pending', ATTRIBUTION_MATCHED_WITHDRAWAL]
 
 
 def test_successful_matching_does_not_hide_a_remaining_negative_balance(
@@ -428,7 +559,7 @@ def test_exchange_issue_without_unmatched_movements_stays_open(database: DBHandl
     process_historical_balances(database, database.msg_aggregator)
     manager = DataIssuesManager(database)
     issue = manager.list_issues()[0]
-    assert CexOnchainMatchingStrategy(database, MagicMock()).applies_to(issue) is True
+    assert CexOnchainMatchingStrategy(database).applies_to(issue) is False
 
     issue = _run_strategy(database, issue)
     assert issue.state == IssueState.OPEN
@@ -513,11 +644,7 @@ def test_open_issue_ignores_already_linked_movement_in_window(database: DBHandle
     process_historical_balances(database, database.msg_aggregator)
     manager = DataIssuesManager(database)
     exchange_issue = manager.list_issues()[0]
-    with patch(
-        'rotkehlchen.history.data_issues.remediation.cex_matching._get_linked_movements',
-    ) as get_linked:
-        exchange_issue = _run_strategy(database, exchange_issue)
-    get_linked.assert_not_called()
+    exchange_issue = _run_strategy(database, exchange_issue)
     assert exchange_issue.state == IssueState.OPEN
     assert exchange_issue.auto_remediation_attempts == []
 
@@ -583,17 +710,11 @@ def test_matched_without_resolving_after_reprocessing_pending_is_not_retried(
             amount=FVal(2),
         ))
 
-    with patch(
-        'rotkehlchen.history.data_issues.remediation.cex_matching.process_historical_balances',
-        return_value=None,
-    ):
+    with patch(f'{CEX_MATCHING_MODULE}.process_historical_balances', return_value=None):
         run_data_issue_remediation(database, MagicMock())
 
     manager = DataIssuesManager(database)
-    assert [
-        entry['attribution']
-        for entry in manager.get_issue(issue.id).auto_remediation_attempts
-    ] == ['reprocessing_pending']
+    assert _attributions(manager.get_issue(issue.id)) == ['reprocessing_pending']
 
     run_data_issue_remediation(database, MagicMock())
     after_second_run = manager.get_issue(issue.id)
@@ -602,7 +723,7 @@ def test_matched_without_resolving_after_reprocessing_pending_is_not_retried(
         'reprocessing_pending',
         'matched_without_resolving',
     ]
-    assert CexOnchainMatchingStrategy(database, MagicMock()).applies_to(after_second_run) is False
+    assert CexOnchainMatchingStrategy(database).applies_to(after_second_run) is False
 
     run_data_issue_remediation(database, MagicMock())
     assert len(manager.get_issue(issue.id).auto_remediation_attempts) == 2
@@ -708,15 +829,15 @@ def test_stale_balances_after_reprocessing_returns_reprocessing_pending_and_retr
         return True
 
     with patch(
-        'rotkehlchen.history.data_issues.remediation.cex_matching.process_historical_balances',
+        f'{CEX_MATCHING_MODULE}.process_historical_balances',
         side_effect=process_and_mark_stale,
     ):
         run_data_issue_remediation(database, MagicMock())
 
     manager = DataIssuesManager(database)
     pending = manager.get_issue(issue.id)
-    assert pending.state == IssueState.UNRESOLVED
-    assert pending.auto_remediation_attempts[-1]['attribution'] == 'reprocessing_pending'
+    assert pending.state == IssueState.OPEN
+    assert _attributions(pending) == ['reprocessing_pending']
 
     run_data_issue_remediation(database, MagicMock())
     resolved = manager.get_issue(issue.id)
@@ -725,29 +846,73 @@ def test_stale_balances_after_reprocessing_returns_reprocessing_pending_and_retr
     assert _get_onchain_event_state(database, event_id) == ('exchange transfer', 'receive', ['1'])
 
 
-def test_unresolved_issue_without_attempts_verifies_linked_movement(
-        database: DBHandler,
-) -> None:
+def test_links_not_made_by_the_strategy_are_never_credited(database: DBHandler) -> None:
+    """An unresolved issue without attempts whose window holds a link made elsewhere."""
     issue, event_id = _add_kraken_withdrawal_issue(database)
-    with patch(
-        'rotkehlchen.history.data_issues.remediation.cex_matching.process_historical_balances',
-        return_value=None,
-    ):
-        _run_strategy(database, issue)
-
-    # Simulate an orphaned UNRESOLVED row with no recorded attempt (e.g. after reset)
-    manager = DataIssuesManager(database)
-    with database.user_write() as write_cursor:
+    match_asset_movements(database=database)
+    process_historical_balances(database, database.msg_aggregator)
+    assert _get_onchain_event_state(database, event_id) == ('exchange transfer', 'receive', ['1'])
+    with database.user_write() as write_cursor:  # e.g. reset while another strategy ran
         write_cursor.execute(
-            'UPDATE data_issues SET state = ?, auto_remediation_attempts_json = ? WHERE id = ?',
-            (IssueState.UNRESOLVED, '[]', issue.id),
+            'UPDATE data_issues SET state = ? WHERE id = ?',
+            (IssueState.UNRESOLVED, issue.id),
         )
 
     run_data_issue_remediation(database, MagicMock())
-    resolved = manager.get_issue(issue.id)
-    assert resolved.state == IssueState.RESOLVED
-    assert resolved.auto_remediation_attempts[-1]['attribution'] == ATTRIBUTION_MATCHED_WITHDRAWAL
-    assert _get_onchain_event_state(database, event_id) == ('exchange transfer', 'receive', ['1'])
+    after = DataIssuesManager(database).get_issue(issue.id)
+    assert after.state == IssueState.UNRESOLVED
+    assert after.auto_remediation_attempts == []
+
+
+def test_issues_matched_in_one_run_share_one_reprocessing(database: DBHandler) -> None:
+    first, _ = _add_kraken_withdrawal_issue(database)
+    second, _ = _add_kraken_withdrawal_issue(
+        database=database,
+        onchain_ts=TimestampMS(ONCHAIN_TS + DAY_IN_SECONDS * 10 * 1000),
+        address=TEST_ADDR2,
+    )
+    with (
+        patch(
+            f'{CEX_MATCHING_MODULE}.process_historical_balances',
+            wraps=process_historical_balances,
+        ) as reprocess,
+        patch(
+            f'{CEX_MATCHING_MODULE}.get_unmatched_asset_movements',
+            wraps=get_unmatched_asset_movements,
+        ) as load_unmatched,
+    ):
+        run_data_issue_remediation(database, MagicMock())
+
+    assert reprocess.call_count == 1
+    assert load_unmatched.call_count == 1
+    manager = DataIssuesManager(database)
+    for issue in (first, second):
+        assert _attributions(manager.get_issue(issue.id)) == [
+            'reprocessing_pending',
+            ATTRIBUTION_MATCHED_WITHDRAWAL,
+        ]
+
+
+@pytest.mark.parametrize(('state', 'latest_attribution'), [
+    (IssueState.OPEN, 'timeout'),
+    (IssueState.UNRESOLVED, 'no_match'),
+])
+def test_applies_to_never_reads_the_database(
+        database: DBHandler,
+        state: IssueState,
+        latest_attribution: str,
+) -> None:
+    """Inputs the strategy did not preload when it was created are left to `attempt`."""
+    issue, _ = _add_kraken_withdrawal_issue(database)
+    strategy = CexOnchainMatchingStrategy(database)
+    issue = replace(issue, state=state, auto_remediation_attempts=[{
+        'attribution': latest_attribution,
+        'strategy': CEX_ONCHAIN_MATCHING,
+        'timestamp': 0,
+        'success': False,
+    }])
+    with patch.object(database.conn, 'read_ctx', side_effect=AssertionError('unexpected DB read')):
+        assert strategy.applies_to(issue) is True
 
 
 @pytest.mark.parametrize((
@@ -788,8 +953,16 @@ def test_stored_attempt_schema_includes_trial_snapshot(
 
     issue = _run_strategy(database, issue)
     assert issue.state == expected_state
-    assert len(issue.auto_remediation_attempts) == 1
-    attempt = issue.auto_remediation_attempts[0]
+    *earlier_attempts, attempt = issue.auto_remediation_attempts
+    if expected_success:  # the matches owed a verification before it resolved the issue
+        assert [(x['attribution'], x['matched_movement_ids']) for x in earlier_attempts] == [
+            ('reprocessing_pending', [movement_id]),
+        ]
+        assert all(earlier_attempts[0][key] == attempt[key] for key in (
+            'amount_tolerance', 'time_range', 'movement_ids', 'window_fingerprint',
+        ))
+    else:
+        assert earlier_attempts == []
     settings = CachedSettings().get_settings()
     assert set(attempt) == {
         'attribution',
@@ -855,7 +1028,7 @@ def test_unresolved_no_match_skips_unchanged_and_retries_when_counterpart_added(
     assert after_first.state == IssueState.UNRESOLVED
     assert [a['attribution'] for a in after_first.auto_remediation_attempts] == ['no_match']
 
-    strategy = CexOnchainMatchingStrategy(database, MagicMock())
+    strategy = CexOnchainMatchingStrategy(database)
     with patch.object(database.conn, 'read_ctx', side_effect=AssertionError('unexpected DB read')):
         assert strategy.applies_to(after_first) is False
     with patch.object(DataIssuesManager, 'update_state', wraps=manager.update_state) as spy_update:
@@ -878,14 +1051,18 @@ def test_unresolved_no_match_skips_unchanged_and_retries_when_counterpart_added(
         ))
     assert counterpart_id is not None
 
-    assert CexOnchainMatchingStrategy(database, MagicMock()).applies_to(after_first) is True
+    assert CexOnchainMatchingStrategy(database).applies_to(after_first) is True
     run_data_issue_remediation(database, MagicMock())
     resolved = manager.get_issue(issue.id)
     assert resolved.state == IssueState.RESOLVED
     attempts = resolved.auto_remediation_attempts
-    assert [a['attribution'] for a in attempts] == ['no_match', ATTRIBUTION_MATCHED_WITHDRAWAL]
-    assert attempts[0]['movement_ids'] == attempts[1]['movement_ids']
-    assert attempts[0]['window_fingerprint'] != attempts[1]['window_fingerprint']
+    assert _attributions(resolved) == [
+        'no_match',
+        'reprocessing_pending',
+        ATTRIBUTION_MATCHED_WITHDRAWAL,
+    ]
+    assert attempts[0]['movement_ids'] == attempts[-1]['movement_ids']
+    assert attempts[0]['window_fingerprint'] != attempts[-1]['window_fingerprint']
 
 
 def test_unresolved_no_match_retries_when_new_cex_movement_added(database: DBHandler) -> None:
@@ -946,9 +1123,13 @@ def test_unresolved_no_match_retries_when_new_cex_movement_added(database: DBHan
     resolved = manager.get_issue(issue.id)
     assert resolved.state == IssueState.RESOLVED
     attempts = resolved.auto_remediation_attempts
-    assert [a['attribution'] for a in attempts] == ['no_match', ATTRIBUTION_MATCHED_WITHDRAWAL]
-    assert new_movement_id in attempts[1]['movement_ids']
-    assert len(attempts[1]['movement_ids']) == 2
+    assert _attributions(resolved) == [
+        'no_match',
+        'reprocessing_pending',
+        ATTRIBUTION_MATCHED_WITHDRAWAL,
+    ]
+    assert new_movement_id in attempts[-1]['movement_ids']
+    assert len(attempts[-1]['movement_ids']) == 2
 
 
 def test_unresolved_no_match_retries_when_amount_tolerance_widened(database: DBHandler) -> None:
@@ -967,9 +1148,13 @@ def test_unresolved_no_match_retries_when_amount_tolerance_widened(database: DBH
     resolved = manager.get_issue(issue.id)
     assert resolved.state == IssueState.RESOLVED
     attempts = resolved.auto_remediation_attempts
-    assert [a['attribution'] for a in attempts] == ['no_match', ATTRIBUTION_MATCHED_WITHDRAWAL]
-    assert attempts[1]['amount_tolerance'] == '0.02'
-    assert attempts[0]['amount_tolerance'] != attempts[1]['amount_tolerance']
+    assert _attributions(resolved) == [
+        'no_match',
+        'reprocessing_pending',
+        ATTRIBUTION_MATCHED_WITHDRAWAL,
+    ]
+    assert attempts[-1]['amount_tolerance'] == '0.02'
+    assert attempts[0]['amount_tolerance'] != attempts[-1]['amount_tolerance']
 
 
 @pytest.mark.parametrize('deferred_reason', ['no_movement', 'no_premium'])
@@ -1097,8 +1282,9 @@ def test_unresolved_from_customized_redecode_is_resolved_without_rerunning_redec
 
     resolved = manager.get_issue(issue.id)
     assert resolved.state == IssueState.RESOLVED
-    assert [a['strategy'] for a in resolved.auto_remediation_attempts] == [
-        REDECODE_CUSTOMIZED_TRANSACTIONS,
-        CEX_ONCHAIN_MATCHING,
+    assert [(a['strategy'], a['attribution']) for a in resolved.auto_remediation_attempts] == [
+        (REDECODE_CUSTOMIZED_TRANSACTIONS, 'system'),
+        (CEX_ONCHAIN_MATCHING, 'reprocessing_pending'),
+        (CEX_ONCHAIN_MATCHING, ATTRIBUTION_MATCHED_WITHDRAWAL),
     ]
     assert resolved.payload['resolution']['strategy'] == CEX_ONCHAIN_MATCHING
