@@ -1,4 +1,6 @@
+import threading
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
@@ -8,7 +10,11 @@ from rotkehlchen.history.data_issues.constants import (
     IssueSeverity,
     IssueState,
 )
-from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.manager import (
+    MAX_REMEDIATION_ATTEMPTS,
+    DataIssuesManager,
+    _validate_state_transition,
+)
 from rotkehlchen.history.data_issues.types import DataIssueFilters
 from rotkehlchen.locations.constants import (
     LOCATION_ETHEREUM,
@@ -148,9 +154,69 @@ def test_state_transitions(database: DBHandler) -> None:
     assert issue.state == IssueState.UNRESOLVED
     issue = manager.update_state(issue_id, IssueState.AUTO_REMEDIATING)
     assert issue.state == IssueState.AUTO_REMEDIATING
+    # a run that attempted nothing hands the issue back to open
+    issue = manager.update_state(issue_id, IssueState.OPEN)
+    assert issue.state == IssueState.OPEN
 
     with pytest.raises(InputError):
-        manager.update_state(issue_id, IssueState.OPEN)
+        manager.update_state(issue_id, IssueState.UNRESOLVED)
+
+
+def test_update_state_rejects_unexpected_state(database: DBHandler) -> None:
+    """An update conditional on the state must not act on an issue that left that state."""
+    manager = DataIssuesManager(database)
+    manager.update_state(
+        issue_id := _write_negative_balance_issue(manager),
+        IssueState.AUTO_REMEDIATING,
+        expected_state=IssueState.OPEN,
+    )
+    manager.resolve_manually(issue_id, note='done')
+
+    with pytest.raises(InputError):  # resolved -> open is an allowed transition by itself
+        manager.update_state(
+            issue_id, IssueState.OPEN, expected_state=IssueState.AUTO_REMEDIATING,
+        )
+    assert (issue := manager.get_issue(issue_id)).state == IssueState.RESOLVED
+    assert issue.payload['resolution'] == {'manual': True, 'note': 'done'}
+
+
+def test_update_state_does_not_overwrite_concurrent_dismissal(database: DBHandler) -> None:
+    """A dismissal attempted after update_state read the row, but before it wrote, must win.
+
+    The dismissal is started from inside update_state, right after its read, and given
+    time to land in that window. The issue must end up dismissed, never flipped back
+    to resolved by the update's write.
+    """
+    manager = DataIssuesManager(database)
+    manager.update_state(
+        issue_id := _write_negative_balance_issue(manager),
+        IssueState.AUTO_REMEDIATING,
+    )
+    dismissal_started = threading.Event()
+
+    def dismiss() -> None:
+        dismissal_started.set()
+        manager.dismiss(issue_id)
+
+    dismissal = threading.Thread(target=dismiss)
+
+    def dismiss_after_read(current_state: str | IssueState, new_state: IssueState) -> None:
+        if dismissal.ident is None:  # only the update's own validation opens the window
+            dismissal.start()
+            assert dismissal_started.wait(5)
+            dismissal.join(0.5)
+        _validate_state_transition(current_state, new_state)
+
+    with patch(
+        'rotkehlchen.history.data_issues.manager._validate_state_transition',
+        side_effect=dismiss_after_read,
+    ):
+        manager.update_state(issue_id, IssueState.RESOLVED, resolution={'result': 'ok'})
+        dismissal.join(5)
+
+    assert dismissal.is_alive() is False
+    assert (issue := manager.get_issue(issue_id)).state == IssueState.DISMISSED
+    assert 'resolution' not in issue.payload
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -177,6 +243,33 @@ def test_only_latest_attempt_keeps_comparison(database: DBHandler, use_update_st
         'transactions' not in attempt
         for attempt in manager.get_issue(issue_id).auto_remediation_attempts
     )
+
+
+def test_append_auto_remediation_attempt_caps_history(database: DBHandler) -> None:
+    manager = DataIssuesManager(database)
+    issue_id = _write_negative_balance_issue(manager)
+    attempts = [{'step': step} for step in range(MAX_REMEDIATION_ATTEMPTS + 5)]
+
+    for attempt in attempts:
+        issue = manager.append_auto_remediation_attempt(issue_id, attempt=attempt)
+
+    assert issue.auto_remediation_attempts == attempts[-MAX_REMEDIATION_ATTEMPTS:]
+    assert manager.get_issue(issue_id).auto_remediation_attempts == (
+        attempts[-MAX_REMEDIATION_ATTEMPTS:]
+    )
+
+
+def test_update_state_caps_remediation_history(database: DBHandler) -> None:
+    manager = DataIssuesManager(database)
+    issue_id = _write_negative_balance_issue(manager)
+    attempts = [{'step': step} for step in range(MAX_REMEDIATION_ATTEMPTS + 5)]
+
+    issue = manager.update_state(issue_id, IssueState.AUTO_REMEDIATING, attempt=attempts[0])
+    for step, attempt in enumerate(attempts[1:], start=1):
+        state = IssueState.UNRESOLVED if step % 2 == 1 else IssueState.AUTO_REMEDIATING
+        issue = manager.update_state(issue_id, state, attempt=attempt)
+
+    assert issue.auto_remediation_attempts == attempts[-MAX_REMEDIATION_ATTEMPTS:]
 
 
 def test_retry_auto_remediation(database: DBHandler) -> None:
@@ -315,16 +408,72 @@ def test_write_issue_dismissed_not_reopened(database: DBHandler) -> None:
     assert manager.get_issue(issue_id).state == IssueState.DISMISSED
 
 
-def test_write_issue_resolved_reopened(database: DBHandler) -> None:
+def test_write_issue_unchanged_candidate_keeps_manual_resolution(database: DBHandler) -> None:
     manager = DataIssuesManager(database)
     issue_id = _write_negative_balance_issue(manager)
-    manager.resolve_manually(issue_id)
+    manager.resolve_manually(issue_id, note='checked')
+
+    same_id = _write_negative_balance_issue(manager)
+    assert same_id == issue_id
+    issue = manager.get_issue(issue_id)
+    assert issue.state == IssueState.RESOLVED
+    assert issue.resolved_at is not None
+    assert issue.payload['resolution'] == {'manual': True, 'note': 'checked'}
+
+
+def test_write_issue_unchanged_candidate_reopens_automatic_resolution(
+        database: DBHandler,
+) -> None:
+    """An automatically resolved issue must reopen when its candidate is rediscovered."""
+    manager = DataIssuesManager(database)
+    issue_id = _write_negative_balance_issue(manager)
+    manager.update_state(issue_id, IssueState.AUTO_REMEDIATING)
+    manager.update_state(
+        issue_id,
+        IssueState.RESOLVED,
+        resolution={'attribution': 'system', 'strategy': 'redecode', 'notes': 'matched'},
+    )
 
     same_id = _write_negative_balance_issue(manager)
     assert same_id == issue_id
     issue = manager.get_issue(issue_id)
     assert issue.state == IssueState.OPEN
     assert issue.resolved_at is None
+    assert 'resolution' not in issue.payload
+
+
+def test_write_issue_unchanged_candidate_reopens_system_resolution(database: DBHandler) -> None:
+    """A system resolution (no resolution payload) must reopen when rediscovered."""
+    manager = DataIssuesManager(database)
+    location = LOCATION_ETHEREUM
+    issue_id = _write_negative_balance_issue(manager, location=location)
+    manager.resolve_event_issues(
+        kind=IssueKind.NEGATIVE_BALANCE,
+        issues=[(location, '0x0000000000000000000000000000000000000001', None, 'ETH', 1)],
+    )
+    assert manager.get_issue(issue_id).state == IssueState.RESOLVED
+
+    same_id = _write_negative_balance_issue(manager, location=location)
+    assert same_id == issue_id
+    assert manager.get_issue(issue_id).state == IssueState.OPEN
+
+
+def test_write_issue_changed_candidate_reopens_resolved(database: DBHandler) -> None:
+    manager = DataIssuesManager(database)
+    issue_id = _write_negative_balance_issue(manager)
+    manager.resolve_manually(issue_id, note='checked')
+
+    same_id = _write_negative_balance_issue(
+        manager,
+        balance_before='5',
+        negative_amount='-5',
+    )
+    assert same_id == issue_id
+    issue = manager.get_issue(issue_id)
+    assert issue.state == IssueState.OPEN
+    assert issue.resolved_at is None
+    assert issue.payload['in_memory_negative_amount'] == '-5'
+    assert 'resolution' not in issue.payload
 
 
 def test_dismiss_not_found(database: DBHandler) -> None:

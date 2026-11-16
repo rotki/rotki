@@ -1,4 +1,5 @@
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { effectScope, type EffectScope } from 'vue';
 import { ActionUrgency } from '@/modules/core/action-center/types';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import { HISTORY_ISSUE_IDS, type useHistoryEventIssues as UseHistoryEventIssues } from '@/modules/history/events/actions-center/use-history-event-issues';
@@ -112,6 +113,12 @@ vi.mock('@/modules/history/data-issues/use-data-issues-summary', () => ({
   }),
 }));
 
+const remediationCompleted = ref(0);
+
+vi.mock('@/modules/history/data-issues/use-data-issue-remediation-store', () => ({
+  useDataIssueRemediationStore: (): object => ({ remediationCompleted }),
+}));
+
 vi.mock('@/modules/history/events/tx/use-undecoded-transactions-count', () => ({
   useUndecodedTransactionsCount: (): object => ({
     decodeMissing: state.decodeMissing,
@@ -137,9 +144,26 @@ async function loadComposable(): Promise<typeof UseHistoryEventIssues> {
 
 describe('useHistoryEventIssues', () => {
   let useHistoryEventIssues: typeof UseHistoryEventIssues;
+  let scope: EffectScope | undefined;
+
+  /**
+   * Invokes the composable inside a scope that `afterEach` stops.
+   *
+   * @remarks
+   * Nothing mounts this composable, so an unscoped call would leave the watcher it registers on
+   * the remediation store's shared ref alive for every later test in the file.
+   */
+  function createHistoryEventIssues(): ReturnType<typeof UseHistoryEventIssues> {
+    scope = effectScope();
+    const result = scope.run(() => useHistoryEventIssues());
+    assert(result, 'the composable should return its state');
+    return result;
+  }
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    // The remediation watcher calls `startPromise`, so the mock has to hand back a promise.
+    state.refreshDataIssuesSummary.mockResolvedValue(undefined);
     useHistoryEventIssues = await loadComposable();
     set(state.autoFixCount, 0);
     set(state.autoFixGroupIds, []);
@@ -157,6 +181,7 @@ describe('useHistoryEventIssues', () => {
     set(state.matchingAllowed, true);
     set(state.postProcessing, false);
     set(state.processing, false);
+    set(remediationCompleted, 0);
     set(state.trackedEntitiesLoading, false);
     set(state.tracksNothing, false);
     set(state.undecodedCount, 0);
@@ -165,11 +190,12 @@ describe('useHistoryEventIssues', () => {
   });
 
   afterEach(() => {
+    scope?.stop();
     vi.unstubAllEnvs();
   });
 
   it('should report no issues when every count is zero', () => {
-    const { activeItems, categoryCount, clearedItems, hasItems, issues } = useHistoryEventIssues();
+    const { activeItems, categoryCount, clearedItems, hasItems, issues } = createHistoryEventIssues();
 
     expect(get(issues)).toHaveLength(7);
     expect(get(activeItems)).toEqual([]);
@@ -184,7 +210,7 @@ describe('useHistoryEventIssues', () => {
     set(state.internalConflictsCount, 957);
     set(state.undecodedCount, 47);
 
-    const { activeItems, categoryCount, clearedItems, hasItems } = useHistoryEventIssues();
+    const { activeItems, categoryCount, clearedItems, hasItems } = createHistoryEventIssues();
 
     expect(get(categoryCount)).toBe(4);
     expect(get(hasItems)).toBe(true);
@@ -205,7 +231,7 @@ describe('useHistoryEventIssues', () => {
     set(state.unmatchedMovementsCount, 5);
     set(state.autoMatchLoading, true);
 
-    const { activeItems, categoryCount } = useHistoryEventIssues();
+    const { activeItems, categoryCount } = createHistoryEventIssues();
 
     expect(get(categoryCount)).toBe(0);
     expect(get(activeItems)).toEqual([]);
@@ -216,7 +242,7 @@ describe('useHistoryEventIssues', () => {
   });
 
   it('should demote internal conflicts and mark undecoded as informational', () => {
-    const { issues } = useHistoryEventIssues();
+    const { issues } = createHistoryEventIssues();
     const byUrgency = Object.fromEntries(get(issues).map(issue => [issue.id, issue.urgency]));
 
     expect(byUrgency[HISTORY_ISSUE_IDS.INTERNAL_CONFLICTS]).toBe(ActionUrgency.AUTOMATIC);
@@ -225,7 +251,7 @@ describe('useHistoryEventIssues', () => {
   });
 
   it('should give bridges their own action label', () => {
-    const { issues } = useHistoryEventIssues();
+    const { issues } = createHistoryEventIssues();
     const bridges = get(issues).find(issue => issue.id === HISTORY_ISSUE_IDS.UNMATCHED_BRIDGES);
     const movements = get(issues).find(issue => issue.id === HISTORY_ISSUE_IDS.UNMATCHED_MOVEMENTS);
 
@@ -236,7 +262,7 @@ describe('useHistoryEventIssues', () => {
   it('should target the matching dialog or duplicate route per issue', () => {
     set(state.autoFixGroupIds, ['group-1', 'group-2']);
 
-    const { issues } = useHistoryEventIssues();
+    const { issues } = createHistoryEventIssues();
     const bridges = get(issues).find(issue => issue.id === HISTORY_ISSUE_IDS.UNMATCHED_BRIDGES);
     const autoFix = get(issues).find(issue => issue.id === HISTORY_ISSUE_IDS.AUTO_FIX_DUPLICATES);
 
@@ -252,7 +278,7 @@ describe('useHistoryEventIssues', () => {
   });
 
   it('should redecode in place from the undecoded row', () => {
-    const { issues } = useHistoryEventIssues();
+    const { issues } = createHistoryEventIssues();
     const undecoded = get(issues).find(issue => issue.id === HISTORY_ISSUE_IDS.UNDECODED);
 
     assert(undecoded?.target.kind === 'run', 'the undecoded row should run in place');
@@ -262,7 +288,7 @@ describe('useHistoryEventIssues', () => {
   });
 
   it('should show the undecoded row as loading while decoding runs', () => {
-    const { issues } = useHistoryEventIssues();
+    const { issues } = createHistoryEventIssues();
     const undecodedLoading = (): boolean | undefined => get(issues).find(issue => issue.id === HISTORY_ISSUE_IDS.UNDECODED)?.loading;
 
     expect(undecodedLoading()).toBe(false);
@@ -273,7 +299,7 @@ describe('useHistoryEventIssues', () => {
   });
 
   it('should stay pending until a scan lands and while the history syncs', async () => {
-    const { checking, refreshAll } = useHistoryEventIssues();
+    const { checking, refreshAll } = createHistoryEventIssues();
 
     expect(get(checking)).toBe(true);
 
@@ -287,7 +313,7 @@ describe('useHistoryEventIssues', () => {
   });
 
   it('should stay busy after processing ends until the work that follows it finishes', () => {
-    const { busy } = useHistoryEventIssues();
+    const { busy } = createHistoryEventIssues();
 
     set(state.postProcessing, true);
     expect(get(busy)).toBe(true);
@@ -302,7 +328,7 @@ describe('useHistoryEventIssues', () => {
     set(state.unmatchedBridgesCount, 38);
     set(state.undecodedCount, 47);
 
-    const { activeItems, categoryCount, lockedItems } = useHistoryEventIssues();
+    const { activeItems, categoryCount, lockedItems } = createHistoryEventIssues();
 
     expect(get(categoryCount)).toBe(1);
     expect(get(activeItems).map(issue => issue.id)).toEqual([HISTORY_ISSUE_IDS.UNDECODED]);
@@ -316,7 +342,7 @@ describe('useHistoryEventIssues', () => {
   it('should not lock anything when the matching capability is available', () => {
     set(state.unmatchedBridgesCount, 38);
 
-    const { lockedItems } = useHistoryEventIssues();
+    const { lockedItems } = createHistoryEventIssues();
 
     expect(get(lockedItems)).toEqual([]);
   });
@@ -324,7 +350,7 @@ describe('useHistoryEventIssues', () => {
   it('should offer the ignored items for review once nothing is left unmatched', () => {
     set(state.ignoredMovementsCount, 4);
 
-    const { activeItems, categoryCount, reviewItems } = useHistoryEventIssues();
+    const { activeItems, categoryCount, reviewItems } = createHistoryEventIssues();
     const [movements] = get(reviewItems);
 
     expect(get(activeItems)).toEqual([]);
@@ -339,14 +365,14 @@ describe('useHistoryEventIssues', () => {
     set(state.ignoredMovementsCount, 4);
     set(state.unmatchedMovementsCount, 2);
 
-    const { activeItems, reviewItems } = useHistoryEventIssues();
+    const { activeItems, reviewItems } = createHistoryEventIssues();
 
     expect(get(reviewItems)).toEqual([]);
     expect(get(activeItems)[0].count).toBe(2);
   });
 
   it('should send a cleared duplicates category to the dialog rather than the filtered list', () => {
-    const { issues } = useHistoryEventIssues();
+    const { issues } = createHistoryEventIssues();
     const autoFix = get(issues).find(issue => issue.id === HISTORY_ISSUE_IDS.AUTO_FIX_DUPLICATES);
 
     expect(autoFix?.checkTarget).toEqual({ kind: 'dialog', options: { type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES } });
@@ -354,7 +380,7 @@ describe('useHistoryEventIssues', () => {
   });
 
   it('should refresh every issue source on re-scan', async () => {
-    const { refreshAll } = useHistoryEventIssues();
+    const { refreshAll } = createHistoryEventIssues();
 
     await refreshAll();
 
@@ -366,7 +392,7 @@ describe('useHistoryEventIssues', () => {
   });
 
   it('should leave the ignored lists out of a rescan, since only the user changes them', async () => {
-    const { refreshAll, rescan } = useHistoryEventIssues();
+    const { refreshAll, rescan } = createHistoryEventIssues();
     await refreshAll();
     vi.clearAllMocks();
 
@@ -379,7 +405,7 @@ describe('useHistoryEventIssues', () => {
 
   it('should leave the inbox out entirely when the build does not serve it', async () => {
     set(state.dataIssuesCount, 4);
-    const { issues, refreshAll } = useHistoryEventIssues();
+    const { issues, refreshAll } = createHistoryEventIssues();
 
     await refreshAll();
 
@@ -393,7 +419,7 @@ describe('useHistoryEventIssues', () => {
     it('should raise it first when the user tracks nothing, pointing at the add-account page', () => {
       set(state.tracksNothing, true);
 
-      const { activeItems, categoryCount } = useHistoryEventIssues();
+      const { activeItems, categoryCount } = createHistoryEventIssues();
       const [row] = get(activeItems);
 
       expect(get(categoryCount)).toBe(1);
@@ -407,7 +433,7 @@ describe('useHistoryEventIssues', () => {
       set(state.tracksNothing, true);
       set(state.undecodedCount, 47);
 
-      const { activeItems } = useHistoryEventIssues();
+      const { activeItems } = createHistoryEventIssues();
 
       expect(get(activeItems).map(issue => issue.id)).toEqual([
         HISTORY_ISSUE_IDS.NO_TRACKED_ACCOUNTS,
@@ -416,7 +442,7 @@ describe('useHistoryEventIssues', () => {
     });
 
     it('should clear it once anything at all is tracked', () => {
-      const { activeItems, clearedItems } = useHistoryEventIssues();
+      const { activeItems, clearedItems } = createHistoryEventIssues();
 
       expect(get(activeItems)).toEqual([]);
       expect(get(clearedItems).map(issue => issue.id)).toContain(HISTORY_ISSUE_IDS.NO_TRACKED_ACCOUNTS);
@@ -426,7 +452,7 @@ describe('useHistoryEventIssues', () => {
       set(state.tracksNothing, true);
       set(state.trackedEntitiesLoading, true);
 
-      const { activeItems, categoryCount } = useHistoryEventIssues();
+      const { activeItems, categoryCount } = createHistoryEventIssues();
 
       expect(get(categoryCount)).toBe(0);
       expect(get(activeItems)).toEqual([]);
@@ -444,7 +470,7 @@ describe('useHistoryEventIssues', () => {
 
     it('should raise a data issues row that opens the inbox in the pinned rail', () => {
       set(state.dataIssuesCount, 4);
-      const { activeItems, issues } = useHistoryEventIssues();
+      const { activeItems, issues } = createHistoryEventIssues();
       const row = get(issues).find(issue => issue.id === HISTORY_ISSUE_IDS.DATA_ISSUES);
 
       expect(get(issues)).toHaveLength(8);
@@ -455,16 +481,25 @@ describe('useHistoryEventIssues', () => {
     });
 
     it('should clear the data issues row when nothing is actionable', () => {
-      const { activeItems, clearedItems } = useHistoryEventIssues();
+      const { activeItems, clearedItems } = createHistoryEventIssues();
 
       expect(get(activeItems)).toEqual([]);
       expect(get(clearedItems).map(issue => issue.id)).toContain(HISTORY_ISSUE_IDS.DATA_ISSUES);
     });
 
     it('should refresh the inbox summary alongside the other sources', async () => {
-      const { refreshAll } = useHistoryEventIssues();
+      const { refreshAll } = createHistoryEventIssues();
 
       await refreshAll();
+
+      expect(state.refreshDataIssuesSummary).toHaveBeenCalledOnce();
+    });
+
+    it('should refresh the inbox summary when a remediation run completes', async () => {
+      createHistoryEventIssues();
+
+      set(remediationCompleted, 1);
+      await nextTick();
 
       expect(state.refreshDataIssuesSummary).toHaveBeenCalledOnce();
     });
