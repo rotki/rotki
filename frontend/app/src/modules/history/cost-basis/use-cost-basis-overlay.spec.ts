@@ -126,4 +126,25 @@ describe('useCostBasisOverlay', () => {
     expect(overlay.statusFor(2)).toBe('ready');
     expect(overlay.entriesFor(2)).toEqual([entry]);
   });
+
+  it('should fetch again only the processing events, keeping them as processing until answered', async () => {
+    fetchCostBasis.mockImplementation(async () => response([1], [2, 3]));
+    const { overlay } = create([1, 2, 3]);
+    await vi.advanceTimersByTimeAsync(60);
+
+    fetchCostBasis.mockImplementation(async () => response([1, 2], [3]));
+    const refreshing = overlay.refreshProcessing();
+    expect(overlay.statusFor(2)).toBe('processing');
+    await refreshing;
+    expect(fetchCostBasis).toHaveBeenLastCalledWith([2, 3]);
+    expect(overlay.statusFor(2)).toBe('ready');
+    expect(overlay.entriesFor(2)).toEqual([entry]);
+    expect(overlay.statusFor(3)).toBe('processing');
+
+    fetchCostBasis.mockImplementation(async () => response([1, 2, 3]));
+    await overlay.refreshProcessing();
+    expect(overlay.statusFor(3)).toBe('ready');
+    await overlay.refreshProcessing();
+    expect(fetchCostBasis).toHaveBeenCalledTimes(3);
+  });
 });

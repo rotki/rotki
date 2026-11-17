@@ -9,6 +9,9 @@ import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/
 import { useCostBasisOverlay } from '@/modules/history/cost-basis/use-cost-basis-overlay';
 import { provideCostBasisOverlay } from '@/modules/history/cost-basis/use-cost-basis-overlay-context';
 
+/** How often, at most, a running pass makes the cost basis overlay fetch its pending events again. */
+const PROCESSING_REFRESH_THROTTLE_MS = 5000;
+
 interface UseHistoryEventsOverlayReturn {
   /** Whether the build serves the overlay at all, i.e. whether to render its toggles. */
   available: boolean;
@@ -28,6 +31,8 @@ interface UseHistoryEventsOverlayReturn {
  *
  * Completed processing, which covers the balances and then the cost basis, invalidates the
  * breakdown series and refreshes the visible overlay. A hidden overlay stays idle until enabled.
+ * While processing runs, the visible cost basis overlay fetches again the events that are still
+ * pending, since the pass stores its results in batches as it goes.
  */
 export function useHistoryEventsOverlay(
   mode: MaybeRefOrGetter<OverlayMode>,
@@ -57,7 +62,7 @@ export function useHistoryEventsOverlay(
   const costBasis = useCostBasisOverlay({ enabled: costBasisEnabled, eventIdentifiers: costBasisEventIdentifiers });
   provideCostBasisOverlay({ enabled: costBasisEnabled, overlay: costBasis });
 
-  const { historicalBalanceProcessingCompleted } = storeToRefs(useHistoricalBalanceProcessingStore());
+  const { historicalBalanceProcessingCompleted, historicalBalanceProcessingProgressed } = storeToRefs(useHistoricalBalanceProcessingStore());
   watch(historicalBalanceProcessingCompleted, async () => {
     series.reset();
     if (get(enabled))
@@ -65,6 +70,11 @@ export function useHistoryEventsOverlay(
     if (get(costBasisEnabled))
       await costBasis.refresh();
   });
+
+  watchThrottled(historicalBalanceProcessingProgressed, async () => {
+    if (get(costBasisEnabled))
+      await costBasis.refreshProcessing();
+  }, { throttle: PROCESSING_REFRESH_THROTTLE_MS });
 
   return { available, enabled };
 }

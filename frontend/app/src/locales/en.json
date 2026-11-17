@@ -7245,7 +7245,7 @@
         "evm_transactions": "Querying the transactions of {address}",
         "exchange_history": "Querying the history of {name}",
         "gnosis_pay_events": "Importing your Gnosis Pay events",
-        "historical_balances": "Processing historical balances",
+        "historical_balances": "Going through your history events",
         "monerium_orders": "Importing your Monerium orders",
         "snapshot_balances": "Saving a balance snapshot",
         "transaction_decoding": "Decoding {count} {chain} transaction | Decoding {count} {chain} transactions",
@@ -7278,7 +7278,7 @@
       "historical_balances": {
         "detection": "Comparing calculated balances with the chain",
         "divergence": "Looking for divergence in {asset}",
-        "processing": "Processing historical events to calculate balances",
+        "processing": "Calculating balances and cost basis from history events",
         "series": "Building the {asset} balance series"
       },
       "history_events": {
