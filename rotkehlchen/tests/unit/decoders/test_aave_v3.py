@@ -2373,3 +2373,136 @@ def test_aave_v3_scroll_deposit_eth(scroll_inquirer, scroll_accounts, allow_scro
         notes=f'Receive {interest_amount} aScrWETH as interest earned from AAVE v3',
         counterparty=CPT_AAVE_V3,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x3f978fEE9c9Af54257dD52b754AE5167d842a109']])
+def test_aave_v3_borrow_with_accrued_debt_interest(ethereum_inquirer, ethereum_accounts) -> None:
+    """The debt tokens minted on a borrow include the interest accrued on the existing debt,
+    which is debt, not interest earned."""
+    tx_hash = deserialize_evm_tx_hash('0x0e88cf2b2522654db7bae2c796da3a1c2492057685c2fe9c025e3593f40263e1')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    variable_debt_usdc = Asset('eip155:1/erc20:0x72E95b8931767C79bA4EeE721354d6E99a61D004')
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1794886211000)),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.000034169499790138'),
+        location_label=ethereum_accounts[0],
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1172,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=variable_debt_usdc,
+        amount=FVal(borrowed_amount := '3000'),
+        location_label=ethereum_accounts[0],
+        notes=f'Receive {borrowed_amount} variableDebtEthUSDC from AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1173,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.GENERATE_DEBT,
+        asset=variable_debt_usdc,
+        amount=FVal(interest_amount := '35.814035'),
+        location_label=ethereum_accounts[0],
+        notes=f'Receive {interest_amount} variableDebtEthUSDC as interest accrued on debt in AAVE v3',  # noqa: E501
+        counterparty=CPT_AAVE_V3,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1175,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.GENERATE_DEBT,
+        asset=A_USDC,
+        amount=FVal(borrowed_amount),
+        location_label=ethereum_accounts[0],
+        notes=f'Borrow {borrowed_amount} USDC from AAVE v3 with variable APY 4.57%',
+        counterparty=CPT_AAVE_V3,
+        address=string_to_evm_address('0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xe178AEA6B3cd9ff8e277EDe1EB2BB8393056371b']])
+def test_aave_v3_repay_less_than_accrued_debt_interest(ethereum_inquirer, ethereum_accounts) -> None:  # noqa: E501
+    """When the repaid amount is smaller than the interest accrued on the debt, debt tokens are
+    minted for the difference. That is the debt growing, not interest earned."""
+    tx_hash = deserialize_evm_tx_hash('0x6ea1159e712cf1cf796329f85b65652eb55dbef3363a82c8a159ac83cd66ae8f')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    variable_debt_usdc = Asset('eip155:1/erc20:0x72E95b8931767C79bA4EeE721354d6E99a61D004')
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1794825071000)),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.00004948955052456'),
+        location_label=ethereum_accounts[0],
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=439,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=variable_debt_usdc,
+        amount=FVal(returned_amount := '588.643488'),
+        location_label=ethereum_accounts[0],
+        notes=f'Return {returned_amount} variableDebtEthUSDC to AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=440,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.GENERATE_DEBT,
+        asset=variable_debt_usdc,
+        amount=FVal(interest_amount := '615.635328'),
+        location_label=ethereum_accounts[0],
+        notes=f'Receive {interest_amount} variableDebtEthUSDC as interest accrued on debt in AAVE v3',  # noqa: E501
+        counterparty=CPT_AAVE_V3,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=442,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+        asset=A_USDC,
+        amount=FVal(repaid_amount := '588.643489'),
+        location_label=ethereum_accounts[0],
+        notes=f'Repay {repaid_amount} USDC on AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=string_to_evm_address('0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x9600A48ed0f931d0c422D574e3275a90D8b22745']])
+def test_aave_v3_debt_mint_in_withdraw_is_not_interest(ethereum_inquirer, ethereum_accounts) -> None:  # noqa: E501
+    """A withdraw in the same transaction as a borrow must not report the interest accrued on
+    the debt token as interest earned. Here a position is moved from Spark to AAVE v3."""
+    tx_hash = deserialize_evm_tx_hash('0x5da083eaf81bb2eb649be48dc0f255e563a36e32333d9a101ac66d04ccb2a2eb')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert [
+        (event.asset.identifier, event.amount)
+        for event in events if event.event_subtype == HistoryEventSubType.INTEREST
+    ] == [('eip155:1/erc20:0x0B925eD163218f6662a35e0f0371Ac234f9E9371', FVal('0.000066389463853771'))]  # aEthwstETH  # noqa: E501
