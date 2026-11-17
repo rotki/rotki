@@ -8,12 +8,15 @@ from rotkehlchen.chain.ethereum.modules.lido.constants import WITHDRAWAL_QUEUE
 from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
     CPT_LIDO_CSM,
     LIDO_CSM_MODULE_CONTRACTS,
+    LidoCsmOperatorType,
     LidoCsmStakingModule,
 )
+from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmNodeOperatorStats
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_STETH, A_WSTETH
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.db.lido_csm import DBLidoCsm, LidoCsmNodeOperator
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -116,6 +119,19 @@ def test_create_node_operator_from_safe(
             address=safe_address,
         ),
     ]
+    assert DBLidoCsm(ethereum_inquirer.database).get_node_operators() == (LidoCsmNodeOperator(
+        address=safe_address,
+        node_operator_id=609,
+        staking_module=LidoCsmStakingModule.CSM,
+        metrics=LidoCsmNodeOperatorStats(
+            operator_type=LidoCsmOperatorType.IDENTIFIED_DVT_CLUSTER,
+            current_bond=FVal('39.790944114671971036'),
+            required_bond=FVal('39.499999999999999999'),
+            claimable_bond=FVal('0.290944114671971037'),
+            total_deposited_validators=77,
+            rewards_steth=FVal('0.272740017413926946'),
+        ),
+    ),)
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -202,6 +218,7 @@ def test_create_node_operator_tracked_reward_address(
             address=CSM.module,
         ),
     ]
+    assert [(x.address, x.node_operator_id) for x in DBLidoCsm(ethereum_inquirer.database).get_node_operators()] == [(user_address, 601)]  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -228,6 +245,7 @@ def test_create_csm_0x02_node_operator(
         counterparty=CPT_LIDO_CSM,
         address=CSM_0X02.module,
     )]
+    assert [(x.address, x.node_operator_id, x.staking_module) for x in DBLidoCsm(ethereum_inquirer.database).get_node_operators()] == [(ethereum_accounts[0], 25, LidoCsmStakingModule.CSM_0X02)]  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -824,6 +842,7 @@ def test_reward_address_change(
             address=CSM.module,
         ),
     ]
+    assert [(x.address, x.node_operator_id) for x in DBLidoCsm(ethereum_inquirer.database).get_node_operators()] == [(user_address, 0)]  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -872,6 +891,11 @@ def test_manager_address_change_away_from_tracked_address(
 ) -> None:
     """The new manager of operator 42 accepted the change, so only the old one is tracked."""
     tx_hash = deserialize_evm_tx_hash('0xce524338caf90ab2824e23451d8574dde6fdf2162ebf1757c879439eb6be45c6')  # noqa: E501
+    (db := DBLidoCsm(ethereum_inquirer.database)).add_node_operator(
+        address=ethereum_accounts[0],
+        node_operator_id=42,
+        staking_module=LidoCsmStakingModule.CSM,
+    )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
         tx_ref=tx_hash,
@@ -887,6 +911,7 @@ def test_manager_address_change_away_from_tracked_address(
         counterparty=CPT_LIDO_CSM,
         address=CSM.module,
     )]
+    assert db.get_node_operators() == ()
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1051,3 +1076,59 @@ def test_claim_unsteth_with_rewards_csm_v1(
             address=ZERO_ADDRESS,
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x1FA5A60cFD410C130a64100acc09eA71a273D136',
+    '0x0E408140f4Ef8a366D27804219A7939CfD934Ee5',
+]])
+def test_create_node_operator_tracked_manager_and_reward_address(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Operator 601 has different manager and reward addresses. When both are tracked it is
+    stored under the manager."""
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x7ad6f865b991f994872f1727173e5c507a319979315ccaecf3aa2319cf79cd05'),
+    )
+    assert [(x.address, x.node_operator_id) for x in DBLidoCsm(ethereum_inquirer.database).get_node_operators()] == [(ethereum_accounts[0], 601)]  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x08dc7C00bcbBb2C063cb0bbe7c6D6c2a009484D2']])
+def test_create_node_operator_tracked_safe_signer(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Only the signer that executed the creation of operator 609 is tracked, not the Safe
+    that is its manager and reward address, so the operator is not stored."""
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x6fff83319cff9b55efa66117533af5c3db6c4de6dbe9003970777e23e689a752'),
+    )
+    assert DBLidoCsm(ethereum_inquirer.database).get_node_operators() == ()
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x3C465D82530315cceC1CAd1Fd20164E09B8E4d1f',
+    '0x50B06A4037A167073A45ab3cC895c52378B08BA8',
+]])
+def test_reward_address_change_moves_node_operator(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Operator 0 was stored under its old reward address, which is neither its manager nor
+    its reward address any more, so it moves to the new one."""
+    (db := DBLidoCsm(ethereum_inquirer.database)).add_node_operator(
+        address=ethereum_accounts[1],
+        node_operator_id=0,
+        staking_module=LidoCsmStakingModule.CSM,
+    )
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x5f4680ecf501704054bee892950a79c2d0e4463152e61d2984cc326ad5aac8d4'),
+    )
+    assert [(x.address, x.node_operator_id) for x in db.get_node_operators()] == [(ethereum_accounts[0], 0)]  # noqa: E501
