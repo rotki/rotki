@@ -39,6 +39,7 @@ from rotkehlchen.history.data_issues.bucket_state import (
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.reconciliation import get_reconciliation_report
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.locations.chains import EVM_LOCATIONS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -441,7 +442,8 @@ def _trace_rows(
     """
     settings = CachedSettings()
     treat_eth2_as_eth = settings.get_entry('treat_eth2_as_eth') is True
-    rebasing = bucket.asset in GlobalDBHandler.get_asset_ids_with_flag(AssetFlag.REBASING)
+    rebasing_assets = GlobalDBHandler.get_asset_ids_with_flag(AssetFlag.REBASING)
+    rebasing = bucket.asset in rebasing_assets
     event_filter = HistoryEventFilterQuery.make(
         order_by_rules=[
             ('timestamp', True),
@@ -492,7 +494,11 @@ def _trace_rows(
                 ):
                     after += rebase_yield
                     awaiting_rebase = False
-                if after < ZERO and rebasing:
+                if after < ZERO and (  # only on-chain rebasing events await reconciliation
+                    rebasing and
+                    event.asset.identifier in rebasing_assets and
+                    isinstance(event, EvmEvent)
+                ):
                     status, awaiting_rebase = 'negative_awaiting_rebase_reconciliation', True
                 elif after < ZERO:
                     status, stopped = 'stop', True

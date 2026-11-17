@@ -16,6 +16,7 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import DataIssuesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.diagnostics import (
     asset_signals,
@@ -101,6 +102,14 @@ def _add(database: DBHandler, events: list[EvmEvent], customized: bool = False) 
                 {HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED}
                 if customized else None
             ),
+        ) for event in events]
+
+
+def _add_history_events(database: DBHandler, events: list[HistoryEvent]) -> list[int]:
+    with database.user_write() as write_cursor:
+        return [DBHistoryEvents(database).add_history_event(  # type: ignore[misc]
+            write_cursor=write_cursor,
+            event=event,
         ) for event in events]
 
 
@@ -704,3 +713,45 @@ def test_health_leaves_out_stops_of_ignored_assets(database: DBHandler) -> None:
     assert health['status'] != 'blocked'
     assert health['stops']['count'] == 0
     assert health['comparison_coverage']['counts'].get('blocked', 0) == 0
+
+
+def test_trace_stops_a_negative_off_chain_rebasing_bucket(database: DBHandler) -> None:
+    """Only on-chain rebasing events wait for a reconciliation. An exchange event of a
+    rebasing asset that goes negative stops the bucket, in the trace as in the processor."""
+    spend_id, _ = _add_history_events(database, [
+        HistoryEvent(
+            group_identifier='kraken_spend',
+            sequence_index=0,
+            timestamp=TimestampMS(1_000),
+            location=LOCATION_KRAKEN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal(1),
+        ),
+        HistoryEvent(
+            group_identifier='kraken_receive',
+            sequence_index=0,
+            timestamp=TimestampMS(2_000),
+            location=LOCATION_KRAKEN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal(5),
+        ),
+    ])
+    with patch.object(
+        GlobalDBHandler,
+        'get_asset_ids_with_flag',
+        return_value=frozenset({A_ETH.identifier}),
+    ):
+        process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+        trace = trace_bucket(
+            database=database,
+            bucket=Bucket(location=LOCATION_KRAKEN, location_label=None, protocol=None, asset=A_ETH.identifier),  # noqa: E501
+            offset=0,
+        )
+
+    assert trace['stop']['event_identifier'] == spend_id
+    assert [row['status'] for row in trace['rows']] == ['stop', 'skipped_after_stop']
+    assert trace['summary']['awaiting_rebase_reconciliation'] is False
