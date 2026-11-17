@@ -16,3 +16,4 @@ ETHERFI_CASH_EVENT_EMITTER: Final = string_to_evm_address('0x380B2e96799405be6e3
 ETHERFI_CASH_CHAINS: Final = {ChainID.SCROLL, ChainID.OPTIMISM}
 
 CASHBACK: Final = b'\x89\xd3W\x1aI\x8b]=hY\x9f_\x00\xc3\x01o\x96\x04\xaa\xfaw\x01\xc5,\x1b\x04\x10\x9c\xd9\t\xa7\x98'  # noqa: E501
+PENDING_CASHBACK_CLEARED: Final = b'\xb20N=u\xf4fz\xe0\xec\xb88\xe9\xdd\xa6\x97\xe1+\xe22\xdf5JB\n\xbcOvc\x90&\xca'  # noqa: E501
