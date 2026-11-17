@@ -187,6 +187,7 @@ from rotkehlchen.tests.utils.factories import (
     make_evm_address,
     make_evm_tx_hash,
 )
+from rotkehlchen.tests.utils.fluid import add_fluid_position_event
 from rotkehlchen.tests.utils.sonic import SONIC_MAINNET_NODE
 from rotkehlchen.types import (
     CacheType,
@@ -2482,19 +2483,21 @@ def test_fluid_balances(
         evm_inquirer=ethereum_inquirer,
         tx_hash=deserialize_evm_tx_hash('0x7d3ff3033b13a1abd0761dd79f4f16b0c85bbfa8ea9f84331602fcc2b22bc650'),
     )
-    with patch(
-        'rotkehlchen.chain.evm.decoding.fluid.decoder.FluidCommonDecoder._get_nft_owner',
-        return_value=ethereum_accounts[1],
+    add_fluid_position_event(
+        database=ethereum_inquirer.database,
+        nft_id=19744,
+        timestamp=TimestampMS(1794000000000),
+        location_label=ethereum_accounts[1],
+    )
+    for tx_hash_hex in (
+        '0x75bad3dd9b7b4a338e689a927ab57488acd5b87e6027069109eabbc0159d7801',
+        '0xf13ee83ff7b03e5a65332963c2454a1fda8e8afe85f5331c152bc80c3094ec32',
     ):
-        for tx_hash_hex in (
-            '0x75bad3dd9b7b4a338e689a927ab57488acd5b87e6027069109eabbc0159d7801',
-            '0xf13ee83ff7b03e5a65332963c2454a1fda8e8afe85f5331c152bc80c3094ec32',
-        ):
-            get_decoded_events_of_transaction(
-                evm_inquirer=ethereum_inquirer,
-                tx_hash=deserialize_evm_tx_hash(tx_hash_hex),
-                evm_decoder=tx_decoder,
-            )
+        get_decoded_events_of_transaction(
+            evm_inquirer=ethereum_inquirer,
+            tx_hash=deserialize_evm_tx_hash(tx_hash_hex),
+            evm_decoder=tx_decoder,
+        )
 
     balances = FluidBalances(
         evm_inquirer=ethereum_inquirer,

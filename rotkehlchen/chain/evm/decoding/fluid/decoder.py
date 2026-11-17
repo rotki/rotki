@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Final, NamedTuple
 import rlp
 from eth_utils import keccak, to_checksum_address
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     asset_normalized_value,
@@ -21,11 +22,14 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
+from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, TokenKind
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp, TokenKind
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import bytes_to_address
 
@@ -180,16 +184,52 @@ class FluidCommonDecoder(EvmDecoderInterface):
             )
             return None
 
-    def _get_nft_owner(self, nft_id: int) -> ChecksumEvmAddress | None:
-        """Query FluidVaultFactory for best-effort ownership of a vault position NFT.
+    def _get_prior_nft_owner(
+            self,
+            nft_id: int,
+            transaction: EvmTransaction,
+    ) -> ChecksumEvmAddress | None:
+        """Return the tracked holder of a vault position NFT right before `transaction`.
 
-        Uses the latest owner, assuming position NFTs rarely change hands. A later transfer can
-        misattribute historical deposits or repayments; this is not proof of ownership at tx time.
+        @remarks
+        Ownership is rebuilt from the position NFT events decoded so far instead of `ownerOf`,
+        which only reports the current holder. Only tracked accounts get events, so the latest
+        one names the holder: a mint or receive leaves the NFT with its location_label, while a
+        send or transfer moves it to the event's address. Events in the same second as the
+        transaction are skipped since their order relative to it is unknown.
+
+        @returns The holder, or None when no history exists or the holder is not tracked.
         """
-        if (owner := self._call_view(self.factory_contract, 'ownerOf', [nft_id])) is None:
+        nft_asset = Asset(evm_address_to_identifier(
+            address=FLUID_VAULT_FACTORY,
+            chain_id=self.node_inquirer.chain_id,
+            token_type=TokenKind.ERC721,
+            collectible_id=str(nft_id),
+        ))
+        with self.base.database.conn.read_ctx() as cursor:
+            events = DBHistoryEvents(self.base.database).get_history_events_internal(
+                cursor=cursor,
+                filter_query=EvmEventFilterQuery.make(
+                    assets=(nft_asset,),
+                    to_ts=Timestamp(transaction.timestamp - 1),
+                    order_by_rules=[('timestamp', False), ('sequence_index', False)],
+                    limit=1,
+                ),
+            )
+
+        if len(events) == 0:
             return None
 
-        return string_to_evm_address(owner)
+        last_event = events[0]
+        holder = (
+            last_event.address
+            if last_event.event_type in (HistoryEventType.SPEND, HistoryEventType.TRANSFER) else
+            last_event.location_label
+        )
+        if holder is None or not self.base.is_tracked(owner := string_to_evm_address(holder)):
+            return None
+
+        return owner
 
     def _is_fluid_vault(self, address: ChecksumEvmAddress) -> bool:
         """Check whether an address is a Fluid vault via CREATE table or on-chain factory."""
@@ -484,7 +524,7 @@ class FluidCommonDecoder(EvmDecoderInterface):
             allowed_addresses: set[ChecksumEvmAddress],
             to_event_type: HistoryEventType,
             to_event_subtype: HistoryEventSubType,
-            vault_addr: ChecksumEvmAddress | None,
+            address: ChecksumEvmAddress | None,
             notes_template: str,
             allow_native_refund: bool = False,
             location_label: ChecksumEvmAddress | None = None,
@@ -542,10 +582,126 @@ class FluidCommonDecoder(EvmDecoderInterface):
         candidate.event_type = to_event_type
         candidate.event_subtype = to_event_subtype
         candidate.counterparty = CPT_FLUID
-        if vault_addr is not None:
-            candidate.address = vault_addr
+        if address is not None:
+            candidate.address = address
         candidate.notes = notes_template.format(amount=candidate.amount, symbol=symbol)
         return candidate
+
+    def _apply_position_leg(
+            self,
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            asset: CryptoAsset | EvmToken,
+            amount: FVal,
+            allowed_addresses: set[ChecksumEvmAddress],
+            is_collateral: bool,
+            is_increase: bool,
+            vault_addr: ChecksumEvmAddress,
+            position_owner: ChecksumEvmAddress,
+            nft_id: int,
+    ) -> None:
+        """Book one vault leg on the position owner.
+
+        @remarks
+        The owner's own matching wallet transfer becomes the protocol event. Deposits and
+        repayments are permissionless, so another tracked account may pay them: that payer's
+        spend becomes a transfer to the owner, followed by a synthetic protocol event of the
+        owner, so the value leaves the combined portfolio's wallets only once. Legs settled
+        entirely between Fluid contracts (e.g. flash leverage) also get a synthetic event.
+        """
+        spec = _OPERATE_LEG_CONFIG[is_collateral, is_increase]
+        from_type, to_type, to_subtype, notes_template = spec
+        allow_native_refund = not is_collateral and not is_increase
+        if self._reconcile_transfer(
+            decoded_events=decoded_events,
+            from_event_type=from_type,
+            asset=asset,
+            amount=amount,
+            allowed_addresses=allowed_addresses,
+            to_event_type=to_type,
+            to_event_subtype=to_subtype,
+            address=vault_addr,
+            notes_template=notes_template,
+            allow_native_refund=allow_native_refund,
+            location_label=position_owner,
+        ) is not None:
+            return
+
+        if from_type == HistoryEventType.SPEND:
+            self._reconcile_transfer(
+                decoded_events=decoded_events,
+                from_event_type=HistoryEventType.SPEND,
+                asset=asset,
+                amount=amount,
+                allowed_addresses=allowed_addresses,
+                to_event_type=HistoryEventType.TRANSFER,
+                to_event_subtype=HistoryEventSubType.NONE,
+                address=position_owner,
+                notes_template=(
+                    f'Transfer {{amount}} {{symbol}} to {position_owner} '
+                    f'for Fluid vault position {nft_id}'
+                ),
+                allow_native_refund=allow_native_refund,
+            )
+
+        decoded_events.append(self.base.make_event_next_index(
+            tx_ref=transaction.tx_hash,
+            timestamp=transaction.timestamp,
+            event_type=to_type,
+            event_subtype=to_subtype,
+            asset=asset,
+            amount=amount,
+            location_label=position_owner,
+            notes=notes_template.format(
+                amount=amount,
+                symbol=asset.resolve_to_asset_with_symbol().symbol,
+            ),
+            counterparty=CPT_FLUID,
+            address=vault_addr,
+        ))
+
+    def _resolve_position_owner(
+            self,
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            nft_owners: dict[int, ChecksumEvmAddress],
+            nft_id: int,
+            operate_user: ChecksumEvmAddress,
+            has_owner_only_leg: bool,
+    ) -> ChecksumEvmAddress | None:
+        """Return the tracked owner of the operated position, or None if it is not proven.
+
+        @remarks
+        Fluid checks `ownerOf(nftId) == msg.sender` only to withdraw collateral or borrow, so
+        for those the caller is the owner. Deposits and repayments are permissionless and need
+        ownership proven by the NFT transfers of this transaction or by previously decoded
+        position history; the paying caller says nothing about who owns the position.
+        """
+        has_third_party_mint = any(
+            event.event_type == HistoryEventType.RECEIVE and
+            event.address == ZERO_ADDRESS and
+            event.asset != self.node_inquirer.native_token and
+            event.counterparty != CPT_FLUID
+            for event in decoded_events
+        )
+        in_tx_owner = nft_owners.get(nft_id)
+        if in_tx_owner is not None and self.base.is_tracked(in_tx_owner):
+            return in_tx_owner
+
+        if has_owner_only_leg:
+            if self.base.is_tracked(operate_user):
+                return operate_user
+            if self.base.is_tracked(transaction.from_address) and not has_third_party_mint:
+                return transaction.from_address
+            return None
+
+        if in_tx_owner is None and (
+            self.base.is_tracked(operate_user) or
+            (self.base.is_tracked(transaction.from_address) and not has_third_party_mint)
+        ):
+            return self._get_prior_nft_owner(nft_id=nft_id, transaction=transaction)
+
+        return None
 
     def _process_vault_operate(
             self,
@@ -554,7 +710,7 @@ class FluidCommonDecoder(EvmDecoderInterface):
             vault_log_pos: int,
             all_logs: list[EvmTxReceiptLog],
             decoded_events: list[EvmEvent],
-            tracked_nfts: dict[int, ChecksumEvmAddress],
+            nft_owners: dict[int, ChecksumEvmAddress],
             used_liq_legs: set[tuple[int, bool]],
             used_dex_logs: set[int],
     ) -> None:
@@ -564,39 +720,14 @@ class FluidCommonDecoder(EvmDecoderInterface):
         col_amt = int.from_bytes(tx_log.data[64:96], signed=True)
         debt_amt = int.from_bytes(tx_log.data[96:128], signed=True)
         to_addr = bytes_to_address(tx_log.data[128:160])
-
-        has_third_party_mint = any(
-            event.event_type == HistoryEventType.RECEIVE and
-            event.address == ZERO_ADDRESS and
-            event.asset != self.node_inquirer.native_token and
-            event.counterparty != CPT_FLUID
-            for event in decoded_events
+        position_owner = self._resolve_position_owner(
+            transaction=transaction,
+            decoded_events=decoded_events,
+            nft_owners=nft_owners,
+            nft_id=nft_id,
+            operate_user=operate_user,
+            has_owner_only_leg=col_amt < 0 or debt_amt > 0,
         )
-        has_owner_only_leg = col_amt < 0 or debt_amt > 0
-        has_tracked_caller = (
-            self.base.is_tracked(operate_user) or
-            (self.base.is_tracked(transaction.from_address) and not has_third_party_mint)
-        )
-        if (nft_owner := tracked_nfts.get(nft_id)) is not None:
-            position_owner: ChecksumEvmAddress | None = nft_owner
-        elif has_owner_only_leg and self.base.is_tracked(operate_user):
-            position_owner = operate_user
-        elif (
-            has_owner_only_leg and
-            self.base.is_tracked(transaction.from_address) and
-            not has_third_party_mint
-        ):
-            position_owner = transaction.from_address
-        elif (
-            not has_owner_only_leg and
-            has_tracked_caller and
-            (onchain_owner := self._get_nft_owner(nft_id)) is not None and
-            self.base.is_tracked(onchain_owner)
-        ):
-            position_owner = onchain_owner
-        else:
-            position_owner = None
-
         if position_owner is None and not self.base.is_tracked(to_addr):
             return
 
@@ -607,10 +738,11 @@ class FluidCommonDecoder(EvmDecoderInterface):
             ((True, col_amt), (False, debt_amt))
         )
         for is_collateral, raw_amt in legs:
-            if raw_amt == 0:
+            pays_out_to_receiver = is_collateral != (raw_amt > 0)
+            if raw_amt == 0 or (position_owner is None and not pays_out_to_receiver):
                 continue
 
-            entries = self._resolve_vault_leg(
+            for asset, amount in self._resolve_vault_leg(
                 all_logs=all_logs,
                 vault_log_pos=vault_log_pos,
                 vault_addr=vault_addr,
@@ -619,52 +751,37 @@ class FluidCommonDecoder(EvmDecoderInterface):
                 expected_sign=1 if raw_amt > 0 else -1,
                 used_liq_legs=used_liq_legs,
                 used_dex_logs=used_dex_logs,
-            )
-            if position_owner is not None:
-                spec = _OPERATE_LEG_CONFIG[is_collateral, raw_amt > 0]
-                from_type, to_type, to_subtype, notes_template = spec
-                target_vault: ChecksumEvmAddress | None = vault_addr
-            elif is_collateral != (raw_amt > 0):
-                from_type = to_type = HistoryEventType.RECEIVE
-                to_subtype = HistoryEventSubType.NONE
-                target_vault = None
-                action = 'withdrawal' if is_collateral else 'borrow'
-                notes_template = (
-                    f'Receive {{amount}} {{symbol}} from a Fluid {action} by {operate_user}'
-                )
-            else:
-                continue
-
-            for asset, amount in entries:
-                if (
-                    self._reconcile_transfer(
+            ):
+                if position_owner is not None:
+                    self._apply_position_leg(
+                        transaction=transaction,
                         decoded_events=decoded_events,
-                        from_event_type=from_type,
                         asset=asset,
                         amount=amount,
                         allowed_addresses=allowed_addresses,
-                        to_event_type=to_type,
-                        to_event_subtype=to_subtype,
-                        vault_addr=target_vault,
-                        notes_template=notes_template,
-                        allow_native_refund=not is_collateral and raw_amt < 0,
-                        location_label=position_owner if position_owner is not None else to_addr,
-                    ) is None and
-                    position_owner is not None
-                ):
-                    symbol = asset.resolve_to_asset_with_symbol().symbol
-                    decoded_events.append(self.base.make_event_next_index(
-                        tx_ref=transaction.tx_hash,
-                        timestamp=transaction.timestamp,
-                        event_type=to_type,
-                        event_subtype=to_subtype,
-                        asset=asset,
-                        amount=amount,
-                        location_label=position_owner,
-                        notes=notes_template.format(amount=amount, symbol=symbol),
-                        counterparty=CPT_FLUID,
-                        address=vault_addr,
-                    ))
+                        is_collateral=is_collateral,
+                        is_increase=raw_amt > 0,
+                        vault_addr=vault_addr,
+                        position_owner=position_owner,
+                        nft_id=nft_id,
+                    )
+                    continue
+
+                action = 'withdrawal' if is_collateral else 'borrow'
+                self._reconcile_transfer(
+                    decoded_events=decoded_events,
+                    from_event_type=HistoryEventType.RECEIVE,
+                    asset=asset,
+                    amount=amount,
+                    allowed_addresses=allowed_addresses,
+                    to_event_type=HistoryEventType.RECEIVE,
+                    to_event_subtype=HistoryEventSubType.NONE,
+                    address=None,
+                    notes_template=(
+                        f'Receive {{amount}} {{symbol}} from a Fluid {action} by {operate_user}'
+                    ),
+                    location_label=to_addr,
+                )
 
     def _process_vault_liquidate(
             self,
@@ -723,7 +840,7 @@ class FluidCommonDecoder(EvmDecoderInterface):
                     allowed_addresses=allowed_addresses,
                     to_event_type=event_type,
                     to_event_subtype=HistoryEventSubType.NONE,
-                    vault_addr=vault_addr,
+                    address=vault_addr,
                     notes_template=notes_template,
                 )) is not None:
                     target_list.append(event)
@@ -747,21 +864,14 @@ class FluidCommonDecoder(EvmDecoderInterface):
             all_logs: list[EvmTxReceiptLog],
     ) -> list[EvmEvent]:
         """Post-decoding hook transforming token/ETH transfers into Fluid vault events."""
-        tracked_nfts: dict[int, ChecksumEvmAddress] = {}
+        nft_owners: dict[int, ChecksumEvmAddress] = {}  # holder of each NFT moved in this tx
         for tx_log in all_logs:
             if (
-                tx_log.address != FLUID_VAULT_FACTORY or
-                len(tx_log.topics) != 4 or
-                tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER
+                tx_log.address == FLUID_VAULT_FACTORY and
+                len(tx_log.topics) == 4 and
+                tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER
             ):
-                continue
-
-            to_addr = bytes_to_address(tx_log.topics[2])
-            nft_id = int.from_bytes(tx_log.topics[3])
-            if self.base.is_tracked(to_addr):
-                tracked_nfts[nft_id] = to_addr
-            else:
-                tracked_nfts.pop(nft_id, None)
+                nft_owners[int.from_bytes(tx_log.topics[3])] = bytes_to_address(tx_log.topics[2])
 
         used_liq_legs: set[tuple[int, bool]] = set()
         used_dex_logs: set[int] = set()
@@ -782,7 +892,7 @@ class FluidCommonDecoder(EvmDecoderInterface):
                     vault_log_pos=pos,
                     all_logs=all_logs,
                     decoded_events=decoded_events,
-                    tracked_nfts=tracked_nfts,
+                    nft_owners=nft_owners,
                     used_liq_legs=used_liq_legs,
                     used_dex_logs=used_dex_logs,
                 )
