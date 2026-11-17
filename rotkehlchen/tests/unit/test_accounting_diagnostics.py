@@ -594,3 +594,39 @@ def test_asset_signals_flag_deceptive_metadata_only(database: DBHandler) -> None
         identifier: list(flags) for flags, identifier in tokens.items() if flags
     } | {'eip155:1/erc20:0xnope': ['unknown_asset']}
     assert 'Claim' not in str(signals)
+
+
+def test_bridge_link_preview_applies_the_matcher_scope(database: DBHandler) -> None:
+    """A link can't be proposed for what the matcher would never consider: a non-bridge
+    anchor, a candidate outside the time window or a candidate of another asset."""
+    bridge_id, eligible_id, rejected = _add_bridge_scenario(database)
+    spend_id, receive_id, other_asset_id = _add(database, [
+        _event(2_000_000, HistoryEventType.SPEND, '0.3'),
+        _event(2_060_000, HistoryEventType.RECEIVE, '0.3', location=LOCATION_OPTIMISM),
+        EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=0,
+            timestamp=TimestampMS(1_060_000),
+            location=LOCATION_OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_USDC,
+            amount=FVal(1),
+            location_label=TEST_ADDR1,
+        ),
+    ])
+    with pytest.raises(RemediationError) as error:
+        preview_bridge_link(database, spend_id, receive_id)
+    assert error.value.code == 'not_a_bridge_leg'
+
+    for candidate_id, reason in (
+            (rejected['outside_time_window'], 'outside_time_window'),
+            (other_asset_id, 'asset_not_in_collection'),
+    ):
+        with pytest.raises(RemediationError, match=reason) as error:
+            preview_bridge_link(database, bridge_id, candidate_id)
+        assert error.value.code == 'candidate_rejected'
+
+    assert preview_bridge_link(database, bridge_id, eligible_id)['state'] == PlanState.PENDING
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM remediation_plans').fetchone()[0] == 1

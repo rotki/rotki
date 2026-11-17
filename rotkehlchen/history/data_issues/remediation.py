@@ -49,6 +49,10 @@ from rotkehlchen.history.data_issues.diagnostics import (
     serialize_effects,
     serialize_event_summary,
 )
+from rotkehlchen.history.data_issues.transaction_diagnostics import (
+    get_bridge_match_scope,
+    is_bridge_match_anchor,
+)
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.locations.chains import EVM_LOCATIONS, location_to_chain_id
@@ -57,7 +61,7 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_tx_hash
 from rotkehlchen.tasks.bridges import (
     apply_bridge_match_to_events,
     classify_bridge_candidate,
-    get_bridge_match_assets_in_collection,
+    find_bridge_transaction_exact_matches,
     update_bridge_matched_event,
 )
 from rotkehlchen.tasks.data_issues import preview_transaction
@@ -483,31 +487,48 @@ def preview_bridge_link(
     """Preview linking a bridge leg with a counterpart candidate.
 
     Only a candidate the matcher considers eligible can be proposed: a rejected one would need
-    a judgement the plan can't make. May raise RemediationError.
+    a judgement the plan can't make. That takes the same checks as explain_bridge_match: the
+    anchor must be a bridge leg, and the candidate must either share its exact transfer id or
+    be of an asset and within the time window the matcher searches, and pass its classifier.
+    May raise RemediationError.
     """
     events = _load_events(database, [bridge_event_identifier, matched_event_identifier])
     if (bridge_event := events.get(bridge_event_identifier)) is None or (
         matched_event := events.get(matched_event_identifier)
     ) is None:
         raise RemediationError('unknown_event', 'Both events of the link must exist')
+    if not is_bridge_match_anchor(bridge_event):
+        raise RemediationError('not_a_bridge_leg', 'The anchor event is not a bridge leg')
 
     settings = CachedSettings().get_settings()
+    scope = get_bridge_match_scope(bridge_event=bridge_event, settings=settings)
     with database.conn.read_ctx() as cursor:
         excluded_ids = get_already_matched_event_ids(
             cursor=cursor,
             link_type=HistoryEventLinkType.BRIDGE_MATCH,
         )
         mapping_states = get_mapping_states(cursor=cursor, events=events.values())
-    if bridge_event_identifier in excluded_ids:
-        raise RemediationError('already_linked', 'The bridge leg is already linked')
+        if bridge_event_identifier in excluded_ids:
+            raise RemediationError('already_linked', 'The bridge leg is already linked')
+        exact = {x.identifier for x in find_bridge_transaction_exact_matches(
+            events_db=DBHistoryEvents(database),
+            bridge_event=bridge_event,
+            cursor=cursor,
+            excluded_ids=excluded_ids,
+        )}
 
-    tier, rejection = classify_bridge_candidate(
-        bridge_event=bridge_event,
-        candidate=matched_event,
-        assets_in_collection=get_bridge_match_assets_in_collection(deposit=bridge_event),
-        tolerance=settings.bridge_match_amount_tolerance,
-        excluded_ids=excluded_ids,
-    )
+    tier: str | None = None
+    rejection: str | None = None
+    if matched_event_identifier in exact:
+        tier = 'close'
+    elif (rejection := scope.excludes(matched_event)) is None:
+        tier, rejection = classify_bridge_candidate(
+            bridge_event=bridge_event,
+            candidate=matched_event,
+            assets_in_collection=scope.assets_in_collection,
+            tolerance=settings.bridge_match_amount_tolerance,
+            excluded_ids=excluded_ids,
+        )
     if tier is None:
         raise RemediationError(
             'candidate_rejected',

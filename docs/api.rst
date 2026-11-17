@@ -16326,7 +16326,7 @@ eligible counterpart).
     :reqjson list group_identifiers: For ``redecode``, the transactions to redecode, 1 to 20.
     :reqjson bool replace_customized: For ``redecode``, whether transactions with customized events are replaced. Otherwise they are previewed but marked ``blocked_by_customization``. Defaults to false.
     :reqjson int bridge_event_identifier: For ``bridge_link``, the bridge leg.
-    :reqjson int matched_event_identifier: For ``bridge_link``, the counterpart. It must be an eligible candidate.
+    :reqjson int matched_event_identifier: For ``bridge_link``, the counterpart. It must be a candidate ``bridge_match`` reports as eligible: one sharing the leg's exact transfer id, or one of the searched assets, inside the match window, that the matcher's classification accepts.
     :reqjson bool async_query: Whether to run the preview as an asynchronous task.
 
     **Example Response**:
@@ -16367,7 +16367,7 @@ eligible counterpart).
     :statuscode 200: The plan was created.
     :statuscode 400: Invalid arguments.
     :statuscode 401: No user is currently logged in.
-    :statuscode 409: The plan cannot be created. ``result.code`` says why: ``invalid_scope``, ``unknown_group``, ``unknown_event``, ``already_linked`` or ``candidate_rejected``.
+    :statuscode 409: The plan cannot be created. ``result.code`` says why: ``invalid_scope``, ``unknown_group``, ``unknown_event``, ``not_a_bridge_leg``, ``already_linked`` or ``candidate_rejected``.
 
   .. http:get:: /api/(version)/data_issues/remediation_plans/(plan_id)
 

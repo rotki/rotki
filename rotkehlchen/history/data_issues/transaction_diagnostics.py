@@ -9,7 +9,7 @@ Both only read the database: receipts and internal transactions come from what w
 when the transaction was pulled, and are reported as missing rather than queried.
 """
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -60,8 +60,9 @@ from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.settings import DBSettings
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
-    from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction
+    from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction, TimestampMS
 
 MAX_LISTED_CANDIDATES: Final = 50
 # Candidates up to this many match windows away are listed as outside the window, so a leg
@@ -306,6 +307,59 @@ def _link_state(database: DBHandler, event_identifier: int) -> dict[str, Any]:
     }
 
 
+def is_bridge_match_anchor(event: HistoryBaseEntry) -> bool:
+    """Whether the event is a bridge leg the matcher searches counterparts for."""
+    return (event.event_type, event.event_subtype) in (
+        (HistoryEventType.DEPOSIT, HistoryEventSubType.BRIDGE),
+        (HistoryEventType.WITHDRAWAL, HistoryEventSubType.BRIDGE),
+    ) or is_zksync_lite_exit(event)
+
+
+class BridgeMatchScope(NamedTuple):
+    """Where the matcher looks for counterparts of one bridge leg.
+
+    The window and the assets are enforced by the matcher's candidate query, not by
+    classify_bridge_candidate, so anything judging a candidate must check them itself.
+    """
+    window: int  # seconds
+    assets_in_collection: tuple[Asset, ...]
+    from_ts: TimestampMS
+    to_ts: TimestampMS
+
+    def excludes(self, candidate: HistoryBaseEntry) -> str | None:
+        """Why the candidate is out of the matcher's search, None if it is in it."""
+        if candidate.asset not in self.assets_in_collection:
+            return 'asset_not_in_collection'
+        if not self.from_ts <= candidate.timestamp <= self.to_ts:
+            return 'outside_time_window'
+        return None
+
+
+def get_bridge_match_scope(
+        bridge_event: HistoryBaseEntry,
+        settings: DBSettings,
+) -> BridgeMatchScope:
+    """The matcher's search for the leg. Only deposits get a protocol specific window."""
+    window = (
+        settings.bridge_match_time_range
+        if bridge_event.event_type == HistoryEventType.WITHDRAWAL
+        else get_bridge_match_window(
+            event=bridge_event,
+            default_window=settings.bridge_match_time_range,
+        )
+    )
+    from_ts, to_ts = get_bridge_leg_timestamp_range_ms(
+        bridge_event=bridge_event,
+        match_window=window,
+    )
+    return BridgeMatchScope(
+        window=window,
+        assets_in_collection=get_bridge_match_assets_in_collection(deposit=bridge_event),
+        from_ts=from_ts,
+        to_ts=to_ts,
+    )
+
+
 def _serialize_candidate(
         bridge_event: HistoryBaseEntry,
         candidate: HistoryBaseEntry,
@@ -346,22 +400,15 @@ def explain_bridge_match(database: DBHandler, event_identifier: int) -> dict[str
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(identifiers=[event_identifier]),
         )
-    if len(found) != 1 or not (
-        (found[0].event_type, found[0].event_subtype) in (
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.BRIDGE),
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.BRIDGE),
-        ) or is_zksync_lite_exit(found[0])
-    ):
+    if len(found) != 1 or not is_bridge_match_anchor(found[0]):
         return None
 
     bridge_event = found[0]
     settings = CachedSettings().get_settings()
     is_withdrawal = bridge_event.event_type == HistoryEventType.WITHDRAWAL
-    window = settings.bridge_match_time_range if is_withdrawal else get_bridge_match_window(
-        event=bridge_event,
-        default_window=settings.bridge_match_time_range,
-    )
-    assets_in_collection = get_bridge_match_assets_in_collection(deposit=bridge_event)
+    scope = get_bridge_match_scope(bridge_event=bridge_event, settings=settings)
+    window, assets_in_collection = scope.window, scope.assets_in_collection
+    in_from, in_to = scope.from_ts, scope.to_ts
     link_state = _link_state(database, event_identifier)
     with database.conn.read_ctx() as cursor:
         excluded_ids = get_already_matched_event_ids(
@@ -374,10 +421,6 @@ def explain_bridge_match(database: DBHandler, event_identifier: int) -> dict[str
             bridge_event=bridge_event,
             cursor=cursor,
             excluded_ids=excluded_ids,
-        )
-        in_from, in_to = get_bridge_leg_timestamp_range_ms(
-            bridge_event=bridge_event,
-            match_window=window,
         )
         near_from, near_to = get_bridge_leg_timestamp_range_ms(
             bridge_event=bridge_event,
