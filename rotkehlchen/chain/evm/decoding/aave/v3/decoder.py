@@ -187,13 +187,15 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
             elif (
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.RECEIVE_WRAPPED and
-                    self._token_is_aave_contract(event.asset)
+                    self._token_is_aave_contract(event.asset) and
+                    not event.asset.resolve_to_evm_token().is_liability()
             ):
                 receive_events.append(event)
             elif (
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.RETURN_WRAPPED and
-                    self._token_is_aave_contract(event.asset)
+                    self._token_is_aave_contract(event.asset) and
+                    not event.asset.resolve_to_evm_token().is_liability()
             ):
                 return_events.append(event)
             elif (
