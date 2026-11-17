@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict, deque
 from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
 import rlp
@@ -130,6 +131,19 @@ class VaultConstants(NamedTuple):
     borrow_address: ChecksumEvmAddress
     col_tokens: tuple[ChecksumEvmAddress, ChecksumEvmAddress]
     debt_tokens: tuple[ChecksumEvmAddress, ChecksumEvmAddress]
+
+
+class VaultLeg(NamedTuple):
+    vault_address: ChecksumEvmAddress
+    owner: ChecksumEvmAddress
+    asset: CryptoAsset | EvmToken
+    amount: FVal
+    is_collateral: bool
+    is_increase: bool
+
+    @property
+    def is_payout(self) -> bool:
+        return self.is_collateral != self.is_increase
 
 
 class FluidCommonDecoder(EvmDecoderInterface):
@@ -587,87 +601,89 @@ class FluidCommonDecoder(EvmDecoderInterface):
         candidate.notes = notes_template.format(amount=candidate.amount, symbol=symbol)
         return candidate
 
-    def _apply_position_leg(
+    def _make_position_event(self, transaction: EvmTransaction, leg: VaultLeg) -> EvmEvent:
+        _, event_type, event_subtype, notes_template = _OPERATE_LEG_CONFIG[
+            leg.is_collateral, leg.is_increase,
+        ]
+        return self.base.make_event_next_index(
+            tx_ref=transaction.tx_hash,
+            timestamp=transaction.timestamp,
+            event_type=event_type,
+            event_subtype=event_subtype,
+            asset=leg.asset,
+            amount=leg.amount,
+            location_label=leg.owner,
+            notes=notes_template.format(
+                amount=leg.amount,
+                symbol=leg.asset.resolve_to_asset_with_symbol().symbol,
+            ),
+            counterparty=CPT_FLUID,
+            address=leg.vault_address,
+        )
+
+    def _reconcile_position_leg(
             self,
             transaction: EvmTransaction,
             decoded_events: list[EvmEvent],
-            asset: CryptoAsset | EvmToken,
-            amount: FVal,
+            leg: VaultLeg,
             allowed_addresses: set[ChecksumEvmAddress],
-            is_collateral: bool,
-            is_increase: bool,
-            vault_addr: ChecksumEvmAddress,
-            position_owner: ChecksumEvmAddress,
             operate_user: ChecksumEvmAddress,
             to_addr: ChecksumEvmAddress,
             nft_id: int,
-    ) -> None:
-        """Book one vault leg on the position owner.
+    ) -> bool:
+        """Book a protocol leg if a wallet transfer accounts for it.
 
-        @remarks
-        The owner's own matching wallet transfer becomes the protocol event. When a third party
-        is on the wallet side of the leg, the protocol event is still booked on the owner and
-        paired with the wallet transfer between the owner and that third party (a TRANSFER when
-        both are tracked, or a SPEND from the owner to an untracked payout receiver), so the
-        combined portfolio's wallets change by the leg amount only once. Legs settled entirely
-        between Fluid contracts (e.g. flash leverage) get only the synthetic protocol event.
+        A third party's matching transfer is redirected through the position owner so the
+        protocol event and the intermediate transfer do not count the wallet movement twice.
+        An explicit payout to an untracked third party has no decoded receive to redirect, so
+        record an onward spend instead. Return False for legs with no established wallet effect.
         """
-        spec = _OPERATE_LEG_CONFIG[is_collateral, is_increase]
-        from_type, to_type, to_subtype, notes_template = spec
-        allow_native_refund = not is_collateral and not is_increase
+        from_type, to_type, to_subtype, notes_template = _OPERATE_LEG_CONFIG[
+            leg.is_collateral, leg.is_increase,
+        ]
+        allow_native_refund = not leg.is_collateral and not leg.is_increase
         if self._reconcile_transfer(
             decoded_events=decoded_events,
             from_event_type=from_type,
-            asset=asset,
-            amount=amount,
+            asset=leg.asset,
+            amount=leg.amount,
             allowed_addresses=allowed_addresses,
             to_event_type=to_type,
             to_event_subtype=to_subtype,
-            address=vault_addr,
+            address=leg.vault_address,
             notes_template=notes_template,
             allow_native_refund=allow_native_refund,
-            location_label=position_owner,
+            location_label=leg.owner,
         ) is not None:
-            return
+            return True
 
-        symbol = asset.resolve_to_asset_with_symbol().symbol
-        owner_event = self.base.make_event_next_index(
-            tx_ref=transaction.tx_hash,
-            timestamp=transaction.timestamp,
-            event_type=to_type,
-            event_subtype=to_subtype,
-            asset=asset,
-            amount=amount,
-            location_label=position_owner,
-            notes=notes_template.format(amount=amount, symbol=symbol),
-            counterparty=CPT_FLUID,
-            address=vault_addr,
-        )
         if from_type == HistoryEventType.SPEND:
-            self._reconcile_transfer(
+            if self._reconcile_transfer(
                 decoded_events=decoded_events,
                 from_event_type=HistoryEventType.SPEND,
-                asset=asset,
-                amount=amount,
+                asset=leg.asset,
+                amount=leg.amount,
                 allowed_addresses=allowed_addresses,
                 to_event_type=HistoryEventType.TRANSFER,
                 to_event_subtype=HistoryEventSubType.NONE,
-                address=position_owner,
+                address=leg.owner,
                 notes_template=(
-                    f'Transfer {{amount}} {{symbol}} to {position_owner} '
+                    f'Transfer {{amount}} {{symbol}} to {leg.owner} '
                     f'for Fluid vault position {nft_id}'
                 ),
                 allow_native_refund=allow_native_refund,
-            )
-            decoded_events.append(owner_event)
-            return
+            ) is None:
+                return False
 
-        if to_addr != position_owner and (
+            decoded_events.append(self._make_position_event(transaction, leg))
+            return True
+
+        if to_addr != leg.owner and (
             receive_event := self._reconcile_transfer(
                 decoded_events=decoded_events,
                 from_event_type=HistoryEventType.RECEIVE,
-                asset=asset,
-                amount=amount,
+                asset=leg.asset,
+                amount=leg.amount,
                 allowed_addresses=allowed_addresses,
                 to_event_type=HistoryEventType.TRANSFER,
                 to_event_subtype=HistoryEventSubType.NONE,
@@ -679,34 +695,63 @@ class FluidCommonDecoder(EvmDecoderInterface):
                 location_label=to_addr,
             )
         ) is not None:
-            receive_event.location_label = position_owner
+            owner_event = self._make_position_event(transaction, leg)
+            receive_event.location_label = leg.owner
             owner_event.sequence_index, receive_event.sequence_index = (
                 receive_event.sequence_index,
                 owner_event.sequence_index,
             )
             decoded_events.insert(decoded_events.index(receive_event), owner_event)
-            return
+            return True
 
-        decoded_events.append(owner_event)
-        if to_addr not in (ZERO_ADDRESS, position_owner, operate_user):
-            is_tracked_receiver = self.base.is_tracked(to_addr)
-            decoded_events.append(self.base.make_event_next_index(
+        if to_addr in (ZERO_ADDRESS, leg.owner, operate_user) or self.base.is_tracked(to_addr):
+            return False
+
+        decoded_events.extend((
+            self._make_position_event(transaction, leg),
+            self.base.make_event_next_index(
                 tx_ref=transaction.tx_hash,
                 timestamp=transaction.timestamp,
-                event_type=(
-                    HistoryEventType.TRANSFER if is_tracked_receiver else HistoryEventType.SPEND
-                ),
+                event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
-                asset=asset,
-                amount=amount,
-                location_label=position_owner,
+                asset=leg.asset,
+                amount=leg.amount,
+                location_label=leg.owner,
                 notes=(
-                    f'{"Transfer" if is_tracked_receiver else "Send"} {amount} {symbol} '
+                    f'Send {leg.amount} {leg.asset.resolve_to_asset_with_symbol().symbol} '
                     f'to {to_addr} for Fluid vault position {nft_id}'
                 ),
                 counterparty=CPT_FLUID,
                 address=to_addr,
-            ))
+            ),
+        ))
+        return True
+
+    def _append_wallet_neutral_legs(
+            self,
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            unmatched_legs: list[VaultLeg],
+    ) -> None:
+        """Only book unmatched legs that offset each other in the same wallet.
+
+        A router can settle legs internally (e.g. borrow and redeposit in a flash leverage
+        operation). Book the paired inflow first so history never sees an unfunded wallet debit.
+        """
+        pending: defaultdict[tuple[ChecksumEvmAddress, Asset, FVal, bool], deque[VaultLeg]] = (
+            defaultdict(deque)
+        )
+        for leg in unmatched_legs:
+            wallet_amount = (leg.owner, leg.asset, leg.amount)
+            if (opposite_legs := pending.get((*wallet_amount, not leg.is_payout))):
+                other_leg = opposite_legs.popleft()
+                payout, funding = (leg, other_leg) if leg.is_payout else (other_leg, leg)
+                decoded_events.extend((
+                    self._make_position_event(transaction, payout),
+                    self._make_position_event(transaction, funding),
+                ))
+            else:
+                pending[*wallet_amount, leg.is_payout].append(leg)
 
     def _resolve_position_owner(
             self,
@@ -755,6 +800,7 @@ class FluidCommonDecoder(EvmDecoderInterface):
             all_logs: list[EvmTxReceiptLog],
             decoded_events: list[EvmEvent],
             nft_owners: dict[int, ChecksumEvmAddress],
+            unmatched_legs: list[VaultLeg],
             used_liq_legs: set[tuple[int, bool]],
             used_dex_logs: set[int],
     ) -> None:
@@ -797,20 +843,24 @@ class FluidCommonDecoder(EvmDecoderInterface):
                 used_dex_logs=used_dex_logs,
             ):
                 if position_owner is not None:
-                    self._apply_position_leg(
-                        transaction=transaction,
-                        decoded_events=decoded_events,
+                    leg = VaultLeg(
+                        vault_address=vault_addr,
+                        owner=position_owner,
                         asset=asset,
                         amount=amount,
-                        allowed_addresses=allowed_addresses,
                         is_collateral=is_collateral,
                         is_increase=raw_amt > 0,
-                        vault_addr=vault_addr,
-                        position_owner=position_owner,
+                    )
+                    if not self._reconcile_position_leg(
+                        transaction=transaction,
+                        decoded_events=decoded_events,
+                        leg=leg,
+                        allowed_addresses=allowed_addresses,
                         operate_user=operate_user,
                         to_addr=to_addr,
                         nft_id=nft_id,
-                    )
+                    ):
+                        unmatched_legs.append(leg)
                     continue
 
                 action = 'withdrawal' if is_collateral else 'borrow'
@@ -921,6 +971,7 @@ class FluidCommonDecoder(EvmDecoderInterface):
 
         used_liq_legs: set[tuple[int, bool]] = set()
         used_dex_logs: set[int] = set()
+        unmatched_legs: list[VaultLeg] = []
 
         for pos, tx_log in enumerate(all_logs):
             if len(tx_log.topics) == 0:
@@ -939,6 +990,7 @@ class FluidCommonDecoder(EvmDecoderInterface):
                     all_logs=all_logs,
                     decoded_events=decoded_events,
                     nft_owners=nft_owners,
+                    unmatched_legs=unmatched_legs,
                     used_liq_legs=used_liq_legs,
                     used_dex_logs=used_dex_logs,
                 )
@@ -956,6 +1008,7 @@ class FluidCommonDecoder(EvmDecoderInterface):
                     used_dex_logs=used_dex_logs,
                 )
 
+        self._append_wallet_neutral_legs(transaction, decoded_events, unmatched_legs)
         return decoded_events
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:

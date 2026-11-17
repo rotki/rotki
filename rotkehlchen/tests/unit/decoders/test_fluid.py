@@ -31,7 +31,10 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.locations.constants import LOCATION_ARBITRUM_ONE, LOCATION_ETHEREUM
 from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
-from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.ethereum import (
+    PRUNED_AND_NOT_ARCHIVED_NODE,
+    get_decoded_events_of_transaction,
+)
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.fluid import add_fluid_position_event
 from rotkehlchen.types import (
@@ -771,9 +774,10 @@ def _make_tx(from_address: ChecksumEvmAddress, timestamp: Timestamp) -> EvmTrans
 def _nft_transfer_log(
         from_address: ChecksumEvmAddress,
         to_address: ChecksumEvmAddress,
+        log_index: int = 0,
 ) -> EvmTxReceiptLog:
     return EvmTxReceiptLog(
-        log_index=0,
+        log_index=log_index,
         data=b'',
         address=FLUID_VAULT_FACTORY,
         topics=[
@@ -1008,6 +1012,93 @@ def test_fluid_later_received_position_not_owned_before(
         decoded_events=[_eth_spend(tx=tx, payer=alice, amount='2')],
         all_logs=_operate_logs(operate_user=alice, col_raw=0, debt_raw=-(2 * 10**18)),
     ) == [_eth_spend(tx=tx, payer=alice, amount='2')]
+
+
+@pytest.mark.vcr(match_on=['etherscan_matcher', 'rpc_body_matcher'])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])
+@pytest.mark.parametrize('ethereum_accounts', [['0x0dc5d5F8F147A9ebB44370756116e58227dd43db']])
+def test_fluid_router_funded_deposit_does_not_debit_owner_wallet(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Only the user's USDC deposit touches their wallet, not the WBTC-to-USDC leverage leg."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x522f7417c9cca15369d78be8e6a170bb85813d9931d29ae85088757ee18211a9')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1794573887000)),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.002247358186032351'),
+        location_label=(user_address := ethereum_accounts[0]),
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=424,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+        asset=A_USDC,
+        amount=FVal('2123.173661'),
+        location_label=user_address,
+        notes='Deposit 2123.173661 USDC as collateral to Fluid',
+        counterparty=CPT_FLUID,
+        address=(vault := string_to_evm_address('0xF140Ea1C1D657EaaB802FF7626dC220cD4007CE7')),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=439,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.MINT,
+        event_subtype=HistoryEventSubType.NFT,
+        asset=_vault_nft(19800),
+        amount=ONE,
+        location_label=user_address,
+        notes='Create Fluid vault position 19800',
+        counterparty=CPT_FLUID,
+        address=vault,
+    )]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xB83E6edF8325e7d1Fc916A021866BeFe475DdbB6']])
+@pytest.mark.parametrize('repay_amount', [1, 2])
+def test_fluid_unmatched_router_legs_require_equal_wallet_offsets(
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        repay_amount: int,
+) -> None:
+    """An internal withdrawal and repay only pair when they offset the same wallet amount."""
+    alice, router = ethereum_accounts[0], make_evm_address()
+    _load_tracked_accounts(ethereum_transaction_decoder)
+    tx = _make_tx(from_address=alice, timestamp=Timestamp(1790000000))
+    events = _decode_vault_operation(
+        tx_decoder=ethereum_transaction_decoder,
+        tx=tx,
+        decoded_events=[],
+        all_logs=[
+            *_operate_logs(operate_user=router, col_raw=0, debt_raw=-(repay_amount * 10**18)),
+            *_operate_logs(
+                operate_user=router,
+                col_raw=-(10**18),
+                debt_raw=0,
+                first_log_index=2,
+                to_address=router,
+            ),
+            _nft_transfer_log(from_address=router, to_address=alice, log_index=4),
+        ],
+    )
+    assert [
+        (event.event_subtype, event.asset, event.amount, event.location_label) for event in events
+    ] == ([
+        (HistoryEventSubType.WITHDRAW_FROM_PROTOCOL, A_ETH, ONE, alice),
+        (HistoryEventSubType.PAYBACK_DEBT, A_ETH, ONE, alice),
+    ] if repay_amount == 1 else [])
 
 
 def _decode_alice_funding_bob(
