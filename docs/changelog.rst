@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`13691` Re-importing a rotki generic events CSV no longer duplicates events, and identical rows in one generic CSV are no longer merged.
 * :bug:`-` GnosisDAO treasury redemption deposits are now shown as leaving the wallet and the claimed treasury payouts as entering it.
 * :bug:`-` Hop bridge transfers sent from an L2 now record the amount that actually left the wallet and a correctly sized bonder fee. Before, a 6-decimal token such as USDC got a near-zero fee, and transfers through the Hop AMM wrapper recorded the bridged hToken amount instead of the wallet debit.
 * :bug:`-` Jupiter Lend collateral deposits on Solana are now counted as moving from the wallet into Jupiter, and collateral withdrawals as moving back.

@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.data_import.importers.rotki_events import RotkiGenericEventsImporter
 from rotkehlchen.data_import.importers.rotki_trades import RotkiGenericTradesImporter
 from rotkehlchen.data_import.utils import BaseExchangeImporter, detect_duplicate_event
@@ -8,7 +9,8 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.history.events.utils import create_group_identifier_from_swap
+from rotkehlchen.types import AssetAmount, Location, TimestampMS
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -107,3 +109,128 @@ def test_rotki_generic_events_unknown_asset(database, tmp_path) -> None:
     assert len(error_msgs) == 1
     assert 'ZZZFAKE' in error_msgs[0]['msg']
     assert 'Unknown asset' in error_msgs[0]['msg']
+
+
+def _count_history_events(database) -> int:
+    with database.conn.read_ctx() as cursor:
+        return cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0]
+
+
+def test_rotki_generic_events_reimport_skips_duplicates(database, tmp_path) -> None:
+    """Regression for https://github.com/rotki/rotki/issues/13691.
+
+    Re-importing a file, or a reordered superset of it, must not duplicate events while
+    identical rows in the same file (e.g. identical fills in the same second) are all kept.
+    """
+    header = 'Type,Location,Currency,Amount,Fee,Fee Currency,Description,Timestamp\n'
+    (filepath := tmp_path / 'events.csv').write_text(
+        header +
+        (row_a := 'Deposit,kraken,ETH,1.5,0.01,ETH,Deposit A,1659171600000\n') +
+        (row_b := 'Staking,kraken,ETH,0.1,,,Reward,1659171700000\n') +
+        row_b,  # legitimately identical second reward
+    )
+    importer = RotkiGenericEventsImporter(db=database)
+    assert importer.import_csv(filepath=filepath) == (True, '')
+    assert _count_history_events(database) == 4  # deposit + fee + 2 rewards
+    assert importer.imported_entries == 3
+
+    assert importer.import_csv(filepath=filepath) == (True, '')
+    assert _count_history_events(database) == 4
+    assert (importer.total_entries, importer.imported_entries) == (3, 0)
+    assert importer.import_msgs == [
+        {'row': 1, 'msg': 'Skipped already imported deposit/deposit asset of 1.5 ETH at 2022/07/30 09:00:00'},  # noqa: E501
+        {'row': 2, 'msg': 'Skipped already imported staking/reward of 0.1 ETH at 2022/07/30 09:01:40'},  # noqa: E501
+        {'row': 3, 'msg': 'Skipped already imported staking/reward of 0.1 ETH at 2022/07/30 09:01:40'},  # noqa: E501
+    ]
+
+    (superset_path := tmp_path / 'renamed.csv').write_text(  # reordered, edited description
+        header + row_b + 'Withdrawal,kraken,ETH,0.3,,,New C,1659171800000\n' + row_b +
+        row_a.replace('Deposit A', 'Changed description'),
+    )
+    assert importer.import_csv(filepath=superset_path) == (True, '')
+    assert _count_history_events(database) == 5
+    assert (importer.total_entries, importer.imported_entries) == (4, 1)
+
+    (more_path := tmp_path / 'more.csv').write_text(header + row_b * 3)  # a third reward
+    assert importer.import_csv(filepath=more_path) == (True, '')
+    assert _count_history_events(database) == 6
+    assert importer.imported_entries == 1
+
+
+def test_rotki_generic_events_source_id(database, tmp_path) -> None:
+    """The optional Source ID column identifies rows with otherwise identical values"""
+    (filepath := tmp_path / 'events.csv').write_text(
+        'Type,Location,Currency,Amount,Fee,Fee Currency,Description,Timestamp,Source ID\n'
+        'Deposit,kraken,ETH,1,,,,1659171600000,id-1\n'
+        'Deposit,kraken,ETH,1,,,,1659171600000,id-2\n',
+    )
+    importer = RotkiGenericEventsImporter(db=database)
+    assert importer.import_csv(filepath=filepath) == (True, '')
+    assert _count_history_events(database) == 2
+
+    (batch_path := tmp_path / 'batch.csv').write_text(  # incremental batch with an identical row
+        'Type,Location,Currency,Amount,Fee,Fee Currency,Description,Timestamp,Source ID\n'
+        'Deposit,kraken,ETH,1,,,,1659171600000,id-2\n'
+        'Deposit,kraken,ETH,1,,,,1659171600000,id-3\n',
+    )
+    assert importer.import_csv(filepath=batch_path) == (True, '')
+    assert _count_history_events(database) == 3
+    assert importer.imported_entries == 1
+
+
+def test_rotki_generic_events_legacy_identifiers(database, tmp_path) -> None:
+    """Events imported by older versions have random identifiers and must still be matched,
+    each existing event matching at most one row."""
+    history_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        for group_identifier in ('RE_' + 'a' * 32, 'RE_' + 'b' * 32):
+            history_db.add_history_event(write_cursor, HistoryEvent(
+                group_identifier=group_identifier,
+                sequence_index=0,
+                timestamp=TimestampMS(1659171600000),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+                asset=A_ETH,
+                amount=FVal('1'),
+            ))
+
+    (filepath := tmp_path / 'events.csv').write_text(
+        'Type,Location,Currency,Amount,Fee,Fee Currency,Description,Timestamp\n' +
+        'Deposit,kraken,ETH,1,,,,1659171600000\n' * 3 +
+        'Deposit,kraken,ETH,2,,,,1659171600000\n',
+    )
+    importer = RotkiGenericEventsImporter(db=database)
+    assert importer.import_csv(filepath=filepath) == (True, '')
+    assert importer.imported_entries == 2
+    assert _count_history_events(database) == 4
+
+    assert importer.import_csv(filepath=filepath) == (True, '')
+    assert _count_history_events(database) == 4
+    assert importer.imported_entries == 0
+
+
+def test_rotki_generic_trades_identical_fills(database, tmp_path) -> None:
+    """Identical trades in the same file are all kept, and the first one keeps the
+    identifier used by older versions so that re-imports still match it."""
+    (filepath := tmp_path / 'trades.csv').write_text(
+        'Location,Spend Currency,Receive Currency,Receive Amount,Spend Amount,'
+        'Fee,Fee Currency,Description,Timestamp\n' +
+        'kraken,LTC,BTC,4.3241,392.8870,,,Fill,1659171600000\n' * 2,
+    )
+    importer = RotkiGenericTradesImporter(db=database)
+    assert importer.import_csv(filepath=filepath) == (True, '')
+    assert _count_history_events(database) == 4  # spend + receive per trade
+    assert importer.imported_entries == 2
+
+    assert importer.import_csv(filepath=filepath) == (True, '')
+    assert _count_history_events(database) == 4
+    assert (importer.total_entries, importer.imported_entries) == (2, 0)
+    assert [msg['row'] for msg in importer.import_msgs] == [1, 2]
+    with database.conn.read_ctx() as cursor:
+        assert create_group_identifier_from_swap(
+            location=Location.KRAKEN,
+            timestamp=TimestampMS(1659171600000),
+            spend=AssetAmount(asset=Asset('LTC'), amount=FVal('392.8870')),
+            receive=AssetAmount(asset=A_BTC, amount=FVal('4.3241')),
+        ) in {row[0] for row in cursor.execute('SELECT group_identifier FROM history_events')}

@@ -1,4 +1,5 @@
 import csv
+from collections import defaultdict
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
@@ -10,9 +11,10 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.swap import create_swap_events
-from rotkehlchen.history.events.utils import create_group_identifier_from_swap
+from rotkehlchen.history.events.utils import create_group_identifier_from_swap, hash_group_key
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import AssetAmount
+from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -27,12 +29,19 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
     def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db, name='Rotki generic trades')
 
+    def reset(self) -> None:
+        super().reset()
+        # occurrences of each trade identity seen so far in the file being imported
+        self._identity_occurrences: defaultdict[str, int] = defaultdict(int)
+
     def _consume_rotki_trades(
             self,
             write_cursor: DBCursor,
             csv_row: dict[str, Any],
-    ) -> None:
+            row_index: int,
+    ) -> bool:
         """Consume rotki generic trades import CSV file.
+        Returns False if the row was skipped as already imported and True otherwise.
         May raise:
         - DeserializationError
         - UnknownAsset
@@ -42,23 +51,44 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
         receive_amount = deserialize_fval(csv_row['Receive Amount'])
         spend_asset, fee, fee_currency, location, timestamp = process_rotki_generic_import_csv_fields(csv_row, 'Spend Currency')  # noqa: E501
         receive_asset = symbol_to_asset_or_token(csv_row['Receive Currency'])
+        group_identifier = create_group_identifier_from_swap(
+            location=location,
+            timestamp=timestamp,
+            spend=(spend := AssetAmount(asset=spend_asset, amount=spend_amount)),
+            receive=(receive := AssetAmount(asset=receive_asset, amount=receive_amount)),
+        )
+        occurrence = self._identity_occurrences[group_identifier]
+        self._identity_occurrences[group_identifier] += 1
+        if occurrence != 0:
+            # identical trades in the same file are legitimate (e.g. identical fills in the
+            # same second). The first keeps the plain identifier so that already imported
+            # trades still match it on re-import.
+            group_identifier = hash_group_key({'swap': group_identifier, 'occurrence': occurrence})
+
+        if self.group_already_imported(write_cursor, group_identifier):
+            self.append_msg(
+                row_index=row_index,
+                msg=(
+                    f'Skipped already imported trade of {spend_amount} {spend_asset.symbol_or_name()} '  # noqa: E501
+                    f'for {receive_amount} {receive_asset.symbol_or_name()} at {timestamp_to_date(ts_ms_to_sec(timestamp), "%Y/%m/%d %H:%M:%S")}'  # noqa: E501
+                ),
+                is_error=False,
+            )
+            return False
+
         self.add_history_events(
             write_cursor=write_cursor,
             history_events=create_swap_events(
                 timestamp=timestamp,
                 location=location,
-                spend=(spend := AssetAmount(asset=spend_asset, amount=spend_amount)),
-                receive=(receive := AssetAmount(asset=receive_asset, amount=receive_amount)),
+                spend=spend,
+                receive=receive,
                 spend_notes=csv_row['Description'],
                 fee=AssetAmount(asset=fee_currency, amount=fee) if fee_currency is not None and fee is not None else None,  # noqa: E501
-                group_identifier=create_group_identifier_from_swap(
-                    location=location,
-                    timestamp=timestamp,
-                    spend=spend,
-                    receive=receive,
-                ),
+                group_identifier=group_identifier,
             ),
         )
+        return True
 
     def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """May raise:
@@ -68,8 +98,8 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
             for index, row in enumerate(csv.DictReader(csvfile), start=1):
                 try:
                     self.total_entries += 1
-                    self._consume_rotki_trades(write_cursor, row)
-                    self.imported_entries += 1
+                    if self._consume_rotki_trades(write_cursor, row, row_index=index):
+                        self.imported_entries += 1
                 except UnknownAsset as e:
                     self.send_message(
                         row_index=index,
