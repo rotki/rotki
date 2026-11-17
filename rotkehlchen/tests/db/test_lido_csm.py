@@ -182,7 +182,7 @@ def test_lido_csm_node_operator_ids_are_scoped_by_staking_module(database) -> No
     )
 
 
-def test_lido_csm_move_node_operator(database) -> None:
+def test_lido_csm_move_and_ignore_node_operator(database) -> None:
     db = DBLidoCsm(database)
     _add_eth_account(database, (old_address := make_evm_address()))
     _add_eth_account(database, (new_address := make_evm_address()))
@@ -217,3 +217,13 @@ def test_lido_csm_move_node_operator(database) -> None:
 
     db.move_node_operator(address=None, node_operator_id=7, staking_module=LidoCsmStakingModule.CSM)  # noqa: E501
     assert db.get_node_operators() == ()
+    assert db.is_node_operator_ignored(node_operator_id=7, staking_module=LidoCsmStakingModule.CSM) is False  # noqa: E501
+
+    # only a removal by the user is remembered, and only for its staking module
+    db.add_node_operator(address=new_address, node_operator_id=7, staking_module=LidoCsmStakingModule.CSM)  # noqa: E501
+    db.remove_node_operator(address=new_address, node_operator_id=7, staking_module=LidoCsmStakingModule.CSM)  # noqa: E501
+    assert db.is_node_operator_ignored(node_operator_id=7, staking_module=LidoCsmStakingModule.CSM) is True  # noqa: E501
+    assert db.is_node_operator_ignored(node_operator_id=7, staking_module=LidoCsmStakingModule.CSM_0X02) is False  # noqa: E501
+
+    db.add_node_operator(address=new_address, node_operator_id=7, staking_module=LidoCsmStakingModule.CSM)  # noqa: E501
+    assert db.is_node_operator_ignored(node_operator_id=7, staking_module=LidoCsmStakingModule.CSM) is False  # noqa: E501
