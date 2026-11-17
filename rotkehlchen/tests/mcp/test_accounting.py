@@ -1,7 +1,7 @@
 import asyncio
 import selectors
 from http import HTTPStatus
-from typing import Any
+from typing import Any, get_args
 
 import pytest
 from mcp import types
@@ -9,6 +9,7 @@ from mcp.shared.memory import create_connected_server_and_client_session
 
 from rotkehlchen.mcp import accounting, analytics, server
 from rotkehlchen.mcp.backend import BackendOutcome
+from rotkehlchen.mcp.constants import PrivacyMode
 from rotkehlchen.mcp.references import (
     UnknownReferenceError,
     get_reference_registry,
@@ -254,12 +255,20 @@ def test_bucket_references_are_dropped_when_the_user_changes(monkeypatch: pytest
         get_reference_registry().resolve_bucket(bucket_ref)
 
 
-def test_ui_route_is_only_handed_out_in_raw_mode() -> None:
+def test_ui_routes_leak_nothing_private() -> None:
     assert sanitize(DIAGNOSIS, privacy_mode='raw')['ui_route'] == (
         f'/history/events?groupIdentifiers=1{TX_HASH}'
     )
     for privacy_mode in ('balanced', 'strict'):
         assert 'ui_route' not in sanitize(DIAGNOSIS, privacy_mode=privacy_mode)
+
+    issue = {'id': 7, 'kind': 'negative_balance', 'state': 'open', 'group_identifier': f'1{TX_HASH}'}  # noqa: E501
+    for mode in get_args(PrivacyMode):  # an issue id names nothing private
+        sanitized = sanitize({'entries': [issue], 'baseline_issues': [{'issue_id': 8}]}, privacy_mode=mode)  # noqa: E501
+        assert sanitized['entries'][0]['issue_ui_route'] == '/history/data-issues/issues?issue=7'
+        assert sanitized['baseline_issues'][0]['issue_ui_route'] == '/history/data-issues/issues?issue=8'  # noqa: E501
+        assert 'issue_ui_route' not in sanitized
+    assert 'issue_ui_route' not in sanitize(DIAGNOSIS, privacy_mode='balanced')
 
     flags = {'asset_signals': {USDC: ['mixed_scripts', 'link_in_metadata']}}
     assert sanitize(flags, privacy_mode='balanced') == flags

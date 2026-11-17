@@ -9,6 +9,7 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.concurrency import TaskCancelledError
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
@@ -18,6 +19,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.bucket_checks import BucketStatus
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.diagnostics import (
     asset_signals,
@@ -27,6 +29,10 @@ from rotkehlchen.history.data_issues.diagnostics import (
     trace_bucket,
 )
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.reconciliation import (
+    ReconciliationBucket,
+    ReconciliationReport,
+)
 from rotkehlchen.history.data_issues.remediation.plans import (
     PlanState,
     RemediationError,
@@ -225,6 +231,88 @@ def test_list_data_issues_groups_issues_of_one_transaction(database: DBHandler) 
     group, = result['groups']
     assert group['shared_cause'] == 'hypothesis'
     assert len(group['issue_ids']) == 2
+
+
+def _mismatch_bucket(asset: str, last_event_ts: int | None) -> ReconciliationBucket:
+    return ReconciliationBucket(
+        location=LOCATION_ETHEREUM,
+        location_label=TEST_ADDR1,
+        protocol=None,
+        asset=asset,
+        status=BucketStatus.MISMATCH,
+        reasons=(),
+        derived_balance=ZERO,
+        observed_balance=FVal(5),
+        observed_at=Timestamp(1),
+        last_event_ts=None if last_event_ts is None else TimestampMS(last_event_ts),
+        issue_id=None,
+        check=None,
+        stop=None,
+    )
+
+
+def test_health_keeps_observed_only_holdings_apart(database: DBHandler) -> None:
+    """A holding with no history at all, such as an airdrop, is reported apart from a
+    disagreement over a bucket with history, and only that one makes health a mismatch."""
+    with database.user_write() as write_cursor:
+        database.set_static_cache(write_cursor, DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS, ts_now())  # noqa: E501
+    spam = get_or_create_evm_token(
+        userdb=database,
+        evm_address=make_evm_address(),
+        chain_id=ChainID.ETHEREUM,
+        name='Claim at scam.xyz',
+        symbol='SCAM',
+    ).identifier
+    buckets = [_mismatch_bucket(spam, None), _mismatch_bucket(A_USDC.identifier, None)]
+
+    def health(buckets: list[ReconciliationBucket]) -> dict:
+        with patch(
+            'rotkehlchen.history.data_issues.diagnostics.get_reconciliation_report',
+            return_value=ReconciliationReport(
+                stale=False,
+                processing=False,
+                totals={BucketStatus.MISMATCH: len(buckets)},
+                accounts=(),
+                all_buckets=tuple(buckets),
+            ),
+        ):
+            return get_accounting_health(database)
+
+    observed_only = health(buckets)
+    assert observed_only['status'] == 'observed_only_mismatch'
+    assert observed_only['comparison_coverage']['mismatch_breakdown'] == {
+        'with_history': 0,
+        'observed_only': 2,
+        'observed_only_with_asset_signals': 1,
+    }
+    with_history = health([*buckets, _mismatch_bucket(A_ETH.identifier, 1_000)])
+    assert with_history['status'] == 'mismatch'
+    assert with_history['comparison_coverage']['mismatch_breakdown']['with_history'] == 1
+
+
+def test_list_data_issues_marks_observed_only_mismatches(database: DBHandler) -> None:
+    manager = DataIssuesManager(database)
+    for asset, derived, latest in (('ETH', '0', None), (A_USDC.identifier, '2', 7)):
+        manager.report_current_balance_mismatch(
+            location=LOCATION_ETHEREUM,
+            location_label=TEST_ADDR1,
+            asset=asset,
+            payload={
+                'derived_balance': derived,
+                'observed_balance': '5',
+                'delta': str(5 - int(derived)),
+                'queried_at_ts': 1,
+                'latest_event_identifier': latest,
+            },
+            ts_start=1_000,
+            ts_end=1_000,
+        )
+
+    result = list_data_issues(database, DataIssuesFilterQuery.make())
+    assert {
+        entry['bucket']['asset']: entry['observed_only'] for entry in result['entries']
+    } == {'ETH': True, A_USDC.identifier: False}
+    assert result['asset_signals'] == {}
 
 
 def _add_bridge_scenario(database: DBHandler) -> tuple[int, int, dict[str, int]]:

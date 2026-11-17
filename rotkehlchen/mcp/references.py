@@ -52,8 +52,11 @@ TRANSACTION_KEYS: Final = frozenset({'group_identifier', 'tx_hash', 'tx_ref', 't
 PASSTHROUGH_KEYS: Final = frozenset({'asset', 'assets_considered', 'event_asset'})
 BUCKET_KEYS: Final = frozenset({'location', 'location_label', 'protocol', 'asset'})
 # The rotki app route listing a transaction's events. It names the transaction, so it is only
-# handed out in raw mode; otherwise the agent points the user at the Data issues page.
+# handed out in raw mode.
 HISTORY_EVENTS_ROUTE: Final = '/history/events?groupIdentifiers='
+# The rotki app route opening one data issue. An issue id is a row number, so this one is
+# handed out in every privacy mode, and the issue's drawer leads on to its events.
+DATA_ISSUE_ROUTE: Final = '/history/data-issues/issues?issue='
 
 
 class UnknownReferenceError(Exception):
@@ -131,11 +134,19 @@ def _sanitize_account(value: Any, privacy_mode: PrivacyMode) -> Any:
     return _registry.reference(value)
 
 
+def _issue_id(value: dict[str, Any]) -> Any:
+    """The id of the data issue the dict is, or refers to by ``issue_id``."""
+    if 'issue_id' in value:
+        return value['issue_id']
+    return value.get('id') if value.keys() >= {'id', 'kind', 'state'} else None
+
+
 def sanitize(value: Any, privacy_mode: PrivacyMode, key: str | None = None) -> Any:
     """Return a copy of a diagnosis payload that is safe to hand to the agent.
 
-    Every bucket gets a ``bucket_ref`` the agent can pass back, in every privacy mode. In raw
-    mode everything naming a transaction also gets the ``ui_route`` that opens it in rotki.
+    Every bucket gets a ``bucket_ref`` the agent can pass back, and every data issue an
+    ``issue_ui_route`` that opens it in rotki, in every privacy mode. In raw mode everything
+    naming a transaction also gets the ``ui_route`` that opens it in rotki.
     """
     if isinstance(value, dict):
         sanitized = {
@@ -146,6 +157,8 @@ def sanitize(value: Any, privacy_mode: PrivacyMode, key: str | None = None) -> A
             sanitized['bucket_ref'] = _registry.bucket_reference(value)
         if privacy_mode == 'raw' and isinstance(group := value.get('group_identifier'), str):
             sanitized['ui_route'] = HISTORY_EVENTS_ROUTE + quote(group, safe='')
+        if isinstance(issue_id := _issue_id(value), int):
+            sanitized['issue_ui_route'] = f'{DATA_ISSUE_ROUTE}{issue_id}'
         return sanitized
     if isinstance(value, list):
         return [sanitize(item, privacy_mode=privacy_mode, key=key) for item in value]

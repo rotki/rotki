@@ -289,9 +289,16 @@ def get_accounting_health(database: DBHandler) -> dict[str, Any]:
 
     ``status`` is the first of these that applies: ``disabled``, ``unprocessed`` (never
     processed), ``processing_pending`` (events changed since the last pass), ``blocked``
-    (a bucket stopped), ``mismatch`` (a comparison disagrees with the chain), ``unverified``
-    (some buckets were never compared or can't be), ``healthy``. An unverified bucket is not
-    a healthy one: only ``reconciled`` buckets have been checked against an observation.
+    (a bucket stopped), ``mismatch`` (a comparison of a bucket with history disagrees with the
+    chain), ``observed_only_mismatch`` (the only disagreements are holdings the account has no
+    history of at all), ``unverified`` (some buckets were never compared or can't be),
+    ``healthy``. An unverified bucket is not a healthy one: only ``reconciled`` buckets have
+    been checked against an observation.
+
+    Observed-only holdings are kept apart because they are usually unsolicited airdrops, while
+    a disagreement over a bucket with history points at the history itself. They are not
+    assumed to be spam: ``observed_only_with_asset_signals`` only counts those whose metadata
+    looks deceptive, and a holding received through a transaction rotki missed looks the same.
     """
     if is_accounting_update_enabled() is False:
         return {'status': 'disabled', 'feature_enabled': False}
@@ -322,6 +329,18 @@ def get_accounting_health(database: DBHandler) -> dict[str, Any]:
             reason_counts[bucket.status.value][reason.value] += 1
 
     totals = {status.value: count for status, count in report.totals.items()}
+    observed_only = [  # a holding the account has no history of at all, often an airdrop
+        bucket.asset for bucket in report.all_buckets
+        if bucket.status == BucketStatus.MISMATCH and bucket.last_event_ts is None
+    ]
+    observed_only_signals = asset_signals(observed_only)
+    mismatch_breakdown = {
+        'with_history': totals.get(BucketStatus.MISMATCH.value, 0) - len(observed_only),
+        'observed_only': len(observed_only),
+        'observed_only_with_asset_signals': sum(
+            asset in observed_only_signals for asset in observed_only
+        ),
+    }
     stops = {  # the report's stops, so ignored assets and untracked accounts are left out
         (bucket.location, bucket.location_label, bucket.protocol, bucket.asset): bucket.stop
         for bucket in report.all_buckets if bucket.stop is not None
@@ -332,8 +351,10 @@ def get_accounting_health(database: DBHandler) -> dict[str, Any]:
         status = 'processing_pending'
     elif len(stops) != 0:
         status = 'blocked'
-    elif totals.get(BucketStatus.MISMATCH.value, 0) != 0:
+    elif mismatch_breakdown['with_history'] != 0:
         status = 'mismatch'
+    elif mismatch_breakdown['observed_only'] != 0:
+        status = 'observed_only_mismatch'
     elif (
         totals.get(BucketStatus.PENDING.value, 0) != 0 or
         totals.get(BucketStatus.NOT_COMPARED.value, 0) != 0 or
@@ -362,6 +383,7 @@ def get_accounting_health(database: DBHandler) -> dict[str, Any]:
         'comparison_coverage': {
             'buckets_total': sum(totals.values()),
             'counts': totals,
+            'mismatch_breakdown': mismatch_breakdown,
             'reason_counts': {
                 status_name: dict(sorted(counts.items()))
                 for status_name, counts in sorted(reason_counts.items())
@@ -627,7 +649,9 @@ def list_data_issues(
 
     ``groups`` gathers the issues by the transaction (event group) they were raised on, since
     several issues of one transaction usually share a cause. That a group shares a cause is a
-    hypothesis, never established by the grouping itself.
+    hypothesis, never established by the grouping itself. A balance mismatch says whether it
+    is ``observed_only``, see get_accounting_health, and ``asset_signals`` flags the listed
+    assets whose metadata looks deceptive.
     """
     manager = DataIssuesManager(database)
     issues = manager.list_issues(filter_query)
@@ -644,6 +668,8 @@ def list_data_issues(
     by_group: dict[str, list[int]] = defaultdict(list)
     for issue in issues:
         entry = serialize_issue(issue)
+        if issue.kind == IssueKind.CURRENT_BALANCE_MISMATCH:
+            entry['observed_only'] = _is_observed_only(issue)
         if entry['group_identifier'] is None and entry['event_identifier'] is not None:
             entry['group_identifier'] = event_groups.get(entry['event_identifier'])
         if (group := entry['group_identifier']) is not None:
@@ -653,11 +679,26 @@ def list_data_issues(
     return {
         'entries': serialized,
         'entries_found': manager.count_issues(filter_query),
+        'asset_signals': asset_signals(
+            asset for entry in serialized if (asset := entry['bucket']['asset']) != ''
+        ),
         'groups': [
             {'group_identifier': group, 'issue_ids': ids, 'shared_cause': 'hypothesis'}
             for group, ids in by_group.items() if len(ids) > 1
         ],
     }
+
+
+def _is_observed_only(issue: DataIssue) -> bool:
+    """Whether a balance mismatch is a holding the account has no history of at all.
+
+    The detector compares such a holding against a zero it verified to have no history, and
+    that zero comes with no latest event.
+    """
+    return (
+        issue.payload.get('latest_event_identifier') is None and
+        FVal(issue.payload.get('derived_balance', '0')) == ZERO
+    )
 
 
 def _event_groups(cursor: DBCursor, event_identifiers: Sequence[int]) -> dict[int, str]:

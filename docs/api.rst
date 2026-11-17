@@ -16152,8 +16152,10 @@ All of them require the accounting update feature and return 404 when it is disa
   .. http:get:: /api/(version)/data_issues/diagnostics/health
 
     Whether the derived balances can be trusted. ``status`` is the first that applies of
-    ``unprocessed``, ``processing_pending``, ``blocked`` (a bucket stopped), ``mismatch``,
-    ``unverified`` (buckets not compared or transactions pending decoding) and ``healthy``.
+    ``unprocessed``, ``processing_pending``, ``blocked`` (a bucket stopped), ``mismatch`` (a
+    bucket with history disagrees with the chain), ``observed_only_mismatch`` (the only
+    disagreements are holdings the account has no history of at all), ``unverified`` (buckets
+    not compared or transactions pending decoding) and ``healthy``.
 
     **Example Request**:
 
@@ -16175,7 +16177,7 @@ All of them require the accounting update feature and return 404 when it is disa
           "feature_enabled": true,
           "settings": {"treat_eth2_as_eth": false, "auto_create_profit_events": true, "bridge_match_time_range_s": 14400, "bridge_match_amount_tolerance": "0.01", "reconciliation_tolerance": "0.000001"},
           "processing": {"last_processing_ts_s": 1710000100, "stale_from_ts_ms": null, "revision": "1710000100:0", "observed_at_ts_s": 1710000200, "has_unprocessed_events": false, "last_remediation_ts_s": null, "last_current_balance_detection_ts_s": null},
-          "comparison_coverage": {"buckets_total": 3, "counts": {"blocked": 1, "not_compared": 0, "pending": 2, "reconciled": 0, "mismatch": 0}, "reason_counts": {"pending": {"never_compared": 2}}},
+          "comparison_coverage": {"buckets_total": 3, "counts": {"blocked": 1, "not_compared": 0, "pending": 2, "reconciled": 0, "mismatch": 0}, "mismatch_breakdown": {"with_history": 0, "observed_only": 0, "observed_only_with_asset_signals": 0}, "reason_counts": {"pending": {"never_compared": 2}}},
           "stops": {"count": 1, "truncated": false, "entries": [{
             "bucket": {"location": "ethereum", "location_label": "0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea", "protocol": null, "asset": "ETH"},
             "event_identifier": 3, "group_identifier": "10x64f1...", "event_timestamp_ms": 3000,
@@ -16197,6 +16199,12 @@ All of them require the accounting update feature and return 404 when it is disa
     balance divergence search need an archive node; ``archive_queries_possible_for`` lists the
     chains that have one.
 
+    ``comparison_coverage.mismatch_breakdown`` splits the ``mismatch`` buckets into those with
+    history and those observed only, which are usually unsolicited airdrops.
+    ``observed_only_with_asset_signals`` counts the observed-only ones whose asset metadata looks
+    deceptive. Observed-only holdings are not assumed to be spam: one received in a transaction
+    rotki missed looks the same.
+
     :statuscode 200: Health returned.
     :statuscode 401: No user is currently logged in.
 
@@ -16204,9 +16212,11 @@ All of them require the accounting update feature and return 404 when it is disa
 
     Lists data issues like ``GET /data_issues``, accepting the same filters, in a compact form.
     ``groups`` gathers issues raised on the same transaction; that they share a cause is a
-    hypothesis (``"shared_cause": "hypothesis"``).
+    hypothesis (``"shared_cause": "hypothesis"``). A ``current_balance_mismatch`` entry says
+    whether it is ``observed_only``, a holding the account has no history of at all, and
+    ``asset_signals`` flags the listed assets whose metadata looks deceptive.
 
-    :statuscode 200: Issues returned, as ``{"entries": [...], "entries_found": 2, "groups": [{"group_identifier": "...", "issue_ids": [1, 2], "shared_cause": "hypothesis"}]}``.
+    :statuscode 200: Issues returned, as ``{"entries": [...], "entries_found": 2, "asset_signals": {}, "groups": [{"group_identifier": "...", "issue_ids": [1, 2], "shared_cause": "hypothesis"}]}``.
     :statuscode 401: No user is currently logged in.
 
   .. http:get:: /api/(version)/data_issues/(issue_id)/explanation

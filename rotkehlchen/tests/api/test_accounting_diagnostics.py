@@ -45,7 +45,7 @@ def test_diagnosis_endpoints(rotkehlchen_api_server: APIServer) -> None:
     issues = assert_proper_sync_response_with_result(requests.get(
         api_url_for(rotkehlchen_api_server, 'dataissuesdiagnosisresource'),
     ))
-    assert issues == {'entries': [], 'entries_found': 0, 'groups': []}
+    assert issues == {'entries': [], 'entries_found': 0, 'asset_signals': {}, 'groups': []}
 
     for response in (
         requests.get(api_url_for(rotkehlchen_api_server, 'dataissueexplanationresource', issue_id=99)),  # noqa: E501

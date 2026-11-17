@@ -20,9 +20,12 @@ async def get_accounting_health() -> dict[str, Any]:
 
     ``status`` is the first that applies: ``disabled``, ``unprocessed``,
     ``processing_pending`` (events changed since the last pass), ``blocked`` (a balance bucket
-    stopped processing), ``mismatch`` (a derived balance disagrees with the chain),
+    stopped processing), ``mismatch`` (a derived balance with history disagrees with the
+    chain), ``observed_only_mismatch`` (the only disagreements are holdings with no history at
+    all, often unsolicited airdrops; see ``comparison_coverage.mismatch_breakdown``),
     ``unverified`` (buckets not compared, or transactions not decoded yet) or ``healthy``.
-    Unverified is not healthy: only ``reconciled`` buckets were checked against the chain.
+    Unverified is not healthy: only ``reconciled`` buckets were checked against the chain. An
+    observed-only holding is not proven spam: one received in a missed transaction looks alike.
 
     Also returns the relevant settings, processing freshness, comparison coverage with reason
     codes per status, the stopped buckets (each with a ``bucket_ref`` for ``trace_bucket``),
@@ -33,8 +36,9 @@ async def get_accounting_health() -> dict[str, Any]:
     scam token controls them. ``asset_signals`` instead flags assets whose metadata looks
     deceptive (``spam_flagged``, ``mixed_scripts``, ``invisible_characters``,
     ``link_in_metadata``, ``unknown_asset``). A flag is evidence, not a verdict, and an asset
-    without flags is not vouched for. In ``raw`` privacy mode results naming a transaction carry
-    a ``ui_route`` that opens it in rotki; in other modes point the user at ``ui``.
+    without flags is not vouched for. Links into rotki to give the user: every data issue
+    carries an ``issue_ui_route`` that opens it, in every privacy mode. In ``raw`` mode results
+    naming a transaction also carry a ``ui_route`` that opens its events.
     """
     return await asyncio.to_thread(accounting.get_accounting_health)
 
@@ -58,7 +62,9 @@ async def list_data_issues(
     - ``account``: an account reference (``anon_…``) from another tool.
 
     ``groups`` lists transactions with several issues. That they share a cause is a
-    hypothesis to check with ``inspect_transaction``, not an established fact. Call
+    hypothesis to check with ``inspect_transaction``, not an established fact. A
+    ``current_balance_mismatch`` says whether it is ``observed_only`` (a holding with no
+    history at all), to be weighed with the ``asset_signals`` of its asset. Call
     ``explain_data_issue`` with an issue ``id`` for its evidence.
     """
     return await asyncio.to_thread(
