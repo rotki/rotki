@@ -755,3 +755,43 @@ def test_trace_stops_a_negative_off_chain_rebasing_bucket(database: DBHandler) -
     assert trace['stop']['event_identifier'] == spend_id
     assert [row['status'] for row in trace['rows']] == ['stop', 'skipped_after_stop']
     assert trace['summary']['awaiting_rebase_reconciliation'] is False
+
+
+def test_explanation_counts_pending_decoding_of_the_issue_chain(database: DBHandler) -> None:
+    """Undecoded transactions of the same address on another chain can't hold back the
+    bucket, so only the ones of the issue's chain are reported as pending decoding."""
+    _add(database, [_event(1_000, HistoryEventType.SPEND, '1')])
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+    issue_id, = _issues(database, IssueKind.NEGATIVE_BALANCE)
+
+    def add_undecoded_transaction(chain_id: ChainID) -> None:
+        with database.user_write() as write_cursor:
+            DBEvmTx(database).add_transactions(
+                write_cursor=write_cursor,
+                evm_transactions=[EvmTransaction(
+                    tx_hash=make_evm_tx_hash(),
+                    chain_id=chain_id,
+                    timestamp=Timestamp(1),
+                    block_number=1,
+                    from_address=TEST_ADDR1,
+                    to_address=TEST_ADDR2,
+                    value=0,
+                    gas=21_000,
+                    gas_price=0,
+                    gas_used=0,
+                    input_data=b'',
+                    nonce=0,
+                )],
+                relevant_address=TEST_ADDR1,
+            )
+
+    def pending_details() -> list[str]:
+        return [
+            x['detail'] for x in explain_data_issue(database, issue_id)['missing_prerequisites']
+            if x['code'] == 'pending_decoding'
+        ]
+
+    add_undecoded_transaction(ChainID.OPTIMISM)
+    assert pending_details() == []
+    add_undecoded_transaction(ChainID.ETHEREUM)
+    assert pending_details() == ['1 transactions of the account are not decoded yet']

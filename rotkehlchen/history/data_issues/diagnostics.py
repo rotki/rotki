@@ -41,7 +41,8 @@ from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.reconciliation import get_reconciliation_report
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import EventDirection
-from rotkehlchen.locations.chains import EVM_LOCATIONS
+from rotkehlchen.locations.chains import EVM_LOCATIONS, location_to_chain_id
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.historical_balances import Bucket
 from rotkehlchen.types import SPAM_PROTOCOL, EventMetricKey, TimestampMS
@@ -696,7 +697,9 @@ def _pending_decoding_for_account(
         location: str,
         location_label: str | None,
 ) -> int | None:
-    """Undecoded transactions of the account, None when that can't apply to it."""
+    """Undecoded transactions of the account on the location's chain, None when that can't
+    apply to it. An address tracked on several chains has its transactions of each saved, and
+    only the ones of this chain can hold back this bucket."""
     if location not in EVM_LOCATIONS or location_label is None:
         return None
 
@@ -704,9 +707,9 @@ def _pending_decoding_for_account(
         return cursor.execute(
             'SELECT COUNT(DISTINCT M.tx_id) FROM evmtx_address_mappings AS M '
             'INNER JOIN evm_transactions AS T ON T.identifier = M.tx_id '
-            'WHERE M.address = ? AND NOT EXISTS (SELECT 1 FROM evm_tx_mappings AS D '
-            'WHERE D.tx_id = M.tx_id AND D.value = ?)',
-            (location_label, TX_DECODED),
+            'WHERE M.address = ? AND T.chain_id = ? AND NOT EXISTS ('
+            'SELECT 1 FROM evm_tx_mappings AS D WHERE D.tx_id = M.tx_id AND D.value = ?)',
+            (location_label, location_to_chain_id(LocationIdentifier(location)), TX_DECODED),
         ).fetchone()[0]
 
 
