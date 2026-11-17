@@ -684,14 +684,12 @@ def apply_plan(
             _apply_redecode(database, chains_aggregator, plan, outcomes)
         else:
             _apply_bridge_link(database, plan, outcomes)
-        applied = _applied(outcomes)
-        timestamps = [x['timestamp_ms'] for x in plan['plan']['items'] if 'timestamp_ms' in x]
-        if len(applied) != 0 and len(timestamps) != 0:
+        if (from_ts := _earliest_applied_ts(outcomes)) is not None:
             try:
                 reprocessing = 'completed' if process_historical_balances(
                     database=database,
                     msg_aggregator=database.msg_aggregator,
-                    from_ts=TimestampMS(min(timestamps)),
+                    from_ts=from_ts,
                     chains_aggregator=chains_aggregator,
                 ) is True else 'deferred_another_pass_running'
             except (RemoteError, DeserializationError) as e:
@@ -711,8 +709,8 @@ def apply_plan(
         raise
 
     applied = _applied(outcomes)
-    state = (
-        PlanState.APPLIED if len(applied) == len(outcomes) and len(outcomes) != 0 else
+    state = (  # items that were never applicable are skipped, they don't make it partial
+        PlanState.APPLIED if len(applied) == plan['plan']['applicable_items'] else
         PlanState.PARTIALLY_APPLIED if len(applied) != 0 else PlanState.FAILED
     )
     result = {'items': outcomes, 'reprocessing': reprocessing}
@@ -729,6 +727,15 @@ def apply_plan(
 
 def _applied(outcomes: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [x for x in outcomes if x['outcome'] in ('applied', 'applied_with_differences')]
+
+
+def _earliest_applied_ts(outcomes: list[dict[str, Any]]) -> TimestampMS | None:
+    """Where the changes of the applied items start, None if nothing was applied.
+
+    Items that were skipped or failed changed nothing, so they don't widen the range that
+    needs reprocessing, nor the range a processing pass must cover before verification.
+    """
+    return min((TimestampMS(x['timestamp_ms']) for x in _applied(outcomes)), default=None)
 
 
 def _apply_redecode(
@@ -773,6 +780,7 @@ def _apply_redecode(
         events = get_group_events(database, item['group_identifier'])
         outcomes.append({
             'group_identifier': item['group_identifier'],
+            'timestamp_ms': item['timestamp_ms'],
             'outcome': (
                 'applied' if _content_digest(events) == item['decoded_digest']
                 else 'applied_with_differences'
@@ -798,6 +806,7 @@ def _apply_bridge_link(
     outcomes.append({
         'bridge_event_identifier': item['bridge_event_identifier'],
         'matched_event_identifier': item['matched_event_identifier'],
+        'timestamp_ms': item['timestamp_ms'],
         'outcome': 'applied',
     })
 
@@ -839,10 +848,7 @@ def verify_plan(database: DBHandler, plan_id: str) -> dict[str, Any]:
     baseline_stops = {
         _bucket_key(entry['bucket']): entry for entry in plan['plan']['baseline']['stops']
     }
-    earliest = min(
-        (item['timestamp_ms'] for item in plan['plan']['items'] if 'timestamp_ms' in item),
-        default=None,
-    )
+    earliest = _earliest_applied_ts(plan['result']['items'])
     reevaluated = (
         (last := processing_state['last_processing_ts_s']) is not None and
         last >= plan['applied_at_ts_s'] and (

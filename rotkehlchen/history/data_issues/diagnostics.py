@@ -228,7 +228,7 @@ def get_processing_state(cursor: DBCursor, database: DBHandler) -> dict[str, Any
     )
     return {
         'last_processing_ts_s': last_processing,
-        'stale_from_ts_ms': stale_from,
+        'stale_from_ts_ms': None if stale_from is None else int(stale_from),  # cached as text
         'revision': f'{last_processing or 0}:{modification or 0}',
         'observed_at_ts_s': ts_now(),
     }

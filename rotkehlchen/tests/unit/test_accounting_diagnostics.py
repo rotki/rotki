@@ -10,6 +10,7 @@ from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.concurrency import TaskCancelledError
 from rotkehlchen.constants.assets import A_ETH, A_USDC
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import DataIssuesFilterQuery
@@ -32,6 +33,7 @@ from rotkehlchen.history.data_issues.remediation import (
     preview_bridge_link,
     preview_redecode,
     reject_plan,
+    verify_plan,
 )
 from rotkehlchen.history.data_issues.transaction_diagnostics import (
     explain_bridge_match,
@@ -365,7 +367,9 @@ def test_redecode_plan_repairs_a_wrong_direction(database: DBHandler, customized
         assert error.value.code == 'nothing_to_apply'
 
     result = apply_plan(database, chains_aggregator, plan['plan_id'], 'mcp_elicitation', ts_now())
-    assert result['result']['items'] == [{'group_identifier': group, 'outcome': 'applied'}]
+    assert result['result']['items'] == [
+        {'group_identifier': group, 'timestamp_ms': 1_000, 'outcome': 'applied'},
+    ]
     assert result['verification']['verdict'] == 'repaired'
     assert result['verification']['buckets'][0]['outcome'] == 'stop_cleared'
     assert get_accounting_health(database)['stops']['count'] == 0
@@ -630,3 +634,55 @@ def test_bridge_link_preview_applies_the_matcher_scope(database: DBHandler) -> N
     assert preview_bridge_link(database, bridge_id, eligible_id)['state'] == PlanState.PENDING
     with database.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM remediation_plans').fetchone()[0] == 1
+
+
+def test_redecode_apply_and_verify_only_count_applied_items(database: DBHandler) -> None:
+    """An item with nothing to change neither makes a clean apply partial nor widens the
+    range a processing pass must cover before the plan can be judged."""
+    tx_hashes = [make_evm_tx_hash(), make_evm_tx_hash()]
+    saved_ids = _add(database, [
+        _event(1_000, HistoryEventType.RECEIVE, '1', tx_hash=tx_hashes[0]),
+        _event(5_000, HistoryEventType.SPEND, '1', tx_hash=tx_hashes[1]),
+    ])
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+    decoded = {
+        tx_hashes[0]: _event(1_000, HistoryEventType.RECEIVE, '1', tx_hash=tx_hashes[0]),
+        tx_hashes[1]: _event(5_000, HistoryEventType.RECEIVE, '1', tx_hash=tx_hashes[1]),
+    }
+
+    def fake_redecode(ignore_cache: bool, tx_hashes: list, delete_customized: bool) -> None:
+        with database.user_write() as write_cursor:
+            write_cursor.execute('DELETE FROM history_events WHERE identifier = ?', (saved_ids[1],))  # noqa: E501
+            DBHistoryEvents(database).add_history_events(write_cursor, [copy.deepcopy(decoded[tx_hashes[0]])])  # noqa: E501
+
+    chains_aggregator = MagicMock()
+    decoder = chains_aggregator.get_evm_manager.return_value.transactions_decoder
+    decoder.possible_decoding_exceptions = ()
+    decoder.decode_transaction_hashes.side_effect = fake_redecode
+    with patch(
+        'rotkehlchen.history.data_issues.remediation.preview_transaction',
+        side_effect=lambda tx_hash, **kwargs: [copy.deepcopy(decoded[tx_hash])],
+    ):
+        plan = preview_redecode(
+            database=database,
+            chains_aggregator=chains_aggregator,
+            group_identifiers=[event.group_identifier for event in decoded.values()],
+            replace_customized=False,
+        )
+    assert [x['status'] for x in plan['plan']['items']] == ['no_change', 'ready']
+
+    with patch(  # another pass is running, so this apply only marks the range stale
+        'rotkehlchen.history.data_issues.remediation.process_historical_balances',
+        return_value=False,
+    ) as process_mock:
+        result = apply_plan(database, chains_aggregator, plan['plan_id'], 'mcp_elicitation', ts_now())  # noqa: E501
+    assert process_mock.call_args.kwargs['from_ts'] == 5_000
+    assert result['state'] == PlanState.APPLIED
+    assert result['result']['reprocessing'] == 'deferred_another_pass_running'
+
+    with database.user_write() as write_cursor:  # the running pass ends with the redecode stale
+        database.set_static_cache(write_cursor, DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS, ts_now())  # noqa: E501
+        database.set_static_cache(write_cursor, DBCacheStatic.STALE_BALANCES_FROM_TS, '5000')
+    verification = verify_plan(database, plan['plan_id'])['verification']
+    assert verification['reevaluated'] is False
+    assert verification['verdict'] == 'not_reevaluated'
