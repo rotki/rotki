@@ -1,0 +1,954 @@
+import copy
+from typing import TYPE_CHECKING
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.concurrency import TaskCancelledError
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_ETH, A_USDC
+from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
+from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.filtering import DataIssuesFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.misc import InputError
+from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.bucket_checks import BucketStatus
+from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
+from rotkehlchen.history.data_issues.diagnostics import (
+    asset_signals,
+    explain_data_issue,
+    get_accounting_health,
+    list_data_issues,
+    trace_bucket,
+)
+from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.reconciliation import (
+    ReconciliationBucket,
+    ReconciliationReport,
+)
+from rotkehlchen.history.data_issues.remediation.plans import (
+    PlanState,
+    RemediationError,
+    apply_plan,
+    get_plan,
+    preview_bridge_link,
+    preview_redecode,
+    reject_plan,
+    verify_plan,
+)
+from rotkehlchen.history.data_issues.transaction_diagnostics import (
+    explain_bridge_match,
+    inspect_transaction,
+)
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.locations.constants import LOCATION_ETHEREUM, LOCATION_KRAKEN, LOCATION_OPTIMISM
+from rotkehlchen.tasks.historical_balances import (
+    Bucket,
+    BucketEffectRule,
+    process_historical_balances,
+)
+from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.types import SPAM_PROTOCOL, ChainID, EvmTransaction, Timestamp, TimestampMS
+from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.locations.types import LocationIdentifier
+    from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash
+
+pytestmark = pytest.mark.accounting_update
+
+WALLET: Bucket = Bucket(
+    location=LOCATION_ETHEREUM,
+    location_label=TEST_ADDR1,
+    protocol=None,
+    asset=A_ETH.identifier,
+)
+
+
+def _event(
+        timestamp: int,
+        event_type: HistoryEventType,
+        amount: str,
+        location: LocationIdentifier = LOCATION_ETHEREUM,
+        event_subtype: HistoryEventSubType = HistoryEventSubType.NONE,
+        sequence_index: int = 0,
+        tx_hash: EVMTxHash | None = None,
+        **kwargs: object,
+) -> EvmEvent:
+    return EvmEvent(
+        tx_ref=make_evm_tx_hash() if tx_hash is None else tx_hash,
+        sequence_index=sequence_index,
+        timestamp=TimestampMS(timestamp),
+        location=location,
+        event_type=event_type,
+        event_subtype=event_subtype,
+        asset=A_ETH,
+        amount=FVal(amount),
+        location_label=TEST_ADDR1,
+        **kwargs,  # type: ignore[arg-type]
+    )
+
+
+def _add(database: DBHandler, events: list[EvmEvent], customized: bool = False) -> list[int]:
+    with database.user_write() as write_cursor:
+        return [DBHistoryEvents(database).add_history_event(  # type: ignore[misc]
+            write_cursor=write_cursor,
+            event=event,
+            mapping_values=(
+                {HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED}
+                if customized else None
+            ),
+        ) for event in events]
+
+
+def _add_history_events(database: DBHandler, events: list[HistoryEvent]) -> list[int]:
+    with database.user_write() as write_cursor:
+        return [DBHistoryEvents(database).add_history_event(  # type: ignore[misc]
+            write_cursor=write_cursor,
+            event=event,
+        ) for event in events]
+
+
+def _issues(database: DBHandler, kind: IssueKind) -> list[int]:
+    return [issue.id for issue in DataIssuesManager(database).list_issues(
+        DataIssuesFilterQuery.make(kinds=[kind]),
+    )]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+def test_trace_and_explain_decimal_residue_stop(database: DBHandler) -> None:
+    """A one-wei shortfall stops the bucket. The trace keeps it exact and the explanation
+    calls it decimal residue as a hypothesis, while the stop itself is a fact."""
+    receive_id, _, spend_id, later_id = _add(database, [
+        _event(1_000, HistoryEventType.RECEIVE, '1'),
+        _event(2_000, HistoryEventType.SPEND, '0.4'),
+        _event(3_000, HistoryEventType.SPEND, '0.600000000000000001'),
+        _event(4_000, HistoryEventType.RECEIVE, '5'),
+    ])
+    assert get_accounting_health(database)['status'] == 'unprocessed'
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+
+    trace = trace_bucket(database=database, bucket=WALLET, offset=0)
+    assert [
+        (row['status'], row['rule'], row['signed_amount'], row['balance_after'], row['stored_balance'])  # noqa: E501
+        for row in trace['rows']
+    ] == [
+        ('applied', 'wallet', '1', '1', '1'),
+        ('applied', 'wallet', '-0.4', '0.6', '0.6'),
+        ('stop', 'wallet', '-0.600000000000000001', '-0.000000000000000001', None),
+        ('skipped_after_stop', 'wallet', '5', '-0.000000000000000001', None),
+    ]
+    assert trace['summary']['stop_row_index'] == 2
+    assert trace['summary']['stored_balance_mismatches'] == 0
+    assert trace['stop']['event_identifier'] == spend_id
+    assert trace['rows'][0]['event_identifier'] == receive_id
+
+    health = get_accounting_health(database)
+    assert health['status'] == 'blocked'
+    assert health['stops']['count'] == 1
+    assert health['stops']['entries'][0]['negative_amount'] == '-0.000000000000000001'
+
+    issue_id, = _issues(database, IssueKind.NEGATIVE_BALANCE)
+    explanation = explain_data_issue(database=database, issue_id=issue_id)
+    assert explanation['facts']['shortfall'] == '0.000000000000000001'
+    assert explanation['facts']['derived_balance_before_event'] == '0.6'
+    assert explanation['facts']['bucket_stopped_at_this_event'] is True
+    assert explanation['trigger_event']['rule'] == BucketEffectRule.WALLET
+    assert explanation['affected_later_history']['events_not_applied'] == 1
+    assert [x['code'] for x in explanation['hypotheses']] == ['decimal_residue']
+    assert explanation['confirmed_conflicts'] == []
+    assert later_id not in {x['event_identifier'] for x in explanation['same_transaction_effects_on_bucket']}  # noqa: E501
+
+    DataIssuesManager(database).dismiss(issue_id)  # dismissing must not look like a repair
+    assert [x['code'] for x in explain_data_issue(
+        database=database,
+        issue_id=issue_id,
+    )['confirmed_conflicts']] == ['closed_issue_but_bucket_still_stopped']
+    assert get_accounting_health(database)['status'] == 'blocked'
+
+
+def test_effects_report_the_deciding_rule() -> None:
+    assert Bucket.effects_with_rule(_event(
+        1,
+        HistoryEventType.TRANSFER,
+        '1',
+        event_subtype=HistoryEventSubType.NONE,
+        address=TEST_ADDR2,
+    ))[0] == BucketEffectRule.OWNED_ADDRESS_TRANSFER
+    assert Bucket.effects_with_rule(HistoryEvent(
+        group_identifier='x',
+        sequence_index=0,
+        timestamp=TimestampMS(1),
+        location=LOCATION_KRAKEN,
+        event_type=HistoryEventType.TRANSFER,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal(1),
+    )) == (BucketEffectRule.IGNORED_EXCHANGE_TRANSFER, [])
+    assert Bucket.effects_with_rule(_event(
+        1,
+        HistoryEventType.INFORMATIONAL,
+        '1',
+    )) == (BucketEffectRule.NO_BALANCE_DIRECTION, [])
+
+
+def test_list_data_issues_groups_issues_of_one_transaction(database: DBHandler) -> None:
+    tx_hash = make_evm_tx_hash()
+    first_id, second_id = _add(database, [
+        _event(1_000, HistoryEventType.SPEND, '1', tx_hash=tx_hash),
+        _event(1_000, HistoryEventType.SPEND, '1', tx_hash=tx_hash, sequence_index=1),
+    ])
+    manager = DataIssuesManager(database)
+    for event_id, label in ((first_id, TEST_ADDR1), (second_id, TEST_ADDR2)):
+        manager.write_issue(
+            IssueKind.NEGATIVE_BALANCE,
+            location=LOCATION_ETHEREUM,
+            location_label=label,
+            protocol=None,
+            asset=A_ETH.identifier,
+            payload={
+                'event_identifier': event_id,
+                'in_memory_negative_amount': '-1',
+                'derived_balance_before_event': '0',
+            },
+            ts_start=1_000,
+            ts_end=1_000,
+        )
+
+    result = list_data_issues(database, DataIssuesFilterQuery.make())
+    assert result['entries_found'] == 2
+    group, = result['groups']
+    assert group['shared_cause'] == 'hypothesis'
+    assert len(group['issue_ids']) == 2
+
+
+def _mismatch_bucket(asset: str, last_event_ts: int | None) -> ReconciliationBucket:
+    return ReconciliationBucket(
+        location=LOCATION_ETHEREUM,
+        location_label=TEST_ADDR1,
+        protocol=None,
+        asset=asset,
+        status=BucketStatus.MISMATCH,
+        reasons=(),
+        derived_balance=ZERO,
+        observed_balance=FVal(5),
+        observed_at=Timestamp(1),
+        last_event_ts=None if last_event_ts is None else TimestampMS(last_event_ts),
+        issue_id=None,
+        check=None,
+        stop=None,
+    )
+
+
+def test_health_keeps_observed_only_holdings_apart(database: DBHandler) -> None:
+    """A holding with no history at all, such as an airdrop, is reported apart from a
+    disagreement over a bucket with history, and only that one makes health a mismatch."""
+    with database.user_write() as write_cursor:
+        database.set_static_cache(write_cursor, DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS, ts_now())  # noqa: E501
+    spam = get_or_create_evm_token(
+        userdb=database,
+        evm_address=make_evm_address(),
+        chain_id=ChainID.ETHEREUM,
+        name='Claim at scam.xyz',
+        symbol='SCAM',
+    ).identifier
+    buckets = [_mismatch_bucket(spam, None), _mismatch_bucket(A_USDC.identifier, None)]
+
+    def health(buckets: list[ReconciliationBucket]) -> dict:
+        with patch(
+            'rotkehlchen.history.data_issues.diagnostics.get_reconciliation_report',
+            return_value=ReconciliationReport(
+                stale=False,
+                processing=False,
+                totals={BucketStatus.MISMATCH: len(buckets)},
+                accounts=(),
+                all_buckets=tuple(buckets),
+            ),
+        ):
+            return get_accounting_health(database)
+
+    observed_only = health(buckets)
+    assert observed_only['status'] == 'observed_only_mismatch'
+    assert observed_only['comparison_coverage']['mismatch_breakdown'] == {
+        'with_history': 0,
+        'observed_only': 2,
+        'observed_only_with_asset_signals': 1,
+    }
+    with_history = health([*buckets, _mismatch_bucket(A_ETH.identifier, 1_000)])
+    assert with_history['status'] == 'mismatch'
+    assert with_history['comparison_coverage']['mismatch_breakdown']['with_history'] == 1
+
+
+def test_list_data_issues_marks_observed_only_mismatches(database: DBHandler) -> None:
+    manager = DataIssuesManager(database)
+    for asset, derived, latest in (('ETH', '0', None), (A_USDC.identifier, '2', 7)):
+        manager.report_current_balance_mismatch(
+            location=LOCATION_ETHEREUM,
+            location_label=TEST_ADDR1,
+            asset=asset,
+            payload={
+                'derived_balance': derived,
+                'observed_balance': '5',
+                'delta': str(5 - int(derived)),
+                'queried_at_ts': 1,
+                'latest_event_identifier': latest,
+            },
+            ts_start=1_000,
+            ts_end=1_000,
+        )
+
+    result = list_data_issues(database, DataIssuesFilterQuery.make())
+    assert {
+        entry['bucket']['asset']: entry['observed_only'] for entry in result['entries']
+    } == {'ETH': True, A_USDC.identifier: False}
+    assert result['asset_signals'] == {}
+
+
+def _add_bridge_scenario(database: DBHandler) -> tuple[int, int, dict[str, int]]:
+    """A funded bridge deposit and candidates that each fail one check, plus one eligible."""
+    _, bridge_id, eligible_id, same_chain_id, wrong_amount_id, late_id = _add(database, [
+        _event(1_000, HistoryEventType.RECEIVE, '2'),
+        _event(1_000_000, HistoryEventType.DEPOSIT, '1', event_subtype=HistoryEventSubType.BRIDGE),
+        _event(1_060_000, HistoryEventType.RECEIVE, '0.995', location=LOCATION_OPTIMISM),
+        _event(1_060_000, HistoryEventType.RECEIVE, '1'),
+        _event(1_070_000, HistoryEventType.RECEIVE, '0.5', location=LOCATION_OPTIMISM),
+        _event(1_000_000 + 5 * 3600 * 1000, HistoryEventType.RECEIVE, '1', location=LOCATION_OPTIMISM),  # noqa: E501
+    ])
+    return bridge_id, eligible_id, {
+        'same_location': same_chain_id,
+        'amount_mismatch': wrong_amount_id,
+        'outside_time_window': late_id,
+    }
+
+
+def test_explain_bridge_match_reports_rejections(database: DBHandler) -> None:
+    bridge_id, eligible_id, rejected = _add_bridge_scenario(database)
+    result = explain_bridge_match(database, bridge_id)
+    assert result is not None
+    assert result['conclusion'] == 'unique_eligible_candidate'
+    assert result['eligible_count'] == 1
+    by_id = {x['event_identifier']: x for x in result['candidates']}
+    assert by_id[eligible_id]['tier'] == 'other'
+    assert by_id[eligible_id]['amount_difference'] == '-0.005'
+    assert {reason: by_id[event_id]['rejection'] for reason, event_id in rejected.items()} == {
+        reason: reason for reason in rejected
+    }
+    assert 'transfer_id' in result['missing_metadata']
+    assert explain_bridge_match(database, eligible_id) is None  # not a bridge leg
+
+
+def test_bridge_link_plan_lifecycle(database: DBHandler) -> None:
+    """Preview, refuse without approval, apply once, verify and refuse a second apply."""
+    bridge_id, eligible_id, rejected = _add_bridge_scenario(database)
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+    unmatched_issue, = _issues(database, IssueKind.UNMATCHED_BRIDGE)
+
+    with pytest.raises(RemediationError, match='rejects this candidate') as error:
+        preview_bridge_link(database, bridge_id, rejected['amount_mismatch'])
+    assert error.value.code == 'candidate_rejected'
+
+    plan = preview_bridge_link(database, bridge_id, eligible_id)
+    assert plan['state'] == PlanState.PENDING
+    assert plan['plan']['baseline']['open_issue_ids'] == [unmatched_issue]
+    assert [x['action'] for x in plan['audit']] == ['created']
+
+    with pytest.raises(RemediationError) as error:
+        apply_plan(database, MagicMock(), plan['plan_id'], 'agent_says_yes', ts_now())
+    assert error.value.code == 'approval_required'
+
+    result = apply_plan(database, MagicMock(), plan['plan_id'], 'mcp_elicitation', ts_now())
+    assert result['state'] == PlanState.APPLIED
+    assert result['result']['items'][0]['outcome'] == 'applied'
+    assert result['result']['reprocessing'] == 'completed'
+    assert result['verification']['reevaluated'] is True
+    assert result['verification']['baseline_issues'] == [
+        {'issue_id': unmatched_issue, 'state': IssueState.RESOLVED},
+    ]
+    assert [x['action'] for x in result['audit']] == ['created', 'approved', 'applied', 'verified']
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT left_event_id, right_event_id FROM history_event_links',
+        ).fetchall() == [(bridge_id, eligible_id)]
+
+    with pytest.raises(RemediationError) as error:
+        apply_plan(database, MagicMock(), plan['plan_id'], 'mcp_elicitation', ts_now())
+    assert error.value.code == 'plan_not_pending'
+
+
+def test_plan_refused_when_stale_expired_or_rejected(database: DBHandler) -> None:
+    bridge_id, eligible_id, _ = _add_bridge_scenario(database)
+    stale_plan = preview_bridge_link(database, bridge_id, eligible_id)
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'UPDATE history_events SET amount = ? WHERE identifier = ?',
+            ('0.996', eligible_id),
+        )
+    with pytest.raises(RemediationError) as error:
+        apply_plan(database, MagicMock(), stale_plan['plan_id'], 'mcp_elicitation', ts_now())
+    assert error.value.code == 'plan_stale'
+    assert get_plan(database, stale_plan['plan_id'])['state'] == PlanState.STALE
+
+    expired_plan = preview_bridge_link(database, bridge_id, eligible_id)
+    with patch(
+        'rotkehlchen.history.data_issues.remediation.plans.ts_now',
+        return_value=ts_now() + 3600,
+    ):
+        assert get_plan(database, expired_plan['plan_id'])['state'] == PlanState.EXPIRED
+        with pytest.raises(RemediationError) as error:
+            apply_plan(database, MagicMock(), expired_plan['plan_id'], 'mcp_elicitation', ts_now())
+    assert error.value.code == 'plan_expired'
+
+    rejected_plan = preview_bridge_link(database, bridge_id, eligible_id)
+    assert reject_plan(database, rejected_plan['plan_id'], 'user_decline')['state'] == PlanState.REJECTED  # noqa: E501
+    with pytest.raises(RemediationError) as error:
+        apply_plan(database, MagicMock(), rejected_plan['plan_id'], 'mcp_elicitation', ts_now())
+    assert error.value.code == 'plan_not_pending'
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM history_event_links').fetchone()[0] == 0
+
+
+@pytest.mark.parametrize('customized', [False, True])
+def test_redecode_plan_repairs_a_wrong_direction(database: DBHandler, customized: bool) -> None:
+    """A receive saved as a spend stops the bucket. Redecoding it clears the stop, which the
+    verification reads from the stops. A customized transaction is only replaced on request."""
+    tx_hash = make_evm_tx_hash()
+    saved_id, = _add(database, [
+        _event(1_000, HistoryEventType.SPEND, '1', tx_hash=tx_hash),
+    ], customized=customized)
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+    issue_id, = _issues(database, IssueKind.NEGATIVE_BALANCE)
+    decoded = [_event(1_000, HistoryEventType.RECEIVE, '1', tx_hash=tx_hash)]
+
+    def fake_redecode(ignore_cache: bool, tx_hashes: list, delete_customized: bool) -> None:
+        assert (ignore_cache, tx_hashes, delete_customized) == (True, [tx_hash], customized)
+        with database.user_write() as write_cursor:
+            write_cursor.execute('DELETE FROM history_events WHERE identifier = ?', (saved_id,))
+            DBHistoryEvents(database).add_history_events(write_cursor, copy.deepcopy(decoded))
+
+    chains_aggregator = MagicMock()
+    decoder = chains_aggregator.get_evm_manager.return_value.transactions_decoder
+    decoder.possible_decoding_exceptions = ()
+    decoder.decode_transaction_hashes.side_effect = fake_redecode
+    group = decoded[0].group_identifier
+    with patch(
+        'rotkehlchen.history.data_issues.remediation.plans.preview_transaction',
+        return_value=copy.deepcopy(decoded),
+    ):
+        blocked = preview_redecode(database, chains_aggregator, [group], replace_customized=False)
+        plan = preview_redecode(database, chains_aggregator, [group], replace_customized=True)
+
+    item, = blocked['plan']['items']
+    assert item['status'] == ('blocked_by_customization' if customized else 'ready')
+    assert item['bucket_effect_diff'] == [{
+        'bucket': {
+            'location': LOCATION_ETHEREUM,
+            'location_label': TEST_ADDR1,
+            'protocol': None,
+            'asset': A_ETH.identifier,
+        },
+        'current_net': '-1',
+        'proposed_net': '1',
+        'difference': '2',
+    }]
+    assert item['event_diff']['changed'][0]['changed_fields'] == ['event_type']
+    assert blocked['plan']['baseline']['open_issue_ids'] == [issue_id]
+    if customized:
+        with pytest.raises(RemediationError) as error:
+            apply_plan(database, chains_aggregator, blocked['plan_id'], 'mcp_elicitation', ts_now())  # noqa: E501
+        assert error.value.code == 'nothing_to_apply'
+
+    result = apply_plan(database, chains_aggregator, plan['plan_id'], 'mcp_elicitation', ts_now())
+    assert result['result']['items'] == [
+        {'group_identifier': group, 'timestamp_ms': 1_000, 'outcome': 'applied'},
+    ]
+    assert result['verification']['verdict'] == 'repaired'
+    assert result['verification']['buckets'][0]['outcome'] == 'stop_cleared'
+    assert get_accounting_health(database)['stops']['count'] == 0
+
+
+def test_redecode_verify_judges_a_stop_that_survives(database: DBHandler) -> None:
+    """A redecode that keeps the stop in its transaction is not repaired, even though the
+    stopping event and its issue were replaced, and even when the nets did not change."""
+    tx_hash = make_evm_tx_hash()
+    saved_id, _ = _add(database, [  # a later event, so the replacing one gets a new rowid
+        _event(1_000, HistoryEventType.SPEND, '1', tx_hash=tx_hash),
+        _event(2_000, HistoryEventType.RECEIVE, '1', location=LOCATION_OPTIMISM),
+    ])
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+    decoded = [_event(1_000, HistoryEventType.SPEND, '1', tx_hash=tx_hash, counterparty='foo')]
+
+    def fake_redecode(ignore_cache: bool, tx_hashes: list, delete_customized: bool) -> None:
+        with database.user_write() as write_cursor:
+            write_cursor.execute('DELETE FROM history_events WHERE identifier = ?', (saved_id,))
+            DBHistoryEvents(database).add_history_events(write_cursor, copy.deepcopy(decoded))
+
+    chains_aggregator = MagicMock()
+    decoder = chains_aggregator.get_evm_manager.return_value.transactions_decoder
+    decoder.possible_decoding_exceptions = ()
+    decoder.decode_transaction_hashes.side_effect = fake_redecode
+    with patch(
+        'rotkehlchen.history.data_issues.remediation.plans.preview_transaction',
+        return_value=copy.deepcopy(decoded),
+    ):
+        plan = preview_redecode(
+            database=database,
+            chains_aggregator=chains_aggregator,
+            group_identifiers=[decoded[0].group_identifier],
+            replace_customized=False,
+        )
+    assert plan['plan']['items'][0]['bucket_effect_diff'] == []
+    assert plan['plan']['affected_buckets'] == [{
+        'location': LOCATION_ETHEREUM,
+        'location_label': TEST_ADDR1,
+        'protocol': None,
+        'asset': A_ETH.identifier,
+    }]
+
+    result = apply_plan(database, chains_aggregator, plan['plan_id'], 'mcp_elicitation', ts_now())
+    assert (bucket := result['verification']['buckets'][0])['outcome'] == 'stop_persisted'
+    assert bucket['stop_event_identifier'] != saved_id
+    assert result['verification']['new_open_issue_ids'] == []
+    assert result['verification']['verdict'] == 'not_repaired'
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+def test_failed_bridge_link_write_fails_the_plan(database: DBHandler) -> None:
+    """A link the database refuses fails the plan instead of leaving it applying for good."""
+    bridge_id, eligible_id, _ = _add_bridge_scenario(database)
+    plan = preview_bridge_link(database, bridge_id, eligible_id)
+    with patch(
+        'rotkehlchen.history.data_issues.remediation.plans.update_bridge_matched_event',
+        side_effect=InputError('refused'),
+    ):
+        result = apply_plan(database, MagicMock(), plan['plan_id'], 'mcp_elicitation', ts_now())
+    assert result['state'] == PlanState.FAILED
+    assert result['result']['items'] == [{
+        'bridge_event_identifier': bridge_id,
+        'matched_event_identifier': eligible_id,
+        'outcome': 'failed',
+        'reason': 'refused',
+    }]
+    assert result['verification']['verdict'] == 'not_applied'
+
+
+def _add_usdc_transfer(
+        database: DBHandler,
+        tx_hash: EVMTxHash,
+        sender: ChecksumEvmAddress,
+        receiver: ChecksumEvmAddress,
+) -> None:
+    """Save a transaction whose receipt moves 100 USDC from sender to receiver."""
+    with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[EvmTransaction(
+                tx_hash=tx_hash,
+                chain_id=ChainID.ETHEREUM,
+                timestamp=Timestamp(1),
+                block_number=1,
+                from_address=sender,
+                to_address=(usdc_address := string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')),  # noqa: E501
+                value=0,
+                gas=21_000,
+                gas_price=0,
+                gas_used=0,
+                input_data=b'',
+                nonce=0,
+            )],
+            relevant_address=TEST_ADDR1,
+        )
+        DBEvmTx(database).add_or_ignore_receipt_data(write_cursor, ChainID.ETHEREUM, {
+            'transactionHash': str(tx_hash),
+            'type': '0x0',
+            'status': 1,
+            'contractAddress': None,
+            'logs': [{
+                'logIndex': 0,
+                'data': '0x' + (100_000_000).to_bytes(32, 'big').hex(),
+                'address': usdc_address,
+                'topics': [
+                    '0x' + ERC20_OR_ERC721_TRANSFER.hex(),
+                    '0x' + '00' * 12 + sender[2:],
+                    '0x' + '00' * 12 + receiver[2:],
+                ],
+            }],
+        })
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+def test_inspect_transaction_compares_receipt_transfers(database: DBHandler) -> None:
+    """The receipt moved 100 USDC to the account but the saved event records 90."""
+    _add_usdc_transfer(database, (tx_hash := make_evm_tx_hash()), TEST_ADDR2, TEST_ADDR1)
+    _add(database, [received := EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1_000),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_USDC,
+        amount=FVal(90),
+        location_label=TEST_ADDR1,
+    )], customized=True)
+
+    result = inspect_transaction(database, received.group_identifier)
+    assert result is not None
+    assert result['customized'] is True
+    assert result['events'][0]['rule'] == BucketEffectRule.WALLET
+    assert result['receipt_comparison']['discrepancies'] == [{
+        'account': TEST_ADDR1,
+        'asset': A_USDC.identifier,
+        'observed_net': '100',
+        'decoded_net': '90',
+        'difference': '10',
+    }]
+    assert inspect_transaction(database, 'missing') is None
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+def test_inspect_transaction_counts_protocol_fees(database: DBHandler) -> None:
+    """A bridge deposit split into the bridged amount and a bonder fee matches the receipt's
+    single transfer: only gas is left out of the decoded side, not every fee event."""
+    _add_usdc_transfer(database, (tx_hash := make_evm_tx_hash()), TEST_ADDR1, TEST_ADDR2)
+    _add(database, [deposit := EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=TimestampMS(1_000),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_USDC,
+        amount=FVal(99),
+        location_label=TEST_ADDR1,
+        counterparty='hop',
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=TimestampMS(1_000),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USDC,
+        amount=FVal(1),
+        location_label=TEST_ADDR1,
+        counterparty='hop',
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1_000),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.001'),
+        location_label=TEST_ADDR1,
+        counterparty=CPT_GAS,
+    )])
+
+    result = inspect_transaction(database, deposit.group_identifier)
+    assert result is not None
+    assert result['receipt_comparison']['discrepancies'] == []
+
+
+def test_cancelled_apply_keeps_what_was_applied(database: DBHandler) -> None:
+    """Cancelling stops between transactions: the first stays redecoded and is recorded, the
+    plan leaves the applying state and verification still has something to judge."""
+    tx_hashes = [make_evm_tx_hash(), make_evm_tx_hash()]
+    saved_ids = _add(database, [
+        _event(1_000 * idx, HistoryEventType.SPEND, '1', tx_hash=tx_hash)
+        for idx, tx_hash in enumerate(tx_hashes, start=1)
+    ])
+    decoded = {
+        tx_hash: _event(1_000 * idx, HistoryEventType.RECEIVE, '1', tx_hash=tx_hash)
+        for idx, tx_hash in enumerate(tx_hashes, start=1)
+    }
+
+    def fake_redecode(ignore_cache: bool, tx_hashes: list, delete_customized: bool) -> None:
+        with database.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM history_events WHERE identifier = ?',
+                (saved_ids[0],),
+            )
+            DBHistoryEvents(database).add_history_events(
+                write_cursor,
+                [copy.deepcopy(decoded[tx_hashes[0]])],
+            )
+
+    chains_aggregator = MagicMock()
+    decoder = chains_aggregator.get_evm_manager.return_value.transactions_decoder
+    decoder.possible_decoding_exceptions = ()
+    decoder.decode_transaction_hashes.side_effect = fake_redecode
+    with patch(
+        'rotkehlchen.history.data_issues.remediation.plans.preview_transaction',
+        side_effect=lambda tx_hash, **kwargs: [copy.deepcopy(decoded[tx_hash])],
+    ):
+        plan = preview_redecode(
+            database=database,
+            chains_aggregator=chains_aggregator,
+            group_identifiers=[event.group_identifier for event in decoded.values()],
+            replace_customized=False,
+        )
+
+    with (
+        patch(
+            'rotkehlchen.history.data_issues.remediation.plans.checkpoint',
+            side_effect=[None, TaskCancelledError('cancelled')],
+        ),
+        pytest.raises(TaskCancelledError),
+    ):
+        apply_plan(database, chains_aggregator, plan['plan_id'], 'mcp_elicitation', ts_now())
+
+    cancelled = get_plan(database, plan['plan_id'])
+    assert cancelled['state'] == PlanState.PARTIALLY_APPLIED
+    assert cancelled['audit'][-1]['action'] == 'cancelled'
+    assert [x['outcome'] for x in cancelled['result']['items']] == ['applied']
+    assert cancelled['result']['reprocessing'] == 'cancelled'
+    assert decoder.decode_transaction_hashes.call_count == 1
+
+
+def test_health_reports_archive_node_capabilities(database: DBHandler) -> None:
+    with database.user_write() as write_cursor:
+        write_cursor.execute('DELETE FROM rpc_nodes')
+        write_cursor.executemany(
+            'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain, '
+            'is_archive) VALUES (?, ?, 0, ?, 1, ?, ?)',
+            [
+                ('archive', 'https://a', 1, 'ETH', 1),
+                ('pruned', 'https://b', 1, 'ETH', 0),
+                ('unprobed', 'https://c', 1, 'OPTIMISM', None),
+                ('inactive', 'https://d', 0, 'OPTIMISM', 1),
+            ],
+        )
+
+    capabilities = get_accounting_health(database)['capabilities']
+    assert capabilities['archive_nodes_by_chain'] == {
+        'ETH': {'archive': 1, 'not_archive': 1, 'unknown': 0},
+        'OPTIMISM': {'archive': 0, 'not_archive': 0, 'unknown': 1},
+    }
+    assert capabilities['archive_queries_possible_for'] == ['ETH']
+
+
+def test_asset_signals_flag_deceptive_metadata_only(database: DBHandler) -> None:
+    """Lookalike, link and spam tokens are flagged by structure, without returning their
+    name, while an ordinary unfamiliar token is not flagged at all."""
+    tokens = {
+        flags: get_or_create_evm_token(
+            userdb=database,
+            evm_address=make_evm_address(),
+            chain_id=ChainID.ETHEREUM,
+            name=name,
+            symbol=symbol,
+            protocol=protocol,
+        ).identifier
+        for flags, name, symbol, protocol in (
+            (('mixed_scripts',), 'USD Coin', 'U\u0405DC', None),  # a Cyrillic lookalike
+            # rotki already marks a token with a link in its name as spam on creation
+            (('spam_flagged', 'link_in_metadata'), 'Claim at usdc-airdrop.com', 'CLAIM', None),
+            (('invisible_characters',), 'Tether\u200b', 'USDT', None),
+            (('spam_flagged',), 'Some token', 'SOME', SPAM_PROTOCOL),
+            ((), 'Obscure Protocol Token', 'OPT', None),
+        )
+    }
+    signals = asset_signals([*tokens.values(), 'eip155:1/erc20:0xnope'])
+    assert signals == {
+        identifier: list(flags) for flags, identifier in tokens.items() if flags
+    } | {'eip155:1/erc20:0xnope': ['unknown_asset']}
+    assert 'Claim' not in str(signals)
+
+
+def test_bridge_link_preview_applies_the_matcher_scope(database: DBHandler) -> None:
+    """A link can't be proposed for what the matcher would never consider: a non-bridge
+    anchor, a candidate outside the time window or a candidate of another asset."""
+    bridge_id, eligible_id, rejected = _add_bridge_scenario(database)
+    spend_id, receive_id, other_asset_id = _add(database, [
+        _event(2_000_000, HistoryEventType.SPEND, '0.3'),
+        _event(2_060_000, HistoryEventType.RECEIVE, '0.3', location=LOCATION_OPTIMISM),
+        EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=0,
+            timestamp=TimestampMS(1_060_000),
+            location=LOCATION_OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_USDC,
+            amount=FVal(1),
+            location_label=TEST_ADDR1,
+        ),
+    ])
+    with pytest.raises(RemediationError) as error:
+        preview_bridge_link(database, spend_id, receive_id)
+    assert error.value.code == 'not_a_bridge_leg'
+
+    for candidate_id, reason in (
+            (rejected['outside_time_window'], 'outside_time_window'),
+            (other_asset_id, 'asset_not_in_collection'),
+    ):
+        with pytest.raises(RemediationError, match=reason) as error:
+            preview_bridge_link(database, bridge_id, candidate_id)
+        assert error.value.code == 'candidate_rejected'
+
+    assert preview_bridge_link(database, bridge_id, eligible_id)['state'] == PlanState.PENDING
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM remediation_plans').fetchone()[0] == 1
+
+
+def test_redecode_apply_and_verify_only_count_applied_items(database: DBHandler) -> None:
+    """An item with nothing to change neither makes a clean apply partial nor widens the
+    range a processing pass must cover before the plan can be judged."""
+    tx_hashes = [make_evm_tx_hash(), make_evm_tx_hash()]
+    saved_ids = _add(database, [
+        _event(1_000, HistoryEventType.RECEIVE, '1', tx_hash=tx_hashes[0]),
+        _event(5_000, HistoryEventType.SPEND, '1', tx_hash=tx_hashes[1]),
+    ])
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+    decoded = {
+        tx_hashes[0]: _event(1_000, HistoryEventType.RECEIVE, '1', tx_hash=tx_hashes[0]),
+        tx_hashes[1]: _event(5_000, HistoryEventType.RECEIVE, '1', tx_hash=tx_hashes[1]),
+    }
+
+    def fake_redecode(ignore_cache: bool, tx_hashes: list, delete_customized: bool) -> None:
+        with database.user_write() as write_cursor:
+            write_cursor.execute('DELETE FROM history_events WHERE identifier = ?', (saved_ids[1],))  # noqa: E501
+            DBHistoryEvents(database).add_history_events(write_cursor, [copy.deepcopy(decoded[tx_hashes[0]])])  # noqa: E501
+
+    chains_aggregator = MagicMock()
+    decoder = chains_aggregator.get_evm_manager.return_value.transactions_decoder
+    decoder.possible_decoding_exceptions = ()
+    decoder.decode_transaction_hashes.side_effect = fake_redecode
+    with patch(
+        'rotkehlchen.history.data_issues.remediation.plans.preview_transaction',
+        side_effect=lambda tx_hash, **kwargs: [copy.deepcopy(decoded[tx_hash])],
+    ):
+        plan = preview_redecode(
+            database=database,
+            chains_aggregator=chains_aggregator,
+            group_identifiers=[event.group_identifier for event in decoded.values()],
+            replace_customized=False,
+        )
+    assert [x['status'] for x in plan['plan']['items']] == ['no_change', 'ready']
+
+    with patch(  # another pass is running, so this apply only marks the range stale
+        'rotkehlchen.history.data_issues.remediation.plans.process_historical_balances',
+        return_value=False,
+    ) as process_mock:
+        result = apply_plan(database, chains_aggregator, plan['plan_id'], 'mcp_elicitation', ts_now())  # noqa: E501
+    assert process_mock.call_args.kwargs['from_ts'] == 5_000
+    assert result['state'] == PlanState.APPLIED
+    assert result['result']['reprocessing'] == 'deferred_another_pass_running'
+
+    with database.user_write() as write_cursor:  # the running pass ends with the redecode stale
+        database.set_static_cache(write_cursor, DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS, ts_now())  # noqa: E501
+        database.set_static_cache(write_cursor, DBCacheStatic.STALE_BALANCES_FROM_TS, '5000')
+    verified = verify_plan(database, plan['plan_id'])
+    assert verified['verification']['reevaluated'] is False
+    assert verified['verification']['verdict'] == 'not_reevaluated'
+    assert [x['action'] for x in verified['audit']].count('verified') == 1  # polling adds none
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+def test_health_leaves_out_stops_of_ignored_assets(database: DBHandler) -> None:
+    """A stopped bucket whose asset the user then ignores no longer blocks health, in line
+    with the comparison coverage reported next to it."""
+    _add(database, [_event(1_000, HistoryEventType.SPEND, '1')])
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+    assert get_accounting_health(database)['status'] == 'blocked'
+
+    with database.user_write() as write_cursor:
+        database.add_to_ignored_assets(write_cursor, A_ETH)
+    health = get_accounting_health(database)
+    assert health['status'] != 'blocked'
+    assert health['stops']['count'] == 0
+    assert health['comparison_coverage']['counts'].get('blocked', 0) == 0
+
+
+def test_trace_stops_a_negative_off_chain_rebasing_bucket(database: DBHandler) -> None:
+    """Only on-chain rebasing events wait for a reconciliation. An exchange event of a
+    rebasing asset that goes negative stops the bucket, in the trace as in the processor."""
+    spend_id, _ = _add_history_events(database, [
+        HistoryEvent(
+            group_identifier='kraken_spend',
+            sequence_index=0,
+            timestamp=TimestampMS(1_000),
+            location=LOCATION_KRAKEN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal(1),
+        ),
+        HistoryEvent(
+            group_identifier='kraken_receive',
+            sequence_index=0,
+            timestamp=TimestampMS(2_000),
+            location=LOCATION_KRAKEN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal(5),
+        ),
+    ])
+    with patch.object(
+        GlobalDBHandler,
+        'get_asset_ids_with_flag',
+        return_value=frozenset({A_ETH.identifier}),
+    ):
+        process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+        trace = trace_bucket(
+            database=database,
+            bucket=Bucket(location=LOCATION_KRAKEN, location_label=None, protocol=None, asset=A_ETH.identifier),  # noqa: E501
+            offset=0,
+        )
+
+    assert trace['stop']['event_identifier'] == spend_id
+    assert [row['status'] for row in trace['rows']] == ['stop', 'skipped_after_stop']
+    assert trace['summary']['awaiting_rebase_reconciliation'] is False
+
+
+def test_explanation_counts_pending_decoding_of_the_issue_chain(database: DBHandler) -> None:
+    """Undecoded transactions of the same address on another chain can't hold back the
+    bucket, so only the ones of the issue's chain are reported as pending decoding."""
+    _add(database, [_event(1_000, HistoryEventType.SPEND, '1')])
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+    issue_id, = _issues(database, IssueKind.NEGATIVE_BALANCE)
+
+    def add_undecoded_transaction(chain_id: ChainID) -> None:
+        with database.user_write() as write_cursor:
+            DBEvmTx(database).add_transactions(
+                write_cursor=write_cursor,
+                evm_transactions=[EvmTransaction(
+                    tx_hash=make_evm_tx_hash(),
+                    chain_id=chain_id,
+                    timestamp=Timestamp(1),
+                    block_number=1,
+                    from_address=TEST_ADDR1,
+                    to_address=TEST_ADDR2,
+                    value=0,
+                    gas=21_000,
+                    gas_price=0,
+                    gas_used=0,
+                    input_data=b'',
+                    nonce=0,
+                )],
+                relevant_address=TEST_ADDR1,
+            )
+
+    def pending_details() -> list[str]:
+        return [
+            x['detail'] for x in explain_data_issue(database, issue_id)['missing_prerequisites']
+            if x['code'] == 'pending_decoding'
+        ]
+
+    add_undecoded_transaction(ChainID.OPTIMISM)
+    assert pending_details() == []
+    add_undecoded_transaction(ChainID.ETHEREUM)
+    assert pending_details() == ['1 transactions of the account are not decoded yet']

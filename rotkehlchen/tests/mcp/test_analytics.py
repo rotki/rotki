@@ -30,6 +30,8 @@ def test_sync_privacy_mode_should_clear_data_only_when_mode_changes(monkeypatch)
     clear = Mock(wraps=session.clear)
     monkeypatch.setattr(session, 'clear', clear)
     monkeypatch.setattr(analytics, 'query_settings', lambda: {'mcp_privacy_mode': 'strict'})
+    monkeypatch.setattr(analytics, 'query_logged_in_user', lambda: 'alice')
+    monkeypatch.setattr(analytics, '_session_user', 'alice')
 
     assert sync_privacy_mode() is session
     assert get_backend_config().privacy_mode == 'strict'
@@ -39,8 +41,26 @@ def test_sync_privacy_mode_should_clear_data_only_when_mode_changes(monkeypatch)
     clear.assert_called_once_with()
 
 
+def test_sync_privacy_mode_should_forget_hashes_when_the_user_changes(monkeypatch) -> None:
+    """A hash handed out for one user's data must not resolve once another user logs in."""
+    configure_backend(base_url='http://backend/api/1', timeout=5, privacy_mode='balanced')
+    monkeypatch.setattr(analytics, 'query_settings', lambda: {'mcp_privacy_mode': 'balanced'})
+    monkeypatch.setattr(analytics, 'query_logged_in_user', lambda: 'alice')
+    sync_privacy_mode()
+    hashed = str(analytics._hash_identifier('0xabc'))  # not in an assert: pytest re-runs it
+    assert analytics.resolve_hashed_value(hashed) == '0xabc'
+
+    sync_privacy_mode()  # same user and mode
+    assert analytics.resolve_hashed_value(hashed) == '0xabc'
+
+    monkeypatch.setattr(analytics, 'query_logged_in_user', lambda: 'bob')
+    sync_privacy_mode()
+    assert analytics.resolve_hashed_value(hashed) is None
+
+
 def test_sync_privacy_mode_should_reject_invalid_backend_value(monkeypatch) -> None:
     monkeypatch.setattr(analytics, 'query_settings', lambda: {'mcp_privacy_mode': 'invalid'})
+    monkeypatch.setattr(analytics, 'query_logged_in_user', lambda: 'alice')
 
     with pytest.raises(analytics.BackendQueryError, match='invalid MCP privacy mode'):
         sync_privacy_mode()

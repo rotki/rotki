@@ -1242,7 +1242,7 @@ def test_unresolved_from_customized_redecode_is_resolved_without_rerunning_redec
     }
 
     with patch(
-        'rotkehlchen.tasks.data_issues._preview_transaction',
+        'rotkehlchen.tasks.data_issues.preview_transaction',
         return_value=[customized_receive],
     ) as preview:
         run_data_issue_remediation(database, chains_aggregator)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, replace
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final, Literal
@@ -80,7 +81,7 @@ def request_api(
         timeout: int,
         params: dict[str, Any] | None = None,
         json_data: dict[str, Any] | None = None,
-        method: Literal['GET', 'POST'] = 'GET',
+        method: Literal['GET', 'POST', 'PATCH', 'DELETE'] = 'GET',
 ) -> dict[str, Any]:
     """Query the local rotki REST API and return its decoded ``{result, message}`` payload.
 
@@ -89,8 +90,43 @@ def request_api(
     ``POST`` with ``json_data``. Any failure to reach, or make sense of, the backend is
     surfaced as a ``BackendQueryError`` so tools can fail closed.
     """
+    status_code, payload, url = _request_api_with_status(
+        base_url=base_url,
+        endpoint=endpoint,
+        timeout=timeout,
+        params=params,
+        json_data=json_data,
+        method=method,
+    )
+    if status_code != HTTPStatus.OK:
+        raise BackendQueryError(
+            f'rotki backend returned HTTP {status_code} for {url}: {payload.get("message")}',
+        )
+    if 'result' not in payload:
+        raise BackendQueryError(f'rotki backend returned an unexpected response for {url}')
+
+    return payload
+
+
+def _request_api_with_status(
+        base_url: str,
+        endpoint: str,
+        timeout: int,
+        params: dict[str, Any] | None = None,
+        json_data: dict[str, Any] | None = None,
+        method: Literal['GET', 'POST', 'PATCH', 'DELETE'] = 'GET',
+) -> tuple[int, dict[str, Any], str]:
+    """Query the API and return the status code, the decoded payload and the URL.
+
+    Raises BackendQueryError only when the backend can't be reached or answers without a
+    JSON object, so an endpoint's own error response stays available to the caller.
+    """
     url = _api_url(base_url=base_url, endpoint=endpoint)
-    request = requests.post if method == 'POST' else requests.get
+    request = (
+        requests.get if method == 'GET' else
+        requests.post if method == 'POST' else
+        requests.patch if method == 'PATCH' else requests.delete
+    )
     headers: dict[str, str] | None = None
     if (
         (access_token := get_access_token()) is not None and
@@ -114,20 +150,111 @@ def request_api(
     except requests.exceptions.RequestException as e:
         raise BackendQueryError(f'Could not connect to rotki backend at {url}: {e!s}') from e
 
-    if response.status_code != HTTPStatus.OK:
-        raise BackendQueryError(
-            f'rotki backend returned HTTP {response.status_code} for {url}: {response.text}',
-        )
-
     try:
         payload = response.json()
     except ValueError as e:
+        if response.status_code != HTTPStatus.OK:
+            raise BackendQueryError(
+                f'rotki backend returned HTTP {response.status_code} for {url}: {response.text}',
+            ) from e
         raise BackendQueryError(f'rotki backend returned invalid JSON for {url}: {e!s}') from e
 
-    if not isinstance(payload, dict) or 'result' not in payload:
+    if not isinstance(payload, dict):
         raise BackendQueryError(f'rotki backend returned an unexpected response for {url}')
 
-    return payload
+    return response.status_code, payload, url
+
+
+@dataclass(frozen=True)
+class BackendOutcome:
+    """The outcome of an endpoint that may legitimately fail, such as applying a stale plan.
+
+    ``ok`` is False for the endpoint's own error responses (``message`` says why and
+    ``result`` may carry a machine readable ``code``). ``pending_task_id`` is set when an
+    asynchronous task had not finished within the wait.
+    """
+    ok: bool
+    result: Any
+    message: str
+    status_code: int
+    pending_task_id: int | None = None
+
+
+def query_backend(
+        endpoint: str,
+        method: Literal['GET', 'POST', 'PATCH', 'DELETE'] = 'GET',
+        params: dict[str, Any] | None = None,
+        json_data: dict[str, Any] | None = None,
+        timeout: int | None = None,
+) -> BackendOutcome:
+    """Query an endpoint and return its outcome, including its own error responses."""
+    backend_config = get_backend_config()
+    status_code, payload, _ = _request_api_with_status(
+        base_url=backend_config.base_url,
+        endpoint=endpoint,
+        timeout=backend_config.timeout if timeout is None else timeout,
+        params=params,
+        json_data=json_data,
+        method=method,
+    )
+    return BackendOutcome(
+        ok=status_code == HTTPStatus.OK,
+        result=payload.get('result'),
+        message=str(payload.get('message') or ''),
+        status_code=status_code,
+    )
+
+
+def run_backend_task(
+        endpoint: str,
+        json_data: dict[str, Any],
+        wait_seconds: int,
+        poll_interval: float = 1.0,
+) -> BackendOutcome:
+    """Start an asynchronous backend task and wait up to wait_seconds for its outcome.
+
+    A task still running after the wait is returned with pending_task_id set, so the caller
+    can report it instead of blocking the agent indefinitely.
+    """
+    started = query_backend(endpoint=endpoint, method='POST', json_data=json_data | {'async_query': True})  # noqa: E501
+    if not started.ok or not isinstance(started.result, dict) or not isinstance(
+        task_id := started.result.get('task_id'), int,
+    ):
+        return started
+
+    deadline = time.monotonic() + wait_seconds
+    while True:
+        if (polled := poll_backend_task(task_id)).pending_task_id is None:
+            return polled
+        if time.monotonic() >= deadline:
+            return polled
+        time.sleep(poll_interval)
+
+
+def poll_backend_task(task_id: int) -> BackendOutcome:
+    """The outcome of a finished task, or pending_task_id set while it still runs.
+
+    A finished task's outcome is handed out once: the backend forgets it after this.
+    """
+    polled = query_backend(endpoint=f'tasks/{task_id}')
+    if not polled.ok:
+        return polled
+    if isinstance(polled.result, dict) and polled.result.get('status') == 'completed':
+        outcome = polled.result.get('outcome') or {}
+        status_code = int(polled.result.get('status_code') or HTTPStatus.OK)
+        return BackendOutcome(
+            ok=status_code == HTTPStatus.OK,
+            result=outcome.get('result'),
+            message=str(outcome.get('message') or ''),
+            status_code=status_code,
+        )
+    return BackendOutcome(
+        ok=False,
+        result=None,
+        message='The backend task is still running',
+        status_code=HTTPStatus.ACCEPTED,
+        pending_task_id=task_id,
+    )
 
 
 def query_history_events_page(
@@ -182,6 +309,20 @@ def query_settings() -> dict[str, Any]:
         raise BackendQueryError('rotki backend returned an unexpected settings response')
 
     return result
+
+
+def query_logged_in_user() -> str | None:
+    """The name of the user whose database is unlocked, None if none is."""
+    backend_config = get_backend_config()
+    payload = request_api(
+        base_url=backend_config.base_url,
+        endpoint='users',
+        timeout=backend_config.timeout,
+    )
+    if not isinstance(users := payload['result'], dict):
+        raise BackendQueryError('rotki backend returned an unexpected users response')
+
+    return next((name for name, status in users.items() if status == 'loggedin'), None)
 
 
 def balances_timeout() -> int:
