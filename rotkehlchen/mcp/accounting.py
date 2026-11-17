@@ -260,6 +260,19 @@ def cancel_remediation_task(task_id: int) -> dict[str, Any]:
     return _call(run)
 
 
+def _describe_rewrite(current: dict[str, Any], proposed: dict[str, Any]) -> str:
+    """One line saying what linking a bridge leg does to one of the two events."""
+    kind = f'{current["event_type"]}/{current["event_subtype"]}'
+    new_kind = f'{proposed["event_type"]}/{proposed["event_subtype"]}'
+    line = f'- {current["amount"]} {current["asset"]} on {current["location"]} ({kind})'
+    changes = [f'becomes {new_kind}'] if new_kind != kind else []
+    if proposed['amount'] != current['amount']:
+        changes.append(f'amount becomes {proposed["amount"]}')
+    return f'{line}: {", ".join(changes)}, linked as a bridge leg.' if changes else (
+        f'{line}: linked as a bridge leg.'
+    )
+
+
 def describe_plan_for_approval(plan: dict[str, Any]) -> str:
     """A plain summary of a sanitized plan, for the user to approve or decline.
 
@@ -274,6 +287,19 @@ def describe_plan_for_approval(plan: dict[str, Any]) -> str:
     for item in body['items']:
         if item.get('status') != 'ready':
             continue
+        if plan['kind'] == 'bridge_link':
+            lines.extend(map(
+                _describe_rewrite,
+                item.get('current_events', []),
+                item.get('proposed_events', []),
+                strict=False,
+            ))
+        elif (diff := item.get('event_diff')) is not None:
+            lines.append(
+                f'- Redecodes one {item.get("location")} transaction: '
+                f'{len(diff["changed"])} events changed, {len(diff["added"])} added, '
+                f'{len(diff["removed"])} removed.',
+            )
         if item.get('replace_customized'):
             lines.append('- Replaces events you customized in one transaction.')
         if item.get('has_matched_events'):

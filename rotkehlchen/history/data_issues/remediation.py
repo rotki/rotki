@@ -536,11 +536,12 @@ def preview_bridge_link(
         )
 
     treat_eth2_as_eth = settings.treat_eth2_as_eth
-    after = apply_bridge_match_to_events(
+    rewritten = {event.identifier: event for event in apply_bridge_match_to_events(
         bridge_event=copy.deepcopy(bridge_event),
         matched_event=copy.deepcopy(matched_event),
-    )
+    )}
     before = (bridge_event, matched_event)
+    after = [rewritten[event.identifier] for event in before]  # proposed in the current order
     diff = _effect_diff(before, after, treat_eth2_as_eth)
     item = {
         'bridge_event_identifier': bridge_event_identifier,

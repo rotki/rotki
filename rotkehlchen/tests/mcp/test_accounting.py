@@ -263,3 +263,37 @@ def test_ui_route_is_only_handed_out_in_raw_mode() -> None:
 
     flags = {'asset_signals': {USDC: ['mixed_scripts', 'link_in_metadata']}}
     assert sanitize(flags, privacy_mode='balanced') == flags
+
+
+def test_approval_prompt_names_the_event_rewrites() -> None:
+    """A bridge link barely moves any balance, so the prompt states the event it rewrites,
+    and a redecode states how many events it changes, adds and removes."""
+    event = {'location': 'optimism', 'asset': 'ETH', 'amount': '0.995'}
+    bridge_prompt = accounting.describe_plan_for_approval({'kind': 'bridge_link', 'plan': {
+        'applicable_items': 1,
+        'items': [{
+            'status': 'ready',
+            'current_events': [
+                event | {'location': 'ethereum', 'amount': '1', 'event_type': 'deposit', 'event_subtype': 'bridge'},  # noqa: E501
+                event | {'event_type': 'receive', 'event_subtype': 'none'},
+            ],
+            'proposed_events': [
+                {'amount': '1', 'event_type': 'deposit', 'event_subtype': 'bridge'},
+                {'amount': '0.995', 'event_type': 'withdrawal', 'event_subtype': 'bridge'},
+            ],
+            'bucket_effect_diff': [],
+        }],
+    }})
+    assert '- 1 ETH on ethereum (deposit/bridge): linked as a bridge leg.' in bridge_prompt
+    assert '- 0.995 ETH on optimism (receive/none): becomes withdrawal/bridge, linked as a bridge leg.' in bridge_prompt  # noqa: E501
+
+    redecode_prompt = accounting.describe_plan_for_approval({'kind': 'redecode', 'plan': {
+        'applicable_items': 1,
+        'items': [{
+            'status': 'ready',
+            'location': 'ethereum',
+            'event_diff': {'changed': [{}], 'added': [{}, {}], 'removed': []},
+            'bucket_effect_diff': [],
+        }],
+    }})
+    assert '- Redecodes one ethereum transaction: 1 events changed, 2 added, 0 removed.' in redecode_prompt  # noqa: E501
