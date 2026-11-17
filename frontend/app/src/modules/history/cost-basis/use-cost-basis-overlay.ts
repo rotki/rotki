@@ -34,6 +34,8 @@ export interface UseCostBasisOverlayReturn {
   /** Register a rendered event absent from the page groups; returns its cleanup function. */
   registerEvent: (identifier: number) => () => void;
   refresh: () => Promise<void>;
+  /** Fetch again the events still waiting for processing, keeping what is shown until then. */
+  refreshProcessing: () => Promise<void>;
 }
 
 /**
@@ -68,15 +70,10 @@ export function useCostBasisOverlay({ enabled, eventIdentifiers }: CostBasisOver
     set(cache, next);
   }
 
-  async function fetchMissing(): Promise<void> {
-    if (disposed)
-      return;
+  async function fetchBatches(identifiers: number[]): Promise<void> {
     const currentGeneration = generation;
-    const missing = get(activeIdentifiers).filter(needsFetch);
-    store(missing, () => ({ entries: [], status: CostBasisStatus.LOADING }));
-
-    for (let offset = 0; offset < missing.length; offset += BATCH_SIZE) {
-      const batch = missing.slice(offset, offset + BATCH_SIZE);
+    for (let offset = 0; offset < identifiers.length; offset += BATCH_SIZE) {
+      const batch = identifiers.slice(offset, offset + BATCH_SIZE);
       try {
         const response = await fetchEventsCostBasis(batch);
         if (currentGeneration !== generation)
@@ -97,6 +94,20 @@ export function useCostBasisOverlay({ enabled, eventIdentifiers }: CostBasisOver
         store(batch, () => ({ entries: [], status: CostBasisStatus.ERROR }));
       }
     }
+  }
+
+  async function fetchMissing(): Promise<void> {
+    if (disposed)
+      return;
+    const missing = get(activeIdentifiers).filter(needsFetch);
+    store(missing, () => ({ entries: [], status: CostBasisStatus.LOADING }));
+    await fetchBatches(missing);
+  }
+
+  async function refreshProcessing(): Promise<void> {
+    if (disposed)
+      return;
+    await fetchBatches(get(activeIdentifiers).filter(identifier => statusFor(identifier) === CostBasisStatus.PROCESSING));
   }
 
   function registerEvent(identifier: number): () => void {
@@ -139,5 +150,5 @@ export function useCostBasisOverlay({ enabled, eventIdentifiers }: CostBasisOver
     generation++;
   });
 
-  return { entriesFor, refresh, registerEvent, statusFor };
+  return { entriesFor, refresh, refreshProcessing, registerEvent, statusFor };
 }

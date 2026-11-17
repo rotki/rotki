@@ -11,7 +11,9 @@ import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHistoricalBalanceProcessingCompletedHandler } from '@/modules/core/messaging/handlers/historical-balance-processing-completed';
 import { WebsocketMessage } from '@/modules/core/messaging/messages';
+import { HistoricalBalanceProcessingPhase } from '@/modules/core/messaging/types/status-types';
 import { OverlayMode, type UseAccountingOverlayReturn } from '@/modules/history/balances/use-accounting-overlay';
+import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 import { useHistoryEventsOverlay } from './use-history-events-overlay';
 
 interface OverlayParams {
@@ -25,6 +27,7 @@ const {
   provideOverlay,
   refresh,
   refreshCostBasis,
+  refreshProcessing,
   reset,
   useCostBasis,
   useOverlay,
@@ -34,6 +37,7 @@ const {
   provideOverlay: vi.fn<(context: AccountingOverlayContext) => void>(),
   refresh: vi.fn<() => Promise<void>>(),
   refreshCostBasis: vi.fn<() => Promise<void>>(),
+  refreshProcessing: vi.fn<() => Promise<void>>(),
   reset: vi.fn<() => void>(),
   useCostBasis: vi.fn<(params: OverlayParams) => UseCostBasisOverlayReturn>(),
   useOverlay: vi.fn<(params: OverlayParams) => UseAccountingOverlayReturn>(),
@@ -42,7 +46,7 @@ const {
 const mockSyncCompleted = ref<number>(0);
 const mockOverlay = createMock<UseAccountingOverlayReturn>({ refresh });
 const mockSeries = createMock<UseAccountingOverlaySeriesReturn>({ reset });
-const mockCostBasis = createMock<UseCostBasisOverlayReturn>({ refresh: refreshCostBasis });
+const mockCostBasis = createMock<UseCostBasisOverlayReturn>({ refresh: refreshCostBasis, refreshProcessing });
 
 vi.mock('@/modules/core/common/feature-flags', async importOriginal => ({
   ...await importOriginal<Record<string, unknown>>(),
@@ -94,11 +98,15 @@ describe('useHistoryEventsOverlay', () => {
     provideOverlay.mockReset();
     useOverlay.mockReset().mockReturnValue(mockOverlay);
     refreshCostBasis.mockReset().mockResolvedValue(undefined);
+    refreshProcessing.mockReset().mockResolvedValue(undefined);
     provideCostBasis.mockReset();
     useCostBasis.mockReset().mockReturnValue(mockCostBasis);
   });
 
-  afterEach(() => scope.stop());
+  afterEach(() => {
+    scope.stop();
+    vi.useRealTimers();
+  });
 
   it('should request only events that carry an account, including grouped rows', () => {
     const { params } = setup(ref<OverlayMode>(OverlayMode.BALANCE), [
@@ -217,6 +225,30 @@ describe('useHistoryEventsOverlay', () => {
       await handler.handle(message.data);
       await flushPromises();
       expect(refreshCostBasis).toHaveBeenCalledOnce();
+    });
+
+    it('should fetch its processing events again as processing progresses, at most every five seconds, only while visible', async () => {
+      vi.useFakeTimers();
+      const mode = ref<OverlayMode>(OverlayMode.COST_BASIS);
+      setup(mode);
+      const { notifyHistoricalBalanceProcessingProgressed } = useHistoricalBalanceProcessingStore();
+      const progress = (): void => notifyHistoricalBalanceProcessingProgressed(HistoricalBalanceProcessingPhase.COST_BASIS);
+
+      progress();
+      await vi.advanceTimersByTimeAsync(0);
+      progress();
+      await vi.advanceTimersByTimeAsync(0);
+      progress();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(refreshProcessing).toHaveBeenCalledOnce();
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(refreshProcessing).toHaveBeenCalledTimes(2);
+
+      set(mode, OverlayMode.BALANCE);
+      await vi.advanceTimersByTimeAsync(5000);
+      progress();
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(refreshProcessing).toHaveBeenCalledTimes(2);
     });
   });
 });

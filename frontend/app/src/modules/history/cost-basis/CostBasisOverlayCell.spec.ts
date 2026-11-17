@@ -52,6 +52,7 @@ function mountCell(opts: {
   const overlay: UseCostBasisOverlayReturn = {
     entriesFor: () => entries,
     refresh: async () => {},
+    refreshProcessing: async () => {},
     registerEvent: () => () => {},
     statusFor: () => opts.status ?? (entries.length > 0 ? 'ready' : 'empty'),
     ...opts.overlay,

@@ -2,6 +2,7 @@ import type { HistoricalBalanceProcessingPhase } from '@/modules/core/messaging/
 
 export const useHistoricalBalanceProcessingStore = defineStore('history/historical-balance-processing', () => {
   const historicalBalanceProcessingCompleted = ref<number>(0);
+  const historicalBalanceProcessingProgressed = ref<number>(0);
   const currentBalanceDetectionCompleted = ref<number>(0);
   /** The pass the running processing reported last; absent while none runs. */
   const processingPhase = ref<HistoricalBalanceProcessingPhase>();
@@ -11,8 +12,10 @@ export const useHistoricalBalanceProcessingStore = defineStore('history/historic
     set(historicalBalanceProcessingCompleted, get(historicalBalanceProcessingCompleted) + 1);
   }
 
+  /** Counts the progress reports of a running pass, which may have stored part of its results. */
   function notifyHistoricalBalanceProcessingProgressed(phase: HistoricalBalanceProcessingPhase): void {
     set(processingPhase, phase);
+    set(historicalBalanceProcessingProgressed, get(historicalBalanceProcessingProgressed) + 1);
   }
 
   function notifyCurrentBalanceDetectionCompleted(): void {
@@ -22,6 +25,7 @@ export const useHistoricalBalanceProcessingStore = defineStore('history/historic
   return {
     currentBalanceDetectionCompleted,
     historicalBalanceProcessingCompleted,
+    historicalBalanceProcessingProgressed,
     notifyCurrentBalanceDetectionCompleted,
     notifyHistoricalBalanceProcessingCompleted,
     notifyHistoricalBalanceProcessingProgressed,
