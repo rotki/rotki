@@ -229,6 +229,7 @@ def _baseline(database: DBHandler, buckets: Sequence[dict[str, Any]]) -> dict[st
         'stops': [{
             'bucket': bucket,
             'event_identifier': stop.event_identifier,
+            'group_identifier': stop.group_identifier,
             'event_timestamp_ms': stop.event_timestamp,
         } for bucket in buckets if (stop := stops.get(_bucket_key(bucket))) is not None],
         'open_issue_ids': sorted(
@@ -339,6 +340,8 @@ def preview_redecode(
         )
 
     treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
+    with database.conn.read_ctx() as cursor:
+        stops = get_bucket_stops(cursor)
     items, affected, uncertainty = [], {}, []
     reloaded: set[ChainID] = set()
     for group_identifier in dict.fromkeys(group_identifiers):
@@ -393,6 +396,9 @@ def preview_redecode(
         diff = _effect_diff(saved, decoded, treat_eth2_as_eth)
         for entry in diff:
             affected[_bucket_key(entry['bucket'])] = entry['bucket']
+        for key, stop in stops.items():  # verified even when the nets don't change
+            if stop.group_identifier == group_identifier:
+                affected.setdefault(key, serialize_bucket(make_bucket(*key)))
         if _content_digest(saved) == _content_digest(decoded):
             status = 'no_change'
         elif customized and not replace_customized:
@@ -794,22 +800,30 @@ def _apply_bridge_link(
         plan: dict[str, Any],
         outcomes: list[dict[str, Any]],
 ) -> None:
+    """Link the plan's two events, as one write: a failure links neither of them."""
     item = plan['plan']['items'][0]
+    outcome: dict[str, Any] = {
+        'bridge_event_identifier': item['bridge_event_identifier'],
+        'matched_event_identifier': item['matched_event_identifier'],
+    }
     events = _load_events(database, [
         item['bridge_event_identifier'],
         item['matched_event_identifier'],
     ])
-    update_bridge_matched_event(
-        events_db=DBHistoryEvents(database),
-        bridge_event=events[item['bridge_event_identifier']],
-        matched_event=events[item['matched_event_identifier']],
-    )
-    outcomes.append({
-        'bridge_event_identifier': item['bridge_event_identifier'],
-        'matched_event_identifier': item['matched_event_identifier'],
-        'timestamp_ms': item['timestamp_ms'],
-        'outcome': 'applied',
-    })
+    if len(events) != 2:
+        outcomes.append(outcome | {'outcome': 'failed', 'reason': 'An event of the link is gone'})
+        return
+    try:
+        update_bridge_matched_event(
+            events_db=DBHistoryEvents(database),
+            bridge_event=events[item['bridge_event_identifier']],
+            matched_event=events[item['matched_event_identifier']],
+        )
+    except InputError as e:
+        outcomes.append(outcome | {'outcome': 'failed', 'reason': str(e)})
+        return
+
+    outcomes.append(outcome | {'timestamp_ms': item['timestamp_ms'], 'outcome': 'applied'})
 
 
 def verify_plan(database: DBHandler, plan_id: str) -> dict[str, Any]:
@@ -830,18 +844,18 @@ def verify_plan(database: DBHandler, plan_id: str) -> dict[str, Any]:
                 f'SELECT id, state FROM data_issues WHERE id IN ({",".join("?" * len(ids))})',
                 ids,
             ))
-        new_issues = [row[0] for row in cursor.execute(
-            'SELECT id, location, location_label, protocol, asset FROM data_issues '
-            'WHERE created_at >= ? AND state IN (?, ?, ?)',
+        new_issues = {row[0]: row[5] for row in cursor.execute(
+            'SELECT id, location, location_label, protocol, asset, event_identifier '
+            'FROM data_issues WHERE created_at >= ? AND state IN (?, ?, ?)',
             (
                 plan['applied_at_ts_s'] or ts_now(),
                 IssueState.OPEN,
                 IssueState.UNRESOLVED,
                 IssueState.AUTO_REMEDIATING,
             ),
-        ) if row[0] not in ids and make_bucket_key(*row[1:]) in {
+        ) if row[0] not in ids and make_bucket_key(*row[1:5]) in {
             _bucket_key(bucket) for bucket in plan['plan']['affected_buckets']
-        }]
+        }}
 
     if plan['state'] not in (PlanState.APPLIED, PlanState.PARTIALLY_APPLIED):
         return plan | {'verification': {'verdict': 'not_applied'}}
@@ -850,6 +864,11 @@ def verify_plan(database: DBHandler, plan_id: str) -> dict[str, Any]:
         _bucket_key(entry['bucket']): entry for entry in plan['plan']['baseline']['stops']
     }
     earliest = _earliest_applied_ts(plan['result']['items'])
+    redecoded_groups = {  # their events were replaced, so they have new identifiers
+        x['group_identifier'] for x in _applied(plan['result']['items'])
+        if 'group_identifier' in x
+    }
+    carried_stop_events: set[int] = set()
     reevaluated = (
         (last := processing_state['last_processing_ts_s']) is not None and
         last >= plan['applied_at_ts_s'] and (
@@ -869,6 +888,12 @@ def verify_plan(database: DBHandler, plan_id: str) -> dict[str, Any]:
             outcome = 'stop_cleared'
         elif before is not None and now is not None and before['event_identifier'] == now.event_identifier:  # noqa: E501
             outcome = 'stop_persisted'
+        elif before is not None and now is not None and (
+            before.get('group_identifier') in redecoded_groups and
+            before['group_identifier'] == now.group_identifier
+        ):  # still in the same redecoded transaction, at one of its new events
+            outcome = 'stop_persisted'
+            carried_stop_events.add(now.event_identifier)
         elif before is not None:
             outcome = 'stop_moved'
         else:
@@ -880,10 +905,14 @@ def verify_plan(database: DBHandler, plan_id: str) -> dict[str, Any]:
             'stop_event_timestamp_ms': None if now is None else now.event_timestamp,
         })
 
+    new_issue_ids = [  # a persisted stop's issue is raised anew on the replacing event
+        issue_id for issue_id, event_identifier in new_issues.items()
+        if event_identifier not in carried_stop_events
+    ]
     outcomes = {entry['outcome'] for entry in buckets}
     if not reevaluated:
         verdict = 'not_reevaluated'
-    elif outcomes & {'new_stop', 'stop_moved'} or len(new_issues) != 0:
+    elif outcomes & {'new_stop', 'stop_moved'} or len(new_issue_ids) != 0:
         verdict = 'new_problems_revealed'
     elif 'stop_persisted' in outcomes:
         verdict = 'not_repaired' if 'stop_cleared' not in outcomes else 'partially_repaired'
@@ -899,7 +928,7 @@ def verify_plan(database: DBHandler, plan_id: str) -> dict[str, Any]:
             {'issue_id': issue_id, 'state': issue_states.get(issue_id, 'deleted')}
             for issue_id in plan['plan']['baseline']['open_issue_ids']
         ],
-        'new_open_issue_ids': new_issues,
+        'new_open_issue_ids': new_issue_ids,
         'interpretation': 'The verdict comes from the bucket processing stops, not from issue '
                           'states: a dismissed or resolved issue does not mean repaired data',
     }

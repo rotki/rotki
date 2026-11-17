@@ -15,6 +15,7 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingSt
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import DataIssuesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
@@ -386,6 +387,71 @@ def test_redecode_plan_repairs_a_wrong_direction(database: DBHandler, customized
     assert result['verification']['verdict'] == 'repaired'
     assert result['verification']['buckets'][0]['outcome'] == 'stop_cleared'
     assert get_accounting_health(database)['stops']['count'] == 0
+
+
+def test_redecode_verify_judges_a_stop_that_survives(database: DBHandler) -> None:
+    """A redecode that keeps the stop in its transaction is not repaired, even though the
+    stopping event and its issue were replaced, and even when the nets did not change."""
+    tx_hash = make_evm_tx_hash()
+    saved_id, _ = _add(database, [  # a later event, so the replacing one gets a new rowid
+        _event(1_000, HistoryEventType.SPEND, '1', tx_hash=tx_hash),
+        _event(2_000, HistoryEventType.RECEIVE, '1', location=LOCATION_OPTIMISM),
+    ])
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+    decoded = [_event(1_000, HistoryEventType.SPEND, '1', tx_hash=tx_hash, counterparty='foo')]
+
+    def fake_redecode(ignore_cache: bool, tx_hashes: list, delete_customized: bool) -> None:
+        with database.user_write() as write_cursor:
+            write_cursor.execute('DELETE FROM history_events WHERE identifier = ?', (saved_id,))
+            DBHistoryEvents(database).add_history_events(write_cursor, copy.deepcopy(decoded))
+
+    chains_aggregator = MagicMock()
+    decoder = chains_aggregator.get_evm_manager.return_value.transactions_decoder
+    decoder.possible_decoding_exceptions = ()
+    decoder.decode_transaction_hashes.side_effect = fake_redecode
+    with patch(
+        'rotkehlchen.history.data_issues.remediation.plans.preview_transaction',
+        return_value=copy.deepcopy(decoded),
+    ):
+        plan = preview_redecode(
+            database=database,
+            chains_aggregator=chains_aggregator,
+            group_identifiers=[decoded[0].group_identifier],
+            replace_customized=False,
+        )
+    assert plan['plan']['items'][0]['bucket_effect_diff'] == []
+    assert plan['plan']['affected_buckets'] == [{
+        'location': LOCATION_ETHEREUM,
+        'location_label': TEST_ADDR1,
+        'protocol': None,
+        'asset': A_ETH.identifier,
+    }]
+
+    result = apply_plan(database, chains_aggregator, plan['plan_id'], 'mcp_elicitation', ts_now())
+    assert (bucket := result['verification']['buckets'][0])['outcome'] == 'stop_persisted'
+    assert bucket['stop_event_identifier'] != saved_id
+    assert result['verification']['new_open_issue_ids'] == []
+    assert result['verification']['verdict'] == 'not_repaired'
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+def test_failed_bridge_link_write_fails_the_plan(database: DBHandler) -> None:
+    """A link the database refuses fails the plan instead of leaving it applying for good."""
+    bridge_id, eligible_id, _ = _add_bridge_scenario(database)
+    plan = preview_bridge_link(database, bridge_id, eligible_id)
+    with patch(
+        'rotkehlchen.history.data_issues.remediation.plans.update_bridge_matched_event',
+        side_effect=InputError('refused'),
+    ):
+        result = apply_plan(database, MagicMock(), plan['plan_id'], 'mcp_elicitation', ts_now())
+    assert result['state'] == PlanState.FAILED
+    assert result['result']['items'] == [{
+        'bridge_event_identifier': bridge_id,
+        'matched_event_identifier': eligible_id,
+        'outcome': 'failed',
+        'reason': 'refused',
+    }]
+    assert result['verification']['verdict'] == 'not_applied'
 
 
 def _add_usdc_transfer(
