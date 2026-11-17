@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
@@ -25,6 +26,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.externalapis.alchemy import Alchemy
 from rotkehlchen.externalapis.coingecko import Coingecko
@@ -761,3 +763,67 @@ def test_historical_price_collection_main_asset_is_not_redirected_to_itself(
         timestamp=query_timestamp,
         max_seconds_distance=HOUR_IN_SECONDS,
     ) is None
+
+
+@pytest.mark.parametrize('cached', [True, False], ids=['cache', 'oracle'])
+def test_historical_price_collection_member_falls_back_to_own_price(
+        globaldb: GlobalDBHandler,
+        fake_price_historian: PriceHistorian,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+        cached: bool,
+) -> None:
+    """A missing main-asset price must not hide the member's cached or oracle price."""
+    query_timestamp = Timestamp(1660584108)
+    expected_price = Price(FVal('0.9659'))
+    if cached:
+        globaldb.add_single_historical_price(HistoricalPrice(
+            from_asset=A_ETH_MATIC, to_asset=A_USD, price=expected_price,
+            timestamp=query_timestamp, source=HistoricalPriceOracle.CRYPTOCOMPARE,
+        ))
+
+    fake_price_historian.set_oracles_order([HistoricalPriceOracle.DEFILLAMA])
+    with patch.object(fake_price_historian._defillama, 'query_historical_price', side_effect=[
+        NoPriceForGivenTimestamp(
+            from_asset=A_ETH_POL, to_asset=A_USD, time=query_timestamp,
+        ),
+        expected_price,
+    ]) as query_price:
+        assert fake_price_historian.query_historical_price(
+            from_asset=A_ETH_MATIC,
+            to_asset=A_USD,
+            timestamp=query_timestamp,
+        ) == expected_price
+        assert query_price.call_args_list == [
+            ((), {'from_asset': asset, 'to_asset': A_USD, 'timestamp': query_timestamp})
+            for asset in ((A_ETH_POL,) if cached else (A_ETH_POL, A_ETH_MATIC))
+        ]
+
+
+def test_historical_price_collection_member_preserves_main_asset_rate_limit(
+        globaldb: GlobalDBHandler,
+        fake_price_historian: PriceHistorian,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
+    """A rate-limited main asset must still raise even when the member has a price."""
+    globaldb.add_single_historical_price(HistoricalPrice(
+        from_asset=A_ETH_MATIC, to_asset=A_USD, price=Price(FVal('0.9659')),
+        timestamp=(query_timestamp := Timestamp(1660584108)),
+        source=HistoricalPriceOracle.MANUAL,
+    ))
+    fake_price_historian.set_oracles_order([HistoricalPriceOracle.DEFILLAMA])
+    with (
+        patch.object(
+            fake_price_historian._defillama,
+            'query_historical_price',
+            side_effect=RemoteError('Rate limited', error_code=HTTPStatus.TOO_MANY_REQUESTS),
+        ),
+        pytest.raises(NoPriceForGivenTimestamp) as exc_info,
+    ):
+        fake_price_historian.query_historical_price(
+            from_asset=A_ETH_MATIC,
+            to_asset=A_USD,
+            timestamp=query_timestamp,
+        )
+
+    assert exc_info.value.rate_limited is True
+    assert exc_info.value.from_asset == A_ETH_POL

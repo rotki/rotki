@@ -321,21 +321,24 @@ class PriceHistorian:
             if aggregated_price != ZERO:
                 return Price(aggregated_price)
 
-        # Last resort: an asset that is a non-main member of a collection is the same
-        # asset on another chain, so it must be priced as the collection's main asset.
-        # Without this, each member is priced through its own oracle mapping and members
-        # whose mapping differs from the main asset's silently get a different price.
-        # Mirrors Inquirer._maybe_replace_asset so current and historical prices agree.
+        # Prefer the collection's main asset so members with differing oracle mappings
+        # still get the same price. If it has no price at this timestamp (for example,
+        # before POL existed), fall through to the member's own cache and oracles.
+        # Mirrors Inquirer._maybe_replace_asset when the main asset can be priced.
         if (
             (main_asset_id := AssetResolver.get_collection_main_asset(from_asset.identifier)) is not None and  # noqa: E501
             main_asset_id != from_asset.identifier  # the main asset is a member of its own collection  # noqa: E501
         ):
-            return PriceHistorian._get_cached_price_or_query(
-                from_asset=Asset(main_asset_id),
-                to_asset=to_asset,
-                timestamp=timestamp,
-                max_seconds_distance=max_seconds_distance,
-            )
+            try:
+                return PriceHistorian._get_cached_price_or_query(
+                    from_asset=Asset(main_asset_id),
+                    to_asset=to_asset,
+                    timestamp=timestamp,
+                    max_seconds_distance=max_seconds_distance,
+                )
+            except NoPriceForGivenTimestamp as e:
+                if e.rate_limited:
+                    raise
 
         return None
 
