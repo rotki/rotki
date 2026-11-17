@@ -37,7 +37,7 @@ def test_card_cashback_scroll(
         asset=Asset('eip155:534352/erc20:0xd29687c813D741E2F938F4aC377128810E217b1b'),
         amount=FVal(amount := '2.170484754468739741'),
         location_label=scroll_accounts[0],
-        notes=f'Receive {amount} SCR as ether.fi card cashback',
+        notes=f'Receive cashback of {amount} SCR from ether.fi card',
         counterparty=CPT_ETHERFI,
         address=CASHBACK_PAYER,
     )]
@@ -74,7 +74,7 @@ def test_card_cashback_optimism(
         asset=usdc,
         amount=FVal(amount := '0.139653'),
         location_label=optimism_accounts[0],
-        notes=f'Receive {amount} USDC as ether.fi card cashback',
+        notes=f'Receive cashback of {amount} USDC from ether.fi card',
         counterparty=CPT_ETHERFI,
         address=CASHBACK_PAYER,
     )]
