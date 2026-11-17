@@ -22,7 +22,15 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
-from .constants import BORROW, BURN, DEPOSIT, REPAY, REWARDS_CLAIMED, SWAPPED
+from .constants import (
+    BORROW,
+    BURN,
+    DEBT_TOKEN_SYMBOL_REGEX,
+    DEPOSIT,
+    REPAY,
+    REWARDS_CLAIMED,
+    SWAPPED,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -147,6 +155,11 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
            receive/return amount, because the interest event is created separately.
 
         Returns the final list of the decoded events."""
+        self._decode_debt_interest(
+            decoded_events=decoded_events,
+            transaction=transaction,
+            all_logs=all_logs,
+        )
         supply_events, withdraw_events, return_events, receive_events = [], [], [], []
         swap_event = migrateout_event = migratein_event = swap_receive_event = maybe_earned_event = None  # noqa: E501
         # list of every interest event we've decoded in this transaction. We iterate this later
@@ -277,12 +290,14 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 i_log.topics[0] in (MINT, BURN) and (
                     # topics[2] is on_behalf_of, should be equal to the value we got above
                     bytes_to_address(i_log.topics[2]) == user_address
-                ) and (
+                ) and DEBT_TOKEN_SYMBOL_REGEX.match(
+                    (earned_token := self.base.get_or_create_evm_token(
+                        address=i_log.address,
+                    )).symbol,
+                ) is None and (
                     balance_increase := asset_normalized_value(
                         amount=int.from_bytes(i_log.data[32:64]),
-                        asset=(earned_token := self.base.get_or_create_evm_token(
-                            address=i_log.address,
-                        )),
+                        asset=earned_token,
                     )
                 ) > 0
             ):  # parse the mint amount and balance_increase
@@ -521,6 +536,73 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
 
                 ordered_events.append(interest_event)
                 used_interest_event_ids.add(interest_event.sequence_index)
+
+    def _decode_debt_interest(
+            self,
+            decoded_events: list[EvmEvent],
+            transaction: EvmTransaction,
+            all_logs: list[EvmTxReceiptLog],
+    ) -> None:
+        """Split the debt tokens minted to a user into principal and accrued debt interest.
+
+        A v3 debt token mint transfers the borrowed amount plus the interest accrued since the
+        user's last action, or on a repay smaller than that interest, the interest minus the
+        repaid amount. The balance increase of the matching Mint log is that interest.
+        """
+        new_events = []
+        for event in decoded_events:
+            if not (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.address == ZERO_ADDRESS and
+                self._token_is_aave_contract(event.asset) and
+                (debt_token := event.asset.resolve_to_evm_token()).is_liability()
+            ):
+                continue
+
+            for tx_log in all_logs:
+                if (
+                    tx_log.topics[0] == MINT and
+                    tx_log.address == debt_token.evm_address and
+                    bytes_to_address(tx_log.topics[2]) == event.location_label and
+                    asset_normalized_value(
+                        amount=int.from_bytes(tx_log.data[:32]),
+                        asset=debt_token,
+                    ) == event.amount
+                ):
+                    interest = asset_normalized_value(
+                        amount=int.from_bytes(tx_log.data[32:64]),
+                        asset=debt_token,
+                    )
+                    break
+            else:
+                continue
+
+            event.counterparty = self.counterparty
+            if (principal := event.amount - interest) >= ZERO:
+                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                event.amount = principal
+                event.notes = f'Receive {principal} {debt_token.symbol} from {self.label}'
+            else:  # repaid less than the interest accrued, so the debt still grew
+                event.event_type = HistoryEventType.SPEND
+                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                event.amount = -principal
+                event.notes = f'Return {event.amount} {debt_token.symbol} to {self.label}'
+
+            if interest > ZERO:
+                new_events.append(self.base.make_event_from_transaction(
+                    transaction=transaction,
+                    tx_log=tx_log,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.GENERATE_DEBT,
+                    asset=debt_token,
+                    amount=interest,
+                    location_label=event.location_label,
+                    notes=f'Receive {interest} {debt_token.symbol} as interest accrued on debt in {self.label}',  # noqa: E501
+                    counterparty=self.counterparty,
+                ))
+
+        decoded_events.extend(new_events)
 
     @staticmethod
     def _get_interest_amount_for_event(
