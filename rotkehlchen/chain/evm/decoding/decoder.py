@@ -34,6 +34,8 @@ from rotkehlchen.chain.evm.decoding.beefy_finance.decoder import BeefyFinanceCom
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_SUPPORTED_CHAINS_WITHOUT_VCOW
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import CowswapCommonDecoder
 from rotkehlchen.chain.evm.decoding.erc4337.decoder import Erc4337Decoder
+from rotkehlchen.chain.evm.decoding.etherfi.constants import ETHERFI_CASH_CHAINS
+from rotkehlchen.chain.evm.decoding.etherfi.decoder import EtherfiCashCommonDecoder
 from rotkehlchen.chain.evm.decoding.fluid.constants import FLUID_SUPPORTED_CHAINS
 from rotkehlchen.chain.evm.decoding.fluid.decoder import FluidCommonDecoder
 from rotkehlchen.chain.evm.decoding.flying_tulip.ftusd.constants import (
@@ -321,6 +323,8 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             )
         if self.evm_inquirer.chain_id in SUPPORTED_BEEFY_CHAINS:
             self._add_single_decoder(class_name='BeefyFinance', decoder_class=BeefyFinanceCommonDecoder, rules=rules)  # noqa: E501
+        if self.evm_inquirer.chain_id in ETHERFI_CASH_CHAINS:
+            self._add_single_decoder(class_name='EtherfiCash', decoder_class=EtherfiCashCommonDecoder, rules=rules)  # noqa: E501
         if self.evm_inquirer.chain_id in SUPPORTED_ZCHF_SAVINGS_CHAINS:
             self._add_single_decoder(class_name='FrankencoinSavings', decoder_class=FrankencoinSavingsCommonDecoder, rules=rules)  # noqa: E501
         if self.evm_inquirer.chain_id in FLYING_TULIP_FTUSD_DEPLOYMENTS:
