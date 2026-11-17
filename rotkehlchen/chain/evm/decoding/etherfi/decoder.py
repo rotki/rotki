@@ -41,7 +41,7 @@ class EtherfiCashCommonDecoder(EvmDecoderInterface):
             ):
                 event.event_subtype = HistoryEventSubType.CASHBACK
                 event.counterparty = CPT_ETHERFI
-                event.notes = f'Receive {amount} {token.symbol} as ether.fi card cashback'
+                event.notes = f'Receive cashback of {amount} {token.symbol} from ether.fi card'
                 break
 
         return DEFAULT_EVM_DECODING_OUTPUT

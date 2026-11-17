@@ -8,7 +8,7 @@ CPT_ETHERFI: Final = 'etherfi'
 ETHERFI_COUNTERPARTY_DETAILS: Final = CounterpartyDetails(
     identifier=CPT_ETHERFI,
     label='ether.fi',
-    icon='lu-credit-card',
+    image='etherfi.png',
 )
 
 # The ether.fi Cash event emitter has the same address on every chain the card has lived on
