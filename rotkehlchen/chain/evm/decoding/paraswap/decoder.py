@@ -61,8 +61,7 @@ class ParaswapCommonDecoder(EvmDecoderInterface, ABC):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         out_event: EvmEvent | None = None
-        in_event: EvmEvent | None = None
-        partial_refund_event: EvmEvent | None = None
+        receive_events: list[EvmEvent] = []
         fee_event: EvmEvent | None = None
         fee_asset: CryptoAsset | None = None
         for event in context.decoded_events:
@@ -72,38 +71,45 @@ class ParaswapCommonDecoder(EvmDecoderInterface, ABC):
                 (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.SPEND) or  # noqa: E501
                 (event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE)  # noqa: E501
             ):  # find the send event
-                event.counterparty = CPT_PARASWAP
-                event.event_type = HistoryEventType.TRADE
-                event.event_subtype = HistoryEventSubType.SPEND
-                event.address = self.router_address
-                # not modifying event.notes here since that's done after partial refund below
                 out_event = event
             elif (
                 (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE) or  # noqa: E501
                 (event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE)  # noqa: E501
-            ):  # find the receive event
-                event.event_type = HistoryEventType.TRADE
-                event.event_subtype = HistoryEventSubType.RECEIVE
-                event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap in paraswap'  # noqa: E501
-                if in_event is None:
-                    in_event = event
-                else:  # if another in_event is found, then it is a partial refund of in_asset
-                    partial_refund_event = event
+            ):  # collect receive candidates; classified below once the spent asset is known
+                receive_events.append(event)
 
-        if in_event is None or out_event is None:
-            log.error(f'Could not find the corresponding events when decoding {self.node_inquirer.chain_name} paraswap swap {context.transaction.tx_hash!s}')  # noqa: E501
+        if out_event is None:
+            log.error(
+                'Could not find the corresponding events when decoding %s paraswap swap %s',
+                self.node_inquirer.chain_name,
+                context.transaction.tx_hash,
+            )
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        if partial_refund_event is not None:  # if some in_asset is returned back.
-            # it's assumed in the above for loop, that the second in_event is the partial refund
-            # we verify below if the assumption is wrong, by checking the asset's similarity
-            # we check it here instead of in the for loop above because, out_event could be None
-            # at the time of the check
-            if in_event.asset == out_event.asset:  # if this is true, then assumption is wrong
-                partial_refund_event, in_event = in_event, partial_refund_event  # swap them
-            out_event.amount -= partial_refund_event.amount  # adjust the amount
-            context.decoded_events.remove(partial_refund_event)  # and remove it from the list
+        # the bought asset is the first received asset that differs from the spent one
+        if (in_event := next((x for x in receive_events if x.asset != out_event.asset), None)) is None:  # noqa: E501
+            log.error(
+                'Could not find a receive event of an asset other than the spent %s when decoding %s paraswap swap %s',  # noqa: E501
+                out_event.asset,
+                self.node_inquirer.chain_name,
+                context.transaction.tx_hash,
+            )
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        for event in receive_events:  # a receive of the spent asset is a partial refund of it
+            if event.asset == out_event.asset:
+                out_event.amount -= event.amount
+                context.decoded_events.remove(event)
+
+        out_event.counterparty = CPT_PARASWAP
+        out_event.event_type = HistoryEventType.TRADE
+        out_event.event_subtype = HistoryEventSubType.SPEND
+        out_event.address = self.router_address
         out_event.notes = f'Swap {out_event.amount} {out_event.asset.resolve_to_asset_with_symbol().symbol} in paraswap'  # noqa: E501
+
+        in_event.event_type = HistoryEventType.TRADE
+        in_event.event_subtype = HistoryEventSubType.RECEIVE
+        in_event.notes = f'Receive {in_event.amount} {in_event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap in paraswap'  # noqa: E501
 
         fee_raw: int | None = None
         # assets can be native currency, so resolve them to CryptoAsset instead of EvmToken
