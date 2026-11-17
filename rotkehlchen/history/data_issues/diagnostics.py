@@ -266,7 +266,10 @@ def _archive_node_capabilities(cursor: DBCursor) -> dict[str, dict[str, int]]:
     return dict(sorted(capabilities.items()))
 
 
-def _serialize_stop(key: tuple[str, str, str, str], stop: BucketStop) -> dict[str, Any]:
+def _serialize_stop(
+        key: tuple[str, str | None, str | None, str],
+        stop: BucketStop,
+) -> dict[str, Any]:
     location, label, protocol, asset = key
     return {
         'bucket': serialize_bucket(make_bucket(location, label, protocol, asset)),
@@ -294,7 +297,6 @@ def get_accounting_health(database: DBHandler) -> dict[str, Any]:
     settings = CachedSettings().get_settings()
     with database.conn.read_ctx() as cursor:
         processing_state = get_processing_state(cursor=cursor, database=database)
-        stops = get_bucket_stops(cursor)
         pending_decoding = _count_pending_decoding(cursor)
         issue_counts: Counter[tuple[str, str]] = Counter({
             (kind, state): count for kind, state, count in cursor.execute(
@@ -318,6 +320,10 @@ def get_accounting_health(database: DBHandler) -> dict[str, Any]:
             reason_counts[bucket.status.value][reason.value] += 1
 
     totals = {status.value: count for status, count in report.totals.items()}
+    stops = {  # the report's stops, so ignored assets and untracked accounts are left out
+        (bucket.location, bucket.location_label, bucket.protocol, bucket.asset): bucket.stop
+        for bucket in report.all_buckets if bucket.stop is not None
+    }
     if processing_state['last_processing_ts_s'] is None:
         status = 'unprocessed'
     elif processing_state['stale_from_ts_ms'] is not None or report.processing:

@@ -110,6 +110,7 @@ def _issues(database: DBHandler, kind: IssueKind) -> list[int]:
     )]
 
 
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
 def test_trace_and_explain_decimal_residue_stop(database: DBHandler) -> None:
     """A one-wei shortfall stops the bucket. The trace keeps it exact and the explanation
     calls it decimal residue as a hypothesis, while the stop itself is a fact."""
@@ -687,3 +688,19 @@ def test_redecode_apply_and_verify_only_count_applied_items(database: DBHandler)
     assert verified['verification']['reevaluated'] is False
     assert verified['verification']['verdict'] == 'not_reevaluated'
     assert [x['action'] for x in verified['audit']].count('verified') == 1  # polling adds none
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+def test_health_leaves_out_stops_of_ignored_assets(database: DBHandler) -> None:
+    """A stopped bucket whose asset the user then ignores no longer blocks health, in line
+    with the comparison coverage reported next to it."""
+    _add(database, [_event(1_000, HistoryEventType.SPEND, '1')])
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+    assert get_accounting_health(database)['status'] == 'blocked'
+
+    with database.user_write() as write_cursor:
+        database.add_to_ignored_assets(write_cursor, A_ETH)
+    health = get_accounting_health(database)
+    assert health['status'] != 'blocked'
+    assert health['stops']['count'] == 0
+    assert health['comparison_coverage']['counts'].get('blocked', 0) == 0
