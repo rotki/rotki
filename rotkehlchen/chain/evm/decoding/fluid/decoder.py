@@ -180,6 +180,17 @@ class FluidCommonDecoder(EvmDecoderInterface):
             )
             return None
 
+    def _get_nft_owner(self, nft_id: int) -> ChecksumEvmAddress | None:
+        """Query FluidVaultFactory for best-effort ownership of a vault position NFT.
+
+        Uses the latest owner, assuming position NFTs rarely change hands. A later transfer can
+        misattribute historical deposits or repayments; this is not proof of ownership at tx time.
+        """
+        if (owner := self._call_view(self.factory_contract, 'ownerOf', [nft_id])) is None:
+            return None
+
+        return string_to_evm_address(owner)
+
     def _is_fluid_vault(self, address: ChecksumEvmAddress) -> bool:
         """Check whether an address is a Fluid vault via CREATE table or on-chain factory."""
         if address in PRECOMPUTED_FLUID_VAULTS:
@@ -476,6 +487,7 @@ class FluidCommonDecoder(EvmDecoderInterface):
             vault_addr: ChecksumEvmAddress | None,
             notes_template: str,
             allow_native_refund: bool = False,
+            location_label: ChecksumEvmAddress | None = None,
     ) -> EvmEvent | None:
         candidate = next((
             event for event in decoded_events
@@ -484,7 +496,8 @@ class FluidCommonDecoder(EvmDecoderInterface):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == asset and
                 event.amount == amount and
-                event.address in allowed_addresses
+                event.address in allowed_addresses and
+                (location_label is None or event.location_label == location_label)
             )
         ), None)
 
@@ -500,7 +513,8 @@ class FluidCommonDecoder(EvmDecoderInterface):
                     spend_event.event_subtype != HistoryEventSubType.NONE or
                     spend_event.asset != asset or
                     spend_event.address not in allowed_addresses or
-                    spend_event.amount <= amount
+                    spend_event.amount <= amount or
+                    (location_label is not None and spend_event.location_label != location_label)
                 ):
                     continue
 
@@ -558,12 +572,28 @@ class FluidCommonDecoder(EvmDecoderInterface):
             event.counterparty != CPT_FLUID
             for event in decoded_events
         )
-        if self.base.is_tracked(operate_user):
-            position_owner: ChecksumEvmAddress | None = operate_user
-        elif (nft_owner := tracked_nfts.get(nft_id)) is not None:
-            position_owner = nft_owner
-        elif self.base.is_tracked(transaction.from_address) and not has_third_party_mint:
+        has_owner_only_leg = col_amt < 0 or debt_amt > 0
+        has_tracked_caller = (
+            self.base.is_tracked(operate_user) or
+            (self.base.is_tracked(transaction.from_address) and not has_third_party_mint)
+        )
+        if (nft_owner := tracked_nfts.get(nft_id)) is not None:
+            position_owner: ChecksumEvmAddress | None = nft_owner
+        elif has_owner_only_leg and self.base.is_tracked(operate_user):
+            position_owner = operate_user
+        elif (
+            has_owner_only_leg and
+            self.base.is_tracked(transaction.from_address) and
+            not has_third_party_mint
+        ):
             position_owner = transaction.from_address
+        elif (
+            not has_owner_only_leg and
+            has_tracked_caller and
+            (onchain_owner := self._get_nft_owner(nft_id)) is not None and
+            self.base.is_tracked(onchain_owner)
+        ):
+            position_owner = onchain_owner
         else:
             position_owner = None
 
@@ -618,6 +648,7 @@ class FluidCommonDecoder(EvmDecoderInterface):
                         vault_addr=target_vault,
                         notes_template=notes_template,
                         allow_native_refund=not is_collateral and raw_amt < 0,
+                        location_label=position_owner if position_owner is not None else to_addr,
                     ) is None and
                     position_owner is not None
                 ):
@@ -725,12 +756,12 @@ class FluidCommonDecoder(EvmDecoderInterface):
             ):
                 continue
 
-            from_addr = bytes_to_address(tx_log.topics[1])
             to_addr = bytes_to_address(tx_log.topics[2])
+            nft_id = int.from_bytes(tx_log.topics[3])
             if self.base.is_tracked(to_addr):
-                tracked_nfts[int.from_bytes(tx_log.topics[3])] = to_addr
-            elif self.base.is_tracked(from_addr):
-                tracked_nfts[int.from_bytes(tx_log.topics[3])] = from_addr
+                tracked_nfts[nft_id] = to_addr
+            else:
+                tracked_nfts.pop(nft_id, None)
 
         used_liq_legs: set[tuple[int, bool]] = set()
         used_dex_logs: set[int] = set()

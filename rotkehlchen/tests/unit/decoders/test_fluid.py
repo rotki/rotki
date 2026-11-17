@@ -6,12 +6,14 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.fluid.constants import (
     CPT_FLUID,
     FLUID_LIQUIDITY,
     FLUID_VAULT_FACTORY,
     LIQUIDITY_LOG_OPERATE,
+    VAULT_LOG_OPERATE,
 )
 from rotkehlchen.chain.evm.decoding.fluid.decoder import FluidCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_EVM_DECODING_OUTPUT, DecoderContext
@@ -209,10 +211,11 @@ def test_fluid_t1_repay_erc20(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf6a74cf48d0025c634b7b99b0a72f828cce3523b5e8c487b663bd2c8dcc28189')),  # noqa: E501
-    )
+    with patch.object(FluidCommonDecoder, '_get_nft_owner', return_value=ethereum_accounts[0]):
+        events, _ = get_decoded_events_of_transaction(
+            evm_inquirer=ethereum_inquirer,
+            tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf6a74cf48d0025c634b7b99b0a72f828cce3523b5e8c487b663bd2c8dcc28189')),  # noqa: E501
+        )
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
@@ -344,10 +347,11 @@ def test_fluid_t4_smart_collateral_deposit_and_smart_debt_borrow(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
-    deposit_events, decoder = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        tx_hash=(deposit_tx := deserialize_evm_tx_hash('0x75bad3dd9b7b4a338e689a927ab57488acd5b87e6027069109eabbc0159d7801')),  # noqa: E501
-    )
+    with patch.object(FluidCommonDecoder, '_get_nft_owner', return_value=ethereum_accounts[0]):
+        deposit_events, decoder = get_decoded_events_of_transaction(
+            evm_inquirer=ethereum_inquirer,
+            tx_hash=(deposit_tx := deserialize_evm_tx_hash('0x75bad3dd9b7b4a338e689a927ab57488acd5b87e6027069109eabbc0159d7801')),  # noqa: E501
+        )
     assert deposit_events == [
         EvmEvent(
             tx_ref=deposit_tx,
@@ -563,10 +567,11 @@ def test_fluid_arbitrum_deposit(
         arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xb5cee36d3b065b7e2d15648b1c9a5ff2e9e524f37e9f15a16424a113d2d7e485')),  # noqa: E501
-    )
+    with patch.object(FluidCommonDecoder, '_get_nft_owner', return_value=arbitrum_one_accounts[0]):
+        events, _ = get_decoded_events_of_transaction(
+            evm_inquirer=arbitrum_one_inquirer,
+            tx_hash=(tx_hash := deserialize_evm_tx_hash('0xb5cee36d3b065b7e2d15648b1c9a5ff2e9e524f37e9f15a16424a113d2d7e485')),  # noqa: E501
+        )
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
@@ -713,3 +718,262 @@ def test_fluid_nft_secondary_transfers_and_non_vault_liquidity_ignored(
     assert receive_output.events[0].asset == _vault_nft(99)
     assert receive_output.events[0].counterparty == CPT_FLUID
     assert receive_output.events[0].notes == f'Receive Fluid vault position 99 from {external_sender}'  # noqa: E501
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xB83E6edF8325e7d1Fc916A021866BeFe475DdbB6']])
+def test_fluid_funding_untracked_nft_not_classified(
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Permissionless deposits/repayments into an untracked owner's NFT stay plain spends."""
+    fluid_decoder = ethereum_transaction_decoder.decoders['Fluid']
+    assert isinstance(fluid_decoder, FluidCommonDecoder)
+
+    alice = ethereum_accounts[0]
+    bob = make_evm_address()
+    router = make_evm_address()
+    vault_address = string_to_evm_address('0x3A0b7c8840D74D39552EF53F586dD8c3d1234C40')
+    nft_id = 12345
+    tx_hash = make_evm_tx_hash()
+    tx = EvmTransaction(
+        tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1790000000),
+        block_number=26000000,
+        from_address=alice,
+        to_address=vault_address,
+        value=0,
+        gas=100000,
+        gas_price=0,
+        gas_used=50000,
+        input_data=b'',
+        nonce=0,
+    )
+
+    def _pad_addr(addr: ChecksumEvmAddress) -> bytes:
+        return b'\x00' * 12 + hexstring_to_bytes(addr)
+
+    def _make_liq_log(log_index: int, col_raw: int, debt_raw: int) -> EvmTxReceiptLog:
+        return EvmTxReceiptLog(
+            log_index=log_index,
+            data=(
+                col_raw.to_bytes(32, 'big', signed=True) +
+                debt_raw.to_bytes(32, 'big', signed=True)
+            ),
+            address=FLUID_LIQUIDITY,
+            topics=[
+                LIQUIDITY_LOG_OPERATE,
+                _pad_addr(vault_address),
+                _pad_addr(ETH_SPECIAL_ADDRESS),
+            ],
+        )
+
+    def _make_vault_log(
+            log_index: int,
+            operate_user: ChecksumEvmAddress,
+            col_amt: int,
+            debt_amt: int,
+    ) -> EvmTxReceiptLog:
+        return EvmTxReceiptLog(
+            log_index=log_index,
+            data=(
+                _pad_addr(operate_user) +
+                nft_id.to_bytes(32, 'big') +
+                col_amt.to_bytes(32, 'big', signed=True) +
+                debt_amt.to_bytes(32, 'big', signed=True) +
+                _pad_addr(ZERO_ADDRESS)
+            ),
+            address=vault_address,
+            topics=[VAULT_LOG_OPERATE],
+        )
+
+    def _make_spend_event(sequence_index: int, amount: str) -> EvmEvent:
+        return EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=sequence_index,
+            timestamp=TimestampMS(1790000000000),
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal(amount),
+            location_label=alice,
+            address=FLUID_LIQUIDITY,
+        )
+
+    with (
+        patch_decoder_reload_data(),
+        patch.object(ethereum_transaction_decoder.base, 'maybe_get_proxy_owner', return_value=None),  # noqa: E501
+        patch.object(fluid_decoder, '_call_view', return_value=bob),
+        ethereum_transaction_decoder.database.conn.read_ctx() as cursor,
+    ):
+        ethereum_transaction_decoder.reload_data(cursor=cursor)
+
+        # 1. Direct collateral deposit by Alice into Bob's NFT.
+        deposit_spend = _make_spend_event(sequence_index=1, amount='1')
+        deposit_events = fluid_decoder._decode_vault_events(
+            transaction=tx,
+            decoded_events=[deposit_spend],
+            all_logs=[
+                _make_liq_log(log_index=0, col_raw=10**18, debt_raw=0),
+                _make_vault_log(log_index=1, operate_user=alice, col_amt=10**18, debt_amt=0),
+            ],
+        )
+        assert deposit_events == [deposit_spend]
+        assert deposit_spend.event_type == HistoryEventType.SPEND
+        assert deposit_spend.event_subtype == HistoryEventSubType.NONE
+        assert deposit_spend.counterparty is None
+
+        # 2. Direct debt repayment by Alice on Bob's NFT.
+        repay_spend = _make_spend_event(sequence_index=2, amount='2')
+        repay_events = fluid_decoder._decode_vault_events(
+            transaction=tx,
+            decoded_events=[repay_spend],
+            all_logs=[
+                _make_liq_log(log_index=0, col_raw=0, debt_raw=-(2 * 10**18)),
+                _make_vault_log(log_index=1, operate_user=alice, col_amt=0, debt_amt=-(2 * 10**18)),  # noqa: E501
+            ],
+        )
+        assert repay_events == [repay_spend]
+        assert repay_spend.event_type == HistoryEventType.SPEND
+        assert repay_spend.event_subtype == HistoryEventSubType.NONE
+        assert repay_spend.counterparty is None
+
+        # 3. Router-mediated deposit where transaction.from_address is Alice, NFT is Bob's.
+        router_spend = _make_spend_event(sequence_index=3, amount='1')
+        router_events = fluid_decoder._decode_vault_events(
+            transaction=tx,
+            decoded_events=[router_spend],
+            all_logs=[
+                _make_liq_log(log_index=0, col_raw=10**18, debt_raw=0),
+                _make_vault_log(log_index=1, operate_user=router, col_amt=10**18, debt_amt=0),
+            ],
+        )
+        assert router_events == [router_spend]
+        assert router_spend.event_type == HistoryEventType.SPEND
+        assert router_spend.event_subtype == HistoryEventSubType.NONE
+        assert router_spend.counterparty is None
+
+        # 4. Alice transfers NFT to Bob in the same tx, then deposits collateral.
+        transfer_and_deposit_spend = _make_spend_event(sequence_index=4, amount='1')
+        nft_transfer_log = EvmTxReceiptLog(
+            log_index=0,
+            data=b'',
+            address=FLUID_VAULT_FACTORY,
+            topics=[
+                ERC20_OR_ERC721_TRANSFER,
+                _pad_addr(alice),
+                _pad_addr(bob),
+                nft_id.to_bytes(32, 'big'),
+            ],
+        )
+        transfer_deposit_events = fluid_decoder._decode_vault_events(
+            transaction=tx,
+            decoded_events=[transfer_and_deposit_spend],
+            all_logs=[
+                nft_transfer_log,
+                _make_liq_log(log_index=1, col_raw=10**18, debt_raw=0),
+                _make_vault_log(log_index=2, operate_user=alice, col_amt=10**18, debt_amt=0),
+            ],
+        )
+        assert transfer_deposit_events == [transfer_and_deposit_spend]
+        assert transfer_and_deposit_spend.event_type == HistoryEventType.SPEND
+        assert transfer_and_deposit_spend.event_subtype == HistoryEventSubType.NONE
+        assert transfer_and_deposit_spend.counterparty is None
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xB83E6edF8325e7d1Fc916A021866BeFe475DdbB6',
+    '0xe4637833F5513524D0B9337A75963619034fbB23',
+]])
+def test_fluid_funding_another_tracked_account_nft(
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """When tracked Alice funds tracked Bob's NFT, Alice keeps SPEND and Bob gets DEPOSIT."""
+    fluid_decoder = ethereum_transaction_decoder.decoders['Fluid']
+    assert isinstance(fluid_decoder, FluidCommonDecoder)
+
+    alice, bob = ethereum_accounts[0], ethereum_accounts[1]
+    vault_address = string_to_evm_address('0x3A0b7c8840D74D39552EF53F586dD8c3d1234C40')
+    tx_hash = make_evm_tx_hash()
+    tx = EvmTransaction(
+        tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1790000000),
+        block_number=26000000,
+        from_address=alice,
+        to_address=vault_address,
+        value=0,
+        gas=100000,
+        gas_price=0,
+        gas_used=50000,
+        input_data=b'',
+        nonce=0,
+    )
+
+    def _pad_addr(addr: ChecksumEvmAddress) -> bytes:
+        return b'\x00' * 12 + hexstring_to_bytes(addr)
+
+    liq_log = EvmTxReceiptLog(
+        log_index=0,
+        data=(10**18).to_bytes(32, 'big', signed=True) + (0).to_bytes(32, 'big', signed=True),
+        address=FLUID_LIQUIDITY,
+        topics=[
+            LIQUIDITY_LOG_OPERATE,
+            _pad_addr(vault_address),
+            _pad_addr(ETH_SPECIAL_ADDRESS),
+        ],
+    )
+    vault_log = EvmTxReceiptLog(
+        log_index=1,
+        data=(
+            _pad_addr(alice) +
+            (12345).to_bytes(32, 'big') +
+            (10**18).to_bytes(32, 'big', signed=True) +
+            (0).to_bytes(32, 'big', signed=True) +
+            _pad_addr(ZERO_ADDRESS)
+        ),
+        address=vault_address,
+        topics=[VAULT_LOG_OPERATE],
+    )
+    alice_spend = EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=TimestampMS(1790000000000),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal('1'),
+        location_label=alice,
+        address=FLUID_LIQUIDITY,
+    )
+
+    with (
+        patch_decoder_reload_data(),
+        patch.object(ethereum_transaction_decoder.base, 'maybe_get_proxy_owner', return_value=None),  # noqa: E501
+        patch.object(fluid_decoder, '_call_view', return_value=bob),
+        ethereum_transaction_decoder.database.conn.read_ctx() as cursor,
+    ):
+        ethereum_transaction_decoder.reload_data(cursor=cursor)
+        events = fluid_decoder._decode_vault_events(
+            transaction=tx,
+            decoded_events=[alice_spend],
+            all_logs=[liq_log, vault_log],
+        )
+
+    assert len(events) == 2
+    assert events[0] is alice_spend
+    assert alice_spend.event_type == HistoryEventType.SPEND
+    assert alice_spend.event_subtype == HistoryEventSubType.NONE
+    assert alice_spend.location_label == alice
+    assert alice_spend.counterparty is None
+
+    assert events[1].event_type == HistoryEventType.DEPOSIT
+    assert events[1].event_subtype == HistoryEventSubType.DEPOSIT_TO_PROTOCOL
+    assert events[1].asset == A_ETH
+    assert events[1].amount == FVal('1')
+    assert events[1].location_label == bob
+    assert events[1].counterparty == CPT_FLUID
+    assert events[1].address == vault_address

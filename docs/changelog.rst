@@ -2,7 +2,6 @@
 Changelog
 =========
 
-* :feature:`13070` Fluid vaults are now supported on Ethereum, Arbitrum, Base, Polygon PoS and BNB Chain. Creating and transferring vault positions, depositing and withdrawing collateral, borrowing and repaying debt, and liquidations are decoded in transaction history, including smart collateral and smart debt vaults, and active vault collateral and debt positions are tracked in balances.
 * :bug:`-` Venice DIEM collateral locks and unlocks are now informational events because the locked sVVV remains in the wallet.
 * :bug:`-` With a crypto main currency such as ETH or BTC, historical fiat prices in that currency are now found by inverting the crypto price in fiat. Before, fiat received in a profit and loss report was valued at zero, fiat spent was reported as a missing price, and snapshot exports used a rate of one.
 * :bug:`-` Bitpanda history queries now save each page as it arrives, so a failure part way through no longer throws away the history already fetched.
@@ -18,6 +17,7 @@ Changelog
 * :feature:`13287` Deleting a token balance from a balance snapshot can now also mark the token as spam, so it is not queried again and does not come back in the next snapshot. The mark is applied when the snapshot is saved, and undoing the delete or discarding the changes drops it.
 * :feature:`13451` A SoChain API key can now be added under API Keys > External Services, to raise the limits of Dogecoin balance queries. It is optional.
 * :feature:`12596` Bitvavo is now a supported exchange. Add a Read-only API key under API Keys -> Exchanges to track your balances, including assets locked in Fixed Staking, and your history of trades, conversions, deposits, withdrawals, staking rewards and other payouts. Bitvavo history entries of a type rotki does not handle yet are kept as informational events that can be edited.
+* :feature:`13070` Fluid vaults are now supported on Ethereum, Arbitrum, Base, Polygon PoS and BNB Chain. Creating and transferring vault positions, depositing and withdrawing collateral, borrowing and repaying debt, and liquidations are decoded in transaction history, including smart collateral and smart debt vaults, and active vault collateral and debt positions are tracked in balances.
 * :bug:`-` Asking for the current price of an NFT no longer fails with an error.
 * :bug:`-` Hide small balances no longer hides large blockchain balances when no historical price is cached for them, and a threshold change now applies at once.
 * :bug:`-` Hide small balances now keeps applying to blockchain balances after they are refreshed, instead of showing the hidden balances again.

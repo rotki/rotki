@@ -2482,15 +2482,19 @@ def test_fluid_balances(
         evm_inquirer=ethereum_inquirer,
         tx_hash=deserialize_evm_tx_hash('0x7d3ff3033b13a1abd0761dd79f4f16b0c85bbfa8ea9f84331602fcc2b22bc650'),
     )
-    for tx_hash_hex in (
-        '0x75bad3dd9b7b4a338e689a927ab57488acd5b87e6027069109eabbc0159d7801',
-        '0xf13ee83ff7b03e5a65332963c2454a1fda8e8afe85f5331c152bc80c3094ec32',
+    with patch(
+        'rotkehlchen.chain.evm.decoding.fluid.decoder.FluidCommonDecoder._get_nft_owner',
+        return_value=ethereum_accounts[1],
     ):
-        get_decoded_events_of_transaction(
-            evm_inquirer=ethereum_inquirer,
-            tx_hash=deserialize_evm_tx_hash(tx_hash_hex),
-            evm_decoder=tx_decoder,
-        )
+        for tx_hash_hex in (
+            '0x75bad3dd9b7b4a338e689a927ab57488acd5b87e6027069109eabbc0159d7801',
+            '0xf13ee83ff7b03e5a65332963c2454a1fda8e8afe85f5331c152bc80c3094ec32',
+        ):
+            get_decoded_events_of_transaction(
+                evm_inquirer=ethereum_inquirer,
+                tx_hash=deserialize_evm_tx_hash(tx_hash_hex),
+                evm_decoder=tx_decoder,
+            )
 
     balances = FluidBalances(
         evm_inquirer=ethereum_inquirer,
