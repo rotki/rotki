@@ -2920,7 +2920,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
                     )
 
     trade1_id, trade2_id, trade3_id, trade4_id, trade5_id = '99a7a11471a153413b825040bf031e4eaaeff4e4300cb89d8dc5fa0490e594f8', '270f318e1b0afe84367bb23185c4dccb01f11eee59578f57c5aca17117bb1354', 'f40b711eb844420db11770f794142fd1afbbe5573c52b8aa42a5b554f6a8f1fc', '82e3fefb4ccafa0c418bbb26a0b7e6869bdae66fc74a1695220da2bb81e15704', '0aa12919c65abbf8dc3c5704fd6e0bd83da3e296e125559069548e2e5b467af0'  # noqa: E501
-    trade4_second_fill_id = 'b8c82eb70ff5d636e681533085be7fe9d44cfec2f2926ca8fe009d13d3080516'  # identical trade in the same file  # noqa: E501
+    trade4_second_fill_id = '56de26a8920b08b027f0e36a86839dc0f4d224f32ce500052309f0d8d73d6b56'  # identical trade in the same file  # noqa: E501
     expected_events = [SwapEvent(
         identifier=1,
         timestamp=TimestampMS(1659085200000),

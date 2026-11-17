@@ -28,6 +28,8 @@ if TYPE_CHECKING:
     from rotkehlchen.fval import FVal
     from rotkehlchen.types import Location, TimestampMS
 
+type LegacyEventKey = tuple[str, int, str, str, str, str, str | None, str | None]
+
 GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS = {
     'Deposit': (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
     'Withdrawal': (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
@@ -51,49 +53,78 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
         super().reset()
         # occurrences of each row identity seen so far in the file being imported
         self._identity_occurrences: defaultdict[str, int] = defaultdict(int)
-        # legacy (random identifier) events per event key not yet matched to a row
-        self._legacy_unmatched: dict[tuple[Location, TimestampMS, str, str, HistoryEventType, HistoryEventSubType], int] = {}  # noqa: E501
+        self._legacy_events: defaultdict[LegacyEventKey, list[str]] = defaultdict(list)
+        self._legacy_events_loaded = False
 
-    def _matches_legacy_event(
+    def _load_legacy_events(self, write_cursor: DBCursor) -> None:
+        """Load old randomly identified generic events once for the current import."""
+        groups: defaultdict[str, list[tuple[str, int, str, str, str, str]]] = defaultdict(list)
+        for row in write_cursor.execute(
+            'SELECT group_identifier, location, timestamp, asset, amount, type, subtype '
+            'FROM history_events WHERE group_identifier LIKE ? ESCAPE ? '
+            'AND length(group_identifier)=?',
+            (f'{ROTKI_EVENT_PREFIX}\\_%', '\\', LEGACY_GROUP_IDENTIFIER_LENGTH),
+        ):
+            groups[row[0]].append(row[1:])
+
+        serialized_fee_subtype = HistoryEventSubType.FEE.serialize()
+        for group_identifier, events in groups.items():
+            fee_event = next(
+                (event for event in events if event[5] == serialized_fee_subtype),
+                None,
+            )
+            if (main_event := next(
+                (event for event in events if event[5] != serialized_fee_subtype),
+                None,
+            )) is None:
+                continue
+
+            self._legacy_events[*main_event, *(
+                (fee_event[2], fee_event[3]) if fee_event is not None else (None, None)
+            )].append(group_identifier)
+
+        self._legacy_events_loaded = True
+
+    def _migrate_matching_legacy_event(
             self,
             write_cursor: DBCursor,
+            identifier: str,
             location: Location,
             timestamp: TimestampMS,
             asset: Asset,
             amount: FVal,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
+            fee: FVal | None,
+            fee_currency: Asset | None,
     ) -> bool:
-        """Check if the row corresponds to an event imported by an older rotki version.
+        """Migrate a matching randomly identified event imported by an older rotki version.
 
         Those got a random group identifier, so they can only be matched by their attributes.
-        Each legacy event matches at most one row, so that identical rows of the file are
-        only skipped as many times as they already exist in the DB.
+        Moving the whole group to the deterministic identifier ensures it can only match one row
+        across all imports. Fee attributes distinguish otherwise identical legacy events.
         """
-        if (key := (
-            location, timestamp, asset.identifier, str(amount), event_type, event_subtype,
-        )) not in self._legacy_unmatched:
-            self._legacy_unmatched[key] = write_cursor.execute(
-                'SELECT COUNT(*) FROM history_events WHERE group_identifier LIKE ? ESCAPE ? '
-                'AND length(group_identifier)=? AND location=? AND timestamp=? AND asset=? '
-                'AND amount=? AND type=? AND subtype=?',
-                (
-                    f'{ROTKI_EVENT_PREFIX}\\_%',
-                    '\\',
-                    LEGACY_GROUP_IDENTIFIER_LENGTH,
-                    location.serialize_for_db(),
-                    timestamp,
-                    asset.identifier,
-                    str(amount),
-                    event_type.serialize(),
-                    event_subtype.serialize(),
-                ),
-            ).fetchone()[0]
+        if self._legacy_events_loaded is False:
+            self._load_legacy_events(write_cursor)
 
-        if self._legacy_unmatched[key] == 0:
+        has_fee = fee is not None and fee != ZERO
+        key: LegacyEventKey = (
+            location.serialize_for_db(),
+            timestamp,
+            asset.identifier,
+            str(amount),
+            event_type.serialize(),
+            event_subtype.serialize(),
+            fee_currency.identifier if has_fee and fee_currency is not None else None,
+            str(fee) if has_fee else None,
+        )
+        if len(legacy_identifiers := self._legacy_events[key]) == 0:
             return False
 
-        self._legacy_unmatched[key] -= 1
+        write_cursor.execute(
+            'UPDATE history_events SET group_identifier=? WHERE group_identifier=?',
+            (identifier, legacy_identifiers.pop()),
+        )
         return True
 
     def _consume_rotki_event(
@@ -133,20 +164,29 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
                 'timestamp': timestamp,
                 'asset': asset.identifier,
                 'amount': str(amount),
-                'fee': str(fee) if fee else None,
-                'fee_currency': fee_currency.identifier if fee and fee_currency else None,
+                'fee': str(fee) if fee is not None and fee != ZERO else None,
+                'fee_currency': (
+                    fee_currency.identifier
+                    if fee is not None and fee != ZERO and fee_currency is not None else None
+                ),
             })
         occurrence = self._identity_occurrences[identity]
         self._identity_occurrences[identity] += 1
         identifier = f'{ROTKI_EVENT_PREFIX}_{hash_group_key({"identity": identity, "occurrence": occurrence})}'  # noqa: E501
-        if self.group_already_imported(write_cursor, identifier) or self._matches_legacy_event(
-            write_cursor=write_cursor,
-            location=location,
-            timestamp=timestamp,
-            asset=asset,
-            amount=amount,
-            event_type=event_type,
-            event_subtype=event_subtype,
+        if (
+            self.group_already_imported(write_cursor, identifier) or
+            self._migrate_matching_legacy_event(
+                write_cursor=write_cursor,
+                identifier=identifier,
+                location=location,
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                event_type=event_type,
+                event_subtype=event_subtype,
+                fee=fee,
+                fee_currency=fee_currency,
+            )
         ):
             self.append_msg(
                 row_index=row_index,

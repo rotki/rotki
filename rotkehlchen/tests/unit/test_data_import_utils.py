@@ -180,34 +180,97 @@ def test_rotki_generic_events_source_id(database, tmp_path) -> None:
 
 def test_rotki_generic_events_legacy_identifiers(database, tmp_path) -> None:
     """Events imported by older versions have random identifiers and must still be matched,
-    each existing event matching at most one row."""
+    migrated, and each existing event must match at most one row across all later imports."""
     history_db = DBHistoryEvents(database)
     with database.user_write() as write_cursor:
-        for group_identifier in ('RE_' + 'a' * 32, 'RE_' + 'b' * 32):
-            history_db.add_history_event(write_cursor, HistoryEvent(
-                group_identifier=group_identifier,
-                sequence_index=0,
-                timestamp=TimestampMS(1659171600000),
-                location=Location.KRAKEN,
-                event_type=HistoryEventType.DEPOSIT,
-                event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
-                asset=A_ETH,
-                amount=FVal('1'),
-            ))
+        history_db.add_history_event(write_cursor, HistoryEvent(
+            group_identifier='RE_' + 'a' * 32,
+            sequence_index=0,
+            timestamp=TimestampMS(1659171600000),
+            location=Location.KRAKEN,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_ETH,
+            amount=FVal('1'),
+        ))
 
     (filepath := tmp_path / 'events.csv').write_text(
-        'Type,Location,Currency,Amount,Fee,Fee Currency,Description,Timestamp\n' +
-        'Deposit,kraken,ETH,1,,,,1659171600000\n' * 3 +
-        'Deposit,kraken,ETH,2,,,,1659171600000\n',
+        'Type,Location,Currency,Amount,Fee,Fee Currency,Description,Timestamp,Source ID\n'
+        'Deposit,kraken,ETH,1,,,,1659171600000,id-1\n'
+        'Deposit,kraken,ETH,1,,,,1659171600000,id-2\n',
     )
     importer = RotkiGenericEventsImporter(db=database)
     assert importer.import_csv(filepath=filepath) == (True, '')
-    assert importer.imported_entries == 2
-    assert _count_history_events(database) == 4
+    assert importer.imported_entries == 1
+    assert _count_history_events(database) == 2
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE length(group_identifier)=?',
+            (len('RE_' + 'a' * 32),),
+        ).fetchone()[0] == 0
+
+    filepath.write_text(
+        'Type,Location,Currency,Amount,Fee,Fee Currency,Description,Timestamp,Source ID\n'
+        'Deposit,kraken,ETH,1,,,,1659171600000,id-2\n'
+        'Deposit,kraken,ETH,1,,,,1659171600000,id-3\n',
+    )
+    assert importer.import_csv(filepath=filepath) == (True, '')
+    assert _count_history_events(database) == 3
+    assert importer.imported_entries == 1
+
+
+def test_rotki_generic_events_legacy_fee_matching(database, tmp_path) -> None:
+    """A fee-less row must not claim a legacy event that has a companion fee row."""
+    history_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        history_db.add_history_events(write_cursor, [HistoryEvent(
+            group_identifier=(legacy_identifier := 'RE_' + 'a' * 32),
+            sequence_index=4,
+            timestamp=TimestampMS(1659171600000),
+            location=Location.KRAKEN,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_ETH,
+            amount=FVal('1'),
+        ), HistoryEvent(
+            group_identifier=legacy_identifier,
+            sequence_index=5,
+            timestamp=TimestampMS(1659171600000),
+            location=Location.KRAKEN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.01'),
+        )])
+
+    (filepath := tmp_path / 'events.csv').write_text(
+        'Type,Location,Currency,Amount,Fee,Fee Currency,Description,Timestamp\n'
+        'Deposit,kraken,ETH,1,,,,1659171600000\n'
+        'Deposit,kraken,ETH,1,0.01,ETH,,1659171600000\n',
+    )
+    importer = RotkiGenericEventsImporter(db=database)
+    assert importer.import_csv(filepath=filepath) == (True, '')
+    assert importer.imported_entries == 1
+    assert _count_history_events(database) == 3
 
     assert importer.import_csv(filepath=filepath) == (True, '')
-    assert _count_history_events(database) == 4
     assert importer.imported_entries == 0
+    assert _count_history_events(database) == 3
+
+
+def test_rotki_generic_events_zero_and_blank_fee_match(database, tmp_path) -> None:
+    """Zero and blank fees create the same identity because neither creates a fee event."""
+    header = 'Type,Location,Currency,Amount,Fee,Fee Currency,Description,Timestamp\n'
+    (filepath := tmp_path / 'events.csv').write_text(
+        header + 'Deposit,kraken,ETH,1,,,,1659171600000\n',
+    )
+    importer = RotkiGenericEventsImporter(db=database)
+    assert importer.import_csv(filepath=filepath) == (True, '')
+
+    filepath.write_text(header + 'Deposit,kraken,ETH,1,0,ETH,,1659171600000\n')
+    assert importer.import_csv(filepath=filepath) == (True, '')
+    assert importer.imported_entries == 0
+    assert _count_history_events(database) == 1
 
 
 def test_rotki_generic_trades_identical_fills(database, tmp_path) -> None:
@@ -234,3 +297,26 @@ def test_rotki_generic_trades_identical_fills(database, tmp_path) -> None:
             spend=AssetAmount(asset=Asset('LTC'), amount=FVal('392.8870')),
             receive=AssetAmount(asset=A_BTC, amount=FVal('4.3241')),
         ) in {row[0] for row in cursor.execute('SELECT group_identifier FROM history_events')}
+
+
+def test_rotki_generic_trades_reordered_fee_variants(database, tmp_path) -> None:
+    """A new fee variant in a reordered superset must not displace the existing trade."""
+    header = (
+        'Location,Spend Currency,Receive Currency,Receive Amount,Spend Amount,'
+        'Fee,Fee Currency,Description,Timestamp\n'
+    )
+    row_a = 'kraken,LTC,BTC,4.3241,392.8870,1,USD,Fill A,1659171600000\n'
+    row_b = 'kraken,LTC,BTC,4.3241,392.8870,2,USD,Fill B,1659171600000\n'
+    (filepath := tmp_path / 'trades.csv').write_text(header + row_a)
+    importer = RotkiGenericTradesImporter(db=database)
+    assert importer.import_csv(filepath=filepath) == (True, '')
+
+    filepath.write_text(header + row_b + row_a)
+    assert importer.import_csv(filepath=filepath) == (True, '')
+    assert importer.imported_entries == 1
+    assert _count_history_events(database) == 6
+
+    filepath.write_text(header + row_a + row_b)
+    assert importer.import_csv(filepath=filepath) == (True, '')
+    assert importer.imported_entries == 0
+    assert _count_history_events(database) == 6

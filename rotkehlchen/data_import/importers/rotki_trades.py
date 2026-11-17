@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
+from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import (
     BaseExchangeImporter,
     process_rotki_generic_import_csv_fields,
@@ -11,6 +12,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.swap import create_swap_events
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_swap, hash_group_key
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import AssetAmount
@@ -19,8 +21,10 @@ from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.fval import FVal
 
 
 class RotkiGenericTradesImporter(BaseExchangeImporter):
@@ -33,6 +37,24 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
         super().reset()
         # occurrences of each trade identity seen so far in the file being imported
         self._identity_occurrences: defaultdict[str, int] = defaultdict(int)
+        self._base_identifiers_used: set[str] = set()
+
+    @staticmethod
+    def _group_fee_matches(
+            write_cursor: DBCursor,
+            group_identifier: str,
+            fee: FVal | None,
+            fee_currency: Asset | None,
+    ) -> bool:
+        """Check whether an existing swap group has the row's normalized fee."""
+        fee_row = write_cursor.execute(
+            'SELECT asset, amount FROM history_events WHERE group_identifier=? AND subtype=?',
+            (group_identifier, HistoryEventSubType.FEE.serialize()),
+        ).fetchone()
+        if fee is None or fee == ZERO:
+            return fee_row is None
+
+        return fee_currency is not None and fee_row == (fee_currency.identifier, str(fee))
 
     def _consume_rotki_trades(
             self,
@@ -51,21 +73,50 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
         receive_amount = deserialize_fval(csv_row['Receive Amount'])
         spend_asset, fee, fee_currency, location, timestamp = process_rotki_generic_import_csv_fields(csv_row, 'Spend Currency')  # noqa: E501
         receive_asset = symbol_to_asset_or_token(csv_row['Receive Currency'])
-        group_identifier = create_group_identifier_from_swap(
+        base_identifier = create_group_identifier_from_swap(
             location=location,
             timestamp=timestamp,
             spend=(spend := AssetAmount(asset=spend_asset, amount=spend_amount)),
             receive=(receive := AssetAmount(asset=receive_asset, amount=receive_amount)),
         )
-        occurrence = self._identity_occurrences[group_identifier]
-        self._identity_occurrences[group_identifier] += 1
-        if occurrence != 0:
-            # identical trades in the same file are legitimate (e.g. identical fills in the
-            # same second). The first keeps the plain identifier so that already imported
-            # trades still match it on re-import.
-            group_identifier = hash_group_key({'swap': group_identifier, 'occurrence': occurrence})
+        has_fee = fee is not None and fee != ZERO
+        identity = hash_group_key({
+            'swap': base_identifier,
+            'fee': str(fee) if has_fee else None,
+            'fee_currency': (
+                fee_currency.identifier if has_fee and fee_currency is not None else None
+            ),
+        })
+        occurrence = self._identity_occurrences[identity]
+        self._identity_occurrences[identity] += 1
+        occurrence_identifier = hash_group_key({
+            'identity': identity,
+            'occurrence': occurrence,
+        })
+        if self.group_already_imported(write_cursor, occurrence_identifier):
+            already_imported = True
+            group_identifier = occurrence_identifier
+        elif (
+            self.group_already_imported(write_cursor, base_identifier) and
+            self._group_fee_matches(write_cursor, base_identifier, fee, fee_currency)
+        ):
+            # Older imports used the fee-less base identifier. Keep matching it when the fee
+            # agrees, even if a full-history export reordered otherwise identical trades.
+            already_imported = True
+            group_identifier = base_identifier
+        elif (
+            base_identifier not in self._base_identifiers_used and
+            not self.group_already_imported(write_cursor, base_identifier)
+        ):
+            # The first new trade keeps the old identifier for backwards compatibility.
+            already_imported = False
+            group_identifier = base_identifier
+            self._base_identifiers_used.add(base_identifier)
+        else:
+            already_imported = False
+            group_identifier = occurrence_identifier
 
-        if self.group_already_imported(write_cursor, group_identifier):
+        if already_imported:
             self.append_msg(
                 row_index=row_index,
                 msg=(
