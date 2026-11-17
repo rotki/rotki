@@ -10,6 +10,7 @@ from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import OLD_POOL_ADDRESS
 from rotkehlchen.chain.evm.decoding.privacy_pools.constants import CPT_PRIVACY_POOLS
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
+from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -2506,3 +2507,141 @@ def test_aave_v3_debt_mint_in_withdraw_is_not_interest(ethereum_inquirer, ethere
         (event.asset.identifier, event.amount)
         for event in events if event.event_subtype == HistoryEventSubType.INTEREST
     ] == [('eip155:1/erc20:0x0B925eD163218f6662a35e0f0371Ac234f9E9371', FVal('0.000066389463853771'))]  # aEthwstETH  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x1edb166E7EDb9De192A423ED5e01662acf083aA6']])
+def test_aave_v3_supply_and_borrow_with_accrued_debt_interest(ethereum_inquirer, ethereum_accounts) -> None:  # noqa: E501
+    """A Safe borrows against existing debt, swaps the USDC and supplies the WBTC in one
+    transaction. The debt token mint must not be reported as interest earned."""
+    tx_hash = deserialize_evm_tx_hash('0x000aff531f94a7466db020b61abc25b385b5c5cc71a3590395479413b3f0f0f6')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    user, uniswap_pool = ethereum_accounts[0], string_to_evm_address('0x11e048f19844B7bAa6D9eA4a20eD4fACF7b757b2')  # noqa: E501
+    variable_debt_usdc = Asset('eip155:1/erc20:0x72E95b8931767C79bA4EeE721354d6E99a61D004')
+    timestamp = TimestampMS(1794862751000)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=99,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=variable_debt_usdc,
+        amount=FVal('500'),
+        location_label=user,
+        notes='Receive 500 variableDebtEthUSDC from AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=100,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.GENERATE_DEBT,
+        asset=variable_debt_usdc,
+        amount=FVal('2.929634'),
+        location_label=user,
+        notes='Receive 2.929634 variableDebtEthUSDC as interest accrued on debt in AAVE v3',
+        counterparty=CPT_AAVE_V3,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=102,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.GENERATE_DEBT,
+        asset=A_USDC,
+        amount=FVal('500'),
+        location_label=user,
+        notes='Borrow 500 USDC from AAVE v3 with variable APY 5.27%',
+        counterparty=CPT_AAVE_V3,
+        address=string_to_evm_address('0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=105,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_USDC,
+        amount=FVal('1.25'),
+        location_label=user,
+        notes=f'Send 1.25 USDC from {user} to 0x6467e807dB1E71B9Ef04E0E3aFb962E4B0900B2B',
+        address=string_to_evm_address('0x6467e807dB1E71B9Ef04E0E3aFb962E4B0900B2B'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=106,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDC,
+        amount=FVal('498.75'),
+        location_label=user,
+        notes='Swap 498.75 USDC in Uniswap V3',
+        counterparty=CPT_UNISWAP_V3,
+        address=uniswap_pool,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=115,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_WBTC,
+        amount=FVal(wbtc_amount := '0.007677'),
+        location_label=user,
+        notes=f'Receive {wbtc_amount} WBTC from {uniswap_pool} to {user}',
+        address=uniswap_pool,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=117,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=A_WBTC,
+        amount=FVal(wbtc_amount),
+        location_label=user,
+        address=string_to_evm_address('0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=125,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ZERO,
+        location_label=string_to_evm_address('0xdA3654171b52A31d7FAe55F071503Ee0b169d948'),
+        notes=f'Successfully executed safe transaction 0xd33b78e88af8e8d995332e8438335fd15c607bc51ce31e8880659f26189cab6f for multisig {user}',  # noqa: E501
+        counterparty=CPT_SAFE_MULTISIG,
+        address=user,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=126,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=A_WBTC,
+        amount=FVal(wbtc_amount),
+        location_label=user,
+        notes=f'Deposit {wbtc_amount} WBTC into AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=string_to_evm_address('0x5Ee5bf7ae06D1Be5997A1A72006FE6C607eC6DE8'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=127,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('eip155:1/erc20:0x5Ee5bf7ae06D1Be5997A1A72006FE6C607eC6DE8'),
+        amount=FVal(wbtc_amount),
+        location_label=user,
+        notes=f'Receive {wbtc_amount} aEthWBTC from AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=ZERO_ADDRESS,
+    )]
