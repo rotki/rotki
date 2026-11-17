@@ -1132,3 +1132,35 @@ def test_reward_address_change_moves_node_operator(
         tx_hash=deserialize_evm_tx_hash('0x5f4680ecf501704054bee892950a79c2d0e4463152e61d2984cc326ad5aac8d4'),
     )
     assert [(x.address, x.node_operator_id) for x in db.get_node_operators()] == [(ethereum_accounts[0], 0)]  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x37CfFA4094e7D3437E3D897DD7fa58bFf015e0F0']])
+def test_removed_node_operator_is_not_added_back(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x6fff83319cff9b55efa66117533af5c3db6c4de6dbe9003970777e23e689a752')  # noqa: E501
+    _, decoder = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    db = DBLidoCsm(ethereum_inquirer.database)
+    db.remove_node_operator(
+        address=ethereum_accounts[0],
+        node_operator_id=609,
+        staking_module=LidoCsmStakingModule.CSM,
+    )
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=tx_hash,
+        evm_decoder=decoder,
+    )
+    assert db.get_node_operators() == ()
+
+    db.add_node_operator(  # adding it by hand again lets decoding track it
+        address=ethereum_accounts[0],
+        node_operator_id=609,
+        staking_module=LidoCsmStakingModule.CSM,
+    )
+    assert db.is_node_operator_ignored(
+        node_operator_id=609,
+        staking_module=LidoCsmStakingModule.CSM,
+    ) is False

@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
@@ -20,6 +20,13 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# multisettings name of the node operators the user removed, so decoding does not add them back
+IGNORED_NODE_OPERATOR_SETTING: Final = 'ignored_csm_operator'
+
+
+def _ignored_value(node_operator_id: int, staking_module: LidoCsmStakingModule) -> str:
+    return f'{staking_module.value}_{node_operator_id}'
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,6 +161,23 @@ class DBLidoCsm:
                     f'for staking module {staking_module.name}',
                 ) from e
 
+            write_cursor.execute(
+                'DELETE FROM multisettings WHERE name=? AND value=?',
+                (IGNORED_NODE_OPERATOR_SETTING, _ignored_value(node_operator_id, staking_module)),
+            )
+
+    def is_node_operator_ignored(
+            self,
+            node_operator_id: int,
+            staking_module: LidoCsmStakingModule,
+    ) -> bool:
+        """Whether the user removed this node operator, which must then not be added back."""
+        with self.db.conn.read_ctx() as cursor:
+            return cursor.execute(
+                'SELECT 1 FROM multisettings WHERE name=? AND value=?',
+                (IGNORED_NODE_OPERATOR_SETTING, _ignored_value(node_operator_id, staking_module)),
+            ).fetchone() is not None
+
     def get_node_operator_address(
             self,
             node_operator_id: int,
@@ -174,7 +198,8 @@ class DBLidoCsm:
             node_operator_id: int,
             staking_module: LidoCsmStakingModule,
     ) -> None:
-        """Track a node operator under another address, or stop tracking it if address is None."""
+        """Track a node operator under another address, or stop tracking it if address is None.
+        Unlike remove_node_operator this does not stop it from being added again."""
         with self.db.user_write() as write_cursor:
             if address is None:
                 write_cursor.execute(
@@ -270,7 +295,8 @@ class DBLidoCsm:
             node_operator_id: int,
             staking_module: LidoCsmStakingModule,
     ) -> None:
-        """Delete a node operator; raises InputError when id is unknown or address mismatched."""
+        """Delete a node operator and remember it, so that decoding its events does not add it
+        back. Raises InputError when id is unknown or address mismatched."""
         with self.db.conn.read_ctx() as cursor:
             row = cursor.execute(
                 'SELECT address FROM lido_csm_node_operators '
@@ -294,4 +320,8 @@ class DBLidoCsm:
                 'DELETE FROM lido_csm_node_operators '
                 'WHERE staking_module_id=? AND node_operator_id=?',
                 (staking_module.value, node_operator_id),
+            )
+            write_cursor.execute(
+                'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)',
+                (IGNORED_NODE_OPERATOR_SETTING, _ignored_value(node_operator_id, staking_module)),
             )

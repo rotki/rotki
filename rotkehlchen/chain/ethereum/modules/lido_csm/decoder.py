@@ -21,7 +21,7 @@ from rotkehlchen.constants.assets import A_ETH, A_STETH, A_WSTETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.lido_csm import DBLidoCsm
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import InputError, NotFoundError, RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, TokenKind
@@ -217,12 +217,18 @@ class LidoCsmDecoder(EvmDecoderInterface):
             node_operator_id: int,
     ) -> None:
         """Store, move or drop the node operator so that it is kept under its tracked manager
-        or, failing that, reward address.
+        or, failing that, reward address. Operators the user removed are left alone.
 
         The addresses are read from the module and not from the log, since the transaction
         may be decoded after a later one changed them.
         """
         db = DBLidoCsm(self.base.database)
+        if db.is_node_operator_ignored(
+            node_operator_id=node_operator_id,
+            staking_module=staking_module,
+        ):
+            return
+
         metrics_fetcher = self.metrics_fetchers[staking_module]
         try:
             manager, reward, _ = metrics_fetcher.module_contract.call(
@@ -258,11 +264,21 @@ class LidoCsmDecoder(EvmDecoderInterface):
         if address is None:
             return
 
-        db.add_node_operator(
-            address=address,
-            node_operator_id=node_operator_id,
-            staking_module=staking_module,
-        )
+        try:
+            db.add_node_operator(
+                address=address,
+                node_operator_id=node_operator_id,
+                staking_module=staking_module,
+            )
+        except (InputError, NotFoundError) as e:
+            log.error(
+                'Failed to store a Lido CSM node operator found in its events',
+                staking_module=staking_module.name,
+                node_operator_id=node_operator_id,
+                error=str(e),
+            )
+            return
+
         try:
             metrics = metrics_fetcher.get_operator_stats(
                 node_operator_id=node_operator_id,
