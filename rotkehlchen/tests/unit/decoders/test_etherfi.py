@@ -78,3 +78,54 @@ def test_card_cashback_optimism(
         counterparty=CPT_ETHERFI,
         address=CASHBACK_PAYER,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('scroll_accounts', [['0x9fae78d538E39C79Ae74075f01eF34267A750304']])
+def test_pending_cashback_cleared_scroll(
+        scroll_inquirer: ScrollInquirer,
+        scroll_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """A card spend that also pays out cashback deferred from an earlier spend."""
+    tx_hash = deserialize_evm_tx_hash('0xc9489481ae0aa0f7866ed38e6e8358d27f54c23533c863dc8105360b67e78992')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
+    weth = Asset('eip155:534352/erc20:0x5300000000000000000000000000000000000004')
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1775572916000)),
+        location=LOCATION_SCROLL,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=Asset('eip155:534352/erc20:0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4'),
+        amount=FVal(spent := '8.8'),
+        location_label=scroll_accounts[0],
+        notes=f'Send {spent} USDC from {scroll_accounts[0]} to 0x50A233C4a0Bb1d7124b0224880037d35767a501C',  # noqa: E501
+        address=string_to_evm_address('0x50A233C4a0Bb1d7124b0224880037d35767a501C'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=LOCATION_SCROLL,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.CASHBACK,
+        asset=weth,
+        amount=FVal(deferred := '0.00138636527373749'),
+        location_label=scroll_accounts[0],
+        notes=f'Receive cashback of {deferred} WETH from ether.fi card',
+        counterparty=CPT_ETHERFI,
+        address=CASHBACK_PAYER,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=5,
+        timestamp=timestamp,
+        location=LOCATION_SCROLL,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.CASHBACK,
+        asset=weth,
+        amount=FVal(amount := '0.000127202735990928'),
+        location_label=scroll_accounts[0],
+        notes=f'Receive cashback of {amount} WETH from ether.fi card',
+        counterparty=CPT_ETHERFI,
+        address=CASHBACK_PAYER,
+    )]

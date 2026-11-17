@@ -11,6 +11,7 @@ from .constants import (
     CPT_ETHERFI,
     ETHERFI_CASH_EVENT_EMITTER,
     ETHERFI_COUNTERPARTY_DETAILS,
+    PENDING_CASHBACK_CLEARED,
 )
 
 if TYPE_CHECKING:
@@ -22,15 +23,25 @@ if TYPE_CHECKING:
 class EtherfiCashCommonDecoder(EvmDecoderInterface):
 
     def _decode_cash_events(self, context: DecoderContext) -> EvmDecodingOutput:
-        if (
-            context.tx_log.topics[0] != CASHBACK or
-            int.from_bytes(context.tx_log.topics[3]) == 0 or  # not paid out yet
-            not self.base.is_tracked(recipient := bytes_to_address(context.tx_log.topics[2]))
-        ):
+        if context.tx_log.topics[0] == CASHBACK:
+            if int.from_bytes(context.tx_log.topics[3]) == 0:  # not paid out yet
+                return DEFAULT_EVM_DECODING_OUTPUT
+
+            recipient = bytes_to_address(context.tx_log.topics[2])
+            token_address = bytes_to_address(context.tx_log.data[32:64])
+            raw_amount = int.from_bytes(context.tx_log.data[64:96])
+        elif context.tx_log.topics[0] == PENDING_CASHBACK_CLEARED:  # deferred cashback paid out
+            recipient = bytes_to_address(context.tx_log.topics[1])
+            token_address = bytes_to_address(context.tx_log.data[:32])
+            raw_amount = int.from_bytes(context.tx_log.data[32:64])
+        else:
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        token = self.base.get_or_create_evm_token(address=bytes_to_address(context.tx_log.data[32:64]))  # noqa: E501
-        amount = asset_normalized_value(amount=int.from_bytes(context.tx_log.data[64:96]), asset=token)  # noqa: E501
+        if not self.base.is_tracked(recipient):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        token = self.base.get_or_create_evm_token(address=token_address)
+        amount = asset_normalized_value(amount=raw_amount, asset=token)
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.RECEIVE and
