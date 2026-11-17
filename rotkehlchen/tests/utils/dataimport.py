@@ -2908,11 +2908,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
             'source_name': 'Rotki generic trades',
             'total': 6,
             'processed': 6,
-            'messages': [
-                {'msg': 'Skipped duplicate swap event: trade/spend of 4576.64 ADA at 2022/08/01 09:08:20', 'rows': [-1]},  # noqa: E501
-                {'msg': 'Skipped duplicate swap event: trade/receive of 16.3444 BCH at 2022/08/01 09:08:20', 'rows': [-1]},  # noqa: E501
-                {'msg': 'Skipped duplicate swap event: trade/fee of 5.1345 USD at 2022/08/01 09:08:20', 'rows': [-1]},  # noqa: E501
-            ],
+            'messages': [],
         },
     }
     assert websocket_connection.messages_num() == 0
@@ -2924,6 +2920,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
                     )
 
     trade1_id, trade2_id, trade3_id, trade4_id, trade5_id = '99a7a11471a153413b825040bf031e4eaaeff4e4300cb89d8dc5fa0490e594f8', '270f318e1b0afe84367bb23185c4dccb01f11eee59578f57c5aca17117bb1354', 'f40b711eb844420db11770f794142fd1afbbe5573c52b8aa42a5b554f6a8f1fc', '82e3fefb4ccafa0c418bbb26a0b7e6869bdae66fc74a1695220da2bb81e15704', '0aa12919c65abbf8dc3c5704fd6e0bd83da3e296e125559069548e2e5b467af0'  # noqa: E501
+    trade4_second_fill_id = '56de26a8920b08b027f0e36a86839dc0f4d224f32ce500052309f0d8d73d6b56'  # identical trade in the same file  # noqa: E501
     expected_events = [SwapEvent(
         identifier=1,
         timestamp=TimestampMS(1659085200000),
@@ -2993,9 +2990,26 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
         amount=FVal('4576.6400'),
         notes='Trade ADA for BCH',
     ), SwapEvent(
+        identifier=11,
+        timestamp=TimestampMS(1659344900000),
+        group_identifier=trade4_second_fill_id,
+        location=Location.EXTERNAL,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ADA,
+        amount=FVal('4576.6400'),
+        notes='Trade ADA for BCH',
+    ), SwapEvent(
         identifier=9,
         timestamp=TimestampMS(1659344900000),
         group_identifier=trade4_id,
+        location=Location.EXTERNAL,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BCH,
+        amount=FVal('16.3444'),
+    ), SwapEvent(
+        identifier=12,
+        timestamp=TimestampMS(1659344900000),
+        group_identifier=trade4_second_fill_id,
         location=Location.EXTERNAL,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BCH,
@@ -3009,7 +3023,15 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
         asset=A_USD,
         amount=FVal('5.1345'),
     ), SwapEvent(
-        identifier=11,
+        identifier=13,
+        timestamp=TimestampMS(1659344900000),
+        group_identifier=trade4_second_fill_id,
+        location=Location.EXTERNAL,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('5.1345'),
+    ), SwapEvent(
+        identifier=14,
         timestamp=TimestampMS(1659345600000),
         group_identifier=trade5_id,
         location=Location.BISQ,
@@ -3018,7 +3040,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
         amount=FVal('4576.6400'),
         notes='Trade USDT for DAI',
     ), SwapEvent(
-        identifier=12,
+        identifier=15,
         timestamp=TimestampMS(1659345600000),
         group_identifier=trade5_id,
         location=Location.BISQ,
@@ -3026,7 +3048,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
         asset=A_DAI,
         amount=ZERO,
     ), SwapEvent(
-        identifier=13,
+        identifier=16,
         timestamp=TimestampMS(1659345600000),
         group_identifier=trade5_id,
         location=Location.BISQ,
@@ -3041,7 +3063,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
     expected_history_events = [
         HistoryEvent(
             identifier=1,
-            group_identifier=(dummy_event_id := '1xyz'),  # placeholder as this field is randomly generated on import  # noqa: E501
+            group_identifier=(dummy_event_id := '1xyz'),  # placeholder as this field is a hash of the row  # noqa: E501
             sequence_index=0,
             timestamp=TimestampMS(1658912400000),
             location=Location.KUCOIN,
@@ -3053,7 +3075,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
         ), HistoryEvent(
             identifier=2,
             group_identifier=dummy_event_id,
-            sequence_index=1,
+            sequence_index=0,
             timestamp=TimestampMS(1658998800000),
             location=Location.BINANCE,
             asset=A_USDT,
@@ -3064,7 +3086,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
         ), HistoryEvent(
             identifier=3,
             group_identifier=dummy_event_id,
-            sequence_index=2,
+            sequence_index=1,
             timestamp=TimestampMS(1658998800000),
             location=Location.BINANCE,
             asset=A_USDT,
@@ -3075,7 +3097,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
         ), HistoryEvent(
             identifier=4,
             group_identifier=dummy_event_id,
-            sequence_index=2,
+            sequence_index=0,
             timestamp=TimestampMS(1659085200000),
             location=Location.KRAKEN,
             asset=A_BNB,
@@ -3086,7 +3108,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
         ), HistoryEvent(
             identifier=5,
             group_identifier=dummy_event_id,
-            sequence_index=3,
+            sequence_index=0,
             timestamp=TimestampMS(1659340800000),
             location=Location.EXTERNAL,
             asset=A_ETH,
@@ -3097,7 +3119,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
         ), HistoryEvent(
             identifier=6,
             group_identifier=dummy_event_id,
-            sequence_index=4,
+            sequence_index=0,
             timestamp=TimestampMS(1659430800000),
             location=Location.COINBASE,
             asset=A_BTC,
@@ -3108,7 +3130,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
         ), HistoryEvent(
             identifier=7,
             group_identifier=dummy_event_id,
-            sequence_index=5,
+            sequence_index=0,
             timestamp=TimestampMS(1659513600000),
             location=Location.EXTERNAL,
             asset=A_DAI,

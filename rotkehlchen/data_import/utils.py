@@ -103,6 +103,16 @@ class BaseExchangeImporter(ABC):
         self._history_events.extend(history_events)
         self.maybe_flush_all(write_cursor)
 
+    @staticmethod
+    def group_already_imported(write_cursor: DBCursor, group_identifier: str) -> bool:
+        """Check if events of the given group are already in the DB. Lets importers whose
+        rows map to a deterministic group identifier skip a row as a whole, so that it is
+        not counted as imported."""
+        return write_cursor.execute(
+            'SELECT EXISTS(SELECT 1 FROM history_events WHERE group_identifier=?)',
+            (group_identifier,),
+        ).fetchone()[0] == 1
+
     def maybe_flush_all(self, cursor: DBCursor) -> None:
         if len(self._margin_trades) + len(self._history_events) >= ITEMS_PER_DB_WRITE:
             self.flush_all(cursor)
