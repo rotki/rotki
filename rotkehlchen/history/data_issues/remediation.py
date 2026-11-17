@@ -902,6 +902,10 @@ def verify_plan(database: DBHandler, plan_id: str) -> dict[str, Any]:
         'interpretation': 'The verdict comes from the bucket processing stops, not from issue '
                           'states: a dismissed or resolved issue does not mean repaired data',
     }
-    with database.user_write() as write_cursor:
-        _audit(write_cursor, plan_id, 'verified', {'verdict': verdict})
+    if verdict != next((  # a caller polling for re-evaluation doesn't repeat the entry
+        entry['details'].get('verdict') for entry in reversed(plan['audit'])
+        if entry['action'] == 'verified'
+    ), None):
+        with database.user_write() as write_cursor:
+            _audit(write_cursor, plan_id, 'verified', {'verdict': verdict})
     return get_plan(database, plan_id) | {'verification': verification}

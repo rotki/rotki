@@ -683,6 +683,7 @@ def test_redecode_apply_and_verify_only_count_applied_items(database: DBHandler)
     with database.user_write() as write_cursor:  # the running pass ends with the redecode stale
         database.set_static_cache(write_cursor, DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS, ts_now())  # noqa: E501
         database.set_static_cache(write_cursor, DBCacheStatic.STALE_BALANCES_FROM_TS, '5000')
-    verification = verify_plan(database, plan['plan_id'])['verification']
-    assert verification['reevaluated'] is False
-    assert verification['verdict'] == 'not_reevaluated'
+    verified = verify_plan(database, plan['plan_id'])
+    assert verified['verification']['reevaluated'] is False
+    assert verified['verification']['verdict'] == 'not_reevaluated'
+    assert [x['action'] for x in verified['audit']].count('verified') == 1  # polling adds none
