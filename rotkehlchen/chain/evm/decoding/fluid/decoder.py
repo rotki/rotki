@@ -540,7 +540,7 @@ class FluidCommonDecoder(EvmDecoderInterface):
             vault_log_pos: int,
             all_logs: list[EvmTxReceiptLog],
             decoded_events: list[EvmEvent],
-            tracked_nfts: set[int],
+            tracked_nfts: dict[int, ChecksumEvmAddress],
             used_liq_legs: set[tuple[int, bool]],
             used_dex_logs: set[int],
     ) -> None:
@@ -558,16 +558,25 @@ class FluidCommonDecoder(EvmDecoderInterface):
             event.counterparty != CPT_FLUID
             for event in decoded_events
         )
-        position_is_tracked = (
-            self.base.is_tracked(operate_user) or
-            nft_id in tracked_nfts or
-            (self.base.is_tracked(transaction.from_address) and not has_third_party_mint)
-        )
-        if not position_is_tracked and not self.base.is_tracked(to_addr):
+        if self.base.is_tracked(operate_user):
+            position_owner: ChecksumEvmAddress | None = operate_user
+        elif (nft_owner := tracked_nfts.get(nft_id)) is not None:
+            position_owner = nft_owner
+        elif self.base.is_tracked(transaction.from_address) and not has_third_party_mint:
+            position_owner = transaction.from_address
+        else:
+            position_owner = None
+
+        if position_owner is None and not self.base.is_tracked(to_addr):
             return
 
         allowed_addresses = {FLUID_LIQUIDITY, vault_addr, operate_user}
-        for is_collateral, raw_amt in ((True, col_amt), (False, debt_amt)):
+        legs = (
+            ((False, debt_amt), (True, col_amt))
+            if debt_amt > 0 else
+            ((True, col_amt), (False, debt_amt))
+        )
+        for is_collateral, raw_amt in legs:
             if raw_amt == 0:
                 continue
 
@@ -581,7 +590,7 @@ class FluidCommonDecoder(EvmDecoderInterface):
                 used_liq_legs=used_liq_legs,
                 used_dex_logs=used_dex_logs,
             )
-            if position_is_tracked:
+            if position_owner is not None:
                 spec = _OPERATE_LEG_CONFIG[is_collateral, raw_amt > 0]
                 from_type, to_type, to_subtype, notes_template = spec
                 target_vault: ChecksumEvmAddress | None = vault_addr
@@ -597,18 +606,34 @@ class FluidCommonDecoder(EvmDecoderInterface):
                 continue
 
             for asset, amount in entries:
-                self._reconcile_transfer(
-                    decoded_events=decoded_events,
-                    from_event_type=from_type,
-                    asset=asset,
-                    amount=amount,
-                    allowed_addresses=allowed_addresses,
-                    to_event_type=to_type,
-                    to_event_subtype=to_subtype,
-                    vault_addr=target_vault,
-                    notes_template=notes_template,
-                    allow_native_refund=not is_collateral and raw_amt < 0,
-                )
+                if (
+                    self._reconcile_transfer(
+                        decoded_events=decoded_events,
+                        from_event_type=from_type,
+                        asset=asset,
+                        amount=amount,
+                        allowed_addresses=allowed_addresses,
+                        to_event_type=to_type,
+                        to_event_subtype=to_subtype,
+                        vault_addr=target_vault,
+                        notes_template=notes_template,
+                        allow_native_refund=not is_collateral and raw_amt < 0,
+                    ) is None and
+                    position_owner is not None
+                ):
+                    symbol = asset.resolve_to_asset_with_symbol().symbol
+                    decoded_events.append(self.base.make_event_next_index(
+                        tx_ref=transaction.tx_hash,
+                        timestamp=transaction.timestamp,
+                        event_type=to_type,
+                        event_subtype=to_subtype,
+                        asset=asset,
+                        amount=amount,
+                        location_label=position_owner,
+                        notes=notes_template.format(amount=amount, symbol=symbol),
+                        counterparty=CPT_FLUID,
+                        address=vault_addr,
+                    ))
 
     def _process_vault_liquidate(
             self,
@@ -691,19 +716,22 @@ class FluidCommonDecoder(EvmDecoderInterface):
             all_logs: list[EvmTxReceiptLog],
     ) -> list[EvmEvent]:
         """Post-decoding hook transforming token/ETH transfers into Fluid vault events."""
-        tracked_nfts = {
-            int.from_bytes(tx_log.topics[3])
-            for tx_log in all_logs
+        tracked_nfts: dict[int, ChecksumEvmAddress] = {}
+        for tx_log in all_logs:
             if (
-                tx_log.address == FLUID_VAULT_FACTORY and
-                len(tx_log.topics) == 4 and
-                tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                self.base.any_tracked((
-                    bytes_to_address(tx_log.topics[1]),
-                    bytes_to_address(tx_log.topics[2]),
-                ))
-            )
-        }
+                tx_log.address != FLUID_VAULT_FACTORY or
+                len(tx_log.topics) != 4 or
+                tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER
+            ):
+                continue
+
+            from_addr = bytes_to_address(tx_log.topics[1])
+            to_addr = bytes_to_address(tx_log.topics[2])
+            if self.base.is_tracked(to_addr):
+                tracked_nfts[int.from_bytes(tx_log.topics[3])] = to_addr
+            elif self.base.is_tracked(from_addr):
+                tracked_nfts[int.from_bytes(tx_log.topics[3])] = from_addr
+
         used_liq_legs: set[tuple[int, bool]] = set()
         used_dex_logs: set[int] = set()
 

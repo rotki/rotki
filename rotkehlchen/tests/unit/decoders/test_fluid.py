@@ -18,7 +18,7 @@ from rotkehlchen.chain.evm.decoding.structures import DEFAULT_EVM_DECODING_OUTPU
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT, A_WBTC
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -420,32 +420,103 @@ def test_fluid_t2_flash_leverage_router(
 ) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=deserialize_evm_tx_hash('0x10ad4b964d5fb11b22a746cdf8d672f0f580593c8f1d58b7a59ef7fad1d5aeb3'),
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x10ad4b964d5fb11b22a746cdf8d672f0f580593c8f1d58b7a59ef7fad1d5aeb3')),  # noqa: E501
     )
-    user_address = ethereum_accounts[0]
-    vault_address = string_to_evm_address('0x01510793Df6aD5C1a8Ae592158713176Cbd17a62')
-    assert any(
-        event.event_type == HistoryEventType.DEPOSIT and
-        event.event_subtype == HistoryEventSubType.DEPOSIT_TO_PROTOCOL and
-        event.asset == A_USDC and
-        event.amount == FVal('19197.792701') and
-        event.location_label == user_address and
-        event.counterparty == CPT_FLUID and
-        event.address == vault_address and
-        event.notes == 'Deposit 19197.792701 USDC as collateral to Fluid'
-        for event in events
-    )
-    assert any(
-        event.event_type == HistoryEventType.MINT and
-        event.event_subtype == HistoryEventSubType.NFT and
-        event.asset == _vault_nft(19740) and
-        event.amount == ONE and
-        event.location_label == user_address and
-        event.counterparty == CPT_FLUID and
-        event.address == vault_address and
-        event.notes == 'Create Fluid vault position 19740'
-        for event in events
-    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1794299315000)),
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.000035645487870392'),
+            location_label=(user_address := ethereum_accounts[0]),
+            counterparty=CPT_GAS,
+        ),
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.TRANSACTION_TO_SELF,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user_address,
+            notes='Transaction to self of 0 ETH',
+            address=user_address,
+        ),
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=935,
+            timestamp=timestamp,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_USDC,
+            amount=FVal('19197.792701'),
+            location_label=user_address,
+            address=string_to_evm_address('0x110c30efC1A0D378C22f01b08Cb52d27275EEd6e'),
+        ),
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=938,
+            timestamp=timestamp,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+            asset=A_USDC,
+            amount=FVal('19197.792701'),
+            location_label=user_address,
+            notes='Deposit 19197.792701 USDC as collateral to Fluid',
+            counterparty=CPT_FLUID,
+            address=(vault_address := string_to_evm_address('0x01510793Df6aD5C1a8Ae592158713176Cbd17a62')),  # noqa: E501
+        ),
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=953,
+            timestamp=timestamp,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.MINT,
+            event_subtype=HistoryEventSubType.NFT,
+            asset=_vault_nft(19740),
+            amount=ONE,
+            location_label=user_address,
+            notes='Create Fluid vault position 19740',
+            counterparty=CPT_FLUID,
+            address=vault_address,
+        ),
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=959,
+            timestamp=timestamp,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.GENERATE_DEBT,
+            asset=A_USDC,
+            amount=FVal('79237.596619'),
+            location_label=user_address,
+            notes='Borrow 79237.596619 USDC from Fluid',
+            counterparty=CPT_FLUID,
+            address=vault_address,
+        ),
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=960,
+            timestamp=timestamp,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+            asset=A_USDC,
+            amount=FVal('79237.596619'),
+            location_label=user_address,
+            notes='Deposit 79237.596619 USDC as collateral to Fluid',
+            counterparty=CPT_FLUID,
+            address=vault_address,
+        ),
+    ]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
