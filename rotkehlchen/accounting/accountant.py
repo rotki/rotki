@@ -82,7 +82,7 @@ class Accountant:
 
     def clear_processable_events_cache(self) -> None:
         """Forget the cached accounting rule statuses of the events. Called whenever the
-        accounting rules change.
+        accounting rules change or the user edits events.
 
         The whole cache is cleared instead of only the affected events since which events a
         rule affects depends on the rule precedence (a rule without counterparty applies to

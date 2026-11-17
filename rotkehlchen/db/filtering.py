@@ -966,11 +966,11 @@ class HistoryEventStateMarkersJoinsFilter(DBFilter):
                 HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),
                 HISTORY_MAPPING_KEY_STATE, auto_matched_value,
             ])
-        else:
+        else:  # a subquery, since a join returns an event once per marker it has
             query = (
-                'INNER JOIN history_events_mappings '
-                'ON history_events_mappings.parent_identifier = history_events_identifier '
-                f'WHERE history_events_mappings.name = ? AND history_events_mappings.value IN ({placeholders})'  # noqa: E501
+                'WHERE history_events_identifier IN ('
+                'SELECT parent_identifier FROM history_events_mappings '
+                f'WHERE name = ? AND value IN ({placeholders}))'
             )
         return [query], bindings
 
@@ -1185,6 +1185,13 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
         filters.append(filter_query.timestamp_filter)
         filter_query.filters = filters
         return filter_query
+
+    @property
+    def state_markers(self) -> list[HistoryMappingState]:
+        if not isinstance(self.join_clause, HistoryEventStateMarkersJoinsFilter):
+            return []
+
+        return self.join_clause.state_markers
 
     def requires_counterparty(self) -> bool:
         """True if only events of specific counterparties can match this filter.

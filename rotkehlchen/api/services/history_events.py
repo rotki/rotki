@@ -129,6 +129,7 @@ class HistoryEventsService:
             except InputError as e:
                 return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
             else:
+                self.rotkehlchen.accountant.clear_processable_events_cache()
                 return OkResult(True)
 
         try:
@@ -142,6 +143,7 @@ class HistoryEventsService:
         except InputError as e:
             return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
+        self.rotkehlchen.accountant.clear_processable_events_cache()
         return OkResult(True)
 
     def delete_history_events(

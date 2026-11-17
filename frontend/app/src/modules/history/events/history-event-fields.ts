@@ -303,8 +303,9 @@ export function toHistoryEventFields(
 
 /**
  * The history event state markers (matched / customized / imported / profit adjustment /
- * synthetic) as a param-bound pill field. Like the account field it is an external filter rather
- * than a matcher: it rides the `stateMarkers` param, which goes to both the request and the URL.
+ * synthetic / missing accounting rule) as a param-bound pill field. Like the account field it is an
+ * external filter rather than a matcher: it rides the `stateMarkers` param, which goes to both the
+ * request and the URL.
  *
  * Its values are read by their glyph and colour in the list it came from, so unlike the other
  * non-identity enums it keeps a per-value icon (`resolveIcon`).

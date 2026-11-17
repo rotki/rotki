@@ -139,6 +139,14 @@ describe('useHistoryEventsPillBar', () => {
       expect(get(toggles).stateMarkers).toStrictEqual(['customized']);
     });
 
+    it('should keep the missing accounting rule state marker', () => {
+      const { bar } = mountBar();
+
+      set(bar.modelPillParams, { stateMarkers: ['missing accounting rule'] });
+
+      expect(get(toggles).stateMarkers).toStrictEqual(['missing accounting rule']);
+    });
+
     it('should drop a state marker the app does not know', () => {
       const { bar } = mountBar();
 

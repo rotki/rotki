@@ -48,6 +48,7 @@ class HistoryMappingState(DBIntEnumMixIn):
     MATCHED = 3  # events matched with asset movements and adjustments created during matching.
     IMPORTED_FROM_CSV = 4
     SYNTHETIC = 5  # events manufactured by rotki from other events' data, e.g. exchange adjustments or the counterpart leg of a bridge whose chain can no longer be queried  # noqa: E501
+    MISSING_ACCOUNTING_RULE = 6  # derived data, rewritten by update_missing_accounting_rule_markers before each filter by it  # noqa: E501
 
 
 class HistoryEventLinkType(DBIntEnumMixIn):

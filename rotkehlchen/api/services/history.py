@@ -26,8 +26,11 @@ from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.connections.types import connection_range_name
 from rotkehlchen.constants import HOUR_IN_SECONDS, ZERO
-from rotkehlchen.db.accounting_rules import query_missing_accounting_rules
-from rotkehlchen.db.constants import HistoryEventLinkType
+from rotkehlchen.db.accounting_rules import (
+    query_missing_accounting_rules,
+    update_missing_accounting_rule_markers,
+)
+from rotkehlchen.db.constants import HistoryEventLinkType, HistoryMappingState
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     EvmTransactionsNotDecodedFilterQuery,
@@ -87,7 +90,6 @@ if TYPE_CHECKING:
     )
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
-    from rotkehlchen.db.constants import HistoryMappingState
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.db.filtering import HistoryBaseEntryFilterQuery
     from rotkehlchen.db.history_events import HistoryEventsWithCountResult
@@ -385,11 +387,37 @@ class HistoryService:
 
         return OkResult(True)
 
+    def _build_dummy_pot(self) -> AccountingPot:
+        """Only needed when the accounting rule statuses miss their cache, so it is passed
+        as a factory to avoid the construction cost (settings reads + accounting machinery
+        instantiation) on the common repeat/poll/back-pagination loads."""
+        return AccountingPot(
+            database=self.rotkehlchen.data.db,
+            evm_accounting_aggregators=EVMAccountingAggregators([
+                self.rotkehlchen.chains_aggregator.get_evm_manager(x).accounting_aggregator
+                for x in EVM_CHAIN_IDS_WITH_TRANSACTIONS
+            ]),
+            msg_aggregator=self.rotkehlchen.msg_aggregator,
+            is_dummy_pot=True,
+        )
+
+    def maybe_update_missing_accounting_rule_markers(
+            self,
+            filter_query: HistoryBaseEntryFilterQuery,
+    ) -> None:
+        """Bring the missing accounting rule markers up to date if the filter selects by them"""
+        if HistoryMappingState.MISSING_ACCOUNTING_RULE in filter_query.state_markers:
+            update_missing_accounting_rule_markers(
+                db=self.rotkehlchen.data.db,
+                pot_factory=self._build_dummy_pot,
+            )
+
     def get_history_events(
             self,
             filter_query: HistoryBaseEntryFilterQuery,
             aggregate_by_group_ids: bool,
     ) -> ApiResult:
+        self.maybe_update_missing_accounting_rule_markers(filter_query)
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         entries_limit, has_premium = get_user_limit(
             premium=self.rotkehlchen.premium,
@@ -447,20 +475,6 @@ class HistoryService:
                 identifiers={event.group_identifier for event in events},
             )
 
-        # The dummy pot is only needed when query_missing_accounting_rules misses its cache,
-        # so build it lazily to avoid the construction cost (settings reads + accounting
-        # machinery instantiation) on the common repeat/poll/back-pagination loads.
-        def build_dummy_pot() -> AccountingPot:
-            return AccountingPot(
-                database=self.rotkehlchen.data.db,
-                evm_accounting_aggregators=EVMAccountingAggregators([
-                    self.rotkehlchen.chains_aggregator.get_evm_manager(x).accounting_aggregator
-                    for x in EVM_CHAIN_IDS_WITH_TRANSACTIONS
-                ]),
-                msg_aggregator=self.rotkehlchen.msg_aggregator,
-                is_dummy_pot=True,
-            )
-
         result = {
             # entries are already serialized to JSON primitives, so wrap them to skip
             # the redundant process_result re-walk of the whole (potentially huge) list
@@ -469,7 +483,7 @@ class HistoryService:
                 aggregate_by_group_ids=aggregate_by_group_ids,
                 event_accounting_rule_statuses=query_missing_accounting_rules(
                     db=self.rotkehlchen.data.db,
-                    pot_factory=build_dummy_pot,
+                    pot_factory=self._build_dummy_pot,
                     events=events,
                     accountant=self.rotkehlchen.accountant,
                 ),
@@ -531,6 +545,7 @@ class HistoryService:
             directory_path: Path | None,
             match_exact_events: bool,
     ) -> ApiResult:
+        self.maybe_update_missing_accounting_rule_markers(filter_query)
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         entries_limit, _ = get_user_limit(
             premium=self.rotkehlchen.premium,

@@ -42,6 +42,11 @@ export const useHistoryEventStateMapping = createSharedComposable(() => {
       color: 'secondary',
       label: t('transactions.events.event_states.synthetic'),
     },
+    [HistoryEventState.MISSING_ACCOUNTING_RULE]: {
+      icon: 'lu-info',
+      color: 'warning',
+      label: t('transactions.events.event_states.missing_accounting_rule'),
+    },
   };
 
   return {

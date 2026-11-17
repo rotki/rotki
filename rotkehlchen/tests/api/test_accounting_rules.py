@@ -18,13 +18,16 @@ from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_PROPERTIES,
     NO_ACCOUNTING_COUNTERPARTY,
+    HistoryMappingState,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.updates import RotkiDataUpdater, UpdateType
+from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.locations.constants import (
     LOCATION_ETHEREUM,
+    LOCATION_EXTERNAL,
 )
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -34,7 +37,11 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.tests.utils.history_base_entry import add_entries, store_and_retrieve_events
+from rotkehlchen.tests.utils.history_base_entry import (
+    add_entries,
+    entries_to_input_dict,
+    store_and_retrieve_events,
+)
 from rotkehlchen.types import TimestampMS
 
 if TYPE_CHECKING:
@@ -680,6 +687,105 @@ def test_rule_changes_refresh_cached_statuses(rotkehlchen_api_server: APIServer)
         api_url_for(rotkehlchen_api_server, 'accountingrulesresetresource'),
     ))
     assert query_status(migrate_event.group_identifier) == EventAccountingRuleStatus.NOT_PROCESSED.serialize()  # noqa: E501
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [False])
+def test_missing_accounting_rule_filter(rotkehlchen_api_server: APIServer) -> None:
+    """Filtering by the missing accounting rule state marker returns exactly the events that
+    accounting would skip, also when their page was never queried, and follows rule additions,
+    edits and deletions as well as event edits."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    def query_missing(*other_markers: HistoryMappingState) -> list[int]:
+        result = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json={'state_markers': [
+                marker.serialize()
+                for marker in (HistoryMappingState.MISSING_ACCOUNTING_RULE, *other_markers)
+            ]},
+        ))
+        assert result['entries_found'] == len(result['entries'])
+        return sorted(entry['entry']['identifier'] for entry in result['entries'])
+
+    def query_group(group_identifier: str) -> list[dict[str, Any]]:
+        return assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json={'group_identifiers': [group_identifier]},
+        ))['entries']
+
+    tx_hash = make_evm_tx_hash()
+    deposit, receive_wrapped, _ = store_and_retrieve_events([EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=sequence_index,
+        timestamp=TimestampMS(16433333000),
+        location=LOCATION_ETHEREUM,
+        asset=asset,
+        amount=ONE,
+        event_type=event_type,
+        event_subtype=event_subtype,
+        counterparty=CPT_COMPOUND,
+    ) for sequence_index, asset, event_type, event_subtype in (
+        (0, A_CUSDC, HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+        (1, A_USDC, HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED),
+        (2, A_USDC, HistoryEventType.INFORMATIONAL, HistoryEventSubType.APPROVE),
+    )], rotki.data.db)
+    migrate = store_and_retrieve_events([HistoryEvent(
+        group_identifier='migrate_group',
+        sequence_index=0,
+        timestamp=TimestampMS(16433334000),
+        location=LOCATION_EXTERNAL,
+        asset=A_USDC,
+        amount=ONE,
+        event_type=HistoryEventType.MIGRATE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+    )], rotki.data.db)[0]
+    all_missing = sorted([deposit.identifier, receive_wrapped.identifier, migrate.identifier])  # type: ignore[type-var]  # identifiers are set
+    assert query_missing() == all_missing
+
+    rule = {
+        'event_type': HistoryEventType.DEPOSIT.serialize(),
+        'event_subtype': HistoryEventSubType.DEPOSIT_ASSET.serialize(),
+        'counterparty': CPT_COMPOUND,
+        'taxable': {'value': True},
+        'count_entire_amount_spend': {'value': True},
+        'count_cost_basis_pnl': {'value': True},
+        'accounting_treatment': TxAccountingTreatment.SWAP.serialize(),
+    }
+    assert_simple_ok_response(requests.put(  # the swap treatment also processes the next event
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json=rule,
+    ))
+    assert query_missing() == [migrate.identifier]
+
+    assert_simple_ok_response(requests.patch(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json=rule | {'identifier': 1, 'accounting_treatment': None},
+    ))
+    assert query_missing() == sorted([receive_wrapped.identifier, migrate.identifier])  # type: ignore[type-var]  # identifiers are set
+
+    assert_simple_ok_response(requests.delete(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json={'identifier': 1},
+    ))
+    assert query_missing() == all_missing
+    assert all('states' not in entry for entry in query_group(deposit.group_identifier))
+
+    assert query_group(migrate.group_identifier)[0]['event_accounting_rule_status'] == EventAccountingRuleStatus.NOT_PROCESSED.serialize()  # noqa: E501
+    migrate.event_type, migrate.event_subtype = HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE  # noqa: E501
+    assert_simple_ok_response(requests.patch(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json=entries_to_input_dict(entries=[migrate], include_identifier=True),
+    ))
+    assert query_missing() == sorted([deposit.identifier, receive_wrapped.identifier])  # type: ignore[type-var]  # identifiers are set
+    assert query_group(migrate.group_identifier)[0]['event_accounting_rule_status'] == EventAccountingRuleStatus.PROCESSED.serialize()  # noqa: E501
+
+    migrate.event_type, migrate.event_subtype = HistoryEventType.MIGRATE, HistoryEventSubType.RECEIVE  # noqa: E501
+    assert_simple_ok_response(requests.patch(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json=entries_to_input_dict(entries=[migrate], include_identifier=True),
+    ))
+    # the edited event is now both customized and missing a rule, and is returned once
+    assert query_missing(HistoryMappingState.CUSTOMIZED) == all_missing
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])

@@ -7669,6 +7669,7 @@
         "customized": "Customized",
         "imported_from_csv": "Imported from CSV",
         "matched": "Matched",
+        "missing_accounting_rule": "Missing accounting rule",
         "profit_adjustment": "Profit adjustment",
         "synthetic": "Synthetic"
       },

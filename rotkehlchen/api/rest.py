@@ -1208,6 +1208,7 @@ class RestAPI:
             force_delete: bool,
             requested_identifiers: list[int] | None = None,
     ) -> Response:
+        self.history_service.maybe_update_missing_accounting_rule_markers(filter_query)
         response_data = self.history_events_service.delete_history_events(
             filter_query=filter_query,
             force_delete=force_delete,
@@ -3688,6 +3689,7 @@ class RestAPI:
             filter_query: HistoryBaseEntryFilterQuery,
     ) -> Response:
         """Gets the 0-based group position of a history event group in the filtered sorted list."""
+        self.history_service.maybe_update_missing_accounting_rule_markers(filter_query)
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         position = dbevents.get_history_event_group_position(
             group_identifier=group_identifier,

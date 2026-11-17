@@ -1517,8 +1517,13 @@ class DBHistoryEvents:
             for chunk, placeholders in get_query_chunks(entry_identifiers):
                 for identifier, state_value in cursor.execute(
                     f'SELECT parent_identifier, value FROM history_events_mappings '
-                    f'WHERE name=? AND parent_identifier IN ({placeholders})',
-                    (HISTORY_MAPPING_KEY_STATE, *chunk),
+                    f'WHERE name=? AND value!=? AND parent_identifier IN ({placeholders})',
+                    (
+                        HISTORY_MAPPING_KEY_STATE,
+                        # stale unless just filtered by, event_accounting_rule_status is current
+                        HistoryMappingState.MISSING_ACCOUNTING_RULE.serialize_for_db(),
+                        *chunk,
+                    ),
                 ):
                     scoped_states[identifier].append(HistoryMappingState(state_value))
 

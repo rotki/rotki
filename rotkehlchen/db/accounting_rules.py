@@ -1,4 +1,5 @@
 import logging
+import sys
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -13,9 +14,12 @@ from rotkehlchen.chain.evm.accounting.structures import (
     TxAccountingTreatment,
 )
 from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_STATE,
     LINKABLE_ACCOUNTING_PROPERTIES,
     LINKABLE_ACCOUNTING_SETTINGS_NAME,
     NO_ACCOUNTING_COUNTERPARTY,
+    SQL_VARIABLE_CHUNK_SIZE,
+    HistoryMappingState,
 )
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -23,10 +27,12 @@ from rotkehlchen.db.settings import DEFAULT_INCLUDE_CRYPTO2CRYPTO, DEFAULT_INCLU
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.history.events.constants import STAKING_ENTRY_TYPES
 from rotkehlchen.history.events.structures.eth2 import EthStakingEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
@@ -779,7 +785,22 @@ def query_missing_accounting_rules(
     if all(status is not None for status in cached_statuses):
         return cached_statuses  # type: ignore  # all entries are non-None here
 
-    accounting_pot = pot_factory()
+    return _resolve_accounting_rule_statuses(
+        db=db,
+        statuses_cache=accountant.processable_events_cache,
+        accounting_pot=pot_factory(),
+        events=events,
+    )
+
+
+def _resolve_accounting_rule_statuses(
+        db: DBHandler,
+        statuses_cache: LRUCacheWithRemove[int, EventAccountingRuleStatus],
+        accounting_pot: AccountingPot,
+        events: Sequence[HistoryBaseEntry],
+) -> list[EventAccountingRuleStatus]:
+    """Resolve the accounting rule status of the given events, together with the events of
+    their groups, storing every resolved status in statuses_cache"""
     evm_accounting_aggregator = accounting_pot.events_accountant.evm_accounting_aggregators
     history_db = DBHistoryEvents(db)
     with db.conn.read_ctx() as cursor:
@@ -807,7 +828,7 @@ def query_missing_accounting_rules(
         # iterator
         current_event_index = 0
         for _, event in bindings_and_events_iterator:
-            if accountant.processable_events_cache.get(event.identifier) is not None:  # type: ignore
+            if statuses_cache.get(event.identifier) is not None:  # type: ignore
                 current_event_index += 1
                 continue
 
@@ -818,7 +839,7 @@ def query_missing_accounting_rules(
                     (isinstance(event, EvmEvent) and event.group_identifier.startswith('BP1_'))
             ):
 
-                accountant.processable_events_cache.add(event.identifier, EventAccountingRuleStatus.PROCESSED)  # type: ignore  # noqa: E501
+                statuses_cache.add(event.identifier, EventAccountingRuleStatus.PROCESSED)  # type: ignore
                 current_event_index += 1
                 continue
 
@@ -829,7 +850,7 @@ def query_missing_accounting_rules(
                 event_specific_treatments=event_specific_treatments,
                 generic_treatments=generic_treatments,
             )
-            accountant.processable_events_cache.add(event.identifier, accounting_outcome)  # type: ignore
+            statuses_cache.add(event.identifier, accounting_outcome)  # type: ignore
 
             # the current event in addition to have an accounting rule could have a callback that
             # affects events that come after and is not enough to check the accounting rule
@@ -847,23 +868,99 @@ def query_missing_accounting_rules(
             if len(new_missing_accounting_rule) != 0:
                 current_event_index += len(new_missing_accounting_rule)
                 if accounting_outcome is EventAccountingRuleStatus.NOT_PROCESSED:  # we processed it in the callback so is not missing  # noqa: E501
-                    accountant.processable_events_cache.add(
+                    statuses_cache.add(
                         key=event.identifier,  # type: ignore  # the identifier is optional in the event
                         value=EventAccountingRuleStatus.PROCESSED,
                     )
 
                 # update information about the new events
                 for processed_event_id, _ in new_missing_accounting_rule:
-                    accountant.processable_events_cache.add(
+                    statuses_cache.add(
                         key=processed_event_id,
                         value=EventAccountingRuleStatus.PROCESSED,
                     )
 
     result = []
     for event in events:
-        if (processable_status := accountant.processable_events_cache.get(event.identifier)) is None:  # type: ignore # noqa: E501
+        if (processable_status := statuses_cache.get(event.identifier)) is None:  # type: ignore
             result.append(EventAccountingRuleStatus.NOT_PROCESSED)
         else:
             result.append(processable_status)
 
     return result
+
+
+def update_missing_accounting_rule_markers(
+        db: DBHandler,
+        pot_factory: Callable[[], AccountingPot],
+) -> None:
+    """Mark with the MISSING_ACCOUNTING_RULE state exactly the events that accounting would
+    skip under the current rules, so that filtering by that state marker is complete.
+
+    Only events that no rule matches by type, subtype and counterparty can be skipped, so only
+    their groups are resolved, since callbacks of other events in a group may still process them.
+    """
+    marker_bindings = (
+        HISTORY_MAPPING_KEY_STATE,
+        HistoryMappingState.MISSING_ACCOUNTING_RULE.serialize_for_db(),
+    )
+    with db.conn.read_ctx() as cursor:
+        candidate_ids = [row[0] for row in cursor.execute(
+            'SELECT he.identifier FROM history_events he '
+            'LEFT JOIN chain_events_info cei ON cei.identifier = he.identifier '
+            f"WHERE he.type != ? AND he.entry_type NOT IN ({','.join('?' * len(STAKING_ENTRY_TYPES))}) "  # noqa: E501
+            'AND NOT EXISTS (SELECT 1 FROM accounting_rule_events WHERE event_id = he.identifier) '
+            'AND NOT EXISTS (SELECT 1 FROM accounting_rules ar WHERE ar.is_event_specific = 0 '
+            'AND ar.type = he.type AND ar.subtype = he.subtype '
+            'AND ar.counterparty IN (COALESCE(cei.counterparty, ?), ?))',
+            (
+                HistoryEventType.INFORMATIONAL.serialize(),
+                *[entry_type.serialize_for_db() for entry_type in STAKING_ENTRY_TYPES],
+                NO_ACCOUNTING_COUNTERPARTY,
+                NO_ACCOUNTING_COUNTERPARTY,
+            ),
+        )]
+        marked_ids = {row[0] for row in cursor.execute(
+            'SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?',
+            marker_bindings,
+        )}
+
+    missing_ids: set[int] = set()
+    if len(candidate_ids) != 0:
+        accounting_pot, history_db = pot_factory(), DBHistoryEvents(db)
+        for chunk in get_chunks(candidate_ids, n=SQL_VARIABLE_CHUNK_SIZE):
+            with db.conn.read_ctx() as cursor:
+                events = history_db.get_history_events_internal(
+                    cursor=cursor,
+                    filter_query=HistoryEventFilterQuery.make(identifiers=chunk),
+                )
+            statuses = _resolve_accounting_rule_statuses(
+                db=db,
+                # unbounded since an evicted status would report its event as missing
+                statuses_cache=LRUCacheWithRemove(maxsize=sys.maxsize),
+                accounting_pot=accounting_pot,
+                events=events,
+            )
+            missing_ids.update(
+                event.identifier for event, status in zip(events, statuses, strict=True)  # type: ignore[misc]  # identifier is set for events loaded from the DB
+                if status is EventAccountingRuleStatus.NOT_PROCESSED
+            )
+
+    unmarked_ids, new_ids = marked_ids - missing_ids, missing_ids - marked_ids
+    if len(unmarked_ids) == 0 and len(new_ids) == 0:
+        return
+
+    with db.conn.write_ctx() as write_cursor:
+        for chunk, placeholders in get_query_chunks(list(unmarked_ids)):
+            write_cursor.execute(
+                'DELETE FROM history_events_mappings WHERE name=? AND value=? '
+                f'AND parent_identifier IN ({placeholders})',
+                (*marker_bindings, *chunk),
+            )
+        for chunk, placeholders in get_query_chunks(list(new_ids)):
+            write_cursor.execute(  # selected from history_events in case one got deleted meanwhile
+                'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) '
+                'SELECT identifier, ?, ? FROM history_events '
+                f'WHERE identifier IN ({placeholders})',
+                (*marker_bindings, *chunk),
+            )

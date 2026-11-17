@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`13096` The History view can now be filtered to the events that are missing an accounting rule. Pick "Missing accounting rule" in the state filter to list every event that a profit and loss report would skip, and add the missing rule from each event's row.
 * :bug:`-` Venice DIEM collateral locks and unlocks are now informational events because the locked sVVV remains in the wallet.
 * :bug:`-` With a crypto main currency such as ETH or BTC, historical fiat prices in that currency are now found by inverting the crypto price in fiat. Before, fiat received in a profit and loss report was valued at zero, fiat spent was reported as a missing price, and snapshot exports used a rate of one.
 * :bug:`-` Bitpanda history queries now save each page as it arrives, so a failure part way through no longer throws away the history already fetched.

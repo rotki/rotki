@@ -6129,7 +6129,7 @@ Dealing with History Events
    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson object otherargs: Check the documentation of the remaining arguments `here <filter-request-args-label_>`_.
-   :reqjson list[string] state_markers: Optional. A list of state markers to filter events by. Events matching any of the specified markers will be returned. Valid values are ``customized``, ``profit adjustment``, ``matched``, ``imported from csv``. If not provided, no marker filtering is applied.
+   :reqjson list[string] state_markers: Optional. A list of state markers to filter events by. Events matching any of the specified markers will be returned. Valid values are ``customized``, ``profit adjustment``, ``matched``, ``imported from csv``, ``synthetic`` and ``missing accounting rule``. ``missing accounting rule`` selects the events that have no accounting rule and are not processed in accounting otherwise, the same events whose ``event_accounting_rule_status`` is ``not processed``. It is computed for all events when requested and is not returned in the ``states`` of an event. If not provided, no marker filtering is applied.
 
    **Example Response**:
 

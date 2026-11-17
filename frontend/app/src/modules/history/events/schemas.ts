@@ -165,6 +165,7 @@ export enum HistoryEventState {
   IMPORTED_FROM_CSV = 'imported from csv',
   PROFIT_ADJUSTMENT = 'profit adjustment',
   SYNTHETIC = 'synthetic',
+  MISSING_ACCOUNTING_RULE = 'missing accounting rule',
 }
 
 const HistoryEventStateEnum = z.enum(HistoryEventState);

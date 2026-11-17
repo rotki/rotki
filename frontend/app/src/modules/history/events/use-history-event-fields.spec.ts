@@ -5,6 +5,7 @@ import { HistoryEventEntryType } from '@rotki/common';
 import { createLocationNode as node } from '@test/utils/location-tree';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';
+import { HistoryEventState } from '@/modules/history/events/schemas';
 import { useHistoryEventFields } from '@/modules/history/events/use-history-event-fields';
 import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 
@@ -319,6 +320,18 @@ describe('useHistoryEventFields', () => {
 
     it('should be dropped when the page admits a single entry type', () => {
       expect(keys(fields({ entryTypes: [HistoryEventEntryType.EVM_EVENT] }))).not.toContain('entryTypes');
+    });
+  });
+
+  describe('the state pill', () => {
+    it('should offer the missing accounting rule state with the glyph of the row warning', () => {
+      const state = field(fields(), 'state');
+
+      expect(state.suggest?.()).toContain(HistoryEventState.MISSING_ACCOUNTING_RULE);
+      expect(state.resolveLabel?.(HistoryEventState.MISSING_ACCOUNTING_RULE))
+        .toBe('transactions.events.event_states.missing_accounting_rule');
+      expect(state.resolveIcon?.(HistoryEventState.MISSING_ACCOUNTING_RULE))
+        .toMatchObject({ color: 'warning', icon: 'lu-info' });
     });
   });
 });
