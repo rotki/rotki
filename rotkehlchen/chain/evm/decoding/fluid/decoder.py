@@ -598,16 +598,19 @@ class FluidCommonDecoder(EvmDecoderInterface):
             is_increase: bool,
             vault_addr: ChecksumEvmAddress,
             position_owner: ChecksumEvmAddress,
+            operate_user: ChecksumEvmAddress,
+            to_addr: ChecksumEvmAddress,
             nft_id: int,
     ) -> None:
         """Book one vault leg on the position owner.
 
         @remarks
-        The owner's own matching wallet transfer becomes the protocol event. Deposits and
-        repayments are permissionless, so another tracked account may pay them: that payer's
-        spend becomes a transfer to the owner, followed by a synthetic protocol event of the
-        owner, so the value leaves the combined portfolio's wallets only once. Legs settled
-        entirely between Fluid contracts (e.g. flash leverage) also get a synthetic event.
+        The owner's own matching wallet transfer becomes the protocol event. When a third party
+        is on the wallet side of the leg, the protocol event is still booked on the owner and
+        paired with the wallet transfer between the owner and that third party (a TRANSFER when
+        both are tracked, or a SPEND from the owner to an untracked payout receiver), so the
+        combined portfolio's wallets change by the leg amount only once. Legs settled entirely
+        between Fluid contracts (e.g. flash leverage) get only the synthetic protocol event.
         """
         spec = _OPERATE_LEG_CONFIG[is_collateral, is_increase]
         from_type, to_type, to_subtype, notes_template = spec
@@ -627,6 +630,19 @@ class FluidCommonDecoder(EvmDecoderInterface):
         ) is not None:
             return
 
+        symbol = asset.resolve_to_asset_with_symbol().symbol
+        owner_event = self.base.make_event_next_index(
+            tx_ref=transaction.tx_hash,
+            timestamp=transaction.timestamp,
+            event_type=to_type,
+            event_subtype=to_subtype,
+            asset=asset,
+            amount=amount,
+            location_label=position_owner,
+            notes=notes_template.format(amount=amount, symbol=symbol),
+            counterparty=CPT_FLUID,
+            address=vault_addr,
+        )
         if from_type == HistoryEventType.SPEND:
             self._reconcile_transfer(
                 decoded_events=decoded_events,
@@ -643,22 +659,54 @@ class FluidCommonDecoder(EvmDecoderInterface):
                 ),
                 allow_native_refund=allow_native_refund,
             )
+            decoded_events.append(owner_event)
+            return
 
-        decoded_events.append(self.base.make_event_next_index(
-            tx_ref=transaction.tx_hash,
-            timestamp=transaction.timestamp,
-            event_type=to_type,
-            event_subtype=to_subtype,
-            asset=asset,
-            amount=amount,
-            location_label=position_owner,
-            notes=notes_template.format(
+        if to_addr != position_owner and (
+            receive_event := self._reconcile_transfer(
+                decoded_events=decoded_events,
+                from_event_type=HistoryEventType.RECEIVE,
+                asset=asset,
                 amount=amount,
-                symbol=asset.resolve_to_asset_with_symbol().symbol,
-            ),
-            counterparty=CPT_FLUID,
-            address=vault_addr,
-        ))
+                allowed_addresses=allowed_addresses,
+                to_event_type=HistoryEventType.TRANSFER,
+                to_event_subtype=HistoryEventSubType.NONE,
+                address=to_addr,
+                notes_template=(
+                    f'Transfer {{amount}} {{symbol}} to {to_addr} '
+                    f'for Fluid vault position {nft_id}'
+                ),
+                location_label=to_addr,
+            )
+        ) is not None:
+            receive_event.location_label = position_owner
+            owner_event.sequence_index, receive_event.sequence_index = (
+                receive_event.sequence_index,
+                owner_event.sequence_index,
+            )
+            decoded_events.insert(decoded_events.index(receive_event), owner_event)
+            return
+
+        decoded_events.append(owner_event)
+        if to_addr not in (ZERO_ADDRESS, position_owner, operate_user):
+            is_tracked_receiver = self.base.is_tracked(to_addr)
+            decoded_events.append(self.base.make_event_next_index(
+                tx_ref=transaction.tx_hash,
+                timestamp=transaction.timestamp,
+                event_type=(
+                    HistoryEventType.TRANSFER if is_tracked_receiver else HistoryEventType.SPEND
+                ),
+                event_subtype=HistoryEventSubType.NONE,
+                asset=asset,
+                amount=amount,
+                location_label=position_owner,
+                notes=(
+                    f'{"Transfer" if is_tracked_receiver else "Send"} {amount} {symbol} '
+                    f'to {to_addr} for Fluid vault position {nft_id}'
+                ),
+                counterparty=CPT_FLUID,
+                address=to_addr,
+            ))
 
     def _resolve_position_owner(
             self,
@@ -689,11 +737,7 @@ class FluidCommonDecoder(EvmDecoderInterface):
             return in_tx_owner
 
         if has_owner_only_leg:
-            if self.base.is_tracked(operate_user):
-                return operate_user
-            if self.base.is_tracked(transaction.from_address) and not has_third_party_mint:
-                return transaction.from_address
-            return None
+            return operate_user if self.base.is_tracked(operate_user) else None
 
         if in_tx_owner is None and (
             self.base.is_tracked(operate_user) or
@@ -763,6 +807,8 @@ class FluidCommonDecoder(EvmDecoderInterface):
                         is_increase=raw_amt > 0,
                         vault_addr=vault_addr,
                         position_owner=position_owner,
+                        operate_user=operate_user,
+                        to_addr=to_addr,
                         nft_id=nft_id,
                     )
                     continue

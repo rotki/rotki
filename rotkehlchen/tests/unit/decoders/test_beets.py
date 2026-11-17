@@ -26,6 +26,7 @@ AN_S_SILO_WS = 'eip155:146/erc20:0x944D4AE892dE4BFd38742Cc8295d6D5164c5593C'
 SONIC_VAULT = '0xbA1333333333a1BA1108E8412f11850A5C319bA9'
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
 @pytest.mark.parametrize('sonic_accounts', [['0xaBf0f7bD0Dc8Ce44b084B4B66b8Db97F1b9Ce419']])
 def test_beets_v3_join(sonic_inquirer, sonic_accounts):
@@ -75,6 +76,7 @@ def test_beets_v3_join(sonic_inquirer, sonic_accounts):
     )]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
 @pytest.mark.parametrize('sonic_accounts', [['0x801EF3Bf0883b1fDC72669C7d2f368D8c3845d6e']])
 def test_beets_v3_swap(sonic_inquirer, sonic_accounts):
@@ -125,6 +127,7 @@ def test_beets_v3_swap(sonic_inquirer, sonic_accounts):
     )]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
 @pytest.mark.parametrize('sonic_accounts', [['0xda20986e2D4FaeB3B4C949E9c0Ab5630D8Ac0914']])
 def test_beets_v2_join(sonic_inquirer, sonic_accounts):
@@ -201,6 +204,7 @@ def test_beets_v2_join(sonic_inquirer, sonic_accounts):
     )]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
 @pytest.mark.parametrize('sonic_accounts', [['0xCB6586874cc04B01Cc4fDB777dE502cEa7b3D6c1']])
 def test_beets_v2_exit(sonic_inquirer, sonic_accounts):
@@ -290,6 +294,7 @@ def test_beets_v2_exit(sonic_inquirer, sonic_accounts):
     )]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
 @pytest.mark.parametrize('sonic_accounts', [['0x5541B7D1F2f0d5A6bA921156ce48D97f9D212e02']])
 def test_ws_wrap(sonic_inquirer, sonic_accounts):
@@ -339,6 +344,7 @@ def test_ws_wrap(sonic_inquirer, sonic_accounts):
     )]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
 @pytest.mark.parametrize('sonic_accounts', [['0xCB4fF53cfC5747611CFD2d89dA9114c243Bea3d5']])
 def test_ws_unwrap(sonic_inquirer, sonic_accounts):
@@ -388,6 +394,7 @@ def test_ws_unwrap(sonic_inquirer, sonic_accounts):
     )]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
 @pytest.mark.parametrize('sonic_accounts', [['0x725AbD8eb83d0f22E905B1e60884b98c8314CB93']])
 def test_beets_v2_swap(sonic_inquirer, sonic_accounts):
@@ -438,6 +445,7 @@ def test_beets_v2_swap(sonic_inquirer, sonic_accounts):
     )]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('sonic_manager_connect_at_start', [(SONIC_MAINNET_NODE,)])
 @pytest.mark.parametrize('sonic_accounts', [['0x5FadCB810A04bB94D7fFb7902E4dc67e43ef0701']])
 def test_beets_v3_exit(sonic_inquirer, sonic_accounts):

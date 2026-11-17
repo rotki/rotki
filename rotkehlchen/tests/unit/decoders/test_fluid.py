@@ -790,6 +790,7 @@ def _operate_logs(
         col_raw: int,
         debt_raw: int,
         first_log_index: int = 0,
+        to_address: ChecksumEvmAddress = ZERO_ADDRESS,
 ) -> list[EvmTxReceiptLog]:
     """FluidLiquidity and vault LogOperate pair of a native ETH operation on TEST_NFT_ID."""
     return [EvmTxReceiptLog(
@@ -804,7 +805,7 @@ def _operate_logs(
             TEST_NFT_ID.to_bytes(32, 'big') +
             col_raw.to_bytes(32, 'big', signed=True) +
             debt_raw.to_bytes(32, 'big', signed=True) +
-            _pad_addr(ZERO_ADDRESS)
+            _pad_addr(to_address)
         ),
         address=TEST_VAULT,
         topics=[VAULT_LOG_OPERATE],
@@ -822,6 +823,21 @@ def _eth_spend(tx: EvmTransaction, payer: ChecksumEvmAddress, amount: str) -> Ev
         asset=A_ETH,
         amount=FVal(amount),
         location_label=payer,
+        address=FLUID_LIQUIDITY,
+    )
+
+
+def _eth_receive(tx: EvmTransaction, receiver: ChecksumEvmAddress, amount: str) -> EvmEvent:
+    return EvmEvent(
+        tx_ref=tx.tx_hash,
+        sequence_index=0,
+        timestamp=ts_sec_to_ms(tx.timestamp),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal(amount),
+        location_label=receiver,
         address=FLUID_LIQUIDITY,
     )
 
@@ -1133,3 +1149,269 @@ def test_fluid_funding_another_tracked_account_historical_balances(
             (1790000100000, 2, bob, None, '0'),
         ]
     assert DataIssuesManager(database).list_issues() == []
+
+
+def _decode_alice_payouts(
+        tx_decoder: EthereumTransactionDecoder,
+        alice: ChecksumEvmAddress,
+        bob: ChecksumEvmAddress,
+        carol: ChecksumEvmAddress,
+) -> tuple[list[EvmEvent], list[EvmEvent], list[EvmEvent]]:
+    """Decode alice withdrawing 1 ETH to bob, borrowing 2 ETH to bob, and 1 ETH to carol."""
+    _load_tracked_accounts(tx_decoder)
+    withdraw_tx = _make_tx(from_address=alice, timestamp=Timestamp(1790000000))
+    borrow_bob_tx = _make_tx(from_address=alice, timestamp=Timestamp(1790000100))
+    borrow_carol_tx = _make_tx(from_address=alice, timestamp=Timestamp(1790000200))
+    return (
+        _decode_vault_operation(
+            tx_decoder=tx_decoder,
+            tx=withdraw_tx,
+            decoded_events=[_eth_receive(tx=withdraw_tx, receiver=bob, amount='1')],
+            all_logs=_operate_logs(
+                operate_user=alice,
+                col_raw=-(10**18),
+                debt_raw=0,
+                to_address=bob,
+            ),
+        ),
+        _decode_vault_operation(
+            tx_decoder=tx_decoder,
+            tx=borrow_bob_tx,
+            decoded_events=[_eth_receive(tx=borrow_bob_tx, receiver=bob, amount='2')],
+            all_logs=_operate_logs(
+                operate_user=alice,
+                col_raw=0,
+                debt_raw=2 * 10**18,
+                to_address=bob,
+            ),
+        ),
+        _decode_vault_operation(
+            tx_decoder=tx_decoder,
+            tx=borrow_carol_tx,
+            decoded_events=[],
+            all_logs=_operate_logs(
+                operate_user=alice,
+                col_raw=0,
+                debt_raw=10**18,
+                to_address=carol,
+            ),
+        ),
+    )
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xB83E6edF8325e7d1Fc916A021866BeFe475DdbB6',
+    '0xe4637833F5513524D0B9337A75963619034fbB23',
+]])
+def test_fluid_payout_to_another_account(
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Withdrawals and borrows sent to another address book the owner leg then move value out."""
+    alice, bob = ethereum_accounts
+    carol = make_evm_address()
+    withdraw_bob, borrow_bob, borrow_carol = _decode_alice_payouts(
+        tx_decoder=ethereum_transaction_decoder,
+        alice=alice,
+        bob=bob,
+        carol=carol,
+    )
+    assert withdraw_bob == [EvmEvent(
+        tx_ref=(tx_ref := withdraw_bob[0].tx_ref),
+        sequence_index=0,
+        timestamp=(timestamp := withdraw_bob[0].timestamp),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+        asset=A_ETH,
+        amount=ONE,
+        location_label=alice,
+        notes='Withdraw 1 ETH as collateral from Fluid',
+        counterparty=CPT_FLUID,
+        address=TEST_VAULT,
+    ), EvmEvent(
+        tx_ref=tx_ref,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.TRANSFER,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ONE,
+        location_label=alice,
+        notes=f'Transfer 1 ETH to {bob} for Fluid vault position {TEST_NFT_ID}',
+        counterparty=CPT_FLUID,
+        address=bob,
+    )]
+    assert borrow_bob == [EvmEvent(
+        tx_ref=(tx_ref := borrow_bob[0].tx_ref),
+        sequence_index=0,
+        timestamp=(timestamp := borrow_bob[0].timestamp),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.GENERATE_DEBT,
+        asset=A_ETH,
+        amount=FVal('2'),
+        location_label=alice,
+        notes='Borrow 2 ETH from Fluid',
+        counterparty=CPT_FLUID,
+        address=TEST_VAULT,
+    ), EvmEvent(
+        tx_ref=tx_ref,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.TRANSFER,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal('2'),
+        location_label=alice,
+        notes=f'Transfer 2 ETH to {bob} for Fluid vault position {TEST_NFT_ID}',
+        counterparty=CPT_FLUID,
+        address=bob,
+    )]
+    assert borrow_carol == [EvmEvent(
+        tx_ref=(tx_ref := borrow_carol[0].tx_ref),
+        sequence_index=2,
+        timestamp=(timestamp := borrow_carol[0].timestamp),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.GENERATE_DEBT,
+        asset=A_ETH,
+        amount=ONE,
+        location_label=alice,
+        notes='Borrow 1 ETH from Fluid',
+        counterparty=CPT_FLUID,
+        address=TEST_VAULT,
+    ), EvmEvent(
+        tx_ref=tx_ref,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ONE,
+        location_label=alice,
+        notes=f'Send 1 ETH to {carol} for Fluid vault position {TEST_NFT_ID}',
+        counterparty=CPT_FLUID,
+        address=carol,
+    )]
+
+
+@pytest.mark.accounting_update
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xB83E6edF8325e7d1Fc916A021866BeFe475DdbB6',
+    '0xe4637833F5513524D0B9337A75963619034fbB23',
+]])
+def test_fluid_payout_to_another_account_historical_balances(
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """Payouts from alice's position to bob or untracked carol credit wallets once."""
+    alice, bob = ethereum_accounts
+    carol = make_evm_address()
+    withdraw_bob, borrow_bob, borrow_carol = _decode_alice_payouts(
+        tx_decoder=ethereum_transaction_decoder,
+        alice=alice,
+        bob=bob,
+        carol=carol,
+    )
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1780000000000),
+                location=LOCATION_ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+                location_label=alice,
+            ), EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=1,
+                timestamp=TimestampMS(1780000000000),
+                location=LOCATION_ETHEREUM,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                asset=A_ETH,
+                amount=ONE,
+                location_label=alice,
+                counterparty=CPT_FLUID,
+                address=TEST_VAULT,
+            ), *withdraw_bob, *borrow_bob, *borrow_carol],
+        )
+
+    process_historical_balances(database=database, msg_aggregator=messages_aggregator)
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT timestamp, sequence_index, location_label, protocol, metric_value '
+            'FROM event_metrics WHERE asset = ? AND metric_key = ? '
+            'ORDER BY timestamp, sequence_index, location_label, protocol NULLS FIRST',
+            (A_ETH.identifier, EventMetricKey.BALANCE.serialize()),
+        ).fetchall() == [
+            (1780000000000, 0, alice, None, '1'),
+            (1780000000000, 1, alice, None, '0'),
+            (1780000000000, 1, alice, CPT_FLUID, '1'),
+            (1790000000000, 0, alice, None, '1'),
+            (1790000000000, 0, alice, CPT_FLUID, '0'),
+            (1790000000000, 2, alice, None, '0'),
+            (1790000000000, 2, bob, None, '1'),
+            (1790000100000, 0, alice, None, '2'),
+            (1790000100000, 2, alice, None, '0'),
+            (1790000100000, 2, bob, None, '3'),
+            (1790000200000, 2, alice, None, '1'),
+            (1790000200000, 3, alice, None, '0'),
+        ]
+    assert DataIssuesManager(database).list_issues() == []
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xB83E6edF8325e7d1Fc916A021866BeFe475DdbB6']])
+def test_fluid_untracked_operate_user_not_attributed_to_tx_sender(
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Withdraw and borrow through an untracked smart account are not booked on from_address."""
+    alice, smart_account = ethereum_accounts[0], make_evm_address()
+    _load_tracked_accounts(ethereum_transaction_decoder)
+    tx = _make_tx(from_address=alice, timestamp=Timestamp(1790000000))
+    assert _decode_vault_operation(
+        tx_decoder=ethereum_transaction_decoder,
+        tx=tx,
+        decoded_events=[],
+        all_logs=_operate_logs(
+            operate_user=smart_account,
+            col_raw=0,
+            debt_raw=10**18,
+            to_address=smart_account,
+        ),
+    ) == []
+    assert _decode_vault_operation(
+        tx_decoder=ethereum_transaction_decoder,
+        tx=tx,
+        decoded_events=[_eth_receive(tx=tx, receiver=alice, amount='1')],
+        all_logs=_operate_logs(
+            operate_user=smart_account,
+            col_raw=-(10**18),
+            debt_raw=0,
+            to_address=alice,
+        ),
+    ) == [EvmEvent(
+        tx_ref=tx.tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1790000000000),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ONE,
+        location_label=alice,
+        notes=f'Receive 1 ETH from a Fluid withdrawal by {smart_account}',
+        counterparty=CPT_FLUID,
+        address=FLUID_LIQUIDITY,
+    )]
