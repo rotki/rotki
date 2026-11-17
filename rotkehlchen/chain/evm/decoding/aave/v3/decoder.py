@@ -28,7 +28,9 @@ from .constants import (
     DEBT_TOKEN_SYMBOL_REGEX,
     DEPOSIT,
     REPAY,
+    RESERVE_DATA_UPDATED,
     REWARDS_CLAIMED,
+    STABLE_DEBT_MINT,
     SWAPPED,
 )
 
@@ -550,6 +552,9 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
         A v3 debt token mint transfers the borrowed amount plus the interest accrued since the
         user's last action, or on a repay smaller than that interest, the interest minus the
         repaid amount. The balance increase of the matching Mint log is that interest.
+
+        The debt token is identified by its symbol, its own Mint log and the pool that minted it
+        rather than by its protocol in the global DB, which most debt tokens only get later.
         """
         new_events = []
         for event in decoded_events:
@@ -557,23 +562,31 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.address == ZERO_ADDRESS and
-                self._token_is_aave_contract(event.asset) and
-                (debt_token := event.asset.resolve_to_evm_token()).is_liability()
+                event.asset.is_evm_token() and
+                DEBT_TOKEN_SYMBOL_REGEX.match((debt_token := event.asset.resolve_to_evm_token()).symbol) is not None  # noqa: E501
             ):
                 continue
 
             for tx_log in all_logs:
+                if tx_log.address != debt_token.evm_address:
+                    continue
+                if tx_log.topics[0] == MINT:  # variable debt token
+                    balance_increase_raw = tx_log.data[32:64]
+                elif tx_log.topics[0] == STABLE_DEBT_MINT:
+                    balance_increase_raw = tx_log.data[64:96]
+                else:
+                    continue
+
                 if (
-                    tx_log.topics[0] == MINT and
-                    tx_log.address == debt_token.evm_address and
                     bytes_to_address(tx_log.topics[2]) == event.location_label and
                     asset_normalized_value(
                         amount=int.from_bytes(tx_log.data[:32]),
                         asset=debt_token,
-                    ) == event.amount
+                    ) == event.amount and
+                    self._minted_by_own_pool(mint_log=tx_log, all_logs=all_logs)
                 ):
                     interest = asset_normalized_value(
-                        amount=int.from_bytes(tx_log.data[32:64]),
+                        amount=int.from_bytes(balance_increase_raw),
                         asset=debt_token,
                     )
                     break
@@ -605,6 +618,23 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 ))
 
         decoded_events.extend(new_events)
+
+    def _minted_by_own_pool(
+            self,
+            mint_log: EvmTxReceiptLog,
+            all_logs: list[EvmTxReceiptLog],
+    ) -> bool:
+        """The pool that mints debt emits ReserveDataUpdated right after. This tells an AAVE
+        debt token from a Spark one when both protocols are used in the same transaction."""
+        for tx_log in all_logs:
+            if (
+                tx_log.log_index > mint_log.log_index and
+                len(tx_log.topics) != 0 and
+                tx_log.topics[0] == RESERVE_DATA_UPDATED
+            ):
+                return tx_log.address in self.pool_addresses
+
+        return False
 
     @staticmethod
     def _get_interest_amount_for_event(

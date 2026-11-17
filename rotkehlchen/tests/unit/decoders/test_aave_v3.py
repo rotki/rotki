@@ -2499,14 +2499,57 @@ def test_aave_v3_repay_less_than_accrued_debt_interest(ethereum_inquirer, ethere
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9600A48ed0f931d0c422D574e3275a90D8b22745']])
 def test_aave_v3_debt_mint_in_withdraw_is_not_interest(ethereum_inquirer, ethereum_accounts) -> None:  # noqa: E501
-    """A withdraw in the same transaction as a borrow must not report the interest accrued on
-    the debt token as interest earned. Here a position is moved from Spark to AAVE v3."""
+    """A position is moved from Spark to AAVE v3 in one transaction, so a withdraw sits next to
+    a borrow. The debt token is not in the global DB and Spark is also used here, so it
+    is told apart by the pool that minted it. Its accrued interest must be booked as debt."""
     tx_hash = deserialize_evm_tx_hash('0x5da083eaf81bb2eb649be48dc0f255e563a36e32333d9a101ac66d04ccb2a2eb')  # noqa: E501
+    user, timestamp = ethereum_accounts[0], TimestampMS(1794844235000)
+    variable_debt_weth = Asset('eip155:1/erc20:0xeA51d7853EEFb32b6ee06b1C12E6dcCA88Be0fFE')
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert variable_debt_weth.resolve_to_evm_token().protocol is None
     assert [
         (event.asset.identifier, event.amount)
         for event in events if event.event_subtype == HistoryEventSubType.INTEREST
     ] == [('eip155:1/erc20:0x0B925eD163218f6662a35e0f0371Ac234f9E9371', FVal('0.000066389463853771'))]  # aEthwstETH  # noqa: E501
+    assert [event for event in events if event.asset in (variable_debt_weth, A_WETH) and event.counterparty is not None] == [EvmEvent(  # noqa: E501
+        tx_ref=tx_hash,
+        sequence_index=740,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=variable_debt_weth,
+        amount=FVal('10572.503966520527448035'),
+        location_label=user,
+        notes='Receive 10572.503966520527448035 variableDebtEthWETH from AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=741,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.GENERATE_DEBT,
+        asset=variable_debt_weth,
+        amount=FVal('9.706243350715809714'),
+        location_label=user,
+        notes='Receive 9.706243350715809714 variableDebtEthWETH as interest accrued on debt in AAVE v3',  # noqa: E501
+        counterparty=CPT_AAVE_V3,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=743,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.GENERATE_DEBT,
+        asset=A_WETH,
+        amount=FVal('10572.503966520527448034'),
+        location_label=user,
+        notes='Borrow 10572.503966520527448034 WETH from AAVE v3 with variable APY 2.04%',
+        counterparty=CPT_AAVE_V3,
+        address=string_to_evm_address('0x4d5F47FA6A74757f35C14fD3a6Ef8E3C9BC514E8'),
+    )]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -2644,4 +2687,137 @@ def test_aave_v3_supply_and_borrow_with_accrued_debt_interest(ethereum_inquirer,
         notes=f'Receive {wbtc_amount} aEthWBTC from AAVE v3',
         counterparty=CPT_AAVE_V3,
         address=ZERO_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x65CF37517B2C7375B60d0a8A8cEBEf84090eF6D2']])
+def test_aave_v3_stable_borrow_with_accrued_debt_interest(arbitrum_one_inquirer, arbitrum_one_accounts) -> None:  # noqa: E501
+    """Stable debt tokens emit their own Mint event, where the balance increase is the third
+    data word. The interest accrued on the existing stable debt must be booked as debt."""
+    tx_hash = deserialize_evm_tx_hash('0x102ebe379c6b1a3ee0cc4163a13170f1443f37fb4acf86c4f747c771f2993681')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    user, timestamp = arbitrum_one_accounts[0], TimestampMS(1648049199000)
+    stable_debt_usdc = Asset('eip155:42161/erc20:0x307ffe186F84a3bc2613D1eA417A5737D69A7007')
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=LOCATION_ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.000178701835340168'),
+        location_label=user,
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=LOCATION_ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=stable_debt_usdc,
+        amount=FVal('2000'),
+        location_label=user,
+        notes='Receive 2000 stableDebtArbUSDC from AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=LOCATION_ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.GENERATE_DEBT,
+        asset=stable_debt_usdc,
+        amount=FVal('0.846717'),
+        location_label=user,
+        notes='Receive 0.846717 stableDebtArbUSDC as interest accrued on debt in AAVE v3',
+        counterparty=CPT_AAVE_V3,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=4,
+        timestamp=timestamp,
+        location=LOCATION_ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.GENERATE_DEBT,
+        asset=Asset('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
+        amount=FVal('2000'),
+        location_label=user,
+        notes='Borrow 2000 USDC.e from AAVE v3 with stable APY 5.34%',
+        counterparty=CPT_AAVE_V3,
+        address=string_to_evm_address('0x625E7708f30cA75bfd92586e17077590C60eb4cD'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xcC19a1aE2e3F34d0fdb215bD657f2470f63C9fab']])
+def test_aave_v3_stable_repay_less_than_accrued_debt_interest(arbitrum_one_inquirer, arbitrum_one_accounts) -> None:  # noqa: E501
+    """Repaying less than the interest accrued on stable debt mints the difference."""
+    tx_hash = deserialize_evm_tx_hash('0x7e9ed461143f58282105ca4616519157885395cc0bf016e6403b2e5ec0ff838a')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    user, timestamp = arbitrum_one_accounts[0], TimestampMS(1650119201000)
+    stable_debt_usdt = Asset('eip155:42161/erc20:0x70eFfc565DB6EEf7B927610155602d31b670e802')
+    usdt = Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9')
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=LOCATION_ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.000172643997399885'),
+        location_label=user,
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=LOCATION_ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=stable_debt_usdt,
+        amount=FVal('0.000419'),
+        location_label=user,
+        notes='Return 0.000419 stableDebtArbUSDT to AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=LOCATION_ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.GENERATE_DEBT,
+        asset=stable_debt_usdt,
+        amount=FVal('1.648419'),
+        location_label=user,
+        notes='Receive 1.648419 stableDebtArbUSDT as interest accrued on debt in AAVE v3',
+        counterparty=CPT_AAVE_V3,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=4,
+        timestamp=timestamp,
+        location=LOCATION_ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+        asset=usdt,
+        amount=FVal('0.000419'),
+        location_label=user,
+        notes='Repay 0.000419 USDT0 on AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=string_to_evm_address('0x6ab707Aca953eDAeFBc4fD23bA73294241490620'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=5,
+        timestamp=timestamp,
+        location=LOCATION_ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=usdt,
+        amount=FVal('115792089237316195423570985008687907853269984665640564039457584007912669.575333'),
+        location_label=user,
+        address=string_to_evm_address('0x794a61358D6845594F94dc1DB02A252b5b4814aD'),
     )]
