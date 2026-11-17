@@ -83,6 +83,7 @@ from rotkehlchen.balances.historical import (
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.lido_csm.constants import LidoCsmStakingModule
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmMetricsFetcher
+from rotkehlchen.chain.ethereum.modules.lido_csm.utils import follow_stored_node_operators
 from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as get_liquity_stats
 from rotkehlchen.chain.evm.types import (
     ChainID,
@@ -138,7 +139,7 @@ from rotkehlchen.db.filtering import (
     UserNotesFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.lido_csm import DBLidoCsm
+from rotkehlchen.db.lido_csm import DBLidoCsm, LidoCsmNodeOperator
 from rotkehlchen.db.locations import DBLocations
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import CachedSettings
@@ -2145,13 +2146,23 @@ class RestAPI:
                 ),
             ))
 
+        metrics_fetcher = LidoCsmMetricsFetcher(
+            evm_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+            staking_module=staking_module,
+        )
+        follow_stored_node_operators(
+            evm_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+            database=self.rotkehlchen.data.db,
+            metrics_fetchers={staking_module: metrics_fetcher},
+            node_operators=[LidoCsmNodeOperator(
+                address=address,
+                node_operator_id=node_operator_id,
+                staking_module=staking_module,
+            )],
+        )
         # Compute and persist metrics for the newly added operator. If it fails
         # we still return the list but metrics will be empty until refreshed.
         try:
-            metrics_fetcher = LidoCsmMetricsFetcher(
-                evm_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
-                staking_module=staking_module,
-            )
             metrics = metrics_fetcher.get_operator_stats(
                 node_operator_id=node_operator_id,
                 rewards_tree=metrics_fetcher.get_rewards_tree_or_none(),
@@ -2225,6 +2236,12 @@ class RestAPI:
         failed_ids: list[str] = []
         unknown_rewards_ids: list[str] = []
         failure_causes: set[FailureCause] = set()
+        follow_stored_node_operators(
+            evm_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+            database=self.rotkehlchen.data.db,
+            metrics_fetchers=metrics_fetchers,
+            node_operators=DBLidoCsm(self.rotkehlchen.data.db).get_node_operators(),
+        )
         for entry in DBLidoCsm(self.rotkehlchen.data.db).get_node_operators():
             metrics_fetcher = metrics_fetchers[entry.staking_module]
             operator_label = f'{entry.staking_module.name} #{entry.node_operator_id}'

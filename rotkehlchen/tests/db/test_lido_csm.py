@@ -214,14 +214,17 @@ def test_lido_csm_move_and_ignore_node_operator(database) -> None:
         staking_module=LidoCsmStakingModule.CSM,
         metrics=stats,
     ),)
+    assert db.get_followed_node_operators() == {(LidoCsmStakingModule.CSM, 7)}
 
     db.move_node_operator(address=None, node_operator_id=7, staking_module=LidoCsmStakingModule.CSM)  # noqa: E501
     assert db.get_node_operators() == ()
     assert db.is_node_operator_ignored(node_operator_id=7, staking_module=LidoCsmStakingModule.CSM) is False  # noqa: E501
+    assert db.get_followed_node_operators() == set()
 
     # only a removal by the user is remembered, and only for its staking module
-    db.add_node_operator(address=new_address, node_operator_id=7, staking_module=LidoCsmStakingModule.CSM)  # noqa: E501
+    db.add_node_operator(address=new_address, node_operator_id=7, staking_module=LidoCsmStakingModule.CSM, followed=True)  # noqa: E501
     db.remove_node_operator(address=new_address, node_operator_id=7, staking_module=LidoCsmStakingModule.CSM)  # noqa: E501
+    assert db.get_followed_node_operators() == set()
     assert db.is_node_operator_ignored(node_operator_id=7, staking_module=LidoCsmStakingModule.CSM) is True  # noqa: E501
     assert db.is_node_operator_ignored(node_operator_id=7, staking_module=LidoCsmStakingModule.CSM_0X02) is False  # noqa: E501
 

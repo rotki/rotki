@@ -9,6 +9,7 @@ from rotkehlchen.chain.ethereum.modules.lido.constants import (
     WITHDRAWAL_QUEUE,
 )
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmMetricsFetcher
+from rotkehlchen.chain.ethereum.modules.lido_csm.utils import follow_node_operator_addresses
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
@@ -217,7 +218,8 @@ class LidoCsmDecoder(EvmDecoderInterface):
             node_operator_id: int,
     ) -> None:
         """Store, move or drop the node operator so that it is kept under its tracked manager
-        or, failing that, reward address. Operators the user removed are left alone.
+        or, failing that, reward address. Operators the user removed are left alone, and see
+        follow_node_operator_addresses for those added by hand.
 
         The addresses are read from the module and not from the log, since the transaction
         may be decoded after a later one changed them.
@@ -245,30 +247,31 @@ class LidoCsmDecoder(EvmDecoderInterface):
             )
             return
 
-        tracked_addresses = [x for x in (manager, reward) if self.base.is_tracked(x)]
         if (stored_address := db.get_node_operator_address(
             node_operator_id=node_operator_id,
             staking_module=staking_module,
-        )) in tracked_addresses:
-            return
-
-        address = tracked_addresses[0] if len(tracked_addresses) != 0 else None
-        if stored_address is not None:
-            db.move_node_operator(
-                address=address,
+        )) is not None:
+            follow_node_operator_addresses(
+                db=db,
+                stored_address=stored_address,
+                followed=(staking_module, node_operator_id) in db.get_followed_node_operators(),
                 node_operator_id=node_operator_id,
                 staking_module=staking_module,
+                manager=manager,
+                reward=reward,
+                is_tracked=self.base.is_tracked,
             )
             return
 
-        if address is None:
+        if len(tracked := [x for x in (manager, reward) if self.base.is_tracked(x)]) == 0:
             return
 
         try:
             db.add_node_operator(
-                address=address,
+                address=tracked[0],
                 node_operator_id=node_operator_id,
                 staking_module=staking_module,
+                followed=True,
             )
         except (InputError, NotFoundError) as e:
             log.error(

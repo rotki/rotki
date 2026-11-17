@@ -72,6 +72,16 @@ class FakeLidoContracts:
         raise AssertionError(f'Unexpected contract call to {method_name}')
 
 
+@pytest.fixture(name='follow_node_operators', autouse=True)
+def fixture_follow_node_operators():
+    """Following the operators' addresses is tested in the decoder tests, and here would
+    need the module contract and the accounts in the DB."""
+    with patch(
+        'rotkehlchen.chain.ethereum.modules.lido_csm.balances.follow_stored_node_operators',
+    ) as follow:
+        yield follow
+
+
 def _make_balances(contracts: FakeLidoContracts) -> LidoCsmBalances:
     balances = LidoCsmBalances(
         evm_inquirer=cast(
@@ -124,6 +134,23 @@ def test_lido_csm_balances_accumulates(operators):
         value=FVal('3000'),
     )
     assert _steth_amounts(result, operators)[1] == FVal('3.5')
+
+
+def test_lido_csm_balances_follow_node_operators_first(operators, follow_node_operators):
+    """An operator handed off to an untracked address is dropped before its bond is counted."""
+    def drop_first(**kwargs):
+        assert kwargs['node_operators'] == operators
+        get_node_operators.return_value = operators[1:]
+
+    follow_node_operators.side_effect = drop_first
+    with patch('rotkehlchen.db.lido_csm.DBLidoCsm.get_node_operators') as get_node_operators:
+        get_node_operators.return_value = operators
+        result = _make_balances(FakeLidoContracts()).query_balances(
+            addresses=[x.address for x in operators],
+        )
+
+    assert follow_node_operators.call_count == 1
+    assert list(result) == [operators[1].address]
 
 
 def test_lido_csm_balances_download_rewards_tree_once(operators):
