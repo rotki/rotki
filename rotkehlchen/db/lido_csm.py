@@ -17,15 +17,19 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 # multisettings name of the node operators the user removed, so decoding does not add them back
 IGNORED_NODE_OPERATOR_SETTING: Final = 'ignored_csm_operator'
+# multisettings name of the node operators stored under their manager or reward address, which
+# follow those addresses. Others were added by hand under any address, such as a bond depositor.
+FOLLOWED_NODE_OPERATOR_SETTING: Final = 'followed_csm_operator'
 
 
-def _ignored_value(node_operator_id: int, staking_module: LidoCsmStakingModule) -> str:
+def _operator_value(node_operator_id: int, staking_module: LidoCsmStakingModule) -> str:
     return f'{staking_module.value}_{node_operator_id}'
 
 
@@ -135,9 +139,11 @@ class DBLidoCsm:
             address: ChecksumEvmAddress,
             node_operator_id: int,
             staking_module: LidoCsmStakingModule,
+            followed: bool = False,
     ) -> None:
         """Insert a node operator; raises InputError for invalid ids or duplicates,
-        or NotFoundError if the address is not registered as an Ethereum EVM account."""
+        or NotFoundError if the address is not registered as an Ethereum EVM account.
+        followed is whether the address is the operator's manager or reward address."""
         if node_operator_id < 0:
             raise InputError('Node operator id must be >= 0')
 
@@ -163,8 +169,51 @@ class DBLidoCsm:
 
             write_cursor.execute(
                 'DELETE FROM multisettings WHERE name=? AND value=?',
-                (IGNORED_NODE_OPERATOR_SETTING, _ignored_value(node_operator_id, staking_module)),
+                (IGNORED_NODE_OPERATOR_SETTING, _operator_value(node_operator_id, staking_module)),
             )
+            if followed:
+                self._set_followed(write_cursor, node_operator_id, staking_module, followed=True)
+
+    @staticmethod
+    def _set_followed(
+            write_cursor: DBCursor,
+            node_operator_id: int,
+            staking_module: LidoCsmStakingModule,
+            followed: bool,
+    ) -> None:
+        bindings = (
+            FOLLOWED_NODE_OPERATOR_SETTING,
+            _operator_value(node_operator_id, staking_module),
+        )
+        if followed:
+            write_cursor.execute(
+                'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)',
+                bindings,
+            )
+        else:
+            write_cursor.execute('DELETE FROM multisettings WHERE name=? AND value=?', bindings)
+
+    def set_node_operator_followed(
+            self,
+            node_operator_id: int,
+            staking_module: LidoCsmStakingModule,
+    ) -> None:
+        """Mark a stored node operator as stored under its manager or reward address."""
+        with self.db.user_write() as write_cursor:
+            self._set_followed(write_cursor, node_operator_id, staking_module, followed=True)
+
+    def get_followed_node_operators(self) -> set[tuple[LidoCsmStakingModule, int]]:
+        """Return the staking module and id of the operators that follow their addresses."""
+        with self.db.conn.read_ctx() as cursor:
+            values = [row[0] for row in cursor.execute(
+                'SELECT value FROM multisettings WHERE name=?',
+                (FOLLOWED_NODE_OPERATOR_SETTING,),
+            )]
+        followed = set()
+        for value in values:
+            staking_module_id, node_operator_id = value.split('_')
+            followed.add((LidoCsmStakingModule(int(staking_module_id)), int(node_operator_id)))
+        return followed
 
     def is_node_operator_ignored(
             self,
@@ -175,7 +224,7 @@ class DBLidoCsm:
         with self.db.conn.read_ctx() as cursor:
             return cursor.execute(
                 'SELECT 1 FROM multisettings WHERE name=? AND value=?',
-                (IGNORED_NODE_OPERATOR_SETTING, _ignored_value(node_operator_id, staking_module)),
+                (IGNORED_NODE_OPERATOR_SETTING, _operator_value(node_operator_id, staking_module)),
             ).fetchone() is not None
 
     def get_node_operator_address(
@@ -198,9 +247,16 @@ class DBLidoCsm:
             node_operator_id: int,
             staking_module: LidoCsmStakingModule,
     ) -> None:
-        """Track a node operator under another address, or stop tracking it if address is None.
-        Unlike remove_node_operator this does not stop it from being added again."""
+        """Track a node operator under another of its manager or reward addresses, or stop
+        tracking it if address is None. Unlike remove_node_operator this does not stop it from
+        being added again."""
         with self.db.user_write() as write_cursor:
+            self._set_followed(
+                write_cursor,
+                node_operator_id,
+                staking_module,
+                followed=address is not None,
+            )
             if address is None:
                 write_cursor.execute(
                     'DELETE FROM lido_csm_node_operators '
@@ -323,5 +379,6 @@ class DBLidoCsm:
             )
             write_cursor.execute(
                 'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)',
-                (IGNORED_NODE_OPERATOR_SETTING, _ignored_value(node_operator_id, staking_module)),
+                (IGNORED_NODE_OPERATOR_SETTING, _operator_value(node_operator_id, staking_module)),
             )
+            self._set_followed(write_cursor, node_operator_id, staking_module, followed=False)

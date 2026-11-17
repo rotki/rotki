@@ -11,7 +11,11 @@ from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
     LidoCsmOperatorType,
     LidoCsmStakingModule,
 )
-from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmNodeOperatorStats
+from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import (
+    LidoCsmMetricsFetcher,
+    LidoCsmNodeOperatorStats,
+)
+from rotkehlchen.chain.ethereum.modules.lido_csm.utils import follow_stored_node_operators
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_STETH, A_WSTETH
@@ -889,12 +893,15 @@ def test_manager_address_change_away_from_tracked_address(
         ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
-    """The new manager of operator 42 accepted the change, so only the old one is tracked."""
+    """The new manager of operator 42 accepted the change, so only the old one is tracked.
+    The confirm transaction is sent by the new manager and is not in the old one's history,
+    so in practice the operator is dropped on refresh, see test_refresh_drops_handed_off_node_operator."""  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0xce524338caf90ab2824e23451d8574dde6fdf2162ebf1757c879439eb6be45c6')  # noqa: E501
     (db := DBLidoCsm(ethereum_inquirer.database)).add_node_operator(
         address=ethereum_accounts[0],
         node_operator_id=42,
         staking_module=LidoCsmStakingModule.CSM,
+        followed=True,
     )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
@@ -1126,6 +1133,7 @@ def test_reward_address_change_moves_node_operator(
         address=ethereum_accounts[1],
         node_operator_id=0,
         staking_module=LidoCsmStakingModule.CSM,
+        followed=True,
     )
     get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -1164,3 +1172,48 @@ def test_removed_node_operator_is_not_added_back(
         node_operator_id=609,
         staking_module=LidoCsmStakingModule.CSM,
     ) is False
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x9B4064C9d9801f062f377512e61bD19484e7F365',
+    '0x3C465D82530315cceC1CAd1Fd20164E09B8E4d1f',
+    '0x50B06A4037A167073A45ab3cC895c52378B08BA8',
+]])
+def test_refresh_drops_handed_off_node_operator(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Operator 42 was handed off by its tracked manager to an untracked one, which is only
+    seen in a transaction of the new manager, so the refresh drops it. Operator 0 moves from
+    its old reward address to its tracked manager, and operator 601, added by hand under an
+    address that is neither, is kept."""
+    db = DBLidoCsm(ethereum_inquirer.database)
+    for address, node_operator_id, followed in (
+            (ethereum_accounts[0], 42, True),
+            (ethereum_accounts[2], 0, True),
+            (ethereum_accounts[0], 601, False),
+    ):
+        db.add_node_operator(
+            address=address,
+            node_operator_id=node_operator_id,
+            staking_module=LidoCsmStakingModule.CSM,
+            followed=followed,
+        )
+
+    follow_stored_node_operators(
+        evm_inquirer=ethereum_inquirer,
+        database=ethereum_inquirer.database,
+        metrics_fetchers={
+            staking_module: LidoCsmMetricsFetcher(
+                evm_inquirer=ethereum_inquirer,
+                staking_module=staking_module,
+            ) for staking_module in LidoCsmStakingModule
+        },
+        node_operators=db.get_node_operators(),
+    )
+    assert [(x.address, x.node_operator_id) for x in db.get_node_operators()] == [
+        (ethereum_accounts[1], 0),
+        (ethereum_accounts[0], 601),
+    ]
+    assert db.get_followed_node_operators() == {(LidoCsmStakingModule.CSM, 0)}

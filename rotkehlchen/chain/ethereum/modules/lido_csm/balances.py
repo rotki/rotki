@@ -13,6 +13,7 @@ from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
     LidoCsmStakingModule,
 )
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmMetricsFetcher
+from rotkehlchen.chain.ethereum.modules.lido_csm.utils import follow_stored_node_operators
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_STETH
 from rotkehlchen.constants.misc import ZERO
@@ -94,6 +95,12 @@ class LidoCsmBalances(ProtocolWithBalance):
     def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         """Return the Lido CSM balances tracked in the DB for stETH."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
+        follow_stored_node_operators(
+            evm_inquirer=self.evm_inquirer,
+            database=self.event_db.db,
+            metrics_fetchers=self._metrics_fetchers,
+            node_operators=self._node_operator_db.get_node_operators(addresses=addresses),
+        )
         if len(node_operators := self._node_operator_db.get_node_operators(
             addresses=addresses,
         )) == 0:

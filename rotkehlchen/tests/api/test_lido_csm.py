@@ -5,6 +5,7 @@ from unittest.mock import _patch, patch
 
 import pytest
 import requests
+from eth_abi import encode
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.lido_csm.constants import (
@@ -15,6 +16,7 @@ from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import (
     LidoCsmMetricsFetcher,
     LidoCsmNodeOperatorStats,
 )
+from rotkehlchen.chain.ethereum.modules.lido_csm.utils import follow_stored_node_operators
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.lido_csm import DBLidoCsm
 from rotkehlchen.errors.cause import FailureCause
@@ -64,6 +66,13 @@ def _patched_metrics_fetcher_session() -> Iterator[dict[str, Any]]:
         ),
     ):
         yield stats.serialize()
+
+
+@pytest.fixture(name='follow_node_operators', autouse=True)
+def fixture_follow_node_operators() -> Iterator[None]:
+    """The operators here have random addresses, so don't query the module for theirs."""
+    with patch('rotkehlchen.api.rest.follow_stored_node_operators'):
+        yield
 
 
 def _register_eth_account(rotki: Rotkehlchen, address: ChecksumEvmAddress) -> None:
@@ -482,3 +491,78 @@ def test_refresh_metrics_tree_cid_failure_is_not_an_ipfs_failure(
     assert [x['metrics'] for x in payload['result']] == [None, None]
     assert payload['message'] == 'Failed to refresh metrics for node operators: CSM #7, CSM #10'
     assert db.get_node_operators()[0].metrics == stats
+
+
+def _patch_management_addresses(
+        rotki: Rotkehlchen,
+        addresses: list[tuple[ChecksumEvmAddress, ChecksumEvmAddress]],
+) -> _patch:
+    """Answer getNodeOperatorManagementProperties with these manager and reward addresses,
+    one pair per stored node operator in the order they are queried."""
+    return patch.object(
+        rotki.chains_aggregator.ethereum.node_inquirer,
+        'multicall_2',
+        return_value=[
+            (True, encode(['address', 'address', 'bool'], [manager, reward, False]))
+            for manager, reward in addresses
+        ],
+    )
+
+
+def test_refresh_metrics_drops_handed_off_node_operator(
+        rotkehlchen_api_server: APIServer,
+        metrics_payload: dict[str, Any],
+) -> None:
+    """An operator stored under its manager is dropped once its manager and reward addresses
+    are both untracked, while one added by hand under another address is kept."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBLidoCsm(rotki.data.db)
+    for address in (manager := make_evm_address(), depositor := make_evm_address()):
+        _register_eth_account(rotki, address)
+    db.add_node_operator(
+        address=manager,
+        node_operator_id=7,
+        staking_module=LidoCsmStakingModule.CSM,
+        followed=True,
+    )
+    db.add_node_operator(
+        address=depositor,
+        node_operator_id=10,
+        staking_module=LidoCsmStakingModule.CSM,
+    )
+
+    with (
+        patch('rotkehlchen.api.rest.follow_stored_node_operators', new=follow_stored_node_operators),  # noqa: E501
+        _patch_management_addresses(rotki, [(make_evm_address(), make_evm_address())] * 2),
+    ):
+        result = assert_proper_sync_response_with_result(
+            requests.post(api_url_for(rotkehlchen_api_server, 'lidocsmmetricsresource')),
+        )
+
+    assert [(x['address'], x['node_operator_id']) for x in result] == [(depositor, 10)]
+    assert [(x.address, x.node_operator_id) for x in db.get_node_operators()] == [(depositor, 10)]
+    assert result[0]['metrics'] == metrics_payload
+
+
+def test_add_node_operator_under_its_reward_address_follows_it(
+        rotkehlchen_api_server: APIServer,
+        metrics_payload: dict[str, Any],
+) -> None:
+    """Adding an operator under its reward address lets it follow later address changes,
+    and adding one under any other address does not."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBLidoCsm(rotki.data.db)
+    for node_operator_id, is_reward_address in ((7, True), (10, False)):
+        _register_eth_account(rotki, (address := make_evm_address()))
+        reward = address if is_reward_address else make_evm_address()
+        with (
+            patch('rotkehlchen.api.rest.follow_stored_node_operators', new=follow_stored_node_operators),  # noqa: E501
+            _patch_management_addresses(rotki, [(make_evm_address(), reward)]),
+        ):
+            assert_proper_sync_response_with_result(requests.put(
+                api_url_for(rotkehlchen_api_server, 'lidocsmnodeoperatorresource'),
+                json={'address': address, 'node_operator_id': node_operator_id},
+            ))
+
+    assert db.get_followed_node_operators() == {(LidoCsmStakingModule.CSM, 7)}
+    assert len(db.get_node_operators()) == 2
