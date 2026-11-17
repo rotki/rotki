@@ -3400,7 +3400,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert new_tables == {
         'bucket_processing_stops', 'bucket_balance_checks', 'wallet_balance_observations',
         'locations', 'location_aliases', 'integration_connections',
-        'integration_connection_settings',
+        'integration_connection_settings', 'remediation_plans', 'remediation_plan_audit',
     }
     new_views = views_after_upgrade - views_before
     assert new_views == set()
