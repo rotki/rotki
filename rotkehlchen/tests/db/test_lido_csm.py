@@ -180,3 +180,40 @@ def test_lido_csm_node_operator_ids_are_scoped_by_staking_module(database) -> No
             metrics=stats,
         ),
     )
+
+
+def test_lido_csm_move_node_operator(database) -> None:
+    db = DBLidoCsm(database)
+    _add_eth_account(database, (old_address := make_evm_address()))
+    _add_eth_account(database, (new_address := make_evm_address()))
+    db.add_node_operator(
+        address=old_address,
+        node_operator_id=7,
+        staking_module=LidoCsmStakingModule.CSM,
+    )
+    db.set_metrics(
+        node_operator_id=7,
+        metrics=(stats := LidoCsmNodeOperatorStats(
+            operator_type=LidoCsmOperatorType.PERMISSIONLESS,
+            current_bond=FVal('2.5'),
+            required_bond=FVal('2.4'),
+            claimable_bond=FVal('0.1'),
+            total_deposited_validators=1,
+            rewards_steth=FVal('0'),
+        )),
+        staking_module=LidoCsmStakingModule.CSM,
+    )
+    db.move_node_operator(
+        address=new_address,
+        node_operator_id=7,
+        staking_module=LidoCsmStakingModule.CSM,
+    )
+    assert db.get_node_operators() == (LidoCsmNodeOperator(
+        address=new_address,
+        node_operator_id=7,
+        staking_module=LidoCsmStakingModule.CSM,
+        metrics=stats,
+    ),)
+
+    db.move_node_operator(address=None, node_operator_id=7, staking_module=LidoCsmStakingModule.CSM)  # noqa: E501
+    assert db.get_node_operators() == ()

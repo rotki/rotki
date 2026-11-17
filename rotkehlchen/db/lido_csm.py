@@ -154,6 +154,41 @@ class DBLidoCsm:
                     f'for staking module {staking_module.name}',
                 ) from e
 
+    def get_node_operator_address(
+            self,
+            node_operator_id: int,
+            staking_module: LidoCsmStakingModule,
+    ) -> ChecksumEvmAddress | None:
+        """Return the address a node operator is tracked under, or None if it is not tracked."""
+        with self.db.conn.read_ctx() as cursor:
+            row = cursor.execute(
+                'SELECT address FROM lido_csm_node_operators '
+                'WHERE staking_module_id=? AND node_operator_id=?',
+                (staking_module.value, node_operator_id),
+            ).fetchone()
+        return None if row is None else ChecksumEvmAddress(row[0])
+
+    def move_node_operator(
+            self,
+            address: ChecksumEvmAddress | None,
+            node_operator_id: int,
+            staking_module: LidoCsmStakingModule,
+    ) -> None:
+        """Track a node operator under another address, or stop tracking it if address is None."""
+        with self.db.user_write() as write_cursor:
+            if address is None:
+                write_cursor.execute(
+                    'DELETE FROM lido_csm_node_operators '
+                    'WHERE staking_module_id=? AND node_operator_id=?',
+                    (staking_module.value, node_operator_id),
+                )
+            else:
+                write_cursor.execute(
+                    'UPDATE lido_csm_node_operators SET address=? '
+                    'WHERE staking_module_id=? AND node_operator_id=?',
+                    (address, staking_module.value, node_operator_id),
+                )
+
     def set_metrics(
             self,
             node_operator_id: int,

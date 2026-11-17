@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.modules.lido.constants import (
     STETH_MAX_ROUND_ERROR_WEI,
     WITHDRAWAL_QUEUE,
 )
+from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmMetricsFetcher
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
@@ -19,6 +20,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.constants.assets import A_ETH, A_STETH, A_WSTETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.db.lido_csm import DBLidoCsm
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, TokenKind
@@ -44,8 +47,8 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.types import ChecksumEvmAddress
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -66,7 +69,7 @@ class LidoCsmDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
-            evm_inquirer: EvmNodeInquirer,
+            evm_inquirer: EthereumInquirer,
             base_tools: BaseEvmDecoderTools,
             msg_aggregator: MessagesAggregator,
     ) -> None:
@@ -82,6 +85,12 @@ class LidoCsmDecoder(EvmDecoderInterface):
         for staking_module, contracts in LIDO_CSM_MODULE_CONTRACTS.items():
             for address in (contracts.module, contracts.accounting, contracts.fee_distributor):
                 self.modules_by_address[address] = staking_module
+        self.metrics_fetchers = {
+            staking_module: LidoCsmMetricsFetcher(
+                evm_inquirer=evm_inquirer,
+                staking_module=staking_module,
+            ) for staking_module in LidoCsmStakingModule
+        }
 
     def _get_operator(self, context: DecoderContext) -> tuple[LidoCsmStakingModule, int]:
         """Return the staking module that emitted the log and the node operator id it is about.
@@ -202,6 +211,78 @@ class LidoCsmDecoder(EvmDecoderInterface):
             address=context.tx_log.address,
         )
 
+    def _track_node_operator(
+            self,
+            staking_module: LidoCsmStakingModule,
+            node_operator_id: int,
+    ) -> None:
+        """Store, move or drop the node operator so that it is kept under its tracked manager
+        or, failing that, reward address.
+
+        The addresses are read from the module and not from the log, since the transaction
+        may be decoded after a later one changed them.
+        """
+        db = DBLidoCsm(self.base.database)
+        metrics_fetcher = self.metrics_fetchers[staking_module]
+        try:
+            manager, reward, _ = metrics_fetcher.module_contract.call(
+                node_inquirer=self.node_inquirer,
+                method_name='getNodeOperatorManagementProperties',
+                arguments=[node_operator_id],
+            )
+        except RemoteError as e:
+            log.error(
+                'Failed to query the addresses of a Lido CSM node operator',
+                staking_module=staking_module.name,
+                node_operator_id=node_operator_id,
+                error=str(e),
+            )
+            return
+
+        tracked_addresses = [x for x in (manager, reward) if self.base.is_tracked(x)]
+        if (stored_address := db.get_node_operator_address(
+            node_operator_id=node_operator_id,
+            staking_module=staking_module,
+        )) in tracked_addresses:
+            return
+
+        address = tracked_addresses[0] if len(tracked_addresses) != 0 else None
+        if stored_address is not None:
+            db.move_node_operator(
+                address=address,
+                node_operator_id=node_operator_id,
+                staking_module=staking_module,
+            )
+            return
+
+        if address is None:
+            return
+
+        db.add_node_operator(
+            address=address,
+            node_operator_id=node_operator_id,
+            staking_module=staking_module,
+        )
+        try:
+            metrics = metrics_fetcher.get_operator_stats(
+                node_operator_id=node_operator_id,
+                rewards_tree=metrics_fetcher.get_rewards_tree_or_none(),
+            )
+        except RemoteError as e:
+            log.error(
+                'Failed to fetch the metrics of a Lido CSM node operator added from its events',
+                staking_module=staking_module.name,
+                node_operator_id=node_operator_id,
+                error=str(e),
+            )
+            return
+
+        db.set_metrics(
+            node_operator_id=node_operator_id,
+            metrics=metrics,
+            staking_module=staking_module,
+        )
+
     def _decode_node_operator_added(self, context: DecoderContext) -> EvmDecodingOutput:
         manager = bytes_to_address(context.tx_log.topics[2])
         reward = bytes_to_address(context.tx_log.topics[3])
@@ -213,6 +294,7 @@ class LidoCsmDecoder(EvmDecoderInterface):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         staking_module, operator_id = self._get_operator(context)
+        self._track_node_operator(staking_module=staking_module, node_operator_id=operator_id)
         addresses = (
             f'manager and reward address {manager}' if manager == reward else
             f'manager address {manager} and reward address {reward}'
@@ -235,6 +317,7 @@ class LidoCsmDecoder(EvmDecoderInterface):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         staking_module, operator_id = self._get_operator(context)
+        self._track_node_operator(staking_module=staking_module, node_operator_id=operator_id)
         return self._make_informational_event(
             context=context,
             event_subtype=HistoryEventSubType.UPDATE,
