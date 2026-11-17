@@ -97,13 +97,16 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
             already_imported = True
             group_identifier = occurrence_identifier
         elif (
+            base_identifier not in self._base_identifiers_used and
             self.group_already_imported(write_cursor, base_identifier) and
             self._group_fee_matches(write_cursor, base_identifier, fee, fee_currency)
         ):
             # Older imports used the fee-less base identifier. Keep matching it when the fee
-            # agrees, even if a full-history export reordered otherwise identical trades.
+            # agrees, even if a full-history export reordered otherwise identical trades. A base
+            # group can satisfy only one occurrence in an import, just like an occurrence group.
             already_imported = True
             group_identifier = base_identifier
+            self._base_identifiers_used.add(base_identifier)
         elif (
             base_identifier not in self._base_identifiers_used and
             not self.group_already_imported(write_cursor, base_identifier)

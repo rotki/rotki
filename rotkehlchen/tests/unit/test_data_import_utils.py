@@ -299,6 +299,36 @@ def test_rotki_generic_trades_identical_fills(database, tmp_path) -> None:
         ) in {row[0] for row in cursor.execute('SELECT group_identifier FROM history_events')}
 
 
+def test_rotki_generic_trades_identical_fill_superset(database, tmp_path) -> None:
+    """Each existing trade can satisfy only one occurrence in an overlapping import."""
+    header = (
+        'Location,Spend Currency,Receive Currency,Receive Amount,Spend Amount,'
+        'Fee,Fee Currency,Description,Timestamp\n'
+    )
+    row = 'kraken,LTC,BTC,4.3241,392.8870,,,Fill,1659171600000\n'
+    (filepath := tmp_path / 'trades.csv').write_text(header + row * 2)
+    importer = RotkiGenericTradesImporter(db=database)
+    assert importer.import_csv(filepath=filepath) == (True, '')
+
+    filepath.write_text(header + row * 3)
+    assert importer.import_csv(filepath=filepath) == (True, '')
+    assert importer.imported_entries == 1
+    assert _count_history_events(database) == 6
+
+
+def test_rotki_generic_trades_identical_fills_across_flush(database, tmp_path) -> None:
+    """Flushing the first 200 trades must not make their base group reusable."""
+    (filepath := tmp_path / 'trades.csv').write_text(
+        'Location,Spend Currency,Receive Currency,Receive Amount,Spend Amount,'
+        'Fee,Fee Currency,Description,Timestamp\n' +
+        'kraken,LTC,BTC,4.3241,392.8870,,,Fill,1659171600000\n' * 201,
+    )
+    importer = RotkiGenericTradesImporter(db=database)
+    assert importer.import_csv(filepath=filepath) == (True, '')
+    assert importer.imported_entries == 201
+    assert _count_history_events(database) == 402
+
+
 def test_rotki_generic_trades_reordered_fee_variants(database, tmp_path) -> None:
     """A new fee variant in a reordered superset must not displace the existing trade."""
     header = (
