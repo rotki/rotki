@@ -15,6 +15,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.bucket_checks import balances_match
+from rotkehlchen.history.data_issues.bucket_state import BucketKey, make_bucket_key
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.remediation.base import (
@@ -22,7 +23,7 @@ from rotkehlchen.history.data_issues.remediation.base import (
     RemediationOutcome,
 )
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.locations.chains import BLOCKCHAIN_LOCATIONS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.events import (
@@ -35,7 +36,7 @@ from rotkehlchen.tasks.events import (
     get_already_matched_event_ids,
     get_unmatched_asset_movements,
 )
-from rotkehlchen.tasks.historical_balances import process_historical_balances
+from rotkehlchen.tasks.historical_balances import Bucket, process_historical_balances
 from rotkehlchen.types import EventMetricKey, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
@@ -382,6 +383,12 @@ def _pick_causal_movement(
     return matched_movements[0]
 
 
+def _issue_cutoff_ts(issue: DataIssue) -> TimestampMS:
+    if issue.kind == IssueKind.NEGATIVE_BALANCE:
+        return TimestampMS(issue.ts_end)
+    return ts_sec_to_ms(Timestamp(issue.payload['queried_at_ts']))
+
+
 def _issue_still_reproduces(cursor: DBCursor, issue: DataIssue, tolerance: FVal) -> bool:
     """Whether the up to date balances still show what the issue reported.
 
@@ -486,6 +493,7 @@ class CexOnchainMatchingStrategy(BaseRemediationStrategy):
         for movement in unmatched:
             self._unmatched_by_asset[movement.asset].append(movement)
         self._unresolved_issue_ids: set[int] = set()
+        self._pending_issue_ids: set[int] = set()
         self._preloaded_possible_matches: dict[int, list[HistoryBaseEntry]] = {}
         self._already_matched_event_ids: set[int] | None = None
         self._tracked_accounts: list[tuple[str, str]] | None = None
@@ -600,6 +608,7 @@ class CexOnchainMatchingStrategy(BaseRemediationStrategy):
         """
         if (
             issue.kind not in REMEDIATED_ISSUE_KINDS or
+            issue.id in self._pending_issue_ids or
             get_pending_verification(issue) is not None or (
                 _is_on_exchange(issue) is False and
                 (issue.location not in BLOCKCHAIN_LOCATIONS or issue.location_label == '')
@@ -650,7 +659,7 @@ class CexOnchainMatchingStrategy(BaseRemediationStrategy):
                 record_attempt=False,
             )
 
-        with self.database.conn.write_ctx():
+        with self.database.conn.write_ctx() as write_cursor:
             matched_movements, linked_ids = _match_movements(
                 database=self.database,
                 settings=self.settings,
@@ -659,15 +668,49 @@ class CexOnchainMatchingStrategy(BaseRemediationStrategy):
                 fee_events=self.fee_events,
                 assets_in_collection_cache=self.assets_in_collection_cache,
             )
-            if len(matched_movements) != 0:
-                self._record_pending_verification(issue, matched_movements, trial_snapshot)
+            affected_issue_ids = (
+                self._record_pending_verifications(
+                    cursor=write_cursor,
+                    trigger_issue=issue,
+                    matched_movements=matched_movements,
+                    trigger_snapshot=trial_snapshot,
+                )
+                if len(matched_movements) != 0
+                else set()
+            )
 
         self._forget_linked_movements(linked_ids)
-        if len(matched_movements) != 0:
+        if issue.id in affected_issue_ids:
             return RemediationOutcome(
                 resolved=False,
                 attribution=ATTRIBUTION_REPROCESSING_PENDING,
                 notes='Movements matched; balance reprocessing is still pending',
+                record_attempt=False,
+            )
+
+        remaining_movements = self._get_candidate_movements(issue)
+        if len(remaining_movements) == 0:
+            return RemediationOutcome(
+                resolved=False,
+                attribution='not_applicable',
+                notes='No unmatched exchange movement in the issue window',
+                record_attempt=False,
+            )
+
+        remaining_snapshot = (
+            trial_snapshot
+            if len(remaining_movements) == len(movements)
+            else self._compute_fresh_snapshot(remaining_movements)
+        )
+        if (
+            issue.id in self._unresolved_issue_ids and
+            (latest_attempt := _get_latest_strategy_attempt(issue, self.name)) is not None and
+            _attempt_matches_snapshot(latest_attempt, remaining_snapshot)
+        ):
+            return RemediationOutcome(
+                resolved=False,
+                attribution='unchanged_inputs',
+                notes='Matching inputs have not changed since the last attempt',
                 record_attempt=False,
             )
 
@@ -679,20 +722,159 @@ class CexOnchainMatchingStrategy(BaseRemediationStrategy):
             attempt_data=_make_attempt_data(
                 resolved=False,
                 notes=notes,
-                trial_snapshot=trial_snapshot,
+                trial_snapshot=remaining_snapshot,
             ),
         )
 
-    def _record_pending_verification(
+    def _get_affected_buckets_for_matches(
+            self,
+            cursor: DBCursor,
+            matched_movements: list[AssetMovement],
+    ) -> list[tuple[BucketKey, TimestampMS, int]]:
+        """Return `(bucket_key, event_timestamp, movement_id)` for each modified bucket."""
+        movements_by_id = {
+            movement.identifier: movement
+            for movement in matched_movements
+            if movement.identifier is not None
+        }
+        if len(movements_by_id) == 0:
+            return []
+
+        placeholders = ','.join('?' * len(movements_by_id))
+        link_rows = cursor.execute(
+            'SELECT left_event_id, right_event_id FROM history_event_links '
+            f'WHERE link_type = ? AND left_event_id IN ({placeholders})',
+            (HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(), *movements_by_id),
+        ).fetchall()
+        right_ids = sorted({row[1] for row in link_rows})
+        if len(right_ids) == 0:
+            return []
+
+        events_by_id = {
+            event.identifier: event
+            for event in DBHistoryEvents(self.database).get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(identifiers=right_ids),
+            )
+            if event.identifier is not None
+        }
+        group_identifiers = sorted({movement.group_identifier for movement in movements_by_id.values()})  # noqa: E501
+        group_placeholders = ','.join('?' * len(group_identifiers))
+        groups_with_adjustment = {
+            row[0] for row in cursor.execute(
+                'SELECT DISTINCT group_identifier FROM history_events '
+                f'WHERE group_identifier IN ({group_placeholders}) AND type = ?',
+                (*group_identifiers, HistoryEventType.EXCHANGE_ADJUSTMENT.serialize()),
+            )
+        }
+        treat_eth2_as_eth = self.settings.treat_eth2_as_eth
+        affected_buckets: list[tuple[BucketKey, TimestampMS, int]] = []
+        for left_id, right_id in link_rows:
+            if (
+                (movement := movements_by_id.get(left_id)) is None or
+                (matched_event := events_by_id.get(right_id)) is None
+            ):
+                continue
+            for bucket, _ in Bucket.from_event(matched_event, treat_eth2_as_eth):
+                affected_buckets.append((
+                    make_bucket_key(
+                        location=bucket.location,
+                        location_label=bucket.location_label,
+                        protocol=bucket.protocol,
+                        asset=bucket.asset,
+                    ),
+                    matched_event.timestamp,
+                    left_id,
+                ))
+            if (
+                isinstance(matched_event, AssetMovement) or
+                movement.group_identifier in groups_with_adjustment
+            ):
+                for bucket, _ in Bucket.from_event(movement, treat_eth2_as_eth):
+                    affected_buckets.append((
+                        make_bucket_key(
+                            location=bucket.location,
+                            location_label=bucket.location_label,
+                            protocol=bucket.protocol,
+                            asset=bucket.asset,
+                        ),
+                        movement.timestamp,
+                        left_id,
+                    ))
+        return affected_buckets
+
+    def _record_pending_verifications(
+            self,
+            cursor: DBCursor,
+            trigger_issue: DataIssue,
+            matched_movements: list[AssetMovement],
+            trigger_snapshot: Mapping[str, Any],
+    ) -> set[int]:
+        """Record pending verification on every issue whose failing bucket/event was affected."""
+        affected_buckets = self._get_affected_buckets_for_matches(cursor, matched_movements)
+        if len(affected_buckets) == 0:
+            return set()
+
+        candidate_issues = DataIssuesManager(self.database).list_issues(DataIssuesFilterQuery.make(
+            kinds=list(REMEDIATED_ISSUE_KINDS),
+            states=[IssueState.OPEN, IssueState.UNRESOLVED, IssueState.AUTO_REMEDIATING],
+        ))
+        affected_issue_ids: set[int] = set()
+        for candidate_issue in candidate_issues:
+            if (
+                candidate_issue.state == IssueState.AUTO_REMEDIATING and
+                candidate_issue.id != trigger_issue.id
+            ):
+                continue
+            issue_bucket = make_bucket_key(
+                location=candidate_issue.location,
+                location_label=candidate_issue.location_label,
+                protocol=candidate_issue.protocol,
+                asset=candidate_issue.asset,
+            )
+            cutoff = _issue_cutoff_ts(candidate_issue)
+            matching_movement_ids = {
+                movement_id
+                for bucket_key, event_ts, movement_id in affected_buckets
+                if bucket_key == issue_bucket and event_ts <= cutoff
+            }
+            if len(matching_movement_ids) == 0:
+                continue
+
+            if candidate_issue.id == trigger_issue.id:
+                expected_state = IssueState.AUTO_REMEDIATING
+                issue_snapshot = trigger_snapshot
+            else:
+                expected_state = IssueState(candidate_issue.state)
+                issue_snapshot = self._compute_fresh_snapshot(
+                    self._get_candidate_movements(candidate_issue),
+                )
+                if (existing_pending := get_pending_verification(candidate_issue)) is not None:
+                    matching_movement_ids |= set(existing_pending.get('matched_movement_ids', ()))
+
+            if self._record_pending_verification_for_issue(
+                issue=candidate_issue,
+                matched_movement_ids=sorted(matching_movement_ids),
+                trial_snapshot=issue_snapshot,
+                expected_state=expected_state,
+                is_trigger_issue=candidate_issue.id == trigger_issue.id,
+            ):
+                affected_issue_ids.add(candidate_issue.id)
+                self._pending_issue_ids.add(candidate_issue.id)
+        return affected_issue_ids
+
+    def _record_pending_verification_for_issue(
             self,
             issue: DataIssue,
-            matched_movements: list[AssetMovement],
+            matched_movement_ids: list[int],
             trial_snapshot: Mapping[str, Any],
-    ) -> None:
+            expected_state: IssueState,
+            is_trigger_issue: bool,
+    ) -> bool:
         """Record the matches owing a verification, inside the transaction that made them.
 
-        An issue dismissed or deleted meanwhile rolls back its matches too. That is reported
-        as an `InputError`, which the pipeline turns into skipping the changed issue.
+        An issue dismissed or deleted meanwhile rolls back its matches if it is the trigger
+        issue, or is skipped if it is another affected issue.
         """
         notes = 'Movements matched; balance reprocessing is still pending'
         try:
@@ -707,15 +889,21 @@ class CexOnchainMatchingStrategy(BaseRemediationStrategy):
                         notes=notes,
                         trial_snapshot=trial_snapshot,
                     ),
-                    'matched_movement_ids': sorted(
-                        movement.identifier for movement in matched_movements
-                        if movement.identifier is not None
-                    ),
+                    'matched_movement_ids': matched_movement_ids,
                 },
-                expected_state=IssueState.AUTO_REMEDIATING,
+                expected_state=expected_state,
             )
-        except NotFoundError as e:
-            raise InputError(str(e)) from e
+        except (NotFoundError, InputError) as e:
+            if is_trigger_issue:
+                raise InputError(str(e)) from e
+            log.warning(
+                'Data issue %s changed while recording pending CEX match verification: %s',
+                issue.id,
+                e,
+            )
+            return False
+        else:
+            return True
 
 
 class CexOnchainMatchVerificationStrategy(BaseRemediationStrategy):

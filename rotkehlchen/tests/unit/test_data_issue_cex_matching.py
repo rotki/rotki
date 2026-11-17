@@ -734,18 +734,18 @@ def test_multiple_matched_movements_attribute_negative_balance_to_causal_link(
 ) -> None:
     with database.user_write() as cursor:
         (events_db := DBHistoryEvents(database)).add_history_events(cursor, [HistoryEvent(
-            group_identifier='wallet2-funding',
+            group_identifier='wallet1-funding',
             sequence_index=0,
             timestamp=TimestampMS(ONCHAIN_TS - 200_000),
             location=LOCATION_ETHEREUM,
-            location_label=TEST_ADDR2,
+            location_label=TEST_ADDR1,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            amount=FVal(10),
+            amount=FVal(5),
         ), AssetMovement(
-            unique_id='kraken-deposit-later',
-            timestamp=TimestampMS(ONCHAIN_TS + 110_000),
+            unique_id='kraken-deposit-earlier',
+            timestamp=TimestampMS(ONCHAIN_TS - 110_000),
             location=LOCATION_KRAKEN,
             location_label='Kraken',
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -754,9 +754,9 @@ def test_multiple_matched_movements_attribute_negative_balance_to_causal_link(
         ), EvmEvent(
             tx_ref=make_evm_tx_hash(),
             sequence_index=0,
-            timestamp=TimestampMS(ONCHAIN_TS + 100_000),
+            timestamp=TimestampMS(ONCHAIN_TS - 100_000),
             location=LOCATION_ETHEREUM,
-            location_label=TEST_ADDR2,
+            location_label=TEST_ADDR1,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_ETH,
@@ -771,7 +771,7 @@ def test_multiple_matched_movements_attribute_negative_balance_to_causal_link(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            amount=FVal(1),
+            amount=FVal(11),
         ), AssetMovement(
             unique_id='kraken-withdrawal-causal',
             timestamp=TimestampMS(ONCHAIN_TS - 60_000),
@@ -779,7 +779,7 @@ def test_multiple_matched_movements_attribute_negative_balance_to_causal_link(
             location_label='Kraken',
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
-            amount=FVal(1),
+            amount=FVal(11),
         )])
         onchain_event_id = events_db.add_history_event(cursor, EvmEvent(
             tx_ref=make_evm_tx_hash(),
@@ -790,7 +790,7 @@ def test_multiple_matched_movements_attribute_negative_balance_to_causal_link(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_ETH,
-            amount=FVal(1),
+            amount=FVal(11),
             counterparty=CPT_KRAKEN,
         ))
     assert onchain_event_id is not None
@@ -1288,3 +1288,124 @@ def test_unresolved_from_customized_redecode_is_resolved_without_rerunning_redec
         (CEX_ONCHAIN_MATCHING, ATTRIBUTION_MATCHED_WITHDRAWAL),
     ]
     assert resolved.payload['resolution']['strategy'] == CEX_ONCHAIN_MATCHING
+
+
+def test_newer_unrelated_issue_first_records_pending_verification_on_affected_issue(
+        database: DBHandler,
+) -> None:
+    """Matching triggered by a newer unrelated issue must credit the older affected issue."""
+    older_issue, _ = _add_kraken_withdrawal_issue(database)
+    with database.user_write() as cursor:
+        DBHistoryEvents(database).add_history_event(cursor, EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=0,
+            timestamp=TimestampMS(ONCHAIN_TS + 1000),
+            location=LOCATION_ETHEREUM,
+            location_label=TEST_ADDR2,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal(2),
+        ))
+    process_historical_balances(database, database.msg_aggregator)
+    manager = DataIssuesManager(database)
+    issues = manager.list_issues()
+    assert len(issues) == 2
+    newer_issue = issues[0]
+    assert newer_issue.id != older_issue.id  # newer ts_start is listed and processed first
+
+    run_data_issue_remediation(database, MagicMock())
+    resolved_older = manager.get_issue(older_issue.id)
+    assert resolved_older.state == IssueState.RESOLVED
+    assert _attributions(resolved_older) == [
+        'reprocessing_pending',
+        ATTRIBUTION_MATCHED_WITHDRAWAL,
+    ]
+    refetched_newer = manager.get_issue(newer_issue.id)
+    assert refetched_newer.state == IssueState.OPEN
+    assert refetched_newer.auto_remediation_attempts == []
+
+
+def test_cross_bucket_match_handles_remaining_unmatched_movement_on_trigger_issue(
+        database: DBHandler,
+) -> None:
+    older_issue, _ = _add_kraken_withdrawal_issue(database)
+    with database.user_write() as cursor:
+        events_db = DBHistoryEvents(database)
+        events_db.add_history_event(cursor, EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=0,
+            timestamp=TimestampMS(ONCHAIN_TS + 1000),
+            location=LOCATION_ETHEREUM,
+            location_label=TEST_ADDR2,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal(2),
+        ))
+        events_db.add_history_event(cursor, HistoryEvent(
+            group_identifier='kraken-unmatched-funding',
+            sequence_index=0,
+            timestamp=TimestampMS(ONCHAIN_TS - 35_000),
+            location=LOCATION_KRAKEN,
+            location_label='Kraken',
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal(99),
+        ))
+        unmatched_id = events_db.add_history_event(cursor, AssetMovement(
+            unique_id='kraken-unmatched-other',
+            timestamp=TimestampMS(ONCHAIN_TS - 30_000),
+            location=LOCATION_KRAKEN,
+            location_label='Kraken',
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal(99),
+        ))
+    assert unmatched_id is not None
+    process_historical_balances(database, database.msg_aggregator)
+    manager = DataIssuesManager(database)
+    newer_issue = manager.list_issues()[0]
+    assert newer_issue.id != older_issue.id
+
+    run_data_issue_remediation(database, MagicMock())
+    assert manager.get_issue(older_issue.id).state == IssueState.RESOLVED
+    refetched_newer = manager.get_issue(newer_issue.id)
+    assert refetched_newer.state == IssueState.UNRESOLVED
+    assert _attributions(refetched_newer) == ['no_match']
+    assert refetched_newer.auto_remediation_attempts[-1]['movement_ids'] == [unmatched_id]
+
+
+def test_single_match_affects_multiple_issues_in_same_bucket(database: DBHandler) -> None:
+    nb_issue, _ = _add_kraken_withdrawal_issue(database)
+    manager = DataIssuesManager(database)
+    mismatch_id = manager.write_issue(
+        kind=IssueKind.CURRENT_BALANCE_MISMATCH,
+        location=LOCATION_ETHEREUM,
+        location_label=TEST_ADDR1,
+        protocol=None,
+        asset=A_ETH.identifier,
+        payload={
+            'derived_balance': '0',
+            'observed_balance': '1',
+            'delta': '1',
+            'queried_at_ts': (ONCHAIN_TS + 1000) // 1000,
+            'latest_event_identifier': None,
+        },
+        ts_start=ONCHAIN_TS + 1000,
+        ts_end=ONCHAIN_TS + 1000,
+    )
+
+    run_data_issue_remediation(database, MagicMock())
+    assert manager.get_issue(nb_issue.id).state == IssueState.RESOLVED
+    assert _attributions(manager.get_issue(nb_issue.id)) == [
+        'reprocessing_pending',
+        ATTRIBUTION_MATCHED_WITHDRAWAL,
+    ]
+    resolved_mismatch = manager.get_issue(mismatch_id)
+    assert resolved_mismatch.state == IssueState.RESOLVED
+    assert _attributions(resolved_mismatch) == [
+        'reprocessing_pending',
+        ATTRIBUTION_MATCHED_WITHDRAWAL,
+    ]
