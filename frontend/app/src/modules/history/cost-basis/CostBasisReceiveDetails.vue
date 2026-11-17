@@ -1,11 +1,18 @@
 <script setup lang="ts">
+import type { BigNumber } from '@rotki/common';
 import type { CostBasisReceive } from '@/modules/history/cost-basis/types';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import { COST_BASIS_FIAT_FORMAT } from '@/modules/history/cost-basis/cost-basis-helpers';
 import CostBasisBucketLabel from '@/modules/history/cost-basis/CostBasisBucketLabel.vue';
 
-const { entry } = defineProps<{ entry: CostBasisReceive }>();
+const { entry, amount } = defineProps<{
+  entry: CostBasisReceive;
+  amount?: BigNumber;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const costValue = computed<BigNumber | undefined>(() => amount ? entry.basisPerUnit.multipliedBy(amount) : undefined);
 
 /** Where the basis comes from, in words. An unknown source is shown as the backend names it. */
 const source = computed<string>(() => {
@@ -38,11 +45,24 @@ const source = computed<string>(() => {
     />
     <div class="flex flex-col gap-1 text-sm">
       <div class="flex items-center justify-between gap-6">
-        <span class="text-rui-text-secondary">{{ t('cost_basis_overlay.basis_per_unit') }}</span>
+        <span class="text-rui-text-secondary">{{ t('cost_basis_overlay.cost_basis') }}</span>
         <FiatDisplay
           :value="entry.basisPerUnit"
+          :format="COST_BASIS_FIAT_FORMAT"
           class="font-medium tabular-nums"
           data-testid="cost-basis-per-unit"
+        />
+      </div>
+      <div
+        v-if="costValue"
+        class="flex items-center justify-between gap-6"
+      >
+        <span class="text-rui-text-secondary">{{ t('cost_basis_overlay.cost_value') }}</span>
+        <FiatDisplay
+          :value="costValue"
+          :format="COST_BASIS_FIAT_FORMAT"
+          class="font-medium tabular-nums"
+          data-testid="cost-basis-cost-value"
         />
       </div>
       <span

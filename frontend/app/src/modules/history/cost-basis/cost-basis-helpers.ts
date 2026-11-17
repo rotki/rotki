@@ -1,5 +1,12 @@
 import type { BigNumber } from '@rotki/common';
+import type { FormatOptions } from '@/modules/assets/amount-display/types';
 import { CostBasisDirection, type CostBasisEntry, type CostBasisReceive, type CostBasisSpend } from '@/modules/history/cost-basis/types';
+
+/** Fiat values in the cost basis overlay are shown to two decimal places without a `<` or `>` mark. */
+export const COST_BASIS_FIAT_FORMAT: FormatOptions = {
+  decimals: 2,
+  noRoundingMark: true,
+};
 
 export const CostBasisSummaryKind = {
   ACQUISITION: 'acquisition',

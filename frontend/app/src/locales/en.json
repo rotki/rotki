@@ -2543,21 +2543,18 @@
   },
   "cost_basis_overlay": {
     "at": "at",
-    "average_basis": "With the average cost basis method every unit spent carries the average basis of what the account held at the time.",
-    "basis_per_unit": "Basis per unit",
-    "basis_remaining": "Basis left in this account",
     "cost_basis": "Cost basis",
+    "cost_value": "Cost value",
     "error": "Could not load the cost basis of this event.",
     "gain": "Taxable gain or loss",
     "labels": {
       "acquisition": "Cost",
-      "disposal": "Basis",
+      "disposal": "Cost",
       "transfer": "Moved"
     },
     "lots": "Lots used",
     "no_data": "This event does not change the cost basis of any asset.",
     "no_lots": "No acquisition is known for what was spent, so it has no cost basis.",
-    "proceeds": "Proceeds",
     "processing": "Pending",
     "show_details": "Show cost basis details",
     "source": {
@@ -2567,7 +2564,7 @@
       "transfer_in": "The basis was carried over with the asset from another of your accounts.",
       "zero_cost": "No price was found at the time of the event, so the basis is zero."
     },
-    "stale": "The cost basis is waiting to be recalculated, so this may be outdated.",
+    "stale": "The cost basis of this event is waiting to be calculated.",
     "taxfree": "Tax free",
     "taxfree_gain": "Tax free gain or loss",
     "view_acquisition": "Go to the event that acquired this lot"
