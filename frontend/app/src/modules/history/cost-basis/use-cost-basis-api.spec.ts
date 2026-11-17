@@ -35,14 +35,14 @@ describe('useCostBasisApi', () => {
           }],
         },
         method: 'fifo',
-        stale: true,
+        stale: [57],
       } });
     }));
 
     const result = await useCostBasisApi().fetchEventsCostBasis([12, 57]);
 
     expect(capturedBody).toEqual({ event_identifiers: [12, 57] });
-    expect(result.stale).toBe(true);
+    expect(result.stale).toEqual([57]);
     expect(result.method).toBe('fifo');
 
     const [receive] = result.entries['12'];

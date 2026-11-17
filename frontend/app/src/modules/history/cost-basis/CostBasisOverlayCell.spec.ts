@@ -12,7 +12,7 @@ import { provideCostBasisOverlay } from '@/modules/history/cost-basis/use-cost-b
 const stubs = {
   CostBasisReceiveDetails: { template: '<div class="receive-details" />' },
   CostBasisSpendDetails: { template: '<div class="spend-details" />' },
-  FiatDisplay: { props: ['value', 'pnl'], template: '<span class="fiat">{{ value.toString() }}</span>' },
+  FiatDisplay: { props: ['value', 'pnl', 'format'], template: '<span class="fiat" :data-decimals="format?.decimals" :data-no-mark="format?.noRoundingMark">{{ value.toString() }}</span>' },
   RuiButton: { template: '<button><slot /></button>' },
   RuiDivider: true,
   RuiIcon: true,
@@ -46,7 +46,6 @@ function mountCell(opts: {
   enabled?: boolean;
   entries?: CostBasisEntry[];
   status?: CostBasisStatus;
-  stale?: boolean;
   overlay?: Partial<UseCostBasisOverlayReturn>;
 } = {}): VueWrapper {
   const entries = opts.entries ?? [];
@@ -54,7 +53,6 @@ function mountCell(opts: {
     entriesFor: () => entries,
     refresh: async () => {},
     registerEvent: () => () => {},
-    stale: ref<boolean>(opts.stale ?? false),
     statusFor: () => opts.status ?? (entries.length > 0 ? 'ready' : 'empty'),
     ...opts.overlay,
   };
@@ -95,19 +93,22 @@ describe('costBasisOverlayCell.vue', () => {
     expect(wrapper.find('.menu').exists()).toBe(false);
   });
 
-  it('should show pending processing instead of no cost basis impact until stale data is refreshed', async () => {
-    const stale = ref<boolean>(true);
-    const entries = ref<CostBasisEntry[]>([]);
-    const wrapper = mountCell({ overlay: { entriesFor: () => get(entries), stale } });
+  it('should show pending processing and hide any figures until the event is processed', async () => {
+    const status = ref<CostBasisStatus>('processing');
+    const entries = ref<CostBasisEntry[]>([spend]);
+    const wrapper = mountCell({ overlay: { entriesFor: () => get(entries), statusFor: () => get(status) } });
 
     expect(wrapper.get('[data-testid=cost-basis-pending]').text()).toContain('cost_basis_overlay.processing');
+    expect(wrapper.find('[data-testid=cost-basis-pnl]').exists()).toBe(false);
     expect(wrapper.text()).not.toContain('cost_basis_overlay.no_data');
 
-    set(stale, false);
+    set(entries, []);
+    set(status, 'empty');
     await nextTick();
     expect(wrapper.get('[data-testid=cost-basis-empty]').text()).toContain('cost_basis_overlay.no_data');
 
     set(entries, [spend]);
+    set(status, 'ready');
     await nextTick();
     expect(wrapper.get('[data-testid=cost-basis-pnl]').text()).toBe('400');
     expect(wrapper.find('[data-testid=cost-basis-empty]').exists()).toBe(false);
@@ -118,6 +119,10 @@ describe('costBasisOverlayCell.vue', () => {
     expect(wrapper.get('[data-testid=cost-basis-pnl]').text()).toBe('400');
     expect(wrapper.get('[data-testid=cost-basis-basis]').text()).toContain('500');
     expect(wrapper.get('[data-testid=cost-basis-basis]').text()).toContain('cost_basis_overlay.labels.disposal');
+    wrapper.findAll('.fiat').forEach((fiat) => {
+      expect(fiat.attributes('data-decimals')).toBe('2');
+      expect(fiat.attributes('data-no-mark')).toBe('true');
+    });
     expect(wrapper.findAll('.spend-details')).toHaveLength(1);
     expect(wrapper.find('.receive-details').exists()).toBe(false);
   });
@@ -136,10 +141,5 @@ describe('costBasisOverlayCell.vue', () => {
     expect(wrapper.get('[data-testid=cost-basis-basis]').text()).toContain('cost_basis_overlay.labels.transfer');
     expect(wrapper.findAll('.spend-details')).toHaveLength(1);
     expect(wrapper.findAll('.receive-details')).toHaveLength(1);
-  });
-
-  it('should warn that the figures may be outdated only while the cost basis is stale', () => {
-    expect(mountCell({ entries: [spend] }).find('[data-testid=cost-basis-stale]').exists()).toBe(false);
-    expect(mountCell({ entries: [spend], stale: true }).find('[data-testid=cost-basis-stale]').exists()).toBe(true);
   });
 });

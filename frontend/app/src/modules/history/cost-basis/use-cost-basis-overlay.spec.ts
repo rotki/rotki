@@ -24,7 +24,7 @@ const entry: CostBasisEntry = {
   protocol: null,
 };
 
-function response(ids: number[], stale = false): EventsCostBasisResponse {
+function response(ids: number[], stale: number[] = []): EventsCostBasisResponse {
   return { entries: Object.fromEntries(ids.map(id => [String(id), [entry]])), method: 'fifo', stale };
 }
 
@@ -109,15 +109,21 @@ describe('useCostBasisOverlay', () => {
     expect(overlay.entriesFor(1)).toEqual([]);
   });
 
-  it('should report the staleness of the last response and fetch everything again on refresh', async () => {
-    const { overlay } = create([1]);
+  it('should mark only stale events as processing, hide their entries, and fetch everything again on refresh', async () => {
+    fetchCostBasis.mockImplementation(async () => response([1, 2], [2]));
+    const { overlay } = create([1, 2, 3]);
     await vi.advanceTimersByTimeAsync(60);
-    expect(get(overlay.stale)).toBe(false);
+    expect(overlay.statusFor(1)).toBe('ready');
+    expect(overlay.entriesFor(1)).toEqual([entry]);
+    expect(overlay.statusFor(2)).toBe('processing');
+    expect(overlay.entriesFor(2)).toEqual([]);
+    expect(overlay.statusFor(3)).toBe('empty');
 
-    fetchCostBasis.mockImplementation(async ids => response(ids, true));
+    fetchCostBasis.mockImplementation(async () => response([1, 2]));
     await overlay.refresh();
-    expect(fetchCostBasis).toHaveBeenLastCalledWith([1]);
+    expect(fetchCostBasis).toHaveBeenLastCalledWith([1, 2, 3]);
     expect(fetchCostBasis).toHaveBeenCalledTimes(2);
-    expect(get(overlay.stale)).toBe(true);
+    expect(overlay.statusFor(2)).toBe('ready');
+    expect(overlay.entriesFor(2)).toEqual([entry]);
   });
 });

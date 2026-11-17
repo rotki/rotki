@@ -67,11 +67,11 @@ const CostBasisEntry = z.discriminatedUnion('direction', [CostBasisReceive, Cost
 export type CostBasisEntry = z.infer<typeof CostBasisEntry>;
 
 export const EventsCostBasisResponse = z.object({
-  /** Keyed by event identifier. Events that affect no lots are absent. */
+  /** Keyed by event identifier. Events that affect no lots or are in `stale` are absent. */
   entries: z.record(z.string(), z.array(CostBasisEntry)),
   method: z.string(),
-  /** True while the cost basis waits to be processed, so entries may be missing or outdated. */
-  stale: z.boolean(),
+  /** Requested event identifiers whose cost basis waits to be processed. */
+  stale: z.array(z.number()),
 });
 
 export type EventsCostBasisResponse = z.infer<typeof EventsCostBasisResponse>;

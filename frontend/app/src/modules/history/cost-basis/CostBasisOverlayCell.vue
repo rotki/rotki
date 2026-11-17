@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
-import { type CostBasisSummary, CostBasisSummaryKind, summarizeCostBasis } from '@/modules/history/cost-basis/cost-basis-helpers';
+import { COST_BASIS_FIAT_FORMAT, type CostBasisSummary, CostBasisSummaryKind, summarizeCostBasis } from '@/modules/history/cost-basis/cost-basis-helpers';
 import CostBasisReceiveDetails from '@/modules/history/cost-basis/CostBasisReceiveDetails.vue';
 import CostBasisSpendDetails from '@/modules/history/cost-basis/CostBasisSpendDetails.vue';
 import { CostBasisDirection, type CostBasisEntry } from '@/modules/history/cost-basis/types';
@@ -14,7 +14,6 @@ const { t } = useI18n({ useScope: 'global' });
 const context = injectCostBasisOverlay();
 
 const enabled = computed<boolean>(() => !!context && get(context.enabled));
-const stale = computed<boolean>(() => !!context && get(context.overlay.stale));
 const status = computed<CostBasisStatus | undefined>(() => context?.overlay.statusFor(event.identifier));
 const entries = computed<CostBasisEntry[]>(() => context?.overlay.entriesFor(event.identifier) ?? []);
 const summary = computed<CostBasisSummary | undefined>(() => summarizeCostBasis(get(entries), event.amount));
@@ -64,7 +63,7 @@ watch([enabled, () => event.identifier], ([isEnabled, identifier]) => {
     </RuiTooltip>
 
     <RuiTooltip
-      v-else-if="!summary && stale"
+      v-else-if="status === CostBasisStatus.PROCESSING"
       :open-delay="200"
     >
       <template #activator>
@@ -108,24 +107,11 @@ watch([enabled, () => event.identifier], ([isEnabled, identifier]) => {
       v-else
       class="flex items-center justify-end gap-1.5"
     >
-      <RuiTooltip
-        v-if="stale"
-        :open-delay="200"
-      >
-        <template #activator>
-          <RuiIcon
-            name="lu-clock-alert"
-            class="text-rui-warning"
-            size="14"
-            data-testid="cost-basis-stale"
-          />
-        </template>
-        {{ t('cost_basis_overlay.stale') }}
-      </RuiTooltip>
       <div class="flex flex-col items-end leading-tight">
         <FiatDisplay
           v-if="summary.pnl"
           :value="summary.pnl"
+          :format="COST_BASIS_FIAT_FORMAT"
           pnl
           class="font-medium"
           data-testid="cost-basis-pnl"
@@ -136,7 +122,10 @@ watch([enabled, () => event.identifier], ([isEnabled, identifier]) => {
           data-testid="cost-basis-basis"
         >
           <span class="text-xs text-rui-text-secondary">{{ basisLabel }}</span>
-          <FiatDisplay :value="summary.basis" />
+          <FiatDisplay
+            :value="summary.basis"
+            :format="COST_BASIS_FIAT_FORMAT"
+          />
         </span>
       </div>
       <RuiMenu
@@ -172,10 +161,12 @@ watch([enabled, () => event.identifier], ([isEnabled, identifier]) => {
             <CostBasisSpendDetails
               v-if="entry.direction === CostBasisDirection.SPEND"
               :entry="entry"
+              :amount="event.amount"
             />
             <CostBasisReceiveDetails
               v-else
               :entry="entry"
+              :amount="event.amount"
             />
           </template>
         </div>

@@ -1,4 +1,4 @@
-import type { MaybeRefOrGetter, Ref } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 import type { CostBasisEntry } from '@/modules/history/cost-basis/types';
 import { startPromise } from '@shared/utils';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -9,6 +9,7 @@ export const CostBasisStatus = {
   EMPTY: 'empty',
   ERROR: 'error',
   LOADING: 'loading',
+  PROCESSING: 'processing',
   READY: 'ready',
 } as const;
 
@@ -33,8 +34,6 @@ export interface UseCostBasisOverlayReturn {
   /** Register a rendered event absent from the page groups; returns its cleanup function. */
   registerEvent: (identifier: number) => () => void;
   refresh: () => Promise<void>;
-  /** Whether the cost basis waits to be processed, so what is shown may be missing or outdated. */
-  stale: Readonly<Ref<boolean>>;
 }
 
 /**
@@ -43,14 +42,13 @@ export interface UseCostBasisOverlayReturn {
  *
  * @remarks
  * An event the response has no entries for affects no lots, which is a result and not a failure,
- * so it is kept as empty. A failed batch is shown as an error and fetched again on the next
- * change to the active events.
+ * so it is kept as empty unless the response marks it as waiting for processing. A failed batch is
+ * shown as an error and fetched again on the next change to the active events.
  */
 export function useCostBasisOverlay({ enabled, eventIdentifiers }: CostBasisOverlayParams): UseCostBasisOverlayReturn {
   const { fetchEventsCostBasis } = useCostBasisApi();
   const cache = shallowRef<Map<number, EventCostBasis>>(new Map());
   const registered = shallowRef<Map<number, number>>(new Map());
-  const stale = shallowRef<boolean>(false);
   let generation = 0;
   let disposed = false;
 
@@ -84,8 +82,10 @@ export function useCostBasisOverlay({ enabled, eventIdentifiers }: CostBasisOver
         if (currentGeneration !== generation)
           return;
         const entries = new Map(Object.entries(response.entries));
-        set(stale, response.stale);
+        const stale = new Set(response.stale);
         store(batch, (identifier) => {
+          if (stale.has(identifier))
+            return { entries: [], status: CostBasisStatus.PROCESSING };
           const found = entries.get(String(identifier)) ?? [];
           return { entries: found, status: found.length > 0 ? CostBasisStatus.READY : CostBasisStatus.EMPTY };
         });
@@ -139,5 +139,5 @@ export function useCostBasisOverlay({ enabled, eventIdentifiers }: CostBasisOver
     generation++;
   });
 
-  return { entriesFor, refresh, registerEvent, stale: readonly(stale), statusFor };
+  return { entriesFor, refresh, registerEvent, statusFor };
 }

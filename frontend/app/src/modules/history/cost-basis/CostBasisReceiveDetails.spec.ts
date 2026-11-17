@@ -6,10 +6,10 @@ import { CostBasisDirection, type CostBasisReceive } from '@/modules/history/cos
 
 const stubs = {
   CostBasisBucketLabel: { template: '<div class="bucket" />' },
-  FiatDisplay: { props: ['value'], template: '<span class="fiat">{{ value.toString() }}</span>' },
+  FiatDisplay: { props: ['value', 'format'], template: '<span class="fiat" :data-decimals="format?.decimals" :data-no-mark="format?.noRoundingMark">{{ value.toString() }}</span>' },
 };
 
-function mountDetails(basisSource: string): VueWrapper {
+function mountDetails(basisSource: string, amount = bigNumberify('2')): VueWrapper {
   const entry: CostBasisReceive = {
     asset: 'ETH',
     basisPerUnit: bigNumberify('1234.5'),
@@ -21,12 +21,18 @@ function mountDetails(basisSource: string): VueWrapper {
     method: 'fifo',
     protocol: null,
   };
-  return mount(CostBasisReceiveDetails, { global: { stubs }, props: { entry } });
+  return mount(CostBasisReceiveDetails, { global: { stubs }, props: { amount, entry } });
 }
 
 describe('costBasisReceiveDetails.vue', () => {
-  it('should show the basis of each unit received', () => {
-    expect(mountDetails('price_oracle').get('[data-testid=cost-basis-per-unit]').text()).toBe('1234.5');
+  it('should show the cost basis per unit and cost value for what was received', () => {
+    const wrapper = mountDetails('price_oracle');
+    expect(wrapper.get('[data-testid=cost-basis-per-unit]').text()).toBe('1234.5');
+    expect(wrapper.get('[data-testid=cost-basis-cost-value]').text()).toBe('2469');
+    wrapper.findAll('.fiat').forEach((fiat) => {
+      expect(fiat.attributes('data-decimals')).toBe('2');
+      expect(fiat.attributes('data-no-mark')).toBe('true');
+    });
   });
 
   it.each([

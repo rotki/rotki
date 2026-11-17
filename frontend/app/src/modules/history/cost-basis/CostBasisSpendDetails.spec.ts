@@ -8,7 +8,7 @@ const stubs = {
   AssetAmountDisplay: { props: ['amount'], template: '<span class="amount">{{ amount.toString() }}</span>' },
   CostBasisBucketLabel: { template: '<div class="bucket" />' },
   DateDisplay: { props: ['timestamp'], template: '<span class="date">{{ timestamp }}</span>' },
-  FiatDisplay: { props: ['value', 'pnl'], template: '<span class="fiat" :data-pnl="pnl">{{ value.toString() }}</span>' },
+  FiatDisplay: { props: ['value', 'pnl', 'format'], template: '<span class="fiat" :data-pnl="pnl" :data-decimals="format?.decimals" :data-no-mark="format?.noRoundingMark">{{ value.toString() }}</span>' },
   RouterLink: { props: ['to'], template: '<a :data-group="to.query.targetGroupIdentifier" :data-event="to.query.highlightedAccountingEvent" :data-overlay="to.query.overlay"><slot /></a>' },
   RuiChip: { template: '<span><slot /></span>' },
   RuiDivider: true,
@@ -24,7 +24,7 @@ const lot: CostBasisLot = {
   taxable: true,
 };
 
-function mountDetails(overrides: Partial<CostBasisSpend> = {}): VueWrapper {
+function mountDetails(overrides: Partial<CostBasisSpend> = {}, amount = bigNumberify('0.5')): VueWrapper {
   const entry: CostBasisSpend = {
     asset: 'ETH',
     basisRemaining: bigNumberify('250'),
@@ -40,7 +40,7 @@ function mountDetails(overrides: Partial<CostBasisSpend> = {}): VueWrapper {
     taxfreePnl: bigNumberify('0'),
     ...overrides,
   };
-  return mount(CostBasisSpendDetails, { global: { stubs }, props: { entry } });
+  return mount(CostBasisSpendDetails, { global: { stubs }, props: { amount, entry } });
 }
 
 function figure(wrapper: VueWrapper, key: string): string | undefined {
@@ -49,13 +49,25 @@ function figure(wrapper: VueWrapper, key: string): string | undefined {
 }
 
 describe('costBasisSpendDetails.vue', () => {
-  it('should show what a disposal was worth, what it cost, what it realized and what is left', () => {
+  it('should show the cost basis per unit, cost value and taxable gain of a disposal', () => {
     const wrapper = mountDetails();
-    expect(figure(wrapper, 'proceeds')).toBe('900');
-    expect(figure(wrapper, 'basis')).toBe('500');
+    expect(figure(wrapper, 'basis')).toBe('1000');
+    expect(figure(wrapper, 'cost-value')).toBe('500');
     expect(figure(wrapper, 'gain')).toBe('400');
-    expect(figure(wrapper, 'remaining')).toBe('250');
+    expect(figure(wrapper, 'proceeds')).toBeUndefined();
+    expect(figure(wrapper, 'remaining')).toBeUndefined();
     expect(wrapper.get('[data-testid=cost-basis-gain] .fiat').attributes('data-pnl')).toBe('true');
+    wrapper.findAll('.fiat').forEach((fiat) => {
+      expect(fiat.attributes('data-decimals')).toBe('2');
+      expect(fiat.attributes('data-no-mark')).toBe('true');
+    });
+  });
+
+  it('should weight the cost basis per unit across multiple lots', () => {
+    const secondLot: CostBasisLot = { ...lot, acquiredAt: 2000, amount: bigNumberify('1.5'), basisPerUnit: bigNumberify('2000'), lotId: '13' };
+    const wrapper = mountDetails({ basisRemoved: bigNumberify('3500'), lots: [lot, secondLot] }, bigNumberify('2'));
+    expect(figure(wrapper, 'basis')).toBe('1750');
+    expect(figure(wrapper, 'cost-value')).toBe('3500');
   });
 
   it('should leave the tax free gain out when there is none and show it when there is', () => {
@@ -64,11 +76,11 @@ describe('costBasisSpendDetails.vue', () => {
     expect(figure(mountDetails({ taxfreePnl: bigNumberify('60') }), 'taxfree-gain')).toBe('60');
   });
 
-  it('should show neither proceeds nor a gain for a move between own accounts', () => {
+  it('should show no gain for a move between own accounts', () => {
     const wrapper = mountDetails({ proceeds: null, realizedPnl: bigNumberify('0'), taxfreePnl: null });
-    expect(figure(wrapper, 'proceeds')).toBeUndefined();
     expect(figure(wrapper, 'gain')).toBeUndefined();
-    expect(figure(wrapper, 'basis')).toBe('500');
+    expect(figure(wrapper, 'basis')).toBe('1000');
+    expect(figure(wrapper, 'cost-value')).toBe('500');
   });
 
   it('should list each lot with its acquisition date, amount and basis per unit', () => {
@@ -91,13 +103,14 @@ describe('costBasisSpendDetails.vue', () => {
     expect(wrapper.findAll('[data-testid=cost-basis-lot]').map(row => row.find('[data-testid=cost-basis-lot-taxfree]').exists())).toEqual([false, true]);
   });
 
-  it('should explain the shared basis only for the average cost basis method', () => {
-    expect(mountDetails().find('[data-testid=cost-basis-average-note]').exists()).toBe(false);
-    expect(mountDetails({ method: 'acb' }).find('[data-testid=cost-basis-average-note]').exists()).toBe(true);
+  it('should hide the lots section for the average cost basis method', () => {
+    expect(mountDetails().find('[data-testid=cost-basis-lots]').exists()).toBe(true);
+    expect(mountDetails({ method: 'acb' }).find('[data-testid=cost-basis-lots]').exists()).toBe(false);
+    expect(mountDetails({ method: 'acb' }).findAll('[data-testid=cost-basis-lot]')).toHaveLength(0);
   });
 
   it('should say that nothing is known about the acquisition when no lot was found', () => {
     expect(mountDetails().find('[data-testid=cost-basis-no-lots]').exists()).toBe(false);
-    expect(mountDetails({ lots: [] }).find('[data-testid=cost-basis-no-lots]').exists()).toBe(true);
+    expect(mountDetails({ basisRemoved: bigNumberify('0'), lots: [] }).find('[data-testid=cost-basis-no-lots]').exists()).toBe(true);
   });
 });
