@@ -39,12 +39,14 @@ from rotkehlchen.exchanges.utils import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import (
     SwapEvent,
     create_swap_events,
     deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.locations.constants import (
     LOCATION_GEMINI,
@@ -547,19 +549,41 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[AssetMovement]:
-        """Queries Gemini for transfers. Returns a list of AssetMovements."""
+    ) -> list[AssetMovement | HistoryEvent]:
+        """Queries Gemini for transfers.
+
+        Returns deposits and withdrawals as AssetMovements and rewards as HistoryEvents.
+        """
         result = self._get_paginated_query(
             endpoint='transfers',
             start_ts=start_ts,
             end_ts=end_ts,
         )
-        movements = []
+        movements: list[AssetMovement | HistoryEvent] = []
         for entry in result:
             try:
                 timestamp = deserialize_timestamp(entry['timestampms'])
                 timestamp = Timestamp(int(timestamp / 1000))
                 asset = asset_from_gemini(entry['currency'])
+                if entry['type'] == 'Reward':
+                    amount = deserialize_fval_force_positive(entry['amount'])
+                    movements.append(HistoryEvent(
+                        group_identifier=create_group_identifier_from_unique_id(
+                            location=LOCATION_GEMINI,
+                            unique_id=str(entry['eid']),
+                        ),
+                        sequence_index=0,
+                        timestamp=ts_sec_to_ms(timestamp),
+                        location=LOCATION_GEMINI,
+                        location_label=self.name,
+                        event_type=HistoryEventType.RECEIVE,
+                        event_subtype=HistoryEventSubType.REWARD,
+                        asset=asset,
+                        amount=amount,
+                        notes=f'Receive {amount} {asset.symbol} as a Gemini reward',
+                    ))
+                    continue
+
                 # Gemini does not include withdrawal fees neither in the API nor in their UI
                 movement = AssetMovement(
                     location=LOCATION_GEMINI,
@@ -607,7 +631,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
             force_refresh: bool = False,
             event_queue: HistoryEventQueue | None = None,
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
-        events: list[AssetMovement | SwapEvent] = []
+        events: list[AssetMovement | HistoryEvent | SwapEvent] = []
         movements = self._query_asset_movements(start_ts=start_ts, end_ts=end_ts)
         if event_queue is None:
             events.extend(movements)
