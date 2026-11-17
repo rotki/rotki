@@ -196,7 +196,7 @@ from rotkehlchen.history.data_issues.reconciliation import (
     ReconciliationReport,
     get_reconciliation_report,
 )
-from rotkehlchen.history.data_issues.remediation import (
+from rotkehlchen.history.data_issues.remediation.plans import (
     PlanKind,
     RemediationError,
     apply_plan as apply_remediation_plan,

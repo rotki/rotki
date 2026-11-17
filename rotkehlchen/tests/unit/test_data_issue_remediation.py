@@ -522,7 +522,7 @@ def test_normal_transaction_is_not_redecoded_for_negative_balance(database: DBHa
     """An account with nothing customized keeps its issue open, untouched by the pipeline."""
     issue_id, _tx_hash = _add_negative_balance_issue(database=database, customized=False)
     with (
-        patch('rotkehlchen.tasks.data_issues._preview_transaction') as preview,
+        patch('rotkehlchen.tasks.data_issues.preview_transaction') as preview,
         _spy_on_state_updates() as update_state,
     ):
         run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
@@ -774,7 +774,7 @@ def test_budget_timeout_records_a_single_attempt(database: DBHandler) -> None:
             sleep(0.01)
 
     with (
-        patch('rotkehlchen.tasks.data_issues._preview_transaction', side_effect=never_finishes),
+        patch('rotkehlchen.tasks.data_issues.preview_transaction', side_effect=never_finishes),
         patch.object(RedecodeCustomizedTransactionsStrategy, 'timeout', 0.2),
     ):
         run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
@@ -947,7 +947,7 @@ def test_issue_is_compared_once_its_account_has_a_customized_transaction(
     issue_id, tx_hash = _add_negative_balance_issue(database=database, customized=False)
     manager = DataIssuesManager(database)
     with patch(
-        'rotkehlchen.tasks.data_issues._preview_transaction',
+        'rotkehlchen.tasks.data_issues.preview_transaction',
         return_value=[_make_event(tx_hash=tx_hash, amount='2')],
     ) as preview:
         run_data_issue_remediation(database=database, chains_aggregator=MagicMock())
@@ -977,7 +977,7 @@ def test_unresolved_issue_without_attempts_is_retried(database: DBHandler) -> No
     manager.update_state(issue_id, IssueState.UNRESOLVED)
 
     with patch(
-        'rotkehlchen.tasks.data_issues._preview_transaction',
+        'rotkehlchen.tasks.data_issues.preview_transaction',
         return_value=[_make_event(tx_hash=tx_hash, amount='2')],
     ):
         run_data_issue_remediation(database=database, chains_aggregator=MagicMock())

@@ -354,7 +354,7 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.okx import OkxLocation
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.data_issues.bucket_checks import BucketStatus
-    from rotkehlchen.history.data_issues.remediation import PlanKind
+    from rotkehlchen.history.data_issues.remediation.plans import PlanKind
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
     from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
     from rotkehlchen.history.types import HistoricalPriceOracle

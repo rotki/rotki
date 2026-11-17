@@ -126,7 +126,7 @@ from rotkehlchen.history.data_issues.reconciliation import (
     DEFAULT_PAGE_SIZE as DEFAULT_RECONCILIATION_PAGE_SIZE,
     MAX_PAGE_SIZE as MAX_RECONCILIATION_PAGE_SIZE,
 )
-from rotkehlchen.history.data_issues.remediation import APPROVAL_METHODS, PlanKind
+from rotkehlchen.history.data_issues.remediation.plans import APPROVAL_METHODS, PlanKind
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     AssetMovementExtraData,

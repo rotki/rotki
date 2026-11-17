@@ -26,7 +26,7 @@ from rotkehlchen.history.data_issues.diagnostics import (
     trace_bucket,
 )
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
-from rotkehlchen.history.data_issues.remediation import (
+from rotkehlchen.history.data_issues.remediation.plans import (
     PlanState,
     RemediationError,
     apply_plan,
@@ -311,7 +311,10 @@ def test_plan_refused_when_stale_expired_or_rejected(database: DBHandler) -> Non
     assert get_plan(database, stale_plan['plan_id'])['state'] == PlanState.STALE
 
     expired_plan = preview_bridge_link(database, bridge_id, eligible_id)
-    with patch('rotkehlchen.history.data_issues.remediation.ts_now', return_value=ts_now() + 3600):
+    with patch(
+        'rotkehlchen.history.data_issues.remediation.plans.ts_now',
+        return_value=ts_now() + 3600,
+    ):
         assert get_plan(database, expired_plan['plan_id'])['state'] == PlanState.EXPIRED
         with pytest.raises(RemediationError) as error:
             apply_plan(database, MagicMock(), expired_plan['plan_id'], 'mcp_elicitation', ts_now())
@@ -350,7 +353,7 @@ def test_redecode_plan_repairs_a_wrong_direction(database: DBHandler, customized
     decoder.decode_transaction_hashes.side_effect = fake_redecode
     group = decoded[0].group_identifier
     with patch(
-        'rotkehlchen.history.data_issues.remediation.preview_transaction',
+        'rotkehlchen.history.data_issues.remediation.plans.preview_transaction',
         return_value=copy.deepcopy(decoded),
     ):
         blocked = preview_redecode(database, chains_aggregator, [group], replace_customized=False)
@@ -533,7 +536,7 @@ def test_cancelled_apply_keeps_what_was_applied(database: DBHandler) -> None:
     decoder.possible_decoding_exceptions = ()
     decoder.decode_transaction_hashes.side_effect = fake_redecode
     with patch(
-        'rotkehlchen.history.data_issues.remediation.preview_transaction',
+        'rotkehlchen.history.data_issues.remediation.plans.preview_transaction',
         side_effect=lambda tx_hash, **kwargs: [copy.deepcopy(decoded[tx_hash])],
     ):
         plan = preview_redecode(
@@ -545,7 +548,7 @@ def test_cancelled_apply_keeps_what_was_applied(database: DBHandler) -> None:
 
     with (
         patch(
-            'rotkehlchen.history.data_issues.remediation.checkpoint',
+            'rotkehlchen.history.data_issues.remediation.plans.checkpoint',
             side_effect=[None, TaskCancelledError('cancelled')],
         ),
         pytest.raises(TaskCancelledError),
@@ -670,7 +673,7 @@ def test_redecode_apply_and_verify_only_count_applied_items(database: DBHandler)
     decoder.possible_decoding_exceptions = ()
     decoder.decode_transaction_hashes.side_effect = fake_redecode
     with patch(
-        'rotkehlchen.history.data_issues.remediation.preview_transaction',
+        'rotkehlchen.history.data_issues.remediation.plans.preview_transaction',
         side_effect=lambda tx_hash, **kwargs: [copy.deepcopy(decoded[tx_hash])],
     ):
         plan = preview_redecode(
@@ -682,7 +685,7 @@ def test_redecode_apply_and_verify_only_count_applied_items(database: DBHandler)
     assert [x['status'] for x in plan['plan']['items']] == ['no_change', 'ready']
 
     with patch(  # another pass is running, so this apply only marks the range stale
-        'rotkehlchen.history.data_issues.remediation.process_historical_balances',
+        'rotkehlchen.history.data_issues.remediation.plans.process_historical_balances',
         return_value=False,
     ) as process_mock:
         result = apply_plan(database, chains_aggregator, plan['plan_id'], 'mcp_elicitation', ts_now())  # noqa: E501

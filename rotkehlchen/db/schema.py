@@ -1037,7 +1037,7 @@ CREATE TABLE IF NOT EXISTS wallet_balance_observations (
 # Repair plans an agent or user previewed for the historical balance engine. A plan records the
 # exact proposed changes and digests of the evidence they were computed from; it can only be
 # applied while that evidence is unchanged and before it expires. See
-# rotkehlchen/history/data_issues/remediation.py.
+# rotkehlchen/history/data_issues/remediation/plans.py.
 DB_CREATE_REMEDIATION_PLANS = """
 CREATE TABLE IF NOT EXISTS remediation_plans (
     identifier TEXT NOT NULL PRIMARY KEY,
