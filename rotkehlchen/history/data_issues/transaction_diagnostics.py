@@ -12,6 +12,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -164,10 +165,14 @@ def _decoded_wallet_effects(
         events: list[HistoryBaseEntry],
         treat_eth2_as_eth: bool,
 ) -> dict[AccountAsset, FVal]:
-    """Net wallet effect per (account, asset) of the decoded events, gas fees excluded."""
+    """Net wallet effect per (account, asset) of the decoded events, gas fees excluded.
+
+    Only gas is left out, since the receipt's transfers don't carry it. Other fees, such as a
+    bridge's bonder fee, are token transfers the receipt shows.
+    """
     net: dict[AccountAsset, FVal] = defaultdict(lambda: ZERO)
     for event in events:
-        if event.event_subtype == HistoryEventSubType.FEE and event.event_type == HistoryEventType.SPEND:  # noqa: E501
+        if getattr(event, 'counterparty', None) == CPT_GAS:
             continue
         for bucket, direction in Bucket.from_event(event, treat_eth2_as_eth=treat_eth2_as_eth):
             if bucket.protocol is not None or bucket.location_label is None:

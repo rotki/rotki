@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.concurrency import TaskCancelledError
@@ -53,7 +54,7 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.locations.types import LocationIdentifier
-    from rotkehlchen.types import EVMTxHash
+    from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash
 
 pytestmark = pytest.mark.accounting_update
 
@@ -370,10 +371,13 @@ def test_redecode_plan_repairs_a_wrong_direction(database: DBHandler, customized
     assert get_accounting_health(database)['stops']['count'] == 0
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
-def test_inspect_transaction_compares_receipt_transfers(database: DBHandler) -> None:
-    """The receipt moved 100 USDC to the account but the saved event records 90."""
-    tx_hash = make_evm_tx_hash()
+def _add_usdc_transfer(
+        database: DBHandler,
+        tx_hash: EVMTxHash,
+        sender: ChecksumEvmAddress,
+        receiver: ChecksumEvmAddress,
+) -> None:
+    """Save a transaction whose receipt moves 100 USDC from sender to receiver."""
     with database.user_write() as write_cursor:
         DBEvmTx(database).add_transactions(
             write_cursor=write_cursor,
@@ -382,7 +386,7 @@ def test_inspect_transaction_compares_receipt_transfers(database: DBHandler) -> 
                 chain_id=ChainID.ETHEREUM,
                 timestamp=Timestamp(1),
                 block_number=1,
-                from_address=TEST_ADDR2,
+                from_address=sender,
                 to_address=(usdc_address := string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')),  # noqa: E501
                 value=0,
                 gas=21_000,
@@ -404,11 +408,17 @@ def test_inspect_transaction_compares_receipt_transfers(database: DBHandler) -> 
                 'address': usdc_address,
                 'topics': [
                     '0x' + ERC20_OR_ERC721_TRANSFER.hex(),
-                    '0x' + '00' * 12 + TEST_ADDR2[2:],
-                    '0x' + '00' * 12 + TEST_ADDR1[2:],
+                    '0x' + '00' * 12 + sender[2:],
+                    '0x' + '00' * 12 + receiver[2:],
                 ],
             }],
         })
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+def test_inspect_transaction_compares_receipt_transfers(database: DBHandler) -> None:
+    """The receipt moved 100 USDC to the account but the saved event records 90."""
+    _add_usdc_transfer(database, (tx_hash := make_evm_tx_hash()), TEST_ADDR2, TEST_ADDR1)
     _add(database, [received := EvmEvent(
         tx_ref=tx_hash,
         sequence_index=0,
@@ -433,6 +443,51 @@ def test_inspect_transaction_compares_receipt_transfers(database: DBHandler) -> 
         'difference': '10',
     }]
     assert inspect_transaction(database, 'missing') is None
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+def test_inspect_transaction_counts_protocol_fees(database: DBHandler) -> None:
+    """A bridge deposit split into the bridged amount and a bonder fee matches the receipt's
+    single transfer: only gas is left out of the decoded side, not every fee event."""
+    _add_usdc_transfer(database, (tx_hash := make_evm_tx_hash()), TEST_ADDR1, TEST_ADDR2)
+    _add(database, [deposit := EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=TimestampMS(1_000),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_USDC,
+        amount=FVal(99),
+        location_label=TEST_ADDR1,
+        counterparty='hop',
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=TimestampMS(1_000),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USDC,
+        amount=FVal(1),
+        location_label=TEST_ADDR1,
+        counterparty='hop',
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1_000),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.001'),
+        location_label=TEST_ADDR1,
+        counterparty=CPT_GAS,
+    )])
+
+    result = inspect_transaction(database, deposit.group_identifier)
+    assert result is not None
+    assert result['receipt_comparison']['discrepancies'] == []
 
 
 def test_cancelled_apply_keeps_what_was_applied(database: DBHandler) -> None:
