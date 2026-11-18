@@ -8,6 +8,7 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import OLD_POOL_ADDRESS
+from rotkehlchen.chain.evm.decoding.privacy_pools.constants import CPT_PRIVACY_POOLS
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -366,20 +367,35 @@ def test_aave_v3_withdraw_to_tracked_recipient(ethereum_inquirer, ethereum_accou
     """A recipient must not inherit a withdrawal made from an untracked Aave position."""
     tx_hash = deserialize_evm_tx_hash('0xf0e60e80afbefd59793c14f0d279c3c0436ae64a7073a09a236a0e26e0709905')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    assert events == [EvmEvent(
-        tx_ref=tx_hash,
-        sequence_index=132,
-        timestamp=TimestampMS(1794678251000),
-        location=LOCATION_ETHEREUM,
-        event_type=HistoryEventType.RECEIVE,
-        event_subtype=HistoryEventSubType.NONE,
-        asset=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
-        amount=FVal(amount := '20.000006'),
-        location_label=ethereum_accounts[0],
-        notes=f'Receive {amount} USDT from an AAVE v3 withdrawal by 0xDC3D922df81FC7B7f58229431ED91acB0482f3A5',  # noqa: E501
-        counterparty=CPT_AAVE_V3,
-        address=string_to_evm_address('0x23878914EFE38d27C4D67Ab83ed1b93A74D4086a'),
-    )]
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=132,
+            timestamp=(timestamp := TimestampMS(1794678251000)),
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+            asset=A_USDT,
+            amount=FVal(withdrawn_amount := '20.969296'),
+            location_label=ethereum_accounts[0],
+            notes=f'Withdraw {withdrawn_amount} USDT from Privacy Pools',
+            counterparty=CPT_PRIVACY_POOLS,
+            address=(router_address := string_to_evm_address('0x13a0b86bac3e0C29bd64fED7BCD2EE84f371f41C')),  # noqa: E501
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=147,
+            timestamp=timestamp,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USDT,
+            amount=FVal(fee_amount := '0.96929'),
+            location_label=ethereum_accounts[0],
+            notes=f'Spend {fee_amount} USDT as a Privacy Pools withdrawal fee',
+            counterparty=CPT_PRIVACY_POOLS,
+            address=router_address,
+        ),
+    ]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
