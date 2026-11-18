@@ -60,6 +60,22 @@ def test_api_query_classifies_rejected_request(bitget_exchange: Bitget) -> None:
     assert exc_info.value.cause == FailureCause.REMOTE_REJECTED
 
 
+def test_symbol_query_failure_is_propagated(bitget_exchange: Bitget) -> None:
+    with (
+        patch.object(
+            bitget_exchange,
+            '_api_query',
+            side_effect=RemoteError('temporary failure', cause=FailureCause.NETWORK),
+        ),
+        pytest.raises(RemoteError, match='temporary failure'),
+    ):
+        bitget_exchange._query_spot_trades(
+            start_ts=Timestamp(1699999900),
+            end_ts=Timestamp(1700000100),
+            event_queue=None,
+        )
+
+
 def test_query_balances(bitget_exchange: Bitget) -> None:
     responses: dict[tuple[str, str | None], list[dict[str, Any]]] = {
         ('/api/v2/spot/account/assets', None): [
@@ -184,16 +200,18 @@ def test_query_spot_trades(bitget_exchange: Bitget) -> None:
     assert all(event.location == LOCATION_BITGET for event in events)
 
 
-@pytest.mark.parametrize(('event_type', 'endpoint', 'subtypes'), [
+@pytest.mark.parametrize(('event_type', 'endpoint', 'subtypes', 'amount'), [
     (
         HistoryEventType.DEPOSIT,
         '/api/v2/spot/wallet/deposit-records',
         [HistoryEventSubType.RECEIVE],
+        FVal(5),
     ),
     (
         HistoryEventType.WITHDRAWAL,
         '/api/v2/spot/wallet/withdrawal-records',
         [HistoryEventSubType.SPEND, HistoryEventSubType.FEE],
+        FVal('4.8'),
     ),
 ])
 def test_query_movements(
@@ -201,6 +219,7 @@ def test_query_movements(
         event_type: HistoryEventType,
         endpoint: str,
         subtypes: list[HistoryEventSubType],
+        amount: FVal,
 ) -> None:
     with patch.object(bitget_exchange, '_paginated_query', return_value=[{
         'coin': 'USDC',
@@ -221,7 +240,7 @@ def test_query_movements(
     assert query.call_args.args[0] == endpoint
     assert [event.event_subtype for event in events] == subtypes
     assert events[0].asset == A_USDC
-    assert events[0].amount == FVal(5)
+    assert events[0].amount == amount
     assert events[0].extra_data == {
         'address': 'address-1',
         'transaction_id': 'transaction-1',
@@ -261,3 +280,14 @@ def test_query_margin_history(bitget_exchange: Bitget) -> None:
     assert query.call_args_list[0].args[1]['startTime'] == ts_sec_to_ms(Timestamp(
         ts_now() - BITGET_MAX_HISTORY_WINDOW,
     ))
+
+
+@pytest.mark.freeze_time('2025-01-01 00:00:00 GMT')
+def test_query_margin_history_before_available_range(bitget_exchange: Bitget) -> None:
+    with patch.object(bitget_exchange, '_paginated_query') as query:
+        assert bitget_exchange.query_online_margin_history(
+            start_ts=BITGET_LAUNCH_TS,
+            end_ts=Timestamp(ts_now() - BITGET_MAX_HISTORY_WINDOW),
+        ) == []
+
+    query.assert_not_called()

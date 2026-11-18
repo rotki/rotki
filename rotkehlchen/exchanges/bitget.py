@@ -182,12 +182,7 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
         if self.first_connection_made:
             return
 
-        try:
-            raw_symbols = self._api_query('/api/v2/spot/public/symbols')
-        except RemoteError as e:
-            log.error('Failed to query Bitget symbols due to %s', e)
-            return
-
+        raw_symbols = self._api_query('/api/v2/spot/public/symbols')
         for entry in raw_symbols:
             try:
                 self.symbols[entry['symbol']] = (
@@ -375,6 +370,9 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
                     continue
                 try:
                     asset = asset_from_bitget(entry['coin'])
+                    fee_amount = ZERO if is_deposit else abs(
+                        deserialize_fval(entry.get('fee', '0')),
+                    )
                     events.extend(create_asset_movement_with_fee(
                         timestamp=TimestampMS(int(entry['uTime'])),
                         location=self.location,
@@ -384,10 +382,10 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
                             HistoryEventSubType.SPEND
                         ),
                         asset=asset,
-                        amount=deserialize_fval(entry['size']),
+                        amount=deserialize_fval(entry['size']) - fee_amount,
                         fee=None if is_deposit else AssetAmount(
                             asset=asset,
-                            amount=abs(deserialize_fval(entry.get('fee', '0'))),
+                            amount=fee_amount,
                         ),
                         unique_id=entry['orderId'],
                         extra_data=maybe_set_transaction_extra_data(
@@ -430,8 +428,11 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> list[MarginPosition]:
-        positions = []
+        positions: list[MarginPosition] = []
         earliest_ts = Timestamp(max(start_ts, ts_now() - 90 * DAY_IN_SECONDS))
+        if earliest_ts >= end_ts:
+            return positions
+
         for product_type in BITGET_PRODUCT_TYPES:
             for entry in self._paginated_query(
                     '/api/v2/mix/position/history-position',
