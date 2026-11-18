@@ -141,6 +141,16 @@ class PrivacyPoolsDecoder(EvmDecoderInterface):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _native_gas_funding(self, asset: CryptoAsset, gas_funding_raw: int) -> FVal:
+        """Gas funding that shares the withdrawal transfer, which happens only for native assets.
+
+        For token withdrawals the gas funding arrives as its own native transfer and is
+        already decoded as a plain receive, so it is not part of the withdrawal.
+        """
+        if asset != self.node_inquirer.native_token or gas_funding_raw == 0:
+            return ZERO
+        return asset_normalized_value(amount=gas_funding_raw, asset=asset)
+
     def _apply_withdrawal(
             self,
             context: DecoderContext,
@@ -149,19 +159,25 @@ class PrivacyPoolsDecoder(EvmDecoderInterface):
             asset: CryptoAsset,
             withdrawn_amount: FVal,
             fee_amount: FVal,
-            expected_receive_amount: FVal,
+            net_amount: FVal,
+            native_gas_funding: FVal = ZERO,
             match_any_sender: bool = False,
     ) -> EvmDecodingOutput:
-        withdrawal_notes = f'Withdraw {withdrawn_amount} {asset.symbol} from {PRIVACY_POOLS_LABEL}'
-        fee_notes = f'Spend {fee_amount} {asset.symbol} as a {PRIVACY_POOLS_LABEL} withdrawal fee'
+        """Turn the received transfer into a withdrawal plus fee and gas funding events.
 
+        `native_gas_funding` is relayer-provided native currency paid in the same transfer
+        as a native-asset withdrawal, so that transfer carries `net_amount + native_gas_funding`.
+        It is split into its own receive event to keep the total received in history.
+        """
+        withdrawal_notes = f'Withdraw {withdrawn_amount} {asset.symbol} from {PRIVACY_POOLS_LABEL}'
+        new_events: list[EvmEvent] = []
         for event in context.decoded_events:
             if (
                 event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.WITHDRAWAL) and
                 event.location_label == recipient and
                 (match_any_sender or event.address == contract_address) and
                 event.asset == asset and
-                event.amount == expected_receive_amount
+                event.amount == net_amount + native_gas_funding
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
@@ -169,36 +185,23 @@ class PrivacyPoolsDecoder(EvmDecoderInterface):
                 event.counterparty = CPT_PRIVACY_POOLS
                 event.notes = withdrawal_notes
                 event.address = contract_address
-                new_events: list[EvmEvent] = []
-                if fee_amount > ZERO:
-                    new_events.append(self.base.make_event_next_index(
-                        tx_ref=context.transaction.tx_hash,
-                        timestamp=context.transaction.timestamp,
-                        event_type=HistoryEventType.SPEND,
-                        event_subtype=HistoryEventSubType.FEE,
-                        asset=asset,
-                        amount=fee_amount,
-                        location_label=recipient,
-                        notes=fee_notes,
-                        counterparty=CPT_PRIVACY_POOLS,
-                        address=contract_address,
-                    ))
-                return EvmDecodingOutput(events=new_events)
+                break
+        else:
+            new_events.append(self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+                asset=asset,
+                amount=withdrawn_amount,
+                location_label=recipient,
+                notes=withdrawal_notes,
+                counterparty=CPT_PRIVACY_POOLS,
+                address=contract_address,
+            ))
 
-        events = [self.base.make_event_from_transaction(
-            transaction=context.transaction,
-            tx_log=context.tx_log,
-            event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
-            asset=asset,
-            amount=withdrawn_amount,
-            location_label=recipient,
-            notes=withdrawal_notes,
-            counterparty=CPT_PRIVACY_POOLS,
-            address=contract_address,
-        )]
         if fee_amount > ZERO:
-            events.append(self.base.make_event_next_index(
+            new_events.append(self.base.make_event_next_index(
                 tx_ref=context.transaction.tx_hash,
                 timestamp=context.transaction.timestamp,
                 event_type=HistoryEventType.SPEND,
@@ -206,11 +209,23 @@ class PrivacyPoolsDecoder(EvmDecoderInterface):
                 asset=asset,
                 amount=fee_amount,
                 location_label=recipient,
-                notes=fee_notes,
+                notes=f'Spend {fee_amount} {asset.symbol} as a {PRIVACY_POOLS_LABEL} withdrawal fee',  # noqa: E501
                 counterparty=CPT_PRIVACY_POOLS,
                 address=contract_address,
             ))
-        return EvmDecodingOutput(events=events)
+        if native_gas_funding > ZERO:
+            new_events.append(self.base.make_event_next_index(
+                tx_ref=context.transaction.tx_hash,
+                timestamp=context.transaction.timestamp,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=asset,
+                amount=native_gas_funding,
+                location_label=recipient,
+                notes=f'Receive {native_gas_funding} {asset.symbol} from {contract_address}',
+                address=contract_address,
+            ))
+        return EvmDecodingOutput(events=new_events)
 
     def _apply_ragequit(
             self,
@@ -296,7 +311,7 @@ class PrivacyPoolsDecoder(EvmDecoderInterface):
             asset=asset,
             withdrawn_amount=withdrawn_amount,
             fee_amount=fee_amount,
-            expected_receive_amount=withdrawn_amount - fee_amount,
+            net_amount=withdrawn_amount - fee_amount,
         )
 
     def _decode_entrypoint_events(self, context: DecoderContext) -> EvmDecodingOutput:
@@ -391,14 +406,6 @@ class PrivacyPoolsDecoder(EvmDecoderInterface):
             amount=int.from_bytes(context.tx_log.data[32:64]),
             asset=asset,
         )
-        gas_funding_raw = int.from_bytes(context.tx_log.data[64:96])
-        expected_receive_amount = net_amount
-        if asset == self.node_inquirer.native_token and gas_funding_raw > 0:
-            expected_receive_amount += asset_normalized_value(
-                amount=gas_funding_raw,
-                asset=self.node_inquirer.native_token,
-            )
-
         return self._apply_withdrawal(
             context=context,
             recipient=recipient,
@@ -406,7 +413,11 @@ class PrivacyPoolsDecoder(EvmDecoderInterface):
             asset=asset,
             withdrawn_amount=net_amount + fee_amount,
             fee_amount=fee_amount,
-            expected_receive_amount=expected_receive_amount,
+            net_amount=net_amount,
+            native_gas_funding=self._native_gas_funding(
+                asset=asset,
+                gas_funding_raw=int.from_bytes(context.tx_log.data[64:96]),
+            ),
         )
 
     def _decode_v2_router_deposit(self, context: DecoderContext) -> EvmDecodingOutput:
@@ -464,14 +475,6 @@ class PrivacyPoolsDecoder(EvmDecoderInterface):
             amount=int.from_bytes(context.tx_log.data[128:160]),
             asset=asset,
         )
-        gas_funding_raw = int.from_bytes(context.tx_log.data[160:192])
-        expected_receive_amount = net_amount
-        if router_underlying is None and gas_funding_raw > 0:
-            expected_receive_amount += asset_normalized_value(
-                amount=gas_funding_raw,
-                asset=self.node_inquirer.native_token,
-            )
-
         return self._apply_withdrawal(
             context=context,
             recipient=recipient,
@@ -479,7 +482,11 @@ class PrivacyPoolsDecoder(EvmDecoderInterface):
             asset=asset,
             withdrawn_amount=net_amount + fee_amount,
             fee_amount=fee_amount,
-            expected_receive_amount=expected_receive_amount,
+            net_amount=net_amount,
+            native_gas_funding=self._native_gas_funding(
+                asset=asset,
+                gas_funding_raw=int.from_bytes(context.tx_log.data[160:192]),
+            ),
             match_any_sender=router_underlying is not None,
         )
 

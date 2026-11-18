@@ -4,6 +4,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.privacy_pools.constants import (
     CPT_PRIVACY_POOLS,
@@ -12,12 +13,15 @@ from rotkehlchen.chain.evm.decoding.privacy_pools.constants import (
     RAGEQUIT_TOPIC,
     V2_ENTRYPOINT,
     V2_POOL_VAULT,
+    V2_PP_ROUTER_WITHDRAWN_TOPIC,
     V2_RELAY,
+    V2_RELAYED_TOPIC,
     WITHDRAWAL_RELAYED_TOPIC,
 )
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -25,6 +29,7 @@ from rotkehlchen.locations.constants import LOCATION_ARBITRUM_ONE, LOCATION_ETHE
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
+    EvmInternalTransaction,
     EvmTransaction,
     Timestamp,
     TimestampMS,
@@ -36,6 +41,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
 
 DEPLOYMENT = PRIVACY_POOLS_DEPLOYMENTS[ChainID.ETHEREUM]
@@ -401,7 +407,7 @@ def test_privacy_pools_unlisted_pool_and_missing_internal_tx_fallbacks(
     relayer = string_to_evm_address('0x2222222222222222222222222222222222222222')
     usdc_address = A_USDC.resolve_to_evm_token().evm_address
     gross_raw = 1005_000_000
-    net_raw = 1000_000_000
+    deposited_raw = 1000_000_000
 
     deposit_tx = EvmTransaction(
         tx_hash=(deposit_hash := deserialize_evm_tx_hash('0x' + '11' * 32)),
@@ -437,7 +443,7 @@ def test_privacy_pools_unlisted_pool_and_missing_internal_tx_fallbacks(
             ),
             EvmTxReceiptLog(
                 log_index=1,
-                data=net_raw.to_bytes(32),
+                data=deposited_raw.to_bytes(32),
                 address=usdc_address,
                 topics=[
                     ERC20_OR_ERC721_TRANSFER,
@@ -447,7 +453,7 @@ def test_privacy_pools_unlisted_pool_and_missing_internal_tx_fallbacks(
             ),
             EvmTxReceiptLog(
                 log_index=2,
-                data=(1).to_bytes(32) + net_raw.to_bytes(32),
+                data=(1).to_bytes(32) + deposited_raw.to_bytes(32),
                 address=DEPLOYMENT.entrypoint,
                 topics=[
                     ENTRYPOINT_DEPOSITED_TOPIC,
@@ -636,6 +642,122 @@ def test_privacy_pools_unlisted_pool_and_missing_internal_tx_fallbacks(
             notes='Withdraw 0.1 ETH from Privacy Pools via ragequit',
             counterparty=CPT_PRIVACY_POOLS,
             address=DEPLOYMENT.native_pool,
+        ),
+    ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045']])
+@pytest.mark.parametrize(('contract_address', 'topic', 'data'), [
+    (V2_RELAY, V2_RELAYED_TOPIC, (net_raw := 500_000_000_000_000_000).to_bytes(32) + (fee_raw := 1_000_000_000_000_000).to_bytes(32) + (gas_raw := 2_000_000_000_000_000).to_bytes(32)),  # noqa: E501
+    (V2_PP_ETH_ROUTER, V2_PP_ROUTER_WITHDRAWN_TOPIC, bytes(32) + net_raw.to_bytes(32) + bytes(64) + fee_raw.to_bytes(32) + gas_raw.to_bytes(32) + bytes(96)),  # noqa: E501
+])
+def test_privacy_pools_v2_native_withdrawal_gas_funding(
+        database: DBHandler,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        contract_address: ChecksumEvmAddress,
+        topic: bytes,
+        data: bytes,
+) -> None:
+    """Native gas funding paid in the same transfer as the withdrawal is kept as a receive."""
+    user_address = ethereum_accounts[0]
+    relayer = string_to_evm_address('0x2222222222222222222222222222222222222222')
+    transaction = EvmTransaction(
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x' + '44' * 32)),
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1795000000),
+        block_number=24000000,
+        from_address=relayer,
+        to_address=contract_address,
+        value=0,
+        gas=100000,
+        gas_price=1,
+        gas_used=0,
+        input_data=b'',
+        nonce=1,
+        db_id=1,
+    )
+    receipt = EvmTxReceipt(
+        tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        contract_address=None,
+        status=True,
+        tx_type=2,
+        logs=[EvmTxReceiptLog(
+            log_index=0,
+            data=data,
+            address=contract_address,
+            topics=[
+                topic,
+                address_to_bytes32(relayer),
+                address_to_bytes32(ETH_SPECIAL_ADDRESS),
+                address_to_bytes32(user_address),
+            ] if topic == V2_PP_ROUTER_WITHDRAWN_TOPIC else [
+                topic,
+                address_to_bytes32(ETH_SPECIAL_ADDRESS),
+                address_to_bytes32(user_address),
+                address_to_bytes32(relayer),
+            ],
+        )],
+    )
+    dbevmtx = DBEvmTx(database)
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(write_cursor, [transaction], relevant_address=None)
+        dbevmtx.add_evm_internal_transactions(write_cursor, [EvmInternalTransaction(
+            parent_tx_hash=tx_hash,
+            chain_id=ChainID.ETHEREUM,
+            trace_id=1,
+            from_address=contract_address,
+            to_address=user_address,
+            value=net_raw + gas_raw,
+            gas=0,
+            gas_used=0,
+        )], relevant_address=user_address)
+        ethereum_transaction_decoder.reload_data(write_cursor)
+
+    events, _, _ = ethereum_transaction_decoder._decode_transaction(
+        transaction=transaction,
+        tx_receipt=receipt,
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1795000000000)),
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+            asset=A_ETH,
+            amount=FVal(withdrawn_amount := '0.501'),
+            location_label=user_address,
+            notes=f'Withdraw {withdrawn_amount} ETH from Privacy Pools',
+            counterparty=CPT_PRIVACY_POOLS,
+            address=contract_address,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(fee_amount := '0.001'),
+            location_label=user_address,
+            notes=f'Spend {fee_amount} ETH as a Privacy Pools withdrawal fee',
+            counterparty=CPT_PRIVACY_POOLS,
+            address=contract_address,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal(gas_amount := '0.002'),
+            location_label=user_address,
+            notes=f'Receive {gas_amount} ETH from {contract_address}',
+            address=contract_address,
         ),
     ]
 
