@@ -40,6 +40,7 @@ from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
 from rotkehlchen.chain.ethereum.modules.across.balances import AcrossBalances
 from rotkehlchen.chain.ethereum.modules.aztec.balances import AztecBalances
 from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
+from rotkehlchen.chain.ethereum.modules.chainlink.balances import ChainlinkBalances
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.curve.crvusd.balances import CurveCrvusdBalances
@@ -230,6 +231,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         EthenaBalances,
         HedgeyBalances,
         BlurBalances,
+        ChainlinkBalances,
         GearboxBalances,
         SafeBalances,
         AaveBalances,
