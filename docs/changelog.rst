@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7485` Chainlink staking on Ethereum is now supported. Staking LINK in the v0.2 community and operator pools, starting the unbonding period, unstaking and claiming rewards are decoded, as are staking, unstaking and migrating to v0.2 in the concluded v0.1. Staked LINK and its claimable rewards now count towards balances.
 * :feature:`9006` Gemini credit card rewards are now imported as rewards. Before, they were reported as an error and left out of your history. To get rewards from history that was already queried, purge the Gemini history under Settings > Database > Manage Data and query it again.
 * :bug:`-` Venice DIEM collateral locks and unlocks are now informational events because the locked sVVV remains in the wallet.
 * :bug:`-` With a crypto main currency such as ETH or BTC, historical fiat prices in that currency are now found by inverting the crypto price in fiat. Before, fiat received in a profit and loss report was valued at zero, fiat spent was reported as a missing price, and snapshot exports used a rate of one.

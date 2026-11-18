@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.constants import (
     DEFAULT_TOKEN_DECIMALS,
     DEPOSIT_TOPIC,
     REWARD_PAID_TOPIC_V2,
+    STAKED_TOPIC_V2,
     WITHDRAWN_TOPIC,
     ZERO_ADDRESS,
 )
@@ -58,7 +59,6 @@ WITHDRAW_AND_UNWRAP_4BYTE: Final = b'\xc3.r\x02'
 LOCK_ETHEREUM_AND_BASE_4BYTE: Final = b'(-?\xdf'
 
 LOCKED_TOPIC: Final = b'\x9f\x1e\xc8\xc8\x80\xf7g\x98\xe7\xb7\x932]b^\x9b`\xe4\x08*U<\x98\xf4+l\xda6\x8d\xd6\x00\x08'  # noqa: E501
-AURA_STAKED_TOPIC: Final = b'\x14I\xc6\xddxQ\xab\xc3\n\xbf7\xf5w\x15\xf4\x92\x01\x05\x19\x14|\xc2e/\xbc8 ,\x18\xa6\xee\x90'  # noqa: E501
 DEPOSITED_TOPIC: Final = b's\xa1\x9d\xd2\x10\xf1\xa7\xf9\x02\x192\x14\xc0\xee\x91\xdd5\xee[M\x92\x0c\xba\x8dQ\x9e\xcae\xa7\xb4\x88\xca'  # noqa: E501
 
 AURA_BAL_VAULT_ADDRESS = string_to_evm_address('0x4EA9317D90b61fc28C418C247ad0CA8939Bbb0e9')
@@ -399,7 +399,7 @@ class AuraFinanceCommonDecoder(EvmDecoderInterface):
             WITHDRAW_AND_UNWRAP_4BYTE: {REWARD_PAID_TOPIC_V2: self._decode_reward_claims},
         }
         if self.node_inquirer.chain_id in (ChainID.ETHEREUM, ChainID.BASE):
-            decoders[LOCK_ETHEREUM_AND_BASE_4BYTE] = {AURA_STAKED_TOPIC: self._decode_lock_aura}
+            decoders[LOCK_ETHEREUM_AND_BASE_4BYTE] = {STAKED_TOPIC_V2: self._decode_lock_aura}
         if self.node_inquirer.chain_id != ChainID.ETHEREUM:
             decoders[LOCK_4BYTE] = {LOCKED_TOPIC: self._decode_lock_aura_bridged}
 

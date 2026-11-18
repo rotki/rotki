@@ -39,6 +39,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'across',
     'aztec',
     'aerodrome',
+    'chainlink',
     'curve',
     'convex',
     'flying-tulip',
