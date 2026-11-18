@@ -2,7 +2,9 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { toSentenceCase } from '@rotki/common';
 import { type MessageKey, msg } from '@/message-key';
 import { accountAddActivity, type AccountAdditionDetail, type AccountSubject } from '@/modules/accounts/accounts.activity';
-import { TransactionsQueryStatus } from '@/modules/core/messaging/types/status-types';
+import { HistoricalBalanceProcessingPhase, TransactionsQueryStatus } from '@/modules/core/messaging/types/status-types';
+import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
+import { showsHistoricalBalancesProcessing } from '@/modules/history/balances/use-historical-balances-progress';
 import { decodeActivity } from '@/modules/history/events/tx/decode.activity';
 import { accountSyncActivity, bankEventsActivity, eventsConnectionOf, exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { protocolCacheActivity, type ProtocolCacheDetail } from '@/modules/history/protocol-cache.activity';
@@ -51,6 +53,12 @@ const SYNC_STEP: Record<TransactionsQueryStatus, MessageKey | undefined> = {
   [TransactionsQueryStatus.QUERYING_TRANSACTIONS]: msg.$t('task_dock.detail.querying_transactions'),
   [TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED]: undefined,
   [TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED]: msg.$t('task_dock.detail.querying_transactions'),
+};
+
+/** The step each historical balance processing pass names, since each counts its own events from zero. */
+const PROCESSING_STEP: Record<HistoricalBalanceProcessingPhase, MessageKey> = {
+  [HistoricalBalanceProcessingPhase.BALANCES]: msg.$t('task_dock.detail.processing_balances'),
+  [HistoricalBalanceProcessingPhase.COST_BASIS]: msg.$t('task_dock.detail.processing_cost_basis'),
 };
 
 /**
@@ -109,7 +117,9 @@ export function activityCaches(activity: Activity): ProtocolCacheDetail['protoco
  * and the range it has reached, which query an exchange or bank is running, and which protocol
  * caches a decode is filling. Each is read back through the descriptor that published it, with the
  * subject rebuilt from the activity's id and kept only when the descriptor mints that same id, so a
- * chain-level row never picks up an account's detail by sharing a prefix.
+ * chain-level row never picks up an account's detail by sharing a prefix. The pass a historical
+ * balance processing run is on comes from its store instead, since a run the task manager starts
+ * shows only as a background task row, whose id the progress frames carry nothing to rebuild.
  *
  * A query's step and range show only while the activity runs, since they describe a query in
  * flight and a settled row has its outcome to show instead. The caches stay once it settles, as the
@@ -118,6 +128,7 @@ export function activityCaches(activity: Activity): ProtocolCacheDetail['protoco
  */
 export function useDockActivityDetail(activity: MaybeRefOrGetter<Activity>): ComputedRef<DockDetail | undefined> {
   const { t } = useI18n({ useScope: 'global' });
+  const { processingPhase } = storeToRefs(useHistoricalBalanceProcessingStore());
 
   function accountSync(current: Activity): DockDetail | undefined {
     const [chain, address] = activityParts(current.id);
@@ -171,10 +182,21 @@ export function useDockActivityDetail(activity: MaybeRefOrGetter<Activity>): Com
     return address === undefined || current.status !== ActivityStatus.SKIPPED ? undefined : { address, type: 'untracked' };
   }
 
+  /** The pass a historical balance processing run is on, on the rows that show the run. */
+  function historicalBalancesProcessing(current: Activity): DockDetail | undefined {
+    const phase = get(processingPhase);
+    if (phase === undefined || !showsHistoricalBalancesProcessing(current.id))
+      return undefined;
+
+    return { period: undefined, step: t(PROCESSING_STEP[phase]), type: 'query' };
+  }
+
   /** The kinds whose producers stream a query in flight, each read back through its own descriptor. */
   const QUERY_READERS: Partial<Record<ActivityKind, (current: Activity) => DockDetail | undefined>> = {
+    [ActivityKind.BACKGROUND_TASK]: historicalBalancesProcessing,
     [ActivityKind.BANK_EVENTS]: events,
     [ActivityKind.EXCHANGE_EVENTS]: events,
+    [ActivityKind.HISTORICAL_BALANCES]: historicalBalancesProcessing,
     [ActivityKind.TX_SYNC]: accountSync,
   };
 
