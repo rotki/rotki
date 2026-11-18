@@ -64,7 +64,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 BITGET_BASE_URL: Final = 'https://api.bitget.com'
 BITGET_LAUNCH_TS: Final = Timestamp(1530403200)  # July 2018
-BITGET_MAX_HISTORY_WINDOW: Final = 30 * DAY_IN_SECONDS
+BITGET_MAX_HISTORY_WINDOW: Final = 90 * DAY_IN_SECONDS
 BITGET_MAX_RESULTS: Final = 100
 BITGET_PRODUCT_TYPES: Final = ('USDT-FUTURES', 'COIN-FUTURES', 'USDC-FUTURES')
 
@@ -233,7 +233,7 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
             self._add_balance_entries(
                 amounts=amounts,
                 entries=self._api_query('/api/v2/spot/account/assets'),
-                amount_keys=('available', 'frozen', 'locked', 'limitAvailable'),
+                amount_keys=('available', 'frozen', 'locked'),
             )
             for product_type in BITGET_PRODUCT_TYPES:
                 futures_accounts = self._api_query(
@@ -291,7 +291,7 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
         self.first_connection()
         events: list[SwapEvent] = []
         for window_start, window_end in self._history_windows(
-                start_ts, end_ts, 90 * DAY_IN_SECONDS,
+                Timestamp(max(start_ts, ts_now() - BITGET_MAX_HISTORY_WINDOW)), end_ts,
         ):
             page_events: list[SwapEvent] = []
             for entry in self._paginated_query(
@@ -362,9 +362,7 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
             '/api/v2/spot/wallet/withdrawal-records'
         )
         events = []
-        for window_start, window_end in self._history_windows(
-                start_ts, end_ts, 90 * DAY_IN_SECONDS,
-        ):
+        for window_start, window_end in self._history_windows(start_ts, end_ts):
             for entry in self._paginated_query(
                     endpoint,
                     {

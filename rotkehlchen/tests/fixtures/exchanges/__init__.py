@@ -2,6 +2,7 @@ from .binance import *  # noqa: F403
 from .bit2me import *  # noqa: F403
 from .bitcoinde import *  # noqa: F403
 from .bitfinex import *  # noqa: F403
+from .bitget import *  # noqa: F403
 from .bitpanda import *  # noqa: F403
 from .bitstamp import *  # noqa: F403
 from .bitvavo import *  # noqa: F403
