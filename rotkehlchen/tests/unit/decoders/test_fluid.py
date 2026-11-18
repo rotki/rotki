@@ -1073,7 +1073,10 @@ def test_fluid_unmatched_router_legs_require_equal_wallet_offsets(
         ethereum_accounts: list[ChecksumEvmAddress],
         repay_amount: int,
 ) -> None:
-    """An internal withdrawal and repay only pair when they offset the same wallet amount."""
+    """An internal withdrawal and repay only pair when they offset the same wallet amount.
+
+    The router takes temporary custody of alice's position, so the legs are alice's.
+    """
     alice, router = ethereum_accounts[0], make_evm_address()
     _load_tracked_accounts(ethereum_transaction_decoder)
     tx = _make_tx(from_address=alice, timestamp=Timestamp(1790000000))
@@ -1082,15 +1085,21 @@ def test_fluid_unmatched_router_legs_require_equal_wallet_offsets(
         tx=tx,
         decoded_events=[],
         all_logs=[
-            *_operate_logs(operate_user=router, col_raw=0, debt_raw=-(repay_amount * 10**18)),
+            _nft_transfer_log(from_address=alice, to_address=router),
+            *_operate_logs(
+                operate_user=router,
+                col_raw=0,
+                debt_raw=-(repay_amount * 10**18),
+                first_log_index=1,
+            ),
             *_operate_logs(
                 operate_user=router,
                 col_raw=-(10**18),
                 debt_raw=0,
-                first_log_index=2,
+                first_log_index=3,
                 to_address=router,
             ),
-            _nft_transfer_log(from_address=router, to_address=alice, log_index=4),
+            _nft_transfer_log(from_address=router, to_address=alice, log_index=5),
         ],
     )
     assert [
@@ -1099,6 +1108,83 @@ def test_fluid_unmatched_router_legs_require_equal_wallet_offsets(
         (HistoryEventSubType.WITHDRAW_FROM_PROTOCOL, A_ETH, ONE, alice),
         (HistoryEventSubType.PAYBACK_DEBT, A_ETH, ONE, alice),
     ] if repay_amount == 1 else [])
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xB83E6edF8325e7d1Fc916A021866BeFe475DdbB6']])
+def test_fluid_router_held_position_not_attributed_to_later_holder(
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """A withdrawal by an untracked holder of an existing position isn't alice's even if the
+    holder hands alice the position later in the same transaction."""
+    alice, router = ethereum_accounts[0], make_evm_address()
+    _load_tracked_accounts(ethereum_transaction_decoder)
+    tx = _make_tx(from_address=alice, timestamp=Timestamp(1790000000))
+    assert _decode_vault_operation(
+        tx_decoder=ethereum_transaction_decoder,
+        tx=tx,
+        decoded_events=[_eth_receive(tx=tx, receiver=alice, amount='1')],
+        all_logs=[
+            *_operate_logs(operate_user=router, col_raw=-(10**18), debt_raw=0, to_address=router),
+            _nft_transfer_log(from_address=router, to_address=alice, log_index=2),
+        ],
+    ) == [_eth_receive(tx=tx, receiver=alice, amount='1')]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xB83E6edF8325e7d1Fc916A021866BeFe475DdbB6',
+    '0xe4637833F5513524D0B9337A75963619034fbB23',
+]])
+def test_fluid_operation_followed_by_nft_transfer_in_same_tx(
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Operations batched before alice hands her position to bob stay alice's activity."""
+    alice, bob = ethereum_accounts
+    _load_tracked_accounts(ethereum_transaction_decoder)
+    for col_raw, debt_raw, wallet_event, event_type, event_subtype, notes in (
+        (
+            -(10**18), 0, _eth_receive, HistoryEventType.WITHDRAWAL,
+            HistoryEventSubType.WITHDRAW_FROM_PROTOCOL, 'Withdraw 1 ETH as collateral from Fluid',
+        ), (
+            0, 10**18, _eth_receive, HistoryEventType.RECEIVE,
+            HistoryEventSubType.GENERATE_DEBT, 'Borrow 1 ETH from Fluid',
+        ), (
+            10**18, 0, _eth_spend, HistoryEventType.DEPOSIT,
+            HistoryEventSubType.DEPOSIT_TO_PROTOCOL, 'Deposit 1 ETH as collateral to Fluid',
+        ), (
+            0, -(10**18), _eth_spend, HistoryEventType.SPEND,
+            HistoryEventSubType.PAYBACK_DEBT, 'Repay 1 ETH to Fluid',
+        ),
+    ):
+        tx = _make_tx(from_address=alice, timestamp=Timestamp(1790000000))
+        assert _decode_vault_operation(
+            tx_decoder=ethereum_transaction_decoder,
+            tx=tx,
+            decoded_events=[wallet_event(tx, alice, '1')],
+            all_logs=[
+                *_operate_logs(
+                    operate_user=alice,
+                    col_raw=col_raw,
+                    debt_raw=debt_raw,
+                    to_address=alice,
+                ),
+                _nft_transfer_log(from_address=alice, to_address=bob, log_index=2),
+            ],
+        ) == [EvmEvent(
+            tx_ref=tx.tx_hash,
+            sequence_index=0,
+            timestamp=TimestampMS(1790000000000),
+            location=LOCATION_ETHEREUM,
+            event_type=event_type,
+            event_subtype=event_subtype,
+            asset=A_ETH,
+            amount=ONE,
+            location_label=alice,
+            notes=notes,
+            counterparty=CPT_FLUID,
+            address=TEST_VAULT,
+        )]
 
 
 def _decode_alice_funding_bob(
