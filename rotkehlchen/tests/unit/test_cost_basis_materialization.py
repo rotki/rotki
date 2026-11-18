@@ -4,6 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.accounting.cost_basis.lots import BucketLots
+from rotkehlchen.accounting.cost_basis.pnl import get_unprocessed_from_ts
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_USD
 from rotkehlchen.db.accounting_rules import DBAccountingRules
@@ -12,12 +14,15 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
+from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.types import DataIssueFilters
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.locations.constants import LOCATION_ETHEREUM, LOCATION_KRAKEN
-from rotkehlchen.tasks.cost_basis import process_cost_basis
-from rotkehlchen.tasks.historical_balances import process_historical_balances
+from rotkehlchen.tasks.cost_basis import _CostBasisPass, process_cost_basis
+from rotkehlchen.tasks.historical_balances import Bucket, process_historical_balances
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import CostBasisMethod, Price, Timestamp, TimestampMS
@@ -27,6 +32,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash
 
 pytestmark = pytest.mark.accounting_update
@@ -392,29 +398,91 @@ def test_resume_from_stale_marker(
 
 @pytest.mark.usefixtures('queried_prices')
 def test_rate_limited_prices_keep_the_pass_stale(database: DBHandler) -> None:
-    def rate_limited(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
-        raise NoPriceForGivenTimestamp(
-            from_asset=from_asset,
-            to_asset=to_asset,
-            time=timestamp,
-            rate_limited=True,
-        )
+    def rate_limited_at_two(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        if timestamp == 2:
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+                rate_limited=True,
+            )
+        return Price(FVal(1000))
 
     with database.user_write() as write_cursor:
-        DBHistoryEvents(database).add_history_event(
-            write_cursor=write_cursor,
-            event=_event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
-        )
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=[
+            _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+            _event(at=2, amount='1', event_type=HistoryEventType.RECEIVE),
+        ])
         # as on a first pass over events that were there before the markers existed
         write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ?', ('stale_cost_%',))
 
     with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
-        historian.return_value.query_historical_price = rate_limited
+        historian.return_value.query_historical_price = rate_limited_at_two
         assert process_cost_basis(database, database.msg_aggregator) is False
 
-    assert _rows(database) == []
-    assert process_cost_basis(database, database.msg_aggregator) is True  # prices are back
     assert len(_rows(database)) == 1
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == '2000'
+    assert process_cost_basis(database, database.msg_aggregator) is True  # prices are back
+    assert len(_rows(database)) == 2
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_unfinished_pass_keeps_progress_until_events_change(database: DBHandler) -> None:
+    def unprocessed_from_ts() -> TimestampMS | None:
+        with database.conn.read_ctx() as cursor:
+            return get_unprocessed_from_ts(cursor=cursor, database=database)
+
+    with database.user_write() as write_cursor:
+        identifiers = [identifier for at in (1, 2, 3, 4) if (identifier := DBHistoryEvents(
+            database,
+        ).add_history_event(
+            write_cursor=write_cursor,
+            event=_event(at=at, amount='1', event_type=HistoryEventType.RECEIVE),
+        )) is not None]
+
+    apply = _CostBasisPass.apply
+
+    def apply_until_three(
+            self: _CostBasisPass,
+            event: HistoryBaseEntry,
+            next_event: HistoryBaseEntry | None,
+            treat_eth2_as_eth: bool,
+    ) -> None:
+        if event.timestamp == 3000:
+            raise AssertionError('the pass dies at the third event')
+        apply(self, event=event, next_event=next_event, treat_eth2_as_eth=treat_eth2_as_eth)
+
+    with (
+        patch('rotkehlchen.tasks.cost_basis.COST_BASIS_BATCH_SIZE', 1),
+        patch.object(_CostBasisPass, 'apply', apply_until_three),
+        pytest.raises(AssertionError),
+    ):
+        process_cost_basis(database, database.msg_aggregator)
+
+    assert unprocessed_from_ts() == 3000
+    assert _rows(database, 'event_identifier') == [(identifier,) for identifier in identifiers[:2]]
+
+    with database.user_write() as write_cursor:  # a change may make what the pass wrote outdated
+        DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=_event(at=5, amount='1', event_type=HistoryEventType.RECEIVE),
+        )
+    assert unprocessed_from_ts() == 0
+
+    _set_method(database, CostBasisMethod.LIFO)  # also before any pass finished
+    assert _rows(database) == []
+
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert unprocessed_from_ts() is None
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM key_value_cache WHERE name LIKE ?',
+            ('cost_basis_pass_%',),
+        ).fetchone()[0] == 0
 
 
 @pytest.mark.parametrize(('rule', 'pnl'), [
@@ -546,3 +614,238 @@ def test_method_switch_wipes_and_reprocesses_only_the_cost_basis(database: DBHan
     assert process_cost_basis(database, database.msg_aggregator) is True
     assert _rows(database) == fifo_rows
     assert balance_state() == balances
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_spend_separates_the_gain_on_lots_held_past_the_taxfree_period(
+        database: DBHandler,
+) -> None:
+    acquired = _process(database=database, method=CostBasisMethod.FIFO, taxfree_after_period=2, events=[  # noqa: E501
+        _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+        _event(at=2, amount='1', event_type=HistoryEventType.RECEIVE),
+        _event(at=3, amount='1', event_type=HistoryEventType.RECEIVE),
+        _event(at=5, amount='2.5', event_type=HistoryEventType.SPEND),
+    ])[:3]
+    lots, proceeds, realized_pnl, taxfree_pnl = _rows(
+        database=database,
+        columns='lots_consumed_json, proceeds, realized_pnl, taxfree_pnl',
+    )[-1]
+    # at 5 the lots of 1 and 2 were held for more than 2 seconds, the one of 3 was not
+    assert [(lot['lot_id'], lot['acquired_at'], lot['taxable']) for lot in json.loads(lots)] == [
+        (acquired[0], 1, False),
+        (acquired[1], 2, False),
+        (acquired[2], 3, True),
+    ]
+    assert proceeds == '12500'
+    assert realized_pnl == '1500'  # half a unit worth 2500 that was bought for 1000
+    assert taxfree_pnl == '6000'  # two units worth 10000 that were bought for 4000
+
+
+@pytest.mark.parametrize('method', list(CostBasisMethod))
+def test_crashed_pass_resumes_from_committed_progress(
+        database: DBHandler,
+        queried_prices: list[tuple[str, Timestamp]],
+        method: CostBasisMethod,
+) -> None:
+    tx_ref = make_evm_tx_hash()
+    events: list[EvmEvent | HistoryEvent] = [
+        _event(at=1, amount='2', event_type=HistoryEventType.RECEIVE),
+        _event(
+            at=2,
+            amount='0.5',
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            tx_ref=tx_ref,
+        ),
+        _event(
+            at=2,
+            amount='1500',
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_DAI,
+            tx_ref=tx_ref,
+            sequence_index=1,
+        ),
+        _event(at=3, amount='1', event_type=HistoryEventType.TRANSFER, address=TEST_ADDR2),
+        _event(at=4, amount='1', event_type=HistoryEventType.RECEIVE, location_label=TEST_ADDR2),
+        _event(at=5, amount='1.5', event_type=HistoryEventType.SPEND, location_label=TEST_ADDR2),
+        _event(at=6, amount='0.25', event_type=HistoryEventType.SPEND),
+    ]
+    _add_rule(database, HistoryEventType.SPEND)
+    _add_rule(
+        database=database,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        accounting_treatment=TxAccountingTreatment.SWAP,
+    )
+    with database.user_write() as write_cursor:
+        database.set_settings(write_cursor, ModifiableDBSettings(cost_basis_method=method))
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=events)
+
+    apply = _CostBasisPass.apply
+
+    def crash_at_five(
+            self: _CostBasisPass,
+            event: HistoryBaseEntry,
+            next_event: HistoryBaseEntry | None,
+            treat_eth2_as_eth: bool,
+    ) -> None:
+        if event.timestamp == 5000:
+            raise RuntimeError('deterministic crash after committed batches')
+        apply(self, event=event, next_event=next_event, treat_eth2_as_eth=treat_eth2_as_eth)
+
+    with (
+        patch('rotkehlchen.tasks.cost_basis.COST_BASIS_BATCH_SIZE', 2),
+        patch.object(_CostBasisPass, 'apply', crash_at_five),
+        pytest.raises(RuntimeError, match='deterministic crash after committed batches'),
+    ):
+        process_cost_basis(database, database.msg_aggregator)
+
+    committed_rows = _rows(database, f'id, {ROW_COLUMNS}')
+    assert len(committed_rows) == 5
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
+        ) is None
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.LAST_COST_BASIS_FAILURE_TS,
+        ) is not None
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
+        ) == '0'
+
+    queried_prices.clear()
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert queried_prices == [('ETH', 4), ('ETH', 5), ('ETH', 6)]
+    resumed_rows_with_ids = _rows(database, f'id, {ROW_COLUMNS}')
+    assert resumed_rows_with_ids[:len(committed_rows)] == committed_rows
+    resumed_rows = _rows(database)
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.LAST_COST_BASIS_FAILURE_TS,
+        ) is None
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
+        ) is not None
+
+    # Compare against an uninterrupted pass from scratch.
+    with database.user_write() as write_cursor:
+        write_cursor.execute('DELETE FROM event_cost_basis')
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE name IN (?, ?)',
+            (
+                DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS.value,
+                DBCacheStatic.STALE_COST_BASIS_FROM_TS.value,
+            ),
+        )
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _rows(database) == resumed_rows
+
+
+def test_spend_with_invalid_amount_includes_event_details_in_error(
+        database: DBHandler,
+) -> None:
+    with database.conn.read_ctx() as cursor:
+        settings = database.get_settings(cursor)
+    lots = BucketLots[Bucket](settings)
+    bucket = Bucket(
+        location=str(LOCATION_ETHEREUM),
+        location_label=TEST_ADDR1,
+        protocol=None,
+        asset=A_ETH.identifier,
+    )
+    lots.obtain(
+        bucket=bucket,
+        lot_id='1',
+        amount=FVal('1'),
+        basis_per_unit=FVal('1000'),
+        timestamp=Timestamp(1),
+    )
+    spend_event = _event(at=2, amount='-0.5', event_type=HistoryEventType.SPEND)
+    with pytest.raises(
+        AssertionError,
+        match=f'Used amount must be in the interval \\[0, 1\\] but it was -0\\.5 for {spend_event!s}',  # noqa: E501
+    ):
+        lots.spend(
+            bucket=bucket,
+            asset=A_ETH,
+            amount=spend_event.amount,
+            timestamp=Timestamp(2),
+            event=spend_event,
+        )
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_negative_amount_event_records_data_issue_and_blocks_only_its_bucket(
+        database: DBHandler,
+) -> None:
+    identifiers = _process(
+        database=database,
+        method=CostBasisMethod.FIFO,
+        events=[
+            _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE, location_label=TEST_ADDR1),  # noqa: E501
+            _event(at=1, amount='2', event_type=HistoryEventType.RECEIVE, location_label=TEST_ADDR2),  # noqa: E501
+            _event(at=2, amount='-0.5', event_type=HistoryEventType.SPEND, location_label=TEST_ADDR1),  # noqa: E501
+            _event(at=3, amount='1', event_type=HistoryEventType.SPEND, location_label=TEST_ADDR2),
+            _event(at=4, amount='0.5', event_type=HistoryEventType.SPEND, location_label=TEST_ADDR1),  # noqa: E501
+        ],
+    )
+    assert _rows(database, 'event_identifier, location_label, direction') == [
+        (int(identifiers[0]), TEST_ADDR1, 'receive'),
+        (int(identifiers[1]), TEST_ADDR2, 'receive'),
+        (int(identifiers[3]), TEST_ADDR2, 'spend'),
+    ]
+    issues = DataIssuesManager(database).list_issues(
+        DataIssueFilters(kind=IssueKind.INVALID_EVENT_AMOUNT),
+    )
+    assert len(issues) == 1
+    assert issues[0].state == IssueState.OPEN
+    assert issues[0].location == str(LOCATION_ETHEREUM)
+    assert issues[0].location_label == TEST_ADDR1
+    assert issues[0].asset == A_ETH.identifier
+    assert issues[0].payload == {
+        'event_identifier': int(identifiers[2]),
+        'amount': '-0.5',
+    }
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_caches(cursor=cursor, names=(
+            DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            DBCacheStatic.LAST_COST_BASIS_FAILURE_TS,
+        )) == (None, None)
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
+        ) is not None
+
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'UPDATE history_events SET amount = ? WHERE identifier = ?',
+            ('0.5', int(identifiers[2])),
+        )
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+            [
+                (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, '2000'),
+                (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value, '1'),
+            ],
+        )
+
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _rows(database, 'event_identifier, location_label, direction') == [
+        (int(identifiers[0]), TEST_ADDR1, 'receive'),
+        (int(identifiers[1]), TEST_ADDR2, 'receive'),
+        (int(identifiers[2]), TEST_ADDR1, 'spend'),
+        (int(identifiers[3]), TEST_ADDR2, 'spend'),
+        (int(identifiers[4]), TEST_ADDR1, 'spend'),
+    ]
+    issues = DataIssuesManager(database).list_issues(
+        DataIssueFilters(kind=IssueKind.INVALID_EVENT_AMOUNT),
+    )
+    assert len(issues) == 1
+    assert issues[0].state == IssueState.RESOLVED

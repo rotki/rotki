@@ -5,7 +5,11 @@ from contextlib import suppress
 from enum import StrEnum
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 
-from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
+from rotkehlchen.api.websockets.typedefs import (
+    HistoricalBalanceProcessingPhase,
+    ProgressUpdateSubType,
+    WSMessageType,
+)
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetFlag
 from rotkehlchen.chain.evm.decoding.compound.v3.constants import CPT_COMPOUND_V3
@@ -689,6 +693,7 @@ def process_historical_balances(
                 message_type=WSMessageType.PROGRESS_UPDATES,
                 data={
                     'subtype': str(ProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING),
+                    'phase': str(HistoricalBalanceProcessingPhase.BALANCES),
                     'total': total_events,
                     'processed': idx,
                 },
@@ -726,6 +731,7 @@ def process_historical_balances(
         message_type=WSMessageType.PROGRESS_UPDATES,
         data={
             'subtype': str(ProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING),
+            'phase': str(HistoricalBalanceProcessingPhase.BALANCES),
             'total': total_events,
             'processed': total_events,
         },

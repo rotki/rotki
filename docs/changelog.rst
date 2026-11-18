@@ -6,6 +6,7 @@ Changelog
 * :feature:`10940` ether.fi card cashback on Scroll and Optimism, including cashback paid out after a delay, is now decoded as cashback in transaction history.
 * :bug:`10937` Interest accrued on an AAVE v3 borrow is no longer reported as interest earned. When a borrow or a repay mints debt tokens for the interest accrued since the last action, that part is now shown as interest accrued on the debt, and the rest as the amount borrowed or repaid.
 * :feature:`10043` Bitget is now a supported exchange for balances, spot trades, deposits, withdrawals and futures positions.
+* :feature:`12353` rotki now calculates cost basis in the background. Interrupted runs resume from saved progress, and events with invalid negative amounts are flagged in Data Issues instead of stopping the entire run.
 * :feature:`9006` Gemini credit card rewards are now imported as rewards. Before, they were reported as an error and left out of your history. To get rewards from history that was already queried, purge the Gemini history under Settings > Database > Manage Data and query it again.
 * :bug:`-` Venice DIEM collateral locks and unlocks are now informational events because the locked sVVV remains in the wallet.
 * :bug:`-` With a crypto main currency such as ETH or BTC, historical fiat prices in that currency are now found by inverting the crypto price in fiat. Before, fiat received in a profit and loss report was valued at zero, fiat spent was reported as a missing price, and snapshot exports used a rate of one.

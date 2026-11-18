@@ -124,6 +124,37 @@ def test_write_and_list_issues(database: DBHandler) -> None:
     assert filtered[0].id == issue_id
 
 
+def test_invalid_amount_cleanup_keeps_issues_with_a_balance_stop(database: DBHandler) -> None:
+    manager = DataIssuesManager(database)
+    issue_ids = [manager.write_issue(
+        kind=IssueKind.INVALID_EVENT_AMOUNT,
+        location=LOCATION_ETHEREUM,
+        location_label=label,
+        protocol=None,
+        asset='ETH',
+        payload={'event_identifier': 1, 'amount': '-1'},
+        ts_start=1000,
+        ts_end=1000,
+    ) for label in ('wallet with stop', 'wallet without stop')]
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO bucket_processing_stops(location, location_label, asset, '
+            'event_identifier, event_timestamp, derived_balance_before_event, negative_amount, '
+            'issue_kind) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            (LOCATION_ETHEREUM, 'wallet with stop', 'ETH', 1, 1000, '0', '-1',
+             IssueKind.INVALID_EVENT_AMOUNT),
+        )
+
+    manager.resolve_event_issues_except(
+        kind=IssueKind.INVALID_EVENT_AMOUNT,
+        still_active_ids=set(),
+    )
+
+    assert [manager.get_issue(issue_id).state for issue_id in issue_ids] == [
+        IssueState.OPEN, IssueState.RESOLVED,
+    ]
+
+
 def test_get_issue(database: DBHandler) -> None:
     manager = DataIssuesManager(database)
     issue_id = _write_negative_balance_issue(manager)

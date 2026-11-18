@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.settings import DBSettings
     from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
 class BasisSource(StrEnum):
@@ -56,9 +57,10 @@ class ConsumedLot(NamedTuple):
     basis_per_unit: FVal  # the average basis of the bucket for ACB, otherwise the rate of the lot
     taxable: bool  # False if the lot was held for longer than the tax free period
 
-    def serialize(self) -> dict[str, str | bool]:
+    def serialize(self) -> dict[str, str | int | bool]:
         return {
             'lot_id': self.lot.lot_id,
+            'acquired_at': self.lot.timestamp,
             'amount_consumed': str(self.amount),
             'basis_per_unit': str(self.basis_per_unit),
             'taxable': self.taxable,
@@ -115,7 +117,14 @@ class BucketLots[K: Hashable]:
             lot_id=lot_id,
         ))
 
-    def spend(self, bucket: K, asset: Asset, amount: FVal, timestamp: Timestamp) -> SpendResult:
+    def spend(
+            self,
+            bucket: K,
+            asset: Asset,
+            amount: FVal,
+            timestamp: Timestamp,
+            event: HistoryBaseEntry | None = None,
+    ) -> SpendResult:
         """Consume lots of the bucket for the given amount.
 
         Any part of the amount that no lot covers has no basis and counts as taxable.
@@ -129,6 +138,7 @@ class BucketLots[K: Hashable]:
             used_acquisitions=[],
             settings=self.settings,
             timestamp_to_date=str,
+            event=event,
         )
         return SpendResult(
             consumed=[ConsumedLot(
@@ -149,6 +159,7 @@ class BucketLots[K: Hashable]:
             asset: Asset,
             amount: FVal,
             destination_amount: FVal | None = None,
+            event: HistoryBaseEntry | None = None,
     ) -> list[ConsumedLot]:
         """Move lots for the given amount from one bucket to another.
 
@@ -175,7 +186,7 @@ class BucketLots[K: Hashable]:
                 taxable=False,
             ))
             remaining -= used
-            manager.consume_result(used_amount=used, asset=asset)
+            manager.consume_result(used_amount=used, asset=asset, event=event)
 
         destination_manager = self._get(destination)
         for entry in moved:

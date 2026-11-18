@@ -144,6 +144,7 @@ class EventsAccountant:
                 out_amount=event.amount,
                 in_amount=in_event.amount,
                 timestamp=timestamp,
+                event=event,
             )
             # Why this fallback exists:
             # BASIS_TRANSFER consumes the paired in_event (see next(events_iterator) above),
@@ -222,6 +223,8 @@ class EventsAccountant:
             count_entire_amount_spend=event_settings.count_entire_amount_spend,
             count_cost_basis_pnl=event_settings.count_cost_basis_pnl,
             extra_data=general_extra_data,
+            originating_event_id=event.identifier,
+            event=event,
         )
         return 1
 
@@ -275,6 +278,7 @@ class EventsAccountant:
             given_price=prices[0],
             count_entire_amount_spend=False,
             extra_data=extra_data,
+            event=out_event,
         )
 
         add_in_event_kwargs = {
@@ -325,6 +329,7 @@ class EventsAccountant:
                 'count_cost_basis_pnl': True,
                 'count_entire_amount_spend': True,
                 'extra_data': extra_data,
+                'event': fee_event,
             })
             if fee_event.asset == out_event.asset or fee_event.sequence_index < in_event.sequence_index:  # noqa: E501
                 events_to_add_queue.insert(0, fee_out_event)  # we add fee first

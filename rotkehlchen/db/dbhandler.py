@@ -835,6 +835,14 @@ class DBHandler:
         The balances do not depend on what the cost basis depends on and are left as they are.
         """
         write_cursor.execute('DELETE FROM event_cost_basis')
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE name IN (?, ?, ?)',
+            (
+                DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS.value,
+                DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS.value,
+                DBCacheStatic.LAST_COST_BASIS_FAILURE_TS.value,
+            ),
+        )
         write_cursor.executemany(
             'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
             [
@@ -878,10 +886,7 @@ class DBHandler:
         if eth2_mapping_changed:  # the saved ETH and ETH2 comparisons used the previous mapping
             delete_balance_checks(write_cursor=write_cursor, assets=(A_ETH.identifier, A_ETH2.identifier))  # noqa: E501
             delete_wallet_observations(write_cursor=write_cursor, assets=(A_ETH.identifier, A_ETH2.identifier))  # noqa: E501
-        if previous_settings is not None and self.get_static_cache(
-            cursor=write_cursor,
-            name=DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
-        ) is not None:  # before the first pass there is nothing to wipe, and it checks by itself
+        if previous_settings is not None:
             new_settings = self.get_settings(write_cursor)
             if any(
                 getattr(previous_settings, name) != getattr(new_settings, name)
@@ -953,6 +958,8 @@ class DBHandler:
             DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
             DBCacheStatic.STALE_COST_BASIS_FROM_TS,
             DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
+            DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS,
+            DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS,
             DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
             DBCacheStatic.CURRENT_BALANCE_DETECTION_CURSOR,
         ):
@@ -975,6 +982,8 @@ class DBHandler:
                 DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
                 DBCacheStatic.STALE_COST_BASIS_FROM_TS,
                 DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
+                DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS,
+                DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS,
             ],
     ) -> str | None:
         ...
@@ -1006,6 +1015,7 @@ class DBHandler:
                 DBCacheStatic.LAST_DB_UPGRADE,
                 DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
                 DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
+                DBCacheStatic.LAST_COST_BASIS_FAILURE_TS,
                 DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
                 DBCacheStatic.PENDING_DETECTION_FROM_TS,
             ],

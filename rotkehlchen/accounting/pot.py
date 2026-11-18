@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.settings import DBSettings
     from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -317,6 +318,7 @@ class AccountingPot(CustomizableDateMixin):
             count_cost_basis_pnl: bool = True,
             extra_data: dict[str, Any] | None = None,
             originating_event_id: int | None = None,
+            event: HistoryBaseEntry | None = None,
     ) -> tuple[FVal, FVal]:
         """Add an asset spend event for the pot and count it in PnL if needed
 
@@ -374,6 +376,7 @@ class AccountingPot(CustomizableDateMixin):
                 amount=amount,
                 rate=price,
                 taxable_spend=taxable,
+                event=event,
             )
 
         if spend_cost:

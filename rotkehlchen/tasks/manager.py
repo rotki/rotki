@@ -770,6 +770,7 @@ class TaskManager:
                 stale_cost_basis_from_ts,
                 cost_basis_modification_ts,
                 last_cost_basis_processing_ts,
+                last_cost_basis_failure_ts,
             ) = self.database.get_static_caches(
                 cursor=cursor,
                 names=(
@@ -778,14 +779,20 @@ class TaskManager:
                     DBCacheStatic.STALE_COST_BASIS_FROM_TS,
                     DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
                     DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
+                    DBCacheStatic.LAST_COST_BASIS_FAILURE_TS,
                 ),
             )
 
-        is_cost_basis_due = last_cost_basis_processing_ts is None or (
-            stale_cost_basis_from_ts is not None and (
-                int(cost_basis_modification_ts or 0) // 1000 >= int(last_cost_basis_processing_ts) or  # noqa: E501
-                ts_now() - Timestamp(int(last_cost_basis_processing_ts)) >= COST_BASIS_PROCESSING_RETRY  # noqa: E501
-            )
+        last_cost_basis_attempt_ts = max(
+            int(last_cost_basis_processing_ts or 0),
+            int(last_cost_basis_failure_ts or 0),
+        )
+        is_cost_basis_due = (
+            last_cost_basis_processing_ts is None or stale_cost_basis_from_ts is not None
+        ) and (
+            last_cost_basis_attempt_ts == 0 or
+            int(cost_basis_modification_ts or 0) // 1000 >= last_cost_basis_attempt_ts or
+            ts_now() - Timestamp(last_cost_basis_attempt_ts) >= COST_BASIS_PROCESSING_RETRY
         )
         if (skip_balances := (
             stale_from_ts is None and

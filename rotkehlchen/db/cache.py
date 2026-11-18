@@ -56,6 +56,12 @@ class DBCacheStatic(Enum):
     STALE_COST_BASIS_FROM_TS: Final = 'stale_cost_basis_from_ts'
     STALE_COST_BASIS_MODIFICATION_TS: Final = 'stale_cost_basis_modification_ts'
     LAST_COST_BASIS_PROCESSING_TS: Final = 'last_cost_basis_processing_ts'
+    LAST_COST_BASIS_FAILURE_TS: Final = 'last_cost_basis_failure_ts'
+    # How far a cost basis pass that has not finished got: the rows of events before this
+    # timestamp are its own. It only holds while the cost basis modification marker is still the
+    # one the pass started with, which is stored along with it.
+    COST_BASIS_PASS_PROCESSED_TS: Final = 'cost_basis_pass_processed_ts'
+    COST_BASIS_PASS_MODIFICATION_TS: Final = 'cost_basis_pass_modification_ts'
     LAST_DATA_ISSUE_REMEDIATION_TS: Final = 'last_data_issue_remediation_ts'
     LAST_CURRENT_BALANCE_DETECTION_TS: Final = 'last_current_balance_detection_ts'
     PENDING_DETECTION_FROM_TS: Final = 'pending_detection_from_ts'

@@ -23,18 +23,24 @@ from rotkehlchen.accounting.cost_basis.lots import (
     BucketLots,
     CostBasisDirection,
 )
-from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
+from rotkehlchen.accounting.cost_basis.pnl import get_unprocessed_from_ts
+from rotkehlchen.api.websockets.typedefs import (
+    HistoricalBalanceProcessingPhase,
+    ProgressUpdateSubType,
+    WSMessageType,
+)
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
-from rotkehlchen.concurrency import checkpoint
+from rotkehlchen.concurrency import TaskCancelledError, checkpoint
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.constants import COST_BASIS_SETTINGS
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.data_issues.constants import IssueKind
+from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
@@ -49,10 +55,12 @@ from rotkehlchen.tasks.historical_balances import (
     process_historical_balances,
 )
 from rotkehlchen.types import Price, Timestamp, TimestampMS
-from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_now_in_ms
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 from rotkehlchen.utils.mixins.lockable import skip_if_running
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
@@ -77,7 +85,9 @@ type CostBasisRow = tuple[
     str | None,  # basis_per_unit
     str | None,  # basis_source
     str | None,  # lots_consumed_json
+    str | None,  # proceeds
     str | None,  # realized_pnl
+    str | None,  # taxfree_pnl
     str | None,  # basis_removed
     str | None,  # post_spend_basis_remaining
     str,  # method
@@ -140,6 +150,9 @@ class _CostBasisPass:
         self.profit_currency = settings.main_currency.resolve_to_asset_with_oracles()
         self.lots = BucketLots[Bucket](settings)
         self.rows: list[CostBasisRow] = []
+        self.blocked_buckets: set[Bucket] = set()
+        self.invalid_amount_event_ids: set[int] = set()
+        self.invalid_amount_issues: list[tuple[Bucket, HistoryBaseEntry]] = []
         self._prices: dict[tuple[str, Timestamp], Price | None] = {}
         # What a swap gives to each of its sides, keyed by the identifier of the side's event.
         self._swap_basis: dict[int, tuple[FVal, BasisSource]] = {}
@@ -217,8 +230,10 @@ class _CostBasisPass:
             lot_created_id: str | None = None,
             basis_per_unit: FVal | None = None,
             basis_source: BasisSource | None = None,
-            lots_consumed: list[dict[str, str | bool]] | None = None,
+            lots_consumed: list[dict[str, str | int | bool]] | None = None,
+            proceeds: FVal | None = None,
             realized_pnl: FVal | None = None,
+            taxfree_pnl: FVal | None = None,
             basis_removed: FVal | None = None,
     ) -> None:
         assert event.identifier is not None
@@ -236,7 +251,9 @@ class _CostBasisPass:
             None if basis_per_unit is None else str(basis_per_unit),
             None if basis_source is None else basis_source.value,
             None if lots_consumed is None else json.dumps(lots_consumed),
+            None if proceeds is None else str(proceeds),
             None if realized_pnl is None else str(realized_pnl),
+            None if taxfree_pnl is None else str(taxfree_pnl),
             None if basis_removed is None else str(basis_removed),
             str(self.lots.basis_remaining(bucket)) if is_spend else None,
             self.method,
@@ -265,6 +282,7 @@ class _CostBasisPass:
             asset=event.asset,
             amount=event.amount,
             destination_amount=received.amount,
+            event=event,
         )
         lot_ids = list(dict.fromkeys(entry.lot.lot_id for entry in moved))
         if (unknown_amount := event.amount - sum(entry.amount for entry in moved)) > ZERO:
@@ -274,29 +292,31 @@ class _CostBasisPass:
                 lot_id=lot_id,
                 amount=unknown_amount * received.amount / event.amount,
                 basis_per_unit=ZERO,
-                timestamp=timestamp,
+                timestamp=ts_ms_to_sec(received.timestamp),
             )
 
-        if not is_stale:
+        if not (in_is_stale := self.from_ts is None or received.timestamp >= self.from_ts):
             return
 
         basis = sum((entry.amount * entry.basis_per_unit for entry in moved), start=ZERO)
-        self._add_row(
-            event=event,
-            bucket=source,
-            direction=CostBasisDirection.SPEND,
-            lots_consumed=[entry.serialize() for entry in moved],
-            realized_pnl=ZERO,
-            basis_removed=basis,
-        )
-        self._add_row(
-            event=received,
-            bucket=destination,
-            direction=CostBasisDirection.RECEIVE,
-            lot_created_id=','.join(lot_ids),
-            basis_per_unit=basis / received.amount,
-            basis_source=BasisSource.TRANSFER_IN,
-        )
+        if is_stale:
+            self._add_row(
+                event=event,
+                bucket=source,
+                direction=CostBasisDirection.SPEND,
+                lots_consumed=[entry.serialize() for entry in moved],
+                realized_pnl=ZERO,
+                basis_removed=basis,
+            )
+        if in_is_stale:
+            self._add_row(
+                event=received,
+                bucket=destination,
+                direction=CostBasisDirection.RECEIVE,
+                lot_created_id=','.join(lot_ids),
+                basis_per_unit=basis / received.amount,
+                basis_source=BasisSource.TRANSFER_IN,
+            )
 
     def _receive(
             self,
@@ -348,32 +368,47 @@ class _CostBasisPass:
         the rule counts the entire amount as spent. The lots are consumed in any case.
         """
         assert event.identifier is not None
+        swap_proceeds = self._swap_proceeds.pop(event.identifier, None)
         result = self.lots.spend(
             bucket=bucket,
             asset=event.asset,
             amount=event.amount,
             timestamp=timestamp,
+            event=event,
         )
         if not is_stale:
             return
 
-        realized_pnl = ZERO
-        if (proceeds := self._swap_proceeds.pop(event.identifier, None)) is not None:
-            if proceeds[1]:
-                realized_pnl = result.taxable_amount * proceeds[0] - result.taxable_basis
-        elif rule is not None and rule.taxable:
-            rate = self._price(asset=event.asset, timestamp=timestamp) or ZERO
-            if rule.count_entire_amount_spend:
-                realized_pnl -= event.amount * rate
-            if rule.count_cost_basis_pnl:
-                realized_pnl += result.taxable_amount * rate - result.taxable_basis
+        proceeds: FVal | None = None
+        realized_pnl = taxfree_pnl = ZERO
+        counts_cost_basis = False
+        if swap_proceeds is not None:
+            rate: FVal | None = swap_proceeds[0]
+            counts_cost_basis = swap_proceeds[1]
+        elif rule is not None:
+            rate = self._price(asset=event.asset, timestamp=timestamp)
+            counts_cost_basis = rule.taxable and rule.count_cost_basis_pnl
+            if rule.taxable and rule.count_entire_amount_spend:
+                realized_pnl -= event.amount * (rate or ZERO)
+        else:
+            rate = None  # an event without a rule realizes nothing, so its worth is not needed
+
+        if rate is not None:
+            proceeds = event.amount * rate
+        if counts_cost_basis:
+            realized_pnl += result.taxable_amount * (rate or ZERO) - result.taxable_basis
+            taxfree_pnl = (
+                (event.amount - result.taxable_amount) * (rate or ZERO) - result.taxfree_basis
+            )
 
         self._add_row(
             event=event,
             bucket=bucket,
             direction=CostBasisDirection.SPEND,
             lots_consumed=[entry.serialize() for entry in result.consumed],
+            proceeds=proceeds,
             realized_pnl=realized_pnl,
+            taxfree_pnl=taxfree_pnl,
             basis_removed=result.basis_removed,
         )
 
@@ -381,6 +416,7 @@ class _CostBasisPass:
             self,
             event: HistoryBaseEntry,
             in_event: HistoryBaseEntry,
+            out_buckets: Sequence[tuple[Bucket, EventDirection]],
             timestamp: Timestamp,
             is_stale: bool,
             treat_eth2_as_eth: bool,
@@ -391,17 +427,17 @@ class _CostBasisPass:
         another, in which case each is left to be applied on its own.
         """
         assert in_event.identifier is not None
-        if event.asset.is_fiat() or in_event.asset.is_fiat():
+        if len(out_buckets) != 1 or in_event.asset.is_fiat():
             return False
 
-        out_buckets = Bucket.from_event(event=event, treat_eth2_as_eth=treat_eth2_as_eth)
         in_buckets = Bucket.from_event(event=in_event, treat_eth2_as_eth=treat_eth2_as_eth)
         if (
-            len(out_buckets) != 1 or
             len(in_buckets) != 1 or
             out_buckets[0][1] != EventDirection.OUT or
             in_buckets[0][1] != EventDirection.IN or
-            out_buckets[0][0] == in_buckets[0][0]
+            out_buckets[0][0] == in_buckets[0][0] or
+            out_buckets[0][0] in self.blocked_buckets or
+            in_buckets[0][0] in self.blocked_buckets
         ):
             return False
 
@@ -435,6 +471,19 @@ class _CostBasisPass:
 
         timestamp = ts_ms_to_sec(event.timestamp)
         is_stale = self.from_ts is None or event.timestamp >= self.from_ts
+        bucket_directions = (
+            [] if event.asset.is_fiat()
+            else Bucket.from_event(event=event, treat_eth2_as_eth=treat_eth2_as_eth)
+        )
+        if event.amount < ZERO:
+            for bucket, _direction in bucket_directions:
+                if bucket not in self.blocked_buckets:
+                    self.blocked_buckets.add(bucket)
+                    self.invalid_amount_event_ids.add(event.identifier)
+                    if is_stale:
+                        self.invalid_amount_issues.append((bucket, event))
+            return
+
         rule = self.rules.get(event)
         if (
             rule is not None and
@@ -442,18 +491,19 @@ class _CostBasisPass:
             next_event is not None and
             next_event.identifier is not None and
             next_event.group_identifier == event.group_identifier and
-            next_event.amount != ZERO
+            next_event.amount > ZERO
         ):
             if rule.accounting_treatment == TxAccountingTreatment.BASIS_TRANSFER:
                 if self._maybe_transfer_basis(
                     event=event,
                     in_event=next_event,
+                    out_buckets=bucket_directions,
                     timestamp=timestamp,
                     is_stale=is_stale,
                     treat_eth2_as_eth=treat_eth2_as_eth,
                 ):
                     return
-            elif is_stale:
+            elif self.from_ts is None or next_event.timestamp >= self.from_ts:
                 self._price_swap(
                     out_event=event,
                     in_event=next_event,
@@ -461,22 +511,31 @@ class _CostBasisPass:
                     is_taxable=rule.taxable,
                 )
 
-        if event.asset.is_fiat() or len(bucket_directions := Bucket.from_event(
-            event=event,
-            treat_eth2_as_eth=treat_eth2_as_eth,
-        )) == 0:
+        if len(bucket_directions) == 0:
             return  # fiat has no cost basis to track
 
         if len(bucket_directions) == 1:
-            if (bucket_direction := bucket_directions[0])[1] == EventDirection.IN:
-                self._receive(event, bucket_direction[0], timestamp, is_stale)
+            bucket, direction = bucket_directions[0]
+            if bucket in self.blocked_buckets:
+                self._swap_basis.pop(event.identifier, None)
+                self._swap_proceeds.pop(event.identifier, None)
+                return
+
+            if direction == EventDirection.IN:
+                self._receive(event, bucket, timestamp, is_stale)
             else:
-                self._spend(event, bucket_direction[0], timestamp, is_stale, rule)
+                self._spend(event, bucket, timestamp, is_stale, rule)
             return
 
         source = next((b for b, d in bucket_directions if d == EventDirection.OUT), None)
         destination = next((b for b, d in bucket_directions if d == EventDirection.IN), None)
-        if source is not None and destination is not None and source != destination:
+        if (
+            source is not None and
+            destination is not None and
+            source != destination and
+            source not in self.blocked_buckets and
+            destination not in self.blocked_buckets
+        ):
             self._transfer(event, source, destination, timestamp, is_stale)
 
 
@@ -504,23 +563,77 @@ def _write_rows(
     write_cursor.executemany(
         'INSERT OR REPLACE INTO event_cost_basis(event_identifier, location, location_label, '
         'protocol, asset, timestamp, sequence_index, direction, lot_created_id, basis_per_unit, '
-        'basis_source, lots_consumed_json, realized_pnl, basis_removed, '
+        'basis_source, lots_consumed_json, proceeds, realized_pnl, taxfree_pnl, basis_removed, '
         'post_spend_basis_remaining, method) '
-        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         rows,
     )
 
 
+def _record_progress(
+        write_cursor: DBCursor,
+        processed_ts: TimestampMS,
+        modification_ts_at_start: str | None,
+) -> None:
+    """Record that the pass wrote the rows of all events before `processed_ts`.
+
+    It is written along with those rows, so that they can be read while the pass goes on. The
+    modification marker the pass started with is kept with it, since a change to the events or
+    the settings after that may make the rows outdated.
+    """
+    write_cursor.executemany(
+        'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+        [
+            (DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS.value, str(processed_ts)),
+            (DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS.value, modification_ts_at_start or '0'),
+        ],
+    )
+
+
+def _write_invalid_amount_issues(
+        database: DBHandler,
+        issues: list[tuple[Bucket, HistoryBaseEntry]],
+) -> None:
+    if len(issues) == 0:
+        return
+
+    issues_manager = DataIssuesManager(database)
+    for bucket, event in issues:
+        assert event.identifier is not None
+        issues_manager.write_issue(
+            kind=IssueKind.INVALID_EVENT_AMOUNT,
+            location=bucket.location,
+            location_label=bucket.location_label,
+            protocol=bucket.protocol,
+            asset=bucket.asset,
+            payload={
+                'event_identifier': event.identifier,
+                'amount': str(event.amount),
+            },
+            ts_start=event.timestamp,
+            ts_end=event.timestamp,
+        )
+        log.warning(
+            'Invalid event amount %s for %s at event %s. Skipping %s for cost basis.',
+            event.amount,
+            event.asset.identifier,
+            event.identifier,
+            bucket,
+        )
+
+
 def _finalize_processing(
         database: DBHandler,
-        settings: DBSettings,
         modification_ts_at_start: int | None,
+        interrupted_at: TimestampMS | None = None,
 ) -> None:
-    """Record the pass, and clear the stale marker unless something changed while it ran.
+    """Record the pass, and clear or advance the stale marker if nothing changed while it ran.
 
-    Events that changed keep the marker they set. If it is the settings the pass ran with that
-    changed, e.g. the cost basis method, then all it wrote is to be redone. That is checked
-    here since a change before the first pass completes has nothing to wipe and sets no marker.
+    The progress of the pass is dropped, since the stale marker covers what is left to do.
+
+    Events that changed keep the marker they set, and so does a change of the cost basis
+    settings, which wipes what the pass wrote. A pass that stopped early advances the marker to
+    the event it stopped at, so earlier events are no longer seen as stale.
     """
     with database.user_write() as write_cursor:
         database.set_static_cache(
@@ -528,24 +641,40 @@ def _finalize_processing(
             name=DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
             value=ts_now(),
         )
-        current_settings = database.get_settings(write_cursor)
-        if any(
-            getattr(settings, name) != getattr(current_settings, name)
-            for name in COST_BASIS_SETTINGS
-        ):
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE name IN (?, ?, ?)',
+            (
+                DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS.value,
+                DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS.value,
+                DBCacheStatic.LAST_COST_BASIS_FAILURE_TS.value,
+            ),
+        )
+        modification_ts = database.get_static_cache(
+            cursor=write_cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
+        )
+        if modification_ts is not None and int(modification_ts) > (modification_ts_at_start or 0):
+            if interrupted_at is not None and (
+                (stale_from_ts := database.get_static_cache(
+                    cursor=write_cursor,
+                    name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+                )) is None or int(stale_from_ts) > interrupted_at
+            ):
+                database.set_static_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+                    value=str(interrupted_at),
+                )
+            return
+
+        if interrupted_at is not None:
             write_cursor.executemany(
                 'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
                 [
-                    (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, '0'),
-                    (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value, str(ts_now_in_ms())),
+                    (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, str(interrupted_at)),
+                    (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value, '0'),
                 ],
             )
-            return
-
-        if (modification_ts := database.get_static_cache(
-            cursor=write_cursor,
-            name=DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
-        )) is None or int(modification_ts) > (modification_ts_at_start or 0):
             return
 
         write_cursor.execute(
@@ -553,28 +682,6 @@ def _finalize_processing(
             (
                 DBCacheStatic.STALE_COST_BASIS_FROM_TS.value,
                 DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value,
-            ),
-        )
-
-
-def _record_interrupted_pass(database: DBHandler) -> None:
-    """Record a pass that stopped early, making sure that it is still seen as stale.
-
-    A first pass has no stale marker to keep, so one that redoes everything is added.
-    """
-    with database.user_write() as write_cursor:
-        database.set_static_cache(
-            write_cursor=write_cursor,
-            name=DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
-            value=ts_now(),
-        )
-        write_cursor.execute(
-            'INSERT OR IGNORE INTO key_value_cache(name, value) VALUES (?, ?), (?, ?)',
-            (
-                DBCacheStatic.STALE_COST_BASIS_FROM_TS.value,
-                '0',
-                DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value,
-                str(ts_now_in_ms()),
             ),
         )
 
@@ -593,28 +700,22 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
     """
     with database.conn.read_ctx() as cursor:
         settings = database.get_settings(cursor)
-        stale_from_ts, last_processing_ts = database.get_static_caches(
-            cursor=cursor,
-            names=(
-                DBCacheStatic.STALE_COST_BASIS_FROM_TS,
-                DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
-            ),
-        )
-        if stale_from_ts is None and last_processing_ts is not None:
+        if (
+            unprocessed_from_ts := get_unprocessed_from_ts(cursor=cursor, database=database)
+        ) is None:
             return True  # nothing changed since the last pass
 
         from_ts: TimestampMS | None = None
         stored_basis: dict[int, FVal] = {}
         if (
-            stale_from_ts is not None and
-            last_processing_ts is not None and  # a first pass has no rows to resume from
-            int(stale_from_ts) > 0 and
+            unprocessed_from_ts > 0 and
+            cursor.execute('SELECT 1 FROM event_cost_basis LIMIT 1').fetchone() is not None and
             cursor.execute(
-                'SELECT COUNT(*) FROM event_cost_basis WHERE method != ?',
+                'SELECT 1 FROM event_cost_basis WHERE method != ? LIMIT 1',
                 (settings.cost_basis_method.serialize(),),
-            ).fetchone()[0] == 0
+            ).fetchone() is None
         ):
-            from_ts = TimestampMS(int(stale_from_ts))
+            from_ts = unprocessed_from_ts
             stored_basis = {
                 event_identifier: FVal(basis_per_unit)
                 for event_identifier, basis_per_unit in cursor.execute(
@@ -652,60 +753,104 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
     )
     first_batch_written, total_events = False, len(events)
     send_ws_every = msg_aggregator.how_many_events_per_ws(total_events)
-    is_rate_limited = False
-    for idx, event in enumerate(events):
-        try:
-            cost_basis_pass.apply(
-                event=event,
-                next_event=events[idx + 1] if idx + 1 < total_events else None,
-                treat_eth2_as_eth=treat_eth2_as_eth,
+    interrupted_at: TimestampMS | None = None
+    try:
+        for idx, event in enumerate(events):
+            try:
+                cost_basis_pass.apply(
+                    event=event,
+                    next_event=events[idx + 1] if idx + 1 < total_events else None,
+                    treat_eth2_as_eth=treat_eth2_as_eth,
+                )
+            except NoPriceForGivenTimestamp as e:
+                log.warning('Stopping cost basis processing at event %s: %s', event.identifier, e)
+                interrupted_at = event.timestamp
+                break
+
+            if idx % MIN_EVENTS_PROCESSED_TO_SLEEP == 0:
+                time.sleep(0)  # release the GIL so concurrent DB readers interleave
+
+            if idx % send_ws_every == 0:
+                msg_aggregator.add_message(
+                    message_type=WSMessageType.PROGRESS_UPDATES,
+                    data={
+                        'subtype': str(ProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING),
+                        'phase': str(HistoricalBalanceProcessingPhase.COST_BASIS),
+                        'total': total_events,
+                        'processed': idx,
+                    },
+                )
+
+            if len(cost_basis_pass.rows) >= COST_BASIS_BATCH_SIZE:
+                with database.user_write() as write_cursor:
+                    _write_rows(write_cursor, cost_basis_pass.rows, from_ts, first_batch_written)
+                    next_idx = (
+                        idx + 2
+                        if (
+                            idx + 1 < total_events and
+                            events[idx + 1].identifier in cost_basis_pass._basis_transfer_receives
+                        )
+                        else idx + 1
+                    )
+                    if next_idx < total_events:
+                        _record_progress(
+                            write_cursor=write_cursor,
+                            processed_ts=events[next_idx].timestamp,
+                            modification_ts_at_start=modification_ts_at_start,
+                        )
+                first_batch_written, cost_basis_pass.rows = True, []
+                _write_invalid_amount_issues(database, cost_basis_pass.invalid_amount_issues)
+                cost_basis_pass.invalid_amount_issues = []
+                checkpoint()  # cancellation checkpoint of the cost basis processing loop
+                time.sleep(0)
+
+        with database.user_write() as write_cursor:  # also when empty, to drop the replaced rows
+            _write_rows(write_cursor, cost_basis_pass.rows, from_ts, first_batch_written)
+        _write_invalid_amount_issues(database, cost_basis_pass.invalid_amount_issues)
+        if interrupted_at is None:
+            DataIssuesManager(database).resolve_event_issues_except(
+                kind=IssueKind.INVALID_EVENT_AMOUNT,
+                still_active_ids=cost_basis_pass.invalid_amount_event_ids,
             )
-        except NoPriceForGivenTimestamp as e:
-            log.warning('Stopping cost basis processing at event %s: %s', event.identifier, e)
-            is_rate_limited = True
-            break
 
-        if idx % MIN_EVENTS_PROCESSED_TO_SLEEP == 0:
-            time.sleep(0)  # release the GIL so concurrent DB readers interleave
-
-        if idx % send_ws_every == 0:
-            msg_aggregator.add_message(
-                message_type=WSMessageType.PROGRESS_UPDATES,
-                data={
-                    'subtype': str(ProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING),
-                    'total': total_events,
-                    'processed': idx,
-                },
-            )
-
-        if len(cost_basis_pass.rows) >= COST_BASIS_BATCH_SIZE:
+        _finalize_processing(
+            database=database,
+            modification_ts_at_start=(
+                None if modification_ts_at_start is None else int(modification_ts_at_start)
+            ),
+            interrupted_at=interrupted_at,
+        )
+    except Exception as e:
+        if not isinstance(e, TaskCancelledError):
+            _write_invalid_amount_issues(database, cost_basis_pass.invalid_amount_issues)
             with database.user_write() as write_cursor:
-                _write_rows(write_cursor, cost_basis_pass.rows, from_ts, first_batch_written)
-            first_batch_written, cost_basis_pass.rows = True, []
-            checkpoint()  # cancellation checkpoint of the cost basis processing loop
-            time.sleep(0)
-
-    with database.user_write() as write_cursor:  # also when empty, to drop the replaced rows
-        _write_rows(write_cursor, cost_basis_pass.rows, from_ts, first_batch_written)
-
-    if is_rate_limited:
-        _record_interrupted_pass(database)
+                database.set_static_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheStatic.LAST_COST_BASIS_FAILURE_TS,
+                    value=ts_now(),
+                )
+                if modification_ts_at_start is not None:
+                    write_cursor.execute(
+                        'UPDATE key_value_cache SET value = ? WHERE name IN (?, ?) AND value = ?',
+                        (
+                            '0',
+                            DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value,
+                            DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS.value,
+                            modification_ts_at_start,
+                        ),
+                    )
+        raise
+    if interrupted_at is not None:
         return False
 
     msg_aggregator.add_message(
         message_type=WSMessageType.PROGRESS_UPDATES,
         data={
             'subtype': str(ProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING),
+            'phase': str(HistoricalBalanceProcessingPhase.COST_BASIS),
             'total': total_events,
             'processed': total_events,
         },
-    )
-    _finalize_processing(
-        database=database,
-        settings=settings,
-        modification_ts_at_start=(
-            None if modification_ts_at_start is None else int(modification_ts_at_start)
-        ),
     )
     log.debug('Completed cost basis processing of %s events', total_events)
     return True
@@ -726,7 +871,13 @@ def process_balances_and_cost_basis(
     shown covers both. Returns None if a balance pass is already running.
     """
     if skip_balances:
-        process_cost_basis(database=database, msg_aggregator=msg_aggregator)
+        if process_cost_basis(database=database, msg_aggregator=msg_aggregator) is None:
+            return None
+
+        msg_aggregator.add_message(
+            message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
+            data={},
+        )
         return True
 
     if (processed := process_historical_balances(

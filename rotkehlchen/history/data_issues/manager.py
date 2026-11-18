@@ -20,10 +20,7 @@ from rotkehlchen.history.data_issues.types import (
     DataIssue,
     DataIssueFilters,
     DataIssuePayload,
-    InvalidEventAmountIssuePayload,
-    NegativeBalanceIssuePayload,
-    RebasingTokenIssuePayload,
-    UnmatchedBridgeIssuePayload,
+    EventIssuePayload,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
@@ -241,18 +238,7 @@ class DataIssuesManager:
         issue_severity = severity if severity is not None else ISSUE_KIND_SEVERITY[kind]
         payload_json = json.dumps(payload, separators=(',', ':'))
         created_at = ts_now()
-        if kind in (
-            IssueKind.INVALID_EVENT_AMOUNT,
-            IssueKind.NEGATIVE_BALANCE,
-            IssueKind.REBASING_TOKEN,
-            IssueKind.UNMATCHED_BRIDGE,
-        ):
-            event_identifier = cast(
-                'InvalidEventAmountIssuePayload | NegativeBalanceIssuePayload | RebasingTokenIssuePayload | UnmatchedBridgeIssuePayload',  # noqa: E501
-                payload,
-            )['event_identifier']
-        else:  # kind == IssueKind.CURRENT_BALANCE_MISMATCH
-            event_identifier = None
+        event_identifier = cast('EventIssuePayload', payload).get('event_identifier')
         with self.db.user_write() as write_cursor:
             write_cursor.execute(
                 DATA_ISSUE_INSERT_QUERY,
@@ -417,24 +403,48 @@ class DataIssuesManager:
                 ),
             )
 
-    def resolve_unmatched_bridge_issues_except(self, still_unmatched_ids: set[int]) -> None:
-        """Resolve unmatched bridge issues whose event is no longer unmatched."""
+    def resolve_event_issues_except(
+            self,
+            kind: IssueKind,
+            still_active_ids: set[int],
+    ) -> None:
+        """Resolve unseen event issues unless a historical balance stop still backs them.
+
+        Cost basis and historical balances can see different events and report the same kind.
+        An event missing from the cost basis pass does not clear a balance stop's issue.
+        """
         sources_clause, sources = _source_states_clause(IssueState.RESOLVED)
         query = (
             'UPDATE data_issues SET state = ?, resolved_at = ? WHERE kind = ? '
             f'AND {sources_clause}'
         )
+        if kind == IssueKind.INVALID_EVENT_AMOUNT:
+            query += (
+                ' AND NOT EXISTS (SELECT 1 FROM bucket_processing_stops s '
+                'WHERE s.location = data_issues.location '
+                'AND s.location_label = data_issues.location_label '
+                'AND s.protocol = data_issues.protocol AND s.asset = data_issues.asset '
+                'AND s.event_identifier = data_issues.event_identifier '
+                'AND s.issue_kind = data_issues.kind)'
+            )
         bindings: list[Any] = [
             IssueState.RESOLVED,
             _resolved_at_for(IssueState.RESOLVED),
-            IssueKind.UNMATCHED_BRIDGE,
+            kind,
             *sources,
         ]
-        if len(still_unmatched_ids) > 0:
-            query += f' AND event_identifier NOT IN ({",".join("?" * len(still_unmatched_ids))})'
-            bindings.extend(still_unmatched_ids)
+        if len(still_active_ids) > 0:
+            query += f' AND event_identifier NOT IN ({",".join("?" * len(still_active_ids))})'
+            bindings.extend(still_active_ids)
         with self.db.user_write() as write_cursor:
             write_cursor.execute(query, bindings)
+
+    def resolve_unmatched_bridge_issues_except(self, still_unmatched_ids: set[int]) -> None:
+        """Resolve unmatched bridge issues whose event is no longer unmatched."""
+        self.resolve_event_issues_except(
+            kind=IssueKind.UNMATCHED_BRIDGE,
+            still_active_ids=still_unmatched_ids,
+        )
 
     def reset_orphaned_remediations(self) -> None:
         """Make remediation rows left by a previous process retryable after login."""
