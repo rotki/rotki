@@ -52,11 +52,12 @@ class RuleInformation:
 
     For type-based rules, event_ids is None and the rule applies to all events matching
     the type/subtype/counterparty combination.
-    For event-specific rules, event_ids contains the list of specific event identifiers.
+    For event-specific rules, event_ids lists the linked events, or is None if none remain.
 
     links contains the properties in rule that have been linked to an accounting setting.
     """
     identifier: int
+    is_event_specific: bool
     event_ids: list[int] | None
     event_key: tuple[HistoryEventType, HistoryEventSubType, str | None]
     rule: BaseEventSettings
@@ -374,7 +375,8 @@ class DBAccountingRules:
         Returns a dict of identifier -> accounting rules."""
         query = (
             'SELECT accounting_rules.identifier, type, subtype, counterparty, taxable, '
-            'count_entire_amount_spend, count_cost_basis_pnl, accounting_treatment '
+            'count_entire_amount_spend, count_cost_basis_pnl, accounting_treatment, '
+            'is_event_specific '
             'FROM accounting_rules '
         )
         rules: dict[int, RuleInformation] = {}
@@ -384,6 +386,7 @@ class DBAccountingRules:
                 rule_id = entry[0]
                 rules[rule_id] = RuleInformation(
                     identifier=rule_id,
+                    is_event_specific=bool(entry[8]),
                     event_ids=None,  # populated later
                     event_key=(
                         HistoryEventType.deserialize(entry[1]),

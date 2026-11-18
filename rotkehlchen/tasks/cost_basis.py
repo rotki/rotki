@@ -108,9 +108,9 @@ class _Rules:
         for rule_info in DBAccountingRules(database).query_rules(
             filter_query=AccountingRulesFilterQuery.make(),
         )[0]:
-            if rule_info.event_ids is None:
+            if not rule_info.is_event_specific:
                 self._by_type[rule_info.event_key] = rule_info.rule
-            else:
+            elif rule_info.event_ids is not None:
                 self._by_event.update(dict.fromkeys(rule_info.event_ids, rule_info.rule))
 
     def get(self, event: HistoryBaseEntry) -> BaseEventSettings | None:
@@ -125,6 +125,16 @@ class _Rules:
             return rule
 
         return self._by_type.get((*event_key, None))
+
+
+def _swap_leg_direction(
+        event: HistoryBaseEntry,
+        bucket_directions: Sequence[tuple[Bucket, EventDirection]],
+) -> EventDirection | None:
+    if event.asset.is_fiat():
+        return event.maybe_get_direction()
+
+    return bucket_directions[0][1] if len(bucket_directions) == 1 else None
 
 
 class _CostBasisPass:
@@ -235,9 +245,9 @@ class _CostBasisPass:
             realized_pnl: FVal | None = None,
             taxfree_pnl: FVal | None = None,
             basis_removed: FVal | None = None,
+            post_spend_basis_remaining: FVal | None = None,
     ) -> None:
         assert event.identifier is not None
-        is_spend = direction == CostBasisDirection.SPEND
         self.rows.append((
             event.identifier,
             bucket.location,
@@ -255,7 +265,7 @@ class _CostBasisPass:
             None if realized_pnl is None else str(realized_pnl),
             None if taxfree_pnl is None else str(taxfree_pnl),
             None if basis_removed is None else str(basis_removed),
-            str(self.lots.basis_remaining(bucket)) if is_spend else None,
+            str(post_spend_basis_remaining) if post_spend_basis_remaining is not None else None,
             self.method,
         ))
 
@@ -276,6 +286,9 @@ class _CostBasisPass:
         event with no basis.
         """
         received = event if in_event is None else in_event
+        source_basis_before = (
+            self.lots.basis_remaining(source) if is_stale and source == destination else None
+        )
         moved = self.lots.transfer(
             source=source,
             destination=destination,
@@ -307,6 +320,10 @@ class _CostBasisPass:
                 lots_consumed=[entry.serialize() for entry in moved],
                 realized_pnl=ZERO,
                 basis_removed=basis,
+                post_spend_basis_remaining=(
+                    self.lots.basis_remaining(source) if source_basis_before is None
+                    else source_basis_before - basis
+                ),
             )
         if in_is_stale:
             self._add_row(
@@ -410,6 +427,7 @@ class _CostBasisPass:
             realized_pnl=realized_pnl,
             taxfree_pnl=taxfree_pnl,
             basis_removed=result.basis_removed,
+            post_spend_basis_remaining=self.lots.basis_remaining(bucket),
         )
 
     def _maybe_transfer_basis(
@@ -423,8 +441,8 @@ class _CostBasisPass:
     ) -> bool:
         """Carry the basis from what the event gives to what the next event receives for it.
 
-        Returns False if the two events are not a spend from one bucket and a receive in
-        another, in which case each is left to be applied on its own.
+        Returns False if the events are not a single-bucket spend and receive, in which case
+        each is left to be applied on its own. Asset normalization can put both in one bucket.
         """
         assert in_event.identifier is not None
         if len(out_buckets) != 1 or in_event.asset.is_fiat():
@@ -435,7 +453,6 @@ class _CostBasisPass:
             len(in_buckets) != 1 or
             out_buckets[0][1] != EventDirection.OUT or
             in_buckets[0][1] != EventDirection.IN or
-            out_buckets[0][0] == in_buckets[0][0] or
             out_buckets[0][0] in self.blocked_buckets or
             in_buckets[0][0] in self.blocked_buckets
         ):
@@ -503,7 +520,17 @@ class _CostBasisPass:
                     treat_eth2_as_eth=treat_eth2_as_eth,
                 ):
                     return
-            elif self.from_ts is None or next_event.timestamp >= self.from_ts:
+            elif (
+                (self.from_ts is None or next_event.timestamp >= self.from_ts) and
+                _swap_leg_direction(event, bucket_directions) == EventDirection.OUT and
+                _swap_leg_direction(
+                    next_event,
+                    [] if next_event.asset.is_fiat() else Bucket.from_event(
+                        event=next_event,
+                        treat_eth2_as_eth=treat_eth2_as_eth,
+                    ),
+                ) == EventDirection.IN
+            ):
                 self._price_swap(
                     out_event=event,
                     in_event=next_event,
@@ -730,6 +757,7 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             filter_query=HistoryEventFilterQuery.make(
                 order_by_rules=[
                     ('timestamp', True),
+                    ('group_identifier', True),
                     ('sequence_index', True),
                     ('history_events_identifier', True),
                 ],
