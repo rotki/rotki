@@ -3738,6 +3738,7 @@
       "deactivate_tooltip": "Cancel the edit of the api keys for the exchange."
     },
     "history_limit_warning": {
+      "bitget": "Bitget's API only allows querying spot trades and futures positions from the past 90 days. Older trading history cannot be retrieved.",
       "bybit": "Bybit's API only allows querying trades from the past 2 years (unified account) or 180 days (classic account). Older trades cannot be retrieved.",
       "cryptocom": "Crypto.com's API only allows querying trades from the past 6 months. Older trades cannot be retrieved.",
       "htx": "HTX's API only allows querying trades from the past 120 days. Older trades cannot be retrieved."
