@@ -182,6 +182,15 @@ repeat the name and type: `@param chain - the chain` is worse than no tag.
   When a `vi.mock` factory needs runtime imports, use `await import()` inside an async `vi.hoisted`
   callback or async factory, not `require`. Use Vitest `assert()` to narrow before expectations;
   don't put assertions behind an `if` that can silently skip them.
+
+  ```typescript
+  // ✅ vi.hoisted runs before the file's imports, so import runtime values inside it
+  const { count } = await vi.hoisted(async () => {
+    const { ref } = await import('vue');
+    return { count: ref<number>(0) };
+  });
+  // ❌ const { ref } = require('vue'); // with an eslint-disable for no-require-imports
+  ```
 - Use `createMock<T>()` from `@test/utils/create-mock` for large or branded types. Its proxy returns
   truthy stubs for omitted properties: set every boolean the code reads and use a real object for
   deep equality. `useI18n()` is already mocked with the `@test/i18n` echo translator.
