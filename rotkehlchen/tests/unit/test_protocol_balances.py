@@ -71,6 +71,12 @@ from rotkehlchen.chain.evm.decoding.extrafi.cache import (
     query_extrafi_data,
 )
 from rotkehlchen.chain.evm.decoding.extrafi.constants import CPT_EXTRAFI
+from rotkehlchen.chain.evm.decoding.fluid.balances import FluidBalances
+from rotkehlchen.chain.evm.decoding.fluid.constants import (
+    CPT_FLUID,
+    FLUID_SUPPORTED_CHAINS,
+    FLUID_VAULT_FACTORY,
+)
 from rotkehlchen.chain.evm.decoding.flying_tulip.constants import CPT_FLYING_TULIP
 from rotkehlchen.chain.evm.decoding.flying_tulip.ftusd.balances import FlyingTulipStakingBalances
 from rotkehlchen.chain.evm.decoding.flying_tulip.lend.balances import FlyingTulipLendBalances
@@ -136,6 +142,7 @@ from rotkehlchen.constants.assets import (
     A_HYPE,
     A_STETH,
     A_USDC,
+    A_USDT,
     A_WBTC,
     A_WETH,
     A_WETH_ARB,
@@ -145,6 +152,8 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_last_queried_ts_by_key,
@@ -178,6 +187,7 @@ from rotkehlchen.tests.utils.factories import (
     make_evm_address,
     make_evm_tx_hash,
 )
+from rotkehlchen.tests.utils.fluid import add_fluid_position_event
 from rotkehlchen.tests.utils.sonic import SONIC_MAINNET_NODE
 from rotkehlchen.types import (
     CacheType,
@@ -2450,3 +2460,134 @@ def test_kiln_exit_ticket_balances(
     )
     assert set(protocol_balances) == {ethereum_accounts[0]}
     assert protocol_balances[ethereum_accounts[0]].assets[A_ETH][CPT_KILN] == expected_balance
+
+
+def test_fluid_registered_on_supported_chains() -> None:
+    for chain_id in FLUID_SUPPORTED_CHAINS:
+        assert FluidBalances in CHAIN_TO_BALANCE_PROTOCOLS[chain_id]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xb60d601606351dC78a4f5493aa2AacC06A3B19E3',
+    '0xD7B2aF2Ea0Bed60E9f508D34e94eEc4ba7238e50',
+    '0xe4637833F5513524D0B9337A75963619034fbB23',
+]])
+def test_fluid_balances(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
+    """Query T1 normal and T4 smart collateral/debt balances and ignore closed positions."""
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x7d3ff3033b13a1abd0761dd79f4f16b0c85bbfa8ea9f84331602fcc2b22bc650'),
+    )
+    add_fluid_position_event(
+        database=ethereum_inquirer.database,
+        nft_id=19744,
+        timestamp=TimestampMS(1794000000000),
+        location_label=ethereum_accounts[1],
+    )
+    for tx_hash_hex in (
+        '0x75bad3dd9b7b4a338e689a927ab57488acd5b87e6027069109eabbc0159d7801',
+        '0xf13ee83ff7b03e5a65332963c2454a1fda8e8afe85f5331c152bc80c3094ec32',
+    ):
+        get_decoded_events_of_transaction(
+            evm_inquirer=ethereum_inquirer,
+            tx_hash=deserialize_evm_tx_hash(tx_hash_hex),
+            evm_decoder=tx_decoder,
+        )
+
+    balances = FluidBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=tx_decoder,
+    ).query_balances(addresses=ethereum_accounts)
+
+    def expected_balance(amount: str) -> Balance:
+        return Balance(amount=(val := FVal(amount)), value=val * FVal('1.5'))
+
+    assert set(balances) == {ethereum_accounts[0], ethereum_accounts[1]}
+    t1_position = balances[ethereum_accounts[0]]
+    assert set(t1_position.assets) == {A_ETH}
+    assert set(t1_position.liabilities) == {A_USDT}
+    assert t1_position.assets[A_ETH][CPT_FLUID] == expected_balance('108.380690980864875765')
+    assert t1_position.liabilities[A_USDT][CPT_FLUID] == expected_balance('142672.842172')
+
+    cbbtc = Asset('eip155:1/erc20:0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf')
+    t4_position = balances[ethereum_accounts[1]]
+    assert set(t4_position.assets) == {A_WBTC, cbbtc}
+    assert set(t4_position.liabilities) == {A_WBTC, cbbtc}
+    assert t4_position.assets[A_WBTC][CPT_FLUID] == expected_balance('0.00060016')
+    assert t4_position.assets[cbbtc][CPT_FLUID] == expected_balance('0.00807946')
+    assert t4_position.liabilities[A_WBTC][CPT_FLUID] == expected_balance('0.00753182')
+    assert t4_position.liabilities[cbbtc][CPT_FLUID] == expected_balance('0.00055876')
+
+
+def test_fluid_balances_activity_filtering_and_remote_error(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        database: DBHandler,
+) -> None:
+    """Verify secondary NFT transfer filtering and graceful RemoteError handling."""
+    fluid_balances = FluidBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=ethereum_transaction_decoder,
+    )
+    sender, recipient, erc20_only = make_evm_address(), make_evm_address(), make_evm_address()
+    nft_asset = get_or_create_evm_token(
+        userdb=database,
+        evm_address=FLUID_VAULT_FACTORY,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC721,
+        symbol='fVLT-101',
+        name='Fluid Vault #101',
+        decimals=0,
+        collectible_id='101',
+        protocol=CPT_FLUID,
+    )
+    with database.user_write() as cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=cursor,
+            history=[
+                make_ethereum_event(
+                    index=1,
+                    location_label=erc20_only,
+                    counterparty=CPT_FLUID,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=A_USDC,
+                ),
+            ],
+        )
+
+    with patch.object(ethereum_inquirer, 'multicall') as multicall_mock:
+        assert fluid_balances.query_balances(addresses=[erc20_only]) == {}
+        assert multicall_mock.call_count == 0
+
+    with database.user_write() as cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=cursor,
+            history=[
+                make_ethereum_event(
+                    index=2,
+                    location_label=sender,
+                    address=recipient,
+                    counterparty=CPT_FLUID,
+                    event_type=HistoryEventType.TRANSFER,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=nft_asset,
+                ),
+            ],
+        )
+
+    assert fluid_balances._get_active_addresses([sender, recipient]) == sorted([sender, recipient])
+    with (
+        patch.object(ethereum_inquirer, 'get_latest_block_number', return_value=26000000),
+        patch.object(
+            ethereum_inquirer,
+            'multicall',
+            side_effect=RemoteError('rpc failed', cause=FailureCause.NETWORK),
+        ),
+    ):
+        assert fluid_balances.query_balances(addresses=[sender, recipient]) == {}
