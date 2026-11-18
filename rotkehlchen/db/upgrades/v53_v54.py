@@ -835,5 +835,11 @@ CREATE TABLE IF NOT EXISTS event_cost_basis (
         write_cursor.execute(
             'CREATE INDEX IF NOT EXISTS idx_event_cost_basis_method ON event_cost_basis(method)',
         )
+        write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS cost_basis_checkpoints (
+    timestamp INTEGER NOT NULL PRIMARY KEY,
+    state TEXT NOT NULL
+);
+        """)
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

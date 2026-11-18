@@ -1109,6 +1109,16 @@ CREATE TABLE IF NOT EXISTS event_cost_basis (
 );
 """
 
+# Checkpoints of the cost basis lots, so that a pass resumes from the last one before what is
+# stale instead of replaying all events. The lots in `state` are the ones held after all events
+# before `timestamp`. Derived data only: deleting the checkpoints only makes a pass replay more.
+DB_CREATE_COST_BASIS_CHECKPOINTS = """
+CREATE TABLE IF NOT EXISTS cost_basis_checkpoints (
+    timestamp INTEGER NOT NULL PRIMARY KEY,
+    state TEXT NOT NULL
+);
+"""
+
 # The history_events indexes significantly improve performance when filtering history events in large DBs.  # noqa: E501
 # Shown below are before/after query speeds we observed for each index:
 # idx_history_events_entry_type: Before: 12951ms, After: 0ms
@@ -1252,6 +1262,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_DATA_ISSUES}
 {DB_CREATE_EVENT_METRICS}
 {DB_CREATE_EVENT_COST_BASIS}
+{DB_CREATE_COST_BASIS_CHECKPOINTS}
 {DB_CREATE_BUCKET_PROCESSING_STOPS}
 {DB_CREATE_BUCKET_BALANCE_CHECKS}
 {DB_CREATE_WALLET_BALANCE_OBSERVATIONS}

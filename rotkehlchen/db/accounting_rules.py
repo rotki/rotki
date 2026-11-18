@@ -70,20 +70,49 @@ class DBAccountingRules:
         self.db = db_handler
 
     @staticmethod
-    def _mark_cost_basis_stale(write_cursor: DBCursor) -> None:
-        """Mark the whole materialized cost basis as stale, since any rule can affect it.
+    def _mark_cost_basis_stale(
+            write_cursor: DBCursor,
+            event_ids: Sequence[int] | None = None,
+            event_keys: Sequence[tuple[HistoryEventType, HistoryEventSubType]] = (),
+    ) -> None:
+        """Mark the materialized cost basis as stale from the first event a rule change affects.
 
-        The balances are not affected by the accounting rules and stay as they are.
+        A rule affects the events linked to it, and a rule of a type the events of that type
+        and subtype, whatever their counterparty. The rule of an event also decides whether it
+        pairs with the event after it, which is never earlier. Without either argument, as
+        for an import, everything is stale. The balances are not affected by the rules.
         """
         if is_accounting_update_enabled() is False:
             return
 
-        write_cursor.executemany(
+        if event_ids is None and len(event_keys) == 0:
+            from_ts: int | None = 0
+        else:
+            timestamps = [
+                row[0] for chunk, placeholders in get_query_chunks(event_ids or [])
+                if (row := write_cursor.execute(
+                    f'SELECT MIN(timestamp) FROM history_events WHERE identifier IN ({placeholders})',  # noqa: E501
+                    chunk,
+                ).fetchone()) is not None
+            ] + [
+                row[0] for event_type, event_subtype in event_keys
+                if (row := write_cursor.execute(
+                    'SELECT MIN(timestamp) FROM history_events WHERE type=? AND subtype=?',
+                    (event_type.serialize(), event_subtype.serialize()),
+                ).fetchone()) is not None
+            ]
+            if (from_ts := min((ts for ts in timestamps if ts is not None), default=None)) is None:
+                return  # no event is affected
+
+        write_cursor.execute(
+            'INSERT INTO key_value_cache(name, value) VALUES(?, ?) ON CONFLICT(name) DO UPDATE '
+            'SET value=excluded.value '
+            'WHERE CAST(key_value_cache.value AS INTEGER) > CAST(excluded.value AS INTEGER)',
+            (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, str(from_ts)),
+        )
+        write_cursor.execute(
             'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
-            [
-                (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, '0'),
-                (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value, str(ts_now_in_ms())),
-            ],
+            (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value, str(ts_now_in_ms())),
         )
 
     @classmethod
@@ -161,7 +190,13 @@ class DBAccountingRules:
             event_ids: list[int] | None,
     ) -> int:
         """Add a single rule with the provided write cursor. See add_accounting_rule."""
-        self._mark_cost_basis_stale(write_cursor)
+        if event_ids is not None and len(event_ids) > 0:
+            self._mark_cost_basis_stale(write_cursor=write_cursor, event_ids=event_ids)
+        else:
+            self._mark_cost_basis_stale(
+                write_cursor=write_cursor,
+                event_keys=[(event_type, event_subtype)],
+            )
         if event_ids is not None and len(event_ids) > 0:
             write_cursor.executemany(  # remove event IDs from any existing rules first
                 'DELETE FROM accounting_rule_events WHERE event_id=?',
@@ -231,9 +266,9 @@ class DBAccountingRules:
         - InputError if the rule doesn't exist
         """  # noqa: E501
         with self.db.conn.write_ctx() as write_cursor:
-            self._mark_cost_basis_stale(write_cursor)
             write_cursor.execute(
-                'SELECT type, subtype, counterparty FROM accounting_rules WHERE identifier=?',
+                'SELECT type, subtype, counterparty, is_event_specific FROM accounting_rules '
+                'WHERE identifier=?',
                 (rule_id,),
             )
             if (entry := write_cursor.fetchone()) is None:
@@ -248,6 +283,13 @@ class DBAccountingRules:
                 'SELECT event_id FROM accounting_rule_events WHERE rule_id=?',
                 (rule_id,),
             )]) > 0 else None
+            if entry[3]:
+                self._mark_cost_basis_stale(write_cursor=write_cursor, event_ids=event_ids or [])
+            else:
+                self._mark_cost_basis_stale(
+                    write_cursor=write_cursor,
+                    event_keys=[(event_type, event_subtype)],
+                )
 
             write_cursor.execute(
                 'DELETE FROM linked_rules_properties WHERE accounting_rule=?',
@@ -284,7 +326,14 @@ class DBAccountingRules:
         - InputError: if no event gets updated
         """
         with self.db.conn.write_ctx() as write_cursor:
-            self._mark_cost_basis_stale(write_cursor)
+            if (previous := write_cursor.execute(
+                'SELECT type, subtype, is_event_specific FROM accounting_rules WHERE identifier=?',
+                (identifier,),
+            ).fetchone()) is not None and not previous[2]:
+                self._mark_cost_basis_stale(write_cursor=write_cursor, event_keys=[
+                    (HistoryEventType.deserialize(previous[0]), HistoryEventSubType.deserialize(previous[1])),  # noqa: E501
+                    (event_type, event_subtype),
+                ])
             try:
                 write_cursor.execute(
                     'UPDATE accounting_rules SET type=?, subtype=?, counterparty=?, taxable=?, '
@@ -315,6 +364,13 @@ class DBAccountingRules:
                     'INSERT OR REPLACE INTO accounting_rule_events(rule_id, event_id) VALUES (?, ?)',  # noqa: E501
                     ((identifier, event_id) for event_id in event_ids),
                 )
+            if previous is not None and previous[2]:
+                self._mark_cost_basis_stale(write_cursor=write_cursor, event_ids=[
+                    row[0] for row in write_cursor.execute(
+                        'SELECT event_id FROM accounting_rule_events WHERE rule_id=?',
+                        (identifier,),
+                    )
+                ])
 
             # update links. First delete them for this rule and re-add them
             write_cursor.execute(

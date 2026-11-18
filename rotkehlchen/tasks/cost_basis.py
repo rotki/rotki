@@ -16,6 +16,7 @@ of the PnL report are not applied.
 import json
 import logging
 import time
+from itertools import starmap
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.accounting.cost_basis.lots import (
@@ -94,6 +95,9 @@ type CostBasisRow = tuple[
 ]
 
 COST_BASIS_BATCH_SIZE: Final = 500
+# Events walked between two checkpoints of the lots. Each one stores all lots still held, so
+# this trades the space they take for how many events a pass replays before what is stale.
+COST_BASIS_CHECKPOINT_INTERVAL: Final = 10_000
 
 
 class _Rules:
@@ -140,9 +144,10 @@ def _swap_leg_direction(
 class _CostBasisPass:
     """The state of one walk over the events.
 
-    Events before `from_ts` are only replayed to rebuild the lots of each bucket. Their rows
-    stay as they are, and the basis of what they acquired is taken from those rows, so that the
-    lots match what was materialized and no price is queried again.
+    The walk starts from a checkpoint of the lots when there is one before `from_ts`. Events
+    between the two are only replayed to rebuild the lots of each bucket. Their rows stay as
+    they are, and the basis of what they acquired is taken from those rows, so that the lots
+    match what was materialized and no price is queried again.
     """
 
     def __init__(
@@ -469,6 +474,48 @@ class _CostBasisPass:
         )
         return True
 
+    @property
+    def has_pending_pair(self) -> bool:
+        """Whether the last applied event left state for the event after it.
+
+        That state is what pairs the two sides of a swap or of a basis transfer.
+        """
+        return (
+            len(self._swap_basis) != 0 or
+            len(self._swap_proceeds) != 0 or
+            len(self._basis_transfer_receives) != 0
+        )
+
+    def serialize_checkpoint(self) -> str:
+        """The state of the pass that a later pass can resume from, see `restore_checkpoint`.
+
+        Only valid between events with no pending pair, as the pairing state is not included.
+        """
+        next_order, buckets = self.lots.serialize_state()
+        return json.dumps({
+            'method': self.method,
+            'next_order': next_order,
+            'buckets': [[list(bucket), state] for bucket, state in buckets],
+            'blocked_buckets': [list(bucket) for bucket in self.blocked_buckets],
+            'invalid_amount_event_ids': list(self.invalid_amount_event_ids),
+        }, separators=(',', ':'))
+
+    def restore_checkpoint(self, serialized: str) -> bool:
+        """Continue from a state written by `serialize_checkpoint`.
+
+        Returns False and leaves the pass as it is if the checkpoint is of another method.
+        """
+        if (state := json.loads(serialized))['method'] != self.method:
+            return False
+
+        self.lots.restore_state(
+            next_order=state['next_order'],
+            buckets=[(Bucket(*bucket), lots) for bucket, lots in state['buckets']],
+        )
+        self.blocked_buckets = set(starmap(Bucket, state['blocked_buckets']))
+        self.invalid_amount_event_ids = set(state['invalid_amount_event_ids'])
+        return True
+
     def apply(
             self,
             event: HistoryBaseEntry,
@@ -477,8 +524,20 @@ class _CostBasisPass:
     ) -> None:
         """Apply the event to the lots of the buckets it affects.
 
+        Afterwards only the next event can have pairing state left, see `has_pending_pair`.
         May raise NoPriceForGivenTimestamp if the price oracles are rate limited.
         """
+        self._apply(event=event, next_event=next_event, treat_eth2_as_eth=treat_eth2_as_eth)
+        if event.identifier is not None:  # a side that is not applied leaves its pairing state
+            self._swap_basis.pop(event.identifier, None)
+            self._swap_proceeds.pop(event.identifier, None)
+
+    def _apply(
+            self,
+            event: HistoryBaseEntry,
+            next_event: HistoryBaseEntry | None,
+            treat_eth2_as_eth: bool,
+    ) -> None:
         if event.identifier is None or event.amount == ZERO:
             return
 
@@ -544,8 +603,6 @@ class _CostBasisPass:
         if len(bucket_directions) == 1:
             bucket, direction = bucket_directions[0]
             if bucket in self.blocked_buckets:
-                self._swap_basis.pop(event.identifier, None)
-                self._swap_proceeds.pop(event.identifier, None)
                 return
 
             if direction == EventDirection.IN:
@@ -575,16 +632,22 @@ def _write_rows(
     """Write a batch of rows, dropping the rows that are being replaced on the first write.
 
     The delete is what keeps a pass idempotent. The unique constraint of the table can not,
-    since SQLite treats the NULL location labels and protocols of two rows as distinct.
+    since SQLite treats the NULL location labels and protocols of two rows as distinct. The
+    checkpoints after `from_ts` hold lots that the stale events may change, and go with them.
     """
     if not first_batch_written:
         if from_ts is None:
             write_cursor.execute('DELETE FROM event_cost_basis')
+            write_cursor.execute('DELETE FROM cost_basis_checkpoints')
         else:
             write_cursor.execute(
                 'DELETE FROM event_cost_basis WHERE timestamp >= ? OR event_identifier IN '
                 '(SELECT identifier FROM history_events WHERE timestamp >= ?)',
                 (from_ts, from_ts),
+            )
+            write_cursor.execute(
+                'DELETE FROM cost_basis_checkpoints WHERE timestamp > ?',
+                (from_ts,),
             )
 
     write_cursor.executemany(
@@ -595,6 +658,40 @@ def _write_rows(
         'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         rows,
     )
+
+
+def _write_checkpoint(
+        write_cursor: DBCursor,
+        cost_basis_pass: _CostBasisPass,
+        timestamp: TimestampMS,
+) -> None:
+    """Store the lots of the pass as they are after all events before `timestamp`."""
+    write_cursor.execute(
+        'INSERT OR REPLACE INTO cost_basis_checkpoints(timestamp, state) VALUES (?, ?)',
+        (timestamp, cost_basis_pass.serialize_checkpoint()),
+    )
+
+
+def _checkpoint_ts(
+        cost_basis_pass: _CostBasisPass,
+        event: HistoryBaseEntry,
+        next_event: HistoryBaseEntry | None,
+        events_since_checkpoint: int,
+) -> TimestampMS | None:
+    """The timestamp to checkpoint the lots at after the event, or None if not here.
+
+    A checkpoint holds all events before its timestamp, so it can only be taken where the
+    timestamp moves on to the next event and no pair of events is halfway applied.
+    """
+    if (
+        events_since_checkpoint < COST_BASIS_CHECKPOINT_INTERVAL or
+        next_event is None or
+        next_event.timestamp <= event.timestamp or
+        cost_basis_pass.has_pending_pair
+    ):
+        return None
+
+    return next_event.timestamp
 
 
 def _record_progress(
@@ -713,12 +810,43 @@ def _finalize_processing(
         )
 
 
+def _record_failure(
+        database: DBHandler,
+        cost_basis_pass: _CostBasisPass,
+        modification_ts_at_start: str | None,
+) -> None:
+    """Record that a pass failed, keeping what it committed usable by the next pass.
+
+    If nothing changed the events since the pass started, both modification markers are reset
+    together, so that the progress the pass recorded still matches the stale marker.
+    """
+    _write_invalid_amount_issues(database, cost_basis_pass.invalid_amount_issues)
+    with database.user_write() as write_cursor:
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.LAST_COST_BASIS_FAILURE_TS,
+            value=ts_now(),
+        )
+        if modification_ts_at_start is not None:
+            write_cursor.execute(
+                'UPDATE key_value_cache SET value = ? WHERE name IN (?, ?) AND value = ?',
+                (
+                    '0',
+                    DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value,
+                    DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS.value,
+                    modification_ts_at_start,
+                ),
+            )
+
+
 @skip_if_running
 def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) -> bool:
     """Materialize the cost basis of the history events that are stale.
 
     Processes everything on the first pass, and afterwards only from the stale marker forward.
-    Rows of another cost basis method mean the method changed, which redoes everything.
+    Rows of another cost basis method mean the method changed, which redoes everything. A pass
+    that only redoes a part starts from the last checkpoint of the lots before that part, so
+    it reads and replays only the events after the checkpoint.
 
     Returns True once the pass ran to completion, and False if it stopped because the price
     oracles are rate limited. In that case the stale marker is kept and the next pass redoes
@@ -732,8 +860,9 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
         ) is None:
             return True  # nothing changed since the last pass
 
+    rules = _Rules(database)
+    with database.conn.read_ctx() as cursor:
         from_ts: TimestampMS | None = None
-        stored_basis: dict[int, FVal] = {}
         if (
             unprocessed_from_ts > 0 and
             cursor.execute('SELECT 1 FROM event_cost_basis LIMIT 1').fetchone() is not None and
@@ -743,27 +872,53 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             ).fetchone() is None
         ):
             from_ts = unprocessed_from_ts
-            stored_basis = {
+
+        cost_basis_pass = _CostBasisPass(
+            settings=settings,
+            rules=rules,
+            from_ts=from_ts,
+            stored_basis={},
+        )
+        start_ts = TimestampMS(0)
+        if from_ts is not None:
+            if (checkpoint_row := cursor.execute(
+                'SELECT timestamp, state FROM cost_basis_checkpoints WHERE timestamp <= ? '
+                'ORDER BY timestamp DESC LIMIT 1',
+                (from_ts,),
+            ).fetchone()) is not None and cost_basis_pass.restore_checkpoint(checkpoint_row[1]):
+                start_ts = TimestampMS(checkpoint_row[0])
+
+            cost_basis_pass.stored_basis = {
                 event_identifier: FVal(basis_per_unit)
                 for event_identifier, basis_per_unit in cursor.execute(
                     'SELECT event_identifier, basis_per_unit FROM event_cost_basis '
-                    'WHERE direction = ? AND basis_source != ? AND timestamp < ?',
-                    (CostBasisDirection.RECEIVE.value, BasisSource.TRANSFER_IN.value, from_ts),
+                    'WHERE direction = ? AND basis_source != ? AND timestamp >= ? '
+                    'AND timestamp < ?',
+                    (
+                        CostBasisDirection.RECEIVE.value,
+                        BasisSource.TRANSFER_IN.value,
+                        start_ts,
+                        from_ts,
+                    ),
                 )
             }
 
+        event_filter = HistoryEventFilterQuery.make(
+            order_by_rules=[
+                ('timestamp', True),
+                ('group_identifier', True),
+                ('sequence_index', True),
+                ('history_events_identifier', True),
+            ],
+            exclude_ignored_assets=True,
+            exclude_untracked_withdrawals=True,
+        )
+        if start_ts != 0:
+            event_filter.timestamp_filter.from_ts = Timestamp(start_ts)
+            event_filter.timestamp_filter.scaling_factor = None
         events = DBHistoryEvents(database).get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(
-                order_by_rules=[
-                    ('timestamp', True),
-                    ('group_identifier', True),
-                    ('sequence_index', True),
-                    ('history_events_identifier', True),
-                ],
-                exclude_ignored_assets=True,
-                exclude_untracked_withdrawals=True,
-            ),
+            filter_query=event_filter,
         )
         # Read after the events, so that an event modified from here on keeps the marker.
         modification_ts_at_start = database.get_static_cache(
@@ -771,23 +926,25 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             name=DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
         )
 
-    log.debug('Starting cost basis processing of %s events from_ts=%s', len(events), from_ts)
-    treat_eth2_as_eth = settings.treat_eth2_as_eth
-    cost_basis_pass = _CostBasisPass(
-        settings=settings,
-        rules=_Rules(database),
-        from_ts=from_ts,
-        stored_basis=stored_basis,
+    log.debug(
+        'Starting cost basis processing of %s events from_ts=%s start_ts=%s',
+        len(events),
+        from_ts,
+        start_ts,
     )
+    treat_eth2_as_eth = settings.treat_eth2_as_eth
     first_batch_written, total_events = False, len(events)
     send_ws_every = msg_aggregator.how_many_events_per_ws(total_events)
     interrupted_at: TimestampMS | None = None
+    last_checkpoint_idx = 0
+    record_failure = True  # unless the pass ends or is cancelled
     try:
         for idx, event in enumerate(events):
+            next_event = events[idx + 1] if idx + 1 < total_events else None
             try:
                 cost_basis_pass.apply(
                     event=event,
-                    next_event=events[idx + 1] if idx + 1 < total_events else None,
+                    next_event=next_event,
                     treat_eth2_as_eth=treat_eth2_as_eth,
                 )
             except NoPriceForGivenTimestamp as e:
@@ -809,14 +966,25 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                     },
                 )
 
-            if len(cost_basis_pass.rows) >= COST_BASIS_BATCH_SIZE:
+            if (
+                (checkpoint_ts := _checkpoint_ts(
+                    cost_basis_pass=cost_basis_pass,
+                    event=event,
+                    next_event=next_event,
+                    events_since_checkpoint=idx + 1 - last_checkpoint_idx,
+                )) is not None or
+                len(cost_basis_pass.rows) >= COST_BASIS_BATCH_SIZE
+            ):
                 with database.user_write() as write_cursor:
                     _write_rows(write_cursor, cost_basis_pass.rows, from_ts, first_batch_written)
+                    if checkpoint_ts is not None:
+                        _write_checkpoint(write_cursor, cost_basis_pass, checkpoint_ts)
+                        last_checkpoint_idx = idx + 1
                     next_idx = (
                         idx + 2
                         if (
-                            idx + 1 < total_events and
-                            events[idx + 1].identifier in cost_basis_pass._basis_transfer_receives
+                            next_event is not None and
+                            next_event.identifier in cost_basis_pass._basis_transfer_receives
                         )
                         else idx + 1
                     )
@@ -834,6 +1002,12 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
 
         with database.user_write() as write_cursor:  # also when empty, to drop the replaced rows
             _write_rows(write_cursor, cost_basis_pass.rows, from_ts, first_batch_written)
+            if interrupted_at is None and total_events != 0:
+                _write_checkpoint(
+                    write_cursor=write_cursor,
+                    cost_basis_pass=cost_basis_pass,
+                    timestamp=TimestampMS(events[-1].timestamp + 1),
+                )
         _write_invalid_amount_issues(database, cost_basis_pass.invalid_amount_issues)
         if interrupted_at is None:
             DataIssuesManager(database).resolve_event_issues_except(
@@ -848,26 +1022,18 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             ),
             interrupted_at=interrupted_at,
         )
-    except Exception as e:
-        if not isinstance(e, TaskCancelledError):
-            _write_invalid_amount_issues(database, cost_basis_pass.invalid_amount_issues)
-            with database.user_write() as write_cursor:
-                database.set_static_cache(
-                    write_cursor=write_cursor,
-                    name=DBCacheStatic.LAST_COST_BASIS_FAILURE_TS,
-                    value=ts_now(),
-                )
-                if modification_ts_at_start is not None:
-                    write_cursor.execute(
-                        'UPDATE key_value_cache SET value = ? WHERE name IN (?, ?) AND value = ?',
-                        (
-                            '0',
-                            DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value,
-                            DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS.value,
-                            modification_ts_at_start,
-                        ),
-                    )
+        record_failure = False
+    except TaskCancelledError:
+        record_failure = False  # what the pass committed is resumed as it is
         raise
+    finally:
+        if record_failure:
+            _record_failure(
+                database=database,
+                cost_basis_pass=cost_basis_pass,
+                modification_ts_at_start=modification_ts_at_start,
+            )
+
     if interrupted_at is not None:
         return False
 

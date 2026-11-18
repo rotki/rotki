@@ -835,6 +835,7 @@ class DBHandler:
         The balances do not depend on what the cost basis depends on and are left as they are.
         """
         write_cursor.execute('DELETE FROM event_cost_basis')
+        write_cursor.execute('DELETE FROM cost_basis_checkpoints')
         write_cursor.execute(
             'DELETE FROM key_value_cache WHERE name IN (?, ?, ?)',
             (

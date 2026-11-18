@@ -3401,7 +3401,7 @@ def test_latest_upgrade_correctness(user_data_dir):
         'bucket_processing_stops', 'bucket_balance_checks', 'wallet_balance_observations',
         'locations', 'location_aliases', 'integration_connections',
         'integration_connection_settings', 'remediation_plans', 'remediation_plan_audit',
-        'event_cost_basis',
+        'event_cost_basis', 'cost_basis_checkpoints',
     }
     new_views = views_after_upgrade - views_before
     assert new_views == set()
@@ -5124,6 +5124,7 @@ def test_upgrade_db_53_to_54(
         assert not table_exists(cursor=write_cursor, name='remediation_plans')
         assert not table_exists(cursor=write_cursor, name='remediation_plan_audit')
         assert not table_exists(cursor=write_cursor, name='event_cost_basis')
+        assert not table_exists(cursor=write_cursor, name='cost_basis_checkpoints')
         write_cursor.execute(  # a negative balance issue asks for the stops to be rebuilt
             'INSERT INTO data_issues(kind, location, asset, ts_start, ts_end, severity, state, payload_json, created_at) '  # noqa: E501
             "VALUES ('negative_balance', 'f', 'ETH', 1, 1, 'warning', 'open', '{}', 1)",
@@ -5175,6 +5176,7 @@ def test_upgrade_db_53_to_54(
         assert table_exists(cursor=cursor, name='remediation_plans')
         assert table_exists(cursor=cursor, name='remediation_plan_audit')
         assert table_exists(cursor=cursor, name='event_cost_basis')
+        assert table_exists(cursor=cursor, name='cost_basis_checkpoints')
         for index_name in (
             'idx_event_cost_basis_bucket',
             'idx_event_cost_basis_timestamp_sequence',

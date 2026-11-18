@@ -8,7 +8,7 @@ The order in which lots are consumed is still decided by the same FIFO/LIFO/HIFO
 from collections.abc import Hashable
 from dataclasses import dataclass
 from enum import StrEnum, auto
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.accounting.cost_basis.base import (
     AssetAcquisitionEvent,
@@ -17,12 +17,12 @@ from rotkehlchen.accounting.cost_basis.base import (
     CostBasisEvents,
 )
 from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.fval import FVal
 from rotkehlchen.types import Price, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.settings import DBSettings
-    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
@@ -47,8 +47,36 @@ class CostBasisDirection(StrEnum):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class Lot(AssetAcquisitionEvent):
-    """An acquisition with an identity that survives a move to another bucket."""
+    """An acquisition with an identity that survives a move to another bucket.
+
+    `index` is the position of the acquisition among all lots of the user. A lot moved to
+    another bucket keeps it, so that FIFO and LIFO consume it by when it was acquired and not
+    by when it arrived.
+    """
     lot_id: str
+
+    def serialize_state(self) -> list[str | int]:
+        return [
+            self.lot_id,
+            self.timestamp,
+            self.index,
+            str(self.amount),
+            str(self.remaining_amount),
+            str(self.rate),
+        ]
+
+    @classmethod
+    def from_state(cls, state: list[str | int]) -> Lot:
+        lot_id, timestamp, index, amount, remaining_amount, rate = state
+        lot = cls(
+            amount=FVal(amount),
+            timestamp=Timestamp(int(timestamp)),
+            rate=Price(FVal(rate)),
+            index=int(index),
+            lot_id=str(lot_id),
+        )
+        lot.remaining_amount = FVal(remaining_amount)
+        return lot
 
 
 class ConsumedLot(NamedTuple):
@@ -84,6 +112,7 @@ class BucketLots[K: Hashable]:
     def __init__(self, settings: DBSettings) -> None:
         self.settings = settings
         self._buckets: dict[K, BaseCostBasisMethod] = {}
+        self._next_order = 0
 
     def _get(self, bucket: K) -> BaseCostBasisMethod:
         if (manager := self._buckets.get(bucket)) is None:
@@ -91,6 +120,35 @@ class BucketLots[K: Hashable]:
             self._buckets[bucket] = manager
 
         return manager
+
+    def serialize_state(self) -> tuple[int, list[tuple[K, dict[str, Any]]]]:
+        """The lots of every bucket, to be restored by `restore_state`.
+
+        The lots of a bucket are listed in the order of its heap, which pushing them back in
+        reproduces exactly, including the order between lots that the method ranks the same.
+        """
+        return self._next_order, [(bucket, {
+            'lots': [
+                lot.serialize_state()  # type: ignore[attr-defined]  # only lots are added to the buckets
+                for lot in manager.get_acquisitions()
+            ],
+            'acb': (
+                [str(manager.current_amount), str(manager.current_total_acb)]
+                if isinstance(manager, AverageCostBasisMethod) else None
+            ),
+        }) for bucket, manager in self._buckets.items()]
+
+    def restore_state(self, next_order: int, buckets: list[tuple[K, dict[str, Any]]]) -> None:
+        """Replace the lots with ones serialized by `serialize_state`."""
+        self._buckets, self._next_order = {}, next_order
+        for bucket, state in buckets:
+            manager = self._get(bucket)
+            for lot_state in state['lots']:
+                lot = Lot.from_state(lot_state)
+                manager.add_in_event(lot, order=lot.index)
+            if isinstance(manager, AverageCostBasisMethod):
+                manager.current_amount = FVal(state['acb'][0])
+                manager.current_total_acb = FVal(state['acb'][1])
 
     @staticmethod
     def _average_basis(manager: BaseCostBasisMethod) -> FVal | None:
@@ -108,14 +166,16 @@ class BucketLots[K: Hashable]:
             basis_per_unit: FVal,
             timestamp: Timestamp,
     ) -> None:
-        """Add a new lot to the bucket."""
-        self._get(bucket).add_in_event(Lot(
+        """Add a new lot to the bucket, acquired after every lot added before it."""
+        lot = Lot(
             amount=amount,
             timestamp=timestamp,
             rate=Price(basis_per_unit),
-            index=0,
+            index=self._next_order,
             lot_id=lot_id,
-        ))
+        )
+        self._next_order += 1
+        self._get(bucket).add_in_event(lot, order=lot.index)
 
     def spend(
             self,
@@ -146,7 +206,7 @@ class BucketLots[K: Hashable]:
                 amount=matched.amount,
                 basis_per_unit=matched.event.rate if average_basis is None else average_basis,
                 taxable=matched.taxable,
-            ) for matched in info.matched_acquisitions],
+            ) for matched in info.matched_acquisitions if matched.amount > ZERO],
             taxable_amount=info.taxable_amount,
             taxable_basis=info.taxable_bought_cost,
             taxfree_basis=info.taxfree_bought_cost,
@@ -196,7 +256,7 @@ class BucketLots[K: Hashable]:
                 rate=Price(entry.basis_per_unit / ratio),
                 index=entry.lot.index,
                 lot_id=entry.lot.lot_id,
-            ))
+            ), order=entry.lot.index)
 
         return moved
 

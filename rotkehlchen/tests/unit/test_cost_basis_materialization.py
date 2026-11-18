@@ -235,6 +235,31 @@ def test_transfer_between_owned_accounts_keeps_the_lot(
     assert _spend_row(database, spent) == ([(received, FVal(1))], FVal(500), FVal(1000), FVal(1000))  # noqa: E501
 
 
+@pytest.mark.parametrize(('method', 'consumed_lot', 'pnl'), [
+    (CostBasisMethod.FIFO, 0, 3000),  # the lot received at 1 is the first one acquired
+    (CostBasisMethod.LIFO, 1, 1000),
+])
+@pytest.mark.usefixtures('queried_prices')
+def test_transferred_lot_keeps_its_acquisition_order(
+        database: DBHandler,
+        method: CostBasisMethod,
+        consumed_lot: int,
+        pnl: int,
+) -> None:
+    """A lot moved into a bucket that already holds lots is consumed by when it was acquired,
+    not by when it arrived, and a spend lists only the lots it took something from."""
+    identifiers = _process(database=database, method=method, events=[
+        _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+        _event(at=2, amount='1', event_type=HistoryEventType.RECEIVE, location_label=TEST_ADDR2),
+        _event(at=3, amount='1', event_type=HistoryEventType.TRANSFER, address=TEST_ADDR2),
+        _event(at=4, amount='1', event_type=HistoryEventType.SPEND, location_label=TEST_ADDR2),
+    ])
+    assert _spend_row(database, identifiers[3])[:2] == (
+        [(identifiers[consumed_lot], FVal(1))],
+        FVal(pnl),
+    )
+
+
 @pytest.mark.parametrize('method', list(CostBasisMethod))
 @pytest.mark.parametrize(('include_crypto2crypto', 'pnl'), [(True, 500), (False, 0)])
 @pytest.mark.usefixtures('queried_prices')
@@ -725,14 +750,10 @@ def test_spend_separates_the_gain_on_lots_held_past_the_taxfree_period(
     assert taxfree_pnl == '6000'  # two units worth 10000 that were bought for 4000
 
 
-@pytest.mark.parametrize('method', list(CostBasisMethod))
-def test_crashed_pass_resumes_from_committed_progress(
-        database: DBHandler,
-        queried_prices: list[tuple[str, Timestamp]],
-        method: CostBasisMethod,
-) -> None:
+def _mixed_history() -> list[EvmEvent | HistoryEvent]:
+    """A receive, a swap, a transfer to TEST_ADDR2 and spends from both accounts."""
     tx_ref = make_evm_tx_hash()
-    events: list[EvmEvent | HistoryEvent] = [
+    return [
         _event(at=1, amount='2', event_type=HistoryEventType.RECEIVE),
         _event(
             at=2,
@@ -755,6 +776,15 @@ def test_crashed_pass_resumes_from_committed_progress(
         _event(at=5, amount='1.5', event_type=HistoryEventType.SPEND, location_label=TEST_ADDR2),
         _event(at=6, amount='0.25', event_type=HistoryEventType.SPEND),
     ]
+
+
+@pytest.mark.parametrize('method', list(CostBasisMethod))
+def test_crashed_pass_resumes_from_committed_progress(
+        database: DBHandler,
+        queried_prices: list[tuple[str, Timestamp]],
+        method: CostBasisMethod,
+) -> None:
+    events = _mixed_history()
     _add_rule(database, HistoryEventType.SPEND)
     _add_rule(
         database=database,
@@ -830,6 +860,106 @@ def test_crashed_pass_resumes_from_committed_progress(
         )
     assert process_cost_basis(database, database.msg_aggregator) is True
     assert _rows(database) == resumed_rows
+
+
+def _checkpoint_timestamps(database: DBHandler) -> list[int]:
+    with database.conn.read_ctx() as cursor:
+        return [row[0] for row in cursor.execute(
+            'SELECT timestamp FROM cost_basis_checkpoints ORDER BY timestamp',
+        )]
+
+
+def _process_counting_applied(database: DBHandler) -> list[int]:
+    """Process the cost basis and return the timestamps of the events the pass applied."""
+    applied: list[int] = []
+    apply = _CostBasisPass.apply
+
+    def counting_apply(
+            self: _CostBasisPass,
+            event: HistoryBaseEntry,
+            next_event: HistoryBaseEntry | None,
+            treat_eth2_as_eth: bool,
+    ) -> None:
+        applied.append(event.timestamp)
+        apply(self, event=event, next_event=next_event, treat_eth2_as_eth=treat_eth2_as_eth)
+
+    with patch.object(_CostBasisPass, 'apply', counting_apply):
+        assert process_cost_basis(database, database.msg_aggregator) is True
+
+    return applied
+
+
+@pytest.mark.parametrize('method', list(CostBasisMethod))
+@pytest.mark.usefixtures('queried_prices')
+def test_pass_resumes_from_the_last_checkpoint_before_the_stale_events(
+        database: DBHandler,
+        method: CostBasisMethod,
+) -> None:
+    with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', 1):
+        identifiers = _process(database=database, method=method, events=_mixed_history())
+        # none between the two sides of the swap at 2, and the last one after the last event
+        assert _checkpoint_timestamps(database) == [2000, 3000, 4000, 5000, 6000, 6001]
+
+        with database.user_write() as write_cursor:
+            DBHistoryEvents(database).add_history_event(
+                write_cursor=write_cursor,
+                event=_event(at=7, amount='0.25', event_type=HistoryEventType.SPEND),
+            )
+        assert _process_counting_applied(database) == [7000]
+
+        with database.user_write() as write_cursor:
+            write_cursor.execute(
+                'UPDATE history_events SET amount = ? WHERE identifier = ?',
+                ('2', int(identifiers[4])),
+            )
+            write_cursor.executemany(
+                'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+                [
+                    (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, '4000'),
+                    (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value, '1'),
+                ],
+            )
+        assert _process_counting_applied(database) == [4000, 5000, 6000, 7000]
+        assert _checkpoint_timestamps(database) == [2000, 3000, 4000, 5000, 6000, 7000, 7001]
+        resumed_rows = _rows(database)
+
+        with database.user_write() as write_cursor:  # compare against a pass from scratch
+            write_cursor.execute('DELETE FROM event_cost_basis')
+            write_cursor.execute('DELETE FROM cost_basis_checkpoints')
+            write_cursor.execute(
+                'DELETE FROM key_value_cache WHERE name = ?',
+                (DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS.value,),
+            )
+        assert _process_counting_applied(database) == [1000, 2000, 2000, 3000, 4000, 5000, 6000, 7000]  # noqa: E501
+        assert _rows(database) == resumed_rows
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_rule_change_marks_the_cost_basis_stale_from_the_first_event_it_affects(
+        database: DBHandler,
+) -> None:
+    def stale_from_ts() -> str | None:
+        with database.conn.read_ctx() as cursor:
+            return database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            )
+
+    _, first_fee, second_fee = _process(database=database, method=CostBasisMethod.FIFO, events=[
+        _event(at=1, amount='2', event_type=HistoryEventType.RECEIVE),
+        _event(at=4, amount='1', event_type=HistoryEventType.SPEND, event_subtype=HistoryEventSubType.FEE),  # noqa: E501
+        _event(at=5, amount='1', event_type=HistoryEventType.SPEND, event_subtype=HistoryEventSubType.FEE),  # noqa: E501
+    ])
+    assert stale_from_ts() is None
+    _add_rule(database, HistoryEventType.SPEND, HistoryEventSubType.FEE, event_ids=[int(second_fee)])  # noqa: E501
+    assert stale_from_ts() == '5000'
+    _add_rule(database, HistoryEventType.SPEND, HistoryEventSubType.FEE)
+    assert stale_from_ts() == '4000'
+
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    _add_rule(database, HistoryEventType.DEPOSIT)  # no event of the type, so nothing is stale
+    assert stale_from_ts() is None
+    assert _spend_row(database, first_fee)[1] == FVal(3000)
 
 
 def test_spend_with_invalid_amount_includes_event_details_in_error(

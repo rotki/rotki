@@ -120,7 +120,7 @@ class AssetAcquisitionHeapElement(NamedTuple):
     For HIFO, the amount of the acquisition is used although negated so the
     acquisition with the highest amount comes first.
     """
-    priority: FVal  # This is only used by heapq algorithm and not accessed from our code
+    priority: FVal | int  # This is only used by heapq algorithm and not accessed from our code
     acquisition_event: AssetAcquisitionEvent
 
     def __str__(self) -> str:
@@ -133,11 +133,16 @@ class BaseCostBasisMethod(ABC):
         self._acquisitions_heap: list[AssetAcquisitionHeapElement] = []
 
     @abstractmethod
-    def add_in_event(self, acquisition: AssetAcquisitionEvent) -> None:
+    def add_in_event(self, acquisition: AssetAcquisitionEvent, order: int | None = None) -> None:
         """
         The core method. Should be implemented by subclasses.
         This method takes a new acquisition and decides where to insert it
         and thus determines the PnL order.
+
+        `order` is the position of the acquisition among all acquisitions, for an acquisition
+        that is added later than it was made, e.g. when it moves between pools. Methods that
+        consume by arrival use it instead of the arrival counter. A pool must be fed either
+        always or never with it, since the two orders are not comparable.
         """
 
     def processing_iterator(self) -> Iterator[AssetAcquisitionEvent]:
@@ -325,9 +330,9 @@ class FIFOCostBasisMethod(BaseCostBasisMethod):
         super().__init__()
         self._count = ZERO
 
-    def add_in_event(self, acquisition: AssetAcquisitionEvent) -> None:
+    def add_in_event(self, acquisition: AssetAcquisitionEvent, order: int | None = None) -> None:
         """Adds an acquisition to the `_acquisitions_heap` using a counter to achieve the FIFO order."""  # noqa: E501
-        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeapElement(self._count, acquisition))  # noqa: E501
+        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeapElement(self._count if order is None else order, acquisition))  # noqa: E501
         self._count += 1
 
 
@@ -340,9 +345,9 @@ class LIFOCostBasisMethod(BaseCostBasisMethod):
         super().__init__()
         self._count = ZERO
 
-    def add_in_event(self, acquisition: AssetAcquisitionEvent) -> None:
+    def add_in_event(self, acquisition: AssetAcquisitionEvent, order: int | None = None) -> None:
         """Adds an acquisition to the `_acquisitions_heap` using a negated counter to achieve the LIFO order."""  # noqa: E501
-        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeapElement(-self._count, acquisition))  # noqa: E501
+        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeapElement(-(self._count if order is None else order), acquisition))  # noqa: E501
         self._count += 1
 
 
@@ -351,7 +356,7 @@ class HIFOCostBasisMethod(BaseCostBasisMethod):
     Accounting in HIFO (highest-in-first-out) method.
     https://www.investopedia.com/terms/h/hifo.asp
     """
-    def add_in_event(self, acquisition: AssetAcquisitionEvent) -> None:
+    def add_in_event(self, acquisition: AssetAcquisitionEvent, order: int | None = None) -> None:
         """
         Adds an acquisition to the `_acquisitions_heap` using the negated rate
         of the acquisition to achieve the HIFO order.
@@ -381,7 +386,7 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
         # the current total cost basis of the asset
         self.current_total_acb = ZERO
 
-    def add_in_event(self, acquisition: AssetAcquisitionEvent) -> None:
+    def add_in_event(self, acquisition: AssetAcquisitionEvent, order: int | None = None) -> None:
         """
         Adds an acquisition to the `_acquisitions_heap` in order of time seen.
 
@@ -393,7 +398,7 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
         """
         heapq.heappush(
             self._acquisitions_heap,
-            AssetAcquisitionHeapElement(self._count, acquisition),
+            AssetAcquisitionHeapElement(self._count if order is None else order, acquisition),
         )
         self.current_total_acb += acquisition.amount * acquisition.rate
         self.current_amount += acquisition.amount

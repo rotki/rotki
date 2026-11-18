@@ -198,6 +198,7 @@ TABLES_AT_INIT = [
     'eth_validators_data_cache',
     'event_metrics',
     'event_cost_basis',
+    'cost_basis_checkpoints',
     'ignored_actions',
     'nfts',
     'history_events',
