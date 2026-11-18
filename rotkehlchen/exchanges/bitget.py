@@ -92,11 +92,9 @@ def _is_futures_access_rejection(error: RemoteError) -> bool:
 
 
 class BitgetSymbol(NamedTuple):
-    """A spot trading pair with Bitget's raw coin names and their resolved assets."""
+    """The coins of a spot trading pair as Bitget names them."""
     base_coin: str
     quote_coin: str
-    base_asset: AssetWithOracles
-    quote_asset: AssetWithOracles
 
 
 class Bitget(ExchangeInterface, SignatureGeneratorMixin):
@@ -121,7 +119,6 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
         )
         self.passphrase = passphrase
         self.base_uri = BITGET_BASE_URL
-        self.symbols: dict[str, BitgetSymbol] = {}
         self.session.headers.update({
             'ACCESS-KEY': self.api_key,
             'ACCESS-PASSPHRASE': self.passphrase,
@@ -179,6 +176,11 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
                 cause=FailureCause.BAD_DATA,
             ) from e
 
+        if not isinstance(response_data, dict):
+            raise RemoteError(
+                f'Bitget request at {request_url} returned unexpected JSON {response_data}',
+                cause=FailureCause.BAD_DATA,
+            )
         if response.status_code != HTTPStatus.OK:
             raise RemoteError(
                 f'Bitget request at {request_url} failed with HTTP status '
@@ -199,21 +201,30 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
         return response_data['data']
 
     def first_connection(self) -> None:
-        if self.first_connection_made:
-            return
-
-        raw_symbols = self._api_query('/api/v2/spot/public/symbols')
-        for entry in raw_symbols:
-            try:
-                self.symbols[entry['symbol']] = BitgetSymbol(
-                    base_coin=(base_coin := entry['baseCoin']),
-                    quote_coin=(quote_coin := entry['quoteCoin']),
-                    base_asset=asset_from_bitget(base_coin),
-                    quote_asset=asset_from_bitget(quote_coin),
-                )
-            except (KeyError, UnknownAsset, UnsupportedAsset):
-                continue
         self.first_connection_made = True
+
+    def _query_symbols(self) -> dict[str, BitgetSymbol]:
+        """Query the listed spot pairs.
+
+        Queried on every history sync rather than cached for the session, since a fill in a
+        pair listed after the first query would otherwise be skipped while its range is
+        still marked as queried. Assets are resolved per fill, so a pair with a coin rotki
+        does not know is kept and its fills report the unknown asset to the user.
+        """
+        symbols = {}
+        for entry in self._api_query('/api/v2/spot/public/symbols'):
+            try:
+                symbols[entry['symbol']] = BitgetSymbol(
+                    base_coin=entry['baseCoin'],
+                    quote_coin=entry['quoteCoin'],
+                )
+            except KeyError as e:
+                log.error(
+                    'Skipping Bitget spot symbol with missing key',
+                    entry=entry,
+                    error=str(e),
+                )
+        return symbols
 
     def validate_api_key(self) -> ApiKeyCheck:
         try:
@@ -304,12 +315,21 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
                 entries = page
                 next_id = entries[-1].get(id_key) if len(entries) != 0 else None
             results.extend(entries)
-            if len(entries) < BITGET_MAX_RESULTS or next_id is None:
+            if (
+                    len(entries) < BITGET_MAX_RESULTS or
+                    next_id is None or
+                    next_id == query_options.get('idLessThan')
+            ):
                 break
             query_options['idLessThan'] = next_id
         return results
 
-    def _query_traded_symbols(self, start_ts: Timestamp, end_ts: Timestamp) -> list[str]:
+    def _query_traded_symbols(
+            self,
+            symbols: dict[str, BitgetSymbol],
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> list[str]:
         """Return the spot symbols the account may have traded between the given timestamps.
 
         Bitget's classic fills endpoint requires a symbol, and querying every listed pair
@@ -329,17 +349,20 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
             ) if 'coin' in entry
         }
         return [
-            symbol for symbol, info in self.symbols.items()
+            symbol for symbol, info in symbols.items()
             if info.base_coin in traded_coins and info.quote_coin in traded_coins
         ]
 
-    def _deserialize_spot_trade(self, entry: dict[str, Any]) -> list[SwapEvent]:
+    def _deserialize_spot_trade(
+            self,
+            entry: dict[str, Any],
+            symbol_info: BitgetSymbol,
+    ) -> list[SwapEvent]:
         """May raise DeserializationError, KeyError, UnknownAsset, UnsupportedAsset, ValueError."""
-        symbol_info = self.symbols[entry['symbol']]
         spend, receive = get_swap_spend_receive(
             is_buy=deserialize_trade_type_is_buy(entry['side']),
-            base_asset=symbol_info.base_asset,
-            quote_asset=symbol_info.quote_asset,
+            base_asset=asset_from_bitget(symbol_info.base_coin),
+            quote_asset=asset_from_bitget(symbol_info.quote_coin),
             amount=deserialize_fval(entry['size']),
             rate=deserialize_price(entry['priceAvg']),
         )
@@ -367,13 +390,13 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
             end_ts: Timestamp,
             event_queue: HistoryEventQueue | None,
     ) -> list[SwapEvent]:
-        self.first_connection()
+        symbols = self._query_symbols()
         events: list[SwapEvent] = []
         for window_start, window_end in self._history_windows(
                 Timestamp(max(start_ts, ts_now() - BITGET_MAX_HISTORY_WINDOW)), end_ts,
         ):
             page_events: list[SwapEvent] = []
-            for symbol in self._query_traded_symbols(window_start, window_end):
+            for symbol in self._query_traded_symbols(symbols, window_start, window_end):
                 for entry in self._paginated_query(
                         '/api/v2/spot/trade/fills',
                         {
@@ -384,8 +407,10 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
                         'tradeId',
                 ):
                     try:
-                        page_events.extend(self._deserialize_spot_trade(entry))
-                    except (DeserializationError, KeyError, UnknownAsset, UnsupportedAsset, ValueError) as e:  # noqa: E501
+                        page_events.extend(self._deserialize_spot_trade(entry, symbols[symbol]))
+                    except UnknownAsset as e:
+                        self.send_unknown_asset_message(e.identifier, 'trade')
+                    except (DeserializationError, KeyError, UnsupportedAsset, ValueError) as e:
                         log.error('Failed to deserialize Bitget trade %s due to %s', entry, e)
             if event_queue is None:
                 events.extend(page_events)
@@ -455,7 +480,9 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
                             transaction_id=entry.get('tradeId'),
                         ),
                     ))
-                except (DeserializationError, KeyError, UnknownAsset, UnsupportedAsset, ValueError) as e:  # noqa: E501
+                except UnknownAsset as e:
+                    self.send_unknown_asset_message(e.identifier, 'asset movement')
+                except (DeserializationError, KeyError, UnsupportedAsset, ValueError) as e:
                     log.error('Failed to deserialize Bitget movement %s due to %s', entry, e)
         return events
 
@@ -536,7 +563,9 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
                             f'{entry.get("marginMode", "")} futures position'
                         ),
                     ))
-                except (DeserializationError, KeyError, UnknownAsset, UnsupportedAsset, ValueError) as e:  # noqa: E501
+                except UnknownAsset as e:
+                    self.send_unknown_asset_message(e.identifier, 'margin position')
+                except (DeserializationError, KeyError, UnsupportedAsset, ValueError) as e:
                     log.error(
                         'Failed to deserialize Bitget margin position %s due to %s', entry, e,
                     )

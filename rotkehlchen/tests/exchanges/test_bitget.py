@@ -203,10 +203,89 @@ def test_paginated_query(bitget_exchange: Bitget) -> None:
     ]
 
 
+def test_paginated_query_stops_on_repeated_cursor(bitget_exchange: Bitget) -> None:
+    """A page whose cursor does not advance ends the pagination instead of looping forever"""
+    with patch.object(
+        bitget_exchange,
+        '_api_query',
+        side_effect=[(page := [{'tradeId': '1'}] * BITGET_MAX_RESULTS), page, []],
+    ) as query:
+        assert bitget_exchange._paginated_query(
+            endpoint='/api/v2/spot/trade/fills',
+            options={'symbol': 'ETHUSDC'},
+            id_key='tradeId',
+        ) == page * 2
+
+    assert query.call_count == 2
+
+
+def test_api_query_rejects_non_object_json(bitget_exchange: Bitget) -> None:
+    with (
+        patch.object(
+            bitget_exchange.session,
+            'get',
+            return_value=MockResponse(HTTPStatus.BAD_GATEWAY, '["unexpected"]'),
+        ),
+        pytest.raises(RemoteError) as exc_info,
+    ):
+        bitget_exchange._api_query('/api/v2/spot/account/assets')
+
+    assert exc_info.value.cause == FailureCause.BAD_DATA
+
+
+@pytest.mark.freeze_time('2023-11-14 23:00:00 GMT')
+def test_spot_trade_with_unknown_asset_is_reported(bitget_exchange: Bitget) -> None:
+    """A pair with a coin rotki does not know is still queried and its fills are reported"""
+    def mock_paginated_query(
+            endpoint: str,
+            options: dict[str, Any],
+            id_key: str,
+    ) -> list[dict[str, Any]]:
+        if endpoint == '/api/v2/spot/account/bills':
+            return [{'coin': 'NOTACOIN'}, {'coin': 'USDT'}]
+        return [{
+            'symbol': 'NOTACOINUSDT',
+            'side': 'buy',
+            'size': '2',
+            'priceAvg': '3',
+            'cTime': '1700000000000',
+            'tradeId': 'trade-1',
+        }]
+
+    with (
+        patch.object(
+            bitget_exchange,
+            '_query_symbols',
+            return_value={'NOTACOINUSDT': BitgetSymbol(base_coin='NOTACOIN', quote_coin='USDT')},
+        ),
+        patch.object(bitget_exchange, '_paginated_query', side_effect=mock_paginated_query),
+        patch.object(bitget_exchange, 'send_unknown_asset_message') as unknown_asset_message,
+    ):
+        assert bitget_exchange._query_spot_trades(
+            start_ts=Timestamp(1699999900),
+            end_ts=Timestamp(1700000100),
+            event_queue=None,
+        ) == []
+
+    unknown_asset_message.assert_called_once_with('NOTACOIN', 'trade')
+
+
+def test_query_symbols_keeps_unknown_coins(bitget_exchange: Bitget) -> None:
+    with patch.object(bitget_exchange, '_api_query', return_value=[
+        {'symbol': 'NOTACOINUSDT', 'baseCoin': 'NOTACOIN', 'quoteCoin': 'USDT'},
+        {'symbol': 'BROKEN'},
+    ]):
+        assert bitget_exchange._query_symbols() == {
+            'NOTACOINUSDT': BitgetSymbol(base_coin='NOTACOIN', quote_coin='USDT'),
+        }
+
+
 @pytest.mark.freeze_time('2025-01-01 00:00:00 GMT')
 def test_spot_trades_are_limited_to_available_history(bitget_exchange: Bitget) -> None:
-    bitget_exchange.first_connection_made = True
-    with patch.object(bitget_exchange, '_paginated_query', return_value=[]) as query:
+    with (
+        patch.object(bitget_exchange, '_query_symbols', return_value={}),
+        patch.object(bitget_exchange, '_paginated_query', return_value=[]) as query,
+    ):
         assert bitget_exchange._query_spot_trades(
             start_ts=BITGET_LAUNCH_TS,
             end_ts=Timestamp(ts_now()),
@@ -221,26 +300,10 @@ def test_spot_trades_are_limited_to_available_history(bitget_exchange: Bitget) -
 @pytest.mark.freeze_time('2023-11-14 23:00:00 GMT')
 def test_query_spot_trades(bitget_exchange: Bitget) -> None:
     """Fills are queried per symbol, only for pairs whose coins both appear in trade bills"""
-    bitget_exchange.first_connection_made = True
-    bitget_exchange.symbols = {
-        'ETHUSDC': BitgetSymbol(
-            base_coin='ETH',
-            quote_coin='USDC',
-            base_asset=A_ETH.resolve_to_asset_with_oracles(),
-            quote_asset=A_USDC.resolve_to_asset_with_oracles(),
-        ),
-        'BTCUSDT': BitgetSymbol(
-            base_coin='BTC',
-            quote_coin='USDT',
-            base_asset=A_BTC.resolve_to_asset_with_oracles(),
-            quote_asset=A_USDT.resolve_to_asset_with_oracles(),
-        ),
-        'BTCUSDC': BitgetSymbol(
-            base_coin='BTC',
-            quote_coin='USDC',
-            base_asset=A_BTC.resolve_to_asset_with_oracles(),
-            quote_asset=A_USDC.resolve_to_asset_with_oracles(),
-        ),
+    symbols = {
+        'ETHUSDC': BitgetSymbol(base_coin='ETH', quote_coin='USDC'),
+        'BTCUSDT': BitgetSymbol(base_coin='BTC', quote_coin='USDT'),
+        'BTCUSDC': BitgetSymbol(base_coin='BTC', quote_coin='USDC'),
     }
     queries: list[tuple[str, dict[str, Any]]] = []
 
@@ -262,7 +325,10 @@ def test_query_spot_trades(bitget_exchange: Bitget) -> None:
             'feeDetail': {'feeCoin': 'USDC', 'totalFee': '-0.1'},
         }]
 
-    with patch.object(bitget_exchange, '_paginated_query', side_effect=mock_paginated_query):
+    with (
+        patch.object(bitget_exchange, '_query_symbols', return_value=symbols),
+        patch.object(bitget_exchange, '_paginated_query', side_effect=mock_paginated_query),
+    ):
         events = bitget_exchange._query_spot_trades(
             start_ts=(start_ts := Timestamp(1699999900)),
             end_ts=(end_ts := Timestamp(1700000100)),
