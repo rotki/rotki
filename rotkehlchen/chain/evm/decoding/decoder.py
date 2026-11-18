@@ -71,6 +71,8 @@ from rotkehlchen.chain.evm.decoding.pendle.constants import (
     PENDLE_SUPPORTED_CHAINS_WITHOUT_ETHEREUM,
 )
 from rotkehlchen.chain.evm.decoding.pendle.decoder import PendleCommonDecoder
+from rotkehlchen.chain.evm.decoding.privacy_pools.constants import PRIVACY_POOLS_DEPLOYMENTS
+from rotkehlchen.chain.evm.decoding.privacy_pools.decoder import PrivacyPoolsDecoder
 from rotkehlchen.chain.evm.decoding.rainbow.constants import RAINBOW_SUPPORTED_CHAINS
 from rotkehlchen.chain.evm.decoding.rainbow.decoder import RainbowDecoder
 from rotkehlchen.chain.evm.decoding.relay.constants import RELAY_SOLVERS
@@ -318,6 +320,13 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 decoder_class=RelayDecoder,
                 rules=rules,
                 decoder_args=(relay_solvers,),
+            )
+        if (privacy_pools_deployment := PRIVACY_POOLS_DEPLOYMENTS.get(self.evm_inquirer.chain_id)) is not None:  # noqa: E501
+            self._add_single_decoder(
+                class_name='PrivacyPools',
+                decoder_class=PrivacyPoolsDecoder,
+                rules=rules,
+                decoder_args=(privacy_pools_deployment,),
             )
         if self.evm_inquirer.chain_id in SUPPORTED_BEEFY_CHAINS:
             self._add_single_decoder(class_name='BeefyFinance', decoder_class=BeefyFinanceCommonDecoder, rules=rules)  # noqa: E501

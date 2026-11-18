@@ -11,6 +11,7 @@ Changelog
 * :feature:`8019` Balances > Exchanges can now show the assets of one account at a time when an exchange has several connected accounts. Pick the account from the account menu above the table, which shows each account's value and share and marks one whose last refresh failed, or pick All accounts for the whole exchange.
 * :feature:`-` Creating or restoring a profile now takes fewer steps. Your main currency is suggested from your system language, you can show the password while typing, and the form points out exactly which fields still need fixing.
 * :feature:`13622` Lido CSM node operator activity is now decoded, including operator management, validator keys, bond deposits, rewards, and claims.
+* :feature:`10442` Privacy Pools deposits, withdrawals and ragequits are now decoded on Ethereum, Optimism, Arbitrum One, Base and BNB Chain.
 * :feature:`11048` Ethena staking on Ethereum is now supported. Staking USDe for sUSDe and ENA for sENA, starting the cooldown to unstake them and unstaking once it has passed are decoded, including through a Safe. USDe and ENA that are in the cooldown or waiting to be unstaked now count towards balances, with the date they can be unstaked.
 * :feature:`10999` Deposits into and withdrawals from the Spark Savings V2 vaults (spUSDC, spUSDT, spETH and spPYUSD) on Ethereum are now decoded in transaction history.
 * :feature:`12629` OKX balances now include assets in Simple Earn flexible savings and in active On-chain Earn orders, along with the earnings of those orders that are not paid out yet.
