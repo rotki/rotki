@@ -180,6 +180,7 @@ export const backendMappingKeys = [
   'backend_mappings.trade_location.bitcoin_cash',
   'backend_mappings.trade_location.bitcoinde',
   'backend_mappings.trade_location.bitfinex',
+  'backend_mappings.trade_location.bitget',
   'backend_mappings.trade_location.bitmex',
   'backend_mappings.trade_location.bitpanda',
   'backend_mappings.trade_location.bitstamp',

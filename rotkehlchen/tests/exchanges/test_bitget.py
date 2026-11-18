@@ -12,6 +12,7 @@ from rotkehlchen.exchanges.bitget import (
     BITGET_MAX_HISTORY_WINDOW,
     BITGET_MAX_RESULTS,
     Bitget,
+    BitgetSymbol,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -125,6 +126,50 @@ def test_query_balances(bitget_exchange: Bitget) -> None:
     }
 
 
+def _futures_rejection(endpoint: str) -> RemoteError:
+    return RemoteError(
+        f'Bitget request at {endpoint} failed with error code 40014: Incorrect permissions',
+        cause=FailureCause.REMOTE_REJECTED,
+    )
+
+
+def test_query_balances_skips_rejected_futures(bitget_exchange: Bitget) -> None:
+    """A key without futures permission still reports its spot balances"""
+    def mock_api_query(endpoint: str, options: dict[str, Any] | None = None) -> Any:
+        if endpoint == '/api/v2/mix/account/accounts':
+            raise _futures_rejection(endpoint)
+        return [{'coin': 'BTC', 'available': '1', 'frozen': '0', 'locked': '0'}]
+
+    with (
+        patch.object(bitget_exchange, '_api_query', side_effect=mock_api_query) as query,
+        patch.object(
+            bitget_exchange,
+            'balances_from_amounts',
+            side_effect=lambda amounts: amounts,
+        ),
+    ):
+        balances, message, cause = bitget_exchange.query_balances()
+
+    assert query.call_count == 4  # spot + every futures product type
+    assert (message, cause) == ('', None)
+    assert balances == {A_BTC.resolve_to_asset_with_oracles(): FVal('1')}
+
+
+def test_query_balances_fails_on_futures_network_error(bitget_exchange: Bitget) -> None:
+    """A futures request that could not be answered fails the query instead of underreporting"""
+    def mock_api_query(endpoint: str, options: dict[str, Any] | None = None) -> Any:
+        if endpoint == '/api/v2/mix/account/accounts':
+            raise RemoteError('timeout', cause=FailureCause.NETWORK)
+        return [{'coin': 'BTC', 'available': '1', 'frozen': '0', 'locked': '0'}]
+
+    with patch.object(bitget_exchange, '_api_query', side_effect=mock_api_query):
+        balances, message, cause = bitget_exchange.query_balances()
+
+    assert balances is None
+    assert 'timeout' in message
+    assert cause == FailureCause.NETWORK
+
+
 def test_paginated_query(bitget_exchange: Bitget) -> None:
     first_page = [{'tradeId': str(idx)} for idx in range(BITGET_MAX_RESULTS)]
     last_page = [{'tradeId': 'last'}]
@@ -175,23 +220,73 @@ def test_spot_trades_are_limited_to_available_history(bitget_exchange: Bitget) -
 
 @pytest.mark.freeze_time('2023-11-14 23:00:00 GMT')
 def test_query_spot_trades(bitget_exchange: Bitget) -> None:
+    """Fills are queried per symbol, only for pairs whose coins both appear in trade bills"""
     bitget_exchange.first_connection_made = True
-    bitget_exchange.symbols = {'ETHUSDC': (A_ETH.resolve_to_asset_with_oracles(), A_USDC.resolve_to_asset_with_oracles())}  # noqa: E501
-    with patch.object(bitget_exchange, '_paginated_query', return_value=[{
-        'symbol': 'ETHUSDC',
-        'side': 'buy',
-        'size': '2',
-        'priceAvg': '3',
-        'cTime': '1700000000000',
-        'tradeId': 'trade-1',
-        'feeDetail': {'feeCoin': 'USDC', 'totalFee': '-0.1'},
-    }]):
+    bitget_exchange.symbols = {
+        'ETHUSDC': BitgetSymbol(
+            base_coin='ETH',
+            quote_coin='USDC',
+            base_asset=A_ETH.resolve_to_asset_with_oracles(),
+            quote_asset=A_USDC.resolve_to_asset_with_oracles(),
+        ),
+        'BTCUSDT': BitgetSymbol(
+            base_coin='BTC',
+            quote_coin='USDT',
+            base_asset=A_BTC.resolve_to_asset_with_oracles(),
+            quote_asset=A_USDT.resolve_to_asset_with_oracles(),
+        ),
+        'BTCUSDC': BitgetSymbol(
+            base_coin='BTC',
+            quote_coin='USDC',
+            base_asset=A_BTC.resolve_to_asset_with_oracles(),
+            quote_asset=A_USDC.resolve_to_asset_with_oracles(),
+        ),
+    }
+    queries: list[tuple[str, dict[str, Any]]] = []
+
+    def mock_paginated_query(
+            endpoint: str,
+            options: dict[str, Any],
+            id_key: str,
+    ) -> list[dict[str, Any]]:
+        queries.append((endpoint, options))
+        if endpoint == '/api/v2/spot/account/bills':
+            return [{'coin': 'ETH', 'billId': '2'}, {'coin': 'USDC', 'billId': '1'}]
+        return [{
+            'symbol': 'ETHUSDC',
+            'side': 'buy',
+            'size': '2',
+            'priceAvg': '3',
+            'cTime': '1700000000000',
+            'tradeId': 'trade-1',
+            'feeDetail': {'feeCoin': 'USDC', 'totalFee': '-0.1'},
+        }]
+
+    with patch.object(bitget_exchange, '_paginated_query', side_effect=mock_paginated_query):
         events = bitget_exchange._query_spot_trades(
-            start_ts=Timestamp(1699999900),
-            end_ts=Timestamp(1700000100),
+            start_ts=(start_ts := Timestamp(1699999900)),
+            end_ts=(end_ts := Timestamp(1700000100)),
             event_queue=None,
         )
 
+    assert queries == [
+        (
+            '/api/v2/spot/account/bills',
+            {
+                'groupType': 'transaction',
+                'startTime': ts_sec_to_ms(start_ts),
+                'endTime': ts_sec_to_ms(end_ts),
+            },
+        ),
+        (
+            '/api/v2/spot/trade/fills',
+            {
+                'symbol': 'ETHUSDC',
+                'startTime': ts_sec_to_ms(start_ts),
+                'endTime': ts_sec_to_ms(end_ts),
+            },
+        ),
+    ]
     assert [(event.event_subtype, event.asset, event.amount) for event in events] == [
         (HistoryEventSubType.SPEND, A_USDC, FVal(6)),
         (HistoryEventSubType.RECEIVE, A_ETH, FVal(2)),
@@ -291,3 +386,35 @@ def test_query_margin_history_before_available_range(bitget_exchange: Bitget) ->
         ) == []
 
     query.assert_not_called()
+
+
+@pytest.mark.freeze_time('2025-01-01 00:00:00 GMT')
+def test_query_margin_history_skips_rejected_product_types(bitget_exchange: Bitget) -> None:
+    """A rejected futures product type does not stop the remaining ones from being queried"""
+    with patch.object(
+        bitget_exchange,
+        '_paginated_query',
+        side_effect=[_futures_rejection('history-position'), [], []],
+    ) as query:
+        assert bitget_exchange.query_online_margin_history(
+            start_ts=BITGET_LAUNCH_TS,
+            end_ts=Timestamp(ts_now()),
+        ) == []
+
+    assert query.call_count == 3
+
+
+@pytest.mark.freeze_time('2025-01-01 00:00:00 GMT')
+def test_query_margin_history_propagates_network_error(bitget_exchange: Bitget) -> None:
+    with (
+        patch.object(
+            bitget_exchange,
+            '_paginated_query',
+            side_effect=RemoteError('timeout', cause=FailureCause.NETWORK),
+        ),
+        pytest.raises(RemoteError, match='timeout'),
+    ):
+        bitget_exchange.query_online_margin_history(
+            start_ts=BITGET_LAUNCH_TS,
+            end_ts=Timestamp(ts_now()),
+        )

@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Final, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 from urllib.parse import urlencode
 
 import requests
@@ -70,6 +70,7 @@ BITGET_PRODUCT_TYPES: Final = ('USDT-FUTURES', 'COIN-FUTURES', 'USDC-FUTURES')
 
 BitgetEndpoint = Literal[
     '/api/v2/spot/account/assets',
+    '/api/v2/spot/account/bills',
     '/api/v2/spot/public/symbols',
     '/api/v2/spot/trade/fills',
     '/api/v2/spot/wallet/deposit-records',
@@ -77,6 +78,25 @@ BitgetEndpoint = Literal[
     '/api/v2/mix/account/accounts',
     '/api/v2/mix/position/history-position',
 ]
+
+
+def _is_futures_access_rejection(error: RemoteError) -> bool:
+    """Whether Bitget refused a futures request rather than failing to answer it.
+
+    A key with only spot read permission, or an account that never opened futures, gets
+    its futures requests refused while spot requests succeed. Those refusals must not throw
+    away spot balances or block spot and wallet history. Network, rate limit and malformed
+    response failures still propagate so a partial result is never reported as complete.
+    """
+    return error.cause in (FailureCause.REMOTE_REJECTED, FailureCause.AUTH)
+
+
+class BitgetSymbol(NamedTuple):
+    """A spot trading pair with Bitget's raw coin names and their resolved assets."""
+    base_coin: str
+    quote_coin: str
+    base_asset: AssetWithOracles
+    quote_asset: AssetWithOracles
 
 
 class Bitget(ExchangeInterface, SignatureGeneratorMixin):
@@ -101,7 +121,7 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
         )
         self.passphrase = passphrase
         self.base_uri = BITGET_BASE_URL
-        self.symbols: dict[str, tuple[AssetWithOracles, AssetWithOracles]] = {}
+        self.symbols: dict[str, BitgetSymbol] = {}
         self.session.headers.update({
             'ACCESS-KEY': self.api_key,
             'ACCESS-PASSPHRASE': self.passphrase,
@@ -185,9 +205,11 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
         raw_symbols = self._api_query('/api/v2/spot/public/symbols')
         for entry in raw_symbols:
             try:
-                self.symbols[entry['symbol']] = (
-                    asset_from_bitget(entry['baseCoin']),
-                    asset_from_bitget(entry['quoteCoin']),
+                self.symbols[entry['symbol']] = BitgetSymbol(
+                    base_coin=(base_coin := entry['baseCoin']),
+                    quote_coin=(quote_coin := entry['quoteCoin']),
+                    base_asset=asset_from_bitget(base_coin),
+                    quote_asset=asset_from_bitget(quote_coin),
                 )
             except (KeyError, UnknownAsset, UnsupportedAsset):
                 continue
@@ -231,10 +253,20 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
                 amount_keys=('available', 'frozen', 'locked'),
             )
             for product_type in BITGET_PRODUCT_TYPES:
-                futures_accounts = self._api_query(
-                    '/api/v2/mix/account/accounts',
-                    {'productType': product_type},
-                )
+                try:
+                    futures_accounts = self._api_query(
+                        '/api/v2/mix/account/accounts',
+                        {'productType': product_type},
+                    )
+                except RemoteError as e:
+                    if not _is_futures_access_rejection(e):
+                        raise
+                    log.warning(
+                        'Skipping Bitget futures balances since the request was rejected',
+                        product_type=product_type,
+                        error=str(e),
+                    )
+                    continue
                 for account in futures_accounts:
                     if account.get('assetMode') == 'union':
                         self._add_balance_entries(
@@ -277,6 +309,58 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
             query_options['idLessThan'] = next_id
         return results
 
+    def _query_traded_symbols(self, start_ts: Timestamp, end_ts: Timestamp) -> list[str]:
+        """Return the spot symbols the account may have traded between the given timestamps.
+
+        Bitget's classic fills endpoint requires a symbol, and querying every listed pair
+        would cost hundreds of requests per sync. The trade entries of the account bills
+        name every coin whose balance a fill changed, so only pairs of those coins can
+        have fills in the range.
+        """
+        traded_coins = {
+            entry['coin'] for entry in self._paginated_query(
+                '/api/v2/spot/account/bills',
+                {
+                    'groupType': 'transaction',
+                    'startTime': ts_sec_to_ms(start_ts),
+                    'endTime': ts_sec_to_ms(end_ts),
+                },
+                'billId',
+            ) if 'coin' in entry
+        }
+        return [
+            symbol for symbol, info in self.symbols.items()
+            if info.base_coin in traded_coins and info.quote_coin in traded_coins
+        ]
+
+    def _deserialize_spot_trade(self, entry: dict[str, Any]) -> list[SwapEvent]:
+        """May raise DeserializationError, KeyError, UnknownAsset, UnsupportedAsset, ValueError."""
+        symbol_info = self.symbols[entry['symbol']]
+        spend, receive = get_swap_spend_receive(
+            is_buy=deserialize_trade_type_is_buy(entry['side']),
+            base_asset=symbol_info.base_asset,
+            quote_asset=symbol_info.quote_asset,
+            amount=deserialize_fval(entry['size']),
+            rate=deserialize_price(entry['priceAvg']),
+        )
+        fee_data = entry.get('feeDetail') or {}
+        fee_amount = abs(deserialize_fval(fee_data.get('totalFee', '0')))
+        return create_swap_events(
+            timestamp=TimestampMS(int(entry['cTime'])),
+            location=self.location,
+            location_label=self.name,
+            spend=spend,
+            receive=receive,
+            fee=AssetAmount(
+                asset=asset_from_bitget(fee_data['feeCoin']),
+                amount=fee_amount,
+            ) if fee_amount != ZERO else None,
+            group_identifier=create_group_identifier_from_unique_id(
+                location=self.location,
+                unique_id=entry['tradeId'],
+            ),
+        )
+
     def _query_spot_trades(
             self,
             start_ts: Timestamp,
@@ -289,42 +373,20 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
                 Timestamp(max(start_ts, ts_now() - BITGET_MAX_HISTORY_WINDOW)), end_ts,
         ):
             page_events: list[SwapEvent] = []
-            for entry in self._paginated_query(
-                    '/api/v2/spot/trade/fills',
-                    {
-                        'startTime': ts_sec_to_ms(window_start),
-                        'endTime': ts_sec_to_ms(window_end),
-                    },
-                    'tradeId',
-            ):
-                try:
-                    base_asset, quote_asset = self.symbols[entry['symbol']]
-                    spend, receive = get_swap_spend_receive(
-                        is_buy=deserialize_trade_type_is_buy(entry['side']),
-                        base_asset=base_asset,
-                        quote_asset=quote_asset,
-                        amount=deserialize_fval(entry['size']),
-                        rate=deserialize_price(entry['priceAvg']),
-                    )
-                    fee_data = entry.get('feeDetail') or {}
-                    fee_amount = abs(deserialize_fval(fee_data.get('totalFee', '0')))
-                    page_events.extend(create_swap_events(
-                        timestamp=TimestampMS(int(entry['cTime'])),
-                        location=self.location,
-                        location_label=self.name,
-                        spend=spend,
-                        receive=receive,
-                        fee=AssetAmount(
-                            asset=asset_from_bitget(fee_data['feeCoin']),
-                            amount=fee_amount,
-                        ) if fee_amount != ZERO else None,
-                        group_identifier=create_group_identifier_from_unique_id(
-                            location=self.location,
-                            unique_id=entry['tradeId'],
-                        ),
-                    ))
-                except (DeserializationError, KeyError, UnknownAsset, UnsupportedAsset, ValueError) as e:  # noqa: E501
-                    log.error('Failed to deserialize Bitget trade %s due to %s', entry, e)
+            for symbol in self._query_traded_symbols(window_start, window_end):
+                for entry in self._paginated_query(
+                        '/api/v2/spot/trade/fills',
+                        {
+                            'symbol': symbol,
+                            'startTime': ts_sec_to_ms(window_start),
+                            'endTime': ts_sec_to_ms(window_end),
+                        },
+                        'tradeId',
+                ):
+                    try:
+                        page_events.extend(self._deserialize_spot_trade(entry))
+                    except (DeserializationError, KeyError, UnknownAsset, UnsupportedAsset, ValueError) as e:  # noqa: E501
+                        log.error('Failed to deserialize Bitget trade %s due to %s', entry, e)
             if event_queue is None:
                 events.extend(page_events)
             else:
@@ -434,7 +496,8 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
             return positions
 
         for product_type in BITGET_PRODUCT_TYPES:
-            for entry in self._paginated_query(
+            try:
+                entries = self._paginated_query(
                     '/api/v2/mix/position/history-position',
                     {
                         'productType': product_type,
@@ -442,7 +505,17 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
                         'endTime': ts_sec_to_ms(end_ts),
                     },
                     'positionId',
-            ):
+                )
+            except RemoteError as e:
+                if not _is_futures_access_rejection(e):
+                    raise
+                log.warning(
+                    'Skipping Bitget futures position history since the request was rejected',
+                    product_type=product_type,
+                    error=str(e),
+                )
+                continue
+            for entry in entries:
                 try:
                     fee = abs(deserialize_fval(entry.get('openFee', '0'))) + abs(
                         deserialize_fval(entry.get('closeFee', '0')),
