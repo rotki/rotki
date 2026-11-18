@@ -5,6 +5,10 @@ Rotki is a privacy-focused portfolio and tax application. The Python backend liv
 See the [contribution guide](https://docs.rotki.com/contribution-guides/contribute-as-developer.html)
 for general setup and contributor help.
 
+Backend map: `api/` (REST and WebSocket), `chain/` (blockchain integrations and decoders),
+`exchanges/`, `accounting/`, `db/` (user DB), `globaldb/` (assets DB), `history/` (history events,
+the core abstraction for all activity), and `externalapis/`.
+
 ## Commands and validation
 
 Use free-threaded Python 3.14 and `uv` for the backend, and the toolchain pinned in
@@ -42,6 +46,7 @@ rules resolve paths relative to the workspace. Add a workspace script if one is 
 | Run full lint checks | `pnpm run lint` (ESLint) or `pnpm run lint:all` (also checks styles and linked i18n keys) | 10 min |
 | Build / typecheck | `pnpm run build` (includes typecheck) / `pnpm run typecheck` | 10 min |
 | Run Playwright | `pnpm run test:e2e:shards` or `pnpm run test:e2e` | Background |
+| Recover a broken frontend build | `pnpm run clean:modules`, then `pnpm install --frozen-lockfile` | 10 min |
 
 - Set explicit timeouts. Run long-lived commands, E2E suites, Electron packaging builds, and Docker
   builds in the background. A timed-out check is incomplete; rerun it with a larger budget or in
@@ -74,7 +79,8 @@ rules resolve paths relative to the workspace. Add a workspace script if one is 
 - To enable local CDP, set `DEBUGGER_PORT=9222` in the ignored `frontend/app/.env.development.local`,
   not the tracked `.env`. Run `pnpm dev` and attach at `http://127.0.0.1:9222`. This does not apply to
   web mode. Use a separate free port for each instance; the dev instance allocator does not assign
-  it for you. Keep any MCP client configuration outside the repo. The flag is wired through
+  it for you. Keep it below the instance port block (which starts at 13000, see
+  `frontend/scripts/dev-instance/port-registry.ts`) and away from 9229 (node `--inspect`). Keep any MCP client configuration outside the repo. The flag is wired through
   `frontend/scripts/dev/prerequisites.ts`, `frontend/scripts/dev/services.ts`, and `frontend/app/scripts/serve.ts`.
 - The backend is single-user, so unsharded E2E uses one Playwright worker. The sharded runner starts
   isolated stacks and defaults to four shards. Use `pnpm run test:e2e:shards -n 2 <spec-path>` for a
@@ -112,13 +118,24 @@ rules resolve paths relative to the workspace. Add a workspace script if one is 
   explicit types; use `ref<T>()` with no argument for an initially undefined ref.
 - Prefer guards, `instanceof`, `satisfies`, or discriminated unions over `as`. For dynamic lookup,
   consider a typed `Map`. Use one justified assertion at an unavoidable boundary; never go through
-  `any` to bypass lint. For new enum-like types use an `as const` object and a derived union.
+  `any` to bypass lint. For new enum-like types use an `as const` object and a derived union;
+  leave existing enums alone unless you are already reworking that file.
+- VueUse helpers (`get`, `set`, ...) and `useI18n` are auto-imported.
 - Use `startPromise()` from `@shared/utils` for intentionally unawaited promises, not `void`.
 - Call `useI18n({ useScope: 'global' })` where translations are needed; don't pass `t` into a composable.
 - Destructure props with inline defaults (factories for arrays/objects). For composable inputs prefer
   `MaybeRefOrGetter<T>` and normalize with `toValue()`. Pass a destructured prop as a getter to a
   watcher or `MaybeRefOrGetter<T>` input; use `toRef(() => prop)` if the consumer requires a ref.
   Use `onWatcherCleanup()` rather than the watcher callback's cleanup parameter.
+
+  ```typescript
+  const { category, chains } = defineProps<{ category: string; chains: string[] }>();
+  watch(() => category, ...);              // ✅ getter
+  useMyComposable(() => category);         // ✅ MaybeRefOrGetter input
+  useOtherComposable(toRef(() => chains)); // ✅ only when the consumer requires a Ref
+  useMyComposable(toRef(() => category));  // ❌ toRef where a getter suffices
+  const { category } = toRefs(props);      // ❌ destructure the props directly instead
+  ```
 - Use typed tuples for `defineEmits`, `defineModel` for `v-model`, `useTemplateRef` for template refs,
   and `$attrs` in templates instead of `useAttrs`.
 - Return composable refs as read-only. If a ref must be writable for `v-model`, give the returned
@@ -137,16 +154,26 @@ Use a summary, optional `@remarks`, and `@param`/`@returns` only where useful. E
 sentinels, or absent values rather than repeating types. If using `@param` tags, document **all**
 parameters; put a note in `@remarks` if only one needs explanation. Don't document a `void` return.
 
+A `//` that explains code is a defect in the code and a last resort, so it should be rare. A
+comment stranded mid-function (especially in a watcher) means the block wants extracting into a
+named, documented function. Never shorten a comment just to satisfy lint, and don't add tags that
+repeat the name and type: `@param chain - the chain` is worse than no tag.
+
 ### Frontend tests
 
 - Co-locate `.spec.ts` files with the source they test. Shared Vitest/Vue Test Utils fixtures,
   mocks, and setup live in `frontend/app/tests/unit/` and are imported via `@test/*`. Playwright specs,
   page objects, and helpers live in `frontend/app/tests/e2e/`.
+- **Component tests are not optional.** `.vue` coverage lags far behind `.ts`; the remaining gap
+  is logic inside SFCs. Put the component's contract in the `describe`/`it` titles, not in a header
+  comment.
 - **Test components with behavior.** Extract complex logic into a composable and test it directly,
   then test the SFC's public wiring: rendering given props, event payloads, dependency calls, and
   enabled/disabled states. Avoid `wrapper.vm` internals, child class lists, and mount-only tests.
   Pure display wrappers need no dedicated test. Name the behavior in `it('should ...')`.
 - Use scoped, kebab-case `data-testid` selectors (e.g. `service-key-api-key`), not DOM paths or BEM.
+  `@rotki/ui-library` has no test-id prop; a `data-testid` on a `Rui*` component falls through
+  `$attrs` onto its root element.
   In E2E, locate rows by fixture content, not index; a virtualized DOM row count is not a data count.
 - The shared setup unmounts `mount`/`shallowMount` wrappers; clean up manual `createApp` mounts
   yourself. Stub teleporting overlays with a slot pass-through when testing content. Stub layout
@@ -160,8 +187,11 @@ parameters; put a note in `@remarks` if only one needs explanation. Don't docume
   deep equality. `useI18n()` is already mocked with the `@test/i18n` echo translator.
 - **Verify new or changed behavior tests with a negative control.** Temporarily revert the
   specific fix or invert its guard, confirm the intended assertion fails, then restore and rerun.
-  A negative control validates only the test it turns red; prioritize “not called” and “nothing
-  emitted” checks.
+  Break the specific line, not the whole feature, and check that the *right* tests failed and only
+  those. A negative control that still passes is a finding: the test cannot fail, usually because
+  its assertion agrees with both the correct and the broken behavior, so re-aim it. A negative
+  control validates only the test it turns red; prioritize “not called” and “nothing emitted”
+  checks, since an exception thrown mid-handler produces exactly that.
 
 ### Settings and navigation
 
@@ -172,8 +202,9 @@ anchor. Files below are relative to `frontend/app/src/modules/settings/` unless 
    key in the right `settings-registry-{general,frontend,session,accounting}.ts` slice. Add a
    `search` block for searchable values, with `msg.$t(...)` keys. Use one representative key for
    a composite's shared anchor and search entry.
-2. Use `SettingsOption` (`setting`, `frontendSetting`, or `sessionSetting`) for updates and
-   feedback. Wrap the row with `SettingsItem setting-key="..."` so the DOM id comes from the registry.
+2. Render the value with a typed control from `controls/` (`SettingSwitch`, `SettingNumber`,
+   `SettingText`, `SettingSelect`, `SettingMultiSelect`, `SettingToggleNumber`); each takes a
+   registry `setting` key and persists through `useSettingModel` with save/error feedback. Wrap the row with `SettingsItem setting-key="..."` so the DOM id comes from the registry.
    Do not duplicate the anchor in the template.
 3. Put action/info rows with no registry value in `settings-actions.ts`. Use `action-key` on
    `SettingsItem`, or `anchorId(key)` on a bare section. Add new search categories to
@@ -186,6 +217,13 @@ Routes are file-based. Navigate by the generated typed name (e.g. `'/balances/bl
 never override `name`. Declare `definePage({ meta: { nav: ... } })` for the drawer, search, and tabs.
 The shape is in [`types/router.d.ts`](frontend/app/src/types/router.d.ts).
 
+```ts
+definePage({ meta: { nav: {
+  labelKey: msg.$t('navigation_menu.balances_sub.blockchain_balances'), icon: 'lu-blockchain',
+  parent: '/balances/', order: 10, drawer: 'balances-blockchain',
+} } });
+```
+
 - Set `labelKey` and `icon`. Set `drawer` to show an entry in the drawer (also its `data-key`
   selector). Root entries need `section` and `order`; children need `parent` and `order`. The
   parent must have `nav`; its label is the search breadcrumb.
@@ -193,6 +231,12 @@ The shape is in [`types/router.d.ts`](frontend/app/src/types/router.d.ts).
   to opt out and `keywords` for translated aliases.
 - Use `useChildNavTabs(parent)` for all children of a parent or `useNavTabs(names)` for an ordered
   subset. Settings tab metadata also comes from `nav`; per-setting search comes from the registry.
+
+Key files: `settings-channels.ts` (registry builders/types), `use-settings-search.ts` (search
+deriver), `use-settings-highlight.ts` (scroll/highlight), `controls/SettingsItem.vue`,
+`SettingCategory.vue`, `frontend/app/src/message-key.ts` (`msg.$t`); for navigation,
+`modules/shell/layout/use-navigation-menu.ts`, `use-route-search.ts`, `use-nav-tabs.ts`, and
+`modules/shell/components/GlobalSearch.vue`.
 
 ## Backend development
 
@@ -227,12 +271,16 @@ The shape is in [`types/router.d.ts`](frontend/app/src/types/router.d.ts).
   Extend `EvmDecoderInterface` or its protocol-specific base, name the class `ModulenameDecoder`,
   and implement `counterparties()` with identifiers defined in `constants.py`.
 - Prefer `addresses_to_decoders()` for identifiable contracts. Use broad `decoding_rules()` only
-  when address/topic/input selector scoping is unavailable. When building an `ActionItem`, match
+  when address/topic/input selector scoping is unavailable: they run for every log of every
+  transaction on the chain. `enricher_rules()` post-process already decoded events to add
+  information this module can decode. When building an `ActionItem`, match
   using fields available in `context.tx_log`; scan `context.all_logs` only to correlate distinct logs.
 - Use the event helpers in `rotkehlchen/chain/evm/decoding/base.py` for location, timestamp conversion,
   and sequence indexes. `EvmEvent` stores `amount` and the transaction hash as `tx_ref`; its default
   group identifier includes the chain ID. Use `make_event_from_transaction()` at most once per log
-  to avoid duplicate indexes. Check `rotkehlchen/accounting/constants.py` for event classifications.
+  to avoid duplicate indexes. Timestamps are in milliseconds and `location_label` is the
+  initiator. The event type/subtype/counterparty combination determines how an event is shown in
+  the UI and treated in accounting; check `rotkehlchen/accounting/constants.py` for classifications.
 - Verify address literals with `to_checksum_address()`. `string_to_evm_address()` is typing-only;
   it does not checksum or validate a string. Copy exact on-chain hex for topics, selectors, hashes,
   and signatures; validate with `bytes.fromhex(value.removeprefix('0x')).hex() == value.removeprefix('0x').lower()`.
@@ -267,7 +315,9 @@ The scripts are `upgrades/vN_vN+1.py` under the respective DB package. The packa
 `rotkehlchen/data/global.db` must stay schema-compatible: a version mismatch breaks asset resets
 and packaged-DB consistency checks.
 
-**Repackaging after an assets update is not a schema upgrade.** Use the target `rotki/assets`
+**Repackaging after an assets update is not a schema upgrade.** The symptom is
+`test_asset_updates_consistency_with_packaged_db` failing as soon as a new assets update lands on
+the target branch; repackaging is the fix. Use the target `rotki/assets`
 branch's `updates/<N>/updates.sql` (runtime selects the branch via `GITHUB_BASE_REF`, `master` in
 production). Set `TARGET_VERSION`, `ASSETS_BRANCH`, and `OUTPUT_DIR`, then run:
 
@@ -300,6 +350,13 @@ Event changes invalidate balances via `rotkehlchen/db/history_events.py`. Start 
 - Cite exact file/line locations, a concrete triggering condition, and its effect. Verify that
   existing guards don't already handle it. Check error logging, edge cases, hot-path work, and
   tests; use the VCR requirements above for added or changed backend tests.
+- Don't claim error handling or validation is missing until you have traced the called function,
+  and don't assume it is present because of a type annotation.
+- Check dict/list access on external or API data for `KeyError`/`IndexError` and missing or
+  malformed fields. Error paths log with context; an empty `except`/`else` says why it is empty.
+- Check edge cases: empty inputs, `None`, zero amounts, bounds.
+- Look for redundant comparisons, repeated work in loops, and unnecessary queries on hot paths.
+- Check spacing and punctuation in user-facing strings and error messages.
 
 ## Commits and PRs
 
