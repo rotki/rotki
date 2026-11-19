@@ -287,6 +287,7 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
         fullname = _save_hash_mappings_get_fullname(name=decoded_data[0], tx_hash=context.transaction.tx_hash)  # noqa: E501
         logged_cost = from_wei(decoded_data[1])  # logs msg.value for new controller and actual cost for old  # noqa: E501
         expires = decoded_data[2]
+        is_old_controller = context.tx_log.address == ENS_REGISTRAR_CONTROLLER_1
 
         refund_event_idx, refund_amount, checked_cost = None, ZERO, logged_cost
         renewal_event_found = False
@@ -295,7 +296,7 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
                 refund_event_idx = idx
                 refund_amount = event.amount
 
-                if context.tx_log.address == ENS_REGISTRAR_CONTROLLER_1:  # old controller
+                if is_old_controller:
                     # old controller logs actual cost after refund
                     checked_cost = logged_cost + refund_amount
                 # else new controller logs the msg.value, which is the brutto value
@@ -303,7 +304,13 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
             # Find the transfer event which should be before the name renewed event.
             # Some extensions go through a wrapper contract that forwards the payment to the
             # registrar controller emitting this event, so also match the transaction recipient.
-            if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.amount == checked_cost and event.address in {context.tx_log.address, context.transaction.to_address}:  # noqa: E501
+            if (
+                event.event_type == HistoryEventType.SPEND and
+                event.asset == A_ETH and
+                event.amount == checked_cost and
+                event.amount >= refund_amount and
+                event.address in {context.tx_log.address, context.transaction.to_address}
+            ):
                 event.amount -= refund_amount  # get correct amount spent
                 event.event_type = HistoryEventType.RENEW
                 event.event_subtype = HistoryEventSubType.NONE
@@ -312,22 +319,29 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
                 event.extra_data = {'name': fullname, 'expires': expires}
                 renewal_event_found = True
 
+        consume_refund = renewal_event_found
         if renewal_event_found is False and self.base.is_tracked(context.transaction.from_address):
+            if not is_old_controller and ZERO < refund_amount <= logged_cost:
+                renewal_amount = logged_cost - refund_amount
+                consume_refund = True
+            else:
+                renewal_amount = logged_cost
+
             context.decoded_events.append(self.base.make_event_from_transaction(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
                 event_type=HistoryEventType.RENEW,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
-                amount=logged_cost - refund_amount,
+                amount=renewal_amount,
                 location_label=context.transaction.from_address,
-                notes=f'Renew ENS name {fullname} for {logged_cost - refund_amount} ETH until {self.timestamp_to_date(expires)}',  # noqa: E501
+                notes=f'Renew ENS name {fullname} for {renewal_amount} ETH until {self.timestamp_to_date(expires)}',  # noqa: E501
                 counterparty=CPT_ENS,
                 address=context.transaction.to_address,
                 extra_data={'name': fullname, 'expires': expires},
             ))
 
-        if refund_event_idx is not None:
+        if consume_refund and refund_event_idx is not None:
             del context.decoded_events[refund_event_idx]
         return DEFAULT_EVM_DECODING_OUTPUT
 
