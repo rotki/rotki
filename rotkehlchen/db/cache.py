@@ -3,10 +3,13 @@ from typing import TYPE_CHECKING, Any, Final, TypedDict, Unpack, overload
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.constants import EXTRAINTERNALTXPREFIX
 from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, SolanaAddress, Timestamp
+from rotkehlchen.utils.misc import ts_now_in_ms
 from rotkehlchen.utils.mixins.enums import Enum
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX: Final = 'ignored_ced_'
 
@@ -239,3 +242,43 @@ class DBCacheDynamic(Enum):
     @property
     def deserialize_callback(self) -> Callable[[str], int | Timestamp | ChecksumEvmAddress | None]:
         return self.value[1]
+
+
+def mark_stale_from_ts(
+        write_cursor: DBCursor,
+        from_ts: int,
+        include_balances: bool = True,
+        include_cost_basis: bool = True,
+) -> None:
+    """Record stale processing markers and monotonically advance their modification timestamps.
+
+    The `*_FROM_TS` keys only move backward (to the minimum timestamp); the `*_MODIFICATION_TS`
+    keys always advance by at least 1 even within the same millisecond so an in-flight pass
+    cannot miss a concurrent invalidation.
+    """
+    from_ts_keys: list[str] = []
+    mod_ts_keys: list[str] = []
+    if include_balances:
+        from_ts_keys.append(DBCacheStatic.STALE_BALANCES_FROM_TS.value)
+        mod_ts_keys.append(DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value)
+    if include_cost_basis:
+        from_ts_keys.append(DBCacheStatic.STALE_COST_BASIS_FROM_TS.value)
+        mod_ts_keys.append(DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value)
+    if len(from_ts_keys) == 0:
+        return
+
+    from_ts_str = str(from_ts)
+    write_cursor.executemany(
+        'INSERT INTO key_value_cache(name, value) VALUES (?, ?) '
+        'ON CONFLICT(name) DO UPDATE SET value = excluded.value '
+        'WHERE CAST(key_value_cache.value AS INTEGER) > CAST(excluded.value AS INTEGER)',
+        [(key, from_ts_str) for key in from_ts_keys],
+    )
+    now_str = str(ts_now_in_ms())
+    write_cursor.executemany(
+        'INSERT INTO key_value_cache(name, value) VALUES (?, ?) '
+        'ON CONFLICT(name) DO UPDATE SET value = CAST('
+        'MAX(CAST(key_value_cache.value AS INTEGER) + 1, CAST(excluded.value AS INTEGER)) '
+        'AS TEXT)',
+        [(key, now_str) for key in mod_ts_keys],
+    )

@@ -1,4 +1,5 @@
 import json
+import threading
 from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import patch
 
@@ -6,10 +7,13 @@ import pytest
 
 from rotkehlchen.accounting.cost_basis.lots import BucketLots
 from rotkehlchen.accounting.cost_basis.pnl import get_unprocessed_from_ts
+from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_USD
 from rotkehlchen.db.accounting_rules import DBAccountingRules
-from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.cache import DBCacheStatic, mark_stale_from_ts
+from rotkehlchen.db.constants import HistoryMappingState
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
@@ -18,20 +22,33 @@ from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.types import DataIssueFilters
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.locations.constants import LOCATION_ETHEREUM, LOCATION_KRAKEN
-from rotkehlchen.tasks.cost_basis import _CostBasisPass, process_cost_basis
+from rotkehlchen.locations.constants import (
+    LOCATION_BITCOIN,
+    LOCATION_ETHEREUM,
+    LOCATION_KRAKEN,
+    LOCATION_OPTIMISM,
+)
+from rotkehlchen.tasks.cost_basis import _CostBasisPass, _Rules, process_cost_basis
 from rotkehlchen.tasks.historical_balances import Bucket, process_historical_balances
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import CostBasisMethod, Price, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    CostBasisMethod,
+    Price,
+    SupportedBlockchain,
+    Timestamp,
+    TimestampMS,
+)
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Sequence
 
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash
 
@@ -520,10 +537,17 @@ def test_unfinished_pass_keeps_progress_until_events_change(database: DBHandler)
             event: HistoryBaseEntry,
             next_event: HistoryBaseEntry | None,
             treat_eth2_as_eth: bool,
+            swap_fee_events: Sequence[HistoryBaseEntry] = (),
     ) -> None:
         if event.timestamp == 3000:
             raise AssertionError('the pass dies at the third event')
-        apply(self, event=event, next_event=next_event, treat_eth2_as_eth=treat_eth2_as_eth)
+        apply(
+            self,
+            event=event,
+            next_event=next_event,
+            treat_eth2_as_eth=treat_eth2_as_eth,
+            swap_fee_events=swap_fee_events,
+        )
 
     with (
         patch('rotkehlchen.tasks.cost_basis.COST_BASIS_BATCH_SIZE', 1),
@@ -803,10 +827,17 @@ def test_crashed_pass_resumes_from_committed_progress(
             event: HistoryBaseEntry,
             next_event: HistoryBaseEntry | None,
             treat_eth2_as_eth: bool,
+            swap_fee_events: Sequence[HistoryBaseEntry] = (),
     ) -> None:
         if event.timestamp == 5000:
             raise RuntimeError('deterministic crash after committed batches')
-        apply(self, event=event, next_event=next_event, treat_eth2_as_eth=treat_eth2_as_eth)
+        apply(
+            self,
+            event=event,
+            next_event=next_event,
+            treat_eth2_as_eth=treat_eth2_as_eth,
+            swap_fee_events=swap_fee_events,
+        )
 
     with (
         patch('rotkehlchen.tasks.cost_basis.COST_BASIS_BATCH_SIZE', 2),
@@ -879,9 +910,16 @@ def _process_counting_applied(database: DBHandler) -> list[int]:
             event: HistoryBaseEntry,
             next_event: HistoryBaseEntry | None,
             treat_eth2_as_eth: bool,
+            swap_fee_events: Sequence[HistoryBaseEntry] = (),
     ) -> None:
         applied.append(event.timestamp)
-        apply(self, event=event, next_event=next_event, treat_eth2_as_eth=treat_eth2_as_eth)
+        apply(
+            self,
+            event=event,
+            next_event=next_event,
+            treat_eth2_as_eth=treat_eth2_as_eth,
+            swap_fee_events=swap_fee_events,
+        )
 
     with patch.object(_CostBasisPass, 'apply', counting_apply):
         assert process_cost_basis(database, database.msg_aggregator) is True
@@ -1063,3 +1101,568 @@ def test_negative_amount_event_records_data_issue_and_blocks_only_its_bucket(
     )
     assert len(issues) == 1
     assert issues[0].state == IssueState.RESOLVED
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_setting_and_rule_changes_during_startup_keep_stale_marker(
+        database: DBHandler,
+) -> None:
+    """A setting or rule change after startup reads inputs must not be cleared on completion."""
+    _add_rule(database, HistoryEventType.SPEND)
+    with database.user_write() as write_cursor:
+        database.set_settings(
+            write_cursor,
+            ModifiableDBSettings(cost_basis_method=CostBasisMethod.FIFO),
+        )
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=_three_lots_and_a_spend(),
+        )
+
+    # Synchronized method change between get_settings() (which already read FIFO) and _Rules().
+    entered_rules = threading.Event()
+    method_changed = threading.Event()
+    original_rules_init = _Rules.__init__
+
+    def paused_rules_init(
+            self: _Rules,
+            database: DBHandler,
+            cursor: DBCursor | None = None,
+    ) -> None:
+        entered_rules.set()
+        assert method_changed.wait(timeout=5)
+        original_rules_init(self, database, cursor=cursor)
+
+    def switch_method_concurrently() -> None:
+        assert entered_rules.wait(timeout=5)
+        _set_method(database, CostBasisMethod.LIFO)
+        method_changed.set()
+
+    worker = threading.Thread(target=switch_method_concurrently)
+    worker.start()
+    try:
+        with patch.object(_Rules, '__init__', paused_rules_init):
+            assert process_cost_basis(database, database.msg_aggregator) is True
+    finally:
+        worker.join(timeout=5)
+    assert not worker.is_alive()
+
+    with database.conn.read_ctx() as cursor:
+        assert get_unprocessed_from_ts(cursor=cursor, database=database) == 0
+
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert {row[-1] for row in _rows(database)} == {'lifo'}
+    with database.conn.read_ctx() as cursor:
+        assert get_unprocessed_from_ts(cursor=cursor, database=database) is None
+
+    # Synchronized rule change between _Rules() (which already read old rules) and reading events.
+    with database.user_write() as write_cursor:
+        fee_id = DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=_event(
+                at=5,
+                amount='0.5',
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.FEE,
+            ),
+        )
+    assert fee_id is not None
+
+    entered_events = threading.Event()
+    rule_changed = threading.Event()
+    original_get_events = DBHistoryEvents.get_history_events_internal
+
+    def paused_get_events(
+            self: DBHistoryEvents,
+            cursor: DBCursor,
+            filter_query: Any,
+    ) -> list[HistoryBaseEntry]:
+        entered_events.set()
+        assert rule_changed.wait(timeout=5)
+        return original_get_events(self, cursor=cursor, filter_query=filter_query)
+
+    def add_rule_concurrently() -> None:
+        assert entered_events.wait(timeout=5)
+        _add_rule(
+            database=database,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            event_ids=[fee_id],
+        )
+        rule_changed.set()
+
+    worker = threading.Thread(target=add_rule_concurrently)
+    worker.start()
+    try:
+        with patch.object(DBHistoryEvents, 'get_history_events_internal', paused_get_events):
+            assert process_cost_basis(database, database.msg_aggregator) is True
+    finally:
+        worker.join(timeout=5)
+    assert not worker.is_alive()
+
+    with database.conn.read_ctx() as cursor:
+        assert get_unprocessed_from_ts(cursor=cursor, database=database) == 5000
+
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    # LIFO consumed 1 ETH @ 2000 and 0.5 ETH @ 3000 at t=4, leaving 0.5 ETH @ 3000 for t=5 @ 5000.
+    assert _spend_row(database, str(fee_id))[1] == FVal(1000)
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_edit_history_event_invalidates_cost_basis_on_all_consumed_fields(
+        database: DBHandler,
+) -> None:
+    events_db = DBHistoryEvents(database)
+    evm_event = _event(
+        at=3,
+        amount='1',
+        event_type=HistoryEventType.TRANSFER,
+        address=TEST_ADDR2,
+    )
+    btc_event = HistoryEvent(
+        group_identifier='btc_tx',
+        sequence_index=0,
+        timestamp=TimestampMS(4000),
+        location=LOCATION_BITCOIN,
+        location_label='bc1q000000000000000000000000000000000000000',
+        asset=A_BTC,
+        amount=FVal('1'),
+        notes='Transfer 1 BTC to 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+        event_type=HistoryEventType.TRANSFER,
+        event_subtype=HistoryEventSubType.NONE,
+    )
+    evm_id_str, btc_id_str = _process(
+        database=database,
+        method=CostBasisMethod.FIFO,
+        events=[evm_event, btc_event],
+    )
+    evm_event.identifier = int(evm_id_str)
+    btc_event.identifier = int(btc_id_str)
+
+    def stale_from_ts() -> str | None:
+        with database.conn.read_ctx() as cursor:
+            return database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            )
+
+    def edit_and_assert_stale(
+            event: EvmEvent | HistoryEvent,
+            expected_from_ts: str | None,
+    ) -> None:
+        with database.user_write() as write_cursor:
+            events_db.edit_history_event(
+                write_cursor=write_cursor,
+                event=event,
+                mapping_state=HistoryMappingState.CUSTOMIZED,
+            )
+        assert stale_from_ts() == expected_from_ts
+        if expected_from_ts is not None:
+            assert process_cost_basis(database, database.msg_aggregator) is True
+            assert stale_from_ts() is None
+
+    # Non-Bitcoin notes-only edit does not invalidate.
+    evm_event.notes = 'plain memo'
+    edit_and_assert_stale(evm_event, None)
+
+    # Counterparty-only edit invalidates.
+    evm_event.counterparty = 'uniswap-v3'
+    edit_and_assert_stale(evm_event, '3000')
+
+    # Address-only edit invalidates.
+    evm_event.address = TEST_ADDR1
+    edit_and_assert_stale(evm_event, '3000')
+
+    # Location-only edit invalidates.
+    evm_event.location = LOCATION_OPTIMISM
+    edit_and_assert_stale(evm_event, '3000')
+
+    # Group identifier-only edit invalidates.
+    evm_event.group_identifier = 'edited_group'
+    edit_and_assert_stale(evm_event, '3000')
+
+    # Sequence index-only edit invalidates.
+    evm_event.sequence_index = 2
+    edit_and_assert_stale(evm_event, '3000')
+
+    # Moving timestamp forward still marks stale from the minimum of old and new timestamps.
+    evm_event.timestamp = TimestampMS(6000)
+    edit_and_assert_stale(evm_event, '3000')
+
+    # Moving timestamp backward marks stale from the new earlier timestamp.
+    evm_event.timestamp = TimestampMS(2000)
+    edit_and_assert_stale(evm_event, '2000')
+
+    # Bitcoin notes edit can change counterparty address extraction and invalidates.
+    btc_event.notes = 'Transfer 1 BTC to 1BoatSLRHtKNngkdXEeobR76b53LETtpyT'
+    edit_and_assert_stale(btc_event, '4000')
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_swap_fees_follow_include_fees_in_cost_basis(database: DBHandler) -> None:
+    """Swap fee legs fold into acquired basis when include_fees_in_cost_basis is enabled, and
+    are realized as standalone fee spends when disabled."""
+    tx_crypto = make_evm_tx_hash()
+    tx_fiat = make_evm_tx_hash()
+    acquired, spent, received, fee, fiat_spent, _, fiat_fee = _process(
+        database=database,
+        method=CostBasisMethod.FIFO,
+        include_crypto2crypto=True,
+        include_fees_in_cost_basis=True,
+        events=[
+            _event(at=1, amount='3', event_type=HistoryEventType.RECEIVE),
+            _event(
+                at=3,
+                amount='1',
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.SPEND,
+                tx_ref=tx_crypto,
+            ),
+            _event(
+                at=3,
+                amount='2000',
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                asset=A_DAI,
+                tx_ref=tx_crypto,
+                sequence_index=1,
+            ),
+            _event(
+                at=3,
+                amount='0.1',
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.FEE,
+                tx_ref=tx_crypto,
+                sequence_index=2,
+            ),
+            _event(
+                at=4,
+                amount='1',
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.SPEND,
+                tx_ref=tx_fiat,
+            ),
+            _event(
+                at=4,
+                amount='4000',
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                asset=A_USD,
+                tx_ref=tx_fiat,
+                sequence_index=1,
+            ),
+            _event(
+                at=4,
+                amount='0.1',
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.FEE,
+                tx_ref=tx_fiat,
+                sequence_index=2,
+            ),
+        ],
+    )
+    # 1 ETH ($2000) -> 2000 DAI with 0.1 ETH ($200) fee => $2200 DAI lot (1.1/DAI).
+    assert _spend_row(database, spent) == ([(acquired, FVal(1))], FVal(1000), FVal(1000), FVal(2000))  # noqa: E501
+    assert _rows(database, 'event_identifier, basis_per_unit, basis_source')[2] == (
+        int(received), '1.1', 'price_oracle',
+    )
+    assert _spend_row(database, fee) == (
+        [(acquired, FVal('0.1'))], FVal(0), FVal(100), FVal(1900),
+    )
+    # Selling 1 ETH for $4000 USD with 0.1 ETH ($400) fee => $3600 proceeds, $2600 realized PnL.
+    assert _spend_row(database, fiat_spent) == (
+        [(acquired, FVal(1))], FVal(2600), FVal(1000), FVal(900),
+    )
+    assert _spend_row(database, fiat_fee) == (
+        [(acquired, FVal('0.1'))], FVal(0), FVal(100), FVal(800),
+    )
+
+    # Toggling include_fees_in_cost_basis wipes and invalidates the materialized rows.
+    with database.user_write() as write_cursor:
+        database.set_settings(
+            write_cursor,
+            ModifiableDBSettings(include_fees_in_cost_basis=False),
+        )
+    assert _rows(database) == []
+    assert process_cost_basis(database, database.msg_aggregator) is True
+
+    # DAI lot is now $2000 (1/DAI), and fees realize expense (-value) + gain (value - basis).
+    assert _rows(database, 'event_identifier, basis_per_unit, basis_source')[2] == (
+        int(received), '1', 'price_oracle',
+    )
+    assert _spend_row(database, fee) == (
+        [(acquired, FVal('0.1'))], FVal(-100), FVal(100), FVal(1900),
+    )
+    assert _spend_row(database, fiat_spent) == (
+        [(acquired, FVal(1))], FVal(3000), FVal(1000), FVal(900),
+    )
+    assert _spend_row(database, fiat_fee) == (
+        [(acquired, FVal('0.1'))], FVal(-100), FVal(100), FVal(800),
+    )
+
+
+def test_eth2_pre_shapella_staking_reward_follows_withdrawal_setting(
+        database: DBHandler,
+) -> None:
+    """Pre-Shapella Kraken ETH2 staking rewards are skipped when withdrawal-time taxation is
+    enabled (matching legacy HistoryEvent.process), while non-Kraken rewards, post-Shapella
+    rewards, and ETH withdrawals still create lots."""
+    t_pre = Timestamp(SHAPPELA_TIMESTAMP - 1000)
+    t_post_reward = Timestamp(SHAPPELA_TIMESTAMP + 500)
+    t_withdrawal = Timestamp(SHAPPELA_TIMESTAMP + 1000)
+    t_spend = Timestamp(SHAPPELA_TIMESTAMP + 2000)
+    staking_prices = {
+        t_pre: Price(FVal(1000)),
+        t_post_reward: Price(FVal(1500)),
+        t_withdrawal: Price(FVal(2000)),
+        t_spend: Price(FVal(3000)),
+    }
+
+    def query_historical_price(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        if from_asset in (A_ETH, A_ETH2):
+            return staking_prices[timestamp]
+        raise NoPriceForGivenTimestamp(from_asset=from_asset, to_asset=to_asset, time=timestamp)
+
+    with database.user_write() as write_cursor:
+        database.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.ETHEREUM,
+                address=TEST_ADDR1,
+            )],
+        )
+
+    events: list[Any] = [
+        HistoryEvent(
+            group_identifier='pre_shapella_eth2_reward',
+            sequence_index=0,
+            timestamp=TimestampMS(t_pre * 1000),
+            location=LOCATION_ETHEREUM,
+            location_label=TEST_ADDR2,
+            asset=A_ETH2,
+            amount=FVal('1'),
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+        ),
+        HistoryEvent(
+            group_identifier='kraken_pre_shapella_reward',
+            sequence_index=0,
+            timestamp=TimestampMS(t_pre * 1000),
+            location=LOCATION_KRAKEN,
+            location_label='kraken',
+            asset=A_ETH2,
+            amount=FVal('1'),
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+        ),
+        HistoryEvent(
+            group_identifier='kraken_post_shapella_reward',
+            sequence_index=0,
+            timestamp=TimestampMS(t_post_reward * 1000),
+            location=LOCATION_KRAKEN,
+            location_label='kraken',
+            asset=A_ETH2,
+            amount=FVal('1'),
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+        ),
+        EthWithdrawalEvent(
+            validator_index=42,
+            timestamp=TimestampMS(t_withdrawal * 1000),
+            amount=FVal('1'),
+            withdrawal_address=TEST_ADDR1,
+            is_exit=False,
+        ),
+        HistoryEvent(
+            group_identifier='kraken_spend',
+            sequence_index=0,
+            timestamp=TimestampMS(t_spend * 1000),
+            location=LOCATION_KRAKEN,
+            location_label='kraken',
+            asset=A_ETH2,
+            amount=FVal('1'),
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+        ),
+        _event(
+            at=int(t_spend),
+            amount='1',
+            event_type=HistoryEventType.SPEND,
+        ),
+    ]
+
+    with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
+        historian.return_value.query_historical_price = query_historical_price
+        (
+            pre_eth_reward,
+            pre_kraken_reward,
+            post_kraken_reward,
+            withdrawal,
+            kraken_spend,
+            eth_spend,
+        ) = _process(
+            database=database,
+            method=CostBasisMethod.FIFO,
+            treat_eth2_as_eth=True,
+            taxfree_after_period=2500,
+            eth_staking_taxable_after_withdrawal_enabled=True,
+            events=events,
+        )
+
+        # Pre-Shapella Kraken reward is omitted; non-Kraken, post-Shapella, and withdrawal remain.
+        assert _rows(database, 'event_identifier, direction, basis_per_unit') == [
+            (int(pre_eth_reward), 'receive', '1000'),
+            (int(post_kraken_reward), 'receive', '1500'),
+            (int(withdrawal), 'receive', '2000'),
+            (int(eth_spend), 'spend', None),
+            (int(kraken_spend), 'spend', None),
+        ]
+        rows_by_id = {
+            row[0]: row[1:]
+            for row in _rows(
+                database,
+                'event_identifier, lots_consumed_json, realized_pnl, taxfree_pnl',
+            )
+        }
+        # Kraken spend consumes post-Shapella lot (held 1500s < 2500s => taxable $1500 gain).
+        lots, realized_pnl, taxfree_pnl = rows_by_id[int(kraken_spend)]
+        assert [
+            (lot['lot_id'], lot['acquired_at'], lot['taxable']) for lot in json.loads(lots)
+        ] == [(post_kraken_reward, t_post_reward, True)]
+        assert (realized_pnl, taxfree_pnl) == ('1500', '0')
+        # Withdrawal lot was held 1000s (< 2500s), so the gain is taxable against its $2000 basis.
+        lots, realized_pnl, taxfree_pnl = rows_by_id[int(eth_spend)]
+        assert [
+            (lot['lot_id'], lot['acquired_at'], lot['taxable']) for lot in json.loads(lots)
+        ] == [(withdrawal, t_withdrawal, True)]
+        assert (realized_pnl, taxfree_pnl) == ('1000', '0')
+
+        # Disabling the setting invalidates existing rows and materializes pre-Shapella Kraken.
+        with database.user_write() as write_cursor:
+            database.set_settings(
+                write_cursor,
+                ModifiableDBSettings(eth_staking_taxable_after_withdrawal_enabled=False),
+            )
+        assert _rows(database) == []
+        assert process_cost_basis(database, database.msg_aggregator) is True
+
+        assert _rows(database, 'event_identifier, direction, basis_per_unit') == [
+            (int(pre_kraken_reward), 'receive', '1000'),
+            (int(pre_eth_reward), 'receive', '1000'),
+            (int(post_kraken_reward), 'receive', '1500'),
+            (int(withdrawal), 'receive', '2000'),
+            (int(eth_spend), 'spend', None),
+            (int(kraken_spend), 'spend', None),
+        ]
+        rows_by_id = {
+            row[0]: row[1:]
+            for row in _rows(
+                database,
+                'event_identifier, lots_consumed_json, realized_pnl, taxfree_pnl',
+            )
+        }
+        # Pre-Shapella Kraken lot was held 3000s (> 2500s), so the $2000 gain is tax-free.
+        lots, realized_pnl, taxfree_pnl = rows_by_id[int(kraken_spend)]
+        assert [
+            (lot['lot_id'], lot['acquired_at'], lot['taxable']) for lot in json.loads(lots)
+        ] == [(pre_kraken_reward, t_pre, False)]
+        assert (realized_pnl, taxfree_pnl) == ('0', '2000')
+
+
+def test_mark_stale_from_ts_advances_modification_markers_monotonically(
+        database: DBHandler,
+) -> None:
+    """Repeated invalidations within the same millisecond still advance both modification markers,
+    while from_ts only moves backward."""
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE name IN (?, ?, ?, ?)',
+            (
+                DBCacheStatic.STALE_BALANCES_FROM_TS.value,
+                DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value,
+                DBCacheStatic.STALE_COST_BASIS_FROM_TS.value,
+                DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value,
+            ),
+        )
+
+    with patch('rotkehlchen.db.cache.ts_now_in_ms', return_value=1000):
+        with database.user_write() as write_cursor:
+            mark_stale_from_ts(write_cursor=write_cursor, from_ts=5000)
+        with database.user_write() as write_cursor:
+            mark_stale_from_ts(write_cursor=write_cursor, from_ts=7000)
+        with database.user_write() as write_cursor:
+            mark_stale_from_ts(write_cursor=write_cursor, from_ts=3000, include_balances=False)
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_caches(
+            cursor=cursor,
+            names=(
+                DBCacheStatic.STALE_BALANCES_FROM_TS,
+                DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
+                DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+                DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
+            ),
+        ) == ('5000', '1001', '3000', '1002')
+
+
+def test_repeated_append_only_passes_keep_bounded_checkpoints(database: DBHandler) -> None:
+    """Repeated incremental append-only passes replace the terminal checkpoint instead of
+    accumulating a snapshot per pass, while still keeping periodic interval checkpoints."""
+    def query_historical_price(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        return Price(FVal(1000 + int(timestamp)))
+
+    with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
+        historian.return_value.query_historical_price = query_historical_price
+        _process(
+            database=database,
+            method=CostBasisMethod.FIFO,
+            events=[_event(at=1, amount='1', event_type=HistoryEventType.RECEIVE)],
+        )
+        assert _checkpoint_timestamps(database) == [1001]
+
+        # With the default 10_000 interval, repeated single-event appends keep 1 checkpoint.
+        for second in range(2, 11):
+            with database.user_write() as write_cursor:
+                DBHistoryEvents(database).add_history_event(
+                    write_cursor=write_cursor,
+                    event=_event(at=second, amount='1', event_type=HistoryEventType.RECEIVE),
+                )
+            assert _process_counting_applied(database) == [second * 1000]
+            assert _checkpoint_timestamps(database) == [second * 1000 + 1]
+
+        # With a small interval of 3, checkpoints stay bounded to floor(N / 3) + 1.
+        with database.user_write() as write_cursor:
+            write_cursor.execute('DELETE FROM event_cost_basis')
+            write_cursor.execute('DELETE FROM cost_basis_checkpoints')
+            write_cursor.execute('DELETE FROM history_events')
+            write_cursor.execute(
+                'DELETE FROM key_value_cache WHERE name IN (?, ?, ?)',
+                (
+                    DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS.value,
+                    DBCacheStatic.STALE_COST_BASIS_FROM_TS.value,
+                    DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value,
+                ),
+            )
+
+        with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', 3):
+            for second in range(1, 11):
+                with database.user_write() as write_cursor:
+                    DBHistoryEvents(database).add_history_event(
+                        write_cursor=write_cursor,
+                        event=_event(at=second, amount='1', event_type=HistoryEventType.RECEIVE),
+                    )
+                assert _process_counting_applied(database) == [second * 1000]
+                assert len(_checkpoint_timestamps(database)) <= second // 3 + 1
+
+            assert _checkpoint_timestamps(database) == [3001, 6001, 9001, 10001]
+            incremental_rows = _rows(database)
+
+            with database.user_write() as write_cursor:
+                write_cursor.execute('DELETE FROM event_cost_basis')
+                write_cursor.execute('DELETE FROM cost_basis_checkpoints')
+                write_cursor.execute(
+                    'DELETE FROM key_value_cache WHERE name = ?',
+                    (DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS.value,),
+                )
+            assert process_cost_basis(database, database.msg_aggregator) is True
+            assert _rows(database) == incremental_rows

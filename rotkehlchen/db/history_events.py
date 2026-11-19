@@ -24,7 +24,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import (
     IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX,
     DBCacheDynamic,
-    DBCacheStatic,
+    mark_stale_from_ts,
 )
 from rotkehlchen.db.constants import (
     CHAIN_EVENT_FIELDS,
@@ -114,7 +114,7 @@ from rotkehlchen.types import (
     TimestampMS,
 )
 from rotkehlchen.user_messages import LocalDbProblem, UnknownAssetSeen
-from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now_in_ms, ts_sec_to_ms
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -416,40 +416,16 @@ class DBHistoryEvents:
     ) -> None:
         """Track earliest modified event timestamp and when modification occurred.
 
-        Updates two cache entries for the balances and the same two for the cost basis, in one
-        statement so that both pipelines always go stale together:
+        Updates two cache entries for the balances and the same two for the cost basis so that
+        both pipelines always go stale together:
         - STALE_*_FROM_TS: the minimum event timestamp that may need re-processing
-        - STALE_*_MODIFICATION_TS: when the modification occurred (for detecting
+        - STALE_*_MODIFICATION_TS: monotonically advancing modification marker (for detecting
           concurrent modifications during processing)
         """
         if is_accounting_update_enabled() is False:
             return
 
-        from_ts_names = (
-            DBCacheStatic.STALE_BALANCES_FROM_TS.value,
-            DBCacheStatic.STALE_COST_BASIS_FROM_TS.value,
-        )
-        write_cursor.execute(
-            'INSERT INTO key_value_cache(name, value) VALUES(?, ?), (?, ?), (?, ?), (?, ?) '
-            'ON CONFLICT(name) DO UPDATE SET value=CASE '
-            'WHEN key_value_cache.name IN (?, ?) THEN '
-            'MIN(CAST(key_value_cache.value AS INTEGER), CAST(excluded.value AS INTEGER)) '
-            'ELSE excluded.value END '
-            'WHERE key_value_cache.name NOT IN (?, ?) OR '
-            'CAST(key_value_cache.value AS INTEGER) > CAST(excluded.value AS INTEGER)',
-            (
-                from_ts_names[0],
-                timestamp,
-                from_ts_names[1],
-                timestamp,
-                DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value,
-                (now := ts_now_in_ms()),
-                DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value,
-                now,
-                *from_ts_names,
-                *from_ts_names,
-            ),
-        )
+        mark_stale_from_ts(write_cursor=write_cursor, from_ts=timestamp)
 
     def mark_asset_events_modified(self, write_cursor: DBCursor, asset: str) -> None:
         """Mark historical balances stale from the first event holding the given asset."""
@@ -1002,15 +978,20 @@ class DBHistoryEvents:
         matched_asset_movement key is also carried over to edits that do replace
         extra_data, as only the unlink endpoint may remove it.
         Marks the event with the specified mapping state if provided.
-        Only tracks modification for balance cache invalidation if balance-affecting
-        fields change (timestamp, asset, amount, type, subtype, location_label).
+        Only tracks modification for balance/cost-basis cache invalidation if fields
+        consumed by balance or cost-basis processing change (including on-chain
+        counterparty/address details and Bitcoin/BCH notes).
 
         May raise:
             - InputError if an error occurred.
         """
         old_data = write_cursor.execute(
-            'SELECT timestamp, asset, amount, type, subtype, location_label, sequence_index, '
-            'extra_data FROM history_events WHERE identifier=?',
+            'SELECT he.timestamp, he.asset, he.amount, he.type, he.subtype, he.location_label, '
+            'he.sequence_index, he.extra_data, he.location, he.group_identifier, he.notes, '
+            'he.entry_type, cei.counterparty, cei.address '
+            'FROM history_events AS he '
+            'LEFT JOIN chain_events_info AS cei ON cei.identifier = he.identifier '
+            'WHERE he.identifier=?',
             (event.identifier,),
         ).fetchone()
         assert event.identifier is not None
@@ -1080,21 +1061,34 @@ class DBHistoryEvents:
                 ), str(event.identifier)),
             )
 
-        # Track modification only if balance-affecting fields changed. cannot be None here
-        if old_data[:6] == (
-            event.timestamp,
-            event.asset.identifier,
-            str(event.amount),
-            event.event_type.serialize(),
-            event.event_subtype.serialize(),
-            event.location_label,
-        ) and (
-            (old_extra_data or {}).get('liquidity_pool') ==
-            (event.extra_data or {}).get('liquidity_pool')
+        # Track modification only if balance- or cost-basis-affecting fields changed.
+        # old_data cannot be None here because the UPDATE above raised InputError on missing rows.
+        old_btc_notes = old_data[10] if old_data[8] in BITCOIN_LOCATIONS else None
+        new_btc_notes = event.notes if event.location in BITCOIN_LOCATIONS else None
+        new_address = (
+            str(address) if (address := getattr(event, 'address', None)) is not None else None
+        )
+        if (
+            old_data[:7] == (
+                event.timestamp,
+                event.asset.identifier,
+                str(event.amount),
+                event.event_type.serialize(),
+                event.event_subtype.serialize(),
+                event.location_label,
+                event.sequence_index,
+            ) and
+            old_data[8:10] == (event.location, event.group_identifier) and
+            old_data[11:] == (
+                event.entry_type.value,
+                getattr(event, 'counterparty', None),
+                new_address,
+            ) and
+            old_btc_notes == new_btc_notes and
+            (old_extra_data or {}).get('liquidity_pool') == (event.extra_data or {}).get('liquidity_pool')  # noqa: E501
         ):
             return
 
-        # Track modification only if balance-affecting fields changed
         min_ts = min(old_data[0], event.timestamp)
         self._mark_events_modified(write_cursor=write_cursor, timestamp=min_ts)
 

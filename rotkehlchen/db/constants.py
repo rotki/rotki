@@ -71,6 +71,8 @@ LINKABLE_ACCOUNTING_SETTINGS_NAME = Literal[
 COST_BASIS_SETTINGS: Final = (
     'include_gas_costs',
     'include_crypto2crypto',
+    'include_fees_in_cost_basis',
+    'eth_staking_taxable_after_withdrawal_enabled',
     'cost_basis_method',
     'taxfree_after_period',
     'main_currency',

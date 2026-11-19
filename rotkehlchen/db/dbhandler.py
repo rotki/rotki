@@ -62,6 +62,7 @@ from rotkehlchen.db.cache import (
     ExtraTxArgType,
     IndexArgType,
     LabeledLocationIdArgsType,
+    mark_stale_from_ts,
 )
 from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.constants import (
@@ -218,7 +219,7 @@ from rotkehlchen.user_messages import (
     UnknownAssetSeen,
 )
 from rotkehlchen.utils.hashing import file_md5
-from rotkehlchen.utils.misc import get_chunks, ts_ms_to_sec, ts_now, ts_now_in_ms
+from rotkehlchen.utils.misc import get_chunks, ts_ms_to_sec, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 if TYPE_CHECKING:
@@ -844,13 +845,7 @@ class DBHandler:
                 DBCacheStatic.LAST_COST_BASIS_FAILURE_TS.value,
             ),
         )
-        write_cursor.executemany(
-            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
-            [
-                (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, '0'),
-                (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value, str(ts_now_in_ms())),
-            ],
-        )
+        mark_stale_from_ts(write_cursor=write_cursor, from_ts=0, include_balances=False)
 
     def set_settings(self, write_cursor: DBCursor, settings: ModifiableDBSettings) -> None:
         # Compared to the stored value, not CachedSettings, which may not describe this DB yet,
@@ -4148,15 +4143,7 @@ class DBHandler:
                     'DELETE FROM bucket_processing_stops WHERE asset = ?',
                     [(source_identifier,), (target_asset.identifier,)],
                 )
-                write_cursor.executemany(
-                    'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
-                    [
-                        (DBCacheStatic.STALE_BALANCES_FROM_TS.value, '0'),
-                        (DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value, (now := str(ts_now_in_ms()))),  # noqa: E501
-                        (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, '0'),
-                        (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value, now),
-                    ],
-                )
+                mark_stale_from_ts(write_cursor=write_cursor, from_ts=0)
 
     def get_latest_location_value_distribution(self) -> list[LocationData]:
         """Gets the latest location data

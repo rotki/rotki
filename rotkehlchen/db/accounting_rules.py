@@ -1,3 +1,4 @@
+import contextlib
 import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
@@ -12,7 +13,7 @@ from rotkehlchen.chain.evm.accounting.structures import (
     EventsAccountantCallback,
     TxAccountingTreatment,
 )
-from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.cache import mark_stale_from_ts
 from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_PROPERTIES,
     LINKABLE_ACCOUNTING_SETTINGS_NAME,
@@ -29,7 +30,7 @@ from rotkehlchen.history.events.structures.eth2 import EthStakingEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils.misc import get_chunks, ts_now_in_ms
+from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -86,7 +87,7 @@ class DBAccountingRules:
             return
 
         if event_ids is None and len(event_keys) == 0:
-            from_ts: int | None = 0
+            from_ts = 0
         else:
             timestamps = [
                 row[0] for chunk, placeholders in get_query_chunks(event_ids or [])
@@ -101,19 +102,11 @@ class DBAccountingRules:
                     (event_type.serialize(), event_subtype.serialize()),
                 ).fetchone()) is not None
             ]
-            if (from_ts := min((ts for ts in timestamps if ts is not None), default=None)) is None:
+            if (min_ts := min((ts for ts in timestamps if ts is not None), default=None)) is None:
                 return  # no event is affected
+            from_ts = min_ts
 
-        write_cursor.execute(
-            'INSERT INTO key_value_cache(name, value) VALUES(?, ?) ON CONFLICT(name) DO UPDATE '
-            'SET value=excluded.value '
-            'WHERE CAST(key_value_cache.value AS INTEGER) > CAST(excluded.value AS INTEGER)',
-            (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, str(from_ts)),
-        )
-        write_cursor.execute(
-            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
-            (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value, str(ts_now_in_ms())),
-        )
+        mark_stale_from_ts(write_cursor=write_cursor, from_ts=from_ts, include_balances=False)
 
     @classmethod
     def _rule_for_string(
@@ -426,6 +419,7 @@ class DBAccountingRules:
             self,
             filter_query_str: str,
             bindings: Sequence[Any],
+            cursor: DBCursor | None = None,
     ) -> dict[int, RuleInformation]:
         """Query the accounting rules from the database using the provided filter.
         Returns a dict of identifier -> accounting rules."""
@@ -436,9 +430,12 @@ class DBAccountingRules:
             'FROM accounting_rules '
         )
         rules: dict[int, RuleInformation] = {}
-        with self.db.conn.read_ctx() as cursor:
-            cursor.execute(query + filter_query_str, bindings)
-            for entry in cursor:
+        cursor_ctx = (
+            contextlib.nullcontext(cursor) if cursor is not None else self.db.conn.read_ctx()
+        )
+        with cursor_ctx as read_cursor:
+            read_cursor.execute(query + filter_query_str, bindings)
+            for entry in read_cursor:
                 rule_id = entry[0]
                 rules[rule_id] = RuleInformation(
                     identifier=rule_id,
@@ -457,12 +454,12 @@ class DBAccountingRules:
                 return rules
 
             for chunk, placeholders in get_query_chunks(list(rules)):
-                cursor.execute(
+                read_cursor.execute(
                     f'SELECT rule_id, event_id FROM accounting_rule_events '
                     f'WHERE rule_id IN ({placeholders})',
                     chunk,
                 )
-                for rule_id, event_id in cursor:
+                for rule_id, event_id in read_cursor:
                     if rules[rule_id].event_ids is None:
                         rules[rule_id].event_ids = [event_id]
                     else:
@@ -473,28 +470,32 @@ class DBAccountingRules:
     def query_rules(
             self,
             filter_query: AccountingRulesFilterQuery,
+            cursor: DBCursor | None = None,
     ) -> tuple[list[RuleInformation], int]:
         """
         Query rules in the database using the provided filter along with their property settings.
         It returns the list of rules and the total amount of rules matching the filter
         without pagination."""
         filter_query_str, bindings = filter_query.prepare()
-        rules = self.fetch_accounting_rules_from_db(filter_query_str, bindings)
+        rules = self.fetch_accounting_rules_from_db(filter_query_str, bindings, cursor=cursor)
 
-        with self.db.conn.read_ctx() as cursor:
+        cursor_ctx = (
+            contextlib.nullcontext(cursor) if cursor is not None else self.db.conn.read_ctx()
+        )
+        with cursor_ctx as read_cursor:
             query, bindings = filter_query.prepare(with_pagination=False)
             query = 'SELECT COUNT(*) from accounting_rules ' + query
-            total_found_result = cursor.execute(query, bindings).fetchone()[0]
+            total_found_result = read_cursor.execute(query, bindings).fetchone()[0]
 
             # check the settings linked to the rule using the defined filter
-            settings = self.db.get_settings(cursor)
-            cursor.execute(
+            settings = self.db.get_settings(read_cursor)
+            read_cursor.execute(
                 'SELECT accounting_rule, property_name, setting_name FROM '
                 'linked_rules_properties WHERE accounting_rule IN (SELECT accounting_rules.identifier FROM '  # noqa: E501
                 f'accounting_rules {filter_query_str})',
                 bindings,
             )
-            for (accounting_rule_id, property_name, setting_name) in cursor:
+            for (accounting_rule_id, property_name, setting_name) in read_cursor:
                 setting_value = getattr(settings, setting_name, None)
                 if setting_value is None:
                     log.error(

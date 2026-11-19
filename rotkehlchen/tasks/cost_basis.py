@@ -30,9 +30,11 @@ from rotkehlchen.api.websockets.typedefs import (
     ProgressUpdateSubType,
     WSMessageType,
 )
+from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.concurrency import TaskCancelledError, checkpoint
 from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants.assets import A_ETH2
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery, HistoryEventFilterQuery
@@ -49,6 +51,7 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.history.price import PriceHistorian
+from rotkehlchen.locations.constants import LOCATION_KRAKEN
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.historical_balances import (
     MIN_EVENTS_PROCESSED_TO_SLEEP,
@@ -103,7 +106,7 @@ COST_BASIS_CHECKPOINT_INTERVAL: Final = 10_000
 class _Rules:
     """The accounting rules of the user, as the PnL report resolves them for an event."""
 
-    def __init__(self, database: DBHandler) -> None:
+    def __init__(self, database: DBHandler, cursor: DBCursor | None = None) -> None:
         self._by_event: dict[int, BaseEventSettings] = {}
         self._by_type: dict[
             tuple[HistoryEventType, HistoryEventSubType, str | None],
@@ -111,6 +114,7 @@ class _Rules:
         ] = {}
         for rule_info in DBAccountingRules(database).query_rules(
             filter_query=AccountingRulesFilterQuery.make(),
+            cursor=cursor,
         )[0]:
             if not rule_info.is_event_specific:
                 self._by_type[rule_info.event_key] = rule_info.rule
@@ -171,7 +175,7 @@ class _CostBasisPass:
         self._prices: dict[tuple[str, Timestamp], Price | None] = {}
         # What a swap gives to each of its sides, keyed by the identifier of the side's event.
         self._swap_basis: dict[int, tuple[FVal, BasisSource]] = {}
-        self._swap_proceeds: dict[int, tuple[FVal, bool]] = {}
+        self._swap_proceeds: dict[int, tuple[FVal | None, bool, bool]] = {}
         # The receiving side of a basis transfer, which is applied along with its other side.
         self._basis_transfer_receives: set[int] = set()
 
@@ -206,14 +210,18 @@ class _CostBasisPass:
             self,
             out_event: HistoryBaseEntry,
             in_event: HistoryBaseEntry,
+            fee_events: Sequence[HistoryBaseEntry],
             timestamp: Timestamp,
             is_taxable: bool,
     ) -> None:
-        """Value both sides of a swap at what was paid for it.
+        """Value both sides and any fee legs of a swap at what was paid for it.
 
         A fiat side states that value itself. Otherwise it is the market price of what was
-        given, or of what was received if what was given has no price. A swap between two
-        crypto assets realizes nothing if the user does not count those as taxable.
+        given, or of what was received if what was given has no price. When
+        `include_fees_in_cost_basis` is enabled, priced fee legs are folded into the acquired
+        asset's basis (or subtracted from disposal proceeds when selling for fiat) and do not
+        realize PnL on their own; otherwise they are treated as taxable fee spends. A swap
+        between two crypto assets realizes nothing if the user does not count those as taxable.
         """
         assert out_event.identifier is not None
         assert in_event.identifier is not None
@@ -221,21 +229,54 @@ class _CostBasisPass:
         in_price = self._price(asset=in_event.asset, timestamp=timestamp)
         source = BasisSource.PRICE_ORACLE
         if out_event.asset.is_fiat() and out_price is not None:
-            total_paid, source = out_event.amount * out_price, BasisSource.EVENT_AMOUNT
+            base_total, source = out_event.amount * out_price, BasisSource.EVENT_AMOUNT
         elif in_event.asset.is_fiat() and in_price is not None:
-            total_paid = in_event.amount * in_price
+            base_total = in_event.amount * in_price
         elif out_price is not None:
-            total_paid = out_event.amount * out_price
+            base_total = out_event.amount * out_price
         elif in_price is not None:
-            total_paid = in_event.amount * in_price
+            base_total = in_event.amount * in_price
         else:
-            total_paid, source = ZERO, BasisSource.ZERO_COST
+            base_total, source = ZERO, BasisSource.ZERO_COST
 
-        self._swap_basis[in_event.identifier] = (total_paid / in_event.amount, source)
+        total_fees = ZERO
+        if self.settings.include_fees_in_cost_basis:
+            for fee_event in fee_events:
+                if (fee_price := self._price(asset=fee_event.asset, timestamp=timestamp)) is not None:  # noqa: E501
+                    total_fees += fee_event.amount * fee_price
+
+        if in_event.asset.is_fiat():
+            out_rate = (base_total - total_fees) / out_event.amount
+            in_rate = base_total / in_event.amount
+        else:
+            in_total = base_total + total_fees
+            if source == BasisSource.ZERO_COST and total_fees > ZERO:
+                source = BasisSource.PRICE_ORACLE
+            in_rate = in_total / in_event.amount
+            out_rate = base_total / out_event.amount
+
+        fee_proceeds: list[tuple[int, tuple[FVal | None, bool, bool]]] = []
+        for fee_event in fee_events:
+            assert fee_event.identifier is not None
+            if fee_event.asset == self.profit_currency:
+                fee_rate: FVal | None = ONE
+            elif fee_event.asset == in_event.asset and source != BasisSource.ZERO_COST:
+                fee_rate = in_rate
+            elif fee_event.asset == out_event.asset and source != BasisSource.ZERO_COST:
+                fee_rate = out_rate
+            else:
+                fee_rate = self._price(asset=fee_event.asset, timestamp=timestamp)
+            fee_taxable = not self.settings.include_fees_in_cost_basis
+            fee_proceeds.append((fee_event.identifier, (fee_rate, fee_taxable, fee_taxable)))
+
+        self._swap_basis[in_event.identifier] = (in_rate, source)
         self._swap_proceeds[out_event.identifier] = (
-            total_paid / out_event.amount,
+            out_rate,
             is_taxable and (in_event.asset.is_fiat() or self.settings.include_crypto2crypto),
+            False,
         )
+        for fee_id, entry in fee_proceeds:
+            self._swap_proceeds[fee_id] = entry
 
     def _add_row(
             self,
@@ -405,8 +446,9 @@ class _CostBasisPass:
         realized_pnl = taxfree_pnl = ZERO
         counts_cost_basis = False
         if swap_proceeds is not None:
-            rate: FVal | None = swap_proceeds[0]
-            counts_cost_basis = swap_proceeds[1]
+            rate, counts_cost_basis, count_entire_amount_spend = swap_proceeds
+            if count_entire_amount_spend:
+                realized_pnl -= event.amount * (rate or ZERO)
         elif rule is not None:
             rate = self._price(asset=event.asset, timestamp=timestamp)
             counts_cost_basis = rule.taxable and rule.count_cost_basis_pnl
@@ -486,10 +528,12 @@ class _CostBasisPass:
             len(self._basis_transfer_receives) != 0
         )
 
-    def serialize_checkpoint(self) -> str:
+    def serialize_checkpoint(self, events_since_interval: int = 0) -> str:
         """The state of the pass that a later pass can resume from, see `restore_checkpoint`.
 
         Only valid between events with no pending pair, as the pairing state is not included.
+        `events_since_interval` is 0 for a permanent interval checkpoint and positive for a
+        terminal checkpoint that later incremental passes replace until the interval is reached.
         """
         next_order, buckets = self.lots.serialize_state()
         return json.dumps({
@@ -498,15 +542,17 @@ class _CostBasisPass:
             'buckets': [[list(bucket), state] for bucket, state in buckets],
             'blocked_buckets': [list(bucket) for bucket in self.blocked_buckets],
             'invalid_amount_event_ids': list(self.invalid_amount_event_ids),
+            'events_since_interval': events_since_interval,
         }, separators=(',', ':'))
 
-    def restore_checkpoint(self, serialized: str) -> bool:
+    def restore_checkpoint(self, serialized: str) -> int | None:
         """Continue from a state written by `serialize_checkpoint`.
 
-        Returns False and leaves the pass as it is if the checkpoint is of another method.
+        Returns the checkpoint's `events_since_interval` count, or None leaving the pass as it
+        is if the checkpoint is of another method.
         """
         if (state := json.loads(serialized))['method'] != self.method:
-            return False
+            return None
 
         self.lots.restore_state(
             next_order=state['next_order'],
@@ -514,20 +560,27 @@ class _CostBasisPass:
         )
         self.blocked_buckets = set(starmap(Bucket, state['blocked_buckets']))
         self.invalid_amount_event_ids = set(state['invalid_amount_event_ids'])
-        return True
+        return int(state.get('events_since_interval', 0))
 
     def apply(
             self,
             event: HistoryBaseEntry,
             next_event: HistoryBaseEntry | None,
             treat_eth2_as_eth: bool,
+            swap_fee_events: Sequence[HistoryBaseEntry] = (),
     ) -> None:
         """Apply the event to the lots of the buckets it affects.
 
-        Afterwards only the next event can have pairing state left, see `has_pending_pair`.
-        May raise NoPriceForGivenTimestamp if the price oracles are rate limited.
+        Afterwards only the next event (and swap fee events) can have pairing state left, see
+        `has_pending_pair`. May raise NoPriceForGivenTimestamp if the price oracles are rate
+        limited.
         """
-        self._apply(event=event, next_event=next_event, treat_eth2_as_eth=treat_eth2_as_eth)
+        self._apply(
+            event=event,
+            next_event=next_event,
+            treat_eth2_as_eth=treat_eth2_as_eth,
+            swap_fee_events=swap_fee_events,
+        )
         if event.identifier is not None:  # a side that is not applied leaves its pairing state
             self._swap_basis.pop(event.identifier, None)
             self._swap_proceeds.pop(event.identifier, None)
@@ -537,6 +590,7 @@ class _CostBasisPass:
             event: HistoryBaseEntry,
             next_event: HistoryBaseEntry | None,
             treat_eth2_as_eth: bool,
+            swap_fee_events: Sequence[HistoryBaseEntry] = (),
     ) -> None:
         if event.identifier is None or event.amount == ZERO:
             return
@@ -580,7 +634,11 @@ class _CostBasisPass:
                 ):
                     return
             elif (
-                (self.from_ts is None or next_event.timestamp >= self.from_ts) and
+                (
+                    self.from_ts is None or
+                    next_event.timestamp >= self.from_ts or
+                    any(fee.timestamp >= self.from_ts for fee in swap_fee_events)
+                ) and
                 _swap_leg_direction(event, bucket_directions) == EventDirection.OUT and
                 _swap_leg_direction(
                     next_event,
@@ -593,6 +651,7 @@ class _CostBasisPass:
                 self._price_swap(
                     out_event=event,
                     in_event=next_event,
+                    fee_events=swap_fee_events,
                     timestamp=timestamp,
                     is_taxable=rule.taxable,
                 )
@@ -606,6 +665,16 @@ class _CostBasisPass:
                 return
 
             if direction == EventDirection.IN:
+                if (
+                    self.settings.eth_staking_taxable_after_withdrawal_enabled and
+                    event.location == LOCATION_KRAKEN and
+                    event.asset == A_ETH2 and
+                    event.event_type == HistoryEventType.STAKING and
+                    event.event_subtype == HistoryEventSubType.REWARD and
+                    timestamp < SHAPPELA_TIMESTAMP
+                ):
+                    return
+
                 self._receive(event, bucket, timestamp, is_stale)
             else:
                 self._spend(event, bucket, timestamp, is_stale, rule)
@@ -660,15 +729,44 @@ def _write_rows(
     )
 
 
+def _collect_swap_fee_events(
+        events: Sequence[HistoryBaseEntry],
+        out_idx: int,
+) -> list[HistoryBaseEntry]:
+    """Collect fee events immediately following the (out, in) pair of a swap group."""
+    out_event = events[out_idx]
+    fee_events: list[HistoryBaseEntry] = []
+    fee_idx = out_idx + 2
+    while fee_idx < len(events):
+        candidate = events[fee_idx]
+        if (
+            candidate.group_identifier != out_event.group_identifier or
+            candidate.event_type != out_event.event_type or
+            candidate.event_subtype != HistoryEventSubType.FEE
+        ):
+            break
+        if candidate.identifier is not None and candidate.amount > ZERO:
+            fee_events.append(candidate)
+        fee_idx += 1
+    return fee_events
+
+
 def _write_checkpoint(
         write_cursor: DBCursor,
         cost_basis_pass: _CostBasisPass,
         timestamp: TimestampMS,
+        events_since_interval: int = 0,
+        replace_timestamp: TimestampMS | None = None,
 ) -> None:
     """Store the lots of the pass as they are after all events before `timestamp`."""
+    if replace_timestamp is not None and replace_timestamp != timestamp:
+        write_cursor.execute(
+            'DELETE FROM cost_basis_checkpoints WHERE timestamp = ?',
+            (replace_timestamp,),
+        )
     write_cursor.execute(
         'INSERT OR REPLACE INTO cost_basis_checkpoints(timestamp, state) VALUES (?, ?)',
-        (timestamp, cost_basis_pass.serialize_checkpoint()),
+        (timestamp, cost_basis_pass.serialize_checkpoint(events_since_interval)),
     )
 
 
@@ -854,14 +952,19 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
     decorator returns None instead when another pass is running.
     """
     with database.conn.read_ctx() as cursor:
-        settings = database.get_settings(cursor)
+        # Capture before reading settings, rules, checkpoints, or events so any concurrent change
+        # during startup bumps the marker past this value and keeps the stale marker at completion.
+        modification_ts_at_start = database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
+        )
         if (
             unprocessed_from_ts := get_unprocessed_from_ts(cursor=cursor, database=database)
         ) is None:
             return True  # nothing changed since the last pass
 
-    rules = _Rules(database)
-    with database.conn.read_ctx() as cursor:
+        settings = database.get_settings(cursor)
+        rules = _Rules(database=database, cursor=cursor)
         from_ts: TimestampMS | None = None
         if (
             unprocessed_from_ts > 0 and
@@ -880,13 +983,22 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             stored_basis={},
         )
         start_ts = TimestampMS(0)
+        restored_terminal_ts: TimestampMS | None = None
+        events_since_interval = 0
         if from_ts is not None:
             if (checkpoint_row := cursor.execute(
                 'SELECT timestamp, state FROM cost_basis_checkpoints WHERE timestamp <= ? '
                 'ORDER BY timestamp DESC LIMIT 1',
                 (from_ts,),
-            ).fetchone()) is not None and cost_basis_pass.restore_checkpoint(checkpoint_row[1]):
+            ).fetchone()) is not None and (
+                restored_events_since_interval := cost_basis_pass.restore_checkpoint(
+                    checkpoint_row[1],
+                )
+            ) is not None:
                 start_ts = TimestampMS(checkpoint_row[0])
+                if restored_events_since_interval > 0:
+                    restored_terminal_ts = start_ts
+                    events_since_interval = restored_events_since_interval
 
             cost_basis_pass.stored_basis = {
                 event_identifier: FVal(basis_per_unit)
@@ -920,11 +1032,6 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             cursor=cursor,
             filter_query=event_filter,
         )
-        # Read after the events, so that an event modified from here on keeps the marker.
-        modification_ts_at_start = database.get_static_cache(
-            cursor=cursor,
-            name=DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
-        )
 
     log.debug(
         'Starting cost basis processing of %s events from_ts=%s start_ts=%s',
@@ -936,22 +1043,33 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
     first_batch_written, total_events = False, len(events)
     send_ws_every = msg_aggregator.how_many_events_per_ws(total_events)
     interrupted_at: TimestampMS | None = None
-    last_checkpoint_idx = 0
     record_failure = True  # unless the pass ends or is cancelled
     try:
         for idx, event in enumerate(events):
             next_event = events[idx + 1] if idx + 1 < total_events else None
+            swap_fee_events: Sequence[HistoryBaseEntry] = (
+                _collect_swap_fee_events(events, idx)
+                if (
+                    idx + 2 < total_events and
+                    events[idx + 2].group_identifier == event.group_identifier and
+                    events[idx + 2].event_type == event.event_type and
+                    events[idx + 2].event_subtype == HistoryEventSubType.FEE
+                )
+                else ()
+            )
             try:
                 cost_basis_pass.apply(
                     event=event,
                     next_event=next_event,
                     treat_eth2_as_eth=treat_eth2_as_eth,
+                    swap_fee_events=swap_fee_events,
                 )
             except NoPriceForGivenTimestamp as e:
                 log.warning('Stopping cost basis processing at event %s: %s', event.identifier, e)
                 interrupted_at = event.timestamp
                 break
 
+            events_since_interval += 1
             if idx % MIN_EVENTS_PROCESSED_TO_SLEEP == 0:
                 time.sleep(0)  # release the GIL so concurrent DB readers interleave
 
@@ -971,15 +1089,22 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                     cost_basis_pass=cost_basis_pass,
                     event=event,
                     next_event=next_event,
-                    events_since_checkpoint=idx + 1 - last_checkpoint_idx,
+                    events_since_checkpoint=events_since_interval,
                 )) is not None or
                 len(cost_basis_pass.rows) >= COST_BASIS_BATCH_SIZE
             ):
                 with database.user_write() as write_cursor:
                     _write_rows(write_cursor, cost_basis_pass.rows, from_ts, first_batch_written)
                     if checkpoint_ts is not None:
-                        _write_checkpoint(write_cursor, cost_basis_pass, checkpoint_ts)
-                        last_checkpoint_idx = idx + 1
+                        _write_checkpoint(
+                            write_cursor=write_cursor,
+                            cost_basis_pass=cost_basis_pass,
+                            timestamp=checkpoint_ts,
+                            events_since_interval=0,
+                            replace_timestamp=restored_terminal_ts,
+                        )
+                        restored_terminal_ts = None
+                        events_since_interval = 0
                     next_idx = (
                         idx + 2
                         if (
@@ -1007,6 +1132,11 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                     write_cursor=write_cursor,
                     cost_basis_pass=cost_basis_pass,
                     timestamp=TimestampMS(events[-1].timestamp + 1),
+                    events_since_interval=(
+                        0 if events_since_interval >= COST_BASIS_CHECKPOINT_INTERVAL
+                        else events_since_interval
+                    ),
+                    replace_timestamp=restored_terminal_ts,
                 )
         _write_invalid_amount_issues(database, cost_basis_pass.invalid_amount_issues)
         if interrupted_at is None:
