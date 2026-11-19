@@ -6,6 +6,7 @@ from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.constants import IssueKind
 from rotkehlchen.history.data_issues.observations import delete_wallet_observations
 from rotkehlchen.locations.chains import EVM_LOCATIONS, location_to_chain
 from rotkehlchen.types import SupportedBlockchain, TimestampMS
@@ -50,6 +51,7 @@ class BucketStop:
     derived_balance_before_event: FVal
     negative_amount: FVal
     group_identifier: str | None
+    issue_kind: IssueKind = IssueKind.NEGATIVE_BALANCE
 
 
 class BucketRunState[BucketT: Hashable]:
@@ -88,6 +90,7 @@ class BucketRunState[BucketT: Hashable]:
             event: HistoryBaseEntry,
             balance_before_event: FVal,
             negative_amount: FVal,
+            issue_kind: IssueKind = IssueKind.NEGATIVE_BALANCE,
     ) -> None:
         """Remember the event at which the bucket stopped being processed, see BucketStop."""
         assert event.identifier is not None, 'Processed history events should have identifiers'
@@ -97,6 +100,7 @@ class BucketRunState[BucketT: Hashable]:
             derived_balance_before_event=balance_before_event,
             negative_amount=negative_amount,
             group_identifier=event.group_identifier,
+            issue_kind=issue_kind,
         )
 
     def await_reconciliation(
@@ -134,10 +138,11 @@ def get_bucket_stops(cursor: DBCursor) -> dict[BucketKey, BucketStop]:
             derived_balance_before_event=FVal(balance_before),
             negative_amount=FVal(negative_amount),
             group_identifier=group_identifier,
-        ) for location, label, protocol, asset, event_identifier, event_timestamp, balance_before, negative_amount, group_identifier in cursor.execute(  # noqa: E501
+            issue_kind=IssueKind(issue_kind),
+        ) for location, label, protocol, asset, event_identifier, event_timestamp, balance_before, negative_amount, issue_kind, group_identifier in cursor.execute(  # noqa: E501
             'SELECT s.location, s.location_label, s.protocol, s.asset, s.event_identifier, '
             's.event_timestamp, s.derived_balance_before_event, s.negative_amount, '
-            'he.group_identifier FROM bucket_processing_stops s '
+            's.issue_kind, he.group_identifier FROM bucket_processing_stops s '
             'LEFT JOIN history_events he ON he.identifier = s.event_identifier',
         )
     }
@@ -165,13 +170,14 @@ def replace_bucket_stops(
     write_cursor.executemany(
         'INSERT OR REPLACE INTO bucket_processing_stops(location, location_label, protocol, '
         'asset, event_identifier, event_timestamp, derived_balance_before_event, '
-        'negative_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        'negative_amount, issue_kind) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [(
             *key,
             stop.event_identifier,
             stop.event_timestamp,
             str(stop.derived_balance_before_event),
             str(stop.negative_amount),
+            stop.issue_kind.value,
         ) for key, stop in stops.items()],
     )
 

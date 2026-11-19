@@ -15,12 +15,13 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DAY_IN_SECONDS, HOUR_IN_SECONDS, ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.constants import HistoryMappingState
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.bucket_checks import BucketStatus
-from rotkehlchen.history.data_issues.constants import IssueKind
+from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.types import NegativeBalanceIssuePayload
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -414,46 +415,47 @@ def test_historical_balances_at_events_invalid_event_amount_stop(
 def test_reconciliation_report_invalid_event_amount_stop(
         rotkehlchen_api_server: APIServer,
 ) -> None:
-    """Reconciliation links negative-amount stops to their issue and reports its kind,
-    preferring non-resolved issues over resolved ones and then the newest.
+    """Reconciliation links negative-amount stops to their issue and reports the active stop's
+    kind, even when an event alternates between an invalid negative amount and an overdraw.
     """
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     account = make_evm_address()
     track_blockchain_account(db, account, SupportedBlockchain.ETHEREUM)
+    events: list[EvmEvent] = []
     identifiers: list[int] = []
     with db.user_write() as cursor:
         for offset, event_type, amount in (
             (0, HistoryEventType.RECEIVE, '1'),
             (10, HistoryEventType.SPEND, '-0.5'),
         ):
+            event = EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(Timestamp(START_TS + offset)),
+                location=LOCATION_ETHEREUM,
+                event_type=event_type,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal(amount),
+                location_label=account,
+                address=account,
+            )
             identifier = DBHistoryEvents(db).add_history_event(
                 write_cursor=cursor,
-                event=EvmEvent(
-                    tx_ref=make_evm_tx_hash(),
-                    sequence_index=0,
-                    timestamp=ts_sec_to_ms(Timestamp(START_TS + offset)),
-                    location=LOCATION_ETHEREUM,
-                    event_type=event_type,
-                    event_subtype=HistoryEventSubType.NONE,
-                    asset=A_ETH,
-                    amount=FVal(amount),
-                    location_label=account,
-                    address=account,
-                ),
+                event=event,
             )
             assert identifier is not None
+            event.identifier = identifier
+            events.append(event)
             identifiers.append(identifier)
-
-    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
-    with db.conn.read_ctx() as cursor:
-        invalid_amount_issue_id = cursor.execute(
-            'SELECT id FROM data_issues WHERE event_identifier = ? AND kind = ?',
-            (identifiers[1], IssueKind.INVALID_EVENT_AMOUNT.value),
-        ).fetchone()[0]
 
     reconciliation_url = api_url_for(
         rotkehlchen_api_server,
         'historicalbalancesreconciliationresource',
+    )
+    overlay_url = api_url_for(
+        rotkehlchen_api_server,
+        'historicalbalancesateventsresource',
     )
 
     def _fetch_eth_bucket() -> dict:
@@ -463,44 +465,104 @@ def test_reconciliation_report_invalid_event_amount_stop(
         ))
         return report['accounts'][0]['buckets'][0]
 
+    def _fetch_overlay_issue_id() -> int | None:
+        entries = assert_proper_sync_response_with_result(requests.post(
+            overlay_url,
+            json={'event_identifiers': [identifiers[1]]},
+        ))['entries']
+        return entries[str(identifiers[1])]['stop']['issue_id']
+
+    # Step 1: negative event amount stops the bucket with an INVALID_EVENT_AMOUNT issue.
+    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
+    issues_manager = DataIssuesManager(db)
+    with db.conn.read_ctx() as cursor:
+        invalid_amount_issue_id = cursor.execute(
+            'SELECT id FROM data_issues WHERE event_identifier = ? AND kind = ?',
+            (identifiers[1], IssueKind.INVALID_EVENT_AMOUNT.value),
+        ).fetchone()[0]
+
     bucket = _fetch_eth_bucket()
     assert bucket['status'] == BucketStatus.BLOCKED
     assert bucket['issue_id'] == invalid_amount_issue_id
     assert bucket['issue_kind'] == IssueKind.INVALID_EVENT_AMOUNT.value
     assert bucket['stop']['event_identifier'] == identifiers[1]
     assert bucket['stop']['negative_amount'] == '-0.5'
+    assert _fetch_overlay_issue_id() == invalid_amount_issue_id
 
-    # Among non-resolved issues for the same stop, the newest wins.
-    issues_manager = DataIssuesManager(db)
-    neg_issue_id = issues_manager.write_issue(
-        kind=IssueKind.NEGATIVE_BALANCE,
-        location=LOCATION_ETHEREUM,
-        location_label=account,
-        protocol=None,
-        asset=A_ETH.identifier,
-        payload=NegativeBalanceIssuePayload(
-            event_identifier=identifiers[1],
-            in_memory_negative_amount='-0.5',
-            derived_balance_before_event='1',
-        ),
-        ts_start=ts_sec_to_ms(Timestamp(START_TS + 10)),
-        ts_end=ts_sec_to_ms(Timestamp(START_TS + 10)),
-    )
+    # Step 2: user edits the event so it now overdraws the bucket (1 - 2 = -1).
+    # Reprocessing creates a newer NEGATIVE_BALANCE issue and resolves the old one.
+    events[1].amount = FVal('2')
+    with db.user_write() as cursor:
+        DBHistoryEvents(db).edit_history_event(
+            write_cursor=cursor,
+            event=events[1],
+            mapping_state=HistoryMappingState.CUSTOMIZED,
+        )
+    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
+    with db.conn.read_ctx() as cursor:
+        neg_balance_issue_id = cursor.execute(
+            'SELECT id FROM data_issues WHERE event_identifier = ? AND kind = ?',
+            (identifiers[1], IssueKind.NEGATIVE_BALANCE.value),
+        ).fetchone()[0]
+    assert neg_balance_issue_id > invalid_amount_issue_id
+    assert issues_manager.get_issue(invalid_amount_issue_id).state == IssueState.RESOLVED
+    assert issues_manager.get_issue(neg_balance_issue_id).state == IssueState.OPEN
+
     bucket = _fetch_eth_bucket()
-    assert bucket['issue_id'] == neg_issue_id
+    assert bucket['issue_id'] == neg_balance_issue_id
     assert bucket['issue_kind'] == IssueKind.NEGATIVE_BALANCE.value
+    assert bucket['stop']['negative_amount'] == '-1'
+    assert _fetch_overlay_issue_id() == neg_balance_issue_id
 
-    # Once the newer NEGATIVE_BALANCE issue is resolved, the open INVALID_EVENT_AMOUNT wins.
-    issues_manager.resolve_manually(neg_issue_id, note='resolved')
+    # Step 3: user edits the event back to a negative amount.
+    # Reprocessing reopens the original INVALID_EVENT_AMOUNT issue in place (id stays older)
+    # and resolves the stale NEGATIVE_BALANCE issue, so both views report the active cause.
+    events[1].amount = FVal('-0.5')
+    with db.user_write() as cursor:
+        DBHistoryEvents(db).edit_history_event(
+            write_cursor=cursor,
+            event=events[1],
+            mapping_state=HistoryMappingState.CUSTOMIZED,
+        )
+    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
+    assert issues_manager.get_issue(invalid_amount_issue_id).state == IssueState.OPEN
+    assert issues_manager.get_issue(neg_balance_issue_id).state == IssueState.RESOLVED
+
     bucket = _fetch_eth_bucket()
     assert bucket['issue_id'] == invalid_amount_issue_id
     assert bucket['issue_kind'] == IssueKind.INVALID_EVENT_AMOUNT.value
+    assert bucket['stop']['negative_amount'] == '-0.5'
+    assert _fetch_overlay_issue_id() == invalid_amount_issue_id
 
-    # A dismissed issue is still non-resolved and stays ahead of the resolved one.
+    # Step 4: even if the user dismisses both issues and switches back to -0.5, the stop's own
+    # issue_kind still identifies INVALID_EVENT_AMOUNT and links to invalid_amount_issue_id.
     issues_manager.dismiss(invalid_amount_issue_id)
+    events[1].amount = FVal('2')
+    with db.user_write() as cursor:
+        DBHistoryEvents(db).edit_history_event(
+            write_cursor=cursor,
+            event=events[1],
+            mapping_state=HistoryMappingState.CUSTOMIZED,
+        )
+    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
+    issues_manager.dismiss(neg_balance_issue_id)
+
+    events[1].amount = FVal('-0.5')
+    with db.user_write() as cursor:
+        DBHistoryEvents(db).edit_history_event(
+            write_cursor=cursor,
+            event=events[1],
+            mapping_state=HistoryMappingState.CUSTOMIZED,
+        )
+    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
+    assert issues_manager.get_issue(invalid_amount_issue_id).state == IssueState.DISMISSED
+    assert issues_manager.get_issue(neg_balance_issue_id).state == IssueState.DISMISSED
+
     bucket = _fetch_eth_bucket()
     assert bucket['issue_id'] == invalid_amount_issue_id
     assert bucket['issue_kind'] == IssueKind.INVALID_EVENT_AMOUNT.value
+    assert bucket['stop']['negative_amount'] == '-0.5'
+    assert _fetch_overlay_issue_id() == invalid_amount_issue_id
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

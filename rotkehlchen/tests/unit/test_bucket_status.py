@@ -123,7 +123,9 @@ def _bucket_key(address: str = TEST_ADDR1) -> tuple[str, str, str, str]:
 def _stop(database: DBHandler, address: str = TEST_ADDR1, event_id: int = 1) -> None:
     with database.user_write() as write_cursor:
         write_cursor.execute(
-            'INSERT INTO bucket_processing_stops VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO bucket_processing_stops(location, location_label, protocol, asset, '
+            'event_identifier, event_timestamp, derived_balance_before_event, negative_amount) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             (*_bucket_key(address), event_id, 1000, '5', '-1'),
         )
 
@@ -688,7 +690,9 @@ def test_eth2_stop_blocks_the_merged_eth_bucket_after_the_setting_is_turned_on(
     _add_balance(database, TEST_ADDR1, '5')
     with database.user_write() as write_cursor:
         write_cursor.execute(
-            'INSERT INTO bucket_processing_stops VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO bucket_processing_stops(location, location_label, protocol, asset, '
+            'event_identifier, event_timestamp, derived_balance_before_event, negative_amount) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             (LOCATION_ETHEREUM, TEST_ADDR1, '', 'ETH2', 1, 1000, '5', '-1'),
         )
         database.set_settings(write_cursor, ModifiableDBSettings(treat_eth2_as_eth=True))

@@ -293,26 +293,35 @@ def _read_tracked_accounts(cursor: DBCursor) -> dict[str, set[str]]:
     return tracked
 
 
+def _stop_issue_rank(state: str) -> int:
+    """Preference order among stop issues for the same bucket and event: active > dismissed > resolved."""  # noqa: E501
+    if state == IssueState.RESOLVED.value:
+        return 0
+    if state == IssueState.DISMISSED.value:
+        return 1
+    return 2
+
+
 def _read_issue_ids(
         cursor: DBCursor,
         treat_eth2_as_eth: bool,
-) -> tuple[dict[WalletKey, int], dict[tuple[BucketKey, int], tuple[int, IssueKind]]]:
+) -> tuple[dict[WalletKey, int], dict[tuple[BucketKey, int, IssueKind], int]]:
     """The issue to link from a wallet bucket and from a stopped bucket.
 
     The mismatch links to the newest non-resolved issue of the exact wallet bucket, whatever
-    other buckets of the same asset say. The stop links to the stopping issue (negative balance
-    or invalid event amount) of its actual stopping event and full bucket, not to any issue of
-    the asset. Its state does not exclude it: a dismissed issue still describes the stop that
-    the processing state proves, preferring a non-resolved issue over a resolved one and then
-    the newest (matching `_get_stops_at_events`). Keying by the bucket matters because one event
+    other buckets of the same asset say. The stop links to the issue matching the stop's own
+    `issue_kind`, stopping event, and full bucket, not to any issue of the asset or of another
+    stop kind. Its state does not exclude it: a dismissed issue still describes the stop that
+    the processing state proves, preferring active over dismissed over resolved and then the
+    newest (matching `_get_stops_at_events`). Keying by the bucket matters because one event
     can stop a wallet bucket and a protocol bucket; each links only its own issue, and a stop
     without one is still blocked with no link.
 
-    Returns (mismatch issues keyed by (location, label, asset), stop issues as (issue_id, kind)
-    keyed by the full bucket key and the stopping event identifier).
+    Returns (mismatch issues keyed by (location, label, asset), stop issue ids keyed by the
+    full bucket key, the stopping event identifier, and the stop's issue kind).
     """
     mismatches: dict[WalletKey, int] = {}
-    stop_candidates: dict[tuple[BucketKey, int], tuple[bool, int, IssueKind]] = {}
+    stop_candidates: dict[tuple[BucketKey, int, IssueKind], tuple[int, int]] = {}
     for issue_id, kind, location, label, protocol, asset, event_identifier, state in cursor.execute(  # noqa: E501
         'SELECT id, kind, location, location_label, protocol, asset, event_identifier, state '
         'FROM data_issues WHERE kind IN (?, ?, ?)',
@@ -342,15 +351,16 @@ def _read_issue_ids(
             stop_key = (
                 (location, issue_label, issue_protocol, issue_asset),
                 event_identifier,
+                IssueKind(kind),
             )
-            priority = (state != IssueState.RESOLVED.value, issue_id)
+            priority = (_stop_issue_rank(state), issue_id)
             existing = stop_candidates.get(stop_key)
-            if existing is None or priority > (existing[0], existing[1]):
-                stop_candidates[stop_key] = (*priority, IssueKind(kind))
+            if existing is None or priority > existing:
+                stop_candidates[stop_key] = priority
 
     stop_issues = {
-        stop_key: (issue_id, issue_kind)
-        for stop_key, (_, issue_id, issue_kind) in stop_candidates.items()
+        stop_key: issue_id
+        for stop_key, (_, issue_id) in stop_candidates.items()
     }
     return mismatches, stop_issues
 
@@ -539,9 +549,8 @@ def get_reconciliation_report(  # one branch per scope rule
             tolerance=tolerance,
         )
         if stop is not None:
-            stop_issue = stop_issues.get((key, stop.event_identifier))
-            issue_id = None if stop_issue is None else stop_issue[0]
-            issue_kind = None if stop_issue is None else stop_issue[1]
+            issue_id = stop_issues.get((key, stop.event_identifier, stop.issue_kind))
+            issue_kind: IssueKind | None = stop.issue_kind
         elif (
             protocol is None and
             label is not None and

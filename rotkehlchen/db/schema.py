@@ -995,6 +995,7 @@ CREATE TABLE IF NOT EXISTS bucket_processing_stops (
     event_timestamp INTEGER NOT NULL,
     derived_balance_before_event TEXT NOT NULL,
     negative_amount TEXT NOT NULL,
+    issue_kind TEXT NOT NULL DEFAULT 'negative_balance',
     PRIMARY KEY (location, location_label, protocol, asset)
 ) WITHOUT ROWID;
 """
