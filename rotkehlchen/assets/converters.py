@@ -12,6 +12,7 @@ from rotkehlchen.locations.constants import (
     LOCATION_BIT2ME,
     LOCATION_BITCOINDE,
     LOCATION_BITFINEX,
+    LOCATION_BITGET,
     LOCATION_BITPANDA,
     LOCATION_BITSTAMP,
     LOCATION_BITTREX,
@@ -573,9 +574,22 @@ def asset_from_bit2me(bit2me_name: str) -> AssetWithOracles:
     ))
 
 
+def asset_from_bitget(bitget_name: str) -> AssetWithOracles:
+    """May raise DeserializationError, UnsupportedAsset or UnknownAsset."""
+    if not isinstance(bitget_name, str):
+        raise DeserializationError(f'Got non-string type {type(bitget_name)} for Bitget asset')
+
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=LOCATION_BITGET,
+        symbol=bitget_name.upper(),
+        default=bitget_name,
+    ))
+
+
 LOCATION_TO_ASSET_MAPPING: dict[LocationIdentifier, Callable[[str], AssetWithOracles]] = {
     LOCATION_BINANCE: asset_from_binance,
     LOCATION_BIT2ME: asset_from_bit2me,
+    LOCATION_BITGET: asset_from_bitget,
     LOCATION_CRYPTOCOM: asset_from_cryptocom,
     LOCATION_BITPANDA: asset_from_bitpanda,
     LOCATION_BITTREX: asset_from_bittrex,

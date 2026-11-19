@@ -3010,6 +3010,7 @@
       "deactivate_tooltip": "Borsanın API anahtarlarını düzenlemeyi iptal et."
     },
     "history_limit_warning": {
+      "bitget": "Bitget API'si yalnızca son 90 güne ait spot işlemlerin ve vadeli işlem pozisyonlarının sorgulanmasına izin verir. Daha eski işlem geçmişi alınamaz.",
       "bybit": "Bybit API'si yalnızca son 2 yıla (birleşik hesap) veya son 180 güne (klasik hesap) ait alım satımların sorgulanmasına izin verir. Daha eski alım satımlar alınamaz.",
       "cryptocom": "Crypto.com API'si yalnızca son 6 aya ait alım satımların sorgulanmasına izin verir. Daha eski alım satımlar alınamaz.",
       "htx": "HTX API'si yalnızca son 120 güne ait alım satımların sorgulanmasına izin verir. Daha eski alım satımlar alınamaz."

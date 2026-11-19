@@ -15,6 +15,7 @@ from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL, 
 from rotkehlchen.exchanges.bit2me import Bit2me
 from rotkehlchen.exchanges.bitcoinde import Bitcoinde
 from rotkehlchen.exchanges.bitfinex import Bitfinex
+from rotkehlchen.exchanges.bitget import Bitget
 from rotkehlchen.exchanges.bitpanda import Bitpanda
 from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bitvavo import Bitvavo
@@ -797,6 +798,26 @@ def create_test_bit2me(
         name='bit2me',
         api_key=api_key,
         secret=secret,
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
+def create_test_bitget(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+        api_key: ApiKey | None = None,
+        secret: ApiSecret | None = None,
+        passphrase: str | None = None,
+) -> Bitget:
+    return Bitget(
+        name='bitget',
+        api_key=make_api_key() if api_key is None else api_key,
+        secret=make_api_secret() if secret is None else secret,
+        passphrase=(
+            make_random_uppercasenumeric_string(size=10)
+            if passphrase is None else passphrase
+        ),
         database=database,
         msg_aggregator=msg_aggregator,
     )

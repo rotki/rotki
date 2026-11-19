@@ -2987,6 +2987,7 @@
       "deactivate_tooltip": "取消编辑该交易所的 API Key。"
     },
     "history_limit_warning": {
+      "bitget": "Bitget 的 API 仅允许查询过去 90 天的现货交易和合约仓位，更早的交易历史无法获取。",
       "bybit": "Bybit 的 API 仅允许查询过去 2 年（统一账户）或 180 天（经典账户）的交易，更早的交易无法获取。",
       "cryptocom": "Crypto.com 的 API 仅允许查询过去 6 个月的交易，更早的交易无法获取。",
       "htx": "HTX 的 API 仅允许查询过去 120 天的交易，更早的交易无法获取。"

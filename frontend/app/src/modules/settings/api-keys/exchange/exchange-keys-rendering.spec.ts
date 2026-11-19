@@ -208,7 +208,7 @@ describe('settings/api-keys/exchange rendering', () => {
       expect(alertTypes()).toContain('info');
     });
 
-    it.each(['bybit', 'htx', 'cryptocom'])('should warn about the history limit for %s', (location) => {
+    it.each(['bitget', 'bybit', 'htx', 'cryptocom'])('should warn about the history limit for %s', (location) => {
       createWrapper({ location, name: `${location} 1` });
 
       expect(alertTypes()).toContain('warning');

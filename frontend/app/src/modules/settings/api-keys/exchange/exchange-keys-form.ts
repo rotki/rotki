@@ -19,6 +19,7 @@ const SLOW_KEY_EXCHANGES = ['kraken', 'coinbase', 'coinbaseprime'];
 
 /** Exchanges whose API only serves a limited history window. */
 const HISTORY_LIMIT_MESSAGES: Record<string, MessageKey> = {
+  bitget: msg.$t('exchange_keys_form.history_limit_warning.bitget'),
   bybit: msg.$t('exchange_keys_form.history_limit_warning.bybit'),
   cryptocom: msg.$t('exchange_keys_form.history_limit_warning.cryptocom'),
   htx: msg.$t('exchange_keys_form.history_limit_warning.htx'),

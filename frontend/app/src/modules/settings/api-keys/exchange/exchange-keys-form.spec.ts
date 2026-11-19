@@ -123,7 +123,7 @@ describe('settings/api-keys/exchange/exchange-keys-form', () => {
       expect(showsKeyWaitingTimeWarning('kucoin')).toBe(false);
     });
 
-    it.each(['bybit', 'htx', 'cryptocom'])('should carry a history limit message for %s', (location) => {
+    it.each(['bitget', 'bybit', 'htx', 'cryptocom'])('should carry a history limit message for %s', (location) => {
       expect(historyLimitMessage(location)).toBeDefined();
     });
 
