@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDC, A_USDT
+from rotkehlchen.errors.asset import UnsupportedAsset
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.bitget import (
@@ -12,6 +13,7 @@ from rotkehlchen.exchanges.bitget import (
     BITGET_MAX_HISTORY_WINDOW,
     BITGET_MAX_RESULTS,
     Bitget,
+    BitgetAPIError,
     BitgetSymbol,
 )
 from rotkehlchen.fval import FVal
@@ -58,6 +60,26 @@ def test_api_query_classifies_rejected_request(bitget_exchange: Bitget) -> None:
     ):
         bitget_exchange._api_query('/api/v2/spot/account/assets')
 
+    assert isinstance(exc_info.value, BitgetAPIError)
+    assert exc_info.value.code == '40009'
+    assert exc_info.value.cause == FailureCause.REMOTE_REJECTED
+
+
+def test_api_query_preserves_error_code_from_http_error(bitget_exchange: Bitget) -> None:
+    with (
+        patch.object(
+            bitget_exchange.session,
+            'get',
+            return_value=MockResponse(
+                HTTPStatus.BAD_REQUEST,
+                '{"code":"40014","msg":"Incorrect permissions","data":null}',
+            ),
+        ),
+        pytest.raises(BitgetAPIError) as exc_info,
+    ):
+        bitget_exchange._api_query('/api/v2/mix/account/accounts')
+
+    assert exc_info.value.code == '40014'
     assert exc_info.value.cause == FailureCause.REMOTE_REJECTED
 
 
@@ -127,8 +149,9 @@ def test_query_balances(bitget_exchange: Bitget) -> None:
 
 
 def _futures_rejection(endpoint: str) -> RemoteError:
-    return RemoteError(
+    return BitgetAPIError(
         f'Bitget request at {endpoint} failed with error code 40014: Incorrect permissions',
+        code='40014',
         cause=FailureCause.REMOTE_REJECTED,
     )
 
@@ -168,6 +191,80 @@ def test_query_balances_fails_on_futures_network_error(bitget_exchange: Bitget) 
     assert balances is None
     assert 'timeout' in message
     assert cause == FailureCause.NETWORK
+
+
+def test_query_balances_propagates_other_futures_rejections(bitget_exchange: Bitget) -> None:
+    def mock_api_query(endpoint: str, options: dict[str, Any] | None = None) -> Any:
+        if endpoint == '/api/v2/mix/account/accounts':
+            raise BitgetAPIError(
+                'Apikey does not exist',
+                code='40037',
+                cause=FailureCause.REMOTE_REJECTED,
+            )
+        return [{'coin': 'BTC', 'available': '1', 'frozen': '0', 'locked': '0'}]
+
+    with (
+        patch.object(bitget_exchange, '_api_query', side_effect=mock_api_query),
+        patch.object(
+            bitget_exchange,
+            'balances_from_amounts',
+            side_effect=lambda amounts: amounts,
+        ),
+    ):
+        balances, message, cause = bitget_exchange.query_balances()
+
+    assert balances is None
+    assert 'Apikey does not exist' in message
+    assert cause == FailureCause.REMOTE_REJECTED
+
+
+def test_query_balances_handles_null_union_asset_list(bitget_exchange: Bitget) -> None:
+    responses = iter([
+        [{'coin': 'BTC', 'available': '1', 'frozen': '0', 'locked': '0'}],
+        [{'assetMode': 'union', 'assetList': None}],
+        [],
+        [],
+    ])
+    with (
+        patch.object(bitget_exchange, '_api_query', side_effect=lambda *args: next(responses)),
+        patch.object(
+            bitget_exchange,
+            'balances_from_amounts',
+            side_effect=lambda amounts: amounts,
+        ),
+    ):
+        balances, message, cause = bitget_exchange.query_balances()
+
+    assert (message, cause) == ('', None)
+    assert balances == {A_BTC.resolve_to_asset_with_oracles(): FVal('1')}
+
+
+def test_query_balances_skips_unsupported_assets(bitget_exchange: Bitget) -> None:
+    with (
+        patch.object(
+            bitget_exchange,
+            '_api_query',
+            side_effect=[
+                [{'coin': 'UNSUPPORTED', 'available': '1', 'frozen': '0', 'locked': '0'}],
+                [],
+                [],
+                [],
+            ],
+        ),
+        patch(
+            'rotkehlchen.exchanges.bitget.asset_from_bitget',
+            side_effect=UnsupportedAsset('UNSUPPORTED'),
+        ),
+        patch.object(
+            bitget_exchange,
+            'balances_from_amounts',
+            side_effect=lambda amounts: amounts,
+        ),
+    ):
+        balances, message, cause = bitget_exchange.query_balances()
+
+    assert balances == {}
+    assert (message, cause) == ('', None)
 
 
 def test_paginated_query(bitget_exchange: Bitget) -> None:
@@ -219,6 +316,31 @@ def test_paginated_query_stops_on_repeated_cursor(bitget_exchange: Bitget) -> No
     assert query.call_count == 2
 
 
+@pytest.mark.parametrize('page', [None, {'list': None, 'endId': None}])
+def test_paginated_query_handles_null_data(bitget_exchange: Bitget, page: Any) -> None:
+    with patch.object(bitget_exchange, '_api_query', return_value=page):
+        assert bitget_exchange._paginated_query(
+            endpoint='/api/v2/mix/position/history-position',
+            options={'productType': 'USDT-FUTURES'},
+            id_key='positionId',
+        ) == []
+
+
+@pytest.mark.parametrize('page', ['unexpected', {'list': 'unexpected'}])
+def test_paginated_query_rejects_unexpected_data(bitget_exchange: Bitget, page: Any) -> None:
+    with (
+        patch.object(bitget_exchange, '_api_query', return_value=page),
+        pytest.raises(RemoteError) as exc_info,
+    ):
+        bitget_exchange._paginated_query(
+            endpoint='/api/v2/mix/position/history-position',
+            options={'productType': 'USDT-FUTURES'},
+            id_key='positionId',
+        )
+
+    assert exc_info.value.cause == FailureCause.BAD_DATA
+
+
 def test_api_query_rejects_non_object_json(bitget_exchange: Bitget) -> None:
     with (
         patch.object(
@@ -231,6 +353,20 @@ def test_api_query_rejects_non_object_json(bitget_exchange: Bitget) -> None:
         bitget_exchange._api_query('/api/v2/spot/account/assets')
 
     assert exc_info.value.cause == FailureCause.BAD_DATA
+
+
+def test_api_query_classifies_invalid_server_response(bitget_exchange: Bitget) -> None:
+    with (
+        patch.object(
+            bitget_exchange.session,
+            'get',
+            return_value=MockResponse(HTTPStatus.BAD_GATEWAY, 'invalid'),
+        ),
+        pytest.raises(RemoteError) as exc_info,
+    ):
+        bitget_exchange._api_query('/api/v2/spot/account/assets')
+
+    assert exc_info.value.cause == FailureCause.NETWORK
 
 
 @pytest.mark.freeze_time('2023-11-14 23:00:00 GMT')
@@ -278,6 +414,16 @@ def test_query_symbols_keeps_unknown_coins(bitget_exchange: Bitget) -> None:
         assert bitget_exchange._query_symbols() == {
             'NOTACOINUSDT': BitgetSymbol(base_coin='NOTACOIN', quote_coin='USDT'),
         }
+
+
+def test_query_symbols_rejects_null_data(bitget_exchange: Bitget) -> None:
+    with (
+        patch.object(bitget_exchange, '_api_query', return_value=None),
+        pytest.raises(RemoteError) as exc_info,
+    ):
+        bitget_exchange._query_symbols()
+
+    assert exc_info.value.cause == FailureCause.BAD_DATA
 
 
 @pytest.mark.freeze_time('2025-01-01 00:00:00 GMT')
@@ -479,6 +625,26 @@ def test_query_margin_history_propagates_network_error(bitget_exchange: Bitget) 
             side_effect=RemoteError('timeout', cause=FailureCause.NETWORK),
         ),
         pytest.raises(RemoteError, match='timeout'),
+    ):
+        bitget_exchange.query_online_margin_history(
+            start_ts=BITGET_LAUNCH_TS,
+            end_ts=Timestamp(ts_now()),
+        )
+
+
+@pytest.mark.freeze_time('2025-01-01 00:00:00 GMT')
+def test_query_margin_history_propagates_other_rejections(bitget_exchange: Bitget) -> None:
+    with (
+        patch.object(
+            bitget_exchange,
+            '_paginated_query',
+            side_effect=BitgetAPIError(
+                'Apikey does not exist',
+                code='40037',
+                cause=FailureCause.REMOTE_REJECTED,
+            ),
+        ),
+        pytest.raises(RemoteError, match='Apikey does not exist'),
     ):
         bitget_exchange.query_online_margin_history(
             start_ts=BITGET_LAUNCH_TS,

@@ -14,7 +14,12 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status, credential_check_cause_of
+from rotkehlchen.errors.misc import (
+    RemoteError,
+    cause_for_status,
+    cause_for_undecodable_body,
+    credential_check_cause_of,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import (
@@ -67,6 +72,7 @@ BITGET_LAUNCH_TS: Final = Timestamp(1530403200)  # July 2018
 BITGET_MAX_HISTORY_WINDOW: Final = 90 * DAY_IN_SECONDS
 BITGET_MAX_RESULTS: Final = 100
 BITGET_PRODUCT_TYPES: Final = ('USDT-FUTURES', 'COIN-FUTURES', 'USDC-FUTURES')
+BITGET_FUTURES_UNAVAILABLE_CODES: Final = ('40014', '40807', '45019')
 
 BitgetEndpoint = Literal[
     '/api/v2/spot/account/assets',
@@ -80,6 +86,12 @@ BitgetEndpoint = Literal[
 ]
 
 
+class BitgetAPIError(RemoteError):
+    def __init__(self, message: str, code: str, cause: FailureCause) -> None:
+        self.code = code
+        super().__init__(message, cause=cause)
+
+
 def _is_futures_access_rejection(error: RemoteError) -> bool:
     """Whether Bitget refused a futures request rather than failing to answer it.
 
@@ -88,7 +100,10 @@ def _is_futures_access_rejection(error: RemoteError) -> bool:
     away spot balances or block spot and wallet history. Network, rate limit and malformed
     response failures still propagate so a partial result is never reported as complete.
     """
-    return error.cause in (FailureCause.REMOTE_REJECTED, FailureCause.AUTH)
+    return (
+        isinstance(error, BitgetAPIError) and
+        error.code in BITGET_FUTURES_UNAVAILABLE_CODES
+    )
 
 
 class BitgetSymbol(NamedTuple):
@@ -173,7 +188,7 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
             raise RemoteError(
                 f'Bitget request at {request_url} returned invalid JSON with HTTP status '
                 f'{response.status_code}',
-                cause=FailureCause.BAD_DATA,
+                cause=cause_for_undecodable_body(response.status_code),
             ) from e
 
         if not isinstance(response_data, dict):
@@ -181,16 +196,24 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
                 f'Bitget request at {request_url} returned unexpected JSON {response_data}',
                 cause=FailureCause.BAD_DATA,
             )
+        response_code = response_data.get('code')
         if response.status_code != HTTPStatus.OK:
-            raise RemoteError(
+            msg = (
                 f'Bitget request at {request_url} failed with HTTP status '
-                f'{response.status_code}: {response_data.get("msg", response.text)}',
-                cause=cause_for_status(response.status_code),
+                f'{response.status_code}: {response_data.get("msg", response.text)}'
             )
-        if response_data.get('code') != '00000':
-            raise RemoteError(
+            if response_code is not None:
+                raise BitgetAPIError(
+                    msg,
+                    code=str(response_code),
+                    cause=cause_for_status(response.status_code),
+                )
+            raise RemoteError(msg, cause=cause_for_status(response.status_code))
+        if response_code != '00000':
+            raise BitgetAPIError(
                 f'Bitget request at {request_url} failed with error code '
-                f'{response_data.get("code")}: {response_data.get("msg")}',
+                f'{response_code}: {response_data.get("msg")}',
+                code=str(response_code),
                 cause=FailureCause.REMOTE_REJECTED,
             )
         if 'data' not in response_data:
@@ -203,6 +226,21 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
     def first_connection(self) -> None:
         self.first_connection_made = True
 
+    @staticmethod
+    def _validate_list_response(
+            data: Any,
+            endpoint: BitgetEndpoint,
+            none_is_empty: bool = False,
+    ) -> list[dict[str, Any]]:
+        if data is None and none_is_empty:
+            return []
+        if not isinstance(data, list) or not all(isinstance(entry, dict) for entry in data):
+            raise RemoteError(
+                f'Bitget request at {endpoint} returned unexpected data {data}',
+                cause=FailureCause.BAD_DATA,
+            )
+        return data
+
     def _query_symbols(self) -> dict[str, BitgetSymbol]:
         """Query the listed spot pairs.
 
@@ -212,7 +250,8 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
         does not know is kept and its fills report the unknown asset to the user.
         """
         symbols = {}
-        for entry in self._api_query('/api/v2/spot/public/symbols'):
+        endpoint: BitgetEndpoint = '/api/v2/spot/public/symbols'
+        for entry in self._validate_list_response(self._api_query(endpoint), endpoint):
             try:
                 symbols[entry['symbol']] = BitgetSymbol(
                     base_coin=entry['baseCoin'],
@@ -249,7 +288,7 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
             except UnknownAsset as e:
                 self.send_unknown_asset_message(e.identifier, 'balance query')
                 continue
-            except (DeserializationError, KeyError, TypeError) as e:
+            except (DeserializationError, KeyError, TypeError, UnsupportedAsset) as e:
                 log.error('Failed to deserialize Bitget balance %s due to %s', entry, e)
                 continue
             if amount != ZERO:
@@ -258,16 +297,24 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         try:
+            spot_endpoint: BitgetEndpoint = '/api/v2/spot/account/assets'
             self._add_balance_entries(
                 amounts=amounts,
-                entries=self._api_query('/api/v2/spot/account/assets'),
+                entries=self._validate_list_response(
+                    self._api_query(spot_endpoint),
+                    spot_endpoint,
+                ),
                 amount_keys=('available', 'frozen', 'locked'),
             )
             for product_type in BITGET_PRODUCT_TYPES:
+                futures_endpoint: BitgetEndpoint = '/api/v2/mix/account/accounts'
                 try:
-                    futures_accounts = self._api_query(
-                        '/api/v2/mix/account/accounts',
-                        {'productType': product_type},
+                    futures_accounts = self._validate_list_response(
+                        self._api_query(
+                            futures_endpoint,
+                            {'productType': product_type},
+                        ),
+                        futures_endpoint,
                     )
                 except RemoteError as e:
                     if not _is_futures_access_rejection(e):
@@ -282,7 +329,11 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
                     if account.get('assetMode') == 'union':
                         self._add_balance_entries(
                             amounts=amounts,
-                            entries=account.get('assetList', []),
+                            entries=self._validate_list_response(
+                                account.get('assetList'),
+                                futures_endpoint,
+                                none_is_empty=True,
+                            ),
                             amount_keys=('balance',),
                         )
                     else:
@@ -309,11 +360,20 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
         while True:
             page = self._api_query(endpoint, query_options)
             if isinstance(page, dict):
-                entries = page.get('list', [])
+                entries = self._validate_list_response(
+                    page.get('list'),
+                    endpoint,
+                    none_is_empty=True,
+                )
                 next_id = page.get('endId')
-            else:
-                entries = page
+            elif isinstance(page, list) or page is None:
+                entries = self._validate_list_response(page, endpoint, none_is_empty=True)
                 next_id = entries[-1].get(id_key) if len(entries) != 0 else None
+            else:
+                raise RemoteError(
+                    f'Bitget request at {endpoint} returned unexpected data {page}',
+                    cause=FailureCause.BAD_DATA,
+                )
             results.extend(entries)
             if (
                     len(entries) < BITGET_MAX_RESULTS or
@@ -410,7 +470,13 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
                         page_events.extend(self._deserialize_spot_trade(entry, symbols[symbol]))
                     except UnknownAsset as e:
                         self.send_unknown_asset_message(e.identifier, 'trade')
-                    except (DeserializationError, KeyError, UnsupportedAsset, ValueError) as e:
+                    except (
+                        DeserializationError,
+                        KeyError,
+                        TypeError,
+                        UnsupportedAsset,
+                        ValueError,
+                    ) as e:
                         log.error('Failed to deserialize Bitget trade %s due to %s', entry, e)
             if event_queue is None:
                 events.extend(page_events)
@@ -482,7 +548,13 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
                     ))
                 except UnknownAsset as e:
                     self.send_unknown_asset_message(e.identifier, 'asset movement')
-                except (DeserializationError, KeyError, UnsupportedAsset, ValueError) as e:
+                except (
+                    DeserializationError,
+                    KeyError,
+                    TypeError,
+                    UnsupportedAsset,
+                    ValueError,
+                ) as e:
                     log.error('Failed to deserialize Bitget movement %s due to %s', entry, e)
         return events
 
@@ -565,7 +637,13 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
                     ))
                 except UnknownAsset as e:
                     self.send_unknown_asset_message(e.identifier, 'margin position')
-                except (DeserializationError, KeyError, UnsupportedAsset, ValueError) as e:
+                except (
+                    DeserializationError,
+                    KeyError,
+                    TypeError,
+                    UnsupportedAsset,
+                    ValueError,
+                ) as e:
                     log.error(
                         'Failed to deserialize Bitget margin position %s due to %s', entry, e,
                     )
