@@ -20,6 +20,7 @@ from rotkehlchen.history.data_issues.types import (
     DataIssue,
     DataIssueFilters,
     DataIssuePayload,
+    InvalidEventAmountIssuePayload,
     NegativeBalanceIssuePayload,
     RebasingTokenIssuePayload,
     UnmatchedBridgeIssuePayload,
@@ -241,12 +242,13 @@ class DataIssuesManager:
         payload_json = json.dumps(payload, separators=(',', ':'))
         created_at = ts_now()
         if kind in (
+            IssueKind.INVALID_EVENT_AMOUNT,
             IssueKind.NEGATIVE_BALANCE,
             IssueKind.REBASING_TOKEN,
             IssueKind.UNMATCHED_BRIDGE,
         ):
             event_identifier = cast(
-                'NegativeBalanceIssuePayload | RebasingTokenIssuePayload | UnmatchedBridgeIssuePayload',  # noqa: E501
+                'InvalidEventAmountIssuePayload | NegativeBalanceIssuePayload | RebasingTokenIssuePayload | UnmatchedBridgeIssuePayload',  # noqa: E501
                 payload,
             )['event_identifier']
         else:  # kind == IssueKind.CURRENT_BALANCE_MISMATCH
