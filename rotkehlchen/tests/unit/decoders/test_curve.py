@@ -3494,3 +3494,65 @@ def test_ensure_curve_pool_and_gauge_tokens(globaldb, ethereum_transaction_decod
         if address == gauge_address:
             assert token.underlying_tokens is not None
             assert token.underlying_tokens[0].address == lp_token_address
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_deposit_tricrypto_via_zap_arbitrum(
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
+) -> None:
+    """Test depositing ETH into Curve Tricrypto v1 pool via Tricrypto Zap on Arbitrum."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8afaba28c850d9e6b835ce7f596a45e851df9c045ff37d4f196eaf5c44ce2131')),  # noqa: E501
+        load_global_caches=load_global_caches,
+    )
+    pool_address = string_to_evm_address('0x960ea3e3C7FB317332d990873d354E18d7645590')
+    zap_address = string_to_evm_address('0xF97c707024ef0DD3E77a0824555a46B622bfB500')
+    user_address = arbitrum_one_accounts[0]
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1644677727000)),
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_fees := '0.00042372169629174'),
+            location_label=user_address,
+            notes=f'Burn {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ),
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_ETH,
+            amount=FVal(deposit_amount := '0.01'),
+            location_label=user_address,
+            notes=f'Deposit {deposit_amount} ETH in curve pool {pool_address}',
+            counterparty=CPT_CURVE,
+            address=zap_address,
+        ),
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x8e0B8c8BB9db49a46697F3a5Bb8A308e744821D2'),
+            amount=FVal(receive_amount := '0.019159370812422884'),
+            location_label=user_address,
+            notes=f'Receive {receive_amount} crv3crypto after depositing in a curve pool',
+            counterparty=CPT_CURVE,
+            address=zap_address,
+        ),
+    ]
