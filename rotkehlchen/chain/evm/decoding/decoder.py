@@ -31,6 +31,8 @@ from rotkehlchen.chain.evm.decoding.balancer.v3.constants import BALANCER_V3_SUP
 from rotkehlchen.chain.evm.decoding.balancer.v3.decoder import Balancerv3CommonDecoder
 from rotkehlchen.chain.evm.decoding.beefy_finance.constants import SUPPORTED_BEEFY_CHAINS
 from rotkehlchen.chain.evm.decoding.beefy_finance.decoder import BeefyFinanceCommonDecoder
+from rotkehlchen.chain.evm.decoding.connext.constants import CONNEXT_NXTP_MANAGERS
+from rotkehlchen.chain.evm.decoding.connext.decoder import ConnextDecoder
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_SUPPORTED_CHAINS_WITHOUT_VCOW
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import CowswapCommonDecoder
 from rotkehlchen.chain.evm.decoding.erc4337.decoder import Erc4337Decoder
@@ -316,6 +318,13 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         self._add_single_decoder(class_name='Oneinchv6', decoder_class=Oneinchv6Decoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='SocketBridgeDecoder', decoder_class=SocketBridgeDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Lifi', decoder_class=LifiDecoder, rules=rules)
+        if (connext_managers := CONNEXT_NXTP_MANAGERS.get(self.evm_inquirer.chain_id)) is not None:
+            self._add_single_decoder(
+                class_name='Connext',
+                decoder_class=ConnextDecoder,
+                rules=rules,
+                decoder_args=(connext_managers,),
+            )
         if (relay_solvers := RELAY_SOLVERS.get(self.evm_inquirer.chain_id)) is not None:
             self._add_single_decoder(
                 class_name='Relay',
