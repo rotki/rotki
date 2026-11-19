@@ -45,6 +45,7 @@ function bucket(overrides: Partial<ReconciliationBucket> = {}): ReconciliationBu
     check: null,
     derivedBalance: null,
     issueId: null,
+    issueKind: null,
     lastEventTs: null,
     observedAt: null,
     observedBalance: null,

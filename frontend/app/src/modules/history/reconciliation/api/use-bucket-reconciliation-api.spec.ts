@@ -42,6 +42,7 @@ describe('useBucketReconciliationApi', () => {
           check: null,
           derived_balance: null,
           issue_id: null,
+          issue_kind: null,
           last_event_ts: null,
           observed_at: null,
           observed_balance: null,
@@ -49,8 +50,27 @@ describe('useBucketReconciliationApi', () => {
           reasons: [],
           status: 'pending',
           stop: null,
+        }, {
+          asset: 'USDC',
+          check: null,
+          derived_balance: '1',
+          issue_id: 42,
+          issue_kind: 'invalid_event_amount',
+          last_event_ts: 1_700_000_000_000,
+          observed_at: null,
+          observed_balance: null,
+          protocol: null,
+          reasons: [],
+          status: 'blocked',
+          stop: {
+            derived_balance_before_event: '1',
+            event_identifier: 99,
+            event_timestamp: 1_700_000_000_000,
+            group_identifier: 'group-1',
+            negative_amount: '-0.5',
+          },
         }],
-        pagination: { limit: 50, offset: 0, total: 1 },
+        pagination: { limit: 50, offset: 0, total: 2 },
       }),
     ]))));
 
@@ -61,6 +81,9 @@ describe('useBucketReconciliationApi', () => {
     expect(response.accounts[0].historySyncedTo).toBe(1_700_000_000);
     expect(response.accounts[0].buckets?.[0].observedBalance).toBeNull();
     expect(response.accounts[0].buckets?.[0].derivedBalance).toBeNull();
+    expect(response.accounts[0].buckets?.[0].issueKind).toBeNull();
+    expect(response.accounts[0].buckets?.[1].issueId).toBe(42);
+    expect(response.accounts[0].buckets?.[1].issueKind).toBe('invalid_event_amount');
   });
 
   it('should scope an account request with its location, label, statuses and page', async () => {

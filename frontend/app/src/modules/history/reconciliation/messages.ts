@@ -1,5 +1,6 @@
 import type { ReconciliationBucket } from '@/modules/history/reconciliation/schemas';
 import { type MessageKey, msg } from '@/message-key';
+import { IssueKind } from '@/modules/history/data-issues/constants';
 import {
   amountsFor,
   type DisplayStatus,
@@ -36,6 +37,18 @@ export const SUBLINE_LABEL: Record<'blocked' | 'matches' | 'not_checked', Messag
   matches: msg.$t('data_issues.reconciliation.subline.matches'),
   not_checked: msg.$t('data_issues.reconciliation.subline.not_checked'),
 };
+
+const BLOCKED_REASON_LABEL = {
+  invalid_event_amount: msg.$t('data_issues.reconciliation.reason.blocked_invalid_event_amount'),
+  negative_balance: msg.$t('data_issues.reconciliation.reason.blocked'),
+} as const;
+
+/** The interpolated i18n key explaining a blocked bucket that has stop details. */
+export function blockedReasonLabel(bucket: ReconciliationBucket): MessageKey {
+  return bucket.issueKind === IssueKind.INVALID_EVENT_AMOUNT
+    ? BLOCKED_REASON_LABEL.invalid_event_amount
+    : BLOCKED_REASON_LABEL.negative_balance;
+}
 
 const REASON_LABEL: Record<string, MessageKey> = {
   asset_coverage_missing: msg.$t('data_issues.reconciliation.reason.asset_coverage_missing'),

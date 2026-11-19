@@ -75,6 +75,8 @@ export const ReconciliationBucket = z.object({
   /** Unix milliseconds. */
   lastEventTs: z.number().nullable(),
   issueId: z.number().nullable(),
+  /** Kind of the linked issue, kept as a string so newer backend kinds do not fail parsing. */
+  issueKind: z.string().nullable(),
   check: BucketCheck.nullable(),
   stop: BucketStop.nullable(),
 });
