@@ -925,17 +925,28 @@ class Coingecko(
         # https://github.com/PyCQA/pylint/issues/4739
         try:
             price = Price(FVal(result['market_data']['current_price'][vs_currency]))
-        except KeyError as e:
+        except (KeyError, TypeError, ValueError) as e:
             log.warning(
                 f'Queried coingecko historical price from {from_asset.identifier} '
-                f'to {to_asset.identifier}. But got key error for {e!s} when '
+                f'to {to_asset.identifier}. But got error for {e!s} when '
                 f'processing the result.',
+            )
+            is_confirmed_no_data = (
+                isinstance(result, dict) and
+                result.get('id') == from_coingecko_id and (
+                    'market_data' not in result or
+                    result['market_data'] is None or (
+                        isinstance(result['market_data'], dict) and
+                        result['market_data'].get('current_price') == {}
+                    )
+                )
             )
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 time=timestamp,
                 rate_limited=False,
+                cacheable_miss=is_confirmed_no_data,
             ) from e
 
         return price

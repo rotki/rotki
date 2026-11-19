@@ -49,11 +49,15 @@ class AlchemyAssetData(NamedTuple):
     ) -> bool:
         """Check if the API response entry matches the asset identifier."""
         return (
-            ('symbol' in entry and entry['symbol'] == self.symbol is not None) or
             (
-                'address' in entry and
-                entry['network'] == self.network and
-                entry['address'] == self.address
+                self.symbol is not None and
+                entry.get('symbol') == self.symbol
+            ) or
+            (
+                self.address is not None and
+                self.network is not None and
+                entry.get('network') == self.network and
+                entry.get('address') == self.address
             )
         )
 
@@ -184,18 +188,20 @@ class Alchemy(
             ) from e
 
         result = self._query(**alchemy_asset_data.serialize_for_historical_price(timestamp))
-        if (usd_price := self._deserialize_historical_price(
+        usd_price, is_confirmed_no_data = self._deserialize_historical_price(
             result=result,
             alchemy_asset_data=alchemy_asset_data,
             from_asset=from_asset,
             timestamp=timestamp,
             to_asset=to_asset,
-        )) == ZERO_PRICE:
+        )
+        if usd_price == ZERO_PRICE:
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 time=timestamp,
                 rate_limited=False,
+                cacheable_miss=is_confirmed_no_data,
             )
 
         if to_asset != A_USD:  # we need to query intermediate price in this case.
@@ -318,52 +324,66 @@ class Alchemy(
 
     @staticmethod
     def _deserialize_historical_price(
-            result: dict[str, Any],
+            result: Any,
             timestamp: Timestamp,
             alchemy_asset_data: AlchemyAssetData,
             from_asset: Asset,
             to_asset: Asset,
-    ) -> Price:
+    ) -> tuple[Price, bool]:
         """Deserializes historical price data from Alchemy API response.
 
-        If price data is missing, invalid, or there's an error, ZERO_PRICE is returned.
-        Otherwise, the deserialized price is returned.
+        Returns `(price, is_confirmed_no_data)`. `is_confirmed_no_data` is True only when
+        the response matched the requested asset in USD and validly reported empty `data`
+        or a zero price.
         """
+        if not isinstance(result, dict):
+            return ZERO_PRICE, False
+
         try:
             if not alchemy_asset_data.matches_api_response(result):
                 log.warning(
                     f'Queried Alchemy API from {from_asset.identifier} to {to_asset.identifier}, '
                     f'but received mismatched symbol in response',
                 )
-                return ZERO_PRICE
+                return ZERO_PRICE, False
 
             if result['currency'] != 'usd':
                 log.warning(
                     f'Queried Alchemy API from {from_asset.identifier} to {to_asset.identifier}, '
                     f'but received non-USD currency in response',
                 )
-                return ZERO_PRICE
+                return ZERO_PRICE, False
 
-            if not (data := result.get('data', [])):
+            if not isinstance(data := result.get('data'), list):
+                log.warning(
+                    'Queried Alchemy API from %s to %s, '
+                    'but received invalid historical price data in response',
+                    from_asset.identifier,
+                    to_asset.identifier,
+                )
+                return ZERO_PRICE, False
+
+            if len(data) == 0:
                 log.warning(
                     f'Queried Alchemy API from {from_asset.identifier} to {to_asset.identifier}, '
                     f'but received no historical price data in response',
                 )
-                return ZERO_PRICE
+                return ZERO_PRICE, True
 
             closest_price = min(
                 data,
                 key=lambda x: abs(timestamp - int(iso8601ts_to_timestamp(x['timestamp']))),
             )
-            return deserialize_price(closest_price['value'])
-
-        except (DeserializationError, KeyError, ValueError) as e:
+            price = deserialize_price(closest_price['value'])
+        except (DeserializationError, KeyError, TypeError, ValueError) as e:
             error_msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
             log.warning(
                 f'Queried Alchemy Price API from {from_asset.identifier} to {to_asset.identifier}. '  # noqa: E501
                 f'Failed to deserialize historical price data due to: {error_msg}',
             )
-            return ZERO_PRICE
+            return ZERO_PRICE, False
+        else:
+            return price, price == ZERO_PRICE
 
     def _query(
             self,

@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from contextlib import suppress
 from http import HTTPStatus
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Final, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken, FiatAsset
@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import get_uniswap_v3_posit
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 from rotkehlchen.chain.evm.decoding.velodrome.utils import get_slipstream_position_price
 from rotkehlchen.chain.evm.utils import lp_price_from_uniswaplike_pool_contract
-from rotkehlchen.constants import HOUR_IN_SECONDS, ONE, ZERO
+from rotkehlchen.constants import DAY_IN_SECONDS, HOUR_IN_SECONDS, ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_ETH,
     A_ETH2,
@@ -30,7 +30,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp, TokenKind
-from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp
+from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
 
 from .types import (
     DAILY_GRANULARITY_ORACLES,
@@ -55,6 +55,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# Don't cache historical price misses for timestamps newer than this age, so newly traded
+# or not-yet-indexed tokens can be re-queried once indexers catch up.
+PRICE_MISS_MIN_AGE_SECONDS: Final = DAY_IN_SECONDS
 
 
 def query_price_or_use_default(
@@ -432,18 +436,34 @@ class PriceHistorian:
 
         # Daily-granularity oracles have a single price per UTC day, cached at the
         # day-start timestamp, so any same-day query can reuse it without a remote call
+        daystart_ts = timestamp_to_daystart_timestamp(timestamp)
         if (cached_price_entry := GlobalDBHandler.get_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
-            timestamp=timestamp_to_daystart_timestamp(timestamp),
+            timestamp=daystart_ts,
             max_seconds_distance=0,
             sources=tuple(source for source in sources if source in DAILY_GRANULARITY_ORACLES),
         )) is not None:
             return cached_price_entry.price
 
+        # Bucket non-daily misses to the UTC hour to match the 1h positive-cache tolerance
+        # and collapse bursts of transactions within the same hour into a single remote lookup
+        hourstart_ts = Timestamp(timestamp - (timestamp % HOUR_IN_SECONDS))
+        cached_misses, miss_guard = GlobalDBHandler.get_historical_price_misses_and_guard(
+            from_asset=from_asset,
+            timestamps=(hourstart_ts, daystart_ts),
+        )
+        now = ts_now()
+        today_daystart_ts = timestamp_to_daystart_timestamp(now)
+        candidate_misses: list[tuple[HistoricalPriceOracle, Timestamp]] = []
         # else cryptocompare also has historical fiat to fiat data
         rate_limited = False
         for oracle, oracle_instance in zip(oracles, oracle_instances, strict=True):
+            is_daily = oracle in DAILY_GRANULARITY_ORACLES
+            miss_ts = daystart_ts if is_daily else hourstart_ts
+            if (oracle, miss_ts) in cached_misses:
+                continue
+
             if not oracle_instance.can_query_history(
                 from_asset=from_asset,
                 to_asset=to_asset,
@@ -457,9 +477,21 @@ class PriceHistorian:
                     to_asset=to_asset,
                     timestamp=timestamp,
                 )
+            except NoPriceForGivenTimestamp as e:
+                if (
+                    e.rate_limited is False and
+                    e.cacheable_miss and
+                    e.from_asset == from_asset and (
+                        daystart_ts < today_daystart_ts if is_daily
+                        else timestamp <= now - PRICE_MISS_MIN_AGE_SECONDS
+                    )
+                ):
+                    candidate_misses.append((oracle, miss_ts))
+                else:
+                    rate_limited = rate_limited or e.rate_limited
+                continue
             except (
                 PriceQueryUnsupportedAsset,
-                NoPriceForGivenTimestamp,
                 UnknownAsset,
                 WrongAssetType,
             ):
@@ -482,12 +514,19 @@ class PriceHistorian:
                 source=oracle,
                 # daily-granularity sources return the same price for the whole UTC
                 # day, so cache at day start to make it reusable by same-day queries
-                timestamp=(
-                    timestamp_to_daystart_timestamp(timestamp)
-                    if oracle in DAILY_GRANULARITY_ORACLES else timestamp
-                ),
+                timestamp=daystart_ts if is_daily else timestamp,
                 price=price,
             )])
+            # Persist daily-granularity misses even when a later point-in-time oracle
+            # succeeds so later same-day queries don't keep hitting the daily oracle
+            if len(daily_misses := [
+                miss for miss in candidate_misses if miss[0] in DAILY_GRANULARITY_ORACLES
+            ]) != 0:
+                GlobalDBHandler.add_historical_price_misses(
+                    from_asset=from_asset,
+                    misses=daily_misses,
+                    expected_guard=miss_guard,
+                )
             return price
 
         # oracles price crypto in fiat but not fiat in crypto, so invert the crypto to fiat price.
@@ -502,6 +541,12 @@ class PriceHistorian:
                     return Price(ONE / inverse_price)
             except NoPriceForGivenTimestamp as e:
                 rate_limited = rate_limited or e.rate_limited
+        elif len(candidate_misses) != 0:
+            GlobalDBHandler.add_historical_price_misses(
+                from_asset=from_asset,
+                misses=candidate_misses,
+                expected_guard=miss_guard,
+            )
 
         raise NoPriceForGivenTimestamp(
             from_asset=from_asset,

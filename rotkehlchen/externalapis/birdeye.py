@@ -236,19 +236,22 @@ class Birdeye(
         return wait
 
     @staticmethod
-    def _deserialize_price_entry(entry: Any, identifier: str) -> Price:
-        """Read the `value` of a single Birdeye price entry.
+    def _parse_price_entry(entry: Any, identifier: str) -> tuple[Price, bool]:
+        """Parse a single Birdeye price entry and return `(price, is_confirmed_no_data)`.
 
-        Birdeye omits the entry or returns null for a token it has not indexed, and
-        ZERO_PRICE is returned for those and for any malformed value. The identifier
-        names the token in the logs.
+        `is_confirmed_no_data` is True when the entry is a valid dict whose `value` is `None`
+        or validly deserializes to `ZERO_PRICE`, and False for malformed entries.
         """
-        if not isinstance(entry, dict) or (value := entry.get('value')) is None:
+        if not isinstance(entry, dict) or 'value' not in entry:
+            log.debug('Birdeye has malformed price entry for %s. Entry: %s', identifier, entry)
+            return ZERO_PRICE, False
+
+        if (value := entry['value']) is None:
             log.debug('Birdeye has no price for %s. Entry: %s', identifier, entry)
-            return ZERO_PRICE
+            return ZERO_PRICE, True
 
         try:
-            return deserialize_price(str(value))
+            price = deserialize_price(str(value))
         except DeserializationError as e:
             log.warning(
                 'Failed to deserialize Birdeye price %s for %s due to %s',
@@ -256,7 +259,20 @@ class Birdeye(
                 identifier,
                 e,
             )
-            return ZERO_PRICE
+            return ZERO_PRICE, False
+
+        return price, price == ZERO_PRICE
+
+    @staticmethod
+    def _deserialize_price_entry(entry: Any, identifier: str) -> Price:
+        """Read the `value` of a single Birdeye price entry.
+
+        Birdeye omits the entry or returns null for a token it has not indexed, and
+        ZERO_PRICE is returned for those and for any malformed value. The identifier
+        names the token in the logs.
+        """
+        price, _ = Birdeye._parse_price_entry(entry=entry, identifier=identifier)
+        return price
 
     def _query_single_prices(
             self,
@@ -410,14 +426,17 @@ class Birdeye(
             chain: str,
             address: str,
             timestamp: Timestamp,
-    ) -> Price:
-        """Query the price series around the timestamp and pick the point closest to it.
+    ) -> tuple[Price, bool]:
+        """Query the price series around the timestamp and return `(price, is_confirmed_no_data)`.
 
-        Returns ZERO_PRICE if no window contains any point.
+        `is_confirmed_no_data` is True only when every queried window had a valid `items` list
+        with no malformed entries and either no entry was found or the nearest entry validly
+        resolved to `ZERO_PRICE` (e.g. `value` was `None` or `'0'`).
 
         May raise:
         - RemoteError if there is a problem querying Birdeye
         """
+        had_malformed_response = False
         for interval, half_window in BIRDEYE_HISTORY_WINDOWS:
             data = self._query(
                 endpoint='history_price',
@@ -430,11 +449,16 @@ class Birdeye(
                     'time_to': str(timestamp + half_window),
                 },
             )
+            if not isinstance(data, dict) or not isinstance(items := data.get('items'), list):
+                had_malformed_response = True
+                items = []
+
             nearest_entry, nearest_distance = None, half_window + 1
-            for entry in data.get('items', []):
+            for entry in items:
                 try:
                     distance = abs(int(entry['unixTime']) - timestamp)
                 except (KeyError, TypeError, ValueError) as e:
+                    had_malformed_response = True
                     log.warning('Skipping malformed Birdeye history entry %s due to %s', entry, e)
                     continue
 
@@ -442,12 +466,13 @@ class Birdeye(
                     nearest_entry, nearest_distance = entry, distance
 
             if nearest_entry is not None:
-                return self._deserialize_price_entry(
+                price, is_confirmed_no_data = self._parse_price_entry(
                     entry=nearest_entry,
                     identifier=f'{chain}:{address}',
                 )
+                return price, (not had_malformed_response and is_confirmed_no_data)
 
-        return ZERO_PRICE
+        return ZERO_PRICE, not had_malformed_response
 
     def query_historical_price(
             self,
@@ -480,16 +505,18 @@ class Birdeye(
                 rate_limited=False,
             ) from e
 
-        if (usd_price := self._query_nearest_historical_usd_price(
+        usd_price, is_confirmed_no_data = self._query_nearest_historical_usd_price(
             chain=chain,
             address=address,
             timestamp=timestamp,
-        )) == ZERO_PRICE:
+        )
+        if usd_price == ZERO_PRICE:
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 time=timestamp,
                 rate_limited=False,
+                cacheable_miss=is_confirmed_no_data,
             )
 
         if to_asset == A_USD:

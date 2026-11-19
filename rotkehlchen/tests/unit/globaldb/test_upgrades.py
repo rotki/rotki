@@ -1933,6 +1933,7 @@ def test_upgrade_v18_v19(
         assert write_cursor.execute(
             "SELECT COUNT(*) FROM price_history_source_types WHERE type='L'",
         ).fetchone()[0] == 0
+        assert not table_exists(write_cursor, 'historical_price_misses')
         assert write_cursor.execute(
             "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name=?",
             ('idx_evm_tokens_address_chain',),
@@ -1977,6 +1978,7 @@ def test_upgrade_v18_v19(
             for location, symbol, local_id in mappings_before
         }
         assert not table_exists(cursor, 'location_asset_mappings')
+        assert table_exists(cursor, 'historical_price_misses')
         assert {row[0] for row in cursor.execute(
             "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='connector_asset_mappings'",  # noqa: E501
         )} >= {'idx_connector_mappings_identifier'}

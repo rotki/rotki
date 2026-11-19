@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.globaldb.schema import DB_CREATE_HISTORICAL_PRICE_MISSES
 from rotkehlchen.locations.legacy_chars import V53_CHAR_TO_NAME
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.utils.progress import perform_globaldb_upgrade_steps, progress_step
@@ -18,8 +19,9 @@ def migrate_to_v19(
         connection: DBConnection,
         progress_handler: DBUpgradeProgressHandler,
 ) -> None:
-    """Add Birdeye as a historical price source, indexes for asset lookups, and key exchange
-    asset mappings and binance pairs by connector identifier instead of a location character.
+    """Add Birdeye as a historical price source, indexes for asset lookups, historical price
+    misses caching table, and key exchange asset mappings and binance pairs by connector
+    identifier instead of a location character.
 
     This upgrade takes place in v1.45
     """
@@ -30,6 +32,10 @@ def migrate_to_v19(
             'INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES (?, ?)',
             ('L', 12),
         )
+
+    @progress_step('Adding historical_price_misses table')
+    def _add_historical_price_misses_table(write_cursor: DBCursor) -> None:
+        write_cursor.execute(DB_CREATE_HISTORICAL_PRICE_MISSES)
 
     @progress_step('Adding indexes for asset lookups')
     def _add_asset_lookup_indexes(write_cursor: DBCursor) -> None:
