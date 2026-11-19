@@ -590,6 +590,22 @@ def test_query_margin_history(bitget_exchange: Bitget) -> None:
 
 
 @pytest.mark.freeze_time('2025-01-01 00:00:00 GMT')
+def test_query_margin_history_clamps_future_end(bitget_exchange: Bitget) -> None:
+    with patch.object(bitget_exchange, '_paginated_query', return_value=[]) as query:
+        assert bitget_exchange.query_online_margin_history(
+            start_ts=BITGET_LAUNCH_TS,
+            end_ts=Timestamp(ts_now() + 1),
+        ) == []
+
+    assert query.call_count == 3
+    for call in query.call_args_list:
+        assert call.args[1]['startTime'] == ts_sec_to_ms(Timestamp(
+            ts_now() - BITGET_MAX_HISTORY_WINDOW,
+        ))
+        assert call.args[1]['endTime'] == ts_sec_to_ms(Timestamp(ts_now()))
+
+
+@pytest.mark.freeze_time('2025-01-01 00:00:00 GMT')
 def test_query_margin_history_before_available_range(bitget_exchange: Bitget) -> None:
     with patch.object(bitget_exchange, '_paginated_query') as query:
         assert bitget_exchange.query_online_margin_history(

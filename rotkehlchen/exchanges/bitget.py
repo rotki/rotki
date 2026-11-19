@@ -590,8 +590,10 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
             end_ts: Timestamp,
     ) -> list[MarginPosition]:
         positions: list[MarginPosition] = []
-        earliest_ts = Timestamp(max(start_ts, ts_now() - 90 * DAY_IN_SECONDS))
-        if earliest_ts >= end_ts:
+        now = ts_now()
+        effective_end_ts = Timestamp(min(end_ts, now))
+        earliest_ts = Timestamp(max(start_ts, now - BITGET_MAX_HISTORY_WINDOW))
+        if earliest_ts >= effective_end_ts:
             return positions
 
         for product_type in BITGET_PRODUCT_TYPES:
@@ -601,7 +603,7 @@ class Bitget(ExchangeInterface, SignatureGeneratorMixin):
                     {
                         'productType': product_type,
                         'startTime': ts_sec_to_ms(earliest_ts),
-                        'endTime': ts_sec_to_ms(end_ts),
+                        'endTime': ts_sec_to_ms(effective_end_ts),
                     },
                     'positionId',
                 )
