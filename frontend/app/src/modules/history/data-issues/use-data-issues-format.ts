@@ -31,6 +31,8 @@ export function useDataIssuesFormat(): UseDataIssuesFormatReturn {
     switch (kind) {
       case IssueKind.NEGATIVE_BALANCE:
         return t('data_issues.kind.negative_balance');
+      case IssueKind.INVALID_EVENT_AMOUNT:
+        return t('data_issues.kind.invalid_event_amount');
       case IssueKind.CURRENT_BALANCE_MISMATCH:
         return t('data_issues.kind.current_balance_mismatch');
       case IssueKind.REBASING_TOKEN:

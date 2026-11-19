@@ -62,6 +62,7 @@ describe('data-issues constants', () => {
       [IssueKind.REBASING_TOKEN, IssueState.UNRESOLVED, true],
       [IssueKind.REBASING_TOKEN, IssueState.RESOLVED, false],
       [IssueKind.REBASING_TOKEN, IssueState.DISMISSED, false],
+      [IssueKind.INVALID_EVENT_AMOUNT, IssueState.OPEN, false],
       [IssueKind.NEGATIVE_BALANCE, IssueState.OPEN, false],
     ])('canRetry(%s, %s) === %s', (kind, state, expected) => {
       expect(canRetry(kind, state)).toBe(expected);

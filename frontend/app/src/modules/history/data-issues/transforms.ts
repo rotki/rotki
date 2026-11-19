@@ -12,6 +12,7 @@ import {
   type AutoRemediationAttempt,
   CurrentBalanceMismatchPayload,
   type DataIssue,
+  InvalidEventAmountPayload,
   NegativeBalancePayload,
   RebasingTokenPayload,
   UnmatchedBridgePayload,
@@ -148,8 +149,25 @@ function describeUnmatchedBridge(issue: DataIssue): IssueDescription | undefined
   };
 }
 
+function describeInvalidEventAmount(issue: DataIssue): IssueDescription | undefined {
+  const parsed = InvalidEventAmountPayload.safeParse(issue.payload);
+  if (!parsed.success)
+    return undefined;
+  const payload = parsed.data;
+  return {
+    amounts: {
+      amount: payload.amount,
+    },
+    asset: issue.asset ?? undefined,
+    eventIdentifier: payload.eventIdentifier,
+    messageKey: msg.$t('data_issues.description.invalid_event_amount'),
+    shortMessageKey: msg.$t('data_issues.description_short.invalid_event_amount'),
+  };
+}
+
 const KIND_DESCRIBERS: Partial<Record<IssueKind, (issue: DataIssue) => IssueDescription | undefined>> = {
   [IssueKind.CURRENT_BALANCE_MISMATCH]: describeBalanceMismatch,
+  [IssueKind.INVALID_EVENT_AMOUNT]: describeInvalidEventAmount,
   [IssueKind.NEGATIVE_BALANCE]: describeNegativeBalance,
   [IssueKind.REBASING_TOKEN]: describeRebasingToken,
   [IssueKind.UNMATCHED_BRIDGE]: describeUnmatchedBridge,
@@ -211,7 +229,11 @@ export function relatedEventRoute(
     return { name, query: { openMatchBridgesDialog: 'true' } };
   }
 
-  if (kind === IssueKind.NEGATIVE_BALANCE || kind === IssueKind.REBASING_TOKEN) {
+  if (
+    kind === IssueKind.NEGATIVE_BALANCE
+    || kind === IssueKind.INVALID_EVENT_AMOUNT
+    || kind === IssueKind.REBASING_TOKEN
+  ) {
     query.highlightedNegativeBalanceEvent = eventIdentifier.toString();
     if (groupIdentifier)
       query.targetGroupIdentifier = groupIdentifier;

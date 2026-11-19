@@ -19,6 +19,9 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.data_issues.constants import IssueKind
+from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.types import NegativeBalanceIssuePayload
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -323,6 +326,84 @@ def test_historical_balances_at_events(rotkehlchen_api_server: APIServer) -> Non
         'issue_id': issue_id,
     }
     assert [entries[str(identifier)]['stop'] for identifier in identifiers[6:]] == [None, stop, stop, None]  # noqa: E501
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('have_decoders', [True])
+def test_historical_balances_at_events_invalid_event_amount_stop(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Stops caused by a negative event amount link to the INVALID_EVENT_AMOUNT issue."""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    account = make_evm_address()
+    identifiers: list[int] = []
+    with db.user_write() as cursor:
+        for offset, event_type, amount in (
+            (0, HistoryEventType.RECEIVE, '5'),
+            (10, HistoryEventType.SPEND, '-1'),
+            (20, HistoryEventType.RECEIVE, '2'),
+        ):
+            identifier = DBHistoryEvents(db).add_history_event(
+                write_cursor=cursor,
+                event=EvmEvent(
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=0,
+                    timestamp=ts_sec_to_ms(Timestamp(START_TS + offset)),
+                    location=LOCATION_ETHEREUM,
+                    event_type=event_type,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=A_ETH,
+                    amount=FVal(amount),
+                    location_label=account,
+                    address=account,
+                ),
+            )
+            assert identifier is not None
+            identifiers.append(identifier)
+
+    # Seed an older resolved NEGATIVE_BALANCE issue on the same event to verify the stop
+    # links to the active INVALID_EVENT_AMOUNT issue instead.
+    issues_manager = DataIssuesManager(db)
+    old_issue_id = issues_manager.write_issue(
+        kind=IssueKind.NEGATIVE_BALANCE,
+        location=LOCATION_ETHEREUM,
+        location_label=account,
+        protocol=None,
+        asset=A_ETH.identifier,
+        payload=NegativeBalanceIssuePayload(
+            event_identifier=identifiers[1],
+            in_memory_negative_amount='-1',
+            derived_balance_before_event='0',
+        ),
+        ts_start=ts_sec_to_ms(Timestamp(START_TS + 10)),
+        ts_end=ts_sec_to_ms(Timestamp(START_TS + 10)),
+    )
+    issues_manager.resolve_manually(old_issue_id, note='superseded')
+
+    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
+    url = api_url_for(rotkehlchen_api_server, 'historicalbalancesateventsresource')
+    entries = assert_proper_sync_response_with_result(requests.post(
+        url, json={'event_identifiers': identifiers},
+    ))['entries']
+
+    with db.conn.read_ctx() as cursor:
+        group_identifier, invalid_amount_issue_id = cursor.execute(
+            'SELECT he.group_identifier, di.id FROM history_events he '
+            'JOIN data_issues di ON di.event_identifier = he.identifier '
+            'WHERE he.identifier = ? AND di.kind = ?',
+            (identifiers[1], IssueKind.INVALID_EVENT_AMOUNT.value),
+        ).fetchone()
+    assert invalid_amount_issue_id != old_issue_id
+    expected_stop = {
+        'event_identifier': identifiers[1],
+        'group_identifier': group_identifier,
+        'issue_id': invalid_amount_issue_id,
+    }
+    assert [entries[str(identifier)]['stop'] for identifier in identifiers] == [
+        None,
+        expected_stop,
+        expected_stop,
+    ]
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

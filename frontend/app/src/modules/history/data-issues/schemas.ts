@@ -132,6 +132,13 @@ export interface DataIssuesRequestPayload extends PaginationRequestPayload<DataI
   readonly toTimestamp?: number;
 }
 
+export const InvalidEventAmountPayload = z.object({
+  amount: NumericString,
+  eventIdentifier: z.number(),
+});
+
+export type InvalidEventAmountPayload = z.infer<typeof InvalidEventAmountPayload>;
+
 export const NegativeBalancePayload = z.object({
   derivedBalanceBeforeEvent: NumericString,
   eventIdentifier: z.number(),
