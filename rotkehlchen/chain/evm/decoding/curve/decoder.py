@@ -32,6 +32,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import (
     REMOVE_LIQUIDITY_IMBALANCE,
     REMOVE_LIQUIDITY_TOKEN_COUNTS,
     TOKEN_EXCHANGE,
+    TOKEN_EXCHANGE_CRYPTO,
     TOKEN_EXCHANGE_NG,
     TOKEN_EXCHANGE_UNDERLYING,
 )
@@ -766,7 +767,12 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         swapping_contracts: set[ChecksumEvmAddress] = set()
         # we check if before using the router any pool is used separately, by checking all the logs
         for tx_log in context.all_logs[:context.all_logs.index(context.tx_log) + 1]:
-            if tx_log.topics[0] in (TOKEN_EXCHANGE, TOKEN_EXCHANGE_UNDERLYING, TOKEN_EXCHANGE_NG):
+            if tx_log.topics[0] in (
+                TOKEN_EXCHANGE,
+                TOKEN_EXCHANGE_CRYPTO,
+                TOKEN_EXCHANGE_UNDERLYING,
+                TOKEN_EXCHANGE_NG,
+            ):
                 # if a pool is used then we extract the sold token address and amount here.
                 pool_address = tx_log.address
                 swapping_contracts = {pool_address}
@@ -777,7 +783,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                 bought_token_id = int.from_bytes(tx_log.data[64:96])
                 raw_bought_amount = int.from_bytes(tx_log.data[96:128])
                 if (
-                    tx_log.topics[0] in {TOKEN_EXCHANGE, TOKEN_EXCHANGE_NG} and
+                    tx_log.topics[0] in {TOKEN_EXCHANGE, TOKEN_EXCHANGE_CRYPTO, TOKEN_EXCHANGE_NG} and  # noqa: E501
                     pool_address in self.pools and
                     len(self.pools[pool_address]) > max(sold_token_id, bought_token_id)  # Make sure that tokens of the pool are cached  # noqa: E501
                 ):
@@ -985,6 +991,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
 
         if context.tx_log.topics[0] in (
             TOKEN_EXCHANGE,
+            TOKEN_EXCHANGE_CRYPTO,
             TOKEN_EXCHANGE_UNDERLYING,
             TOKEN_EXCHANGE_NG,
             EXCHANGE_MULTIPLE,
