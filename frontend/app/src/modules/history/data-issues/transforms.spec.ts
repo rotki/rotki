@@ -89,6 +89,25 @@ describe('data-issues transforms', () => {
       expect(result.amounts.before?.toString()).toBe('0');
     });
 
+    it('should describe an invalid event amount issue with its signed amount and event identifier', () => {
+      const issue = createIssue({
+        asset: 'ETH',
+        kind: IssueKind.INVALID_EVENT_AMOUNT,
+        payload: {
+          amount: '-0.05',
+          eventIdentifier: 42,
+        },
+      });
+
+      const result = describeIssue(issue);
+
+      expect(result.messageKey).toBe('data_issues.description.invalid_event_amount');
+      expect(result.shortMessageKey).toBe('data_issues.description_short.invalid_event_amount');
+      expect(result.eventIdentifier).toBe(42);
+      expect(result.asset).toBe('ETH');
+      expect(result.amounts.amount?.toString()).toBe('-0.05');
+    });
+
     it('should describe a balance mismatch and link to the latest event when present', () => {
       const issue = createIssue({
         kind: IssueKind.CURRENT_BALANCE_MISMATCH,
@@ -249,6 +268,17 @@ describe('data-issues transforms', () => {
       expect(relatedEventRoute(IssueKind.NEGATIVE_BALANCE, 42, '0xabc')).toEqual({
         name: '/history/events/',
         query: { highlightedNegativeBalanceEvent: '42', targetGroupIdentifier: '0xabc' },
+      });
+    });
+
+    it('should deep-link an invalid event amount issue to its highlighted event', () => {
+      expect(relatedEventRoute(IssueKind.INVALID_EVENT_AMOUNT, 42, '0xabc', 'ETH')).toEqual({
+        name: '/history/events/',
+        query: {
+          asset: 'ETH',
+          highlightedNegativeBalanceEvent: '42',
+          targetGroupIdentifier: '0xabc',
+        },
       });
     });
 

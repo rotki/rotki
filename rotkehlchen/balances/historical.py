@@ -17,7 +17,7 @@ from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import NotFoundError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.data_issues.constants import IssueKind
+from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.events.structures.base import HistoryEvent, get_event_direction
 from rotkehlchen.history.events.structures.types import EventDirection, HistoryEventSubType
 from rotkehlchen.locations.chains import (
@@ -425,16 +425,19 @@ class HistoricalBalancesManager:
         Any stopped bucket of the account and asset counts, since the snapshot of an event sums
         all of them. `requested` is the CTE of the requested events and `bindings` its values.
         A stop whose event was deleted has no sequence index left, so it is ordered by its
-        timestamp alone. The issue is the negative balance issue of the stopping event in the
-        stopped bucket, whatever its state: a dismissed issue still describes the stop.
+        timestamp alone. The issue is the stopping issue (negative balance or invalid event
+        amount) of the stopping event in the stopped bucket, whatever its state: a dismissed
+        issue still describes the stop, preferring an unresolved issue over a resolved one.
         """
         stops: dict[int, HistoricalBalanceStop] = {}
         for identifier, stop_event_identifier, group_identifier, issue_id in cursor.execute(
             requested + """SELECT r.identifier, s.event_identifier, he.group_identifier, (
-                    SELECT MAX(di.id) FROM data_issues di
-                    WHERE di.kind = ? AND di.event_identifier = s.event_identifier
+                    SELECT di.id FROM data_issues di
+                    WHERE di.kind IN (?, ?) AND di.event_identifier = s.event_identifier
                         AND di.location = s.location AND di.location_label = s.location_label
                         AND di.protocol = s.protocol
+                    ORDER BY di.state = ? ASC, di.id DESC
+                    LIMIT 1
                 ) FROM requested r JOIN bucket_processing_stops s
                     ON s.location_label = r.location_label AND s.asset = r.asset
                 LEFT JOIN history_events he ON he.identifier = s.event_identifier
@@ -447,7 +450,12 @@ class HistoricalBalancesManager:
                 )
                 ORDER BY s.event_timestamp DESC, he.sequence_index DESC, s.event_identifier DESC
             """,
-            [*bindings, IssueKind.NEGATIVE_BALANCE.value],
+            [
+                *bindings,
+                IssueKind.NEGATIVE_BALANCE.value,
+                IssueKind.INVALID_EVENT_AMOUNT.value,
+                IssueState.RESOLVED.value,
+            ],
         ):  # ordered latest first, so the earliest stop of each event is the one that stays
             stops[identifier] = HistoricalBalanceStop(
                 event_identifier=stop_event_identifier,

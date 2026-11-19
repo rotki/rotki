@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
-import { DataIssue } from '@/modules/history/data-issues/schemas';
+import { DataIssue, DataIssuesCollectionResponse, InvalidEventAmountPayload } from '@/modules/history/data-issues/schemas';
 
 /**
  * A comparison as the backend stores it, before parsing.
@@ -79,5 +79,37 @@ describe('historical decoding comparisons', () => {
     const issue = parseIssue({ strategy: 'reprocess_event' });
 
     expect(issue.autoRemediationAttempts[0]?.transactions).toBeUndefined();
+  });
+});
+
+describe('invalid event amount schema', () => {
+  it('should accept invalid_event_amount entries in a data issues collection response', () => {
+    const parsed = DataIssuesCollectionResponse.parse({
+      entries: [{
+        asset: 'ETH',
+        autoRemediationAttempts: [],
+        createdAt: 1,
+        id: 7,
+        kind: IssueKind.INVALID_EVENT_AMOUNT,
+        location: 'ethereum',
+        locationLabel: '0x0000000000000000000000000000000000000001',
+        payload: { amount: '-0.05', eventIdentifier: 42 },
+        protocol: null,
+        resolvedAt: null,
+        severity: IssueSeverity.WARNING,
+        state: IssueState.OPEN,
+        tsEnd: 1,
+        tsStart: 1,
+      }],
+      entriesFound: 1,
+    });
+
+    expect(parsed.entries).toHaveLength(1);
+    expect(parsed.entries[0]?.kind).toBe(IssueKind.INVALID_EVENT_AMOUNT);
+    expect(parsed.entriesTotal).toBe(1);
+
+    const payload = InvalidEventAmountPayload.parse(parsed.entries[0]?.payload);
+    expect(payload.eventIdentifier).toBe(42);
+    expect(payload.amount.toString()).toBe('-0.05');
   });
 });
