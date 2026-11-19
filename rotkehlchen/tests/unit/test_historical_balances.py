@@ -3171,9 +3171,9 @@ def test_negative_event_amount_stops_bucket_and_writes_data_issue(
             'SELECT event_identifier, metric_value FROM event_metrics ORDER BY timestamp',
         ).fetchall() == [(receive_id, '1')]
         assert cursor.execute(
-            'SELECT event_identifier, event_timestamp, derived_balance_before_event, negative_amount '  # noqa: E501
-            'FROM bucket_processing_stops',
-        ).fetchall() == [(invalid_id, 2000, '1', '-0.5')]
+            'SELECT event_identifier, event_timestamp, derived_balance_before_event, '
+            'negative_amount, issue_kind FROM bucket_processing_stops',
+        ).fetchall() == [(invalid_id, 2000, '1', '-0.5', IssueKind.INVALID_EVENT_AMOUNT.value)]
         issue_row = cursor.execute(
             'SELECT kind, state, severity, event_identifier, payload_json FROM data_issues',
         ).fetchone()

@@ -993,7 +993,8 @@ def _apply_to_buckets(
             assert event.identifier is not None, 'Processed history events should have identifiers'
             if run_state.is_awaiting_reconciliation(bucket):
                 run_state.reconcile(bucket)
-            DataIssuesManager(database).write_issue(
+            issues_manager = DataIssuesManager(database)
+            issues_manager.write_issue(
                 kind=IssueKind.INVALID_EVENT_AMOUNT,
                 location=bucket.location,
                 location_label=bucket.location_label,
@@ -1006,6 +1007,16 @@ def _apply_to_buckets(
                 ts_start=event.timestamp,
                 ts_end=event.timestamp,
             )
+            issues_manager.resolve_event_issues(
+                kind=IssueKind.NEGATIVE_BALANCE,
+                issues=[(
+                    bucket.location,
+                    bucket.location_label,
+                    bucket.protocol,
+                    bucket.asset,
+                    event.identifier,
+                )],
+            )
             log.warning(
                 'Invalid negative amount %s for %s at event %s. Skipping %s.',
                 event.amount,
@@ -1013,7 +1024,13 @@ def _apply_to_buckets(
                 event.identifier,
                 bucket,
             )
-            run_state.record_stop(bucket, event, current_balance, event.amount)
+            run_state.record_stop(
+                bucket=bucket,
+                event=event,
+                balance_before_event=current_balance,
+                negative_amount=event.amount,
+                issue_kind=IssueKind.INVALID_EVENT_AMOUNT,
+            )
             bucket_balances[bucket] = event.amount
             continue
 
@@ -1120,7 +1137,8 @@ def _apply_to_buckets(
                     'last_run_ts': last_run_ts,
                 },
             )
-            DataIssuesManager(database).write_issue(
+            issues_manager = DataIssuesManager(database)
+            issues_manager.write_issue(
                 IssueKind.NEGATIVE_BALANCE,
                 location=bucket.location,
                 location_label=bucket.location_label,
@@ -1129,6 +1147,16 @@ def _apply_to_buckets(
                 payload=payload,
                 ts_start=event.timestamp,
                 ts_end=event.timestamp,
+            )
+            issues_manager.resolve_event_issues(
+                kind=IssueKind.INVALID_EVENT_AMOUNT,
+                issues=[(
+                    bucket.location,
+                    bucket.location_label,
+                    bucket.protocol,
+                    bucket.asset,
+                    event.identifier,
+                )],
             )
             log.warning(
                 'Negative balance detected for %s at event %s. Skipping %s.',
