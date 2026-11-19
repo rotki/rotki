@@ -3104,3 +3104,101 @@ def test_processing_records_earliest_from_ts_for_pending_detection(
     assert pending() == 0
     process_historical_balances(database, messages_aggregator, from_ts=TimestampMS(7_000))
     assert pending() == 0
+
+
+@pytest.mark.parametrize(
+    'event_type',
+    [
+        HistoryEventType.RENEW,
+        HistoryEventType.RECEIVE,
+    ],
+)
+def test_negative_event_amount_stops_bucket_and_writes_data_issue(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+        event_type: HistoryEventType,
+) -> None:
+    """Events with negative amounts must not be applied and must stop the affected bucket."""
+    events_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        receive_id = events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=LOCATION_ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('1'),
+                location_label=TEST_ADDR1,
+            ),
+        )
+        invalid_id = events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(2000),
+                location=LOCATION_ETHEREUM,
+                event_type=event_type,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('-0.5'),
+                location_label=TEST_ADDR1,
+            ),
+        )
+        later_id = events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(3000),
+                location=LOCATION_ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('0.25'),
+                location_label=TEST_ADDR1,
+            ),
+        )
+
+    assert process_historical_balances(database, messages_aggregator) is True
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT event_identifier, metric_value FROM event_metrics ORDER BY timestamp',
+        ).fetchall() == [(receive_id, '1')]
+        assert cursor.execute(
+            'SELECT event_identifier, event_timestamp, derived_balance_before_event, negative_amount '  # noqa: E501
+            'FROM bucket_processing_stops',
+        ).fetchall() == [(invalid_id, 2000, '1', '-0.5')]
+        issue_row = cursor.execute(
+            'SELECT kind, state, severity, event_identifier, payload_json FROM data_issues',
+        ).fetchone()
+        assert issue_row[:4] == (
+            IssueKind.INVALID_EVENT_AMOUNT.value,
+            IssueState.OPEN.value,
+            'warning',
+            invalid_id,
+        )
+        assert json.loads(issue_row[4]) == {
+            'event_identifier': invalid_id,
+            'amount': '-0.5',
+        }
+
+    # Incremental reprocessing after the stopping event must retain the stop.
+    assert process_historical_balances(
+        database,
+        messages_aggregator,
+        from_ts=TimestampMS(3000),
+    ) is True
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT event_identifier, metric_value FROM event_metrics ORDER BY timestamp',
+        ).fetchall() == [(receive_id, '1')]
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM event_metrics WHERE event_identifier = ?',
+            (later_id,),
+        ).fetchone()[0] == 0

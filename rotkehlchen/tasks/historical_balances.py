@@ -40,6 +40,7 @@ from rotkehlchen.history.data_issues.manager import (
     make_auto_remediation_attempt,
 )
 from rotkehlchen.history.data_issues.types import (
+    InvalidEventAmountIssuePayload,
     NegativeBalanceIssuePayload,
     RebasingQueryFailure,
     RebasingTokenIssuePayload,
@@ -986,6 +987,34 @@ def _apply_to_buckets(
             (current_balance := bucket_balances.get(bucket, ZERO)) < ZERO and
             not run_state.is_awaiting_reconciliation(bucket)
         ):
+            continue
+
+        if event.amount < ZERO:
+            assert event.identifier is not None, 'Processed history events should have identifiers'
+            if run_state.is_awaiting_reconciliation(bucket):
+                run_state.reconcile(bucket)
+            DataIssuesManager(database).write_issue(
+                kind=IssueKind.INVALID_EVENT_AMOUNT,
+                location=bucket.location,
+                location_label=bucket.location_label,
+                protocol=bucket.protocol,
+                asset=bucket.asset,
+                payload=InvalidEventAmountIssuePayload(
+                    event_identifier=event.identifier,
+                    amount=str(event.amount),
+                ),
+                ts_start=event.timestamp,
+                ts_end=event.timestamp,
+            )
+            log.warning(
+                'Invalid negative amount %s for %s at event %s. Skipping %s.',
+                event.amount,
+                event.asset.identifier,
+                event.identifier,
+                bucket,
+            )
+            run_state.record_stop(bucket, event, current_balance, event.amount)
+            bucket_balances[bucket] = event.amount
             continue
 
         new_balance = (

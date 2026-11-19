@@ -44,6 +44,12 @@ class AutoRemediationAttempt(TypedDict):
     matched_movement_ids: NotRequired[list[int]]
 
 
+class InvalidEventAmountIssuePayload(BaseIssuePayload):
+    """Payload for an event-scoped issue where an event carries a negative amount."""
+    event_identifier: int
+    amount: str
+
+
 class NegativeBalanceIssuePayload(BaseIssuePayload):
     """Payload for an event-scoped issue where derived balance goes below zero."""
     event_identifier: int
@@ -83,6 +89,7 @@ class UnmatchedBridgeIssuePayload(BaseIssuePayload):
 
 
 type DataIssuePayload = (
+    InvalidEventAmountIssuePayload |
     NegativeBalanceIssuePayload |
     CurrentBalanceMismatchIssuePayload |
     RebasingTokenIssuePayload |
