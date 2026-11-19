@@ -4131,6 +4131,7 @@ class RestAPI:
             'observed_at': None if bucket.observed_at is None else int(bucket.observed_at),
             'last_event_ts': None if bucket.last_event_ts is None else int(bucket.last_event_ts),
             'issue_id': bucket.issue_id,
+            'issue_kind': None if bucket.issue_kind is None else bucket.issue_kind.value,
             'check': None if bucket.check is None else {
                 'derived_balance': str(bucket.check.derived_balance),
                 'observed_balance': str(bucket.check.observed_balance),

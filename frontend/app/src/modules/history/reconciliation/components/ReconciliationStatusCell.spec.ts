@@ -4,6 +4,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { defineComponent } from 'vue';
+import { IssueKind } from '@/modules/history/data-issues/constants';
 import ReconciliationStatusCell from '@/modules/history/reconciliation/components/ReconciliationStatusCell.vue';
 
 const RouterLinkStub = defineComponent({
@@ -18,6 +19,7 @@ function bucket(overrides: Partial<ReconciliationBucket> = {}): ReconciliationBu
     check: null,
     derivedBalance: null,
     issueId: null,
+    issueKind: null,
     lastEventTs: null,
     observedAt: null,
     observedBalance: null,
@@ -148,6 +150,27 @@ describe('reconciliation status cell', () => {
     const keypaths = wrapper.findAll('i18n-t-stub').map(element => element.attributes('keypath'));
     expect(keypaths).toContain('data_issues.reconciliation.reason.blocked');
     expect(keypaths).not.toContain('data_issues.reconciliation.observed_at');
+  });
+
+  it('should explain a blocked row caused by an invalid event amount and offer the issue link', async () => {
+    const wrapper = mountCell(bucket({
+      issueId: 9,
+      issueKind: IssueKind.INVALID_EVENT_AMOUNT,
+      status: 'blocked',
+      stop: {
+        derivedBalanceBeforeEvent: bigNumberify('1'),
+        eventIdentifier: 1234,
+        eventTimestamp: 1_700_000_000_000,
+        groupIdentifier: 'group',
+        negativeAmount: bigNumberify('-0.5'),
+      },
+    }));
+
+    const keypaths = wrapper.findAll('i18n-t-stub').map(element => element.attributes('keypath'));
+    expect(keypaths).toContain('data_issues.reconciliation.reason.blocked_invalid_event_amount');
+    expect(keypaths).not.toContain('data_issues.reconciliation.reason.blocked');
+    await wrapper.find('[data-testid="reconciliation-open-issue"]').trigger('click');
+    expect(wrapper.emitted('open-issue')?.[0]).toStrictEqual([9]);
   });
 
   it('should explain a blocked row without stop details in a sentence that needs none', () => {

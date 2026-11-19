@@ -3,7 +3,7 @@ import type { RouteLocationRaw } from 'vue-router';
 import type { MessageKey } from '@/message-key';
 import type { ReconciliationBucket } from '@/modules/history/reconciliation/schemas';
 import ReconciliationAmount from '@/modules/history/reconciliation/components/ReconciliationAmount.vue';
-import { reasonLabel, STATUS_LABEL } from '@/modules/history/reconciliation/messages';
+import { blockedReasonLabel, reasonLabel, STATUS_LABEL } from '@/modules/history/reconciliation/messages';
 import {
   amountsFor,
   type BucketAmounts,
@@ -37,6 +37,7 @@ const statusIcon = computed<string>(() => displayStatusIcon(get(status)));
 const statusColor = computed<string>(() => displayStatusColor(get(status)));
 
 const explanationKey = computed<MessageKey>(() => reasonLabel(bucket));
+const blockedReasonKey = computed<MessageKey>(() => blockedReasonLabel(bucket));
 
 const comparedAt = computed<number | null>(() => get(amounts).comparedAt);
 /**
@@ -107,7 +108,7 @@ function openIssue(): void {
     <p class="text-xs text-rui-text-secondary !m-0">
       <i18n-t
         v-if="bucket.status === 'blocked' && bucket.stop"
-        keypath="data_issues.reconciliation.reason.blocked"
+        :keypath="blockedReasonKey"
         scope="global"
         tag="span"
         data-testid="reconciliation-blocked-reason"

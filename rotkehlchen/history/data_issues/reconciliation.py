@@ -111,6 +111,7 @@ class ReconciliationBucket:
     issue_id: int | None
     check: BucketBalanceCheck | None
     stop: BucketStop | None
+    issue_kind: IssueKind | None = None
 
     @property
     def delta(self) -> FVal | None:
@@ -295,25 +296,31 @@ def _read_tracked_accounts(cursor: DBCursor) -> dict[str, set[str]]:
 def _read_issue_ids(
         cursor: DBCursor,
         treat_eth2_as_eth: bool,
-) -> tuple[dict[WalletKey, int], dict[tuple[BucketKey, int], int]]:
+) -> tuple[dict[WalletKey, int], dict[tuple[BucketKey, int], tuple[int, IssueKind]]]:
     """The issue to link from a wallet bucket and from a stopped bucket.
 
     The mismatch links to the newest non-resolved issue of the exact wallet bucket, whatever
-    other buckets of the same asset say. The stop links to the negative balance issue of its
-    actual stopping event and full bucket, not to any issue of the asset. Its state is
-    irrelevant: a dismissed issue still describes the stop that the processing state proves.
-    Keying by the bucket matters because one event can stop a wallet bucket and a protocol
-    bucket; each links only its own issue, and a stop without one is still blocked with no link.
+    other buckets of the same asset say. The stop links to the stopping issue (negative balance
+    or invalid event amount) of its actual stopping event and full bucket, not to any issue of
+    the asset. Its state does not exclude it: a dismissed issue still describes the stop that
+    the processing state proves, preferring a non-resolved issue over a resolved one and then
+    the newest (matching `_get_stops_at_events`). Keying by the bucket matters because one event
+    can stop a wallet bucket and a protocol bucket; each links only its own issue, and a stop
+    without one is still blocked with no link.
 
-    Returns (mismatch issues keyed by (location, label, asset), negative balance issues keyed by
-    the full bucket key and the stopping event identifier).
+    Returns (mismatch issues keyed by (location, label, asset), stop issues as (issue_id, kind)
+    keyed by the full bucket key and the stopping event identifier).
     """
     mismatches: dict[WalletKey, int] = {}
-    negatives: dict[tuple[BucketKey, int], int] = {}
+    stop_candidates: dict[tuple[BucketKey, int], tuple[bool, int, IssueKind]] = {}
     for issue_id, kind, location, label, protocol, asset, event_identifier, state in cursor.execute(  # noqa: E501
         'SELECT id, kind, location, location_label, protocol, asset, event_identifier, state '
-        'FROM data_issues WHERE kind IN (?, ?)',
-        (IssueKind.CURRENT_BALANCE_MISMATCH.value, IssueKind.NEGATIVE_BALANCE.value),
+        'FROM data_issues WHERE kind IN (?, ?, ?)',
+        (
+            IssueKind.CURRENT_BALANCE_MISMATCH.value,
+            IssueKind.NEGATIVE_BALANCE.value,
+            IssueKind.INVALID_EVENT_AMOUNT.value,
+        ),
     ):
         issue_label = label or None
         issue_protocol = protocol or None
@@ -332,14 +339,20 @@ def _read_issue_ids(
             if issue_id > mismatches.get(wallet, 0):  # no ORDER BY, pick the newest explicitly
                 mismatches[wallet] = issue_id
         elif event_identifier is not None:
-            negatives[(
-                location,
-                issue_label,
-                issue_protocol,
-                issue_asset,
-            ), event_identifier] = issue_id
+            stop_key = (
+                (location, issue_label, issue_protocol, issue_asset),
+                event_identifier,
+            )
+            priority = (state != IssueState.RESOLVED.value, issue_id)
+            existing = stop_candidates.get(stop_key)
+            if existing is None or priority > (existing[0], existing[1]):
+                stop_candidates[stop_key] = (*priority, IssueKind(kind))
 
-    return mismatches, negatives
+    stop_issues = {
+        stop_key: (issue_id, issue_kind)
+        for stop_key, (_, issue_id, issue_kind) in stop_candidates.items()
+    }
+    return mismatches, stop_issues
 
 
 def _unsupported_reasons(
@@ -459,7 +472,7 @@ def get_reconciliation_report(  # one branch per scope rule
         )
         checks = _read_checks(cursor, treat_eth2_as_eth, ignored_assets)
         stops = _read_stops(cursor, treat_eth2_as_eth, ignored_assets)
-        mismatch_issues, negative_issues = _read_issue_ids(cursor, treat_eth2_as_eth)
+        mismatch_issues, stop_issues = _read_issue_ids(cursor, treat_eth2_as_eth)
 
     observations = _observed_wallet_keys(
         observations={
@@ -525,6 +538,21 @@ def get_reconciliation_report(  # one branch per scope rule
             now=now,
             tolerance=tolerance,
         )
+        if stop is not None:
+            stop_issue = stop_issues.get((key, stop.event_identifier))
+            issue_id = None if stop_issue is None else stop_issue[0]
+            issue_kind = None if stop_issue is None else stop_issue[1]
+        elif (
+            protocol is None and
+            label is not None and
+            (mismatch_id := mismatch_issues.get(wallet_key)) is not None
+        ):
+            issue_id = mismatch_id
+            issue_kind = IssueKind.CURRENT_BALANCE_MISMATCH
+        else:
+            issue_id = None
+            issue_kind = None
+
         accounted[key] = ReconciliationBucket(
             location=bucket_location,
             location_label=label,
@@ -536,15 +564,10 @@ def get_reconciliation_report(  # one branch per scope rule
             observed_balance=None if wallet_evidence is None else wallet_evidence.amount,
             observed_at=None if wallet_evidence is None else wallet_evidence.observed_at,
             last_event_ts=None if derived is None else derived.latest_ts,
-            issue_id=(
-                negative_issues.get((key, stop.event_identifier))
-                if stop is not None else (
-                    mismatch_issues.get(wallet_key)
-                    if protocol is None and label is not None else None
-                )
-            ),
+            issue_id=issue_id,
             check=check,
             stop=stop,
+            issue_kind=issue_kind,
         )
 
     totals: dict[BucketStatus, int] = dict(ZERO_STATUS_COUNTS)

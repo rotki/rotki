@@ -52,6 +52,7 @@ function bucket(asset: string): ReconciliationBucket {
     check: null,
     derivedBalance: null,
     issueId: null,
+    issueKind: null,
     lastEventTs: null,
     observedAt: null,
     observedBalance: null,
