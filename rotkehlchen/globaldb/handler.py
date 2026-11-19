@@ -39,6 +39,7 @@ from rotkehlchen.constants.misc import (
     NFT_DIRECTIVE,
 )
 from rotkehlchen.constants.resolver import evm_address_to_identifier, tokenid_to_collectible_id
+from rotkehlchen.constants.timing import HOUR_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -61,7 +62,7 @@ from rotkehlchen.types import (
     Timestamp,
     TokenKind,
 )
-from rotkehlchen.utils.misc import timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import timestamp_to_date, timestamp_to_daystart_timestamp, ts_now
 from rotkehlchen.utils.serialization import (
     deserialize_asset_with_oracles_from_db,
     deserialize_generic_asset_from_db,
@@ -83,6 +84,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 MANUAL_SERIALIZED: Final = HistoricalPriceOracle.MANUAL.serialize_for_db()
+HISTORICAL_PRICE_MISS_TTL_SECONDS: Final = MONTH_IN_SECONDS
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -159,7 +161,10 @@ class GlobalDBHandler:
     # guards the lazy creation of _packaged_db_conn. Class-level since the
     # connection may first be needed concurrently from any two threads
     _packaged_db_conn_lock: Lock = Lock()
+    _price_misses_guard_lock: Lock = Lock()
     msg_aggregator: MessagesAggregator | None = None
+    _price_misses_global_generation: int = 0
+    _price_misses_asset_generation: defaultdict[str, int]
 
     def __new__(   # noqa: PYI034  # singleton is an exception
             cls,
@@ -191,6 +196,8 @@ class GlobalDBHandler:
         GlobalDBHandler.__instance = object.__new__(cls)
         GlobalDBHandler.__instance._data_directory = data_dir
         GlobalDBHandler.__instance.msg_aggregator = msg_aggregator
+        GlobalDBHandler.__instance._price_misses_global_generation = 0
+        GlobalDBHandler.__instance._price_misses_asset_generation = defaultdict(int)
 
         global_dir = data_dir / GLOBALDIR_NAME
         global_dir.mkdir(parents=True, exist_ok=True)
@@ -1246,6 +1253,8 @@ class GlobalDBHandler:
                         underlying_tokens=token.underlying_tokens,
                         chain_id=token.chain_id,
                     )
+
+                GlobalDBHandler._invalidate_price_misses(write_cursor, (token.identifier,))
         except rsqlite.IntegrityError as e:
             raise InputError(
                 f'Failed to update DB entry for token {token.identifier} due to a '
@@ -1253,6 +1262,7 @@ class GlobalDBHandler:
             ) from e
 
         AssetResolver.clean_memory_cache(token.identifier)
+        GlobalDBHandler.bump_price_misses_generation((token.identifier,))
 
     @staticmethod
     def edit_solana_token(entry: SolanaToken) -> str:
@@ -1328,6 +1338,8 @@ class GlobalDBHandler:
                 if write_cursor.rowcount != 1 and check_rowcount:
                     raise InputError(f'Tried to edit non existing token with address {address}')
 
+                GlobalDBHandler._invalidate_price_misses(write_cursor, (entry.identifier,))
+
         except rsqlite.IntegrityError as e:
             chain_info = f' at chain {entry.chain_id}' if hasattr(entry, 'chain_id') else ''
             raise InputError(
@@ -1336,6 +1348,7 @@ class GlobalDBHandler:
             ) from e
 
         AssetResolver.clean_memory_cache(entry.identifier)
+        GlobalDBHandler.bump_price_misses_generation((entry.identifier,))
         return entry.identifier
 
     @staticmethod
@@ -1351,9 +1364,11 @@ class GlobalDBHandler:
                     f'UPDATE evm_tokens SET protocol = ? WHERE identifier IN ({placeholders})',
                     (new_protocol, *chunk),
                 )
+            GlobalDBHandler._invalidate_price_misses(write_cursor, identifiers)
 
         for identifier in identifiers:
             AssetResolver.clean_memory_cache(identifier)
+        GlobalDBHandler.bump_price_misses_generation(identifiers)
 
     @staticmethod
     def edit_user_asset(asset: AssetWithOracles) -> None:
@@ -1422,6 +1437,11 @@ class GlobalDBHandler:
                     f'due to a constraint being hit. Make sure the new values are valid.',
                 ) from e
 
+            GlobalDBHandler._invalidate_price_misses(write_cursor, (asset.identifier,))
+
+        AssetResolver.clean_memory_cache(asset.identifier)
+        GlobalDBHandler.bump_price_misses_generation((asset.identifier,))
+
     @staticmethod
     def add_user_owned_assets(assets: list[Asset]) -> None:
         """Make sure all assets in the list are included in the user owned assets
@@ -1479,6 +1499,7 @@ class GlobalDBHandler:
                     f'Tried to delete asset with identifier {identifier} '
                     f'but it was not found in the DB',
                 )
+            GlobalDBHandler.bump_price_misses_generation((identifier,))
 
     @staticmethod
     def get_assets_with_symbol(
@@ -1941,6 +1962,17 @@ class GlobalDBHandler:
                 )
                 return False
 
+            hourstart_ts = Timestamp(timestamp - (timestamp % HOUR_IN_SECONDS))
+            daystart_ts = timestamp_to_daystart_timestamp(timestamp)
+            affected_timestamps = tuple(dict.fromkeys((timestamp, hourstart_ts, daystart_ts)))
+            placeholders = ', '.join('?' * len(affected_timestamps))
+            write_cursor.execute(
+                'DELETE FROM historical_price_misses '
+                f'WHERE from_asset=? AND timestamp IN ({placeholders})',
+                (from_asset.identifier, *affected_timestamps),
+            )
+            GlobalDBHandler.bump_price_misses_generation((from_asset.identifier,))
+
         return True
 
     @staticmethod
@@ -1958,11 +1990,166 @@ class GlobalDBHandler:
         try:
             with GlobalDBHandler().conn.write_ctx() as write_cursor:
                 write_cursor.execute(querystr, tuple(query_list))
+                if source is None:
+                    GlobalDBHandler._invalidate_price_misses(write_cursor, (from_asset.identifier,))  # noqa: E501
+                else:
+                    write_cursor.execute(
+                        'DELETE FROM historical_price_misses '
+                        'WHERE from_asset=? AND source_type=?',
+                        (from_asset.identifier, source.serialize_for_db()),
+                    )
+                    GlobalDBHandler.bump_price_misses_generation((from_asset.identifier,))
         except rsqlite.IntegrityError as e:
             log.error(
                 f'Failed to delete historical prices from {from_asset} to {to_asset} '
                 f'and source: {source!s} due to {e!s}',
             )
+
+    @staticmethod
+    def bump_price_misses_generation(identifiers: Sequence[str] | None = None) -> None:
+        """Increment the miss generation counter(s) to invalidate in-flight miss writes."""
+        instance = GlobalDBHandler()
+        with GlobalDBHandler._price_misses_guard_lock:
+            if identifiers is None:
+                instance._price_misses_global_generation += 1
+            else:
+                for identifier in identifiers:
+                    instance._price_misses_asset_generation[identifier.lower()] += 1
+
+    @staticmethod
+    def _get_price_miss_guard(identifier: str) -> tuple[int, int]:
+        """Return `(global_generation, asset_generation)` for `identifier`."""
+        instance = GlobalDBHandler()
+        with GlobalDBHandler._price_misses_guard_lock:
+            return (
+                instance._price_misses_global_generation,
+                instance._price_misses_asset_generation.get(identifier.lower(), 0),
+            )
+
+    @staticmethod
+    def _invalidate_price_misses(
+            write_cursor: DBCursor,
+            identifiers: Sequence[str] | None = None,
+    ) -> None:
+        """Delete cached historical price misses and bump the corresponding generation(s).
+
+        Must be called inside `write_ctx()`.
+        """
+        if identifiers is None:
+            write_cursor.execute('DELETE FROM historical_price_misses')
+            GlobalDBHandler.bump_price_misses_generation()
+            return
+
+        if len(identifiers) == 0:
+            return
+
+        if len(identifiers) == 1:
+            write_cursor.execute(
+                'DELETE FROM historical_price_misses WHERE from_asset=?',
+                (identifiers[0],),
+            )
+        else:
+            for chunk, placeholders in get_query_chunks(list(identifiers)):
+                write_cursor.execute(
+                    f'DELETE FROM historical_price_misses WHERE from_asset IN ({placeholders})',
+                    chunk,
+                )
+        GlobalDBHandler.bump_price_misses_generation(identifiers)
+
+    @staticmethod
+    def get_historical_price_misses(
+            from_asset: Asset,
+            timestamps: Sequence[Timestamp],
+            min_checked_at: Timestamp | None = None,
+    ) -> set[tuple[HistoricalPriceOracle, Timestamp]]:
+        """Return non-expired cached `(oracle, timestamp)` misses for `from_asset`."""
+        if len(timestamps) == 0:
+            return set()
+
+        unique_timestamps = tuple(dict.fromkeys(timestamps))
+        placeholders = ', '.join('?' * len(unique_timestamps))
+        cutoff = (
+            Timestamp(ts_now() - HISTORICAL_PRICE_MISS_TTL_SECONDS)
+            if min_checked_at is None else min_checked_at
+        )
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            return {
+                (HistoricalPriceOracle.deserialize_from_db(source_type), Timestamp(ts))
+                for source_type, ts in cursor.execute(
+                    'SELECT source_type, timestamp FROM historical_price_misses '
+                    f'WHERE from_asset=? AND timestamp IN ({placeholders}) AND checked_at >= ?',
+                    (from_asset.identifier, *unique_timestamps, cutoff),
+                )
+            }
+
+    @staticmethod
+    def get_historical_price_misses_and_guard(
+            from_asset: Asset,
+            timestamps: Sequence[Timestamp],
+            min_checked_at: Timestamp | None = None,
+    ) -> tuple[set[tuple[HistoricalPriceOracle, Timestamp]], tuple[int, int]]:
+        """Return both the non-expired cached misses for `from_asset` and the current guard."""
+        guard = GlobalDBHandler._get_price_miss_guard(from_asset.identifier)
+        misses = GlobalDBHandler.get_historical_price_misses(
+            from_asset=from_asset,
+            timestamps=timestamps,
+            min_checked_at=min_checked_at,
+        )
+        return misses, guard
+
+    @staticmethod
+    def add_historical_price_misses(
+            from_asset: Asset,
+            misses: Sequence[tuple[HistoricalPriceOracle, Timestamp]],
+            expected_guard: tuple[int, int] | None = None,
+            checked_at: Timestamp | None = None,
+    ) -> None:
+        """Persist confirmed per-oracle historical price misses for `from_asset`.
+
+        When `expected_guard` is provided, the current generation guard is checked inside the
+        write transaction; if the asset mapping or miss cache was invalidated while the query
+        was in flight, the stale misses are dropped instead of being written.
+        """
+        if len(misses) == 0:
+            return
+
+        now = ts_now() if checked_at is None else checked_at
+        entries = [
+            (from_asset.identifier, oracle.serialize_for_db(), ts, now, from_asset.identifier)
+            for oracle, ts in misses
+        ]
+        try:
+            with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                if (
+                    expected_guard is not None and
+                    GlobalDBHandler._get_price_miss_guard(from_asset.identifier) != expected_guard
+                ):
+                    log.debug(
+                        'Skipping stale historical price misses for %s after concurrent asset update',  # noqa: E501
+                        from_asset.identifier,
+                    )
+                    return
+
+                write_cursor.executemany(
+                    'INSERT OR REPLACE INTO historical_price_misses('
+                    'from_asset, source_type, timestamp, checked_at) '
+                    'SELECT ?, ?, ?, ? WHERE EXISTS ('
+                    'SELECT 1 FROM assets WHERE identifier=?'
+                    ')',
+                    entries,
+                )
+        except rsqlite.IntegrityError as e:
+            log.error(
+                'Failed to add historical price misses for %s due to %s',
+                from_asset.identifier,
+                e,
+            )
+
+    @staticmethod
+    def delete_historical_price_misses(from_asset: Asset) -> None:
+        """Delete all cached historical price misses for `from_asset`."""
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            GlobalDBHandler._invalidate_price_misses(write_cursor, (from_asset.identifier,))
 
     @staticmethod
     def get_historical_price_range(
@@ -2061,6 +2248,7 @@ class GlobalDBHandler:
                             # If versions match drop tables
                             write_cursor.execute('DELETE FROM assets')
                             write_cursor.execute('DELETE FROM asset_collections')
+                            GlobalDBHandler.bump_price_misses_generation()
                             # Copy assets
                             write_cursor.switch_foreign_keys('OFF')
                             write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')  # noqa: E501
@@ -2155,6 +2343,8 @@ class GlobalDBHandler:
                     write_cursor.execute(f'DELETE FROM hyperliquid_tokens WHERE identifier IN ({asset_ids});')  # noqa: E501
                     write_cursor.execute(f'DELETE FROM underlying_tokens_list WHERE parent_token_entry IN ({asset_ids});')  # noqa: E501
                     write_cursor.execute(f'DELETE FROM common_asset_details WHERE identifier IN ({asset_ids});')  # noqa: E501
+                    write_cursor.execute(f'DELETE FROM historical_price_misses WHERE from_asset IN ({asset_ids});')  # noqa: E501
+                    GlobalDBHandler.bump_price_misses_generation()
                     write_cursor.execute(f'DELETE FROM asset_collections WHERE id IN ({collection_ids})')  # noqa: E501
                     write_cursor.execute(f'DELETE FROM multiasset_mappings WHERE collection_id IN ({collection_ids})')  # noqa: E501
                     # Copy assets

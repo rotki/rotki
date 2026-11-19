@@ -116,7 +116,7 @@ class Moralis(
             endpoint=f'erc20/{token.evm_address}/price',
             params={'chain': chain},
         )
-        usd_price = self._deserialize_price(
+        usd_price, _ = self._deserialize_price(
             result=result,
             from_asset=from_asset,
             to_asset=to_asset,
@@ -168,16 +168,18 @@ class Moralis(
             endpoint=f'erc20/{token.evm_address}/price',
             params={'chain': chain, 'to_block': str(to_block)},
         )
-        if (usd_price := self._deserialize_price(
+        usd_price, is_confirmed_no_data = self._deserialize_price(
             result=result,
             from_asset=from_asset,
             to_asset=to_asset,
-        )) == ZERO_PRICE:
+        )
+        if usd_price == ZERO_PRICE:
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 time=timestamp,
                 rate_limited=False,
+                cacheable_miss=is_confirmed_no_data,
             )
 
         if to_asset != A_USD:  # we need to query intermediate price in this case.
@@ -225,14 +227,18 @@ class Moralis(
 
     @staticmethod
     def _deserialize_price(
-            result: dict[str, Any],
+            result: Any,
             from_asset: Asset,
             to_asset: Asset,
-    ) -> Price:
+    ) -> tuple[Price, bool]:
         """Deserialize the USD price out of a Moralis token price response.
 
-        If price data is missing or invalid, ZERO_PRICE is returned.
+        Returns `(price, is_confirmed_no_data)`. `is_confirmed_no_data` is True only when
+        `usdPrice` validly deserializes to `ZERO_PRICE`, and False when missing or malformed.
         """
+        if not isinstance(result, dict):
+            return ZERO_PRICE, False
+
         try:
             if (usd_price := result.get('usdPrice')) is None:
                 log.warning(
@@ -241,9 +247,9 @@ class Moralis(
                     from_asset.identifier,
                     to_asset.identifier,
                 )
-                return ZERO_PRICE
+                return ZERO_PRICE, False
 
-            return deserialize_price(str(usd_price))
+            price = deserialize_price(str(usd_price))
         except DeserializationError as e:
             log.warning(
                 'Queried Moralis price API from %s to %s. Failed to deserialize price '
@@ -252,7 +258,9 @@ class Moralis(
                 to_asset.identifier,
                 e,
             )
-            return ZERO_PRICE
+            return ZERO_PRICE, False
+        else:
+            return price, price == ZERO_PRICE
 
     def _query(
             self,

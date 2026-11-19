@@ -642,6 +642,14 @@ def test_global_db_reset(globaldb, database):
         price=ONE,
     )
     GlobalDBHandler.add_single_historical_price(historical_price)
+    GlobalDBHandler.add_historical_price_misses(
+        from_asset=A_ETH,
+        misses=[(HistoricalPriceOracle.COINGECKO, Timestamp(1338))],
+    )
+    GlobalDBHandler.add_historical_price_misses(
+        from_asset=token_to_delete,
+        misses=[(HistoricalPriceOracle.COINGECKO, Timestamp(1338))],
+    )
     GlobalDBHandler.add_user_owned_assets([A_ETH, A_DAI, A_CRV])
     db_custom_assets = DBCustomAssets(database)
     custom_asset = CustomAsset.initialize(
@@ -724,6 +732,10 @@ def test_global_db_reset(globaldb, database):
         max_seconds_distance=0,
     )
     assert historical_price_after_reset == historical_price
+    assert GlobalDBHandler.get_historical_price_misses(A_ETH, (Timestamp(1338),)) == set()
+    assert GlobalDBHandler.get_historical_price_misses(token_to_delete, (Timestamp(1338),)) == {
+        (HistoricalPriceOracle.COINGECKO, Timestamp(1338)),
+    }
     expected_owned_assets = [(A_ETH.identifier,), (A_DAI.identifier,), (A_CRV.identifier,)]
     assert cursor.execute('SELECT * FROM user_owned_assets').fetchall() == expected_owned_assets
     entries, _, entries_total = db_custom_assets.get_custom_assets_and_limit_info(

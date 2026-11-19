@@ -5,10 +5,10 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.asset_updates.manager import (
     ASSETS_VERSION_KEY,
@@ -17,6 +17,7 @@ from rotkehlchen.globaldb.asset_updates.manager import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.tests.api.test_assets_updates import mock_asset_updates
 from rotkehlchen.tests.utils.messages import consume_warnings
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -566,8 +567,33 @@ def test_asset_update(
     consume_warnings(assets_updater.msg_aggregator)
     # set a high version of the globaldb to avoid conflicts with future changes
     GlobalDBHandler.add_setting_value(ASSETS_VERSION_KEY, 997)
+    expected_miss = (HistoricalPriceOracle.COINGECKO, Timestamp(1338))
+    GlobalDBHandler.add_historical_price_misses(
+        from_asset=A_ETH,
+        misses=[expected_miss],
+    )
+    GlobalDBHandler.add_historical_price_misses(
+        from_asset=A_DAI,
+        misses=[expected_miss],
+    )
     with patch('requests.get', wraps=get_mock_github_assets_response(update_assets, update_collections, update_mappings)):  # noqa: E501
         assets_updater.perform_update(up_to_version=999, conflicts={})
+
+    assert GlobalDBHandler.get_historical_price_misses(
+        A_DAI,
+        (Timestamp(1338),),
+    ) == {expected_miss}
+    assert GlobalDBHandler.get_historical_price_misses(A_ETH, (Timestamp(1338),)) == (
+        set() if update_mappings else {expected_miss}
+    )
+
+    with patch('requests.get', wraps=get_mock_github_assets_response(update_assets, update_collections, update_mappings)):  # noqa: E501
+        assets_updater.perform_update(up_to_version=999, conflicts={})
+
+    assert GlobalDBHandler.get_historical_price_misses(
+        A_DAI,
+        (Timestamp(1338),),
+    ) == {expected_miss}
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert cursor.execute("SELECT * FROM assets WHERE identifier = 'solana/token:FGekWypGRCLVyzQTHZstdD5Uyte8LuQZSo9REz3j52ZM'").fetchall() == ([  # noqa: E501
@@ -630,6 +656,16 @@ def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandl
         }},
         sql_actions={'15': {'assets': update_1, 'collections': '', 'mappings': ''}, '16': {'assets': update_2, 'collections': '', 'mappings': ''}},  # noqa: E501
     )
+    conflicting_asset = Asset('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8')
+    expected_miss = (HistoricalPriceOracle.COINGECKO, Timestamp(1338))
+    GlobalDBHandler.add_historical_price_misses(
+        from_asset=conflicting_asset,
+        misses=[expected_miss],
+    )
+    GlobalDBHandler.add_historical_price_misses(
+        from_asset=A_DAI,
+        misses=[expected_miss],
+    )
     cursor = globaldb.conn.cursor()
     cursor.execute(f"DELETE FROM settings WHERE name='{ASSETS_VERSION_KEY}'")
     with update_patch:
@@ -640,6 +676,7 @@ def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandl
     assert conflicts is not None
     assert len(conflicts) == 1
     assert conflicts[0]['remote'] == {'name': 'Bridged USDC', 'symbol': 'USDC.e', 'asset_type': 'evm token', 'started': 1623868379, 'forked': None, 'swapped_for': None, 'address': '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8', 'token_kind': 'erc20', 'decimals': 6, 'cryptocompare': 'USDC', 'coingecko': 'usd-coin-ethereum-bridged', 'protocol': None, 'evm_chain': 'arbitrum_one'}  # noqa: E501
+    assert GlobalDBHandler.get_historical_price_misses(conflicting_asset, (Timestamp(1338),)) == {expected_miss}  # noqa: E501
 
     # resolve with all the remote updates and check if the multiasset and underlying_asset mappings still exists  # noqa: E501
     with update_patch:
@@ -650,6 +687,11 @@ def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandl
                 for conflict in conflicts
             },
         )
+    assert GlobalDBHandler.get_historical_price_misses(conflicting_asset, (Timestamp(1338),)) == set()  # noqa: E501
+    assert GlobalDBHandler.get_historical_price_misses(
+        A_DAI,
+        (Timestamp(1338),),
+    ) == {expected_miss}
     assert cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '16'  # noqa: E501
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute(
@@ -660,3 +702,63 @@ def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandl
             'SELECT COUNT(*) FROM multiasset_mappings WHERE asset=?;',
             ('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',),
         ).fetchone()[0] == 1
+
+
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
+def test_asset_update_deletions_invalidate_price_misses(
+        assets_updater: AssetsUpdater,
+        globaldb: GlobalDBHandler,
+) -> None:
+    """Deletions from assets or multiasset_mappings in an asset update must invalidate
+    cached misses for the affected assets and leave no orphaned foreign-key rows.
+    """
+    deleted_asset = EvmToken.initialize(
+        address=string_to_evm_address('0x000000000000000000000000000000000000dEaD'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        decimals=18,
+        name='Doomed Token',
+        symbol='DOOM',
+    )
+    GlobalDBHandler.add_asset(deleted_asset)
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO multiasset_mappings(collection_id, asset) VALUES (1, ?)',
+            (A_ETH.identifier,),
+        )
+
+    expected_miss = (HistoricalPriceOracle.COINGECKO, Timestamp(1338))
+    GlobalDBHandler.add_historical_price_misses(deleted_asset, [expected_miss])
+    GlobalDBHandler.add_historical_price_misses(A_ETH, [expected_miss])
+    GlobalDBHandler.add_historical_price_misses(A_DAI, [expected_miss])
+
+    update_patch = mock_asset_updates(
+        original_requests_get=requests.get,
+        latest=1000,
+        updates={
+            '1000': {
+                'changes': 2,
+                'min_schema_version': GLOBAL_DB_VERSION,
+                'max_schema_version': GLOBAL_DB_VERSION,
+            },
+        },
+        sql_actions={
+            '1000': {
+                'assets': f"DELETE FROM assets WHERE identifier='{deleted_asset.identifier}';\n*",
+                'collections': '',
+                'mappings': f"DELETE FROM multiasset_mappings WHERE collection_id=1 AND asset='{A_ETH.identifier}';\n*",  # noqa: E501
+            },
+        },
+    )
+    GlobalDBHandler.add_setting_value(ASSETS_VERSION_KEY, 999)
+    with update_patch:
+        assert assets_updater.perform_update(up_to_version=1000, conflicts={}) is None
+
+    assert GlobalDBHandler.get_historical_price_misses(deleted_asset, (Timestamp(1338),)) == set()
+    assert GlobalDBHandler.get_historical_price_misses(A_ETH, (Timestamp(1338),)) == set()
+    assert GlobalDBHandler.get_historical_price_misses(
+        A_DAI,
+        (Timestamp(1338),),
+    ) == {expected_miss}
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute('PRAGMA foreign_key_check(historical_price_misses)').fetchall() == []

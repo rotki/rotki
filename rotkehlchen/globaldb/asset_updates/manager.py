@@ -19,6 +19,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.db.settings import DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT
+from rotkehlchen.db.utils import get_query_chunks, table_exists
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError, cause_for_undecodable_body
@@ -63,10 +64,101 @@ def executeall(cursor: DBCursor, statements: str) -> None:
         cursor.execute(statement)
 
 
+def _get_changed_assets(
+        cursor: DBCursor,
+        required_tables: list[str],
+) -> set[str]:
+    """Return asset identifiers whose metadata or collection mappings differ between
+    `main` and the attached `other_db`.
+    """
+    changed_assets: set[str] = set()
+    for table in (
+        'assets',
+        'common_asset_details',
+        'evm_tokens',
+        'solana_tokens',
+        'hyperliquid_tokens',
+    ):
+        if table in required_tables and table_exists(cursor, table):
+            changed_assets.update(
+                row[0] for row in cursor.execute(
+                    f'SELECT identifier FROM ('
+                    f'SELECT * FROM main.{table} EXCEPT SELECT * FROM other_db.{table}'
+                    f') UNION ALL '
+                    f'SELECT identifier FROM ('
+                    f'SELECT * FROM other_db.{table} EXCEPT SELECT * FROM main.{table}'
+                    f')',
+                )
+            )
+
+    if (
+        'underlying_tokens_list' in required_tables and
+        table_exists(cursor, 'underlying_tokens_list')
+    ):
+        for parent_token, underlying_token in cursor.execute(
+            'SELECT parent_token_entry, identifier FROM ('
+            'SELECT * FROM main.underlying_tokens_list '
+            'EXCEPT SELECT * FROM other_db.underlying_tokens_list'
+            ') UNION ALL '
+            'SELECT parent_token_entry, identifier FROM ('
+            'SELECT * FROM other_db.underlying_tokens_list '
+            'EXCEPT SELECT * FROM main.underlying_tokens_list'
+            ')',
+        ):
+            changed_assets.add(parent_token)
+            changed_assets.add(underlying_token)
+
+    if 'multiasset_mappings' in required_tables and table_exists(cursor, 'multiasset_mappings'):
+        changed_assets.update(
+            row[0] for row in cursor.execute(
+                'SELECT asset FROM ('
+                'SELECT * FROM main.multiasset_mappings '
+                'EXCEPT SELECT * FROM other_db.multiasset_mappings'
+                ') UNION ALL '
+                'SELECT asset FROM ('
+                'SELECT * FROM other_db.multiasset_mappings '
+                'EXCEPT SELECT * FROM main.multiasset_mappings'
+                ')',
+            )
+        )
+
+    if 'asset_collections' in required_tables and table_exists(cursor, 'asset_collections'):
+        changed_collection_ids: set[int] = set()
+        for collection_id, main_asset in cursor.execute(
+            'SELECT id, main_asset FROM ('
+            'SELECT * FROM main.asset_collections '
+            'EXCEPT SELECT * FROM other_db.asset_collections'
+            ') UNION ALL '
+            'SELECT id, main_asset FROM ('
+            'SELECT * FROM other_db.asset_collections '
+            'EXCEPT SELECT * FROM main.asset_collections'
+            ')',
+        ):
+            changed_collection_ids.add(collection_id)
+            if main_asset is not None:
+                changed_assets.add(main_asset)
+
+        if len(changed_collection_ids) != 0 and table_exists(cursor, 'multiasset_mappings'):
+            for chunk, placeholders in get_query_chunks(list(changed_collection_ids)):
+                changed_assets.update(
+                    row[0] for row in cursor.execute(
+                        f'SELECT asset FROM main.multiasset_mappings '
+                        f'WHERE collection_id IN ({placeholders}) '
+                        f'UNION '
+                        f'SELECT asset FROM other_db.multiasset_mappings '
+                        f'WHERE collection_id IN ({placeholders})',
+                        (*chunk, *chunk),
+                    )
+                )
+
+    return changed_assets
+
+
 def _replace_assets_from_db_cursor(
         write_cursor: DBCursor,
         sourcedb_path: Path,
-) -> None:
+        invalidate_price_misses: bool = False,
+) -> set[str]:
     # First handle token_kinds & asset_types since other tables reference it
     required_tables = [
         'token_kinds',
@@ -79,7 +171,7 @@ def _replace_assets_from_db_cursor(
         'multiasset_mappings',
         'settings',
     ]
-    script_parts = ['PRAGMA foreign_keys = OFF;']
+    script_parts = ['PRAGMA foreign_keys = OFF;', 'BEGIN;']
     write_cursor.execute(f"ATTACH DATABASE '{sourcedb_path}' AS other_db;")
     if (  # add solana_tokens table only if source db version supports it
         (result := write_cursor.execute("SELECT value FROM other_db.settings WHERE name='version';").fetchone()) is not None and   # noqa: E501
@@ -112,21 +204,47 @@ def _replace_assets_from_db_cursor(
         for table, schema in schemas.items():
             script_parts.append(f'CREATE TABLE IF NOT EXISTS {table} ({schema};')
 
+    changed_assets = (
+        _get_changed_assets(write_cursor, required_tables)
+        if invalidate_price_misses and table_exists(write_cursor, 'historical_price_misses')
+        else set()
+    )
+    if len(changed_assets) != 0:
+        write_cursor.execute(
+            'CREATE TEMP TABLE IF NOT EXISTS _changed_price_miss_assets('
+            'identifier TEXT PRIMARY KEY)',
+        )
+        write_cursor.execute('DELETE FROM _changed_price_miss_assets')
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO _changed_price_miss_assets(identifier) VALUES (?)',
+            [(identifier,) for identifier in changed_assets],
+        )
+
     # Always do the delete and insert
     for table in required_tables:
         script_parts.extend([
             f'DELETE FROM {table};',
             f'INSERT INTO {table} SELECT * FROM other_db.{table};',
         ])
+    if len(changed_assets) != 0:
+        script_parts.extend([
+            (
+                'DELETE FROM historical_price_misses '
+                'WHERE from_asset IN (SELECT identifier FROM _changed_price_miss_assets);'
+            ),
+            'DROP TABLE _changed_price_miss_assets;',
+        ])
     script_parts.extend([
         (
             f"INSERT OR REPLACE INTO settings(name, value) VALUES('{ASSETS_VERSION_KEY}',"
             f"(SELECT value FROM other_db.settings WHERE name='{ASSETS_VERSION_KEY}'));"
         ),
+        'COMMIT;',
         'PRAGMA foreign_keys = ON;',
         "DETACH DATABASE 'other_db';",
     ])
     write_cursor.executescript('\n'.join(script_parts))
+    return changed_assets
 
 
 def _replace_assets_from_db(
@@ -547,6 +665,8 @@ class AssetsUpdater:
         """
         if self.last_remote_checked_version == -1:
             self.check_for_updates()
+        else:
+            self.local_assets_version = self.globaldb.get_setting_value(ASSETS_VERSION_KEY, 0)
 
         self.conflicts = {}  # reset the stored conflicts
         infojson = self._get_remote_info_json()
@@ -561,6 +681,8 @@ class AssetsUpdater:
             infojson=infojson,
             up_to_version=up_to_version,
         )
+        if len(updates) == 0:
+            return None
 
         with TemporaryDirectory() as tmpdirname:
             tmpdir = Path(tmpdirname)
@@ -597,8 +719,20 @@ class AssetsUpdater:
                 # otherwise we are sure the DB will work without conflicts so let's
                 # now move the data to the actual global DB
                 log.info('Finishing assets update. Replacing users globaldb with the updated information')  # noqa: E501
-                _replace_assets_from_db_cursor(globaldb_write_cursor, tmpdir / temp_db_name)
+                changed_assets = _replace_assets_from_db_cursor(
+                    write_cursor=globaldb_write_cursor,
+                    sourcedb_path=tmpdir / temp_db_name,
+                    invalidate_price_misses=True,
+                )
+                if len(changed_assets) != 0:
+                    self.globaldb.bump_price_misses_generation(list(changed_assets))
 
+        for identifier in changed_assets:
+            AssetResolver.clean_memory_cache(identifier)
+        if len(changed_assets) != 0:
+            self.globaldb.bump_price_misses_generation(list(changed_assets))
+
+        self.local_assets_version = self.globaldb.get_setting_value(ASSETS_VERSION_KEY, 0)
         return None
 
     def _perform_update(

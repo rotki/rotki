@@ -220,22 +220,25 @@ class Defillama(
             coin_id_mapping: dict[str, AssetWithOracles],
             from_assets: list[AssetWithOracles],
             to_asset: AssetWithOracles,
-    ) -> dict[AssetWithOracles, Price]:
+    ) -> tuple[dict[AssetWithOracles, Price], set[AssetWithOracles]]:
         """
-        Reads the response from defillama and returns a dict mapping assets to usd prices.
-        If a price is not available, couldn't be deserialized or the confidence
-        is too low, the asset is skipped. Returns an empty dict if no prices were found.
+        Reads the response from defillama and returns `(prices, confirmed_no_data)`.
+        `prices` maps assets to deserialized usd prices. `confirmed_no_data` contains assets
+        for which the response was well-formed and confirmed no usable price (absent from
+        `coins`, below `MIN_DEFILLAMA_CONFIDENCE`, or explicitly zero). Malformed responses
+        or entries are excluded from `confirmed_no_data`.
         """
-        if 'coins' not in result or not isinstance(coins_result := result['coins'], dict):
+        if not isinstance(result, dict) or not isinstance(coins_result := result.get('coins'), dict):  # noqa: E501
             log.warning(
                 'Defillama current price response is missing its coins',
                 from_assets=[x.identifier for x in from_assets],
                 to_asset=to_asset.identifier,
                 result=result,
             )
-            return {}
+            return {}, set()
 
         prices: dict[AssetWithOracles, Price] = {}
+        confirmed_no_data: set[AssetWithOracles] = set()
         for coin_id, from_asset in coin_id_mapping.items():
             if (coin_result_raw := coins_result.get(coin_id)) is None:
                 # defillama leaves out the coins it has no price for. Common for small tokens
@@ -243,6 +246,16 @@ class Defillama(
                     'Defillama has no current price for asset',
                     from_asset=from_asset.identifier,
                     to_asset=to_asset.identifier,
+                )
+                confirmed_no_data.add(from_asset)
+                continue
+
+            if not isinstance(coin_result_raw, dict):
+                log.warning(
+                    'Queried Defillama price from %s to %s. Unexpected non-dict coin entry: %s',
+                    from_asset.identifier,
+                    to_asset.identifier,
+                    coin_result_raw,
                 )
                 continue
 
@@ -254,9 +267,13 @@ class Defillama(
                     # Defillama provides a confidence value ranking how good their confidence in
                     # reported price is. When their confidence in the price is lower than 20%
                     # ignore it. Probably a spam token
+                    confirmed_no_data.add(from_asset)
                     continue
-                prices[from_asset] = deserialize_price(coin_result_raw['price'])
-            except (KeyError, DeserializationError) as e:
+                price = deserialize_price(coin_result_raw['price'])
+                if price == ZERO_PRICE:
+                    confirmed_no_data.add(from_asset)
+                prices[from_asset] = price
+            except (KeyError, TypeError, ValueError, DeserializationError) as e:
                 error_msg = f'Missing key in defillama response: {e!s}.' if isinstance(e, KeyError) else str(e)  # noqa: E501
                 log.warning(
                     f'Queried Defillama current price from {from_asset.identifier} '
@@ -265,7 +282,7 @@ class Defillama(
                 )
                 continue
 
-        return prices
+        return prices, confirmed_no_data
 
     def query_current_price(
             self,
@@ -361,12 +378,13 @@ class Defillama(
                         else:
                             self._missing_price_cache.add(coin_id, now)
 
-                all_usd_prices.update(self._deserialize_prices(
+                chunk_prices, _ = self._deserialize_prices(
                     result=result,
                     coin_id_mapping=chunk_mapping,
                     from_assets=[chunk_mapping[coin_id] for coin_id in chunk_coin_ids],
                     to_asset=to_asset,
-                ))
+                )
+                all_usd_prices.update(chunk_prices)
             except RemoteError as e:
                 log.debug(f'Defillama failed to query price chunk {chunk_coin_ids}: {e}. Skipping chunk.')  # noqa: E501
                 if self.is_penalized():  # the remaining chunks would only stall the same way
@@ -428,17 +446,19 @@ class Defillama(
             subpath=f'historical/{timestamp}/{coin_id}',
         )
 
-        if (usd_price := self._deserialize_prices(
+        prices, confirmed_no_data = self._deserialize_prices(
             result=result,
             coin_id_mapping={coin_id: from_asset},
             from_assets=[from_asset],
             to_asset=to_asset,
-        ).get(from_asset, ZERO_PRICE)) == ZERO_PRICE:
+        )
+        if (usd_price := prices.get(from_asset, ZERO_PRICE)) == ZERO_PRICE:
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 time=timestamp,
                 rate_limited=False,
+                cacheable_miss=from_asset in confirmed_no_data,
             )
 
         if to_asset != A_USD:

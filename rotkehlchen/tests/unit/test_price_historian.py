@@ -1,11 +1,13 @@
+import logging
+from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -23,7 +25,7 @@ from rotkehlchen.constants.assets import (
     A_USD,
     A_WETH_ARB,
 )
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE, ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.cause import FailureCause
@@ -36,7 +38,10 @@ from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.externalapis.moralis import Moralis
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import _prioritize_manual_balances_query
+from rotkehlchen.globaldb.handler import (
+    HISTORICAL_PRICE_MISS_TTL_SECONDS,
+    _prioritize_manual_balances_query,
+)
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import (
     DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER,
@@ -51,7 +56,7 @@ from rotkehlchen.types import (
     Timestamp,
     TokenKind,
 )
-from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp
+from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import FiatAsset
@@ -812,3 +817,434 @@ def test_historical_price_collection_main_asset_is_not_redirected_to_itself(
         timestamp=query_timestamp,
         max_seconds_distance=HOUR_IN_SECONDS,
     ) is None
+
+
+def _make_miss(
+        from_asset: Asset,
+        timestamp: Timestamp,
+        to_asset: Asset = A_USD,
+        *,
+        cacheable_miss: bool = True,
+        rate_limited: bool = False,
+) -> NoPriceForGivenTimestamp:
+    return NoPriceForGivenTimestamp(
+        from_asset=from_asset,
+        to_asset=to_asset,
+        time=timestamp,
+        rate_limited=rate_limited,
+        cacheable_miss=cacheable_miss,
+    )
+
+
+def test_historical_price_misses_caching_granularity_and_flushing(
+        globaldb: GlobalDBHandler,
+        fake_price_historian,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+):
+    """Confirmed misses are cached at UTC-hour (point-in-time) and UTC-day (daily)
+    granularity, reused within those buckets, and flushed selectively when a later oracle
+    succeeds (point-in-time misses skipped; daily misses persisted).
+    """
+    fake_price_historian.set_oracles_order([
+        HistoricalPriceOracle.DEFILLAMA,
+        HistoricalPriceOracle.COINGECKO,
+    ])
+    defillama, coingecko = fake_price_historian._oracle_instances
+    defillama.can_query_history.return_value = True
+    coingecko.can_query_history.return_value = True
+
+    morning_ts = Timestamp(1611565242)  # 25/01/2021 09:00:42 UTC
+    hourstart_ts = Timestamp(1611565200)  # 25/01/2021 09:00:00 UTC
+    daystart_ts = timestamp_to_daystart_timestamp(morning_ts)
+    defillama.query_historical_price.side_effect = _make_miss(A_BTC, morning_ts)
+    coingecko.query_historical_price.side_effect = _make_miss(A_BTC, morning_ts)
+
+    with pytest.raises(NoPriceForGivenTimestamp) as exc_info:
+        fake_price_historian.query_historical_price(A_BTC, A_USD, morning_ts)
+    assert exc_info.value.rate_limited is False
+    assert defillama.query_historical_price.call_count == 1
+    assert coingecko.query_historical_price.call_count == 1
+    assert globaldb.get_historical_price_misses(A_BTC, (hourstart_ts, daystart_ts)) == {
+        (HistoricalPriceOracle.DEFILLAMA, hourstart_ts),
+        (HistoricalPriceOracle.COINGECKO, daystart_ts),
+    }
+
+    # Same UTC hour reuses both misses; a later UTC hour on the same day retries DefiLlama
+    # while skipping CoinGecko
+    with pytest.raises(NoPriceForGivenTimestamp):
+        fake_price_historian.query_historical_price(A_BTC, A_USD, Timestamp(morning_ts + 600))
+    assert defillama.query_historical_price.call_count == 1
+    assert coingecko.query_historical_price.call_count == 1
+
+    afternoon_ts = Timestamp(morning_ts + 4 * HOUR_IN_SECONDS)
+    defillama.query_historical_price.side_effect = None
+    defillama.query_historical_price.return_value = (btc_price := Price(FVal('32000')))
+    assert fake_price_historian.query_historical_price(A_BTC, A_USD, afternoon_ts) == btc_price
+    assert defillama.query_historical_price.call_count == 2
+    assert coingecko.query_historical_price.call_count == 1
+
+    # Point-in-time miss is NOT flushed when a later oracle succeeds
+    defillama.query_historical_price.side_effect = _make_miss(A_LINK, hourstart_ts)
+    coingecko.query_historical_price.side_effect = None
+    coingecko.query_historical_price.return_value = (link_price := Price(FVal('25')))
+    assert fake_price_historian.query_historical_price(A_LINK, A_USD, hourstart_ts) == link_price
+    assert globaldb.get_historical_price_misses(A_LINK, (hourstart_ts, daystart_ts)) == set()
+
+    # Daily-granularity miss IS flushed when a later point-in-time oracle succeeds, so a
+    # later query on the same UTC day skips the daily oracle
+    fake_price_historian.set_oracles_order([
+        HistoricalPriceOracle.COINGECKO,
+        HistoricalPriceOracle.DEFILLAMA,
+    ])
+    coingecko, defillama = fake_price_historian._oracle_instances
+    coingecko.query_historical_price.reset_mock()
+    defillama.query_historical_price.reset_mock()
+    coingecko.query_historical_price.side_effect = _make_miss(A_ETH, hourstart_ts)
+    defillama.query_historical_price.side_effect = None
+    defillama.query_historical_price.return_value = (eth_price := Price(FVal('1400')))
+
+    assert fake_price_historian.query_historical_price(A_ETH, A_USD, hourstart_ts) == eth_price
+    assert globaldb.get_historical_price_misses(A_ETH, (hourstart_ts, daystart_ts)) == {
+        (HistoricalPriceOracle.COINGECKO, daystart_ts),
+    }
+    later_ts = Timestamp(hourstart_ts + 3 * HOUR_IN_SECONDS)
+    assert fake_price_historian.query_historical_price(A_ETH, A_USD, later_ts) == eth_price
+    assert coingecko.query_historical_price.call_count == 1
+    assert defillama.query_historical_price.call_count == 2
+
+
+def test_historical_price_misses_selective_recording_recency_and_ttl(
+        globaldb: GlobalDBHandler,
+        fake_price_historian,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+):
+    """Only definitive remote misses for old-enough timestamps are recorded; rate limits,
+    can_query_history skips, local unsupported-asset errors, intermediate conversion misses,
+    and recent/current-day timestamps are not cached, and expired misses are retried/refreshed.
+    """
+    fake_price_historian.set_oracles_order([
+        HistoricalPriceOracle.DEFILLAMA,
+        HistoricalPriceOracle.COINGECKO,
+        HistoricalPriceOracle.UNISWAPV3,
+        HistoricalPriceOracle.UNISWAPV2,
+        HistoricalPriceOracle.ALCHEMY,
+        HistoricalPriceOracle.MORALIS,
+    ])
+    defillama, coingecko, uniswapv3, uniswapv2, alchemy, moralis = (
+        fake_price_historian._oracle_instances
+    )
+    ts = Timestamp(1611595466)
+    hourstart_ts = Timestamp(ts - (ts % HOUR_IN_SECONDS))
+    daystart_ts = timestamp_to_daystart_timestamp(ts)
+
+    for oracle in (defillama, uniswapv3, uniswapv2, alchemy, moralis):
+        oracle.can_query_history.return_value = True
+    coingecko.can_query_history.return_value = False
+
+    defillama.query_historical_price.side_effect = _make_miss(A_BTC, ts, A_GBP)
+    uniswapv3.query_historical_price.side_effect = RemoteError(
+        'rate limited',
+        cause=FailureCause.RATE_LIMITED,
+        error_code=HTTPStatus.TOO_MANY_REQUESTS,
+    )
+    uniswapv2.query_historical_price.side_effect = _make_miss(A_USD, ts, A_GBP)
+    alchemy.query_historical_price.side_effect = _make_miss(A_BTC, ts, A_GBP, rate_limited=True)
+    moralis.query_historical_price.side_effect = PriceQueryUnsupportedAsset(A_BTC.identifier)
+
+    with pytest.raises(NoPriceForGivenTimestamp) as exc_info:
+        fake_price_historian.query_historical_price(A_BTC, A_GBP, ts)
+    assert exc_info.value.rate_limited is True
+    assert globaldb.get_historical_price_misses(A_BTC, (hourstart_ts, daystart_ts)) == {
+        (HistoricalPriceOracle.DEFILLAMA, hourstart_ts),
+    }
+
+    # On retry, DefiLlama is skipped while previously uncached oracles are tried
+    coingecko.can_query_history.return_value = True
+    coingecko.query_historical_price.return_value = (gbp_price := Price(FVal('22000')))
+    assert fake_price_historian.query_historical_price(A_BTC, A_GBP, ts) == gbp_price
+    assert defillama.query_historical_price.call_count == 1
+    assert coingecko.query_historical_price.call_count == 1
+
+    # Recent / today's UTC day misses are never cached
+    fake_price_historian.set_oracles_order([
+        HistoricalPriceOracle.DEFILLAMA,
+        HistoricalPriceOracle.COINGECKO,
+    ])
+    defillama, coingecko = fake_price_historian._oracle_instances
+    now = ts_now()
+    recent_ts = Timestamp(now - 600)
+    recent_hour = Timestamp(recent_ts - (recent_ts % HOUR_IN_SECONDS))
+    recent_day = timestamp_to_daystart_timestamp(recent_ts)
+    defillama.query_historical_price.side_effect = _make_miss(A_BTC, recent_ts)
+    coingecko.query_historical_price.side_effect = _make_miss(A_BTC, recent_ts)
+    with pytest.raises(NoPriceForGivenTimestamp):
+        fake_price_historian.query_historical_price(A_BTC, A_USD, recent_ts)
+    assert globaldb.get_historical_price_misses(A_BTC, (recent_hour, recent_day)) == set()
+
+    # Expired misses (checked_at older than TTL) are ignored on read and refreshed on re-miss
+    old_ts = Timestamp(1611565200)
+    old_day = timestamp_to_daystart_timestamp(old_ts)
+    globaldb.add_historical_price_misses(
+        from_asset=A_BTC,
+        misses=[(HistoricalPriceOracle.DEFILLAMA, old_ts)],
+        checked_at=Timestamp(now - HISTORICAL_PRICE_MISS_TTL_SECONDS - 60),
+    )
+    assert globaldb.get_historical_price_misses(A_BTC, (old_ts,)) == set()
+
+    defillama.query_historical_price.reset_mock()
+    coingecko.query_historical_price.reset_mock()
+    defillama.query_historical_price.side_effect = _make_miss(A_BTC, old_ts)
+    coingecko.query_historical_price.side_effect = _make_miss(A_BTC, old_ts)
+    with pytest.raises(NoPriceForGivenTimestamp):
+        fake_price_historian.query_historical_price(A_BTC, A_USD, old_ts)
+    assert defillama.query_historical_price.call_count == 1
+    assert coingecko.query_historical_price.call_count == 1
+    assert globaldb.get_historical_price_misses(A_BTC, (old_ts, old_day)) == {
+        (HistoricalPriceOracle.DEFILLAMA, old_ts),
+        (HistoricalPriceOracle.COINGECKO, old_day),
+    }
+
+
+def test_historical_price_misses_invalidation_and_fk_safety(
+        globaldb: GlobalDBHandler,
+        caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Cached misses are cleared on asset/protocol/price edits and deletions (scoped for
+    price deletions), cascade on asset deletion, and ignore non-existent assets without FK errors.
+    """
+    ts = Timestamp(1611595200)
+    other_ts = Timestamp(ts + 2 * DAY_IN_SECONDS)
+    token = EvmToken.initialize(
+        address=string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        decimals=18,
+        name='Test Token',
+        symbol='TST',
+        coingecko='test-token',
+    )
+    globaldb.add_asset(token)
+
+    def assert_clears_miss(asset: Asset, action) -> None:
+        globaldb.add_historical_price_misses(asset, [(HistoricalPriceOracle.DEFILLAMA, ts)])
+        assert globaldb.get_historical_price_misses(asset, (ts,)) == {
+            (HistoricalPriceOracle.DEFILLAMA, ts),
+        }
+        action()
+        assert globaldb.get_historical_price_misses(asset, (ts,)) == set()
+
+    assert_clears_miss(A_BTC, lambda: globaldb.edit_user_asset(A_BTC.resolve_to_crypto_asset()))
+    assert_clears_miss(token, lambda: globaldb.edit_evm_token(token))
+    assert_clears_miss(token, lambda: globaldb.edit_token_fields(token, {'coingecko'}))
+    assert_clears_miss(token, lambda: globaldb.set_tokens_protocol_if_missing([token], CPT_UNISWAP_V2))  # noqa: E501
+
+    # delete_historical_price clears only the affected timestamp/hour/day misses
+    globaldb.add_historical_price_misses(
+        token,
+        [(HistoricalPriceOracle.DEFILLAMA, ts), (HistoricalPriceOracle.DEFILLAMA, other_ts)],
+    )
+    globaldb.add_single_historical_price(HistoricalPrice(
+        from_asset=token,
+        to_asset=A_USD,
+        source=HistoricalPriceOracle.MANUAL,
+        timestamp=ts,
+        price=Price(ONE),
+    ))
+    assert globaldb.delete_historical_price(token, A_USD, ts, HistoricalPriceOracle.MANUAL) is True
+    assert globaldb.get_historical_price_misses(token, (ts, other_ts)) == {
+        (HistoricalPriceOracle.DEFILLAMA, other_ts),
+    }
+
+    # delete_historical_prices scoped by source only clears that source; source=None clears all
+    globaldb.add_historical_price_misses(
+        token,
+        [(HistoricalPriceOracle.DEFILLAMA, ts), (HistoricalPriceOracle.COINGECKO, ts)],
+    )
+    globaldb.delete_historical_prices(token, A_USD, source=HistoricalPriceOracle.DEFILLAMA)
+    assert globaldb.get_historical_price_misses(token, (ts,)) == {
+        (HistoricalPriceOracle.COINGECKO, ts),
+    }
+    globaldb.delete_historical_prices(token, A_USD)
+    assert globaldb.get_historical_price_misses(token, (ts, other_ts)) == set()
+
+    # Deleting the asset cascades to historical_price_misses
+    assert_clears_miss(token, lambda: globaldb.delete_asset_by_identifier(token.identifier))
+
+    # Assets absent from globaldb.assets (e.g. NFTs) must not log FK IntegrityError
+    nft_asset = Asset(f'{NFT_DIRECTIVE}0x0000000000000000000000000000000000000001_1')
+    with caplog.at_level(logging.ERROR):
+        globaldb.add_historical_price_misses(nft_asset, [(HistoricalPriceOracle.DEFILLAMA, ts)])
+    assert not any(
+        'Failed to add historical price misses' in rec.message for rec in caplog.records
+    )
+
+
+def test_in_flight_miss_not_written_after_concurrent_invalidation(
+        globaldb: GlobalDBHandler,
+        fake_price_historian,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+):
+    """When an asset edit or case-insensitive miss invalidation commits while an oracle query
+    is in flight, the stale in-flight response must not write a new miss.
+    """
+    ts = Timestamp(1611565200)
+    daystart_ts = timestamp_to_daystart_timestamp(ts)
+    address = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
+    token = EvmToken.initialize(
+        address=address,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        decimals=18,
+        name='Test Token',
+        symbol='TST',
+        coingecko='wrong-coingecko-id',
+    )
+    globaldb.add_asset(token)
+    globaldb.add_historical_price_misses(token, [(HistoricalPriceOracle.DEFILLAMA, ts)])
+
+    fake_price_historian.set_oracles_order([HistoricalPriceOracle.COINGECKO])
+    coingecko = fake_price_historian._oracle_instances[0]
+    coingecko.can_query_history.return_value = True
+
+    def edit_during_query(from_asset, to_asset, timestamp):
+        globaldb.edit_evm_token(EvmToken.initialize(
+            address=address,
+            chain_id=ChainID.ETHEREUM,
+            token_kind=TokenKind.ERC20,
+            decimals=18,
+            name='Test Token',
+            symbol='TST',
+            coingecko='corrected-coingecko-id',
+        ))
+        raise _make_miss(from_asset, timestamp, to_asset)
+
+    coingecko.query_historical_price.side_effect = edit_during_query
+    with pytest.raises(NoPriceForGivenTimestamp):
+        fake_price_historian.query_historical_price(token, A_USD, ts)
+    assert globaldb.get_historical_price_misses(token, (ts, daystart_ts)) == set()
+
+    coingecko.query_historical_price.side_effect = None
+    coingecko.query_historical_price.return_value = (expected_price := Price(FVal('42')))
+    assert fake_price_historian.query_historical_price(
+        Asset(token.identifier),
+        A_USD,
+        ts,
+    ) == expected_price
+    assert coingecko.query_historical_price.call_count == 2
+
+    # Case-insensitive invalidation (Asset('eth') query vs A_ETH delete) also drops stale miss
+    def invalidate_uppercase_eth(from_asset, to_asset, timestamp):
+        globaldb.delete_historical_price_misses(A_ETH)
+        raise _make_miss(from_asset, timestamp, to_asset)
+
+    coingecko.query_historical_price.side_effect = invalidate_uppercase_eth
+    with pytest.raises(NoPriceForGivenTimestamp):
+        fake_price_historian.query_historical_price(Asset('eth'), A_USD, ts)
+    assert globaldb.get_historical_price_misses(A_ETH, (ts, daystart_ts)) == set()
+
+
+@pytest.mark.parametrize('should_mock_price_queries', [False])
+def test_unsupported_quote_and_pair_specific_misses_do_not_poison_base_asset_cache(
+        globaldb: GlobalDBHandler,
+        price_historian: PriceHistorian,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
+    """Unsupported quote currencies (BTC/AAVE) and quote-specific misses (BTC/GBP when USD is
+    present) must not record a base-asset miss for BTC that would suppress BTC/USD on the same day.
+    """
+    price_historian.set_oracles_order([HistoricalPriceOracle.COINGECKO])
+    coingecko = price_historian._coingecko
+    ts = Timestamp(1611565200)
+    daystart_ts = timestamp_to_daystart_timestamp(ts)
+
+    with (
+        patch.object(coingecko, 'can_query_history', return_value=True),
+        patch.object(
+            coingecko,
+            '_query',
+            return_value={'id': 'bitcoin', 'market_data': {'current_price': {'usd': 32500.0}}},
+        ) as mock_cg_query,
+    ):
+        with pytest.raises(NoPriceForGivenTimestamp) as exc_info:
+            price_historian.query_historical_price(A_BTC, A_AAVE, ts)
+        assert exc_info.value.cacheable_miss is False
+        assert mock_cg_query.call_count == 0
+        assert globaldb.get_historical_price_misses(A_BTC, (ts, daystart_ts)) == set()
+
+        with pytest.raises(NoPriceForGivenTimestamp):
+            price_historian.query_historical_price(A_BTC, A_GBP, ts)
+        assert mock_cg_query.call_count == 1
+        assert globaldb.get_historical_price_misses(A_BTC, (ts, daystart_ts)) == set()
+
+        assert price_historian.query_historical_price(A_BTC, A_USD, ts) == Price(FVal('32500.0'))
+        assert mock_cg_query.call_count == 2
+
+
+@pytest.mark.parametrize('should_mock_price_queries', [False])
+@pytest.mark.parametrize(
+    ('oracle', 'from_asset', 'payload', 'expect_cached'),
+    [
+        # DefiLlama
+        pytest.param(HistoricalPriceOracle.DEFILLAMA, A_BTC, {}, False, id='defillama-no-coins'),
+        pytest.param(HistoricalPriceOracle.DEFILLAMA, A_BTC, {'coins': {'coingecko:bitcoin': {}}}, False, id='defillama-no-price'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.DEFILLAMA, A_BTC, {'coins': {'coingecko:bitcoin': {'price': 'bad'}}}, False, id='defillama-bad-price'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.DEFILLAMA, A_BTC, {'coins': {}}, True, id='defillama-empty'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.DEFILLAMA, A_BTC, {'coins': {'coingecko:bitcoin': {'price': 1.5, 'confidence': 0.1}}}, True, id='defillama-low-confidence'),  # noqa: E501
+        # CoinGecko
+        pytest.param(HistoricalPriceOracle.COINGECKO, A_BTC, {}, False, id='coingecko-no-id'),
+        pytest.param(HistoricalPriceOracle.COINGECKO, A_BTC, {'id': 'other-coin'}, False, id='coingecko-wrong-id'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.COINGECKO, A_BTC, {'id': 'bitcoin', 'market_data': {}}, False, id='coingecko-missing-current-price'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.COINGECKO, A_BTC, {'id': 'bitcoin', 'market_data': {'current_price': {'usd': 'bad'}}}, False, id='coingecko-bad-price'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.COINGECKO, A_BTC, {'id': 'bitcoin', 'symbol': 'btc'}, True, id='coingecko-no-market-data'),  # noqa: E501
+        # Alchemy
+        pytest.param(HistoricalPriceOracle.ALCHEMY, A_BTC, {'symbol': 'WRONG', 'currency': 'usd', 'data': []}, False, id='alchemy-wrong-symbol'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.ALCHEMY, A_BTC, {'symbol': 'BTC', 'currency': 'eur', 'data': []}, False, id='alchemy-non-usd'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.ALCHEMY, A_BTC, {'symbol': 'BTC', 'currency': 'usd'}, False, id='alchemy-no-data-key'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.ALCHEMY, A_BTC, {'symbol': 'BTC', 'currency': 'usd', 'data': [{'timestamp': 'bad', 'value': '1'}]}, False, id='alchemy-bad-ts'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.ALCHEMY, A_BTC, {'address': '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9', 'currency': 'usd', 'data': []}, False, id='alchemy-address-for-symbol'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.ALCHEMY, A_AAVE, {'address': '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9', 'currency': 'usd', 'data': []}, False, id='alchemy-missing-network'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.ALCHEMY, A_BTC, {'symbol': 'BTC', 'currency': 'usd', 'data': []}, True, id='alchemy-empty-data'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.ALCHEMY, A_BTC, {'symbol': 'BTC', 'currency': 'usd', 'data': [{'timestamp': '2021-01-25T09:00:00Z', 'value': '0'}]}, True, id='alchemy-zero-price'),  # noqa: E501
+        # Moralis
+        pytest.param(HistoricalPriceOracle.MORALIS, A_AAVE, {}, False, id='moralis-missing-price'),
+        pytest.param(HistoricalPriceOracle.MORALIS, A_AAVE, {'usdPrice': 'bad'}, False, id='moralis-bad-price'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.MORALIS, A_BTC, None, False, id='moralis-local-unsupported'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.MORALIS, A_AAVE, {'usdPrice': 0}, True, id='moralis-zero-price'),  # noqa: E501
+        # Birdeye
+        pytest.param(HistoricalPriceOracle.BIRDEYE, A_AAVE, {}, False, id='birdeye-no-items'),
+        pytest.param(HistoricalPriceOracle.BIRDEYE, A_AAVE, {'items': [{'unixTime': 'bad', 'value': 100}]}, False, id='birdeye-bad-ts'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.BIRDEYE, A_AAVE, {'items': [{'unixTime': 1611565200}]}, False, id='birdeye-no-value'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.BIRDEYE, A_AAVE, {'items': [{'unixTime': 1611565200, 'value': 'bad'}]}, False, id='birdeye-bad-value'),  # noqa: E501
+        pytest.param(HistoricalPriceOracle.BIRDEYE, A_AAVE, {'items': []}, True, id='birdeye-empty-items'),  # noqa: E501
+    ],
+)
+def test_oracle_response_miss_classification(
+        globaldb: GlobalDBHandler,
+        price_historian: PriceHistorian,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+        oracle: HistoricalPriceOracle,
+        from_asset: Asset,
+        payload: dict[str, Any] | None,
+        expect_cached: bool,
+) -> None:
+    """Malformed oracle payloads and local UnsupportedAsset rejections must not be cached,
+    whereas confirmed no-data / zero / low-confidence responses are cached as misses.
+    """
+    ts = Timestamp(1611565200)  # 25/01/2021 09:00:00 UTC
+    daystart_ts = timestamp_to_daystart_timestamp(ts)
+    price_historian.set_oracles_order([oracle])
+    assert price_historian._oracle_instances is not None
+    oracle_instance = price_historian._oracle_instances[0]
+
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(oracle_instance, 'can_query_history', return_value=True))
+        if oracle == HistoricalPriceOracle.MORALIS:
+            stack.enter_context(patch.object(oracle_instance, '_timestamp_to_block', return_value=123456))  # noqa: E501
+        if payload is not None:
+            stack.enter_context(patch.object(oracle_instance, '_query', return_value=payload))
+        with pytest.raises(NoPriceForGivenTimestamp):
+            price_historian.query_historical_price(from_asset, A_USD, ts)
+
+    expected_ts = daystart_ts if oracle == HistoricalPriceOracle.COINGECKO else ts
+    expected = {(oracle, expected_ts)} if expect_cached else set()
+    assert globaldb.get_historical_price_misses(from_asset, (ts, daystart_ts)) == expected
