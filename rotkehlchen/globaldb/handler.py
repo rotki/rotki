@@ -39,7 +39,7 @@ from rotkehlchen.constants.misc import (
     NFT_DIRECTIVE,
 )
 from rotkehlchen.constants.resolver import evm_address_to_identifier, tokenid_to_collectible_id
-from rotkehlchen.constants.timing import HOUR_IN_SECONDS, MONTH_IN_SECONDS
+from rotkehlchen.constants.timing import MONTH_IN_SECONDS
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -1962,9 +1962,8 @@ class GlobalDBHandler:
                 )
                 return False
 
-            hourstart_ts = Timestamp(timestamp - (timestamp % HOUR_IN_SECONDS))
             daystart_ts = timestamp_to_daystart_timestamp(timestamp)
-            affected_timestamps = tuple(dict.fromkeys((timestamp, hourstart_ts, daystart_ts)))
+            affected_timestamps = tuple(dict.fromkeys((timestamp, daystart_ts)))
             placeholders = ', '.join('?' * len(affected_timestamps))
             write_cursor.execute(
                 'DELETE FROM historical_price_misses '

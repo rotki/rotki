@@ -841,9 +841,10 @@ def test_historical_price_misses_caching_granularity_and_flushing(
         fake_price_historian,
         inquirer: Inquirer,  # pylint: disable=unused-argument
 ):
-    """Confirmed misses are cached at UTC-hour (point-in-time) and UTC-day (daily)
-    granularity, reused within those buckets, and flushed selectively when a later oracle
-    succeeds (point-in-time misses skipped; daily misses persisted).
+    """Confirmed misses are cached at the exact timestamp (point-in-time) and UTC-day (daily)
+    granularity, so a later timestamp within the same hour retries point-in-time oracles, and
+    flushed selectively when a later oracle succeeds (point-in-time misses skipped; daily
+    misses persisted).
     """
     fake_price_historian.set_oracles_order([
         HistoricalPriceOracle.DEFILLAMA,
@@ -854,7 +855,6 @@ def test_historical_price_misses_caching_granularity_and_flushing(
     coingecko.can_query_history.return_value = True
 
     morning_ts = Timestamp(1611565242)  # 25/01/2021 09:00:42 UTC
-    hourstart_ts = Timestamp(1611565200)  # 25/01/2021 09:00:00 UTC
     daystart_ts = timestamp_to_daystart_timestamp(morning_ts)
     defillama.query_historical_price.side_effect = _make_miss(A_BTC, morning_ts)
     coingecko.query_historical_price.side_effect = _make_miss(A_BTC, morning_ts)
@@ -864,31 +864,33 @@ def test_historical_price_misses_caching_granularity_and_flushing(
     assert exc_info.value.rate_limited is False
     assert defillama.query_historical_price.call_count == 1
     assert coingecko.query_historical_price.call_count == 1
-    assert globaldb.get_historical_price_misses(A_BTC, (hourstart_ts, daystart_ts)) == {
-        (HistoricalPriceOracle.DEFILLAMA, hourstart_ts),
+    assert globaldb.get_historical_price_misses(A_BTC, (morning_ts, daystart_ts)) == {
+        (HistoricalPriceOracle.DEFILLAMA, morning_ts),
         (HistoricalPriceOracle.COINGECKO, daystart_ts),
     }
 
-    # Same UTC hour reuses both misses; a later UTC hour on the same day retries DefiLlama
-    # while skipping CoinGecko
+    # The exact same timestamp reuses both misses
     with pytest.raises(NoPriceForGivenTimestamp):
-        fake_price_historian.query_historical_price(A_BTC, A_USD, Timestamp(morning_ts + 600))
+        fake_price_historian.query_historical_price(A_BTC, A_USD, morning_ts)
     assert defillama.query_historical_price.call_count == 1
     assert coingecko.query_historical_price.call_count == 1
 
-    afternoon_ts = Timestamp(morning_ts + 4 * HOUR_IN_SECONDS)
+    # A later timestamp in the same UTC hour retries DefiLlama (the token may have started
+    # trading since) while still skipping the daily CoinGecko miss
     defillama.query_historical_price.side_effect = None
     defillama.query_historical_price.return_value = (btc_price := Price(FVal('32000')))
-    assert fake_price_historian.query_historical_price(A_BTC, A_USD, afternoon_ts) == btc_price
+    assert fake_price_historian.query_historical_price(
+        A_BTC, A_USD, Timestamp(morning_ts + 600),
+    ) == btc_price
     assert defillama.query_historical_price.call_count == 2
     assert coingecko.query_historical_price.call_count == 1
 
     # Point-in-time miss is NOT flushed when a later oracle succeeds
-    defillama.query_historical_price.side_effect = _make_miss(A_LINK, hourstart_ts)
+    defillama.query_historical_price.side_effect = _make_miss(A_LINK, morning_ts)
     coingecko.query_historical_price.side_effect = None
     coingecko.query_historical_price.return_value = (link_price := Price(FVal('25')))
-    assert fake_price_historian.query_historical_price(A_LINK, A_USD, hourstart_ts) == link_price
-    assert globaldb.get_historical_price_misses(A_LINK, (hourstart_ts, daystart_ts)) == set()
+    assert fake_price_historian.query_historical_price(A_LINK, A_USD, morning_ts) == link_price
+    assert globaldb.get_historical_price_misses(A_LINK, (morning_ts, daystart_ts)) == set()
 
     # Daily-granularity miss IS flushed when a later point-in-time oracle succeeds, so a
     # later query on the same UTC day skips the daily oracle
@@ -899,15 +901,15 @@ def test_historical_price_misses_caching_granularity_and_flushing(
     coingecko, defillama = fake_price_historian._oracle_instances
     coingecko.query_historical_price.reset_mock()
     defillama.query_historical_price.reset_mock()
-    coingecko.query_historical_price.side_effect = _make_miss(A_ETH, hourstart_ts)
+    coingecko.query_historical_price.side_effect = _make_miss(A_ETH, morning_ts)
     defillama.query_historical_price.side_effect = None
     defillama.query_historical_price.return_value = (eth_price := Price(FVal('1400')))
 
-    assert fake_price_historian.query_historical_price(A_ETH, A_USD, hourstart_ts) == eth_price
-    assert globaldb.get_historical_price_misses(A_ETH, (hourstart_ts, daystart_ts)) == {
+    assert fake_price_historian.query_historical_price(A_ETH, A_USD, morning_ts) == eth_price
+    assert globaldb.get_historical_price_misses(A_ETH, (morning_ts, daystart_ts)) == {
         (HistoricalPriceOracle.COINGECKO, daystart_ts),
     }
-    later_ts = Timestamp(hourstart_ts + 3 * HOUR_IN_SECONDS)
+    later_ts = Timestamp(morning_ts + 3 * HOUR_IN_SECONDS)
     assert fake_price_historian.query_historical_price(A_ETH, A_USD, later_ts) == eth_price
     assert coingecko.query_historical_price.call_count == 1
     assert defillama.query_historical_price.call_count == 2
@@ -934,7 +936,6 @@ def test_historical_price_misses_selective_recording_recency_and_ttl(
         fake_price_historian._oracle_instances
     )
     ts = Timestamp(1611595466)
-    hourstart_ts = Timestamp(ts - (ts % HOUR_IN_SECONDS))
     daystart_ts = timestamp_to_daystart_timestamp(ts)
 
     for oracle in (defillama, uniswapv3, uniswapv2, alchemy, moralis):
@@ -954,8 +955,8 @@ def test_historical_price_misses_selective_recording_recency_and_ttl(
     with pytest.raises(NoPriceForGivenTimestamp) as exc_info:
         fake_price_historian.query_historical_price(A_BTC, A_GBP, ts)
     assert exc_info.value.rate_limited is True
-    assert globaldb.get_historical_price_misses(A_BTC, (hourstart_ts, daystart_ts)) == {
-        (HistoricalPriceOracle.DEFILLAMA, hourstart_ts),
+    assert globaldb.get_historical_price_misses(A_BTC, (ts, daystart_ts)) == {
+        (HistoricalPriceOracle.DEFILLAMA, ts),
     }
 
     # On retry, DefiLlama is skipped while previously uncached oracles are tried
@@ -973,13 +974,12 @@ def test_historical_price_misses_selective_recording_recency_and_ttl(
     defillama, coingecko = fake_price_historian._oracle_instances
     now = ts_now()
     recent_ts = Timestamp(now - 600)
-    recent_hour = Timestamp(recent_ts - (recent_ts % HOUR_IN_SECONDS))
     recent_day = timestamp_to_daystart_timestamp(recent_ts)
     defillama.query_historical_price.side_effect = _make_miss(A_BTC, recent_ts)
     coingecko.query_historical_price.side_effect = _make_miss(A_BTC, recent_ts)
     with pytest.raises(NoPriceForGivenTimestamp):
         fake_price_historian.query_historical_price(A_BTC, A_USD, recent_ts)
-    assert globaldb.get_historical_price_misses(A_BTC, (recent_hour, recent_day)) == set()
+    assert globaldb.get_historical_price_misses(A_BTC, (recent_ts, recent_day)) == set()
 
     # Expired misses (checked_at older than TTL) are ignored on read and refreshed on re-miss
     old_ts = Timestamp(1611565200)
@@ -1038,7 +1038,7 @@ def test_historical_price_misses_invalidation_and_fk_safety(
     assert_clears_miss(token, lambda: globaldb.edit_token_fields(token, {'coingecko'}))
     assert_clears_miss(token, lambda: globaldb.set_tokens_protocol_if_missing([token], CPT_UNISWAP_V2))  # noqa: E501
 
-    # delete_historical_price clears only the affected timestamp/hour/day misses
+    # delete_historical_price clears only the affected timestamp/day misses
     globaldb.add_historical_price_misses(
         token,
         [(HistoricalPriceOracle.DEFILLAMA, ts), (HistoricalPriceOracle.DEFILLAMA, other_ts)],
