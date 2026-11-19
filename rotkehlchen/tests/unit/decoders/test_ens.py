@@ -901,6 +901,87 @@ def test_extension_via_wrapper(ethereum_inquirer, ethereum_accounts):
 
 
 @pytest.mark.vcr
+@pytest.mark.parametrize('ethereum_accounts', [['0x5B0f3DBdD49614476e4f5fF5Db6fe13d41fCB516']])
+def test_batch_renewal_with_refund_via_wrapper(ethereum_inquirer, ethereum_accounts):
+    """Test batch renewing ENS names via a wrapper with a refund does not produce negative
+    renewal amounts and preserves the refund event when unapplied."""
+    tx_hash = deserialize_evm_tx_hash('0xd25b137f1e5d5cb26fca29cb8612851a42eba00b32074b8871657ab556bb75f7')  # noqa: E501
+    user_address = ethereum_accounts[0]
+    wrapper_address = string_to_evm_address('0x83827712Df81AF5A85A532a6Bf08c3F74d1fc707')
+    events, decoder = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=tx_hash,
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1793188091000)),
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.000842551363220744'),
+            location_label=user_address,
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal('0.000000655332241728'),
+            location_label=user_address,
+            notes=f'Receive 0.000000655332241728 ETH from {wrapper_address}',
+            address=wrapper_address,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal('0.000130629186415792'),
+            location_label=user_address,
+            notes=f'Send 0.000130629186415792 ETH to {wrapper_address}',
+            address=wrapper_address,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=58,
+            timestamp=timestamp,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.RENEW,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user_address,
+            notes=f'Renew ENS name claudedev.eth for 0 ETH until {decoder.decoders["Ens"].timestamp_to_date(Timestamp(1802368463))}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=wrapper_address,
+            extra_data={'name': 'claudedev.eth', 'expires': Timestamp(1802368463)},
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=66,
+            timestamp=timestamp,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.RENEW,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user_address,
+            notes=f'Renew ENS name sickname.eth for 0 ETH until {decoder.decoders["Ens"].timestamp_to_date(Timestamp(1875455183))}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=wrapper_address,
+            extra_data={'name': 'sickname.eth', 'expires': Timestamp(1875455183)},
+        ),
+    ]
+
+
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_vote_cast(ethereum_inquirer, ethereum_accounts):
     """Test voting for ENS governance"""
