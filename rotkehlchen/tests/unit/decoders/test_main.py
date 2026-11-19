@@ -177,6 +177,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'XdaiBridge',
         'Zerox',
         'WooFi',
+        'Zapper',
         'Zerion',
         'Oneinchliquidity',
     }
@@ -312,6 +313,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'morpho_blue',
         'clipper',
         'zerion',
+        'zapper',
         '1inch-liquidity',
     }
 
