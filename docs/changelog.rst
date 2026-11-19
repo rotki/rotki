@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Legacy Zapper.fi swaps on Ethereum are now decoded in transaction history.
 * :feature:`10940` ether.fi card cashback on Scroll and Optimism, including cashback paid out after a delay, is now decoded as cashback in transaction history.
 * :bug:`10937` Interest accrued on an AAVE v3 borrow is no longer reported as interest earned. When a borrow or a repay mints debt tokens for the interest accrued since the last action, that part is now shown as interest accrued on the debt, and the rest as the amount borrowed or repaid.
 * :feature:`10043` Bitget is now a supported exchange for balances, spot trades, deposits, withdrawals and futures positions.
