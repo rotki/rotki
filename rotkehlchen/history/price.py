@@ -446,12 +446,11 @@ class PriceHistorian:
         )) is not None:
             return cached_price_entry.price
 
-        # Bucket non-daily misses to the UTC hour to match the 1h positive-cache tolerance
-        # and collapse bursts of transactions within the same hour into a single remote lookup
-        hourstart_ts = Timestamp(timestamp - (timestamp % HOUR_IN_SECONDS))
+        # Point-in-time misses are keyed by the exact timestamp: absence at one moment does
+        # not prove absence later in the same hour (e.g. before a token starts trading)
         cached_misses, miss_guard = GlobalDBHandler.get_historical_price_misses_and_guard(
             from_asset=from_asset,
-            timestamps=(hourstart_ts, daystart_ts),
+            timestamps=(timestamp, daystart_ts),
         )
         now = ts_now()
         today_daystart_ts = timestamp_to_daystart_timestamp(now)
@@ -460,7 +459,7 @@ class PriceHistorian:
         rate_limited = False
         for oracle, oracle_instance in zip(oracles, oracle_instances, strict=True):
             is_daily = oracle in DAILY_GRANULARITY_ORACLES
-            miss_ts = daystart_ts if is_daily else hourstart_ts
+            miss_ts = daystart_ts if is_daily else timestamp
             if (oracle, miss_ts) in cached_misses:
                 continue
 
