@@ -39,6 +39,7 @@ from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import TRANSIENT_FAILURE_CAUSES
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
@@ -182,6 +183,9 @@ class _CostBasisPass:
     def _price(self, asset: Asset, timestamp: Timestamp) -> Price | None:
         """The price of the asset in the profit currency, or None if no oracle knows it.
 
+        An oracle rejecting the query (e.g. a 401 for history beyond its plan or a 404 for a
+        delisted id) also counts as no price, since retrying would get the same answer.
+
         May raise NoPriceForGivenTimestamp or RemoteError if the price oracles are rate limited
         or fail transiently.
         """
@@ -201,6 +205,10 @@ class _CostBasisPass:
             price = None
         except NoPriceForGivenTimestamp as e:
             if e.rate_limited or e.remote_error:
+                raise
+            price = None
+        except RemoteError as e:
+            if e.cause in TRANSIENT_FAILURE_CAUSES:
                 raise
             price = None
 

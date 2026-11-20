@@ -73,7 +73,6 @@ from rotkehlchen.errors.misc import (
     combined_cause,
 )
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
-from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
 from rotkehlchen.globaldb.cache import (
@@ -777,22 +776,13 @@ class AssetsService:
             result=result,
         )
 
-    def _invalidate_cost_basis_for_historical_price(
-            self,
-            from_asset: Asset,
-            to_asset: Asset,
-            timestamp: Timestamp,
-    ) -> None:
-        if is_accounting_update_enabled() is False or self.rotkehlchen.user_is_logged_in is False:
+    def _invalidate_cost_basis_for_historical_price(self) -> None:
+        """Apply the recorded manual price change to the logged in profile. The others
+        apply it when they log in."""
+        if self.rotkehlchen.user_is_logged_in is False:
             return
 
-        with self.rotkehlchen.data.db.user_write() as write_cursor:
-            DBHistoryEvents(self.rotkehlchen.data.db).mark_cost_basis_stale_for_price_change(
-                write_cursor=write_cursor,
-                from_asset=from_asset,
-                to_asset=to_asset,
-                timestamp=timestamp,
-            )
+        DBHistoryEvents(self.rotkehlchen.data.db).apply_manual_price_changes()
 
     def add_historical_price(
             self,
@@ -811,11 +801,7 @@ class AssetsService:
         )
         added = GlobalDBHandler.add_single_historical_price(historical_price)
         if added:
-            self._invalidate_cost_basis_for_historical_price(
-                from_asset=from_asset,
-                to_asset=to_asset,
-                timestamp=timestamp,
-            )
+            self._invalidate_cost_basis_for_historical_price()
             return OkResult(True)
         return FailResult(
             f'Failed to store historical price for source {source_type!s}',
@@ -841,11 +827,7 @@ class AssetsService:
         )
         edited = GlobalDBHandler.edit_manual_price(historical_price)
         if edited:
-            self._invalidate_cost_basis_for_historical_price(
-                from_asset=from_asset,
-                to_asset=to_asset,
-                timestamp=timestamp,
-            )
+            self._invalidate_cost_basis_for_historical_price()
             return OkResult(True)
         return FailResult(
             f'Failed to edit historical price for source {source_type!s}',
@@ -876,11 +858,7 @@ class AssetsService:
             source_type=source_type,
         )
         if deleted:
-            self._invalidate_cost_basis_for_historical_price(
-                from_asset=from_asset,
-                to_asset=to_asset,
-                timestamp=timestamp,
-            )
+            self._invalidate_cost_basis_for_historical_price()
             return OkResult(True)
         return FailResult(
             f'Failed to delete historical price for source {source_type!s}',
@@ -978,6 +956,7 @@ class AssetsService:
         except InputError as e:
             return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
         Inquirer.remove_cache_prices_for_asset(assets_to_invalidate)
+        self._invalidate_cost_basis_for_historical_price()
 
         return OkResult(True)
 

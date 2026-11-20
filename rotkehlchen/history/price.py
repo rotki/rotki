@@ -23,6 +23,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.errors.cause import TRANSIENT_FAILURE_CAUSES
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
@@ -499,9 +500,10 @@ class PriceHistorian:
             ):
                 continue
             except RemoteError as e:
-                # Raise the flag if any of the services was rate limited or failed transiently
+                # Raise the flags only if a later retry may get past the failure. A rejection
+                # such as a 401 for history beyond the plan or a 404 for a delisted id is final.
                 rate_limited = rate_limited or e.error_code == HTTPStatus.TOO_MANY_REQUESTS
-                remote_error = True
+                remote_error = remote_error or e.cause in TRANSIENT_FAILURE_CAUSES
                 continue
 
             log.debug(

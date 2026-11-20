@@ -80,6 +80,7 @@ from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import NFTFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings, DBSettings, ModifiableDBSettings
 from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.db.utils import replace_tag_mappings, table_exists
@@ -449,6 +450,7 @@ class Rotkehlchen:
             # has unauthenticable/invalid premium credentials remaining in his DB
 
         DataIssuesManager(self.data.db).reset_orphaned_remediations()
+        DBHistoryEvents(self.data.db).apply_manual_price_changes()
         with self.data.db.conn.read_ctx() as cursor:
             settings = self.get_settings(cursor)
             CachedSettings().initialize(settings)  # initialize with saved DB settings
@@ -1520,6 +1522,7 @@ class Rotkehlchen:
                         main_to_usd_rate=main_to_usd_rate,
                     )
                 self._save_manual_prices_as_historical(result_dict)
+                DBHistoryEvents(self.data.db).apply_manual_price_changes()
                 log.debug('query_balances data saved')
             else:
                 log.debug(
@@ -1601,7 +1604,7 @@ class Rotkehlchen:
                 ))
 
         if len(historical_prices) > 0:
-            GlobalDBHandler.add_historical_prices(historical_prices)
+            GlobalDBHandler.add_manual_historical_prices(historical_prices)
 
     def set_settings(self, settings: ModifiableDBSettings) -> tuple[bool, str]:
         """Tries to set new settings. Returns True in success or False with message if error

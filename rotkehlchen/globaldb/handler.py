@@ -1,3 +1,4 @@
+import json
 import logging
 import shutil
 from collections import defaultdict
@@ -50,6 +51,7 @@ from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     SPAM_PROTOCOL,
+    CacheType,
     ChainID,
     ChecksumEvmAddress,
     ConnectorAssetMappingDeleteEntry,
@@ -62,7 +64,12 @@ from rotkehlchen.types import (
     Timestamp,
     TokenKind,
 )
-from rotkehlchen.utils.misc import timestamp_to_date, timestamp_to_daystart_timestamp, ts_now
+from rotkehlchen.utils.misc import (
+    timestamp_to_date,
+    timestamp_to_daystart_timestamp,
+    ts_now,
+    ts_now_in_ms,
+)
 from rotkehlchen.utils.serialization import (
     deserialize_asset_with_oracles_from_db,
     deserialize_generic_asset_from_db,
@@ -1717,6 +1724,12 @@ class GlobalDBHandler:
                     """,
                     serialized,
                 )
+                GlobalDBHandler._record_manual_price_change(
+                    write_cursor=write_cursor,
+                    from_asset=entry.from_asset,
+                    to_asset=entry.to_asset,
+                    timestamp=entry.timestamp,
+                )
         except rsqlite.IntegrityError as e:
             log.error(
                 f'Failed to add single historical price. {e!s}. ',
@@ -1724,6 +1737,78 @@ class GlobalDBHandler:
             return False
 
         return True
+
+    @staticmethod
+    def _record_manual_price_change(
+            write_cursor: DBCursor,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> None:
+        """Record that a manual historical price changed, for every profile to pick up.
+
+        Manual prices are shared by all profiles of the data directory, while the cost basis
+        computed with them is stored per profile, which may not be logged in. Each change gets
+        an id that is strictly greater than every earlier one, even within the same millisecond,
+        so a profile that has seen every change up to an id never misses a later one.
+        """
+        write_cursor.execute(
+            'INSERT INTO general_cache(key, value, last_queried_ts) '
+            'SELECT ?1, ?2, MAX(?3, COALESCE(MAX(last_queried_ts) + 1, 0)) '
+            'FROM general_cache WHERE key=?1 '
+            'ON CONFLICT(key, value) DO UPDATE SET last_queried_ts=excluded.last_queried_ts',
+            (
+                CacheType.MANUAL_PRICE_CHANGES.serialize(),
+                json.dumps([from_asset.identifier, to_asset.identifier, timestamp]),
+                ts_now_in_ms(),
+            ),
+        )
+
+    @staticmethod
+    def get_manual_price_changes(
+            after_id: int,
+    ) -> list[tuple[int, str, str, Timestamp]]:
+        """The manual price changes recorded with an id greater than `after_id`, as
+        (change id, from asset identifier, to asset identifier, price timestamp)."""
+        changes = []
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            for value, change_id in cursor.execute(
+                'SELECT value, last_queried_ts FROM general_cache '
+                'WHERE key=? AND last_queried_ts > ?',
+                (CacheType.MANUAL_PRICE_CHANGES.serialize(), after_id),
+            ):
+                from_identifier, to_identifier, timestamp = json.loads(value)
+                changes.append((change_id, from_identifier, to_identifier, Timestamp(timestamp)))
+
+        return changes
+
+    @staticmethod
+    def add_manual_historical_prices(entries: list[HistoricalPrice]) -> None:
+        """Add the given manual historical prices, keeping any already stored for the same
+        pair and timestamp, and record each one added as a manual price change.
+
+        If any addition causes a DB error it's skipped and an error is logged
+        """
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            for entry in entries:
+                try:
+                    write_cursor.execute(
+                        'INSERT OR IGNORE INTO price_history('
+                        'from_asset, to_asset, source_type, timestamp, price'
+                        ') VALUES (?, ?, ?, ?, ?)',
+                        entry.serialize_for_db(),
+                    )
+                except rsqlite.IntegrityError as e:
+                    log.error('Failed to add manual historical price %s due to %s', entry, e)
+                    continue
+
+                if write_cursor.rowcount == 1:
+                    GlobalDBHandler._record_manual_price_change(
+                        write_cursor=write_cursor,
+                        from_asset=entry.from_asset,
+                        to_asset=entry.to_asset,
+                        timestamp=entry.timestamp,
+                    )
 
     @staticmethod
     def add_manual_latest_price(from_asset: Asset, to_asset: Asset, price: Price) -> set[Asset]:
@@ -1737,6 +1822,10 @@ class GlobalDBHandler:
         - InputError if some db constraint was hit. Probably means manual price duplication.
         """
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            demoted_prices = write_cursor.execute(
+                'SELECT to_asset, timestamp FROM price_history WHERE source_type=? AND from_asset=?',  # noqa: E501
+                (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), from_asset.identifier),
+            ).fetchall()
             try:
                 write_cursor.execute(
                     'UPDATE price_history SET source_type=? WHERE source_type=? AND from_asset=?',
@@ -1761,6 +1850,14 @@ class GlobalDBHandler:
                     f'Failed to add manual current price because manual price already exists '
                     f'at {timestamp_to_date(ts=timestamp)}',
                 ) from e
+            for demoted_to_asset, demoted_timestamp in demoted_prices:
+                GlobalDBHandler._record_manual_price_change(
+                    write_cursor=write_cursor,
+                    from_asset=from_asset,
+                    to_asset=Asset(demoted_to_asset),
+                    timestamp=Timestamp(demoted_timestamp),
+                )
+
             try:
                 write_cursor.execute(
                     'INSERT INTO '
@@ -1923,6 +2020,13 @@ class GlobalDBHandler:
 
                 if write_cursor.rowcount == 0:
                     return False
+
+                GlobalDBHandler._record_manual_price_change(
+                    write_cursor=write_cursor,
+                    from_asset=entry.from_asset,
+                    to_asset=entry.to_asset,
+                    timestamp=entry.timestamp,
+                )
         except rsqlite.IntegrityError as e:
             log.error(
                 f'Failed to edit manual historical prices from {entry.from_asset} '
@@ -1971,6 +2075,12 @@ class GlobalDBHandler:
                 (from_asset.identifier, *affected_timestamps),
             )
             GlobalDBHandler.bump_price_misses_generation((from_asset.identifier,))
+            GlobalDBHandler._record_manual_price_change(
+                write_cursor=write_cursor,
+                from_asset=from_asset,
+                to_asset=to_asset,
+                timestamp=timestamp,
+            )
 
         return True
 

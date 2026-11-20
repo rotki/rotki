@@ -24,6 +24,7 @@ from rotkehlchen.constants import HOUR_IN_SECONDS, ZERO
 from rotkehlchen.db.cache import (
     IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX,
     DBCacheDynamic,
+    DBCacheStatic,
     mark_stale_from_ts,
 )
 from rotkehlchen.db.constants import (
@@ -62,6 +63,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.bucket_state import delete_balance_checks_of_cleared_accounts
 from rotkehlchen.history.events.constants import CHAIN_ENTRY_TYPES, STAKING_ENTRY_TYPES
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -438,8 +440,47 @@ class DBHistoryEvents:
                 timestamp=TimestampMS(first_event[0]),
             )
 
-    def mark_cost_basis_stale_for_price_change(
-            self,
+    def apply_manual_price_changes(self) -> None:
+        """Mark the cost basis stale for the manual historical prices that changed since
+        this profile last looked, whichever profile changed them.
+
+        Manual prices live in the global DB, which all profiles of the data directory share,
+        so this runs both right after a change and at login.
+        """
+        if is_accounting_update_enabled() is False:
+            return  # keep the changes pending, to apply them once cost basis is computed
+
+        with self.db.user_write() as write_cursor:
+            last_change_id = write_cursor.execute(
+                'SELECT value FROM key_value_cache WHERE name=?',
+                (DBCacheStatic.LAST_MANUAL_PRICE_CHANGE_ID.value,),
+            ).fetchone()
+            if len(changes := GlobalDBHandler.get_manual_price_changes(
+                after_id=-1 if last_change_id is None else int(last_change_id[0]),
+            )) == 0:
+                return
+
+            for _, from_identifier, to_identifier, timestamp in changes:
+                try:
+                    self._mark_cost_basis_stale_for_price_change(
+                        write_cursor=write_cursor,
+                        from_asset=Asset(from_identifier),
+                        to_asset=Asset(to_identifier),
+                        timestamp=timestamp,
+                    )
+                except UnknownAsset as e:  # the asset was deleted along with its prices
+                    log.debug('Skipping manual price change of a deleted asset: %s', e)
+
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+                (
+                    DBCacheStatic.LAST_MANUAL_PRICE_CHANGE_ID.value,
+                    str(max(change[0] for change in changes)),
+                ),
+            )
+
+    @staticmethod
+    def _mark_cost_basis_stale_for_price_change(
             write_cursor: DBCursor,
             from_asset: Asset,
             to_asset: Asset,
@@ -447,10 +488,9 @@ class DBHistoryEvents:
     ) -> None:
         """Mark materialized cost basis stale from the earliest event at or after
         `timestamp - HOUR_IN_SECONDS` that could match the changed historical price.
-        """
-        if is_accounting_update_enabled() is False:
-            return
 
+        May raise UnknownAsset if either asset is no longer in the global DB.
+        """
         window_start_ms = ts_sec_to_ms(Timestamp(max(0, timestamp - HOUR_IN_SECONDS)))
         if from_asset.is_fiat() and to_asset.is_fiat():
             row = write_cursor.execute(

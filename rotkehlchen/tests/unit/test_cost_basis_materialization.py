@@ -19,9 +19,10 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import RemoteError, remote_error_for_status
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.types import DataIssueFilters
@@ -30,13 +31,14 @@ from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.price import HistoricalOracleState, PriceHistorian
-from rotkehlchen.history.types import HistoricalPriceOracle
+from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.locations.constants import (
     LOCATION_BITCOIN,
     LOCATION_ETHEREUM,
     LOCATION_KRAKEN,
     LOCATION_OPTIMISM,
 )
+from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tasks.cost_basis import (
     _CostBasisPass,
     _Rules,
@@ -2048,20 +2050,23 @@ def test_transient_oracle_failure_keeps_pass_stale_until_recovery(
         ) is None
 
 
-def test_price_historian_sets_remote_error_on_non_429_oracle_failure() -> None:
+@pytest.mark.parametrize(('status', 'transient'), [(401, False), (404, False), (503, True)])
+def test_price_historian_sets_remote_error_only_for_transient_oracle_failures(
+        status: int,
+        transient: bool,
+) -> None:
     """PriceHistorian.query_historical_price sets remote_error=True on NoPriceForGivenTimestamp
-    when an oracle fails with a non-429 RemoteError, including through the fiat-to-crypto
-    inverse path."""
+    only when an oracle fails in a way a retry may get past, including through the
+    fiat-to-crypto inverse path. A rejection such as a 401 or a 404 is final."""
     failing_oracle = MagicMock()
     # Real oracles price crypto in fiat, not fiat in crypto; skipping the outer fiat->crypto
-    # loop ensures the inverse path is what propagates remote_error=True.
+    # loop ensures the inverse path is what propagates remote_error.
     failing_oracle.can_query_history.side_effect = (
         lambda from_asset, to_asset, timestamp: from_asset == A_ETH
     )
-    failing_oracle.query_historical_price.side_effect = RemoteError(
-        'upstream 503',
-        cause=FailureCause.NETWORK,
-        error_code=503,
+    failing_oracle.query_historical_price.side_effect = remote_error_for_status(
+        status_code=status,
+        message=f'upstream {status}',
     )
 
     fake_historian = MagicMock()
@@ -2086,7 +2091,7 @@ def test_price_historian_sets_remote_error_on_non_429_oracle_failure() -> None:
                 timestamp=Timestamp(1000),
             )
         assert direct_exc.value.rate_limited is False
-        assert direct_exc.value.remote_error is True
+        assert direct_exc.value.remote_error is transient
 
         with pytest.raises(NoPriceForGivenTimestamp) as inverse_exc:
             PriceHistorian.query_historical_price(
@@ -2095,7 +2100,187 @@ def test_price_historian_sets_remote_error_on_non_429_oracle_failure() -> None:
                 timestamp=Timestamp(1000),
             )
         assert inverse_exc.value.rate_limited is False
-        assert inverse_exc.value.remote_error is True
+        assert inverse_exc.value.remote_error is transient
+
+
+@pytest.mark.parametrize(('status', 'transient'), [(401, False), (404, False), (503, True)])
+def test_oracle_rejection_stores_zero_cost_while_outage_stops_pass(
+        database: DBHandler,
+        status: int,
+        transient: bool,
+) -> None:
+    """An oracle rejecting a price query (a 401 for old history, a 404 for a delisted id)
+    lets the pass finish with a zero cost lot, as no retry would get a price. An outage (503)
+    stops the pass and keeps the range stale to be retried."""
+    def query_oracle(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        if timestamp == 2:
+            raise remote_error_for_status(status_code=status, message=f'upstream {status}')
+        return Price(FVal(1000))
+
+    oracle = MagicMock()
+    oracle.can_query_history.return_value = True
+    oracle.query_historical_price.side_effect = query_oracle
+    fake_historian = MagicMock()
+    fake_historian.get_price_for_special_asset.return_value = None
+    fake_historian.query_historical_price = PriceHistorian.query_historical_price
+    fake_historian._oracle_state = HistoricalOracleState(
+        oracles=(HistoricalPriceOracle.COINGECKO,),
+        instances=[oracle],
+    )
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=[
+            _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+            _event(at=2, amount='1', event_type=HistoryEventType.RECEIVE),
+        ])
+        write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ?', ('stale_cost_%',))
+
+    with (
+        patch.object(PriceHistorian, '__new__', return_value=fake_historian),
+        patch('rotkehlchen.history.price.GlobalDBHandler.get_historical_price', return_value=None),
+        patch('rotkehlchen.history.price.GlobalDBHandler.add_historical_prices'),
+        patch(
+            'rotkehlchen.history.price.GlobalDBHandler.get_historical_price_misses_and_guard',
+            return_value=(set(), 0),
+        ),
+    ):
+        assert process_cost_basis(database, database.msg_aggregator) is not transient
+
+    expected_rows = [(1000, '1000', 'price_oracle')]
+    if not transient:
+        expected_rows.append((2000, '0', 'zero_cost'))
+    assert _rows(database, 'timestamp, basis_per_unit, basis_source') == expected_rows
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == ('2000' if transient else None)
+
+
+def test_price_query_rejection_raised_directly_stores_zero_cost(database: DBHandler) -> None:
+    """A RemoteError that the price query raises directly, e.g. from a node pricing an LP
+    token, only stops the pass if a retry may get past it."""
+    def reject_at_two(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        if timestamp == 2:
+            raise RemoteError('rejected', cause=FailureCause.REMOTE_REJECTED, error_code=404)
+        return Price(FVal(1000))
+
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=[
+            _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+            _event(at=2, amount='1', event_type=HistoryEventType.RECEIVE),
+        ])
+        write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ?', ('stale_cost_%',))
+
+    with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
+        historian.return_value.query_historical_price = reject_at_two
+        assert process_cost_basis(database, database.msg_aggregator) is True
+
+    assert _rows(database, 'timestamp, basis_per_unit, basis_source') == [
+        (1000, '1000', 'price_oracle'),
+        (2000, '0', 'zero_cost'),
+    ]
+
+
+def _stale_cost_basis_from_ts(database: DBHandler) -> str | None:
+    with database.conn.read_ctx() as cursor:
+        return database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        )
+
+
+def _clear_stale_cost_basis_markers(database: DBHandler) -> None:
+    with database.user_write() as write_cursor:
+        write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ?', ('stale_cost_%',))
+
+
+def test_manual_price_change_of_another_profile_marks_cost_basis_stale(
+        database: DBHandler,
+) -> None:
+    """Manual prices are shared by every profile of the data directory. A change made while
+    this profile was not logged in marks its cost basis stale when it applies the recorded
+    changes at login, and each change is applied only once."""
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=[
+            _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+        ])
+
+    DBHistoryEvents(database).apply_manual_price_changes()  # what the profile saw so far
+    _clear_stale_cost_basis_markers(database)
+    price = HistoricalPrice(
+        from_asset=A_ETH,
+        to_asset=A_USD,
+        source=HistoricalPriceOracle.MANUAL,
+        timestamp=Timestamp(1),
+        price=Price(FVal(1500)),
+    )
+    # Another profile adds the price: only the global DB changes
+    assert GlobalDBHandler.add_single_historical_price(price) is True
+    assert _stale_cost_basis_from_ts(database) is None
+
+    DBHistoryEvents(database).apply_manual_price_changes()  # this profile logs in
+    assert _stale_cost_basis_from_ts(database) == '1000'
+
+    _clear_stale_cost_basis_markers(database)
+    DBHistoryEvents(database).apply_manual_price_changes()  # and logs in again
+    assert _stale_cost_basis_from_ts(database) is None
+
+    assert GlobalDBHandler.edit_manual_price(price._replace(price=Price(FVal(1600)))) is True
+    DBHistoryEvents(database).apply_manual_price_changes()
+    assert _stale_cost_basis_from_ts(database) == '1000'
+
+    _clear_stale_cost_basis_markers(database)
+    assert GlobalDBHandler.delete_historical_price(
+        from_asset=A_ETH,
+        to_asset=A_USD,
+        timestamp=Timestamp(1),
+        source_type=HistoricalPriceOracle.MANUAL,
+    ) is True
+    DBHistoryEvents(database).apply_manual_price_changes()
+    assert _stale_cost_basis_from_ts(database) == '1000'
+
+
+def test_manual_prices_turned_historical_mark_cost_basis_stale(database: DBHandler) -> None:
+    """Replacing a manual current price keeps the old one as a manual historical price, and
+    saving a balance snapshot stores the manual current prices as historical ones. Both add
+    prices the cost basis may use, so both mark it stale, but only for prices actually added."""
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=[
+            _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+        ])
+
+    DBHistoryEvents(database).apply_manual_price_changes()
+    _clear_stale_cost_basis_markers(database)
+    with patch('rotkehlchen.globaldb.handler.ts_now', return_value=Timestamp(1)):
+        GlobalDBHandler.add_manual_latest_price(
+            from_asset=A_ETH,
+            to_asset=A_USD,
+            price=Price(FVal(1500)),
+        )
+    DBHistoryEvents(database).apply_manual_price_changes()
+    assert _stale_cost_basis_from_ts(database) is None  # a current price is not historical
+
+    with patch('rotkehlchen.globaldb.handler.ts_now', return_value=Timestamp(5000)):
+        GlobalDBHandler.add_manual_latest_price(  # keeps the price at 1 as a historical one
+            from_asset=A_ETH,
+            to_asset=A_USD,
+            price=Price(FVal(1600)),
+        )
+    DBHistoryEvents(database).apply_manual_price_changes()
+    assert _stale_cost_basis_from_ts(database) == '1000'
+
+    _clear_stale_cost_basis_markers(database)
+    snapshot: dict[str, Any] = {'assets': {A_ETH: {}}, 'liabilities': {}}
+    with patch('rotkehlchen.rotkehlchen.ts_now', return_value=Timestamp(2)):
+        Rotkehlchen._save_manual_prices_as_historical(snapshot)
+    DBHistoryEvents(database).apply_manual_price_changes()
+    assert _stale_cost_basis_from_ts(database) == '1000'
+
+    _clear_stale_cost_basis_markers(database)
+    with patch('rotkehlchen.rotkehlchen.ts_now', return_value=Timestamp(2)):
+        Rotkehlchen._save_manual_prices_as_historical(snapshot)  # the price is already stored
+    DBHistoryEvents(database).apply_manual_price_changes()
+    assert _stale_cost_basis_from_ts(database) is None
 
 
 @pytest.mark.parametrize('missing_exc', ['no_price', 'unsupported_asset'])

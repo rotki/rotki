@@ -65,6 +65,9 @@ class DBCacheStatic(Enum):
     # one the pass started with, which is stored along with it.
     COST_BASIS_PASS_PROCESSED_TS: Final = 'cost_basis_pass_processed_ts'
     COST_BASIS_PASS_MODIFICATION_TS: Final = 'cost_basis_pass_modification_ts'
+    # The id of the last manual historical price change, recorded in the global DB, that
+    # this profile's cost basis was invalidated for
+    LAST_MANUAL_PRICE_CHANGE_ID: Final = 'last_manual_price_change_id'
     LAST_DATA_ISSUE_REMEDIATION_TS: Final = 'last_data_issue_remediation_ts'
     LAST_CURRENT_BALANCE_DETECTION_TS: Final = 'last_current_balance_detection_ts'
     PENDING_DETECTION_FROM_TS: Final = 'pending_detection_from_ts'
