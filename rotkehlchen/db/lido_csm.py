@@ -171,8 +171,7 @@ class DBLidoCsm:
                 'DELETE FROM multisettings WHERE name=? AND value=?',
                 (IGNORED_NODE_OPERATOR_SETTING, _operator_value(node_operator_id, staking_module)),
             )
-            if followed:
-                self._set_followed(write_cursor, node_operator_id, staking_module, followed=True)
+            self._set_followed(write_cursor, node_operator_id, staking_module, followed=followed)
 
     @staticmethod
     def _set_followed(

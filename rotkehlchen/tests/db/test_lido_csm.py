@@ -230,3 +230,32 @@ def test_lido_csm_move_and_ignore_node_operator(database) -> None:
 
     db.add_node_operator(address=new_address, node_operator_id=7, staking_module=LidoCsmStakingModule.CSM)  # noqa: E501
     assert db.is_node_operator_ignored(node_operator_id=7, staking_module=LidoCsmStakingModule.CSM) is False  # noqa: E501
+
+
+def test_lido_csm_followed_flag_does_not_outlive_removed_account(database) -> None:
+    """Removing an account cascades its operator row but not the followed flag. An operator
+    added by hand afterwards must not inherit it, or the refresh would drop it again."""
+    db = DBLidoCsm(database)
+    _add_eth_account(database, (manager := make_evm_address()))
+    _add_eth_account(database, (depositor := make_evm_address()))
+    db.add_node_operator(
+        address=manager,
+        node_operator_id=7,
+        staking_module=LidoCsmStakingModule.CSM,
+        followed=True,
+    )
+    with database.user_write() as write_cursor:
+        database.remove_single_blockchain_accounts(
+            write_cursor=write_cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            accounts=[manager],
+        )
+    assert db.get_node_operators() == ()
+
+    db.add_node_operator(
+        address=depositor,
+        node_operator_id=7,
+        staking_module=LidoCsmStakingModule.CSM,
+    )
+    assert db.get_followed_node_operators() == set()
+    assert [(x.address, x.node_operator_id) for x in db.get_node_operators()] == [(depositor, 7)]
