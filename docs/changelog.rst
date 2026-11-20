@@ -110,6 +110,9 @@ Changelog
 * :feature:`12914` Beets pool joins and exits on Sonic are now decoded, and gauge balances for Beets v2 and v3 pools are queried.
 * :feature:`9110` Sonic is now a fully supported EVM chain. Transactions and balances can be tracked on it.
 * :feature:`13089` Venice.ai is now supported. VVV, sVVV and DIEM balances will be queried and events involving VVV and DIEM are now decoded.
+* :bug:`-` Curve CryptoSwap v1 (Tricrypto) pool deposits, withdrawals (including via zap contracts), and swaps, as well as 3-asset and Stableswap-NG imbalanced withdrawals, are now properly decoded.
+* :bug:`-` Historical prices of asset collection members, such as MATIC, now use the member's own price when the collection's main asset has no price at that time, instead of treating the member as unpriced.
+* :bug:`13691` Re-importing a rotki generic events CSV no longer duplicates events, and identical rows in one generic CSV are no longer merged.
 * :bug:`-` GnosisDAO treasury redemption deposits are now shown as leaving the wallet and the claimed treasury payouts as entering it.
 * :bug:`-` Hop bridge transfers sent from an L2 now record the amount that actually left the wallet and a correctly sized bonder fee. Before, a 6-decimal token such as USDC got a near-zero fee, and transfers through the Hop AMM wrapper recorded the bridged hToken amount instead of the wallet debit.
 * :bug:`-` Jupiter Lend collateral deposits on Solana are now counted as moving from the wallet into Jupiter, and collateral withdrawals as moving back.

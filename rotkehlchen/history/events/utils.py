@@ -32,7 +32,7 @@ def history_event_to_staking_for_api(event: HistoryBaseEntry) -> dict[str, Any]:
     }
 
 
-def _hash_group_key(payload: dict) -> str:
+def hash_group_key(payload: dict) -> str:
     """Create a unique string from a dict with specific keys"""
     data = json.dumps(payload, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
     return hash_id(data)
@@ -60,7 +60,7 @@ def create_group_identifier(
     if unique_id:
         return create_group_identifier_from_unique_id(location, unique_id)
 
-    return _hash_group_key({
+    return hash_group_key({
         'location': str(location),
         'timestamp': timestamp,
         'asset': asset.identifier,
@@ -78,7 +78,7 @@ def create_group_identifier_from_swap(
     if unique_id:
         return create_group_identifier_from_unique_id(location, unique_id)
 
-    return _hash_group_key({
+    return hash_group_key({
         'location': str(location),
         'timestamp': timestamp,
         'spend_asset': spend.asset.identifier,

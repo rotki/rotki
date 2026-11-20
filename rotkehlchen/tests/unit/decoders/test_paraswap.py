@@ -1,4 +1,7 @@
+import copy
+import logging
 from typing import TYPE_CHECKING, Final
+from unittest.mock import patch
 
 import pytest
 
@@ -8,7 +11,13 @@ from rotkehlchen.chain.base.modules.paraswap.v5.constants import (
 )
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.paraswap.v5.constants import PARASWAP_AUGUSTUS_ROUTER
+from rotkehlchen.chain.ethereum.modules.paraswap.v5.decoder import Paraswapv5Decoder
 from rotkehlchen.chain.evm.decoding.paraswap.constants import CPT_PARASWAP
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_EVM_DECODING_OUTPUT,
+    DecoderContext,
+)
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
     A_BSC_BNB,
@@ -39,10 +48,12 @@ from rotkehlchen.locations.constants import (
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.factories import make_ethereum_transaction, make_evm_address
 from rotkehlchen.types import TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
+    from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.types import ChecksumEvmAddress
 
 A_PSP = Asset('eip155:1/erc20:0xcAfE001067cDEF266AfB7Eb5A286dCFD277f3dE5')
@@ -1277,3 +1288,169 @@ def test_multi_swap_token_fee_binance_sc(
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_ROUTER,
     )]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize(('received', 'expected_spent', 'unrelated_receive'), [
+    # a refund of the spent asset, received before the bought asset, reduces the spend
+    ([(A_USDC, '10'), (A_LINK, '7')], '90', None),
+    # multiple refunds of the spent asset are all folded into the spend
+    ([(A_USDC, '10'), (A_LINK, '7'), (A_USDC, '5')], '85', None),
+    # a second receive of an asset other than the spent one stays untouched and is not a trade
+    ([(A_LINK, '7'), (A_USDT, '5')], '100', (A_USDT, '5', 2)),
+])
+def test_swap_refund_matched_by_asset(
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        received: list[tuple[Asset, str]],
+        expected_spent: str,
+        unrelated_receive: tuple[Asset, str, int] | None,
+        caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Only a receive of the spent asset is a partial refund that reduces the spent amount.
+    A receive of any other asset must stay untouched (not turned into an orphan trade)."""
+    assert isinstance(decoder := ethereum_transaction_decoder.decoders['Paraswapv5'], Paraswapv5Decoder)  # noqa: E501
+    transaction = make_ethereum_transaction()
+    user_address = ethereum_accounts[0]
+    decoded_events = [EvmEvent(
+        tx_ref=transaction.tx_hash,
+        sequence_index=index,
+        timestamp=TimestampMS(0),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND if index == 0 else HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=asset,
+        amount=FVal(amount),
+        location_label=user_address,
+        notes=f'Original {asset.resolve_to_asset_with_symbol().symbol} event {index}',
+    ) for index, (asset, amount) in enumerate([(A_USDC, '100'), *received])]
+    with (
+        caplog.at_level(logging.ERROR),
+        patch.object(
+            decoder.evm_txns,
+            'get_and_ensure_internal_txns_of_parent_in_db',
+            return_value=[],
+        ),
+    ):
+        output = decoder._decode_swap(
+            context=DecoderContext(
+                tx_log=EvmTxReceiptLog(log_index=0, address=make_evm_address(), topics=[], data=b''),  # noqa: E501
+                transaction=transaction,
+                action_items=[],
+                all_logs=[],
+                decoded_events=decoded_events,
+            ),
+            sender=user_address,
+        )
+
+    assert output.process_swaps is True
+    sorted_events = sorted(decoded_events, key=lambda x: x.sequence_index)
+    processed_events = ethereum_transaction_decoder._process_swaps(
+        transaction=transaction,
+        decoded_events=sorted_events,
+    )
+    assert caplog.records == []
+
+    expected_events: list[EvmEvent] = []
+    if unrelated_receive is not None:
+        unrelated_asset, unrelated_amount, unrelated_idx = unrelated_receive
+        expected_events.append(EvmEvent(
+            tx_ref=transaction.tx_hash,
+            sequence_index=unrelated_idx,
+            timestamp=TimestampMS(0),
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=unrelated_asset,
+            amount=FVal(unrelated_amount),
+            location_label=user_address,
+            notes=f'Original {unrelated_asset.resolve_to_asset_with_symbol().symbol} event {unrelated_idx}',  # noqa: E501
+        ))
+        first_swap_seq = unrelated_idx + 1
+    else:
+        first_swap_seq = 0
+
+    expected_events.extend([
+        EvmSwapEvent(
+            tx_ref=transaction.tx_hash,
+            sequence_index=first_swap_seq,
+            timestamp=TimestampMS(0),
+            location=LOCATION_ETHEREUM,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USDC,
+            amount=FVal(expected_spent),
+            location_label=user_address,
+            notes=f'Swap {expected_spent} USDC in paraswap',
+            counterparty=CPT_PARASWAP,
+            address=PARASWAP_AUGUSTUS_ROUTER,
+        ),
+        EvmSwapEvent(
+            tx_ref=transaction.tx_hash,
+            sequence_index=first_swap_seq + 1,
+            timestamp=TimestampMS(0),
+            location=LOCATION_ETHEREUM,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_LINK,
+            amount=FVal('7'),
+            location_label=user_address,
+            notes='Receive 7 LINK as the result of a swap in paraswap',
+            counterparty=CPT_PARASWAP,
+            address=PARASWAP_AUGUSTUS_ROUTER,
+        ),
+    ])
+    assert processed_events == expected_events
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+def test_swap_only_spent_asset_receive_untouched(
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        caplog: pytest.LogCaptureFixture,
+) -> None:
+    """When every receive is of the spent asset, _decode_swap returns the default output
+    without converting either the spend or the receive into TRADE events."""
+    assert isinstance(decoder := ethereum_transaction_decoder.decoders['Paraswapv5'], Paraswapv5Decoder)  # noqa: E501
+    transaction = make_ethereum_transaction()
+    user_address = ethereum_accounts[0]
+    original_events = [
+        EvmEvent(
+            tx_ref=transaction.tx_hash,
+            sequence_index=0,
+            timestamp=TimestampMS(0),
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_USDC,
+            amount=FVal('100'),
+            location_label=user_address,
+            notes='Original USDC spend',
+        ),
+        EvmEvent(
+            tx_ref=transaction.tx_hash,
+            sequence_index=1,
+            timestamp=TimestampMS(0),
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_USDC,
+            amount=FVal('10'),
+            location_label=user_address,
+            notes='Original USDC receive',
+        ),
+    ]
+    decoded_events = copy.deepcopy(original_events)
+    with caplog.at_level(logging.ERROR):
+        output = decoder._decode_swap(
+            context=DecoderContext(
+                tx_log=EvmTxReceiptLog(log_index=0, address=make_evm_address(), topics=[], data=b''),  # noqa: E501
+                transaction=transaction,
+                action_items=[],
+                all_logs=[],
+                decoded_events=decoded_events,
+            ),
+            sender=user_address,
+        )
+
+    assert output == DEFAULT_EVM_DECODING_OUTPUT
+    assert decoded_events == original_events
+    assert len(caplog.records) == 1
