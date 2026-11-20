@@ -142,6 +142,7 @@ def test_summary_counts_and_scoped_detail(rotkehlchen_api_server: APIServer) -> 
     assert reconciled['observed_balance'] == '5'
     assert reconciled['check']['derived_balance'] == '5'
     assert reconciled['check']['observed_balance'] == '5'
+    assert reconciled['check']['accrued_interest'] is None
     assert reconciled['check']['delta'] == '0'
     assert reconciled['observed_at'] is not None
     assert reconciled['check']['compared_at'] is not None
@@ -684,3 +685,223 @@ def test_feature_gate(rotkehlchen_api_server: APIServer, monkeypatch: pytest.Mon
         contained_in_msg='Historical balance reconciliation is disabled',
         status_code=HTTPStatus.NOT_FOUND,
     )
+
+
+def test_accrued_interest_serialization_and_pending_reasons(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """API exposes accrued_interest and unexplained delta on check, plus interest pending reasons."""  # noqa: E501
+    from eth_utils import to_canonical_address
+
+    from rotkehlchen.assets.types import AssetFlag
+    from rotkehlchen.assets.utils import get_or_create_evm_token
+    from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3, MINT
+    from rotkehlchen.db.evmtx import DBEvmTx
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
+    from rotkehlchen.history.data_issues.detectors.current_balance import (
+        CurrentBalanceMismatchDetector,
+    )
+    from rotkehlchen.types import ChainID, EvmTransaction, Timestamp, TokenKind
+
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    now = ts_now()
+    ray = 10 ** 27
+
+    debt_token = get_or_create_evm_token(
+        userdb=database,
+        evm_address=make_evm_address(),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        decimals=6,
+        name='Aave Ethereum Variable Debt USDC',
+        symbol='variableDebtEthUSDC',
+        protocol=CPT_AAVE_V3,
+    )
+    GlobalDBHandler.set_asset_flag(debt_token.identifier, AssetFlag.ACCRUING_INTEREST_DEBT, enabled=True)  # noqa: E501
+
+    atoken_missing_idx = get_or_create_evm_token(
+        userdb=database,
+        evm_address=make_evm_address(),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        decimals=6,
+        name='Aave Ethereum USDC',
+        symbol='aEthUSDC',
+        protocol=CPT_AAVE_V3,
+    )
+    GlobalDBHandler.set_asset_flag(atoken_missing_idx.identifier, AssetFlag.ACCRUING_INTEREST_SUPPLY, enabled=True)  # noqa: E501
+
+    atoken_missing_anchor = get_or_create_evm_token(
+        userdb=database,
+        evm_address=make_evm_address(),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        decimals=6,
+        name='Aave Ethereum DAI',
+        symbol='aEthDAI',
+        protocol=CPT_AAVE_V3,
+    )
+    GlobalDBHandler.set_asset_flag(atoken_missing_anchor.identifier, AssetFlag.ACCRUING_INTEREST_SUPPLY, enabled=True)  # noqa: E501
+
+    # 1. Reconciled debt token with 5 accrued interest (derived=100, I_obs/I_last=1.05, obs=105)
+    event_id = add_balance_bucket(
+        database=database,
+        address=TEST_ADDR1,
+        amount='100',
+        ts=now - 3_600,
+        asset=debt_token,
+    )
+    with database.conn.read_ctx() as cursor:
+        tx_hash = cursor.execute(
+            'SELECT tx_ref FROM chain_events_info WHERE identifier = ?',
+            (event_id,),
+        ).fetchone()[0]
+    with database.user_write() as write_cursor:
+        dbevmtx = DBEvmTx(database)
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[EvmTransaction(
+                tx_hash=tx_hash,
+                chain_id=ChainID.ETHEREUM,
+                timestamp=Timestamp(now - 3_600),
+                block_number=20_000_000,
+                from_address=TEST_ADDR1,
+                to_address=debt_token.evm_address,
+                value=0,
+                gas=100_000,
+                gas_price=1,
+                gas_used=50_000,
+                input_data=b'',
+                nonce=1,
+            )],
+            relevant_address=TEST_ADDR1,
+        )
+        dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.ETHEREUM,
+            data={
+                'transactionHash': '0x' + tx_hash.hex(),
+                'contractAddress': None,
+                'status': 1,
+                'type': '0x2',
+                'logs': [{
+                    'logIndex': 0,
+                    'address': debt_token.evm_address,
+                    'topics': [
+                        '0x' + MINT.hex(),
+                        '0x' + (b'\x00' * 12 + to_canonical_address(TEST_ADDR2)).hex(),
+                        '0x' + (b'\x00' * 12 + to_canonical_address(TEST_ADDR1)).hex(),
+                    ],
+                    'data': '0x' + (
+                        (100 * 10**6).to_bytes(32) +
+                        (0).to_bytes(32) +
+                        ray.to_bytes(32)
+                    ).hex(),
+                }],
+            },
+        )
+        # Mark the tx as decoded so history_pending_decoding does not fire
+        tx_db_id = write_cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash = ?',
+            (tx_hash,),
+        ).fetchone()[0]
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) VALUES (?, 0)',
+            (tx_db_id,),
+        )
+
+    add_complete_sync(database, TEST_ADDR1, now)
+    add_observation(
+        database=database,
+        address=TEST_ADDR1,
+        asset=debt_token,
+        amount='105',
+        observed_at=now - 120,
+        observation_index=int(ray * 105 // 100),
+    )
+
+    # 2. Pending bucket missing observation_index
+    add_balance_bucket(
+        database=database,
+        address=TEST_ADDR1,
+        amount='50',
+        ts=now - 3_600,
+        asset=atoken_missing_idx,
+    )
+    add_observation(
+        database=database,
+        address=TEST_ADDR1,
+        asset=atoken_missing_idx,
+        amount='52',
+        observed_at=now - 120,
+        observation_index=None,
+    )
+
+    # 3. Pending bucket with observation_index but missing receipt log (I_last unavailable)
+    add_balance_bucket(
+        database=database,
+        address=TEST_ADDR1,
+        amount='75',
+        ts=now - 3_600,
+        asset=atoken_missing_anchor,
+    )
+    add_observation(
+        database=database,
+        address=TEST_ADDR1,
+        asset=atoken_missing_anchor,
+        amount='76',
+        observed_at=now - 120,
+        observation_index=int(ray * 102 // 100),
+    )
+
+    # Run detector (only debt_token is eligible -> reconciled)
+    compared = CurrentBalanceMismatchDetector(database=database).run()
+    assert compared == 1
+
+    account = _report(
+        rotkehlchen_api_server,
+        location=LOCATION_ETHEREUM,
+        location_label=TEST_ADDR1,
+    )['accounts'][0]
+
+    reconciled_debt = _bucket(account, debt_token.identifier)
+    assert reconciled_debt['status'] == BucketStatus.RECONCILED
+    assert reconciled_debt['reasons'] == []
+    assert reconciled_debt['check']['derived_balance'] == '100'
+    assert reconciled_debt['check']['accrued_interest'] == '5'
+    assert reconciled_debt['check']['observed_balance'] == '105'
+    assert reconciled_debt['check']['delta'] == '0'
+
+    missing_idx_bucket = _bucket(account, atoken_missing_idx.identifier)
+    assert missing_idx_bucket['status'] == BucketStatus.PENDING
+    assert BucketReason.INTEREST_INDEX_MISSING in missing_idx_bucket['reasons']
+    assert missing_idx_bucket['check'] is None
+
+    missing_anchor_bucket = _bucket(account, atoken_missing_anchor.identifier)
+    assert missing_anchor_bucket['status'] == BucketStatus.PENDING
+    assert BucketReason.INTEREST_ANCHOR_UNAVAILABLE in missing_anchor_bucket['reasons']
+    assert missing_anchor_bucket['check'] is None
+
+    # 4. Now simulate missing borrow (observed=155 -> unexplained delta=50, accrued_interest=5)
+    add_observation(
+        database=database,
+        address=TEST_ADDR1,
+        asset=debt_token,
+        amount='155',
+        observed_at=now - 60,
+        observation_index=int(ray * 105 // 100),
+    )
+    assert CurrentBalanceMismatchDetector(database=database).run() == 1
+
+    account_after = _report(
+        rotkehlchen_api_server,
+        location=LOCATION_ETHEREUM,
+        location_label=TEST_ADDR1,
+    )['accounts'][0]
+    mismatch_debt = _bucket(account_after, debt_token.identifier)
+    assert mismatch_debt['status'] == BucketStatus.MISMATCH
+    assert mismatch_debt['check']['derived_balance'] == '100'
+    assert mismatch_debt['check']['accrued_interest'] == '5'
+    assert mismatch_debt['check']['observed_balance'] == '155'
+    assert mismatch_debt['check']['delta'] == '50'
+    assert mismatch_debt['issue_id'] is not None

@@ -37,6 +37,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.user_messages import MessagesAggregator
@@ -188,6 +190,7 @@ class CurrentBalanceMismatchDetector:
         self.issues_manager = DataIssuesManager(database)
         self.treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
         self.swapped_assets: frozenset[str] = frozenset()
+        self.accruing_asset_protocols: Mapping[str, str | None] = {}
         self.reached_end_of_scope = False  # False when the time budget cut the last run short
 
     def run(self, from_ts: TimestampMS | None = None) -> int:
@@ -208,8 +211,9 @@ class CurrentBalanceMismatchDetector:
                 name=DBCacheStatic.CURRENT_BALANCE_DETECTION_CURSOR,
             )
 
-        context = load_wallet_evidence(self.database)
+        context = load_wallet_evidence(self.database, tolerance=self.tolerance)
         self.swapped_assets = context.swapped_assets
+        self.accruing_asset_protocols = context.accruing_asset_protocols
         derived = get_derived_wallet_balances(
             database=self.database,
             from_ts=from_ts,
@@ -359,7 +363,7 @@ class CurrentBalanceMismatchDetector:
             ):
                 return False
 
-            save_balance_check(write_cursor, BucketBalanceCheck(
+            check = BucketBalanceCheck(
                 location=location,
                 location_label=address,
                 asset=asset,
@@ -369,12 +373,12 @@ class CurrentBalanceMismatchDetector:
                 observed_at=evidence.observed_at,
                 compared_at=ts_now(),
                 observation_id=evidence.observation_id,
-            ))
+                accrued_interest=evidence.accrued_interest,
+            )
+            save_balance_check(write_cursor, check)
             self._update_issue(
-                location=location,
-                address=address,
-                asset=asset,
-                evidence=evidence,
+                check=check,
+                latest_ts=evidence.derived_snapshot.latest_ts,
             )
         return True
 
@@ -431,6 +435,8 @@ class CurrentBalanceMismatchDetector:
             asset=asset,
             derived=None if derived.is_history_free else derived,
             swapped_assets=self.swapped_assets,
+            accruing_asset_protocols=self.accruing_asset_protocols,
+            tolerance=self.tolerance,
         )
         if derived.is_history_free:
             if fresh.verified_history_free is False or fresh.derived_snapshot is None:
@@ -453,48 +459,41 @@ class CurrentBalanceMismatchDetector:
             len(fresh.pending_reasons) != 0 or
             fresh.amount != evidence.amount or
             fresh.observed_at != evidence.observed_at or
-            fresh.observation_id != evidence.observation_id
+            fresh.observation_id != evidence.observation_id or
+            fresh.observation_index != evidence.observation_index or
+            fresh.accrued_interest != evidence.accrued_interest
         )
 
     def _update_issue(
             self,
-            location: str,
-            address: str,
-            asset: str,
-            evidence: WalletEvidence,
+            check: BucketBalanceCheck,
+            latest_ts: TimestampMS | None,
     ) -> None:
-        if (
-            evidence.derived_snapshot is None or
-            evidence.amount is None or
-            evidence.observed_at is None
-        ):
-            return
-
-        if balances_match(evidence.derived_snapshot.balance, evidence.amount, self.tolerance):
+        if balances_match(check.expected_balance, check.observed_balance, self.tolerance):
             self.issues_manager.resolve_current_balance_mismatch(
-                location=location,
-                location_label=address,
-                asset=asset,
+                location=check.location,
+                location_label=check.location_label,
+                asset=check.asset,
             )
             return
 
+        payload = CurrentBalanceMismatchIssuePayload(
+            derived_balance=str(check.derived_balance),
+            observed_balance=str(check.observed_balance),
+            delta=str(check.observed_balance - check.expected_balance),
+            queried_at_ts=check.observed_at,
+            latest_event_identifier=check.latest_event_identifier,
+        )
+        if check.accrued_interest is not None:
+            payload['accrued_interest'] = str(check.accrued_interest)
+
         self.issues_manager.report_current_balance_mismatch(
-            location=location,
-            location_label=address,
-            asset=asset,
-            payload=CurrentBalanceMismatchIssuePayload(
-                derived_balance=str(evidence.derived_snapshot.balance),
-                observed_balance=str(evidence.amount),
-                delta=str(evidence.amount - evidence.derived_snapshot.balance),
-                queried_at_ts=evidence.observed_at,
-                latest_event_identifier=evidence.derived_snapshot.latest_event_identifier,
-            ),
-            ts_start=(
-                evidence.derived_snapshot.latest_ts
-                if evidence.derived_snapshot.latest_ts is not None else
-                ts_sec_to_ms(evidence.observed_at)
-            ),
-            ts_end=ts_sec_to_ms(evidence.observed_at),
+            location=check.location,
+            location_label=check.location_label,
+            asset=check.asset,
+            payload=payload,
+            ts_start=latest_ts if latest_ts is not None else ts_sec_to_ms(check.observed_at),
+            ts_end=ts_sec_to_ms(check.observed_at),
         )
 
 

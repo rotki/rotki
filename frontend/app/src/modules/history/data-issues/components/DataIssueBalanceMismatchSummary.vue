@@ -5,9 +5,12 @@ import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import AmountDiffDisplay from '@/modules/assets/amount-display/components/AmountDiffDisplay.vue';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import DataIssueValueTile from '@/modules/history/data-issues/components/DataIssueValueTile.vue';
+import { exactDecimals, hasAccruedInterest } from '@/modules/history/data-issues/transforms';
+import ReconciliationAmount from '@/modules/history/reconciliation/components/ReconciliationAmount.vue';
 
 /** A balance mismatch laid out as values, so the two balances can be compared without reading a sentence. */
-const { derived, observed, delta, asset } = defineProps<{
+const { accruedInterest, derived, observed, delta, asset } = defineProps<{
+  accruedInterest?: BigNumber;
   derived: BigNumber;
   observed: BigNumber;
   delta: BigNumber;
@@ -20,6 +23,7 @@ const symbol = useAssetField(() => asset, 'symbol');
 
 /** One precision for both balances, so they line up and the split lands on the first real difference. */
 const decimals = computed<number>(() => sharedDecimals(derived, observed));
+const deltaDecimals = computed<number | undefined>(() => exactDecimals(delta));
 </script>
 
 <template>
@@ -35,6 +39,26 @@ const decimals = computed<number>(() => sharedDecimals(derived, observed));
           :decimals="decimals"
           data-testid="data-issue-mismatch-tracked"
         />
+        <span
+          v-if="hasAccruedInterest(accruedInterest)"
+          class="text-xs text-rui-text-secondary"
+          data-testid="data-issue-mismatch-accrued-interest"
+        >
+          <i18n-t
+            keypath="data_issues.accrued_interest"
+            scope="global"
+            tag="span"
+          >
+            <template #amount>
+              <ReconciliationAmount
+                :amount="accruedInterest"
+                :asset="asset"
+                no-collection-parent
+                signed
+              />
+            </template>
+          </i18n-t>
+        </span>
       </DataIssueValueTile>
       <DataIssueValueTile :label="t('balance_divergence.onchain')">
         <AmountDiffDisplay
@@ -53,7 +77,7 @@ const decimals = computed<number>(() => sharedDecimals(derived, observed));
           class="font-medium text-rui-warning"
           :amount="delta"
           :asset="asset"
-          :decimals="delta.decimalPlaces() ?? undefined"
+          :decimals="deltaDecimals"
           no-collection-parent
           data-testid="data-issue-mismatch-delta"
         />

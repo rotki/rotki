@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 
@@ -54,6 +54,14 @@ class AssetType(DBCharEnumMixIn):
 
 class AssetFlag(StrEnum):
     REBASING = 'rebasing'
+    ACCRUING_INTEREST_SUPPLY = 'accruing_interest_supply'
+    ACCRUING_INTEREST_DEBT = 'accruing_interest_debt'
+
+
+ACCRUING_INTEREST_FLAGS: Final = (
+    AssetFlag.ACCRUING_INTEREST_SUPPLY,
+    AssetFlag.ACCRUING_INTEREST_DEBT,
+)
 
 
 ASSETS_WITH_NO_CRYPTO_ORACLES = {AssetType.NFT, AssetType.CUSTOM_ASSET}

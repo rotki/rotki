@@ -13,7 +13,9 @@ from rsqlite import IntegrityError
 
 from rotkehlchen.assets.types import AssetFlag, AssetType
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE, CPT_AAVE_V2, CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.compound.v3.constants import CPT_COMPOUND_V3
+from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.constants.assets import A_PAX, A_SOL, A_STETH, A_USD, A_USDT
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.constants.prices import (
@@ -1946,6 +1948,73 @@ def test_upgrade_v18_v19(
             'INSERT INTO binance_pairs(pair, base_asset, quote_asset, location) VALUES (?, ?, ?, ?)',  # noqa: E501
             [('ETHBTC', 'ETH', 'BTC', v53_char('binance')), ('ETHBTC', 'ETH', 'BTC', v53_char('binanceus'))],  # noqa: E501
         )
+        # Seed representative lending & Spark Savings V2 tokens to cover every flag rule.
+        aave_v3_stable_debt = 'eip155:1/erc20:0x1111111111111111111111111111111111111111'
+        spark_lend_sp = 'eip155:1/erc20:0x2222222222222222222222222222222222222222'
+        spark_lend_var_debt = 'eip155:1/erc20:0x3333333333333333333333333333333333333333'
+        spark_lend_stable_debt = 'eip155:1/erc20:0x4444444444444444444444444444444444444444'
+        spark_savings_v2_spusdc = 'eip155:1/erc20:0x28B3a8fb53B741A8Fd78c0fb9A6B2393d896a43d'
+        underlying_dai = 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'
+        evm_type_db = AssetType.EVM_TOKEN.serialize_for_db()
+        for identifier, address, symbol, name, protocol in (
+            (aave_v3_stable_debt, '0x1111111111111111111111111111111111111111', 'stableDebtEthDAI', 'Aave Stable Debt DAI', CPT_AAVE_V3),  # noqa: E501
+            (spark_lend_sp, '0x2222222222222222222222222222222222222222', 'spDAI', 'Spark DAI', CPT_SPARK),  # noqa: E501
+            (spark_lend_var_debt, '0x3333333333333333333333333333333333333333', 'variableDebtDAI', 'Spark Variable Debt DAI', CPT_SPARK),  # noqa: E501
+            (spark_lend_stable_debt, '0x4444444444444444444444444444444444444444', 'stableDebtDAI', 'Spark Stable Debt DAI', CPT_SPARK),  # noqa: E501
+            (spark_savings_v2_spusdc, '0x28B3a8fb53B741A8Fd78c0fb9A6B2393d896a43d', 'spUSDC', 'Spark Savings USDC', CPT_SPARK),  # noqa: E501
+        ):
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO assets(identifier, name, type) VALUES (?, ?, ?)',
+                (identifier, name, evm_type_db),
+            )
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO common_asset_details(identifier, symbol) VALUES (?, ?)',
+                (identifier, symbol),
+            )
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) '  # noqa: E501
+                "VALUES (?, 'A', 1, ?, 18, ?)",
+                (identifier, address, protocol),
+            )
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO underlying_tokens_list(identifier, weight, parent_token_entry) '
+            "VALUES (?, '1', ?)",
+            [(underlying_dai, spark_lend_sp), (underlying_dai, spark_savings_v2_spusdc)],
+        )
+        expected_aave_v1_v2 = {
+            row[0] for row in write_cursor.execute(
+                'SELECT identifier FROM evm_tokens WHERE protocol IN (?, ?)',
+                (CPT_AAVE, CPT_AAVE_V2),
+            )
+        }
+        expected_aave_v3_supply = {
+            row[0] for row in write_cursor.execute(
+                'SELECT et.identifier FROM evm_tokens AS et '
+                'JOIN common_asset_details AS cad ON cad.identifier = et.identifier '
+                "WHERE et.protocol = ? AND cad.symbol GLOB 'a*'",
+                (CPT_AAVE_V3,),
+            )
+        }
+        expected_aave_v3_var_debt = {
+            row[0] for row in write_cursor.execute(
+                'SELECT et.identifier FROM evm_tokens AS et '
+                'JOIN common_asset_details AS cad ON cad.identifier = et.identifier '
+                "WHERE et.protocol = ? AND cad.symbol GLOB 'variableDebt*'",
+                (CPT_AAVE_V3,),
+            )
+        }
+        spark_savings_v1_ids = {
+            row[0] for row in write_cursor.execute(
+                'SELECT et.identifier FROM evm_tokens AS et '
+                'JOIN common_asset_details AS cad ON cad.identifier = et.identifier '
+                "WHERE et.protocol = ? AND cad.symbol IN ('sDAI', 'sUSDC', 'sUSDS')",
+                (CPT_SPARK,),
+            )
+        }
+        assert len(expected_aave_v1_v2) > 0
+        assert len(expected_aave_v3_supply) > 0
+        assert len(expected_aave_v3_var_debt) > 0
+        assert len(spark_savings_v1_ids) == 3
 
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 19)
@@ -1985,6 +2054,32 @@ def test_upgrade_v18_v19(
         assert cursor.execute(
             'SELECT connector FROM binance_pairs ORDER BY connector',
         ).fetchall() == [('binance',), ('binanceus',)]
+
+        rebasing_ids = {
+            row[0] for row in cursor.execute(
+                'SELECT identifier FROM asset_flags WHERE flag = ?',
+                (AssetFlag.REBASING.value,),
+            )
+        }
+        supply_ids = {
+            row[0] for row in cursor.execute(
+                'SELECT identifier FROM asset_flags WHERE flag = ?',
+                (AssetFlag.ACCRUING_INTEREST_SUPPLY.value,),
+            )
+        }
+        debt_ids = {
+            row[0] for row in cursor.execute(
+                'SELECT identifier FROM asset_flags WHERE flag = ?',
+                (AssetFlag.ACCRUING_INTEREST_DEBT.value,),
+            )
+        }
+        assert expected_aave_v1_v2 <= rebasing_ids
+        assert {aave_v3_stable_debt, spark_lend_stable_debt} <= rebasing_ids
+        assert supply_ids == expected_aave_v3_supply | {spark_lend_sp}
+        assert debt_ids == expected_aave_v3_var_debt | {spark_lend_var_debt}
+        all_flagged = rebasing_ids | supply_ids | debt_ids
+        assert spark_savings_v1_ids.isdisjoint(all_flagged)
+        assert spark_savings_v2_spusdc not in all_flagged
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

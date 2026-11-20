@@ -4,6 +4,7 @@ import type { FormatOptions } from '@/modules/assets/amount-display/types';
 import type { IssueDescription } from '@/modules/history/data-issues/types';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
+import { exactDecimals } from '@/modules/history/data-issues/transforms';
 
 const { description, tag = 'span', short = false } = defineProps<{
   description: IssueDescription;
@@ -29,14 +30,15 @@ const assetTitle = computed<string>(() => {
 });
 
 /**
- * Pins the display precision to the amount's own decimal count.
+ * Pins the display precision to the amount's own decimal count up to token precision.
  *
  * @remarks
  * The default rounding renders a tiny amount as a "less than" threshold, which reads as an
- * approximation in the middle of a sentence that is stating an exact discrepancy.
+ * approximation in the middle of a sentence that is stating an exact discrepancy. Ray-divided
+ * interest values fall back to user precision so tooltips stay readable.
  */
 function exact(amount: BigNumber): FormatOptions {
-  return { decimals: amount.decimalPlaces() ?? undefined };
+  return { decimals: exactDecimals(amount) };
 }
 </script>
 
@@ -53,6 +55,14 @@ function exact(amount: BigNumber): FormatOptions {
       >
         {{ symbol || description.asset }}
       </span>
+    </template>
+    <template #accruedInterest>
+      <ValueDisplay
+        v-if="description.amounts.accruedInterest"
+        :value="description.amounts.accruedInterest"
+        :format="exact(description.amounts.accruedInterest)"
+        class="font-medium"
+      />
     </template>
     <template #amount>
       <ValueDisplay

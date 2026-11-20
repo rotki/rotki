@@ -55,12 +55,40 @@ class WalletObservation:
     amount is the actual amount, including an explicit zero. observed_at is when the query was
     issued, in seconds, never the time the row was written. observation_id identifies this
     query result among all the results for the same asset: a later row always has a greater
-    identifier, even within the same second.
+    identifier, even within the same second. observation_index is the optional protocol reserve
+    index (e.g. Aave v3/Spark ray integer) captured atomically in the same block as amount.
     """
     amount: FVal
     observed_at: Timestamp
     observation_id: int
     source: ObservationSource
+    observation_index: int | None = None
+
+
+def _serialize_observation_index(index: int | None) -> str | None:
+    """Serialize a strictly positive reserve index to TEXT, or None if missing/non-positive."""
+    if index is None or index <= 0:
+        return None
+
+    return str(index)
+
+
+def deserialize_observation_index(raw_value: str | None, asset: str) -> int | None:
+    """Parse a stored TEXT reserve index into a strictly positive int, or None if invalid."""
+    if raw_value is None:
+        return None
+
+    try:
+        parsed = int(raw_value)
+    except (TypeError, ValueError):
+        log.error('Ignoring malformed observation_index %r for asset %s', raw_value, asset)
+        return None
+
+    if parsed <= 0:
+        log.error('Ignoring non-positive observation_index %r for asset %s', raw_value, asset)
+        return None
+
+    return parsed
 
 
 def _location_of_chain(blockchain: SupportedBlockchain) -> LocationIdentifier | None:
@@ -78,6 +106,7 @@ def record_wallet_observations(
         amounts: Mapping[str, FVal],
         observed_at: Timestamp,
         source: ObservationSource,
+        observation_indices: Mapping[str, int] | None = None,
 ) -> None:
     """Replace the observations of the given assets with what a successful query returned.
 
@@ -94,12 +123,21 @@ def record_wallet_observations(
     observation_id = _next_observation_id(write_cursor)
     write_cursor.executemany(
         'INSERT OR REPLACE INTO wallet_balance_observations('
-        'blockchain, address, asset, amount, observed_at, source, observation_id) '
-        'VALUES (?, ?, ?, ?, ?, ?, ?)',
+        'blockchain, address, asset, amount, observed_at, source, observation_id, '
+        'observation_index) '
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [
             (
-                blockchain.serialize(), address, asset, str(amount), observed_at,
-                source.value, observation_id,
+                blockchain.serialize(),
+                address,
+                asset,
+                str(amount),
+                observed_at,
+                source.value,
+                observation_id,
+                _serialize_observation_index(
+                    observation_indices.get(asset) if observation_indices is not None else None,
+                ),
             )
             for asset, amount in amounts.items()
         ],
@@ -142,8 +180,18 @@ def get_wallet_observations_from_cursor(
         cursor: DBCursor,
 ) -> dict[ObservationKey, WalletObservation]:
     observations: dict[ObservationKey, WalletObservation] = {}
-    for identifier, blockchain, address, asset, amount, observed_at, source in cursor.execute(
-        'SELECT observation_id, blockchain, address, asset, amount, observed_at, source '
+    for (
+        identifier,
+        blockchain,
+        address,
+        asset,
+        amount,
+        observed_at,
+        source,
+        raw_index,
+    ) in cursor.execute(
+        'SELECT observation_id, blockchain, address, asset, amount, observed_at, source, '
+        'observation_index '
         'FROM wallet_balance_observations',
     ):
         try:
@@ -160,6 +208,7 @@ def get_wallet_observations_from_cursor(
             observed_at=Timestamp(observed_at),
             observation_id=identifier,
             source=ObservationSource(source),
+            observation_index=deserialize_observation_index(raw_index, asset),
         )
 
     return observations
@@ -202,6 +251,7 @@ def record_token_detection_observations(
         previous_assets: Collection[str],
         queried_assets: Collection[str],
         observed_at: Timestamp,
+        observation_indices: Mapping[str, int] | None = None,
 ) -> None:
     """Record what a successful token detection run covered for one address.
 
@@ -244,4 +294,5 @@ def record_token_detection_observations(
         amounts=amounts,
         observed_at=observed_at,
         source=ObservationSource.TOKEN_DETECTION,
+        observation_indices=observation_indices,
     )

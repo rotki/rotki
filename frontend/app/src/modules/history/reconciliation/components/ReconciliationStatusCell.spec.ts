@@ -61,6 +61,7 @@ describe('reconciliation status cell', () => {
   it('should pick the mismatch sentence from the sign and offer the issue link', async () => {
     const wrapper = mountCell(bucket({
       check: {
+        accruedInterest: null,
         comparedAt: 1,
         delta: bigNumberify('-1'),
         derivedBalance: bigNumberify('2'),
@@ -182,6 +183,7 @@ describe('reconciliation status cell', () => {
   it('should show only the comparison time for a row with a saved comparison', () => {
     const wrapper = mountCell(bucket({
       check: {
+        accruedInterest: null,
         comparedAt: 1_700_000_100,
         delta: bigNumberify('0'),
         derivedBalance: bigNumberify('1'),
@@ -208,5 +210,45 @@ describe('reconciliation status cell', () => {
 
     expect(wrapper.text()).toContain('data_issues.reconciliation.status.matches');
     expect(wrapper.html()).toContain('lu-circle-check');
+  });
+
+  it('should explain an interest-adjusted match and mismatch', () => {
+    const matched = mountCell(bucket({
+      check: {
+        accruedInterest: bigNumberify('5'),
+        comparedAt: 1,
+        delta: bigNumberify('0'),
+        derivedBalance: bigNumberify('100'),
+        observedAt: 1,
+        observedBalance: bigNumberify('105'),
+      },
+      status: 'reconciled',
+    }));
+    const mismatched = mountCell(bucket({
+      check: {
+        accruedInterest: bigNumberify('5'),
+        comparedAt: 1,
+        delta: bigNumberify('50'),
+        derivedBalance: bigNumberify('100'),
+        observedAt: 1,
+        observedBalance: bigNumberify('155'),
+      },
+      status: 'mismatch',
+    }));
+
+    expect(matched.text()).toContain('data_issues.reconciliation.reason.matches_with_interest');
+    expect(mismatched.text()).toContain('data_issues.reconciliation.reason.mismatch_higher_with_interest');
+  });
+
+  it.each([
+    ['interest_index_missing', 'data_issues.reconciliation.reason.interest_index_missing'],
+    ['interest_anchor_unavailable', 'data_issues.reconciliation.reason.interest_anchor_unavailable'],
+  ])('should explain the %s pending reason', (reason, key) => {
+    const wrapper = mountCell(bucket({
+      reasons: [reason],
+      status: 'pending',
+    }));
+
+    expect(wrapper.text()).toContain(key);
   });
 });

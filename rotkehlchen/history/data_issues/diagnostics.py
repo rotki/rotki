@@ -1027,6 +1027,8 @@ def explain_data_issue(database: DBHandler, issue_id: int) -> dict[str, Any]:
             'observed_at_ts_s': payload.get('queried_at_ts'),
             'latest_event_identifier': payload.get('latest_event_identifier'),
         }
+        if (accrued_interest := payload.get('accrued_interest')) is not None:
+            explanation['facts']['accrued_interest'] = accrued_interest
         if (delta := payload.get('delta')) is not None and (
             observed := payload.get('observed_balance')
         ) is not None and FVal(observed) != ZERO and abs(FVal(delta)) <= abs(FVal(observed)) * RESIDUE_RELATIVE_THRESHOLD:  # noqa: E501

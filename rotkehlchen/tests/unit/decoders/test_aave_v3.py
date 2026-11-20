@@ -1,21 +1,36 @@
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.types import AssetFlag
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.decoding.constants import CPT_GAS
+from rotkehlchen.chain.ethereum.modules.aave.v3.decoder import Aavev3Decoder
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
-from rotkehlchen.chain.evm.decoding.aave.v3.constants import OLD_POOL_ADDRESS
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3, MINT
+from rotkehlchen.chain.evm.decoding.aave.v3.constants import (
+    BURN,
+    DEPOSIT,
+    OLD_POOL_ADDRESS,
+    POOL_ADDRESS,
+    RESERVE_DATA_UPDATED,
+    STABLE_DEBT_BURN,
+    STABLE_DEBT_MINT,
+)
+from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
 from rotkehlchen.chain.evm.decoding.privacy_pools.constants import CPT_PRIVACY_POOLS
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
+from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_BSC_BNB,
+    A_DAI,
     A_ETH,
     A_OP,
     A_POL,
@@ -29,6 +44,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.locations.constants import (
@@ -54,6 +70,7 @@ from rotkehlchen.types import (
     TokenKind,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
@@ -2505,8 +2522,20 @@ def test_aave_v3_debt_mint_in_withdraw_is_not_interest(ethereum_inquirer, ethere
     tx_hash = deserialize_evm_tx_hash('0x5da083eaf81bb2eb649be48dc0f255e563a36e32333d9a101ac66d04ccb2a2eb')  # noqa: E501
     user, timestamp = ethereum_accounts[0], TimestampMS(1794844235000)
     variable_debt_weth = Asset('eip155:1/erc20:0xeA51d7853EEFb32b6ee06b1C12E6dcCA88Be0fFE')
+    assert variable_debt_weth.exists() is False
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    assert variable_debt_weth.resolve_to_evm_token().protocol is None
+    resolved_debt_weth = variable_debt_weth.resolve_to_evm_token()
+    assert resolved_debt_weth.protocol == CPT_AAVE_V3
+    assert resolved_debt_weth.underlying_tokens == (
+        UnderlyingToken(
+            address=A_WETH.resolve_to_evm_token().evm_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        ),
+    )
+    assert variable_debt_weth.identifier in GlobalDBHandler.get_asset_ids_with_flag(
+        AssetFlag.ACCRUING_INTEREST_DEBT,
+    )
     assert [
         (event.asset.identifier, event.amount)
         for event in events if event.event_subtype == HistoryEventSubType.INTEREST
@@ -2821,3 +2850,368 @@ def test_aave_v3_stable_repay_less_than_accrued_debt_interest(arbitrum_one_inqui
         location_label=user,
         address=string_to_evm_address('0x794a61358D6845594F94dc1DB02A252b5b4814aD'),
     )]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x9600A48ed0f931d0c422D574e3275a90D8b22745']])
+def test_aave_v3_dynamic_lending_token_tagging(ethereum_inquirer, ethereum_accounts) -> None:
+    """Verify dynamic tagging of Aave v3 aTokens, variableDebt, and stableDebt tokens
+    from pool logs while ignoring untracked users and unrelated pools."""
+    tracked_user = string_to_evm_address(ethereum_accounts[0])
+    untracked_user = string_to_evm_address('0x000000000000000000000000000000000000dEaD')
+    other_pool = string_to_evm_address('0xC13e21B648A5Ee794902342038FF3aDAB66BE987')
+    usdc_address = A_USDC.resolve_to_evm_token().evm_address
+
+    atoken_addr = string_to_evm_address('0x1111111111111111111111111111111111111111')
+    var_debt_addr = string_to_evm_address('0x2222222222222222222222222222222222222222')
+    stable_debt_addr = string_to_evm_address('0x3333333333333333333333333333333333333333')
+    other_pool_token_addr = string_to_evm_address('0x4444444444444444444444444444444444444444')
+    untracked_token_addr = string_to_evm_address('0x5555555555555555555555555555555555555555')
+
+    created_tokens = {
+        key: get_or_create_evm_token(
+            userdb=ethereum_inquirer.database,
+            evm_address=addr,
+            chain_id=ethereum_inquirer.chain_id,
+            symbol=symbol,
+            name=name,
+            decimals=6,
+        )
+        for key, addr, symbol, name in (
+            ('atoken', atoken_addr, 'aEthTestUSDC', 'Aave Test USDC'),
+            ('var_debt', var_debt_addr, 'variableDebtEthTestUSDC', 'Aave Test Var Debt USDC'),
+            ('stable_debt', stable_debt_addr, 'stableDebtEthTestUSDC', 'Aave Test Stable Debt USDC'),  # noqa: E501
+            ('other_pool', other_pool_token_addr, 'variableDebtSparkUSDC', 'Spark Var Debt USDC'),
+            ('untracked', untracked_token_addr, 'aEthUntrackedUSDC', 'Aave Untracked USDC'),
+        )
+    }
+
+    def _topic_addr(address: ChecksumEvmAddress) -> bytes:
+        return b'\x00' * 12 + bytes.fromhex(address[2:])
+
+    all_logs = [
+        # Supply: ReserveDataUpdated right before aToken Mint
+        EvmTxReceiptLog(
+            log_index=1,
+            address=POOL_ADDRESS,
+            topics=[RESERVE_DATA_UPDATED, _topic_addr(usdc_address)],
+            data=b'',
+        ),
+        EvmTxReceiptLog(
+            log_index=2,
+            address=atoken_addr,
+            topics=[MINT, _topic_addr(tracked_user), _topic_addr(tracked_user)],
+            data=b'',
+        ),
+        # Untracked user supply on our pool: must not be tagged
+        EvmTxReceiptLog(
+            log_index=3,
+            address=untracked_token_addr,
+            topics=[MINT, _topic_addr(untracked_user), _topic_addr(untracked_user)],
+            data=b'',
+        ),
+        # Variable debt burn followed by ReserveDataUpdated on our pool
+        EvmTxReceiptLog(
+            log_index=10,
+            address=var_debt_addr,
+            topics=[BURN, _topic_addr(tracked_user), _topic_addr(tracked_user)],
+            data=b'',
+        ),
+        EvmTxReceiptLog(
+            log_index=11,
+            address=POOL_ADDRESS,
+            topics=[RESERVE_DATA_UPDATED, _topic_addr(usdc_address)],
+            data=b'',
+        ),
+        # Stable debt mint followed by ReserveDataUpdated on our pool
+        EvmTxReceiptLog(
+            log_index=20,
+            address=stable_debt_addr,
+            topics=[STABLE_DEBT_MINT, _topic_addr(tracked_user), _topic_addr(tracked_user)],
+            data=b'',
+        ),
+        EvmTxReceiptLog(
+            log_index=21,
+            address=POOL_ADDRESS,
+            topics=[RESERVE_DATA_UPDATED, _topic_addr(usdc_address)],
+            data=b'',
+        ),
+        # Debt mint followed by ReserveDataUpdated from a DIFFERENT pool: must not be tagged
+        EvmTxReceiptLog(
+            log_index=30,
+            address=other_pool_token_addr,
+            topics=[MINT, _topic_addr(tracked_user), _topic_addr(tracked_user)],
+            data=b'',
+        ),
+        EvmTxReceiptLog(
+            log_index=31,
+            address=other_pool,
+            topics=[RESERVE_DATA_UPDATED, _topic_addr(usdc_address)],
+            data=b'',
+        ),
+    ]
+
+    msg_aggregator = MessagesAggregator()
+    base_tools = BaseEvmDecoderTools(
+        database=ethereum_inquirer.database,
+        evm_inquirer=ethereum_inquirer,
+        is_non_conformant_erc721_fn=lambda _: False,
+        address_is_exchange_fn=lambda _: None,
+    )
+    decoder = Aavev3Decoder(
+        evm_inquirer=ethereum_inquirer,
+        base_tools=base_tools,
+        msg_aggregator=msg_aggregator,
+    )
+    decoder._tag_lending_tokens_from_logs(all_logs=all_logs)
+
+    expected_underlying = (
+        UnderlyingToken(address=usdc_address, token_kind=TokenKind.ERC20, weight=ONE),
+    )
+    flags_map = GlobalDBHandler.get_asset_ids_with_flags((
+        AssetFlag.ACCRUING_INTEREST_SUPPLY,
+        AssetFlag.ACCRUING_INTEREST_DEBT,
+        AssetFlag.REBASING,
+    ))
+
+    for key, expected_flag in (
+        ('atoken', AssetFlag.ACCRUING_INTEREST_SUPPLY),
+        ('var_debt', AssetFlag.ACCRUING_INTEREST_DEBT),
+        ('stable_debt', AssetFlag.REBASING),
+    ):
+        token = Asset(created_tokens[key].identifier).resolve_to_evm_token()
+        assert token.protocol == CPT_AAVE_V3
+        assert token.underlying_tokens == expected_underlying
+        assert token.identifier in flags_map[expected_flag]
+
+    all_flagged = set().union(*flags_map.values())
+    for key in ('other_pool', 'untracked'):
+        token = Asset(created_tokens[key].identifier).resolve_to_evm_token()
+        assert token.protocol is None
+        assert token.underlying_tokens == ()
+        assert token.identifier not in all_flagged
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x9600A48ed0f931d0c422D574e3275a90D8b22745']])
+def test_aave_v3_tagging_preserves_existing_metadata_and_handles_edge_cases(
+        ethereum_inquirer,
+        ethereum_accounts,
+) -> None:
+    """Verify _tag_lending_tokens_from_logs:
+    - never overwrites existing underlying_tokens on a cross-reserve aToken transfer Mint
+    - never overwrites another protocol's token (e.g. Spark spDAI) on cross-protocol Mint
+    - classifies debt symbols containing '.' or '-' as ACCRUING_INTEREST_DEBT (never supply)
+    - tags StableDebtToken 2-topic Burn logs as REBASING
+    - avoids redundant global.db write transactions when tokens are already tagged
+    """
+    tracked_user = string_to_evm_address(ethereum_accounts[0])
+    usdc_address = A_USDC.resolve_to_evm_token().evm_address
+    weth_address = A_WETH.resolve_to_evm_token().evm_address
+    dai_address = A_DAI.resolve_to_evm_token().evm_address
+
+    atoken_usdc_addr = string_to_evm_address('0x6111111111111111111111111111111111111111')
+    atoken_weth_addr = string_to_evm_address('0x6222222222222222222222222222222222222222')
+    spark_spdai_addr = string_to_evm_address('0x6333333333333333333333333333333333333333')
+    bridged_debt_addr = string_to_evm_address('0x6444444444444444444444444444444444444444')
+    pt_debt_addr = string_to_evm_address('0x6555555555555555555555555555555555555555')
+    stable_burn_addr = string_to_evm_address('0x6666666666666666666666666666666666666666')
+
+    weth_underlying = (UnderlyingToken(address=weth_address, token_kind=TokenKind.ERC20, weight=ONE),)  # noqa: E501
+    dai_underlying = (UnderlyingToken(address=dai_address, token_kind=TokenKind.ERC20, weight=ONE),)  # noqa: E501
+    usdc_underlying = (UnderlyingToken(address=usdc_address, token_kind=TokenKind.ERC20, weight=ONE),)  # noqa: E501
+
+    atoken_usdc = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=atoken_usdc_addr,
+        chain_id=ethereum_inquirer.chain_id,
+        symbol='aEthTagUSDC',
+        name='Aave Tag USDC',
+        decimals=6,
+    )
+    atoken_weth = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=atoken_weth_addr,
+        chain_id=ethereum_inquirer.chain_id,
+        symbol='aEthTagWETH',
+        name='Aave Tag WETH',
+        decimals=18,
+        protocol=CPT_AAVE_V3,
+        underlying_tokens=weth_underlying,
+    )
+    spark_spdai = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=spark_spdai_addr,
+        chain_id=ethereum_inquirer.chain_id,
+        symbol='spTagDAI',
+        name='Spark Tag DAI',
+        decimals=18,
+        protocol=CPT_SPARK,
+        underlying_tokens=dai_underlying,
+    )
+    bridged_debt = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=bridged_debt_addr,
+        chain_id=ethereum_inquirer.chain_id,
+        symbol='variableDebtArbUSDC.e',
+        name='Aave Variable Debt USDC.e',
+        decimals=6,
+    )
+    pt_debt = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=pt_debt_addr,
+        chain_id=ethereum_inquirer.chain_id,
+        symbol='variableDebtEthPT-sUSDe-29MAY2025',
+        name='Aave Variable Debt PT-sUSDe',
+        decimals=18,
+    )
+    stable_burn = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=stable_burn_addr,
+        chain_id=ethereum_inquirer.chain_id,
+        symbol='stableDebtEthBurnUSDC',
+        name='Aave Stable Debt Burn USDC',
+        decimals=6,
+    )
+
+    def _topic_addr(address: ChecksumEvmAddress) -> bytes:
+        return b'\x00' * 12 + bytes.fromhex(address[2:])
+
+    all_logs = [
+        # Supply USDC followed by an unrelated aToken WETH transfer Mint (no ReserveDataUpdated):
+        # aToken WETH must keep its WETH underlying_tokens and not be overwritten with USDC.
+        EvmTxReceiptLog(
+            log_index=1,
+            address=POOL_ADDRESS,
+            topics=[RESERVE_DATA_UPDATED, _topic_addr(usdc_address)],
+            data=b'',
+        ),
+        EvmTxReceiptLog(
+            log_index=2,
+            address=atoken_usdc_addr,
+            topics=[MINT, _topic_addr(tracked_user), _topic_addr(tracked_user)],
+            data=b'',
+        ),
+        EvmTxReceiptLog(
+            log_index=3,
+            address=POOL_ADDRESS,
+            topics=[DEPOSIT, _topic_addr(usdc_address)],
+            data=b'',
+        ),
+        EvmTxReceiptLog(
+            log_index=4,
+            address=atoken_weth_addr,
+            topics=[MINT, _topic_addr(tracked_user), _topic_addr(tracked_user)],
+            data=b'',
+        ),
+        # Cross-protocol: Aave v3 ReserveDataUpdated(WETH) directly before Spark spDAI Mint
+        EvmTxReceiptLog(
+            log_index=10,
+            address=POOL_ADDRESS,
+            topics=[RESERVE_DATA_UPDATED, _topic_addr(weth_address)],
+            data=b'',
+        ),
+        EvmTxReceiptLog(
+            log_index=11,
+            address=spark_spdai_addr,
+            topics=[MINT, _topic_addr(tracked_user), _topic_addr(tracked_user)],
+            data=b'',
+        ),
+        # Borrow bridged USDC.e after a prior ReserveDataUpdated(WETH): must be debt, not supply
+        EvmTxReceiptLog(
+            log_index=20,
+            address=POOL_ADDRESS,
+            topics=[RESERVE_DATA_UPDATED, _topic_addr(weth_address)],
+            data=b'',
+        ),
+        EvmTxReceiptLog(
+            log_index=21,
+            address=bridged_debt_addr,
+            topics=[MINT, _topic_addr(tracked_user), _topic_addr(tracked_user)],
+            data=b'',
+        ),
+        EvmTxReceiptLog(
+            log_index=22,
+            address=POOL_ADDRESS,
+            topics=[RESERVE_DATA_UPDATED, _topic_addr(usdc_address)],
+            data=b'',
+        ),
+        # Borrow PT-token variable debt with '-' in symbol
+        EvmTxReceiptLog(
+            log_index=30,
+            address=pt_debt_addr,
+            topics=[MINT, _topic_addr(tracked_user), _topic_addr(tracked_user)],
+            data=b'',
+        ),
+        EvmTxReceiptLog(
+            log_index=31,
+            address=POOL_ADDRESS,
+            topics=[RESERVE_DATA_UPDATED, _topic_addr(usdc_address)],
+            data=b'',
+        ),
+        # StableDebtToken 2-topic Burn followed by ReserveDataUpdated(USDC)
+        EvmTxReceiptLog(
+            log_index=40,
+            address=stable_burn_addr,
+            topics=[STABLE_DEBT_BURN, _topic_addr(tracked_user)],
+            data=b'',
+        ),
+        EvmTxReceiptLog(
+            log_index=41,
+            address=POOL_ADDRESS,
+            topics=[RESERVE_DATA_UPDATED, _topic_addr(usdc_address)],
+            data=b'',
+        ),
+    ]
+
+    decoder = Aavev3Decoder(
+        evm_inquirer=ethereum_inquirer,
+        base_tools=BaseEvmDecoderTools(
+            database=ethereum_inquirer.database,
+            evm_inquirer=ethereum_inquirer,
+            is_non_conformant_erc721_fn=lambda _: False,
+            address_is_exchange_fn=lambda _: None,
+        ),
+        msg_aggregator=MessagesAggregator(),
+    )
+    decoder._tag_lending_tokens_from_logs(all_logs=all_logs)
+
+    flags_map = GlobalDBHandler.get_asset_ids_with_flags((
+        AssetFlag.ACCRUING_INTEREST_SUPPLY,
+        AssetFlag.ACCRUING_INTEREST_DEBT,
+        AssetFlag.REBASING,
+    ))
+
+    # aToken USDC tagged normally; aToken WETH preserved untouched
+    resolved_usdc = Asset(atoken_usdc.identifier).resolve_to_evm_token()
+    assert resolved_usdc.protocol == CPT_AAVE_V3
+    assert resolved_usdc.underlying_tokens == usdc_underlying
+    assert resolved_usdc.identifier in flags_map[AssetFlag.ACCRUING_INTEREST_SUPPLY]
+
+    resolved_weth = Asset(atoken_weth.identifier).resolve_to_evm_token()
+    assert resolved_weth.protocol == CPT_AAVE_V3
+    assert resolved_weth.underlying_tokens == weth_underlying
+
+    # Spark spDAI must NOT be overwritten to aave-v3 / WETH or flagged by Aavev3Decoder
+    resolved_spdai = Asset(spark_spdai.identifier).resolve_to_evm_token()
+    assert resolved_spdai.protocol == CPT_SPARK
+    assert resolved_spdai.underlying_tokens == dai_underlying
+    assert resolved_spdai.identifier not in set().union(*flags_map.values())
+
+    # Bridged '.' and PT '-' variable debt tokens classified as debt (and liabilities), not supply
+    for debt_tok in (bridged_debt, pt_debt):
+        resolved_debt = Asset(debt_tok.identifier).resolve_to_evm_token()
+        assert resolved_debt.protocol == CPT_AAVE_V3
+        assert resolved_debt.underlying_tokens == usdc_underlying
+        assert resolved_debt.is_liability() is True
+        assert resolved_debt.identifier in flags_map[AssetFlag.ACCRUING_INTEREST_DEBT]
+        assert resolved_debt.identifier not in flags_map[AssetFlag.ACCRUING_INTEREST_SUPPLY]
+
+    # StableDebtToken 2-topic Burn tagged as REBASING
+    resolved_stable = Asset(stable_burn.identifier).resolve_to_evm_token()
+    assert resolved_stable.protocol == CPT_AAVE_V3
+    assert resolved_stable.underlying_tokens == usdc_underlying
+    assert resolved_stable.identifier in flags_map[AssetFlag.REBASING]
+
+    # Re-running on already-tagged logs must not open any global.db write transactions.
+    with patch.object(GlobalDBHandler().conn, 'write_ctx') as mock_write_ctx:
+        decoder._tag_lending_tokens_from_logs(all_logs=all_logs)
+    mock_write_ctx.assert_not_called()

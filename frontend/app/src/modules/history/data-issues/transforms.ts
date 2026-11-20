@@ -19,6 +19,32 @@ import {
 } from '@/modules/history/data-issues/schemas';
 
 /**
+ * Highest decimal count rendered verbatim before falling back to the user's floating precision.
+ *
+ * @remarks
+ * Standard EVM tokens have at most 18 decimals; ray-divided accrued interest and interest-adjusted
+ * deltas carry up to ~78 decimals from backend arithmetic, which would overflow summary tiles and
+ * bloat description tooltips.
+ */
+export const MAX_EXACT_DECIMALS = 18;
+
+/**
+ * Exact decimal count for a token amount, or `undefined` when it exceeds {@link MAX_EXACT_DECIMALS}
+ * so the display formatter falls back to user precision while keeping the full value in its tooltip.
+ */
+export function exactDecimals(amount: BigNumber): number | undefined {
+  const decimals = amount.decimalPlaces();
+  if (decimals === null || decimals > MAX_EXACT_DECIMALS)
+    return undefined;
+  return decimals;
+}
+
+/** Whether an accrued-interest adjustment is non-zero and should be surfaced to the user. */
+export function hasAccruedInterest(amount: BigNumber | null | undefined): amount is BigNumber {
+  return Boolean(amount && !amount.isZero());
+}
+
+/**
  * Turns a raw strategy identifier (e.g. `reprocess_event`) into a human label
  * (`Reprocess event`).
  */
@@ -76,8 +102,12 @@ function describeBalanceMismatch(issue: DataIssue): IssueDescription | undefined
   if (!parsed.success)
     return undefined;
   const payload = parsed.data;
+  const accruedInterest = hasAccruedInterest(payload.accruedInterest)
+    ? payload.accruedInterest
+    : undefined;
   return {
     amounts: {
+      ...(accruedInterest ? { accruedInterest } : {}),
       delta: payload.delta,
       derived: payload.derivedBalance,
       observed: payload.observedBalance,
@@ -87,7 +117,9 @@ function describeBalanceMismatch(issue: DataIssue): IssueDescription | undefined
       fromNullable(payload.latestEventIdentifier),
       (option): number | undefined => getOr(option, undefined),
     ),
-    messageKey: msg.$t('data_issues.description.current_balance_mismatch'),
+    messageKey: accruedInterest
+      ? msg.$t('data_issues.description.current_balance_mismatch_with_interest')
+      : msg.$t('data_issues.description.current_balance_mismatch'),
     shortMessageKey: msg.$t('data_issues.description_short.current_balance_mismatch'),
   };
 }

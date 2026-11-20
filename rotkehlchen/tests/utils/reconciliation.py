@@ -172,6 +172,7 @@ def add_observation(
         amount: str,
         observed_at: int,
         blockchain: SupportedBlockchain = SupportedBlockchain.ETHEREUM,
+        observation_index: int | None = None,
 ) -> None:
     with database.user_write() as write_cursor:
         record_wallet_observations(
@@ -181,6 +182,10 @@ def add_observation(
             amounts={asset.identifier: FVal(amount)},
             observed_at=Timestamp(observed_at),
             source=ObservationSource.BALANCE_QUERY,
+            observation_indices=(
+                {asset.identifier: observation_index}
+                if observation_index is not None else None
+            ),
         )
         database.set_dynamic_cache(
             write_cursor=write_cursor,
@@ -221,6 +226,7 @@ def add_check(
         latest_event_identifier: int | None = None,
         observation_id: int | None = None,
         location: LocationIdentifier = LOCATION_ETHEREUM,
+        accrued_interest: str | None = None,
 ) -> None:
     now = ts_now()
     with database.user_write() as write_cursor:
@@ -234,6 +240,7 @@ def add_check(
             observed_at=Timestamp(now if observed_at is None else observed_at),
             compared_at=Timestamp(now if compared_at is None else compared_at),
             observation_id=observation_id,
+            accrued_interest=None if accrued_interest is None else FVal(accrued_interest),
         ))
 
 

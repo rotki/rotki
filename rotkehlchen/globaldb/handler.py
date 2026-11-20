@@ -24,6 +24,7 @@ from rotkehlchen.assets.asset import (
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import (
+    ACCRUING_INTEREST_FLAGS,
     AssetData,
     AssetFlag,
     AssetType,
@@ -72,7 +73,7 @@ from .upgrades.manager import configure_globaldb
 from .utils import GLOBAL_DB_VERSION, globaldb_get_setting_value, initialize_globaldb
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Sequence
+    from collections.abc import Callable, Collection, Iterator, Sequence
 
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.filtering import (
@@ -1471,9 +1472,49 @@ class GlobalDBHandler:
             ))
 
     @staticmethod
+    def get_asset_ids_with_flags(flags: Collection[AssetFlag]) -> dict[AssetFlag, set[str]]:
+        """Return a mapping from each requested flag to the identifiers of assets carrying it."""
+        result: dict[AssetFlag, set[str]] = {flag: set() for flag in flags}
+        if len(result) == 0:
+            return result
+
+        flag_values = tuple(flag.value for flag in result)
+        placeholders = ','.join('?' * len(flag_values))
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            for identifier, flag_value in cursor.execute(
+                f'SELECT identifier, flag FROM asset_flags WHERE flag IN ({placeholders})',
+                flag_values,
+            ):
+                result[AssetFlag(flag_value)].add(identifier)
+
+        return result
+
+    @staticmethod
+    def get_accruing_asset_protocols() -> dict[str, str | None]:
+        """Load all index-accruing assets and their protocol from the global DB in one query."""
+        placeholders = ','.join('?' * len(ACCRUING_INTEREST_FLAGS))
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            return dict(cursor.execute(
+                'SELECT F.identifier, E.protocol '
+                'FROM asset_flags AS F '
+                'LEFT JOIN evm_tokens AS E ON E.identifier = F.identifier '
+                f'WHERE F.flag IN ({placeholders})',
+                tuple(flag.value for flag in ACCRUING_INTEREST_FLAGS),
+            ))
+
+    @staticmethod
     def set_asset_flag(identifier: str, flag: AssetFlag, enabled: bool) -> bool:
         """Enable or disable an asset flag and return whether the database changed."""
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        conn = GlobalDBHandler().conn
+        with conn.read_ctx() as cursor:
+            exists = cursor.execute(
+                'SELECT 1 FROM asset_flags WHERE identifier=? AND flag=?',
+                (identifier, flag.value),
+            ).fetchone() is not None
+        if exists == enabled:
+            return False
+
+        with conn.write_ctx() as write_cursor:
             if enabled:
                 write_cursor.execute(
                     'INSERT OR IGNORE INTO asset_flags(identifier, flag) VALUES (?, ?)',

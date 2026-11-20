@@ -1,6 +1,7 @@
 import type { ReconciliationBucket } from '@/modules/history/reconciliation/schemas';
 import { type MessageKey, msg } from '@/message-key';
 import { IssueKind } from '@/modules/history/data-issues/constants';
+import { hasAccruedInterest } from '@/modules/history/data-issues/transforms';
 import {
   amountsFor,
   type DisplayStatus,
@@ -58,10 +59,15 @@ const REASON_LABEL: Record<string, MessageKey> = {
   exchange: msg.$t('data_issues.reconciliation.reason.exchange'),
   history_not_synced: msg.$t('data_issues.reconciliation.reason.history_not_synced'),
   history_pending_decoding: msg.$t('data_issues.reconciliation.reason.history_pending_decoding'),
+  interest_anchor_unavailable: msg.$t('data_issues.reconciliation.reason.interest_anchor_unavailable'),
+  interest_index_missing: msg.$t('data_issues.reconciliation.reason.interest_index_missing'),
   matches: msg.$t('data_issues.reconciliation.reason.matches'),
+  matches_with_interest: msg.$t('data_issues.reconciliation.reason.matches_with_interest'),
   mismatch_higher: msg.$t('data_issues.reconciliation.reason.mismatch_higher'),
+  mismatch_higher_with_interest: msg.$t('data_issues.reconciliation.reason.mismatch_higher_with_interest'),
   mismatch_history_free: msg.$t('data_issues.reconciliation.reason.mismatch_history_free'),
   mismatch_lower: msg.$t('data_issues.reconciliation.reason.mismatch_lower'),
+  mismatch_lower_with_interest: msg.$t('data_issues.reconciliation.reason.mismatch_lower_with_interest'),
   never_compared: msg.$t('data_issues.reconciliation.reason.never_compared'),
   non_evm_chain: msg.$t('data_issues.reconciliation.reason.non_evm_chain'),
   observation_missing: msg.$t('data_issues.reconciliation.reason.observation_missing'),
@@ -82,6 +88,8 @@ const PENDING_REASON_PRIORITY = [
   'asset_coverage_missing',
   'observation_missing',
   'observation_stale',
+  'interest_index_missing',
+  'interest_anchor_unavailable',
   'derived_snapshot_changed',
   'derived_history_stale',
   'observation_superseded',
@@ -102,8 +110,14 @@ function mismatchLabel(bucket: ReconciliationBucket): MessageKey {
   if (isHistoryFree(bucket))
     return REASON_LABEL.mismatch_history_free;
 
-  const { derived, observed } = amountsFor(bucket);
-  return derived && observed?.gt(derived)
+  const { accruedInterest, delta, derived, observed } = amountsFor(bucket);
+  const higher = delta !== null ? delta.gt(0) : Boolean(derived && observed?.gt(derived));
+  if (hasAccruedInterest(accruedInterest)) {
+    return higher
+      ? REASON_LABEL.mismatch_higher_with_interest
+      : REASON_LABEL.mismatch_lower_with_interest;
+  }
+  return higher
     ? REASON_LABEL.mismatch_higher
     : REASON_LABEL.mismatch_lower;
 }
@@ -117,8 +131,11 @@ function mismatchLabel(bucket: ReconciliationBucket): MessageKey {
  * backend fall back to a neutral sentence for their status instead of failing the page.
  */
 export function reasonLabel(bucket: ReconciliationBucket): MessageKey {
-  if (bucket.status === 'reconciled')
-    return REASON_LABEL.matches;
+  if (bucket.status === 'reconciled') {
+    return hasAccruedInterest(amountsFor(bucket).accruedInterest)
+      ? REASON_LABEL.matches_with_interest
+      : REASON_LABEL.matches;
+  }
 
   if (bucket.status === 'blocked')
     return REASON_LABEL.blocked_without_stop;

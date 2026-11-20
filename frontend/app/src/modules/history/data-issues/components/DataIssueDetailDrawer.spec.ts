@@ -100,8 +100,27 @@ describe('dataIssueDetailDrawer', () => {
     expect(summary.props('derived').toString()).toBe('0.1');
     expect(summary.props('observed').toString()).toBe('0.09');
     expect(summary.props('delta').toString()).toBe('-0.01');
+    expect(summary.props('accruedInterest')).toBeUndefined();
     expect(summary.props('asset')).toBe('ETH');
     expect(wrapper.findComponent({ name: 'DataIssueDescription' }).exists()).toBe(false);
+  });
+
+  it('should forward accrued interest to the balance mismatch summary when present', () => {
+    const wrapper = createWrapper(createIssue({
+      kind: IssueKind.CURRENT_BALANCE_MISMATCH,
+      payload: {
+        accruedInterest: '5',
+        delta: '50',
+        derivedBalance: '100',
+        latestEventIdentifier: 5,
+        observedBalance: '155',
+        queriedAtTs: 1,
+      },
+    }));
+
+    const summary = wrapper.findComponent({ name: 'DataIssueBalanceMismatchSummary' });
+    expect(summary.props('accruedInterest').toString()).toBe('5');
+    expect(summary.props('delta').toString()).toBe('50');
   });
 
   it('should collapse the remediation section to one line when nothing has been attempted', () => {

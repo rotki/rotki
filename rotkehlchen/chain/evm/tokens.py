@@ -11,6 +11,7 @@ from rotkehlchen.assets.utils import (
     token_raw_value_decimals,
 )
 from rotkehlchen.balances.historical import HistoricalBalancesManager
+from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE_NAME
 from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.constants import ONE, ZERO
@@ -38,10 +39,16 @@ from rotkehlchen.utils.misc import combine_dicts, get_chunks, ts_now
 
 from .constants import ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT, ZERO_ADDRESS
 from .contracts import EvmContract
+from .interest_index import (
+    IndexCallBatch,
+    build_interest_index_batch,
+    get_accruing_asset_flags,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
+    from rotkehlchen.assets.types import AssetFlag
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirerWithProxies
     from rotkehlchen.chain.structures import EvmTokenDetectionData
     from rotkehlchen.db.dbhandler import DBHandler
@@ -343,37 +350,14 @@ class EvmTokens(ABC):  # noqa: B024
 
         return balances
 
-    def _get_multicall_token_balances(
+    def _decode_multicall_token_balances(
             self,
             chunk: list[tuple[ChecksumEvmAddress, Sequence[EvmToken]]],
-            call_order: Sequence[WeightedNode] | None = None,
+            raw_results: Sequence[bytes],
+            encode_arguments: list[list],
     ) -> dict[ChecksumEvmAddress, dict[EvmToken, FVal]]:
-        """Gets token balances from a chunk of address -> token address
-
-        May raise:
-        - RemoteError if no result is queried in multicall
-        """
-        calls: list[tuple[ChecksumEvmAddress, str]] = []
-        encode_arguments: list[list] = []
-        for address, tokens in chunk:
-            tokens_addrs = [token.evm_address for token in tokens]
-            args = [address, tokens_addrs]
-            encode_arguments.append(args)
-            calls.append(
-                (
-                    self.evm_inquirer.contract_scan.address,
-                    self.evm_inquirer.contract_scan.encode(
-                        method_name='tokens_balance',
-                        arguments=args,
-                    ),
-                ),
-            )
-        results = self.evm_inquirer.multicall(
-            calls=calls,
-            call_order=call_order,
-        )
         balances: dict[ChecksumEvmAddress, dict[EvmToken, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
-        for (address, tokens), result, args in zip(chunk, results, encode_arguments, strict=True):
+        for (address, tokens), result, args in zip(chunk, raw_results, encode_arguments, strict=True):  # noqa: E501
             decoded_result = self.evm_inquirer.contract_scan.decode(
                 result=result,
                 method_name='tokens_balance',
@@ -385,10 +369,194 @@ class EvmTokens(ABC):  # noqa: B024
 
                 normalized_balance = token_normalized_value(token_balance, token)
                 log.debug(
-                    f'Found {self.evm_inquirer.chain_name} {token.symbol}({token.evm_address}) '
-                    f'token balance for {address} and balance {normalized_balance}',
+                    'Found %s %s(%s) token balance for %s and balance %s',
+                    self.evm_inquirer.chain_name,
+                    token.symbol,
+                    token.evm_address,
+                    address,
+                    normalized_balance,
                 )
                 balances[address][token] += normalized_balance
+        return balances
+
+    def _split_and_query_multicall_balances_and_indices(
+            self,
+            chunk: list[tuple[ChecksumEvmAddress, Sequence[EvmToken]]],
+            accruing_flags: Mapping[str, AssetFlag],
+            call_order: Sequence[WeightedNode] | None,
+            skip_if_no_indices: bool = False,
+    ) -> tuple[
+        dict[ChecksumEvmAddress, dict[EvmToken, FVal]],
+        dict[ChecksumEvmAddress, dict[str, int]],
+    ]:
+        if len(chunk) > 1:
+            mid = len(chunk) // 2
+            split_chunks = (chunk[:mid], chunk[mid:])
+        elif len(chunk) == 1 and len(chunk[0][1]) > 1:
+            address, tokens = chunk[0]
+            mid = len(tokens) // 2
+            split_chunks = ([(address, tokens[:mid])], [(address, tokens[mid:])])
+        else:
+            raise RequestTooLargeError(
+                f'{self.evm_inquirer.chain_name} accruing multicall_2 request too large '
+                'for a single token chunk',
+            )
+
+        merged_balances: dict[ChecksumEvmAddress, dict[EvmToken, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
+        merged_indices: dict[ChecksumEvmAddress, dict[str, int]] = defaultdict(dict)
+        for sub_chunk in split_chunks:
+            sub_balances, sub_indices = self._get_multicall_token_balances_and_indices(
+                chunk=sub_chunk,
+                accruing_flags=accruing_flags,
+                call_order=call_order,
+                skip_if_no_indices=skip_if_no_indices,
+            )
+            for address, token_balances in sub_balances.items():
+                for token, balance in token_balances.items():
+                    merged_balances[address][token] += balance
+            for address, indices in sub_indices.items():
+                merged_indices[address].update(indices)
+        return merged_balances, dict(merged_indices)
+
+    def _get_multicall_token_balances_and_indices(
+            self,
+            chunk: list[tuple[ChecksumEvmAddress, Sequence[EvmToken]]],
+            accruing_flags: Mapping[str, AssetFlag],
+            call_order: Sequence[WeightedNode] | None = None,
+            skip_if_no_indices: bool = False,
+    ) -> tuple[
+        dict[ChecksumEvmAddress, dict[EvmToken, FVal]],
+        dict[ChecksumEvmAddress, dict[str, int]],
+    ]:
+        """Query token balances for a chunk and atomically capture reserve indices for accruing
+        tokens in the same multicall block.
+
+        When the chunk contains no accruing tokens with resolvable index calls, executes the
+        standard ``multicall`` path with zero extra sub-calls (or returns empty immediately when
+        ``skip_if_no_indices`` is True). Otherwise bundles balance calls and deduplicated reserve
+        index calls into one ``multicall_2(require_success=False)`` so a reverted index call
+        leaves ``observation_index`` unset without failing balance retrieval.
+
+        May raise:
+        - RemoteError if the multicall or any balance sub-call fails.
+        """
+        index_batch = (
+            build_interest_index_batch(
+                tokens=[token for _, tokens in chunk for token in tokens],
+                accruing_flags=accruing_flags,
+                evm_inquirer=self.evm_inquirer,
+                call_order=call_order,
+            )
+            if len(accruing_flags) != 0
+            else IndexCallBatch(raw_calls=[], token_to_call_idx={})
+        )
+        if len(index_batch.raw_calls) == 0 and skip_if_no_indices:
+            return {}, {}
+
+        balance_calls: list[tuple[ChecksumEvmAddress, str]] = []
+        encode_arguments: list[list] = []
+        for address, tokens in chunk:
+            args = [address, [token.evm_address for token in tokens]]
+            encode_arguments.append(args)
+            balance_calls.append(
+                (
+                    self.evm_inquirer.contract_scan.address,
+                    self.evm_inquirer.contract_scan.encode(
+                        method_name='tokens_balance',
+                        arguments=args,
+                    ),
+                ),
+            )
+
+        if len(index_batch.raw_calls) == 0:
+            raw_balance_results = self.evm_inquirer.multicall(
+                calls=balance_calls,
+                call_order=call_order,
+            )
+            return self._decode_multicall_token_balances(
+                chunk=chunk,
+                raw_results=raw_balance_results,
+                encode_arguments=encode_arguments,
+            ), {}
+
+        all_calls = [*balance_calls, *index_batch.raw_calls]
+        call_orders: list[Sequence[WeightedNode] | None] = [call_order]
+        if (
+            call_order is not None and
+            not any(node.node_info.name == EVM_INDEXERS_NODE_NAME for node in call_order)
+        ):
+            call_orders.append([self.evm_inquirer.indexers_node])
+
+        outputs: Sequence[tuple[bool, bytes]] = ()
+        for idx, attempt_call_order in enumerate(call_orders):
+            try:
+                outputs = self.evm_inquirer.multicall_2(
+                    calls=all_calls,
+                    require_success=False,
+                    call_order=attempt_call_order,
+                )
+                break
+            except RequestTooLargeError:
+                return self._split_and_query_multicall_balances_and_indices(
+                    chunk=chunk,
+                    accruing_flags=accruing_flags,
+                    call_order=attempt_call_order,
+                    skip_if_no_indices=skip_if_no_indices,
+                )
+            except RemoteError:
+                if idx == len(call_orders) - 1:
+                    raise
+
+        balance_count = len(balance_calls)
+        if len(outputs) < balance_count:
+            raise RemoteError(
+                f'{self.evm_inquirer.chain_name} multicall_2 returned {len(outputs)} results '
+                f'for {balance_count} balance calls',
+                cause=FailureCause.BAD_DATA,
+            )
+
+        raw_balance_results_list: list[bytes] = []
+        for status, raw_output in outputs[:balance_count]:
+            if status is False or len(raw_output) == 0:
+                raise RemoteError(
+                    f'{self.evm_inquirer.chain_name} tokensBalance sub-call failed in multicall_2',
+                    cause=FailureCause.NETWORK,
+                )
+            raw_balance_results_list.append(raw_output)
+
+        balances = self._decode_multicall_token_balances(
+            chunk=chunk,
+            raw_results=raw_balance_results_list,
+            encode_arguments=encode_arguments,
+        )
+        token_indices = index_batch.decode(outputs[balance_count:])
+        observation_indices: dict[ChecksumEvmAddress, dict[str, int]] = {}
+        for address, tokens in chunk:
+            address_indices = {
+                token.identifier: token_index
+                for token in tokens
+                if (token_index := token_indices.get(token)) is not None
+            }
+            if len(address_indices) != 0:
+                observation_indices[address] = address_indices
+
+        return balances, observation_indices
+
+    def _get_multicall_token_balances(
+            self,
+            chunk: list[tuple[ChecksumEvmAddress, Sequence[EvmToken]]],
+            call_order: Sequence[WeightedNode] | None = None,
+    ) -> dict[ChecksumEvmAddress, dict[EvmToken, FVal]]:
+        """Gets token balances from a chunk of address -> token address
+
+        May raise:
+        - RemoteError if no result is queried in multicall
+        """
+        balances, _ = self._get_multicall_token_balances_and_indices(
+            chunk=chunk,
+            accruing_flags={},
+            call_order=call_order,
+        )
         return balances
 
     def _query_chunks(
@@ -487,6 +655,85 @@ class EvmTokens(ABC):  # noqa: B024
 
         return addresses_info
 
+    def _query_accruing_token_indices_for_detected(
+            self,
+            detected_erc20_tokens: dict[ChecksumEvmAddress, list[Asset]],
+            detected_erc20_balances: DetectedTokenBalancesType,
+            failed_detection_addresses: set[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, dict[str, int]]:
+        """Run an atomic balance + reserve index multicall for newly detected non-zero accruing
+        tokens so detection observations carry a same-block ``(amount, index)`` pair.
+
+        Failures are logged and degraded gracefully (keeping the original detected balance with
+        no ``observation_index``) so token detection itself never fails.
+        """
+        if len(accruing_flags := get_accruing_asset_flags()) == 0:
+            return {}
+
+        accruing_by_address: dict[ChecksumEvmAddress, list[EvmToken]] = {}
+        detected_assets: dict[tuple[ChecksumEvmAddress, str], DetectedTokenBalanceAsset] = {}
+        for address, balances in detected_erc20_balances.items():
+            if address in failed_detection_addresses:
+                continue
+            address_tokens: list[EvmToken] = []
+            for asset, amount in balances.items():
+                if amount <= ZERO or asset.identifier not in accruing_flags:
+                    continue
+                token = asset if isinstance(asset, EvmToken) else EvmToken(asset.identifier)
+                address_tokens.append(token)
+                detected_assets[address, token.identifier] = asset
+            if len(address_tokens) != 0:
+                accruing_by_address[address] = address_tokens
+
+        if len(accruing_by_address) == 0:
+            return {}
+
+        chunk_size, call_order = self._get_token_detection_chunk_size_call_order()
+        observation_indices: dict[ChecksumEvmAddress, dict[str, int]] = defaultdict(dict)
+        for chunk in generate_multicall_chunks(
+            chunk_length=chunk_size,
+            addresses_to_tokens=accruing_by_address,
+        ):
+            try:
+                refreshed_balances, chunk_indices = self._get_multicall_token_balances_and_indices(
+                    chunk=chunk,
+                    accruing_flags=accruing_flags,
+                    call_order=call_order,
+                    skip_if_no_indices=True,
+                )
+            except RemoteError as e:
+                log.warning(
+                    'Failed atomic balance and reserve index multicall during %s token detection: %s',  # noqa: E501
+                    self.evm_inquirer.chain_name,
+                    e,
+                )
+                continue
+
+            for address, chunk_tokens in chunk:
+                if not (address_indices := chunk_indices.get(address)):
+                    continue
+
+                address_refreshed = refreshed_balances.get(address, {})
+                for token in chunk_tokens:
+                    if (token_index := address_indices.get(token.identifier)) is None:
+                        continue
+
+                    asset = detected_assets[address, token.identifier]
+                    refreshed_balance = address_refreshed.get(token, ZERO)
+                    if refreshed_balance == ZERO:
+                        detected_erc20_balances[address].pop(asset, None)
+                        if address in detected_erc20_tokens:
+                            detected_erc20_tokens[address] = [
+                                detected for detected in detected_erc20_tokens[address]
+                                if detected.identifier != token.identifier
+                            ]
+                    else:
+                        detected_erc20_balances[address][asset] = refreshed_balance
+
+                    observation_indices[address][token.identifier] = token_index
+
+        return dict(observation_indices)
+
     def _query_new_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
         """Run token detection and persist results for the given addresses.
 
@@ -508,6 +755,11 @@ class EvmTokens(ABC):  # noqa: B024
             addresses=addresses,
             tokens_to_check=erc20_tokens,
         )
+        observation_indices_per_address = self._query_accruing_token_indices_for_detected(
+            detected_erc20_tokens=detected_erc20_tokens,
+            detected_erc20_balances=detected_erc20_balances,
+            failed_detection_addresses=failed_detection_addresses,
+        )
         all_detected_tokens = self._detect_erc721_tokens(
             addresses=[
                 address for address in addresses
@@ -524,6 +776,7 @@ class EvmTokens(ABC):  # noqa: B024
                 failed_detection_addresses=failed_detection_addresses,
                 queried_assets=tuple(token.identifier for token in erc20_tokens),
                 observed_at=observed_at,
+                observation_indices_per_address=observation_indices_per_address,
             )
             self.db.delete_balances_cache_if_chain_disabled(
                 write_cursor=write_cursor,
@@ -800,11 +1053,17 @@ class EvmTokens(ABC):  # noqa: B024
             addresses_to_tokens=addresses_to_tokens,
             chunk_length=chunk_size,
         )
+        accruing_flags = get_accruing_asset_flags()
+        observation_indices_by_address: dict[ChecksumEvmAddress, dict[str, int]] = defaultdict(dict)  # noqa: E501
         for chunk in multicall_chunks:
-            new_balances = self._get_multicall_token_balances(
+            new_balances, chunk_indices = self._get_multicall_token_balances_and_indices(
                 chunk=chunk,
+                accruing_flags=accruing_flags,
                 call_order=call_order,
             )
+            for address, indices in chunk_indices.items():
+                observation_indices_by_address[address].update(indices)
+
             for address, balances in new_balances.items():
                 for token, balance in balances.items():
                     if balance == ZERO:
@@ -843,6 +1102,7 @@ class EvmTokens(ABC):  # noqa: B024
                     amounts=amounts,
                     observed_at=observed_at,
                     source=ObservationSource.BALANCE_QUERY,
+                    observation_indices=observation_indices_by_address.get(address),
                 )
 
         token_price = cast('dict[EvmToken, Price]', Inquirer.find_main_currency_prices(list(tokens_with_balance)))  # noqa: E501

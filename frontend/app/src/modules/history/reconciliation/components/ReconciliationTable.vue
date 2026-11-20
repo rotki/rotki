@@ -4,6 +4,7 @@ import type { ReconciliationAccount, ReconciliationBucket } from '@/modules/hist
 import type { AccountDetailState } from '@/modules/history/reconciliation/use-bucket-reconciliation-store';
 import { toHumanReadable } from '@rotki/common';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import { hasAccruedInterest } from '@/modules/history/data-issues/transforms';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
 import { MAX_ACCOUNT_BUCKETS } from '@/modules/history/reconciliation/api/use-bucket-reconciliation-api';
 import ReconciliationAccountRow from '@/modules/history/reconciliation/components/ReconciliationAccountRow.vue';
@@ -257,11 +258,33 @@ const emptyDescription = computed<string>(() => (view === 'attention'
     </template>
 
     <template #item.fromHistory="{ row }">
-      <ReconciliationAmount
+      <div
         v-if="row.kind === 'bucket'"
-        :amount="amountsOf(row).derived"
-        :asset="row.bucket.asset"
-      />
+        class="flex flex-col items-end"
+      >
+        <ReconciliationAmount
+          :amount="amountsOf(row).derived"
+          :asset="row.bucket.asset"
+        />
+        <span
+          v-if="hasAccruedInterest(amountsOf(row).accruedInterest)"
+          class="text-xs text-rui-text-secondary whitespace-nowrap"
+          data-testid="reconciliation-accrued-interest"
+        >
+          <i18n-t
+            keypath="data_issues.accrued_interest"
+            scope="global"
+            tag="span"
+          >
+            <template #amount>
+              <ReconciliationAmount
+                :amount="amountsOf(row).accruedInterest"
+                signed
+              />
+            </template>
+          </i18n-t>
+        </span>
+      </div>
     </template>
 
     <template #item.onChain="{ row }">

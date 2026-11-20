@@ -1,19 +1,31 @@
 import logging
+import operator
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
-from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.assets.utils import asset_normalized_value, get_single_underlying_token
+from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.types import AssetFlag
+from rotkehlchen.assets.utils import (
+    asset_normalized_value,
+    get_evm_token,
+    get_or_create_evm_token,
+    get_single_underlying_token,
+)
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.common import Commonv2v3LikeDecoder
-from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3, MINT
+from rotkehlchen.chain.evm.decoding.aave.constants import (
+    CPT_AAVE_V3,
+    LIQUIDATION_CALL,
+    MINT,
+    WITHDRAW,
+)
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
     EvmDecodingOutput,
 )
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -30,6 +42,7 @@ from .constants import (
     REPAY,
     RESERVE_DATA_UPDATED,
     REWARDS_CLAIMED,
+    STABLE_DEBT_BURN,
     STABLE_DEBT_MINT,
     SWAPPED,
 )
@@ -46,6 +59,23 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# Event topics that delimit distinct Aave v3 / Spark Lend reserve operations. When pairing a
+# token Mint/Burn with its pool's ReserveDataUpdated log, scanning stops at the first barrier so
+# an earlier operation's ReserveDataUpdated cannot bleed into an unrelated aToken transfer or
+# liquidation Mint for a different reserve.
+_LENDING_BARRIER_TOPICS: Final = frozenset((
+    MINT,
+    BURN,
+    STABLE_DEBT_MINT,
+    STABLE_DEBT_BURN,
+    RESERVE_DATA_UPDATED,
+    DEPOSIT,
+    WITHDRAW,
+    BORROW,
+    REPAY,
+    LIQUIDATION_CALL,
+))
 
 
 class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
@@ -157,6 +187,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
            receive/return amount, because the interest event is created separately.
 
         Returns the final list of the decoded events."""
+        self._tag_lending_tokens_from_logs(all_logs=all_logs)
         self._decode_debt_interest(
             decoded_events=decoded_events,
             transaction=transaction,
@@ -294,11 +325,11 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 i_log.topics[0] in (MINT, BURN) and (
                     # topics[2] is on_behalf_of, should be equal to the value we got above
                     bytes_to_address(i_log.topics[2]) == user_address
-                ) and DEBT_TOKEN_SYMBOL_REGEX.match(
+                ) and (
                     (earned_token := self.base.get_or_create_evm_token(
                         address=i_log.address,
-                    )).symbol,
-                ) is None and (
+                    )).protocol == self.counterparty
+                ) and DEBT_TOKEN_SYMBOL_REGEX.match(earned_token.symbol) is None and (
                     balance_increase := asset_normalized_value(
                         amount=int.from_bytes(i_log.data[32:64]),
                         asset=earned_token,
@@ -619,6 +650,158 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
 
         decoded_events.extend(new_events)
 
+    def _tag_lending_token(
+            self,
+            token_address: ChecksumEvmAddress,
+            flag: AssetFlag,
+            underlying_address: ChecksumEvmAddress,
+            existing_token: EvmToken | None,
+    ) -> None:
+        """Ensure an Aave v3 / Spark Lend token carries protocol, underlying token, and flag.
+
+        Expects the caller to have already looked up ``existing_token`` and skipped tokens owned
+        by another protocol. Preserves existing ``underlying_tokens`` and avoids redundant
+        global.db writes when metadata and flag are already set.
+        """
+        underlying_tokens = (
+            [UnderlyingToken(address=underlying_address, token_kind=TokenKind.ERC20, weight=ONE)]
+            if (
+                (existing_token is None or len(existing_token.underlying_tokens) == 0) and
+                get_evm_token(evm_address=underlying_address, chain_id=self.node_inquirer.chain_id) is not None  # noqa: E501
+            )
+            else None
+        )
+        if (
+            existing_token is not None and
+            existing_token.protocol == self.counterparty and
+            underlying_tokens is None
+        ):
+            token = existing_token
+        else:
+            token = get_or_create_evm_token(
+                userdb=self.base.database,
+                evm_address=token_address,
+                chain_id=self.node_inquirer.chain_id,
+                evm_inquirer=self.node_inquirer,
+                protocol=self.counterparty,
+                underlying_tokens=underlying_tokens,
+            )
+
+        GlobalDBHandler.set_asset_flag(
+            identifier=token.identifier,
+            flag=flag,
+            enabled=True,
+        )
+
+    def _tag_lending_tokens_from_logs(self, all_logs: list[EvmTxReceiptLog]) -> None:
+        """Tag Aave v3 / Spark Lend aTokens and debt tokens encountered in pool logs.
+
+        Supply/withdraw emits ReserveDataUpdated right before aToken Mint/Burn, while
+        borrow/repay emits ReserveDataUpdated right after debt token Mint/Burn. Matching
+        against an adjacent ReserveDataUpdated from self.pool_addresses (stopped by reserve
+        operation barriers) identifies both the protocol and the underlying reserve token
+        without touching unrelated pools, Spark Savings, or cross-reserve aToken transfers.
+        """
+        for tx_log in all_logs:
+            if len(tx_log.topics) < 2:
+                continue
+
+            topic0 = tx_log.topics[0]
+            if topic0 in (MINT, STABLE_DEBT_MINT):
+                if len(tx_log.topics) < 3:
+                    continue
+                user = bytes_to_address(tx_log.topics[2])
+            elif topic0 == BURN:
+                if len(tx_log.topics) < 3:
+                    continue
+                user = bytes_to_address(tx_log.topics[1])
+            elif topic0 == STABLE_DEBT_BURN:
+                user = bytes_to_address(tx_log.topics[1])
+            else:
+                continue
+
+            if not self.base.is_tracked(user) and user not in self.native_gateways:
+                continue
+
+            is_stable_debt = topic0 in (STABLE_DEBT_MINT, STABLE_DEBT_BURN)
+            debt_reserve = self._get_own_pool_reserve_address(
+                token_log=tx_log,
+                all_logs=all_logs,
+                search_after=True,
+            )
+            supply_reserve = None if is_stable_debt else self._get_own_pool_reserve_address(
+                token_log=tx_log,
+                all_logs=all_logs,
+                search_after=False,
+            )
+            if debt_reserve is None and supply_reserve is None:
+                continue
+
+            existing_token = get_evm_token(
+                evm_address=tx_log.address,
+                chain_id=self.node_inquirer.chain_id,
+            )
+            if existing_token is not None and existing_token.protocol not in (None, '', self.counterparty):  # noqa: E501
+                continue
+
+            if is_stable_debt:
+                if debt_reserve is None:
+                    continue
+                flag, reserve_address = AssetFlag.REBASING, debt_reserve
+            else:
+                if existing_token is None:
+                    existing_token = self.base.get_or_create_evm_token(address=tx_log.address)
+
+                if DEBT_TOKEN_SYMBOL_REGEX.match(existing_token.symbol) is not None:
+                    if debt_reserve is None:
+                        continue
+                    flag = (
+                        AssetFlag.REBASING
+                        if existing_token.symbol.startswith('stableDebt')
+                        else AssetFlag.ACCRUING_INTEREST_DEBT
+                    )
+                    reserve_address = debt_reserve
+                elif supply_reserve is not None:
+                    flag, reserve_address = AssetFlag.ACCRUING_INTEREST_SUPPLY, supply_reserve
+                else:
+                    continue
+
+            self._tag_lending_token(
+                token_address=tx_log.address,
+                flag=flag,
+                underlying_address=reserve_address,
+                existing_token=existing_token,
+            )
+
+    def _get_own_pool_reserve_address(
+            self,
+            token_log: EvmTxReceiptLog,
+            all_logs: list[EvmTxReceiptLog],
+            search_after: bool = True,
+    ) -> ChecksumEvmAddress | None:
+        """Return the reserve token address from the immediately adjacent ReserveDataUpdated log
+        if it was emitted by one of this decoder's pools with no intervening reserve operation
+        barrier, or None otherwise."""
+        logs_iter = all_logs if search_after else reversed(all_logs)
+        is_adjacent_side = operator.gt if search_after else operator.lt
+        for tx_log in logs_iter:
+            if (
+                not is_adjacent_side(tx_log.log_index, token_log.log_index) or
+                len(tx_log.topics) == 0 or
+                tx_log.topics[0] not in _LENDING_BARRIER_TOPICS
+            ):
+                continue
+
+            if (
+                tx_log.topics[0] == RESERVE_DATA_UPDATED and
+                len(tx_log.topics) >= 2 and
+                tx_log.address in self.pool_addresses
+            ):
+                return bytes_to_address(tx_log.topics[1])
+            return None
+
+        return None
+
     def _minted_by_own_pool(
             self,
             mint_log: EvmTxReceiptLog,
@@ -626,15 +809,11 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
     ) -> bool:
         """The pool that mints debt emits ReserveDataUpdated right after. This tells an AAVE
         debt token from a Spark one when both protocols are used in the same transaction."""
-        for tx_log in all_logs:
-            if (
-                tx_log.log_index > mint_log.log_index and
-                len(tx_log.topics) != 0 and
-                tx_log.topics[0] == RESERVE_DATA_UPDATED
-            ):
-                return tx_log.address in self.pool_addresses
-
-        return False
+        return self._get_own_pool_reserve_address(
+            token_log=mint_log,
+            all_logs=all_logs,
+            search_after=True,
+        ) is not None
 
     @staticmethod
     def _get_interest_amount_for_event(

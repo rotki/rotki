@@ -86,6 +86,60 @@ describe('useBucketReconciliationApi', () => {
     expect(response.accounts[0].buckets?.[1].issueKind).toBe('invalid_event_amount');
   });
 
+  it('should parse check accrued_interest when present or null', async () => {
+    server.use(http.get(ENDPOINT, () => HttpResponse.json(summaryBody([
+      accountSummary({
+        buckets: [{
+          asset: 'eip155:1/erc20:0x0000000000000000000000000000000000000001',
+          check: {
+            accrued_interest: '5.25',
+            compared_at: 1_700_000_100,
+            delta: '0',
+            derived_balance: '100',
+            observed_at: 1_700_000_000,
+            observed_balance: '105.25',
+          },
+          derived_balance: '100',
+          issue_id: null,
+          issue_kind: null,
+          last_event_ts: 1_699_000_000_000,
+          observed_at: 1_700_000_000,
+          observed_balance: '105.25',
+          protocol: null,
+          reasons: [],
+          status: 'reconciled',
+          stop: null,
+        }, {
+          asset: 'DAI',
+          check: {
+            accrued_interest: null,
+            compared_at: 1_700_000_100,
+            delta: '0',
+            derived_balance: '10',
+            observed_at: 1_700_000_000,
+            observed_balance: '10',
+          },
+          derived_balance: '10',
+          issue_id: null,
+          issue_kind: null,
+          last_event_ts: 1_699_000_000_000,
+          observed_at: 1_700_000_000,
+          observed_balance: '10',
+          protocol: null,
+          reasons: [],
+          status: 'reconciled',
+          stop: null,
+        }],
+        pagination: { limit: 50, offset: 0, total: 2 },
+      }),
+    ]))));
+
+    const response = await useBucketReconciliationApi().fetchSummary();
+
+    expect(response.accounts[0].buckets?.[0].check?.accruedInterest?.toFixed()).toBe('5.25');
+    expect(response.accounts[0].buckets?.[1].check?.accruedInterest).toBeNull();
+  });
+
   it('should scope an account request with its location, label, statuses and page', async () => {
     let sent: URLSearchParams | undefined;
     server.use(http.get(ENDPOINT, ({ request }) => {

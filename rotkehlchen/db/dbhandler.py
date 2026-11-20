@@ -1580,6 +1580,7 @@ class DBHandler:
             failed_detection_addresses: set[ChecksumEvmAddress],
             queried_assets: Collection[str],
             observed_at: Timestamp,
+            observation_indices_per_address: Mapping[ChecksumEvmAddress, Mapping[str, int]] | None = None,  # noqa: E501
     ) -> None:
         rows: list[tuple[str, str, str, str, str, str]] = []
         asset_category = BalanceType.ASSET.serialize_for_db()
@@ -1642,6 +1643,10 @@ class DBHandler:
                 previous_assets=tuple(token.identifier for token in previous_tokens),
                 queried_assets=queried_assets,
                 observed_at=observed_at,
+                observation_indices=(
+                    observation_indices_per_address.get(address)
+                    if observation_indices_per_address is not None else None
+                ),
             )
 
         if len(rows) == 0:

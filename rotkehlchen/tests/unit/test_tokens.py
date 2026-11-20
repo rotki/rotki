@@ -215,6 +215,7 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
             target='rotkehlchen.chain.ethereum.tokens.EthereumTokens.maybe_detect_proxies_tokens',
             wraps=tokens.maybe_detect_proxies_tokens,
         ) as maybe_detect_proxies_tokens_patch,
+        patch.object(tokens, '_query_accruing_token_indices_for_detected', return_value={}),
         patch(
             target='rotkehlchen.globaldb.handler.GlobalDBHandler.get_token_detection_data',
             side_effect=lambda *args, **kwargs: ([  # mock the returned list to avoid changing this test with every assets version  # noqa: E501
@@ -784,6 +785,7 @@ def test_query_new_tokens_caches_protocol_and_liability_balances(tokens: Ethereu
             '_detect_tokens',
             return_value=({tracked_address: [aave_token, debt_token]}, set(), detected_balances),
         ),
+        patch.object(tokens, '_query_accruing_token_indices_for_detected', return_value={}),
         patch.object(tokens, 'maybe_detect_proxies_tokens', return_value=None),
     ):
         tokens._query_new_tokens(addresses=[tracked_address])

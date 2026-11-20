@@ -525,3 +525,61 @@ def test_swapped_identity_invalidates_saved_match_without_processing(database) -
     assert CurrentBalanceMismatchDetector(database=database).run() == 0
     with database.conn.read_ctx() as cursor:
         assert get_balance_checks(cursor)[LOCATION_ETHEREUM, address, A_ETH.identifier] == check
+
+
+def test_observation_index_round_trip_and_validation(database) -> None:
+    """observation_index persists exact 27-digit ray ints and ignores non-positive/malformed rows."""  # noqa: E501
+    address = TEST_ADDR1
+    now = ts_now()
+    ray_index = 1_045_678_901_234_567_890_123_456_789  # > 64-bit int max
+
+    with database.user_write() as write_cursor:
+        record_wallet_observations(
+            write_cursor=write_cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            address=address,
+            amounts={TOKEN: FVal('10.5'), A_ETH.identifier: FVal('2')},
+            observed_at=Timestamp(now),
+            source=ObservationSource.BALANCE_QUERY,
+            observation_indices={TOKEN: ray_index, A_ETH.identifier: 0},
+        )
+
+    observations = get_wallet_observations(database)
+    assert observations[LOCATION_ETHEREUM, address, TOKEN].observation_index == ray_index
+    # Non-positive index (e.g. uninitialized Aave reserve returning 0) is persisted as NULL.
+    assert observations[LOCATION_ETHEREUM, address, A_ETH.identifier].observation_index is None
+
+    # Malformed TEXT values already in DB degrade safely to None instead of raising.
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'UPDATE wallet_balance_observations SET observation_index=? '
+            'WHERE blockchain=? AND address=? AND asset=?',
+            ('not-an-int', SupportedBlockchain.ETHEREUM.serialize(), address, TOKEN),
+        )
+
+    observations = get_wallet_observations(database)
+    assert observations[LOCATION_ETHEREUM, address, TOKEN].observation_index is None
+
+
+def test_token_detection_observations_persist_observation_index(database) -> None:
+    address = TEST_ADDR1
+    now = ts_now()
+    ray_index = 1_020_000_000_000_000_000_000_000_000
+
+    with database.user_write() as write_cursor:
+        record_token_detection_observations(
+            write_cursor=write_cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            address=address,
+            amounts={TOKEN: FVal('123.45')},
+            previous_assets=(),
+            queried_assets=(TOKEN,),
+            observed_at=Timestamp(now),
+            observation_indices={TOKEN: ray_index},
+        )
+
+    observations = get_wallet_observations(database)
+    obs = observations[LOCATION_ETHEREUM, address, TOKEN]
+    assert obs.amount == FVal('123.45')
+    assert obs.source == ObservationSource.TOKEN_DETECTION
+    assert obs.observation_index == ray_index

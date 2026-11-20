@@ -65,6 +65,7 @@ class CurrentBalanceMismatchIssuePayload(BaseIssuePayload):
     delta: str
     queried_at_ts: int
     latest_event_identifier: int | None
+    accrued_interest: NotRequired[str]
 
 
 class RebasingTokenIssuePayload(BaseIssuePayload):

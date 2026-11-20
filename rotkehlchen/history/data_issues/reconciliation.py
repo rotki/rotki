@@ -115,11 +115,11 @@ class ReconciliationBucket:
 
     @property
     def delta(self) -> FVal | None:
-        """The signed difference of the saved comparison, None without one."""
+        """The signed unexplained difference of the saved comparison, None without one."""
         if self.check is None:
             return None
 
-        return self.check.observed_balance - self.check.derived_balance
+        return self.check.observed_balance - self.check.expected_balance
 
 
 @dataclass(frozen=True)
@@ -677,6 +677,7 @@ def _classify(
         tolerance=tolerance,
         latest_observation_id=None if evidence is None else evidence.observation_id,
         pending_reasons=() if evidence is None else evidence.pending_reasons,
+        expected_accrued_interest=None if evidence is None else evidence.accrued_interest,
     )
 
 

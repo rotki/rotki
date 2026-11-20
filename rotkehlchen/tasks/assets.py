@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 from rotkehlchen.api.websockets.typedefs import UserMessageEntry, WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.types import AssetFlag
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     check_if_spam_token,
@@ -561,6 +562,14 @@ def retry_missing_token_details(chains_aggregator: ChainsAggregator) -> None:
                 )
 
 
+# Positional flags for PoolDataProvider.getReserveTokensAddresses: aToken, stableDebt, variableDebt
+LENDING_RESERVE_TOKEN_FLAGS: Final = (
+    AssetFlag.ACCRUING_INTEREST_SUPPLY,
+    AssetFlag.REBASING,
+    AssetFlag.ACCRUING_INTEREST_DEBT,
+)
+
+
 def _update_lending_protocol_underlying_assets(
         chains_aggregator: ChainsAggregator,
         providers_info: Sequence[tuple[ChainID, ChecksumEvmAddress]],
@@ -613,18 +622,24 @@ def _update_lending_protocol_underlying_assets(
             log.error(f'Failed to query {protocol} reserve tokens addresses due to {e!s}')
             continue
 
-        # map debt tokens to underlying tokens. Underlying tokens have more than 1 debt token
-        reserve_to_underlying = {}
+        # map reserve tokens to underlying tokens and their positional asset flag
+        reserve_to_underlying: dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
+        reserve_to_flag: dict[ChecksumEvmAddress, AssetFlag] = {}
         for underlying_token_address, tokens_raw in zip(underlying_tokens, reserve_tokens_raw, strict=False):  # noqa: E501
-            for reserve in data_provider.decode(
-                method_name='getReserveTokensAddresses',
-                arguments=[underlying_token_address],
-                result=tokens_raw,
+            for reserve, flag in zip(
+                data_provider.decode(
+                    method_name='getReserveTokensAddresses',
+                    arguments=[underlying_token_address],
+                    result=tokens_raw,
+                ),
+                LENDING_RESERVE_TOKEN_FLAGS,
+                strict=True,
             ):
                 if (deserialized_reserve := deserialize_evm_address(reserve)) != ZERO_ADDRESS:
                     if deserialized_reserve in reserve_to_underlying:
                         continue  # the same token can appear multiple times
                     reserve_to_underlying[deserialized_reserve] = underlying_token_address
+                    reserve_to_flag[deserialized_reserve] = flag
 
         # check the missing tokens and query their properties
         missing_tokens = _find_missing_tokens(reserve_to_underlying, node_inquirer.chain_id)
@@ -647,7 +662,7 @@ def _update_lending_protocol_underlying_assets(
                 # will first ensure that both underlying and reserve tokens info is added,
                 # then the mapping is saved. This order is necessary due to its FK relationship
                 # Here we provide name, symbol and decimals since we have queried them previously
-                get_or_create_evm_token(
+                token = get_or_create_evm_token(
                     userdb=node_inquirer.database,
                     evm_address=reserve_address,
                     chain_id=chain_id,
@@ -658,6 +673,11 @@ def _update_lending_protocol_underlying_assets(
                     name=name,
                     decimals=decimals,
                     encounter=encounter,
+                )
+                GlobalDBHandler.set_asset_flag(
+                    identifier=token.identifier,
+                    flag=reserve_to_flag[reserve_address],
+                    enabled=True,
                 )
             except DeserializationError as e:
                 log.error(

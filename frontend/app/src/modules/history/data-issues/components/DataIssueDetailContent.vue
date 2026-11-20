@@ -49,11 +49,16 @@ const description = computed<IssueDescription | undefined>(() => issue ? describ
 const negativeBalance = computed<NegativeBalanceValues | undefined>(() => issue ? negativeBalanceValues(issue) : undefined);
 
 /** Balance mismatches and negative balances show their amounts as values; every other kind keeps its sentence. */
-const mismatch = computed<{ derived: Amount; observed: Amount; delta: Amount } | undefined>(() => {
+const mismatch = computed<{ accruedInterest?: Amount; derived: Amount; observed: Amount; delta: Amount } | undefined>(() => {
   const amounts = get(description)?.amounts;
   if (issue?.kind !== IssueKind.CURRENT_BALANCE_MISMATCH || !amounts?.derived || !amounts.observed || !amounts.delta)
     return undefined;
-  return { delta: amounts.delta, derived: amounts.derived, observed: amounts.observed };
+  return {
+    accruedInterest: amounts.accruedInterest,
+    delta: amounts.delta,
+    derived: amounts.derived,
+    observed: amounts.observed,
+  };
 });
 
 /** Deep-link to the offending history event (shared with the inbox panel). */
