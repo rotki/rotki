@@ -2356,3 +2356,85 @@ def test_unpriced_taxable_spend_leaves_pnl_null_while_consuming_lots(
         (acquired, FVal(1)),
     ]
     assert later_row[2:] == ('4000', '3000', '0', '1000', '0')
+
+
+@pytest.mark.parametrize('with_priced_fee', [False, True])
+def test_unpriced_swap_leaves_pnl_null_while_consuming_lots(
+        database: DBHandler,
+        with_priced_fee: bool,
+) -> None:
+    """A crypto-to-crypto swap with no price for either side stores no proceeds or PnL for
+    the spent side instead of a loss of its whole basis, even if a priced fee leg is folded
+    into the received side's basis. The lots are still consumed."""
+    def no_price_at_two(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        if from_asset == A_DAI:
+            return Price(FVal(1))
+        if from_asset == A_ETH and timestamp != 2:
+            return Price(FVal(ETH_PRICES[timestamp]))
+        raise NoPriceForGivenTimestamp(from_asset=from_asset, to_asset=to_asset, time=timestamp)
+
+    tx_ref = make_evm_tx_hash()
+    fee_events: list[EvmEvent | HistoryEvent] = [
+        _event(at=1, amount='10', event_type=HistoryEventType.RECEIVE, asset=A_DAI),
+        _event(
+            at=2,
+            amount='10',
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_DAI,
+            tx_ref=tx_ref,
+            sequence_index=2,
+        ),
+    ] if with_priced_fee else []
+    with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
+        historian.return_value.query_historical_price = no_price_at_two
+        identifiers = _process(
+            database=database,
+            method=CostBasisMethod.FIFO,
+            events=[
+                _event(at=1, amount='2', event_type=HistoryEventType.RECEIVE),
+                _event(
+                    at=2,
+                    amount='1',
+                    event_type=HistoryEventType.TRADE,
+                    event_subtype=HistoryEventSubType.SPEND,
+                    tx_ref=tx_ref,
+                ),
+                _event(
+                    at=2,
+                    amount='5',
+                    event_type=HistoryEventType.TRADE,
+                    event_subtype=HistoryEventSubType.RECEIVE,
+                    asset=A_BTC,
+                    tx_ref=tx_ref,
+                    sequence_index=1,
+                ),
+                _event(at=4, amount='1', event_type=HistoryEventType.SPEND),
+                *fee_events,
+            ],
+        )
+
+    acquired, swapped, later_spend = identifiers[0], identifiers[1], identifiers[3]
+    with database.conn.read_ctx() as cursor:
+        rows = {
+            str(identifier): (
+                [(lot['lot_id'], FVal(lot['amount_consumed'])) for lot in json.loads(lots)],
+                *rest,
+            )
+            for identifier, lots, *rest in cursor.execute(
+                'SELECT event_identifier, lots_consumed_json, proceeds, realized_pnl, '
+                'taxfree_pnl, basis_removed, post_spend_basis_remaining FROM event_cost_basis '
+                "WHERE asset='ETH' AND direction='spend'",
+            )
+        }
+
+    assert rows == {
+        swapped: (
+            [(acquired, FVal(1))],
+            None, None, None, '1000', '1000',
+        ),
+        later_spend: (
+            [(acquired, FVal(1))],
+            '4000', '3000', '0', '1000', '0',
+        ),
+    }

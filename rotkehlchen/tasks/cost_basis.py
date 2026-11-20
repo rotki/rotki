@@ -231,6 +231,8 @@ class _CostBasisPass:
         asset's basis (or subtracted from disposal proceeds when selling for fiat) and do not
         realize PnL on their own; otherwise they are treated as taxable fee spends. A swap
         between two crypto assets realizes nothing if the user does not count those as taxable.
+        If neither side has a price, the spent side has no proceeds, so its PnL is left unknown
+        rather than booking its whole basis as a loss.
         """
         assert out_event.identifier is not None
         assert in_event.identifier is not None
@@ -247,6 +249,7 @@ class _CostBasisPass:
             base_total = in_event.amount * in_price
         else:
             base_total, source = ZERO, BasisSource.ZERO_COST
+        priced = source != BasisSource.ZERO_COST  # priced fees below may change `source`
 
         total_fees = ZERO
         if self.settings.include_fees_in_cost_basis:
@@ -269,9 +272,9 @@ class _CostBasisPass:
             assert fee_event.identifier is not None
             if fee_event.asset == self.profit_currency:
                 fee_rate: FVal | None = ONE
-            elif fee_event.asset == in_event.asset and source != BasisSource.ZERO_COST:
+            elif fee_event.asset == in_event.asset and priced:
                 fee_rate = in_rate
-            elif fee_event.asset == out_event.asset and source != BasisSource.ZERO_COST:
+            elif fee_event.asset == out_event.asset and priced:
                 fee_rate = out_rate
             else:
                 fee_rate = self._price(asset=fee_event.asset, timestamp=timestamp)
@@ -280,7 +283,7 @@ class _CostBasisPass:
 
         self._swap_basis[in_event.identifier] = (in_rate, source)
         self._swap_proceeds[out_event.identifier] = (
-            out_rate,
+            out_rate if priced else None,
             is_taxable and (in_event.asset.is_fiat() or self.settings.include_crypto2crypto),
             False,
         )
