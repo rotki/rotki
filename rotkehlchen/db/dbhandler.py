@@ -1933,6 +1933,25 @@ class DBHandler:
             # There can only be 1 result, since name is the primary key of the table
             return ExternalServiceApiCredentials(service=service_name, api_key=result[0], api_secret=result[1])  # noqa: E501
 
+    @staticmethod
+    def _mark_cost_basis_stale_for_groups(
+            write_cursor: DBCursor,
+            group_identifiers: Sequence[str],
+    ) -> None:
+        """Mark materialized cost basis stale from the earliest event in the given groups."""
+        if is_accounting_update_enabled() is False or len(group_identifiers) == 0:
+            return
+
+        timestamps = [
+            row[0] for chunk, placeholders in get_query_chunks(data=group_identifiers)
+            if (row := write_cursor.execute(
+                f'SELECT MIN(timestamp) FROM history_events WHERE group_identifier IN ({placeholders})',  # noqa: E501
+                chunk,
+            ).fetchone()) is not None
+        ]
+        if (min_ts := min((ts for ts in timestamps if ts is not None), default=None)) is not None:
+            mark_stale_from_ts(write_cursor=write_cursor, from_ts=min_ts, include_balances=False)
+
     def add_to_ignored_assets(self, write_cursor: DBCursor, asset: Asset) -> None:
         """Add a new asset to the set of ignored assets. If the asset was already marked as
         ignored then we don't do anything. Also ignore history events with this asset.
@@ -1941,25 +1960,40 @@ class DBHandler:
             'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)',
             ('ignored_asset', asset.identifier),
         )
-        write_cursor.execute(
-            'UPDATE history_events SET ignored=? WHERE asset=?',
-            (1, asset.identifier),
-        )
+        changed_groups = {
+            row[0] for row in write_cursor.execute(
+                'UPDATE history_events SET ignored=? WHERE asset=? AND ignored!=? '
+                'RETURNING group_identifier',
+                (1, asset.identifier, 1),
+            )
+        }
+        if len(changed_groups) > 0:
+            self._mark_cost_basis_stale_for_groups(
+                write_cursor=write_cursor,
+                group_identifiers=list(changed_groups),
+            )
         self.invalidate_ignored_assets_cache()
 
     def ignore_multiple_assets(self, write_cursor: DBCursor, assets: list[str]) -> None:
         """Add the provided identifiers to the list of ignored assets. If any asset was already
         marked as ignored then we don't do anything. Also ignore history events with these assets.
         """
+        changed_groups: set[str] = set()
         for chunk, placeholders in get_query_chunks(data=assets):
             ms_placeholders = ','.join(["('ignored_asset', ?)"] * len(chunk))
             write_cursor.execute(
                 f'INSERT OR IGNORE INTO multisettings(name, value) VALUES {ms_placeholders}',
                 chunk,
             )
-            write_cursor.execute(
-                f'UPDATE history_events SET ignored=1 WHERE asset IN ({placeholders})',
+            changed_groups.update(row[0] for row in write_cursor.execute(
+                f'UPDATE history_events SET ignored=1 WHERE asset IN ({placeholders}) '
+                'AND ignored!=1 RETURNING group_identifier',
                 chunk,
+            ))
+        if len(changed_groups) > 0:
+            self._mark_cost_basis_stale_for_groups(
+                write_cursor=write_cursor,
+                group_identifiers=list(changed_groups),
             )
         self.invalidate_ignored_assets_cache()
 
@@ -1969,10 +2003,18 @@ class DBHandler:
             "DELETE FROM multisettings WHERE name='ignored_asset' AND value=?;",
             (asset.identifier,),
         )
-        write_cursor.execute(
-            'UPDATE history_events SET ignored=? WHERE asset=?',
-            (0, asset.identifier),
-        )
+        changed_groups = {
+            row[0] for row in write_cursor.execute(
+                'UPDATE history_events SET ignored=? WHERE asset=? AND ignored!=? '
+                'RETURNING group_identifier',
+                (0, asset.identifier, 0),
+            )
+        }
+        if len(changed_groups) > 0:
+            self._mark_cost_basis_stale_for_groups(
+                write_cursor=write_cursor,
+                group_identifiers=list(changed_groups),
+            )
         self.invalidate_ignored_assets_cache()
 
     def invalidate_ignored_assets_cache(self) -> None:
@@ -2041,6 +2083,10 @@ class DBHandler:
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError('One of the given action ids already exists in the database') from e
+        self._mark_cost_basis_stale_for_groups(
+            write_cursor=write_cursor,
+            group_identifiers=identifiers,
+        )
 
     def remove_from_ignored_action_ids(
             self,
@@ -2062,6 +2108,10 @@ class DBHandler:
                 f'Tried to remove {len(identifiers) - affected_rows} '
                 f'ignored actions that do not exist',
             )
+        self._mark_cost_basis_stale_for_groups(
+            write_cursor=write_cursor,
+            group_identifiers=identifiers,
+        )
 
     def get_ignored_action_ids(
             self,

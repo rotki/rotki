@@ -1023,6 +1023,7 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                 ('history_events_identifier', True),
             ],
             exclude_ignored_assets=True,
+            exclude_ignored_actions=True,
             exclude_untracked_withdrawals=True,
         )
         if start_ts != 0:
@@ -1192,33 +1193,34 @@ def process_balances_and_cost_basis(
     The balances go first since their pass can still add events. `from_ts` only scopes the
     balances, the cost basis has its own stale marker. The completion of the balance
     processing is announced once the cost basis is done too, so that the progress that is
-    shown covers both. Returns None if a balance pass is already running.
+    shown covers both. Returns None if the requested pass is already running.
     """
-    if skip_balances:
-        if process_cost_basis(database=database, msg_aggregator=msg_aggregator) is None:
+    ran = True
+    try:
+        if skip_balances:
+            if (processed := process_cost_basis(
+                database=database,
+                msg_aggregator=msg_aggregator,
+            )) is None:
+                ran = False
+                return None
+            return processed
+
+        if (processed := process_historical_balances(
+            database=database,
+            msg_aggregator=msg_aggregator,
+            from_ts=from_ts,
+            chains_aggregator=chains_aggregator,
+            notify_completion=False,
+        )) is None:
+            ran = False
             return None
 
-        msg_aggregator.add_message(
-            message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
-            data={},
-        )
-        return True
-
-    if (processed := process_historical_balances(
-        database=database,
-        msg_aggregator=msg_aggregator,
-        from_ts=from_ts,
-        chains_aggregator=chains_aggregator,
-        notify_completion=False,
-    )) is None:
-        return None
-
-    try:
         process_cost_basis(database=database, msg_aggregator=msg_aggregator)
+        return processed
     finally:
-        msg_aggregator.add_message(
-            message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
-            data={},
-        )
-
-    return processed
+        if ran:
+            msg_aggregator.add_message(
+                message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
+                data={},
+            )

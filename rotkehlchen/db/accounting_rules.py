@@ -71,7 +71,7 @@ class DBAccountingRules:
         self.db = db_handler
 
     @staticmethod
-    def _mark_cost_basis_stale(
+    def mark_cost_basis_stale(
             write_cursor: DBCursor,
             event_ids: Sequence[int] | None = None,
             event_keys: Sequence[tuple[HistoryEventType, HistoryEventSubType]] = (),
@@ -81,7 +81,7 @@ class DBAccountingRules:
         A rule affects the events linked to it, and a rule of a type the events of that type
         and subtype, whatever their counterparty. The rule of an event also decides whether it
         pairs with the event after it, which is never earlier. Without either argument, as
-        for an import, everything is stale. The balances are not affected by the rules.
+        for an import or reset, everything is stale. The balances are not affected by the rules.
         """
         if is_accounting_update_enabled() is False:
             return
@@ -184,9 +184,9 @@ class DBAccountingRules:
     ) -> int:
         """Add a single rule with the provided write cursor. See add_accounting_rule."""
         if event_ids is not None and len(event_ids) > 0:
-            self._mark_cost_basis_stale(write_cursor=write_cursor, event_ids=event_ids)
+            self.mark_cost_basis_stale(write_cursor=write_cursor, event_ids=event_ids)
         else:
-            self._mark_cost_basis_stale(
+            self.mark_cost_basis_stale(
                 write_cursor=write_cursor,
                 event_keys=[(event_type, event_subtype)],
             )
@@ -277,9 +277,9 @@ class DBAccountingRules:
                 (rule_id,),
             )]) > 0 else None
             if entry[3]:
-                self._mark_cost_basis_stale(write_cursor=write_cursor, event_ids=event_ids or [])
+                self.mark_cost_basis_stale(write_cursor=write_cursor, event_ids=event_ids or [])
             else:
-                self._mark_cost_basis_stale(
+                self.mark_cost_basis_stale(
                     write_cursor=write_cursor,
                     event_keys=[(event_type, event_subtype)],
                 )
@@ -323,7 +323,7 @@ class DBAccountingRules:
                 'SELECT type, subtype, is_event_specific FROM accounting_rules WHERE identifier=?',
                 (identifier,),
             ).fetchone()) is not None and not previous[2]:
-                self._mark_cost_basis_stale(write_cursor=write_cursor, event_keys=[
+                self.mark_cost_basis_stale(write_cursor=write_cursor, event_keys=[
                     (HistoryEventType.deserialize(previous[0]), HistoryEventSubType.deserialize(previous[1])),  # noqa: E501
                     (event_type, event_subtype),
                 ])
@@ -358,7 +358,7 @@ class DBAccountingRules:
                     ((identifier, event_id) for event_id in event_ids),
                 )
             if previous is not None and previous[2]:
-                self._mark_cost_basis_stale(write_cursor=write_cursor, event_ids=[
+                self.mark_cost_basis_stale(write_cursor=write_cursor, event_ids=[
                     row[0] for row in write_cursor.execute(
                         'SELECT event_id FROM accounting_rule_events WHERE rule_id=?',
                         (identifier,),
@@ -582,7 +582,7 @@ class DBAccountingRules:
         import_section = 'accounting rules'
         try:
             with self.db.conn.write_ctx() as write_cursor:
-                self._mark_cost_basis_stale(write_cursor)
+                self.mark_cost_basis_stale(write_cursor)
                 write_cursor.executemany(
                     'INSERT OR REPLACE INTO accounting_rules(identifier, type, subtype, '
                     'counterparty, taxable, count_entire_amount_spend, count_cost_basis_pnl, '

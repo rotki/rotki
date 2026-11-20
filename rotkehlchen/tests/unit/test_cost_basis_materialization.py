@@ -7,15 +7,17 @@ import pytest
 
 from rotkehlchen.accounting.cost_basis.lots import BucketLots
 from rotkehlchen.accounting.cost_basis.pnl import get_unprocessed_from_ts
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_USD
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.cache import DBCacheStatic, mark_stale_from_ts
-from rotkehlchen.db.constants import HistoryMappingState
+from rotkehlchen.db.constants import HistoryMappingState, UpdateType
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
@@ -31,7 +33,12 @@ from rotkehlchen.locations.constants import (
     LOCATION_KRAKEN,
     LOCATION_OPTIMISM,
 )
-from rotkehlchen.tasks.cost_basis import _CostBasisPass, _Rules, process_cost_basis
+from rotkehlchen.tasks.cost_basis import (
+    _CostBasisPass,
+    _Rules,
+    process_balances_and_cost_basis,
+    process_cost_basis,
+)
 from rotkehlchen.tasks.historical_balances import Bucket, process_historical_balances
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
@@ -1666,3 +1673,317 @@ def test_repeated_append_only_passes_keep_bounded_checkpoints(database: DBHandle
                 )
             assert process_cost_basis(database, database.msg_aggregator) is True
             assert _rows(database) == incremental_rows
+
+
+def test_reset_accounting_rules_invalidates_event_specific_and_custom_rules(
+        database: DBHandler,
+        queried_prices: list[tuple[str, Timestamp]],
+) -> None:
+    """Resetting accounting rules marks the whole cost basis stale so events whose deleted
+    event-specific or custom type rules are not restored by defaults are reprocessed."""
+    _add_rule(database, HistoryEventType.LOSS, HistoryEventSubType.NONE, taxable=True)
+    acquired, spend_specific, custom_loss = _process(
+        database=database,
+        method=CostBasisMethod.FIFO,
+        events=[
+            _event(at=1, amount='2', event_type=HistoryEventType.RECEIVE),
+            _event(at=2, amount='1', event_type=HistoryEventType.SPEND),
+            _event(at=4, amount='1', event_type=HistoryEventType.LOSS),
+        ],
+    )
+    # Attach an event-specific override making the spend non-taxable and rematerialize.
+    _add_rule(
+        database,
+        HistoryEventType.SPEND,
+        HistoryEventSubType.NONE,
+        taxable=False,
+        event_ids=[int(spend_specific)],
+    )
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _rows(database, 'event_identifier, realized_pnl') == [
+        (int(acquired), None),
+        (int(spend_specific), '0'),
+        (int(custom_loss), '3000'),
+    ]
+
+    # Reset rules to defaults that only include a generic SPEND rule (no LOSS rule and no
+    # event-specific rule). Both previously customized events must become stale and update.
+    updater = RotkiDataUpdater(msg_aggregator=database.msg_aggregator, user_db=database)
+    default_rules = {
+        UpdateType.ACCOUNTING_RULES.value: [{
+            'event_type': HistoryEventType.SPEND.serialize(),
+            'event_subtype': HistoryEventSubType.NONE.serialize(),
+            'counterparty': None,
+            'taxable': True,
+            'count_entire_amount_spend': False,
+            'count_cost_basis_pnl': True,
+            'accounting_treatment': None,
+        }],
+    }
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE name = ?',
+            (DBCacheStatic.STALE_BALANCES_FROM_TS.value,),
+        )
+    with (
+        patch.object(
+            updater,
+            '_get_remote_info_json',
+            return_value={UpdateType.ACCOUNTING_RULES.value: {'latest': 1, 'limits': {}}},
+        ),
+        patch('rotkehlchen.db.updates.query_file', return_value=default_rules),
+    ):
+        updater.reset_accounting_rules()
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == '0'
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_BALANCES_FROM_TS,
+        ) is None
+
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    # Event-specific non-taxable override is gone (SPEND now realizes 2000 from default rule);
+    # custom LOSS rule is gone (LOSS now has no rule and realizes 0).
+    assert _rows(database, 'event_identifier, realized_pnl') == [
+        (int(acquired), None),
+        (int(spend_specific), '2000'),
+        (int(custom_loss), '0'),
+    ]
+
+
+def test_ignored_actions_excluded_and_invalidated_on_toggle(
+        database: DBHandler,
+        queried_prices: list[tuple[str, Timestamp]],
+) -> None:
+    """Events whose group_identifier is in ignored_actions are excluded from lot tracking and
+    realized PnL, and toggling ignored_actions marks cost basis stale from the group's first
+    event."""
+    ev1 = _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE)
+    ev2 = _event(at=2, amount='1', event_type=HistoryEventType.RECEIVE)
+    ev3 = _event(at=4, amount='1', event_type=HistoryEventType.SPEND)
+    lot1, lot2, spend = _process(
+        database=database,
+        method=CostBasisMethod.FIFO,
+        events=[ev1, ev2, ev3],
+    )
+    assert _rows(database, 'event_identifier, realized_pnl') == [
+        (int(lot1), None),
+        (int(lot2), None),
+        (int(spend), '3000'),
+    ]
+
+    # Ignoring the first acquisition drops its row and shifts the spend onto lot2.
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE name = ?',
+            (DBCacheStatic.STALE_BALANCES_FROM_TS.value,),
+        )
+        database.add_to_ignored_action_ids(write_cursor, [ev1.group_identifier])
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == '1000'
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_BALANCES_FROM_TS,
+        ) is None
+
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _rows(database, 'event_identifier, realized_pnl') == [
+        (int(lot2), None),
+        (int(spend), '1000'),
+    ]
+
+    # Ignoring the spend removes its row altogether.
+    with database.user_write() as write_cursor:
+        database.add_to_ignored_action_ids(write_cursor, [ev3.group_identifier])
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == '4000'
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _rows(database, 'event_identifier, realized_pnl') == [(int(lot2), None)]
+
+    # Un-ignoring both restores the original lots and realized PnL.
+    with database.user_write() as write_cursor:
+        database.remove_from_ignored_action_ids(
+            write_cursor,
+            [ev1.group_identifier, ev3.group_identifier],
+        )
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == '1000'
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _rows(database, 'event_identifier, realized_pnl') == [
+        (int(lot1), None),
+        (int(lot2), None),
+        (int(spend), '3000'),
+    ]
+
+
+def test_ignored_assets_invalidate_cost_basis_and_swap_pairing(
+        database: DBHandler,
+        queried_prices: list[tuple[str, Timestamp]],
+) -> None:
+    """Ignoring or un-ignoring an asset via add/remove/ignore_multiple marks cost basis stale
+    from the affected groups so dropped rows and changed swap pairing are recomputed."""
+    swap_tx = make_evm_tx_hash()
+    # With include_crypto2crypto=False:
+    # - Paired as a swap: ETH spend realizes 0 (crypto-to-crypto excluded), DAI row created.
+    # - With DAI ignored: ETH spend is unpaired and realizes 3000 - 1000 = 2000, DAI row gone.
+    acquired, swap_out, swap_in = _process(
+        database=database,
+        method=CostBasisMethod.FIFO,
+        include_crypto2crypto=False,
+        events=[
+            _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+            _event(
+                at=2,
+                amount='1',
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.SPEND,
+                tx_ref=swap_tx,
+                sequence_index=0,
+            ),
+            _event(
+                at=2,
+                amount='2000',
+                asset=A_DAI,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                tx_ref=swap_tx,
+                sequence_index=1,
+            ),
+        ],
+    )
+    assert _rows(database, 'event_identifier, realized_pnl') == [
+        (int(acquired), None),
+        (int(swap_out), '0'),
+        (int(swap_in), None),
+    ]
+
+    # Ignoring DAI marks cost basis stale from t=2, removes the DAI row, and unpairs the ETH leg.
+    with database.user_write() as write_cursor:
+        database.add_to_ignored_assets(write_cursor, A_DAI)
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == '2000'
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _rows(database, 'event_identifier, realized_pnl') == [
+        (int(acquired), None),
+        (int(swap_out), '2000'),
+    ]
+
+    # Un-ignoring DAI marks cost basis stale from t=2 and restores the swap pairing.
+    with database.user_write() as write_cursor:
+        database.remove_from_ignored_assets(write_cursor, A_DAI)
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == '2000'
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _rows(database, 'event_identifier, realized_pnl') == [
+        (int(acquired), None),
+        (int(swap_out), '0'),
+        (int(swap_in), None),
+    ]
+
+    # Bulk-ignoring DAI via ignore_multiple_assets also marks cost basis stale and drops the row.
+    with database.user_write() as write_cursor:
+        database.ignore_multiple_assets(write_cursor, [A_DAI.identifier])
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == '2000'
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _rows(database, 'event_identifier, realized_pnl') == [
+        (int(acquired), None),
+        (int(swap_out), '2000'),
+    ]
+
+
+def test_process_balances_and_cost_basis_completion_message_on_skip_balances(
+        database: DBHandler,
+) -> None:
+    """`process_balances_and_cost_basis(skip_balances=True)` sends the completion message in a
+    finally whenever the pass ran (even on exception), and omits it when another pass is
+    running."""
+    completed_type = WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED
+
+    with patch.object(database.msg_aggregator, 'add_message') as add_message:
+        def completed_count() -> int:
+            count = sum(
+                1 for call in add_message.call_args_list
+                if call.kwargs.get('message_type') == completed_type
+            )
+            add_message.reset_mock()
+            return count
+
+        # Exception in cost-basis-only pass still emits completion so frontend clears phase.
+        with (
+            patch(
+                'rotkehlchen.tasks.cost_basis.process_cost_basis',
+                side_effect=RuntimeError('boom'),
+            ),
+            pytest.raises(RuntimeError, match='boom'),
+        ):
+            process_balances_and_cost_basis(
+                database=database,
+                msg_aggregator=database.msg_aggregator,
+                skip_balances=True,
+            )
+        assert completed_count() == 1
+
+        # Already-running cost-basis-only pass returns None and does NOT emit completion.
+        with patch('rotkehlchen.tasks.cost_basis.process_cost_basis', return_value=None):
+            assert process_balances_and_cost_basis(
+                database=database,
+                msg_aggregator=database.msg_aggregator,
+                skip_balances=True,
+            ) is None
+        assert completed_count() == 0
+
+        # Interrupted (rate-limited) cost-basis-only pass returns False and emits completion.
+        with patch('rotkehlchen.tasks.cost_basis.process_cost_basis', return_value=False):
+            assert process_balances_and_cost_basis(
+                database=database,
+                msg_aggregator=database.msg_aggregator,
+                skip_balances=True,
+            ) is False
+        assert completed_count() == 1
+
+        # Exception in historical balances pass also emits completion, while None does not.
+        with (
+            patch(
+                'rotkehlchen.tasks.cost_basis.process_historical_balances',
+                side_effect=RuntimeError('balance boom'),
+            ),
+            pytest.raises(RuntimeError, match='balance boom'),
+        ):
+            process_balances_and_cost_basis(
+                database=database,
+                msg_aggregator=database.msg_aggregator,
+                skip_balances=False,
+            )
+        assert completed_count() == 1
+
+        with patch('rotkehlchen.tasks.cost_basis.process_historical_balances', return_value=None):
+            assert process_balances_and_cost_basis(
+                database=database,
+                msg_aggregator=database.msg_aggregator,
+                skip_balances=False,
+            ) is None
+        assert completed_count() == 0
