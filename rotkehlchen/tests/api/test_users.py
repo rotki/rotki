@@ -893,12 +893,14 @@ def test_user_login(
 
     # Now let's manually add valid but not authenticable premium credentials in the DB
     data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True}
-    response = requests.post(
-        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
-        json=data,
-    )
-    task_id = assert_ok_async_response(response)
-    wait_for_async_task(rotkehlchen_api_server, task_id)
+    with ExitStack() as stack:
+        patch_no_op_unlock(rotki, stack)
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
+            json=data,
+        )
+        task_id = assert_ok_async_response(response)
+        wait_for_async_task(rotkehlchen_api_server, task_id)
     credentials = PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET)
     rotki.data.db.set_rotkehlchen_premium(credentials)
     data = {'action': 'logout'}
