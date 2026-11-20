@@ -62,11 +62,13 @@ from rotkehlchen.db.cache import (
     ExtraTxArgType,
     IndexArgType,
     LabeledLocationIdArgsType,
+    mark_stale_from_ts,
 )
 from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.constants import (
     BINANCE_HISTORY_START_TS_KEY,
     BINANCE_MARKETS_KEY,
+    COST_BASIS_SETTINGS,
     EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
     EVM_ACCOUNTS_DETAILS_TOKENS,
     EXTRAINTERNALTXPREFIX,
@@ -142,6 +144,7 @@ from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.gate import GateLocation
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.okx import OkxLocation
+from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.bucket_state import (
@@ -216,7 +219,7 @@ from rotkehlchen.user_messages import (
     UnknownAssetSeen,
 )
 from rotkehlchen.utils.hashing import file_md5
-from rotkehlchen.utils.misc import get_chunks, ts_ms_to_sec, ts_now, ts_now_in_ms
+from rotkehlchen.utils.misc import get_chunks, ts_ms_to_sec, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 if TYPE_CHECKING:
@@ -827,12 +830,32 @@ class DBHandler:
         settings_dict['have_premium'] = have_premium
         return db_settings_from_dict(settings_dict, self.msg_aggregator)
 
+    def _wipe_cost_basis(self, write_cursor: DBCursor) -> None:
+        """Drop the materialized cost basis and mark it as stale from the start.
+
+        The balances do not depend on what the cost basis depends on and are left as they are.
+        """
+        write_cursor.execute('DELETE FROM event_cost_basis')
+        write_cursor.execute('DELETE FROM cost_basis_checkpoints')
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE name IN (?, ?, ?)',
+            (
+                DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS.value,
+                DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS.value,
+                DBCacheStatic.LAST_COST_BASIS_FAILURE_TS.value,
+            ),
+        )
+        mark_stale_from_ts(write_cursor=write_cursor, from_ts=0, include_balances=False)
+
     def set_settings(self, write_cursor: DBCursor, settings: ModifiableDBSettings) -> None:
         # Compared to the stored value, not CachedSettings, which may not describe this DB yet,
         # as right after a premium restore replaced it
         eth2_mapping_changed = (
             settings.treat_eth2_as_eth is not None and
             settings.treat_eth2_as_eth != self.get_setting(write_cursor, 'treat_eth2_as_eth')
+        )
+        previous_settings = (
+            self.get_settings(write_cursor) if is_accounting_update_enabled() else None
         )
         settings_dict = settings.serialize()
         # Settings whose value is an empty string and which support being unset
@@ -859,6 +882,13 @@ class DBHandler:
         if eth2_mapping_changed:  # the saved ETH and ETH2 comparisons used the previous mapping
             delete_balance_checks(write_cursor=write_cursor, assets=(A_ETH.identifier, A_ETH2.identifier))  # noqa: E501
             delete_wallet_observations(write_cursor=write_cursor, assets=(A_ETH.identifier, A_ETH2.identifier))  # noqa: E501
+        if previous_settings is not None:
+            new_settings = self.get_settings(write_cursor)
+            if any(
+                getattr(previous_settings, name) != getattr(new_settings, name)
+                for name in COST_BASIS_SETTINGS
+            ):
+                self._wipe_cost_basis(write_cursor)
         CachedSettings().update_entries(settings)
 
     def patch_frontend_settings(
@@ -922,6 +952,10 @@ class DBHandler:
             DBCacheStatic.EVM_ACCOUNTS_DETECT_RETRIES,
             DBCacheStatic.STALE_BALANCES_FROM_TS,
             DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
+            DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
+            DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS,
+            DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS,
             DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
             DBCacheStatic.CURRENT_BALANCE_DETECTION_CURSOR,
         ):
@@ -942,6 +976,10 @@ class DBHandler:
                 DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
                 DBCacheStatic.STALE_BALANCES_FROM_TS,
                 DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
+                DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+                DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
+                DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS,
+                DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS,
             ],
     ) -> str | None:
         ...
@@ -972,6 +1010,8 @@ class DBHandler:
                 DBCacheStatic.LAST_SPARK_ASSETS_UPDATE,
                 DBCacheStatic.LAST_DB_UPGRADE,
                 DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+                DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
+                DBCacheStatic.LAST_COST_BASIS_FAILURE_TS,
                 DBCacheStatic.LAST_TOKEN_DETAILS_RETRY_TS,
                 DBCacheStatic.PENDING_DETECTION_FROM_TS,
             ],
@@ -1893,6 +1933,25 @@ class DBHandler:
             # There can only be 1 result, since name is the primary key of the table
             return ExternalServiceApiCredentials(service=service_name, api_key=result[0], api_secret=result[1])  # noqa: E501
 
+    @staticmethod
+    def _mark_cost_basis_stale_for_groups(
+            write_cursor: DBCursor,
+            group_identifiers: Sequence[str],
+    ) -> None:
+        """Mark materialized cost basis stale from the earliest event in the given groups."""
+        if is_accounting_update_enabled() is False or len(group_identifiers) == 0:
+            return
+
+        timestamps = [
+            row[0] for chunk, placeholders in get_query_chunks(data=group_identifiers)
+            if (row := write_cursor.execute(
+                f'SELECT MIN(timestamp) FROM history_events WHERE group_identifier IN ({placeholders})',  # noqa: E501
+                chunk,
+            ).fetchone()) is not None
+        ]
+        if (min_ts := min((ts for ts in timestamps if ts is not None), default=None)) is not None:
+            mark_stale_from_ts(write_cursor=write_cursor, from_ts=min_ts, include_balances=False)
+
     def add_to_ignored_assets(self, write_cursor: DBCursor, asset: Asset) -> None:
         """Add a new asset to the set of ignored assets. If the asset was already marked as
         ignored then we don't do anything. Also ignore history events with this asset.
@@ -1901,25 +1960,40 @@ class DBHandler:
             'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)',
             ('ignored_asset', asset.identifier),
         )
-        write_cursor.execute(
-            'UPDATE history_events SET ignored=? WHERE asset=?',
-            (1, asset.identifier),
-        )
+        changed_groups = {
+            row[0] for row in write_cursor.execute(
+                'UPDATE history_events SET ignored=? WHERE asset=? AND ignored!=? '
+                'RETURNING group_identifier',
+                (1, asset.identifier, 1),
+            )
+        }
+        if len(changed_groups) > 0:
+            self._mark_cost_basis_stale_for_groups(
+                write_cursor=write_cursor,
+                group_identifiers=list(changed_groups),
+            )
         self.invalidate_ignored_assets_cache()
 
     def ignore_multiple_assets(self, write_cursor: DBCursor, assets: list[str]) -> None:
         """Add the provided identifiers to the list of ignored assets. If any asset was already
         marked as ignored then we don't do anything. Also ignore history events with these assets.
         """
+        changed_groups: set[str] = set()
         for chunk, placeholders in get_query_chunks(data=assets):
             ms_placeholders = ','.join(["('ignored_asset', ?)"] * len(chunk))
             write_cursor.execute(
                 f'INSERT OR IGNORE INTO multisettings(name, value) VALUES {ms_placeholders}',
                 chunk,
             )
-            write_cursor.execute(
-                f'UPDATE history_events SET ignored=1 WHERE asset IN ({placeholders})',
+            changed_groups.update(row[0] for row in write_cursor.execute(
+                f'UPDATE history_events SET ignored=1 WHERE asset IN ({placeholders}) '
+                'AND ignored!=1 RETURNING group_identifier',
                 chunk,
+            ))
+        if len(changed_groups) > 0:
+            self._mark_cost_basis_stale_for_groups(
+                write_cursor=write_cursor,
+                group_identifiers=list(changed_groups),
             )
         self.invalidate_ignored_assets_cache()
 
@@ -1929,10 +2003,18 @@ class DBHandler:
             "DELETE FROM multisettings WHERE name='ignored_asset' AND value=?;",
             (asset.identifier,),
         )
-        write_cursor.execute(
-            'UPDATE history_events SET ignored=? WHERE asset=?',
-            (0, asset.identifier),
-        )
+        changed_groups = {
+            row[0] for row in write_cursor.execute(
+                'UPDATE history_events SET ignored=? WHERE asset=? AND ignored!=? '
+                'RETURNING group_identifier',
+                (0, asset.identifier, 0),
+            )
+        }
+        if len(changed_groups) > 0:
+            self._mark_cost_basis_stale_for_groups(
+                write_cursor=write_cursor,
+                group_identifiers=list(changed_groups),
+            )
         self.invalidate_ignored_assets_cache()
 
     def invalidate_ignored_assets_cache(self) -> None:
@@ -2001,6 +2083,10 @@ class DBHandler:
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError('One of the given action ids already exists in the database') from e
+        self._mark_cost_basis_stale_for_groups(
+            write_cursor=write_cursor,
+            group_identifiers=identifiers,
+        )
 
     def remove_from_ignored_action_ids(
             self,
@@ -2022,6 +2108,10 @@ class DBHandler:
                 f'Tried to remove {len(identifiers) - affected_rows} '
                 f'ignored actions that do not exist',
             )
+        self._mark_cost_basis_stale_for_groups(
+            write_cursor=write_cursor,
+            group_identifiers=identifiers,
+        )
 
     def get_ignored_action_ids(
             self,
@@ -4103,13 +4193,7 @@ class DBHandler:
                     'DELETE FROM bucket_processing_stops WHERE asset = ?',
                     [(source_identifier,), (target_asset.identifier,)],
                 )
-                write_cursor.executemany(
-                    'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
-                    [
-                        (DBCacheStatic.STALE_BALANCES_FROM_TS.value, '0'),
-                        (DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value, str(ts_now_in_ms())),
-                    ],
-                )
+                mark_stale_from_ts(write_cursor=write_cursor, from_ts=0)
 
     def get_latest_location_value_distribution(self) -> list[LocationData]:
         """Gets the latest location data

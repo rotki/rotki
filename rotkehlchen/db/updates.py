@@ -492,6 +492,7 @@ class RotkiDataUpdater:
                 (ConflictType.ACCOUNTING_RULE.serialize_for_db(),),
             )
             write_cursor.execute('DELETE FROM accounting_rules')  # cascades accounting_rule_events
+            rules_db.mark_cost_basis_stale(write_cursor=write_cursor)
             write_cursor.execute(
                 'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',
                 (UpdateType.ACCOUNTING_RULES.serialize(), applied_version),

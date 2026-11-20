@@ -65,6 +65,7 @@ from rotkehlchen.tasks.assets import (
 )
 from rotkehlchen.tasks.data_issues import run_data_issue_remediation
 from rotkehlchen.tasks.manager import (
+    COST_BASIS_PROCESSING_RETRY,
     CURRENT_BALANCE_DETECTION_TASK_NAME,
     CURRENT_BALANCE_DETECTION_TIME_BUDGET,
     DATA_ISSUE_REMEDIATION_TASK_NAME,
@@ -156,6 +157,60 @@ def test_periodic_historical_balances_skip_active_remediation(task_manager: Task
         ((HISTORICAL_BALANCE_PROCESSING_TASK_NAME,), {}),
         ((DATA_ISSUE_REMEDIATION_TASK_NAME,), {}),
     ]
+
+
+def test_cost_basis_failure_applies_retry_cooldown(task_manager: TaskManager) -> None:
+    now = ts_now()
+    with task_manager.database.user_write() as write_cursor:  # left by the settings of the setup
+        write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ?', ('stale_cost_%',))
+        task_manager.database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+            value=now,
+        )
+        task_manager.database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.LAST_COST_BASIS_FAILURE_TS,
+            value=now,
+        )
+
+    with (
+        patch.object(
+            task_manager.history_processing_coordinator,
+            'is_history_fetching',
+            return_value=False,
+        ),
+        patch.object(task_manager.task_supervisor, 'has_task', return_value=False),
+        patch.object(task_manager, '_spawn_historical_balance_processing') as spawn,
+    ):
+        assert task_manager._maybe_process_historical_balances() is None
+        spawn.assert_not_called()
+
+        with task_manager.database.user_write() as write_cursor:
+            task_manager.database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.LAST_COST_BASIS_FAILURE_TS,
+                value=Timestamp(now - COST_BASIS_PROCESSING_RETRY),
+            )
+        assert task_manager._maybe_process_historical_balances() == spawn.return_value
+        spawn.assert_called_once_with(from_ts=None, skip_balances=True)
+        spawn.reset_mock()
+
+        with task_manager.database.user_write() as write_cursor:
+            task_manager.database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.LAST_COST_BASIS_FAILURE_TS,
+                value=now,
+            )
+            write_cursor.executemany(
+                'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+                [
+                    (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, '1000'),
+                    (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value, str(now * 1000)),
+                ],
+            )
+        assert task_manager._maybe_process_historical_balances() == spawn.return_value
+        spawn.assert_called_once_with(from_ts=None, skip_balances=True)
 
 
 def test_trigger_historical_balance_processing_reports_whether_it_runs(
@@ -2412,3 +2467,71 @@ def test_check_if_should_sync_survives_premium_errors() -> None:
         should_sync, reason = sync_manager.check_if_should_sync(force_upload=False)
         assert should_sync is False
         assert reason == f'Could not query your premium plan due to: {error!s}'
+
+
+def test_stale_cost_basis_alone_is_processed_without_the_balances(
+        task_manager: TaskManager,
+) -> None:
+    def set_cache(name: DBCacheStatic, value: int) -> None:
+        with task_manager.database.user_write() as write_cursor:
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+                (name.value, str(value)),
+            )
+
+    with task_manager.database.user_write() as write_cursor:  # left by the settings of the setup
+        write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ?', ('stale_cost_%',))
+
+    with patch.object(task_manager.task_supervisor, 'spawn_and_track') as spawn_task:
+        set_cache(DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS, ts_now())
+        # the cost basis was never processed
+        assert task_manager._maybe_process_historical_balances() == [spawn_task.return_value]
+        assert spawn_task.call_args.kwargs['skip_balances'] is True
+
+        spawn_task.reset_mock()
+        set_cache(DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS, ts_now())
+        assert task_manager._maybe_process_historical_balances() is None
+        set_cache(DBCacheStatic.STALE_COST_BASIS_FROM_TS, 5)  # left by a pass that just stopped
+        assert task_manager._maybe_process_historical_balances() is None
+        spawn_task.assert_not_called()
+
+        # a change after the last pass, like another cost basis method, is picked up at once
+        set_cache(DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS, ts_now() * 1000)
+        assert task_manager._maybe_process_historical_balances() == [spawn_task.return_value]
+        set_cache(DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS, 0)
+
+        set_cache(DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS, ts_now() - HOUR_IN_SECONDS)
+        assert task_manager._maybe_process_historical_balances() == [spawn_task.return_value]
+        assert spawn_task.call_args.kwargs['skip_balances'] is True
+
+        set_cache(DBCacheStatic.STALE_BALANCES_FROM_TS, 7)
+        assert task_manager._maybe_process_historical_balances() == [spawn_task.return_value]
+        processing_kwargs = spawn_task.call_args.kwargs
+        assert (processing_kwargs['skip_balances'], processing_kwargs['from_ts']) == (False, 7)
+
+
+def test_cost_basis_modified_during_pass_is_reprocessed_immediately(
+        task_manager: TaskManager,
+) -> None:
+    """A cost-basis modification recorded before a pass finishes is reprocessed without waiting
+    for the retry cooldown.
+    """
+    def set_cache(name: DBCacheStatic, value: int) -> None:
+        with task_manager.database.user_write() as write_cursor:
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+                (name.value, str(value)),
+            )
+
+    now = ts_now()
+    with task_manager.database.user_write() as write_cursor:
+        write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ?', ('stale_cost_%',))
+
+    with patch.object(task_manager.task_supervisor, 'spawn_and_track') as spawn_task:
+        set_cache(DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS, now)
+        set_cache(DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS, now)
+        set_cache(DBCacheStatic.STALE_COST_BASIS_FROM_TS, 5)
+        set_cache(DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS, (now - 5) * 1000)
+
+        assert task_manager._maybe_process_historical_balances() == [spawn_task.return_value]
+        assert spawn_task.call_args.kwargs['skip_balances'] is True

@@ -3,10 +3,13 @@ from typing import TYPE_CHECKING, Any, Final, TypedDict, Unpack, overload
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.constants import EXTRAINTERNALTXPREFIX
 from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, SolanaAddress, Timestamp
+from rotkehlchen.utils.misc import ts_now_in_ms
 from rotkehlchen.utils.mixins.enums import Enum
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX: Final = 'ignored_ced_'
 
@@ -51,6 +54,20 @@ class DBCacheStatic(Enum):
     # during historical balance processing.
     STALE_BALANCES_MODIFICATION_TS: Final = 'stale_balances_modification_ts'
     LAST_HISTORICAL_BALANCE_PROCESSING_TS: Final = 'last_historical_balance_processing_ts'
+    # Cost basis counterparts of the three balance markers above. They are separate so that
+    # a cost basis method change only invalidates cost basis and not balances.
+    STALE_COST_BASIS_FROM_TS: Final = 'stale_cost_basis_from_ts'
+    STALE_COST_BASIS_MODIFICATION_TS: Final = 'stale_cost_basis_modification_ts'
+    LAST_COST_BASIS_PROCESSING_TS: Final = 'last_cost_basis_processing_ts'
+    LAST_COST_BASIS_FAILURE_TS: Final = 'last_cost_basis_failure_ts'
+    # How far a cost basis pass that has not finished got: the rows of events before this
+    # timestamp are its own. It only holds while the cost basis modification marker is still the
+    # one the pass started with, which is stored along with it.
+    COST_BASIS_PASS_PROCESSED_TS: Final = 'cost_basis_pass_processed_ts'
+    COST_BASIS_PASS_MODIFICATION_TS: Final = 'cost_basis_pass_modification_ts'
+    # The id of the last manual historical price change, recorded in the global DB, that
+    # this profile's cost basis was invalidated for
+    LAST_MANUAL_PRICE_CHANGE_ID: Final = 'last_manual_price_change_id'
     LAST_DATA_ISSUE_REMEDIATION_TS: Final = 'last_data_issue_remediation_ts'
     LAST_CURRENT_BALANCE_DETECTION_TS: Final = 'last_current_balance_detection_ts'
     PENDING_DETECTION_FROM_TS: Final = 'pending_detection_from_ts'
@@ -228,3 +245,43 @@ class DBCacheDynamic(Enum):
     @property
     def deserialize_callback(self) -> Callable[[str], int | Timestamp | ChecksumEvmAddress | None]:
         return self.value[1]
+
+
+def mark_stale_from_ts(
+        write_cursor: DBCursor,
+        from_ts: int,
+        include_balances: bool = True,
+        include_cost_basis: bool = True,
+) -> None:
+    """Record stale processing markers and monotonically advance their modification timestamps.
+
+    The `*_FROM_TS` keys only move backward (to the minimum timestamp); the `*_MODIFICATION_TS`
+    keys always advance by at least 1 even within the same millisecond so an in-flight pass
+    cannot miss a concurrent invalidation.
+    """
+    from_ts_keys: list[str] = []
+    mod_ts_keys: list[str] = []
+    if include_balances:
+        from_ts_keys.append(DBCacheStatic.STALE_BALANCES_FROM_TS.value)
+        mod_ts_keys.append(DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value)
+    if include_cost_basis:
+        from_ts_keys.append(DBCacheStatic.STALE_COST_BASIS_FROM_TS.value)
+        mod_ts_keys.append(DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value)
+    if len(from_ts_keys) == 0:
+        return
+
+    from_ts_str = str(from_ts)
+    write_cursor.executemany(
+        'INSERT INTO key_value_cache(name, value) VALUES (?, ?) '
+        'ON CONFLICT(name) DO UPDATE SET value = excluded.value '
+        'WHERE CAST(key_value_cache.value AS INTEGER) > CAST(excluded.value AS INTEGER)',
+        [(key, from_ts_str) for key in from_ts_keys],
+    )
+    now_str = str(ts_now_in_ms())
+    write_cursor.executemany(
+        'INSERT INTO key_value_cache(name, value) VALUES (?, ?) '
+        'ON CONFLICT(name) DO UPDATE SET value = CAST('
+        'MAX(CAST(key_value_cache.value AS INTEGER) + 1, CAST(excluded.value AS INTEGER)) '
+        'AS TEXT)',
+        [(key, now_str) for key in mod_ts_keys],
+    )

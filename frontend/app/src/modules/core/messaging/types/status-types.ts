@@ -192,10 +192,21 @@ const ProtocolCacheUpdatesDataWithSubtype = ProtocolCacheUpdatesData.extend({
   subtype: z.literal(SocketMessageProgressUpdateSubType.PROTOCOL_CACHE_UPDATES),
 });
 
+/** The backend pass a historical balance processing frame counts; each counts its own events from zero. */
+export const HistoricalBalanceProcessingPhase = {
+  BALANCES: 'balances',
+  COST_BASIS: 'cost_basis',
+} as const;
+
+export type HistoricalBalanceProcessingPhase = typeof HistoricalBalanceProcessingPhase[keyof typeof HistoricalBalanceProcessingPhase];
+
 const HistoricalBalanceProcessingData = z.object({
+  phase: z.enum([HistoricalBalanceProcessingPhase.BALANCES, HistoricalBalanceProcessingPhase.COST_BASIS]),
   processed: z.number(),
   total: z.number(),
 });
+
+export type HistoricalBalanceProcessingData = z.infer<typeof HistoricalBalanceProcessingData>;
 
 const NegativeBalanceBucket = z.object({
   asset: z.string(),

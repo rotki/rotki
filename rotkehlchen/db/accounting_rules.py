@@ -1,3 +1,4 @@
+import contextlib
 import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
@@ -12,6 +13,7 @@ from rotkehlchen.chain.evm.accounting.structures import (
     EventsAccountantCallback,
     TxAccountingTreatment,
 )
+from rotkehlchen.db.cache import mark_stale_from_ts
 from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_PROPERTIES,
     LINKABLE_ACCOUNTING_SETTINGS_NAME,
@@ -23,6 +25,7 @@ from rotkehlchen.db.settings import DEFAULT_INCLUDE_CRYPTO2CRYPTO, DEFAULT_INCLU
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.history.events.structures.eth2 import EthStakingEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -50,11 +53,12 @@ class RuleInformation:
 
     For type-based rules, event_ids is None and the rule applies to all events matching
     the type/subtype/counterparty combination.
-    For event-specific rules, event_ids contains the list of specific event identifiers.
+    For event-specific rules, event_ids lists the linked events, or is None if none remain.
 
     links contains the properties in rule that have been linked to an accounting setting.
     """
     identifier: int
+    is_event_specific: bool
     event_ids: list[int] | None
     event_key: tuple[HistoryEventType, HistoryEventSubType, str | None]
     rule: BaseEventSettings
@@ -65,6 +69,44 @@ class DBAccountingRules:
 
     def __init__(self, db_handler: DBHandler) -> None:
         self.db = db_handler
+
+    @staticmethod
+    def mark_cost_basis_stale(
+            write_cursor: DBCursor,
+            event_ids: Sequence[int] | None = None,
+            event_keys: Sequence[tuple[HistoryEventType, HistoryEventSubType]] = (),
+    ) -> None:
+        """Mark the materialized cost basis as stale from the first event a rule change affects.
+
+        A rule affects the events linked to it, and a rule of a type the events of that type
+        and subtype, whatever their counterparty. The rule of an event also decides whether it
+        pairs with the event after it, which is never earlier. Without either argument, as
+        for an import or reset, everything is stale. The balances are not affected by the rules.
+        """
+        if is_accounting_update_enabled() is False:
+            return
+
+        if event_ids is None and len(event_keys) == 0:
+            from_ts = 0
+        else:
+            timestamps = [
+                row[0] for chunk, placeholders in get_query_chunks(event_ids or [])
+                if (row := write_cursor.execute(
+                    f'SELECT MIN(timestamp) FROM history_events WHERE identifier IN ({placeholders})',  # noqa: E501
+                    chunk,
+                ).fetchone()) is not None
+            ] + [
+                row[0] for event_type, event_subtype in event_keys
+                if (row := write_cursor.execute(
+                    'SELECT MIN(timestamp) FROM history_events WHERE type=? AND subtype=?',
+                    (event_type.serialize(), event_subtype.serialize()),
+                ).fetchone()) is not None
+            ]
+            if (min_ts := min((ts for ts in timestamps if ts is not None), default=None)) is None:
+                return  # no event is affected
+            from_ts = min_ts
+
+        mark_stale_from_ts(write_cursor=write_cursor, from_ts=from_ts, include_balances=False)
 
     @classmethod
     def _rule_for_string(
@@ -142,6 +184,13 @@ class DBAccountingRules:
     ) -> int:
         """Add a single rule with the provided write cursor. See add_accounting_rule."""
         if event_ids is not None and len(event_ids) > 0:
+            self.mark_cost_basis_stale(write_cursor=write_cursor, event_ids=event_ids)
+        else:
+            self.mark_cost_basis_stale(
+                write_cursor=write_cursor,
+                event_keys=[(event_type, event_subtype)],
+            )
+        if event_ids is not None and len(event_ids) > 0:
             write_cursor.executemany(  # remove event IDs from any existing rules first
                 'DELETE FROM accounting_rule_events WHERE event_id=?',
                 [(event_id,) for event_id in event_ids],
@@ -211,7 +260,8 @@ class DBAccountingRules:
         """  # noqa: E501
         with self.db.conn.write_ctx() as write_cursor:
             write_cursor.execute(
-                'SELECT type, subtype, counterparty FROM accounting_rules WHERE identifier=?',
+                'SELECT type, subtype, counterparty, is_event_specific FROM accounting_rules '
+                'WHERE identifier=?',
                 (rule_id,),
             )
             if (entry := write_cursor.fetchone()) is None:
@@ -226,6 +276,13 @@ class DBAccountingRules:
                 'SELECT event_id FROM accounting_rule_events WHERE rule_id=?',
                 (rule_id,),
             )]) > 0 else None
+            if entry[3]:
+                self.mark_cost_basis_stale(write_cursor=write_cursor, event_ids=event_ids or [])
+            else:
+                self.mark_cost_basis_stale(
+                    write_cursor=write_cursor,
+                    event_keys=[(event_type, event_subtype)],
+                )
 
             write_cursor.execute(
                 'DELETE FROM linked_rules_properties WHERE accounting_rule=?',
@@ -262,6 +319,14 @@ class DBAccountingRules:
         - InputError: if no event gets updated
         """
         with self.db.conn.write_ctx() as write_cursor:
+            if (previous := write_cursor.execute(
+                'SELECT type, subtype, is_event_specific FROM accounting_rules WHERE identifier=?',
+                (identifier,),
+            ).fetchone()) is not None and not previous[2]:
+                self.mark_cost_basis_stale(write_cursor=write_cursor, event_keys=[
+                    (HistoryEventType.deserialize(previous[0]), HistoryEventSubType.deserialize(previous[1])),  # noqa: E501
+                    (event_type, event_subtype),
+                ])
             try:
                 write_cursor.execute(
                     'UPDATE accounting_rules SET type=?, subtype=?, counterparty=?, taxable=?, '
@@ -292,6 +357,13 @@ class DBAccountingRules:
                     'INSERT OR REPLACE INTO accounting_rule_events(rule_id, event_id) VALUES (?, ?)',  # noqa: E501
                     ((identifier, event_id) for event_id in event_ids),
                 )
+            if previous is not None and previous[2]:
+                self.mark_cost_basis_stale(write_cursor=write_cursor, event_ids=[
+                    row[0] for row in write_cursor.execute(
+                        'SELECT event_id FROM accounting_rule_events WHERE rule_id=?',
+                        (identifier,),
+                    )
+                ])
 
             # update links. First delete them for this rule and re-add them
             write_cursor.execute(
@@ -347,21 +419,27 @@ class DBAccountingRules:
             self,
             filter_query_str: str,
             bindings: Sequence[Any],
+            cursor: DBCursor | None = None,
     ) -> dict[int, RuleInformation]:
         """Query the accounting rules from the database using the provided filter.
         Returns a dict of identifier -> accounting rules."""
         query = (
             'SELECT accounting_rules.identifier, type, subtype, counterparty, taxable, '
-            'count_entire_amount_spend, count_cost_basis_pnl, accounting_treatment '
+            'count_entire_amount_spend, count_cost_basis_pnl, accounting_treatment, '
+            'is_event_specific '
             'FROM accounting_rules '
         )
         rules: dict[int, RuleInformation] = {}
-        with self.db.conn.read_ctx() as cursor:
-            cursor.execute(query + filter_query_str, bindings)
-            for entry in cursor:
+        cursor_ctx = (
+            contextlib.nullcontext(cursor) if cursor is not None else self.db.conn.read_ctx()
+        )
+        with cursor_ctx as read_cursor:
+            read_cursor.execute(query + filter_query_str, bindings)
+            for entry in read_cursor:
                 rule_id = entry[0]
                 rules[rule_id] = RuleInformation(
                     identifier=rule_id,
+                    is_event_specific=bool(entry[8]),
                     event_ids=None,  # populated later
                     event_key=(
                         HistoryEventType.deserialize(entry[1]),
@@ -376,12 +454,12 @@ class DBAccountingRules:
                 return rules
 
             for chunk, placeholders in get_query_chunks(list(rules)):
-                cursor.execute(
+                read_cursor.execute(
                     f'SELECT rule_id, event_id FROM accounting_rule_events '
                     f'WHERE rule_id IN ({placeholders})',
                     chunk,
                 )
-                for rule_id, event_id in cursor:
+                for rule_id, event_id in read_cursor:
                     if rules[rule_id].event_ids is None:
                         rules[rule_id].event_ids = [event_id]
                     else:
@@ -392,28 +470,32 @@ class DBAccountingRules:
     def query_rules(
             self,
             filter_query: AccountingRulesFilterQuery,
+            cursor: DBCursor | None = None,
     ) -> tuple[list[RuleInformation], int]:
         """
         Query rules in the database using the provided filter along with their property settings.
         It returns the list of rules and the total amount of rules matching the filter
         without pagination."""
         filter_query_str, bindings = filter_query.prepare()
-        rules = self.fetch_accounting_rules_from_db(filter_query_str, bindings)
+        rules = self.fetch_accounting_rules_from_db(filter_query_str, bindings, cursor=cursor)
 
-        with self.db.conn.read_ctx() as cursor:
+        cursor_ctx = (
+            contextlib.nullcontext(cursor) if cursor is not None else self.db.conn.read_ctx()
+        )
+        with cursor_ctx as read_cursor:
             query, bindings = filter_query.prepare(with_pagination=False)
             query = 'SELECT COUNT(*) from accounting_rules ' + query
-            total_found_result = cursor.execute(query, bindings).fetchone()[0]
+            total_found_result = read_cursor.execute(query, bindings).fetchone()[0]
 
             # check the settings linked to the rule using the defined filter
-            settings = self.db.get_settings(cursor)
-            cursor.execute(
+            settings = self.db.get_settings(read_cursor)
+            read_cursor.execute(
                 'SELECT accounting_rule, property_name, setting_name FROM '
                 'linked_rules_properties WHERE accounting_rule IN (SELECT accounting_rules.identifier FROM '  # noqa: E501
                 f'accounting_rules {filter_query_str})',
                 bindings,
             )
-            for (accounting_rule_id, property_name, setting_name) in cursor:
+            for (accounting_rule_id, property_name, setting_name) in read_cursor:
                 setting_value = getattr(settings, setting_name, None)
                 if setting_value is None:
                     log.error(
@@ -500,6 +582,7 @@ class DBAccountingRules:
         import_section = 'accounting rules'
         try:
             with self.db.conn.write_ctx() as write_cursor:
+                self.mark_cost_basis_stale(write_cursor)
                 write_cursor.executemany(
                     'INSERT OR REPLACE INTO accounting_rules(identifier, type, subtype, '
                     'counterparty, taxable, count_entire_amount_spend, count_cost_basis_pnl, '

@@ -324,6 +324,8 @@ class EthWithdrawalEvent(EthStakingEvent):
                 asset=self.asset,
                 amount=abs(profit_or_loss_amount),
                 taxable=accounting.events_accountant.rules_manager.eth_staking_taxable_after_withdrawal_enabled,
+                originating_event_id=self.identifier,
+                event=self,
             )
         return 1
 

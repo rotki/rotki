@@ -1225,6 +1225,8 @@ class CacheType(Enum):
     SUPERFLUID_SUPER_TOKENS = auto()
     # evm tokens whose contract did not return decimals. See mark_token_without_decimals
     TOKEN_WITHOUT_DECIMALS = auto()
+    # manual historical prices that changed, for every profile to invalidate its cost basis
+    MANUAL_PRICE_CHANGES = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1296,6 +1298,7 @@ UniqueCacheType = Literal[
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
 
 GeneralCacheType = Literal[
+    CacheType.MANUAL_PRICE_CHANGES,
     CacheType.TOKEN_WITHOUT_DECIMALS,
     CacheType.CURVE_LP_TOKENS,
     CacheType.CURVE_POOL_TOKENS,

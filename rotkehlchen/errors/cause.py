@@ -1,4 +1,5 @@
 from enum import StrEnum, auto
+from typing import Final
 
 
 class FailureCause(StrEnum):
@@ -26,3 +27,7 @@ class FailureCause(StrEnum):
     RATE_LIMITED = auto()  # a remote asked us to slow down; retry after a wait
     REMOTE_REJECTED = auto()  # a remote was reached and refused the request
     CANCELLED = auto()  # the user or a logout stopped the task; not a failure to show
+
+
+# The causes of failures that may clear up by themselves, so that retrying later can help
+TRANSIENT_FAILURE_CAUSES: Final = frozenset({FailureCause.NETWORK, FailureCause.RATE_LIMITED})

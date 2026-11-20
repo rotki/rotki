@@ -23,6 +23,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.errors.cause import TRANSIENT_FAILURE_CAUSES
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
@@ -460,6 +461,7 @@ class PriceHistorian:
         candidate_misses: list[tuple[HistoricalPriceOracle, Timestamp]] = []
         # else cryptocompare also has historical fiat to fiat data
         rate_limited = False
+        remote_error = False
         for oracle, oracle_instance in zip(oracles, oracle_instances, strict=True):
             is_daily = oracle in DAILY_GRANULARITY_ORACLES
             miss_ts = daystart_ts if is_daily else timestamp
@@ -482,6 +484,7 @@ class PriceHistorian:
             except NoPriceForGivenTimestamp as e:
                 if (
                     e.rate_limited is False and
+                    e.remote_error is False and
                     e.cacheable_miss and
                     e.from_asset == from_asset and (
                         daystart_ts < today_daystart_ts if is_daily
@@ -491,6 +494,7 @@ class PriceHistorian:
                     candidate_misses.append((oracle, miss_ts))
                 else:
                     rate_limited = rate_limited or e.rate_limited
+                    remote_error = remote_error or e.remote_error
                 continue
             except (
                 PriceQueryUnsupportedAsset,
@@ -499,8 +503,10 @@ class PriceHistorian:
             ):
                 continue
             except RemoteError as e:
-                # Raise the flag if any of the services was rate limited
+                # Raise the flags only if a later retry may get past the failure. A rejection
+                # such as a 401 for history beyond the plan or a 404 for a delisted id is final.
                 rate_limited = rate_limited or e.error_code == HTTPStatus.TOO_MANY_REQUESTS
+                remote_error = remote_error or e.cause in TRANSIENT_FAILURE_CAUSES
                 continue
 
             log.debug(
@@ -543,6 +549,7 @@ class PriceHistorian:
                     return Price(ONE / inverse_price)
             except NoPriceForGivenTimestamp as e:
                 rate_limited = rate_limited or e.rate_limited
+                remote_error = remote_error or e.remote_error
         elif len(candidate_misses) != 0:
             GlobalDBHandler.add_historical_price_misses(
                 from_asset=from_asset,
@@ -555,6 +562,7 @@ class PriceHistorian:
             to_asset=to_asset,
             time=timestamp,
             rate_limited=rate_limited,
+            remote_error=remote_error,
         )
 
     @staticmethod

@@ -1,9 +1,14 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { accountAddActivity, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
-import { TransactionsQueryStatus } from '@/modules/core/messaging/types/status-types';
+import { HistoricalBalanceProcessingPhase, TransactionsQueryStatus } from '@/modules/core/messaging/types/status-types';
+import { currentBalanceDetectionActivity, historicalBalancesActivity } from '@/modules/history/balances/historical-balances.activity';
+import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 import { decodeActivity } from '@/modules/history/events/tx/decode.activity';
 import { accountSyncActivity, chainSyncActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { protocolCacheActivity } from '@/modules/history/protocol-cache.activity';
+import { BackgroundTaskKind } from './background/background-task-types';
+import { backgroundTaskActivity } from './background/background-task.activity';
 import { type Activity, type ActivityId, ActivityKind, ActivitySourceType, ActivityStatus } from './core/types';
 import { publishActivityDetail, useActivityDetail } from './use-activity-detail';
 import { useDockActivityDetail } from './use-dock-activity-detail';
@@ -24,6 +29,10 @@ function activity(id: ActivityId, kind: ActivityKind, status: ActivityStatus = A
 const account = { address: '0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1', chain: 'eth' };
 
 describe('useDockActivityDetail', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
   afterEach(() => {
     useActivityDetail().resetDetails();
   });
@@ -190,6 +199,42 @@ describe('useDockActivityDetail', () => {
       const detail = useDockActivityDetail(activity(accountAddActivity.batchId([EVM_PSEUDO_CHAIN]), ActivityKind.ACCOUNTS, ActivityStatus.COMPLETE));
 
       expect(get(detail)).toBeUndefined();
+    });
+  });
+
+  describe('historical balance processing', () => {
+    const task = { id: 7, kind: BackgroundTaskKind.HISTORICAL_BALANCES, name: 'Process historical balances', startedAt: 0, subject: {} };
+
+    it('should name the pass on the background task row of a run, whoever started it', () => {
+      useHistoricalBalanceProcessingStore().notifyHistoricalBalanceProcessingProgressed(HistoricalBalanceProcessingPhase.COST_BASIS);
+
+      const detail = useDockActivityDetail(activity(backgroundTaskActivity.id(task), ActivityKind.BACKGROUND_TASK));
+
+      expect(get(detail)).toStrictEqual({ period: undefined, step: 'task_dock.detail.processing_cost_basis', type: 'query' });
+    });
+
+    it('should name the pass on the run a user triggered', () => {
+      useHistoricalBalanceProcessingStore().notifyHistoricalBalanceProcessingProgressed(HistoricalBalanceProcessingPhase.BALANCES);
+
+      const detail = useDockActivityDetail(activity(historicalBalancesActivity.id(), ActivityKind.HISTORICAL_BALANCES));
+
+      expect(get(detail)).toStrictEqual({ period: undefined, step: 'task_dock.detail.processing_balances', type: 'query' });
+    });
+
+    it('should give other background tasks and the other historical balance work nothing', () => {
+      useHistoricalBalanceProcessingStore().notifyHistoricalBalanceProcessingProgressed(HistoricalBalanceProcessingPhase.BALANCES);
+      const decoding = { ...task, kind: BackgroundTaskKind.TRANSACTION_DECODING, subject: { chain: 'eth' } };
+
+      expect(get(useDockActivityDetail(activity(backgroundTaskActivity.id(decoding), ActivityKind.BACKGROUND_TASK)))).toBeUndefined();
+      expect(get(useDockActivityDetail(activity(currentBalanceDetectionActivity.id(), ActivityKind.HISTORICAL_BALANCES)))).toBeUndefined();
+    });
+
+    it('should say nothing once the run has completed', () => {
+      const store = useHistoricalBalanceProcessingStore();
+      store.notifyHistoricalBalanceProcessingProgressed(HistoricalBalanceProcessingPhase.COST_BASIS);
+      store.notifyHistoricalBalanceProcessingCompleted();
+
+      expect(get(useDockActivityDetail(activity(backgroundTaskActivity.id(task), ActivityKind.BACKGROUND_TASK)))).toBeUndefined();
     });
   });
 });

@@ -1082,6 +1082,43 @@ CREATE TABLE IF NOT EXISTS event_metrics (
 );
 """
 
+# Cost basis annotations of history events, one row per event, bucket and direction. The lot
+# columns are set for the receive direction and the consumption columns for the spend one.
+DB_CREATE_EVENT_COST_BASIS = """
+CREATE TABLE IF NOT EXISTS event_cost_basis (
+    id INTEGER NOT NULL PRIMARY KEY,
+    event_identifier INTEGER NOT NULL REFERENCES history_events(identifier) ON DELETE CASCADE,
+    location TEXT NOT NULL REFERENCES locations(identifier),
+    location_label TEXT,
+    protocol TEXT,
+    asset TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    sequence_index INTEGER NOT NULL,
+    direction TEXT NOT NULL CHECK(direction IN ('receive', 'spend')),
+    lot_created_id TEXT,
+    basis_per_unit TEXT,
+    basis_source TEXT,
+    lots_consumed_json TEXT,
+    proceeds TEXT,
+    realized_pnl TEXT,
+    taxfree_pnl TEXT,
+    basis_removed TEXT,
+    post_spend_basis_remaining TEXT,
+    method TEXT NOT NULL CHECK(method IN ('fifo', 'lifo', 'hifo', 'acb')),
+    UNIQUE(event_identifier, location, location_label, protocol, asset, direction)
+);
+"""
+
+# Checkpoints of the cost basis lots, so that a pass resumes from the last one before what is
+# stale instead of replaying all events. The lots in `state` are the ones held after all events
+# before `timestamp`. Derived data only: deleting the checkpoints only makes a pass replay more.
+DB_CREATE_COST_BASIS_CHECKPOINTS = """
+CREATE TABLE IF NOT EXISTS cost_basis_checkpoints (
+    timestamp INTEGER NOT NULL PRIMARY KEY,
+    state TEXT NOT NULL
+);
+"""
+
 # The history_events indexes significantly improve performance when filtering history events in large DBs.  # noqa: E501
 # Shown below are before/after query speeds we observed for each index:
 # idx_history_events_entry_type: Before: 12951ms, After: 0ms
@@ -1132,6 +1169,9 @@ CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key_timestamp ON event_metri
 CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key_asset_sort_key ON event_metrics(metric_key, asset, sort_key);
 CREATE INDEX IF NOT EXISTS idx_event_metrics_asset ON event_metrics(asset);
 CREATE INDEX IF NOT EXISTS idx_event_metrics_balances_latest ON event_metrics(metric_key, location, location_label, protocol, asset, timestamp, sort_key, metric_value);
+CREATE INDEX IF NOT EXISTS idx_event_cost_basis_bucket ON event_cost_basis(location, location_label, asset);
+CREATE INDEX IF NOT EXISTS idx_event_cost_basis_timestamp_sequence ON event_cost_basis(timestamp, sequence_index);
+CREATE INDEX IF NOT EXISTS idx_event_cost_basis_method ON event_cost_basis(method);
 CREATE INDEX IF NOT EXISTS idx_data_issues_state ON data_issues(state);
 CREATE INDEX IF NOT EXISTS idx_data_issues_kind_state ON data_issues(kind, state);
 CREATE INDEX IF NOT EXISTS idx_data_issues_location_label_asset ON data_issues(location, location_label, asset);
@@ -1221,6 +1261,8 @@ BEGIN TRANSACTION;
 {DB_CREATE_BLOCKCHAIN_BALANCES_CACHE}
 {DB_CREATE_DATA_ISSUES}
 {DB_CREATE_EVENT_METRICS}
+{DB_CREATE_EVENT_COST_BASIS}
+{DB_CREATE_COST_BASIS_CHECKPOINTS}
 {DB_CREATE_BUCKET_PROCESSING_STOPS}
 {DB_CREATE_BUCKET_BALANCE_CHECKS}
 {DB_CREATE_WALLET_BALANCE_OBSERVATIONS}

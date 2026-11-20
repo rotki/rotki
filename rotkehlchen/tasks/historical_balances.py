@@ -5,7 +5,11 @@ from contextlib import suppress
 from enum import StrEnum
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 
-from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
+from rotkehlchen.api.websockets.typedefs import (
+    HistoricalBalanceProcessingPhase,
+    ProgressUpdateSubType,
+    WSMessageType,
+)
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetFlag
 from rotkehlchen.chain.evm.decoding.compound.v3.constants import CPT_COMPOUND_V3
@@ -563,6 +567,7 @@ def process_historical_balances(
         msg_aggregator: MessagesAggregator,
         from_ts: TimestampMS | None = None,
         chains_aggregator: ChainsAggregator | None = None,
+        notify_completion: bool = True,
 ) -> bool:
     """Process events and compute balance metrics.
 
@@ -570,6 +575,8 @@ def process_historical_balances(
     None instead when another run holds the lock; remediation callers must distinguish that case.
     When a chain aggregator is supplied, negative rebasing balances can make cached or archive-node
     historical balance queries. Results are cached per address, token and block.
+    A caller that has more to do before the processing counts as complete, like the cost basis
+    pass, disables `notify_completion` and sends the completion message itself.
     """
     log.debug(f'Starting historical balance processing from_ts={from_ts}')
     with database.user_write() as write_cursor:
@@ -643,10 +650,11 @@ def process_historical_balances(
             from_ts=from_ts,
             stopped_buckets={},
         )
-        msg_aggregator.add_message(
-            message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
-            data={},
-        )
+        if notify_completion:
+            msg_aggregator.add_message(
+                message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
+                data={},
+            )
         return True
 
     metrics_batch: list[MetricRow] = []
@@ -685,6 +693,7 @@ def process_historical_balances(
                 message_type=WSMessageType.PROGRESS_UPDATES,
                 data={
                     'subtype': str(ProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING),
+                    'phase': str(HistoricalBalanceProcessingPhase.BALANCES),
                     'total': total_events,
                     'processed': idx,
                 },
@@ -722,6 +731,7 @@ def process_historical_balances(
         message_type=WSMessageType.PROGRESS_UPDATES,
         data={
             'subtype': str(ProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING),
+            'phase': str(HistoricalBalanceProcessingPhase.BALANCES),
             'total': total_events,
             'processed': total_events,
         },
@@ -733,10 +743,11 @@ def process_historical_balances(
         from_ts=from_ts,
         stopped_buckets=run_state.stops,
     )
-    msg_aggregator.add_message(
-        message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
-        data={},
-    )
+    if notify_completion:
+        msg_aggregator.add_message(
+            message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
+            data={},
+        )
     log.debug(
         'Completed historical balance processing for %s events with %s modified buckets',
         total_events,

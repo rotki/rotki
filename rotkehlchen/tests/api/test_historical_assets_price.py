@@ -5,11 +5,16 @@ from typing import TYPE_CHECKING, Any
 import pytest
 import requests
 
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import HOUR_IN_SECONDS, ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_CRV, A_ETH, A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.locations.constants import LOCATION_EXTERNAL
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -18,7 +23,7 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.constants import A_GBP
-from rotkehlchen.types import Price, Timestamp
+from rotkehlchen.types import Price, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -611,3 +616,150 @@ def test_historical_price_cache_only(
             contained_in_msg='Cache period must be a positive integer',
             status_code=HTTPStatus.BAD_REQUEST,
         )
+
+
+@pytest.mark.accounting_update
+def test_manual_historical_price_mutations_mark_cost_basis_stale(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Test that add/edit/delete of a manual historical price marks materialized cost basis
+    stale (without marking balances stale) from the earliest affected event at or after
+    `timestamp - HOUR_IN_SECONDS`, and does not mark stale when no such event exists.
+    """
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    event_ts_sec = 1700000000
+    event_ts_ms = TimestampMS(event_ts_sec * 1000)
+
+    def clear_stale_markers() -> None:
+        with db.user_write() as write_cursor:
+            write_cursor.executemany(
+                'DELETE FROM key_value_cache WHERE name=?',
+                [
+                    (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value,),
+                    (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value,),
+                    (DBCacheStatic.STALE_BALANCES_FROM_TS.value,),
+                    (DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value,),
+                ],
+            )
+
+    def read_stale_markers() -> tuple[str | None, str | None, str | None]:
+        with db.conn.read_ctx() as cursor:
+            return (
+                db.get_static_cache(cursor, DBCacheStatic.STALE_COST_BASIS_FROM_TS),
+                db.get_static_cache(cursor, DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS),
+                db.get_static_cache(cursor, DBCacheStatic.STALE_BALANCES_FROM_TS),
+            )
+
+    with db.user_write() as write_cursor:
+        DBHistoryEvents(db).add_history_events(
+            write_cursor=write_cursor,
+            history=[
+                HistoryEvent(
+                    group_identifier='crv_receive',
+                    sequence_index=0,
+                    timestamp=event_ts_ms,
+                    location=LOCATION_EXTERNAL,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=A_CRV,
+                    amount=ONE,
+                ),
+            ],
+        )
+    clear_stale_markers()
+
+    url = api_url_for(rotkehlchen_api_server, 'historicalassetspriceresource')
+
+    # Price well after the event (beyond the 1-hour lookup window) should not mark stale
+    response = requests.put(
+        url,
+        json={
+            'from_asset': A_CRV.identifier,
+            'to_asset': 'USD',
+            'timestamp': event_ts_sec + HOUR_IN_SECONDS + 10,
+            'price': '1.2',
+            'source_type': str(HistoricalPriceOracle.MANUAL),
+        },
+    )
+    assert_simple_ok_response(response)
+    assert read_stale_markers() == (None, None, None)
+
+    # Price for an unrelated asset at the event timestamp should not mark stale
+    response = requests.put(
+        url,
+        json={
+            'from_asset': A_BTC.identifier,
+            'to_asset': 'USD',
+            'timestamp': event_ts_sec,
+            'price': '35000',
+            'source_type': str(HistoricalPriceOracle.MANUAL),
+        },
+    )
+    assert_simple_ok_response(response)
+    assert read_stale_markers() == (None, None, None)
+
+    # Add price within the HOUR_IN_SECONDS lookup window of the CRV event -> marks cost basis stale
+    price_ts = event_ts_sec + 1800
+    response = requests.put(
+        url,
+        json={
+            'from_asset': A_CRV.identifier,
+            'to_asset': 'USD',
+            'timestamp': price_ts,
+            'price': '1.2',
+            'source_type': str(HistoricalPriceOracle.MANUAL),
+        },
+    )
+    assert_simple_ok_response(response)
+    cb_from_ts, cb_mod_ts, bal_from_ts = read_stale_markers()
+    assert cb_from_ts == str(event_ts_ms)
+    assert cb_mod_ts is not None
+    assert bal_from_ts is None
+
+    # Edit the manual price -> marks cost basis stale again, leaving balances untouched
+    clear_stale_markers()
+    response = requests.patch(
+        url,
+        json={
+            'from_asset': A_CRV.identifier,
+            'to_asset': 'USD',
+            'timestamp': price_ts,
+            'price': '1.5',
+            'source_type': str(HistoricalPriceOracle.MANUAL),
+        },
+    )
+    assert_simple_ok_response(response)
+    cb_from_ts, cb_mod_ts, bal_from_ts = read_stale_markers()
+    assert cb_from_ts == str(event_ts_ms)
+    assert cb_mod_ts is not None
+    assert bal_from_ts is None
+
+    # Failed delete (nonexistent timestamp) should not mark stale
+    clear_stale_markers()
+    response = requests.delete(
+        url,
+        json={
+            'from_asset': A_CRV.identifier,
+            'to_asset': 'USD',
+            'timestamp': event_ts_sec + 900,
+            'source_type': str(HistoricalPriceOracle.MANUAL),
+        },
+    )
+    assert response.status_code == HTTPStatus.CONFLICT
+    assert read_stale_markers() == (None, None, None)
+
+    # Delete the manual price -> marks cost basis stale, leaving balances untouched
+    response = requests.delete(
+        url,
+        json={
+            'from_asset': A_CRV.identifier,
+            'to_asset': 'USD',
+            'timestamp': price_ts,
+            'source_type': str(HistoricalPriceOracle.MANUAL),
+        },
+    )
+    assert_simple_ok_response(response)
+    cb_from_ts, cb_mod_ts, bal_from_ts = read_stale_markers()
+    assert cb_from_ts == str(event_ts_ms)
+    assert cb_mod_ts is not None
+    assert bal_from_ts is None

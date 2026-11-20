@@ -3,14 +3,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
-from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.cache import mark_stale_from_ts
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.constants import IssueKind
 from rotkehlchen.history.data_issues.observations import delete_wallet_observations
 from rotkehlchen.locations.chains import EVM_LOCATIONS, location_to_chain
 from rotkehlchen.types import SupportedBlockchain, TimestampMS
-from rotkehlchen.utils.misc import ts_now_in_ms
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -311,11 +310,5 @@ def invalidate_swapped_asset_identities(
     ):
         write_cursor.executemany(statement, [(asset,) for asset in affected])
 
-    write_cursor.executemany(
-        'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
-        [
-            (DBCacheStatic.STALE_BALANCES_FROM_TS.value, '0'),
-            (DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value, str(ts_now_in_ms())),
-        ],
-    )
+    mark_stale_from_ts(write_cursor=write_cursor, from_ts=0)
     return True

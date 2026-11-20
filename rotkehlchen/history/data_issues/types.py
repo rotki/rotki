@@ -44,15 +44,18 @@ class AutoRemediationAttempt(TypedDict):
     matched_movement_ids: NotRequired[list[int]]
 
 
-class InvalidEventAmountIssuePayload(BaseIssuePayload):
-    """Payload for an event-scoped issue where an event carries a negative amount."""
+class EventIssuePayload(BaseIssuePayload):
+    """Common payload fields for event-scoped data issues."""
     event_identifier: int
+
+
+class InvalidEventAmountIssuePayload(EventIssuePayload):
+    """Payload for an event-scoped issue where an event has an invalid (negative) amount."""
     amount: str
 
 
-class NegativeBalanceIssuePayload(BaseIssuePayload):
+class NegativeBalanceIssuePayload(EventIssuePayload):
     """Payload for an event-scoped issue where derived balance goes below zero."""
-    event_identifier: int
     in_memory_negative_amount: str
     derived_balance_before_event: str
     reason: NotRequired[Literal['untracked_exchange']]
@@ -67,21 +70,19 @@ class CurrentBalanceMismatchIssuePayload(BaseIssuePayload):
     latest_event_identifier: int | None
 
 
-class RebasingTokenIssuePayload(BaseIssuePayload):
+class RebasingTokenIssuePayload(EventIssuePayload):
     """Payload for a rebasing balance that could not be verified on-chain."""
-    event_identifier: int
     block_number: int | None
     reason: RebasingQueryFailure
 
 
-class UnmatchedBridgeIssuePayload(BaseIssuePayload):
+class UnmatchedBridgeIssuePayload(EventIssuePayload):
     """Payload for an event-scoped issue about a bridge leg with no matched counterpart.
 
     direction is 'deposit' for a source-chain outflow whose destination leg is unknown
     past the bridge's expected settlement window, and 'withdrawal' for a destination
     chain inflow whose source leg is unknown.
     """
-    event_identifier: int
     group_identifier: str
     direction: str
     counterparty: NotRequired[str]

@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.settings import DBSettings
     from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -119,7 +120,7 @@ class AssetAcquisitionHeapElement(NamedTuple):
     For HIFO, the amount of the acquisition is used although negated so the
     acquisition with the highest amount comes first.
     """
-    priority: FVal  # This is only used by heapq algorithm and not accessed from our code
+    priority: FVal | int  # This is only used by heapq algorithm and not accessed from our code
     acquisition_event: AssetAcquisitionEvent
 
     def __str__(self) -> str:
@@ -132,11 +133,16 @@ class BaseCostBasisMethod(ABC):
         self._acquisitions_heap: list[AssetAcquisitionHeapElement] = []
 
     @abstractmethod
-    def add_in_event(self, acquisition: AssetAcquisitionEvent) -> None:
+    def add_in_event(self, acquisition: AssetAcquisitionEvent, order: int | None = None) -> None:
         """
         The core method. Should be implemented by subclasses.
         This method takes a new acquisition and decides where to insert it
         and thus determines the PnL order.
+
+        `order` is the position of the acquisition among all acquisitions, for an acquisition
+        that is added later than it was made, e.g. when it moves between pools. Methods that
+        consume by arrival use it instead of the arrival counter. A pool must be fed either
+        always or never with it, since the two orders are not comparable.
         """
 
     def processing_iterator(self) -> Iterator[AssetAcquisitionEvent]:
@@ -152,7 +158,12 @@ class BaseCostBasisMethod(ABC):
         """Returns read-only _acquisitions"""
         return tuple(entry.acquisition_event for entry in self._acquisitions_heap)
 
-    def consume_result(self, used_amount: FVal, asset: Asset) -> None:
+    def consume_result(
+            self,
+            used_amount: FVal,
+            asset: Asset,
+            event: HistoryBaseEntry | None = None,
+    ) -> None:
         """
         This function should be used to consume results of the
         currently processed event (received from __next__)
@@ -163,7 +174,11 @@ class BaseCostBasisMethod(ABC):
         """
         # this is a temporary assertion to test that new accounting tools work properly.
         # Written on 06.06.2022 and can be removed after a couple of months if everything goes well
-        assert ZERO <= used_amount <= self._acquisitions_heap[0].acquisition_event.remaining_amount, f'Used amount must be in the interval [0, {self._acquisitions_heap[0].acquisition_event.remaining_amount}] but it was {used_amount} for {asset}'  # noqa: E501
+        assert ZERO <= used_amount <= self._acquisitions_heap[0].acquisition_event.remaining_amount, (  # noqa: E501
+            f'Used amount must be in the interval '
+            f'[0, {self._acquisitions_heap[0].acquisition_event.remaining_amount}] '
+            f'but it was {used_amount} for {asset if event is None else event}'
+        )
 
         self._acquisitions_heap[0].acquisition_event.remaining_amount -= used_amount
         if self._acquisitions_heap[0].acquisition_event.remaining_amount == ZERO:
@@ -180,6 +195,7 @@ class BaseCostBasisMethod(ABC):
             timestamp_to_date: Callable[[Timestamp], str],
             average_cost_basis: FVal | None = None,
             originating_event_id: int | None = None,
+            event: HistoryBaseEntry | None = None,
     ) -> CostBasisInfo:
         """
         When spending `spending_amount` of `spending_asset` at `timestamp` this function
@@ -231,7 +247,11 @@ class BaseCostBasisMethod(ABC):
                     event=acquisition_event,
                     taxable=taxable,
                 ))
-                self.consume_result(used_amount=remaining_sold_amount, asset=spending_asset)
+                self.consume_result(
+                    used_amount=remaining_sold_amount,
+                    asset=spending_asset,
+                    event=event,
+                )
                 remaining_sold_amount = ZERO
                 # stop iterating since we found all acquisitions to satisfy this spend
                 break
@@ -267,6 +287,7 @@ class BaseCostBasisMethod(ABC):
             self.consume_result(
                 used_amount=acquisition_event.remaining_amount,
                 asset=spending_asset,
+                event=event,
             )
             # and since this event is going to be removed, reduce its remaining to zero
             acquisition_event.remaining_amount = ZERO
@@ -309,9 +330,9 @@ class FIFOCostBasisMethod(BaseCostBasisMethod):
         super().__init__()
         self._count = ZERO
 
-    def add_in_event(self, acquisition: AssetAcquisitionEvent) -> None:
+    def add_in_event(self, acquisition: AssetAcquisitionEvent, order: int | None = None) -> None:
         """Adds an acquisition to the `_acquisitions_heap` using a counter to achieve the FIFO order."""  # noqa: E501
-        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeapElement(self._count, acquisition))  # noqa: E501
+        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeapElement(self._count if order is None else order, acquisition))  # noqa: E501
         self._count += 1
 
 
@@ -324,9 +345,9 @@ class LIFOCostBasisMethod(BaseCostBasisMethod):
         super().__init__()
         self._count = ZERO
 
-    def add_in_event(self, acquisition: AssetAcquisitionEvent) -> None:
+    def add_in_event(self, acquisition: AssetAcquisitionEvent, order: int | None = None) -> None:
         """Adds an acquisition to the `_acquisitions_heap` using a negated counter to achieve the LIFO order."""  # noqa: E501
-        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeapElement(-self._count, acquisition))  # noqa: E501
+        heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeapElement(-(self._count if order is None else order), acquisition))  # noqa: E501
         self._count += 1
 
 
@@ -335,7 +356,7 @@ class HIFOCostBasisMethod(BaseCostBasisMethod):
     Accounting in HIFO (highest-in-first-out) method.
     https://www.investopedia.com/terms/h/hifo.asp
     """
-    def add_in_event(self, acquisition: AssetAcquisitionEvent) -> None:
+    def add_in_event(self, acquisition: AssetAcquisitionEvent, order: int | None = None) -> None:
         """
         Adds an acquisition to the `_acquisitions_heap` using the negated rate
         of the acquisition to achieve the HIFO order.
@@ -365,7 +386,7 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
         # the current total cost basis of the asset
         self.current_total_acb = ZERO
 
-    def add_in_event(self, acquisition: AssetAcquisitionEvent) -> None:
+    def add_in_event(self, acquisition: AssetAcquisitionEvent, order: int | None = None) -> None:
         """
         Adds an acquisition to the `_acquisitions_heap` in order of time seen.
 
@@ -377,13 +398,18 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
         """
         heapq.heappush(
             self._acquisitions_heap,
-            AssetAcquisitionHeapElement(self._count, acquisition),
+            AssetAcquisitionHeapElement(self._count if order is None else order, acquisition),
         )
         self.current_total_acb += acquisition.amount * acquisition.rate
         self.current_amount += acquisition.amount
         self._count += 1
 
-    def consume_result(self, used_amount: FVal, asset: Asset) -> None:
+    def consume_result(
+            self,
+            used_amount: FVal,
+            asset: Asset,
+            event: HistoryBaseEntry | None = None,
+    ) -> None:
         """
         Same as its parent function but also deducts `used_amount` from `current_amount`.
         `current_amount` is guaranteed to be greater than zero since `consume_result` is
@@ -395,13 +421,14 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
             # decided to protect against it by raising an error shown in the frontend
             log.error(f'Division by zero error when processing report using ACB. {self._acquisitions_heap}')  # noqa: E501
             raise AccountingError(
-                f'Remaining amount error during ACB calculation for {asset}. Contact support and '
+                f'Remaining amount error during ACB calculation for '
+                f'{asset if event is None else event}. Contact support and '
                 'provide the log file for more information',
             )
 
         self.current_total_acb *= (self.current_amount - used_amount) / self.current_amount
         self.current_amount -= used_amount
-        super().consume_result(used_amount=used_amount, asset=asset)
+        super().consume_result(used_amount=used_amount, asset=asset, event=event)
 
     def calculate_spend_cost_basis(
             self,
@@ -414,6 +441,7 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
             timestamp_to_date: Callable[[Timestamp], str],
             average_cost_basis: FVal | None = None,  # pylint: disable=unused-argument
             originating_event_id: int | None = None,
+            event: HistoryBaseEntry | None = None,
     ) -> CostBasisInfo:
         """Calculates the cost basis of the spend using the average cost basis method."""
         if self.current_amount == ZERO:
@@ -449,6 +477,7 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
             # being processed.
             average_cost_basis=self.current_total_acb / self.current_amount,
             originating_event_id=originating_event_id,
+            event=event,
         )
 
 
@@ -641,6 +670,7 @@ class CostBasisCalculator(CustomizableDateMixin):
             out_amount: FVal,
             in_amount: FVal,
             timestamp: Timestamp,
+            event: HistoryBaseEntry | None = None,
     ) -> FVal:
         """Transfer cost basis lots from out_asset to in_asset preserving original prices.
 
@@ -691,7 +721,11 @@ class CostBasisCalculator(CustomizableDateMixin):
                 lots_to_transfer.append((
                     remaining, acquisition.rate, acquisition.timestamp, acquisition.index,
                 ))
-                source_events.acquisitions_manager.consume_result(remaining, out_asset)
+                source_events.acquisitions_manager.consume_result(
+                    used_amount=remaining,
+                    asset=out_asset,
+                    event=event,
+                )
                 remaining = ZERO
                 break
 
@@ -700,7 +734,11 @@ class CostBasisCalculator(CustomizableDateMixin):
             lots_to_transfer.append((
                 used, acquisition.rate, acquisition.timestamp, acquisition.index,
             ))
-            source_events.acquisitions_manager.consume_result(used, out_asset)
+            source_events.acquisitions_manager.consume_result(
+                used_amount=used,
+                asset=out_asset,
+                event=event,
+            )
             acquisition.remaining_amount = ZERO
 
         if remaining != ZERO and not out_asset.is_fiat():
@@ -733,6 +771,7 @@ class CostBasisCalculator(CustomizableDateMixin):
             asset: Asset,
             amount: FVal,
             timestamp: Timestamp,
+            event: HistoryBaseEntry | None = None,
     ) -> bool:
         """Searches all acquisition events for asset and reduces them by amount.
 
@@ -752,6 +791,7 @@ class CostBasisCalculator(CustomizableDateMixin):
                 asset_events.acquisitions_manager.consume_result(
                     used_amount=remaining_amount,
                     asset=asset,
+                    event=event,
                 )
                 remaining_amount = ZERO
                 # stop iterating since we found all acquisitions to satisfy reduction
@@ -761,6 +801,7 @@ class CostBasisCalculator(CustomizableDateMixin):
             asset_events.acquisitions_manager.consume_result(
                 used_amount=acquisition_event.remaining_amount,
                 asset=asset,
+                event=event,
             )
 
         if remaining_amount != ZERO:
@@ -797,6 +838,7 @@ class CostBasisCalculator(CustomizableDateMixin):
             amount: FVal,
             rate: FVal,
             taxable_spend: Literal[True],
+            event: HistoryBaseEntry | None = None,
     ) -> CostBasisInfo:
         ...
 
@@ -810,6 +852,7 @@ class CostBasisCalculator(CustomizableDateMixin):
             amount: FVal,
             rate: FVal,
             taxable_spend: Literal[False],
+            event: HistoryBaseEntry | None = None,
     ) -> None:
         ...
 
@@ -823,6 +866,7 @@ class CostBasisCalculator(CustomizableDateMixin):
             amount: FVal,
             rate: FVal,
             taxable_spend: bool,
+            event: HistoryBaseEntry | None = None,
     ) -> CostBasisInfo | None:
         ...
 
@@ -835,6 +879,7 @@ class CostBasisCalculator(CustomizableDateMixin):
             amount: FVal,
             rate: FVal,
             taxable_spend: bool,
+            event: HistoryBaseEntry | None = None,
     ) -> CostBasisInfo | None:
         """
         Register an asset spending event. For example from a trade, a fee, a swap.
@@ -844,14 +889,14 @@ class CostBasisCalculator(CustomizableDateMixin):
         ETH for aETH, locking GNO for LockedGNO. In many jurisdictions in this case
         it can be considered as locking/depositing instead of swapping.
         """
-        event = AssetSpendEvent(
+        spend_event = AssetSpendEvent(
             location=location,
             timestamp=timestamp,
             amount=amount,
             rate=rate,
         )
         asset_events = self.get_events(asset)
-        asset_events.spends.append(event)
+        asset_events.spends.append(spend_event)
         if not asset.is_fiat() and taxable_spend:
             return asset_events.acquisitions_manager.calculate_spend_cost_basis(
                 spending_amount=amount,
@@ -862,6 +907,7 @@ class CostBasisCalculator(CustomizableDateMixin):
                 settings=self.settings,
                 timestamp_to_date=self.timestamp_to_date,
                 originating_event_id=originating_event_id,
+                event=event,
             )
         # just reduce the amount's acquisition without counting anything
         self.reduce_asset_amount(
@@ -869,5 +915,6 @@ class CostBasisCalculator(CustomizableDateMixin):
             asset=asset,
             amount=amount,
             timestamp=timestamp,
+            event=event,
         )
         return None

@@ -5,7 +5,7 @@ import { dailyPricesActivity, historicPriceBatchActivity } from '@/modules/asset
 import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { createConditionalHandler } from '@/modules/core/messaging/utils';
-import { historicalBalancesActivity } from '@/modules/history/balances/historical-balances.activity';
+import { useHistoricalBalancesProgress } from '@/modules/history/balances/use-historical-balances-progress';
 import { useDataIssueRemediationStore } from '@/modules/history/data-issues/use-data-issue-remediation-store';
 import { decodeActivity, decodeActivityId, type DecodeSubject } from '@/modules/history/events/tx/decode.activity';
 import { protocolCacheActivity, withProtocolCacheFrame } from '@/modules/history/protocol-cache.activity';
@@ -24,6 +24,7 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
   const { reportProgress, reportProgressByPrefix, statusOf } = useTaskOrchestrator();
   const { matchChain } = useSupportedChains();
   const { notifyRemediationCompleted } = useDataIssueRemediationStore();
+  const { reportHistoricalBalancesProgress } = useHistoricalBalancesProgress();
 
   /**
    * Report a chain's decode progress onto the chain-wide decode activity.
@@ -178,7 +179,7 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
         reportBatchPriceProgress(data);
         break;
       case SocketMessageProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING:
-        reportProgress(historicalBalancesActivity.id(), { current: data.processed, total: data.total });
+        reportHistoricalBalancesProgress(data);
         break;
     }
 

@@ -796,4 +796,50 @@ CREATE TABLE IF NOT EXISTS remediation_plan_audit (
     details TEXT NOT NULL
 );""")
 
+    @progress_step(description='Add the cost basis of history events.')
+    def _add_event_cost_basis(write_cursor: DBCursor) -> None:
+        """Runs after the location conversion, so the table is created with the text
+        location of v54 and does not need to be rebuilt."""
+        write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS event_cost_basis (
+    id INTEGER NOT NULL PRIMARY KEY,
+    event_identifier INTEGER NOT NULL REFERENCES history_events(identifier) ON DELETE CASCADE,
+    location TEXT NOT NULL REFERENCES locations(identifier),
+    location_label TEXT,
+    protocol TEXT,
+    asset TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    sequence_index INTEGER NOT NULL,
+    direction TEXT NOT NULL CHECK(direction IN ('receive', 'spend')),
+    lot_created_id TEXT,
+    basis_per_unit TEXT,
+    basis_source TEXT,
+    lots_consumed_json TEXT,
+    proceeds TEXT,
+    realized_pnl TEXT,
+    taxfree_pnl TEXT,
+    basis_removed TEXT,
+    post_spend_basis_remaining TEXT,
+    method TEXT NOT NULL CHECK(method IN ('fifo', 'lifo', 'hifo', 'acb')),
+    UNIQUE(event_identifier, location, location_label, protocol, asset, direction)
+);
+        """)
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_event_cost_basis_bucket '
+            'ON event_cost_basis(location, location_label, asset)',
+        )
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_event_cost_basis_timestamp_sequence '
+            'ON event_cost_basis(timestamp, sequence_index)',
+        )
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_event_cost_basis_method ON event_cost_basis(method)',
+        )
+        write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS cost_basis_checkpoints (
+    timestamp INTEGER NOT NULL PRIMARY KEY,
+    state TEXT NOT NULL
+);
+        """)
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

@@ -197,6 +197,16 @@ class ProgressUpdateSubType(StrEnum):
     HISTORICAL_BALANCE_PROCESSING = auto()
 
 
+class HistoricalBalanceProcessingPhase(StrEnum):
+    """The pass a HISTORICAL_BALANCE_PROCESSING progress update counts the events of.
+
+    Each pass counts from zero over its own events, so a client needs the phase to tell
+    the restart of the count from a new run.
+    """
+    BALANCES = auto()
+    COST_BASIS = auto()
+
+
 class TransactionStatusStep(StrEnum):
     QUERYING_TRANSACTIONS_STARTED = auto()
     QUERYING_TRANSACTIONS = auto()

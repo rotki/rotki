@@ -20,11 +20,12 @@ from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.constants import (
 from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_address
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import HOUR_IN_SECONDS, ZERO
 from rotkehlchen.db.cache import (
     IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX,
     DBCacheDynamic,
     DBCacheStatic,
+    mark_stale_from_ts,
 )
 from rotkehlchen.db.constants import (
     CHAIN_EVENT_FIELDS,
@@ -62,6 +63,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.bucket_state import delete_balance_checks_of_cleared_accounts
 from rotkehlchen.history.events.constants import CHAIN_ENTRY_TYPES, STAKING_ENTRY_TYPES
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -114,7 +116,7 @@ from rotkehlchen.types import (
     TimestampMS,
 )
 from rotkehlchen.user_messages import LocalDbProblem, UnknownAssetSeen
-from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now_in_ms, ts_sec_to_ms
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -416,31 +418,16 @@ class DBHistoryEvents:
     ) -> None:
         """Track earliest modified event timestamp and when modification occurred.
 
-        Updates two cache entries:
-        - STALE_BALANCES_FROM_TS: the minimum event timestamp that may need re-processing
-        - STALE_BALANCES_MODIFICATION_TS: when the modification occurred (for detecting
+        Updates two cache entries for the balances and the same two for the cost basis so that
+        both pipelines always go stale together:
+        - STALE_*_FROM_TS: the minimum event timestamp that may need re-processing
+        - STALE_*_MODIFICATION_TS: monotonically advancing modification marker (for detecting
           concurrent modifications during processing)
         """
         if is_accounting_update_enabled() is False:
             return
 
-        write_cursor.execute(
-            'INSERT INTO key_value_cache(name, value) VALUES(?, ?), (?, ?) '
-            'ON CONFLICT(name) DO UPDATE SET value=CASE '
-            'WHEN key_value_cache.name = ? THEN '
-            'MIN(CAST(key_value_cache.value AS INTEGER), CAST(excluded.value AS INTEGER)) '
-            'ELSE excluded.value END '
-            'WHERE key_value_cache.name != ? OR '
-            'CAST(key_value_cache.value AS INTEGER) > CAST(excluded.value AS INTEGER)',
-            (
-                DBCacheStatic.STALE_BALANCES_FROM_TS.value,
-                timestamp,
-                DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value,
-                ts_now_in_ms(),
-                DBCacheStatic.STALE_BALANCES_FROM_TS.value,
-                DBCacheStatic.STALE_BALANCES_FROM_TS.value,
-            ),
-        )
+        mark_stale_from_ts(write_cursor=write_cursor, from_ts=timestamp)
 
     def mark_asset_events_modified(self, write_cursor: DBCursor, asset: str) -> None:
         """Mark historical balances stale from the first event holding the given asset."""
@@ -451,6 +438,81 @@ class DBHistoryEvents:
             self._mark_events_modified(
                 write_cursor=write_cursor,
                 timestamp=TimestampMS(first_event[0]),
+            )
+
+    def apply_manual_price_changes(self) -> None:
+        """Mark the cost basis stale for the manual historical prices that changed since
+        this profile last looked, whichever profile changed them.
+
+        Manual prices live in the global DB, which all profiles of the data directory share,
+        so this runs both right after a change and at login.
+        """
+        if is_accounting_update_enabled() is False:
+            return  # keep the changes pending, to apply them once cost basis is computed
+
+        with self.db.user_write() as write_cursor:
+            last_change_id = write_cursor.execute(
+                'SELECT value FROM key_value_cache WHERE name=?',
+                (DBCacheStatic.LAST_MANUAL_PRICE_CHANGE_ID.value,),
+            ).fetchone()
+            if len(changes := GlobalDBHandler.get_manual_price_changes(
+                after_id=-1 if last_change_id is None else int(last_change_id[0]),
+            )) == 0:
+                return
+
+            for _, from_identifier, to_identifier, timestamp in changes:
+                try:
+                    self._mark_cost_basis_stale_for_price_change(
+                        write_cursor=write_cursor,
+                        from_asset=Asset(from_identifier),
+                        to_asset=Asset(to_identifier),
+                        timestamp=timestamp,
+                    )
+                except UnknownAsset as e:  # the asset was deleted along with its prices
+                    log.debug('Skipping manual price change of a deleted asset: %s', e)
+
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+                (
+                    DBCacheStatic.LAST_MANUAL_PRICE_CHANGE_ID.value,
+                    str(max(change[0] for change in changes)),
+                ),
+            )
+
+    @staticmethod
+    def _mark_cost_basis_stale_for_price_change(
+            write_cursor: DBCursor,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> None:
+        """Mark materialized cost basis stale from the earliest event at or after
+        `timestamp - HOUR_IN_SECONDS` that could match the changed historical price.
+
+        May raise UnknownAsset if either asset is no longer in the global DB.
+        """
+        window_start_ms = ts_sec_to_ms(Timestamp(max(0, timestamp - HOUR_IN_SECONDS)))
+        if from_asset.is_fiat() and to_asset.is_fiat():
+            row = write_cursor.execute(
+                'SELECT MIN(timestamp) FROM history_events WHERE timestamp >= ?',
+                (window_start_ms,),
+            ).fetchone()
+        else:
+            assets = [from_asset.identifier]
+            if to_asset != from_asset and not to_asset.is_fiat():
+                assets.append(to_asset.identifier)
+            placeholders = ','.join('?' * len(assets))
+            row = write_cursor.execute(
+                f'SELECT MIN(timestamp) FROM history_events '
+                f'WHERE asset IN ({placeholders}) AND timestamp >= ?',
+                (*assets, window_start_ms),
+            ).fetchone()
+
+        if row is not None and row[0] is not None:
+            mark_stale_from_ts(
+                write_cursor=write_cursor,
+                from_ts=TimestampMS(row[0]),
+                include_balances=False,
             )
 
     def _execute_and_track_modified(
@@ -993,15 +1055,20 @@ class DBHistoryEvents:
         matched_asset_movement key is also carried over to edits that do replace
         extra_data, as only the unlink endpoint may remove it.
         Marks the event with the specified mapping state if provided.
-        Only tracks modification for balance cache invalidation if balance-affecting
-        fields change (timestamp, asset, amount, type, subtype, location_label).
+        Only tracks modification for balance/cost-basis cache invalidation if fields
+        consumed by balance or cost-basis processing change (including on-chain
+        counterparty/address details and Bitcoin/BCH notes).
 
         May raise:
             - InputError if an error occurred.
         """
         old_data = write_cursor.execute(
-            'SELECT timestamp, asset, amount, type, subtype, location_label, sequence_index, '
-            'extra_data FROM history_events WHERE identifier=?',
+            'SELECT he.timestamp, he.asset, he.amount, he.type, he.subtype, he.location_label, '
+            'he.sequence_index, he.extra_data, he.location, he.group_identifier, he.notes, '
+            'he.entry_type, cei.counterparty, cei.address '
+            'FROM history_events AS he '
+            'LEFT JOIN chain_events_info AS cei ON cei.identifier = he.identifier '
+            'WHERE he.identifier=?',
             (event.identifier,),
         ).fetchone()
         assert event.identifier is not None
@@ -1071,21 +1138,34 @@ class DBHistoryEvents:
                 ), str(event.identifier)),
             )
 
-        # Track modification only if balance-affecting fields changed. cannot be None here
-        if old_data[:6] == (
-            event.timestamp,
-            event.asset.identifier,
-            str(event.amount),
-            event.event_type.serialize(),
-            event.event_subtype.serialize(),
-            event.location_label,
-        ) and (
-            (old_extra_data or {}).get('liquidity_pool') ==
-            (event.extra_data or {}).get('liquidity_pool')
+        # Track modification only if balance- or cost-basis-affecting fields changed.
+        # old_data cannot be None here because the UPDATE above raised InputError on missing rows.
+        old_btc_notes = old_data[10] if old_data[8] in BITCOIN_LOCATIONS else None
+        new_btc_notes = event.notes if event.location in BITCOIN_LOCATIONS else None
+        new_address = (
+            str(address) if (address := getattr(event, 'address', None)) is not None else None
+        )
+        if (
+            old_data[:7] == (
+                event.timestamp,
+                event.asset.identifier,
+                str(event.amount),
+                event.event_type.serialize(),
+                event.event_subtype.serialize(),
+                event.location_label,
+                event.sequence_index,
+            ) and
+            old_data[8:10] == (event.location, event.group_identifier) and
+            old_data[11:] == (
+                event.entry_type.value,
+                getattr(event, 'counterparty', None),
+                new_address,
+            ) and
+            old_btc_notes == new_btc_notes and
+            (old_extra_data or {}).get('liquidity_pool') == (event.extra_data or {}).get('liquidity_pool')  # noqa: E501
         ):
             return
 
-        # Track modification only if balance-affecting fields changed
         min_ts = min(old_data[0], event.timestamp)
         self._mark_events_modified(write_cursor=write_cursor, timestamp=min_ts)
 

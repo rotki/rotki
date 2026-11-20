@@ -6,6 +6,8 @@ import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createProgressUpdateHandler } from '@/modules/core/messaging/handlers/progress-updates';
 import { SocketMessageProgressUpdateSubType } from '@/modules/core/messaging/types/base';
+import { HistoricalBalanceProcessingPhase } from '@/modules/core/messaging/types/status-types';
+import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 import { useDataIssueRemediationStore } from '@/modules/history/data-issues/use-data-issue-remediation-store';
 import { decodeActivity, decodeActivityId } from '@/modules/history/events/tx/decode.activity';
 import { protocolCacheActivity } from '@/modules/history/protocol-cache.activity';
@@ -294,15 +296,38 @@ describe('createProgressUpdateHandler', () => {
     });
   });
 
-  it('should route historical balance processing updates', async () => {
-    const handler = createProgressUpdateHandler(mockT);
-    await handler.handle(data(SocketMessageProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING));
+  describe('historical balance processing', () => {
+    const frame = createMock<ProgressUpdateResultData>({
+      phase: HistoricalBalanceProcessingPhase.COST_BASIS,
+      processed: 50,
+      subtype: SocketMessageProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING,
+      total: 200,
+    });
 
-    expect(mockReportProgress).toHaveBeenCalledOnce();
-    expect(mockReportProgress).toHaveBeenCalledWith(
-      makeActivityId(ActivityKind.HISTORICAL_BALANCES),
-      expect.objectContaining({ current: expect.anything(), total: expect.anything() }),
-    );
+    it('should report onto the run a user triggered', async () => {
+      await createProgressUpdateHandler(mockT).handle(frame);
+
+      expect(mockReportProgress).toHaveBeenCalledExactlyOnceWith(
+        makeActivityId(ActivityKind.HISTORICAL_BALANCES),
+        { current: 50, total: 200 },
+      );
+    });
+
+    it('should report onto the background task row, which is the only row of a run the task manager started', async () => {
+      await createProgressUpdateHandler(mockT).handle(frame);
+
+      expect(mockReportProgressByPrefix).toHaveBeenCalledExactlyOnceWith(
+        { current: 50, total: 200 },
+        ActivityKind.BACKGROUND_TASK,
+        'historical_balances',
+      );
+    });
+
+    it('should remember which pass the run is on', async () => {
+      await createProgressUpdateHandler(mockT).handle(frame);
+
+      expect(get(useHistoricalBalanceProcessingStore().processingPhase)).toBe(HistoricalBalanceProcessingPhase.COST_BASIS);
+    });
   });
 
   it('should delegate csv import results to the csv handler', async () => {

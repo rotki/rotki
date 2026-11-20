@@ -253,6 +253,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
                 taxable=taxable,
                 count_entire_amount_spend=count_entire_amount_spend,
                 count_cost_basis_pnl=count_cost_basis_pnl,
+                event=self,
             )
 
         return 1
