@@ -228,6 +228,17 @@ describe('data-issues transforms', () => {
       expect(result.eventIdentifier).toBeUndefined();
       expect(result.amounts).toEqual({});
     });
+
+    it('should fall back to an unknown description when an invalid event amount payload does not match', () => {
+      const issue = createIssue({ kind: IssueKind.INVALID_EVENT_AMOUNT, payload: { garbage: true } });
+
+      const result = describeIssue(issue);
+
+      expect(result.messageKey).toBe('data_issues.description.unknown');
+      expect(result.shortMessageKey).toBe('data_issues.description_short.unknown');
+      expect(result.eventIdentifier).toBeUndefined();
+      expect(result.amounts).toEqual({});
+    });
   });
 
   describe('negativeBalanceValues', () => {
@@ -279,6 +290,13 @@ describe('data-issues transforms', () => {
           highlightedNegativeBalanceEvent: '42',
           targetGroupIdentifier: '0xabc',
         },
+      });
+    });
+
+    it('should deep-link an invalid event amount issue without group or asset when absent', () => {
+      expect(relatedEventRoute(IssueKind.INVALID_EVENT_AMOUNT, 42)).toEqual({
+        name: '/history/events/',
+        query: { highlightedNegativeBalanceEvent: '42' },
       });
     });
 

@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING
 
 import pytest
+from eth_abi import encode as abi_encode
+from eth_utils import keccak
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_evm_token
@@ -13,15 +15,20 @@ from rotkehlchen.chain.ethereum.modules.ens.constants import (
     ENS_REGISTRY_WITH_FALLBACK,
     ENS_V2_HCA_FACTORY,
     ENS_V2_UNLOCKED_MIGRATION_CONTROLLER,
+    NAME_RENEWED,
 )
 from rotkehlchen.chain.ethereum.modules.ens.decoder import (
     ENS_GOVERNOR,
     ENS_PUBLIC_RESOLVER_2_ADDRESS,
     ENS_REGISTRAR_CONTROLLER_1,
     ENS_REGISTRAR_CONTROLLER_2,
+    EnsDecoder,
     _save_hash_mappings_get_fullname,
 )
+from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
 from rotkehlchen.chain.evm.decoding.ens.content_hash import decode_content_hash
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ENS, A_ETH
@@ -38,11 +45,13 @@ from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import (
     CacheType,
     ChainID,
+    EvmTransaction,
     Timestamp,
     TimestampMS,
     TokenKind,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -1333,3 +1342,374 @@ def test_decode_content_hash_undecodable(content_hash):
     """Test that content hashes the decoder can't handle raise what it catches"""
     with pytest.raises((TypeError, KeyError, ValueError)):
         decode_content_hash(bytes.fromhex(content_hash))
+
+
+def _make_ens_decoder(ethereum_inquirer: EthereumInquirer) -> EnsDecoder:
+    base_tools = BaseEvmDecoderTools(
+        database=ethereum_inquirer.database,
+        evm_inquirer=ethereum_inquirer,
+        is_non_conformant_erc721_fn=lambda _: False,
+        address_is_exchange_fn=lambda _: None,
+    )
+    return EnsDecoder(
+        ethereum_inquirer=ethereum_inquirer,
+        base_tools=base_tools,
+        msg_aggregator=MessagesAggregator(),
+    )
+
+
+def _make_name_renewed_log(
+        controller: ChecksumEvmAddress,
+        name: str,
+        cost_wei: int,
+        expires: Timestamp,
+        log_index: int = 10,
+) -> EvmTxReceiptLog:
+    return EvmTxReceiptLog(
+        log_index=log_index,
+        address=controller,
+        topics=[NAME_RENEWED, keccak(text=name)],
+        data=abi_encode(['string', 'uint256', 'uint256'], [name, cost_wei, int(expires)]),
+    )
+
+
+def _make_renewal_tx(
+        user_address: ChecksumEvmAddress,
+        to_address: ChecksumEvmAddress,
+        value: int,
+        timestamp: Timestamp,
+) -> EvmTransaction:
+    return EvmTransaction(
+        tx_hash=make_evm_tx_hash(),
+        chain_id=ChainID.ETHEREUM,
+        timestamp=timestamp,
+        block_number=20_000_000,
+        from_address=user_address,
+        to_address=to_address,
+        value=value,
+        gas=100_000,
+        gas_price=10_000_000_000,
+        gas_used=50_000,
+        input_data=b'',
+        nonce=1,
+    )
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
+@pytest.mark.parametrize(
+    ('controller', 'logged_cost_wei', 'spend_amount', 'refund_amount', 'expected_net'),
+    [
+        # New controller logs msg.value (brutto)
+        (
+            ENS_REGISTRAR_CONTROLLER_2,
+            20_000_000_000_000_000,
+            FVal('0.02'),
+            FVal('0.005'),
+            FVal('0.015'),
+        ),
+        # Old controller logs actual net cost (after refund)
+        (
+            ENS_REGISTRAR_CONTROLLER_1,
+            54_000_000_000_000_000,
+            FVal('0.06'),
+            FVal('0.006'),
+            FVal('0.054'),
+        ),
+    ],
+)
+def test_renewal_spend_before_refund(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        controller: ChecksumEvmAddress,
+        logged_cost_wei: int,
+        spend_amount: FVal,
+        refund_amount: FVal,
+        expected_net: FVal,
+) -> None:
+    """When SPEND appears before the refund RECEIVE event in decoded_events,
+    the refund must still be subtracted from the SPEND and consumed for both controllers."""
+    decoder = _make_ens_decoder(ethereum_inquirer)
+    user_address = ethereum_accounts[0]
+    timestamp = Timestamp(1700000000)
+    timestamp_ms = TimestampMS(timestamp * 1000)
+    expires = Timestamp(1800000000)
+    tx = _make_renewal_tx(
+        user_address=user_address,
+        to_address=controller,
+        value=(spend_amount * 10**18).to_int(exact=True),
+        timestamp=timestamp,
+    )
+    tx_log = _make_name_renewed_log(
+        controller=controller,
+        name='example',
+        cost_wei=logged_cost_wei,
+        expires=expires,
+    )
+    decoded_events = [
+        EvmEvent(
+            tx_ref=tx.tx_hash,
+            sequence_index=1,
+            timestamp=timestamp_ms,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=spend_amount,
+            location_label=user_address,
+            address=controller,
+        ),
+        EvmEvent(
+            tx_ref=tx.tx_hash,
+            sequence_index=2,
+            timestamp=timestamp_ms,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=refund_amount,
+            location_label=user_address,
+            address=controller,
+        ),
+    ]
+    context = DecoderContext(
+        tx_log=tx_log,
+        transaction=tx,
+        action_items=[],
+        all_logs=[tx_log],
+        decoded_events=decoded_events,
+    )
+
+    decoder._decode_name_renewed(context=context)
+
+    assert decoded_events == [
+        EvmEvent(
+            tx_ref=tx.tx_hash,
+            sequence_index=1,
+            timestamp=timestamp_ms,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.RENEW,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=expected_net,
+            location_label=user_address,
+            notes=f'Renew ENS name example.eth for {expected_net} ETH until {decoder.timestamp_to_date(expires)}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=controller,
+            extra_data={'name': 'example.eth', 'expires': expires},
+        ),
+    ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
+@pytest.mark.parametrize('controller', [ENS_REGISTRAR_CONTROLLER_2, ENS_REGISTRAR_CONTROLLER_1])
+def test_renewal_spend_before_larger_refund_preserves_refund(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        controller: ChecksumEvmAddress,
+) -> None:
+    """When SPEND appears before an unrelated RECEIVE refund larger than the SPEND/logged cost,
+    the SPEND is converted to RENEW in place without double-counting, no negative RENEW amount is
+    created, the unapplied refund RECEIVE is preserved, and net ETH movement is unchanged."""
+    decoder = _make_ens_decoder(ethereum_inquirer)
+    user_address = ethereum_accounts[0]
+    timestamp = Timestamp(1700000000)
+    timestamp_ms = TimestampMS(timestamp * 1000)
+    expires = Timestamp(1800000000)
+    tx = _make_renewal_tx(
+        user_address=user_address,
+        to_address=controller,
+        value=1_000_000_000_000_000,
+        timestamp=timestamp,
+    )
+    tx_log = _make_name_renewed_log(
+        controller=controller,
+        name='example',
+        cost_wei=1_000_000_000_000_000,
+        expires=expires,
+        log_index=25,
+    )
+    spend_event = EvmEvent(
+        tx_ref=tx.tx_hash,
+        sequence_index=1,
+        timestamp=timestamp_ms,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal('0.001'),
+        location_label=user_address,
+        address=controller,
+    )
+    refund_event = EvmEvent(
+        tx_ref=tx.tx_hash,
+        sequence_index=2,
+        timestamp=timestamp_ms,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal('0.005'),
+        location_label=user_address,
+        address=controller,
+    )
+    decoded_events = [spend_event, refund_event]
+
+    def _net_eth(events: list[EvmEvent]) -> FVal:
+        return sum(
+            (
+                ev.amount if ev.event_type == HistoryEventType.RECEIVE else -ev.amount
+                for ev in events
+            ),
+            start=ZERO,
+        )
+
+    net_eth_before = _net_eth(decoded_events)
+    assert net_eth_before == FVal('0.004')
+
+    context = DecoderContext(
+        tx_log=tx_log,
+        transaction=tx,
+        action_items=[],
+        all_logs=[tx_log],
+        decoded_events=decoded_events,
+    )
+
+    decoder._decode_name_renewed(context=context)
+
+    assert decoded_events == [
+        EvmEvent(
+            tx_ref=tx.tx_hash,
+            sequence_index=1,
+            timestamp=timestamp_ms,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.RENEW,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal('0.001'),
+            location_label=user_address,
+            notes=f'Renew ENS name example.eth for 0.001 ETH until {decoder.timestamp_to_date(expires)}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=controller,
+            extra_data={'name': 'example.eth', 'expires': expires},
+        ),
+        refund_event,
+    ]
+    assert _net_eth(decoded_events) == net_eth_before == FVal('0.004')
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
+def test_batch_renewal_two_identical_spends(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """In a batch renewal with two identical SPEND events, each NameRenewed log must
+    rewrite only one SPEND event."""
+    decoder = _make_ens_decoder(ethereum_inquirer)
+    user_address = ethereum_accounts[0]
+    timestamp = Timestamp(1700000000)
+    timestamp_ms = TimestampMS(timestamp * 1000)
+    expires_alpha = Timestamp(1800000000)
+    expires_beta = Timestamp(1850000000)
+    cost_wei = 10_000_000_000_000_000
+    tx = _make_renewal_tx(
+        user_address=user_address,
+        to_address=ENS_REGISTRAR_CONTROLLER_2,
+        value=2 * cost_wei,
+        timestamp=timestamp,
+    )
+    log_alpha = _make_name_renewed_log(
+        controller=ENS_REGISTRAR_CONTROLLER_2,
+        name='alpha',
+        cost_wei=cost_wei,
+        expires=expires_alpha,
+        log_index=10,
+    )
+    log_beta = _make_name_renewed_log(
+        controller=ENS_REGISTRAR_CONTROLLER_2,
+        name='beta',
+        cost_wei=cost_wei,
+        expires=expires_beta,
+        log_index=20,
+    )
+    spend_1 = EvmEvent(
+        tx_ref=tx.tx_hash,
+        sequence_index=1,
+        timestamp=timestamp_ms,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal('0.01'),
+        location_label=user_address,
+        address=ENS_REGISTRAR_CONTROLLER_2,
+    )
+    spend_2 = EvmEvent(
+        tx_ref=tx.tx_hash,
+        sequence_index=2,
+        timestamp=timestamp_ms,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal('0.01'),
+        location_label=user_address,
+        address=ENS_REGISTRAR_CONTROLLER_2,
+    )
+    decoded_events = [spend_1, spend_2]
+
+    decoder._decode_name_renewed(
+        context=DecoderContext(
+            tx_log=log_alpha,
+            transaction=tx,
+            action_items=[],
+            all_logs=[log_alpha, log_beta],
+            decoded_events=decoded_events,
+        ),
+    )
+
+    expected_alpha = EvmEvent(
+        tx_ref=tx.tx_hash,
+        sequence_index=1,
+        timestamp=timestamp_ms,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.RENEW,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal('0.01'),
+        location_label=user_address,
+        notes=f'Renew ENS name alpha.eth for 0.01 ETH until {decoder.timestamp_to_date(expires_alpha)}',  # noqa: E501
+        counterparty=CPT_ENS,
+        address=ENS_REGISTRAR_CONTROLLER_2,
+        extra_data={'name': 'alpha.eth', 'expires': expires_alpha},
+    )
+    assert decoded_events == [expected_alpha, spend_2]
+    assert spend_2.event_type == HistoryEventType.SPEND
+
+    decoder._decode_name_renewed(
+        context=DecoderContext(
+            tx_log=log_beta,
+            transaction=tx,
+            action_items=[],
+            all_logs=[log_alpha, log_beta],
+            decoded_events=decoded_events,
+        ),
+    )
+
+    assert decoded_events == [
+        expected_alpha,
+        EvmEvent(
+            tx_ref=tx.tx_hash,
+            sequence_index=2,
+            timestamp=timestamp_ms,
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.RENEW,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal('0.01'),
+            location_label=user_address,
+            notes=f'Renew ENS name beta.eth for 0.01 ETH until {decoder.timestamp_to_date(expires_beta)}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRAR_CONTROLLER_2,
+            extra_data={'name': 'beta.eth', 'expires': expires_beta},
+        ),
+    ]

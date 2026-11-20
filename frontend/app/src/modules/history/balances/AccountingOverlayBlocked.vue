@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 import type { HistoricalBalanceStop } from '@/modules/history/balances/types';
+import { msg } from '@/message-key';
 import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
+import { IssueKind } from '@/modules/history/data-issues/constants';
 
 const { stop, asset, eventIdentifier } = defineProps<{
   stop: HistoricalBalanceStop;
@@ -9,6 +11,22 @@ const { stop, asset, eventIdentifier } = defineProps<{
   /** The event of the row, which is the stopping event itself when the stop starts here. */
   eventIdentifier: number;
 }>();
+
+const INVALID_EVENT_AMOUNT_KEYS = {
+  noLink: msg.$t('accounting_overlay.blocked.invalid_event_amount.no_link'),
+  openIssue: msg.$t('accounting_overlay.blocked.invalid_event_amount.open_issue'),
+  selfNoLink: msg.$t('accounting_overlay.blocked.invalid_event_amount.self_no_link'),
+  selfOpenIssue: msg.$t('accounting_overlay.blocked.invalid_event_amount.self_open_issue'),
+  viewEvent: msg.$t('accounting_overlay.blocked.invalid_event_amount.view_event'),
+} as const;
+
+const NEGATIVE_BALANCE_KEYS = {
+  noLink: msg.$t('accounting_overlay.blocked.no_link'),
+  openIssue: msg.$t('accounting_overlay.blocked.open_issue'),
+  selfNoLink: msg.$t('accounting_overlay.blocked.self_no_link'),
+  selfOpenIssue: msg.$t('accounting_overlay.blocked.self_open_issue'),
+  viewEvent: msg.$t('accounting_overlay.blocked.view_event'),
+} as const;
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -46,16 +64,16 @@ const route = computed<RouteLocationRaw | undefined>(() => {
 });
 
 const explanation = computed<string>(() => {
-  if (get(isStoppingEvent)) {
-    return stop.issueId === null
-      ? t('accounting_overlay.blocked.self_no_link')
-      : t('accounting_overlay.blocked.self_open_issue');
-  }
+  const keys = stop.issueKind === IssueKind.INVALID_EVENT_AMOUNT
+    ? INVALID_EVENT_AMOUNT_KEYS
+    : NEGATIVE_BALANCE_KEYS;
+  if (get(isStoppingEvent))
+    return t(stop.issueId === null ? keys.selfNoLink : keys.selfOpenIssue);
   if (stop.issueId !== null)
-    return t('accounting_overlay.blocked.open_issue');
+    return t(keys.openIssue);
   if (stop.groupIdentifier !== null)
-    return t('accounting_overlay.blocked.view_event');
-  return t('accounting_overlay.blocked.no_link');
+    return t(keys.viewEvent);
+  return t(keys.noLink);
 });
 </script>
 

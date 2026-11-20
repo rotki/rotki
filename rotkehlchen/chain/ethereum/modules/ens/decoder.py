@@ -62,6 +62,8 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -288,39 +290,63 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
         logged_cost = from_wei(decoded_data[1])  # logs msg.value for new controller and actual cost for old  # noqa: E501
         expires = decoded_data[2]
         is_old_controller = context.tx_log.address == ENS_REGISTRAR_CONTROLLER_1
+        expected_addresses = {context.tx_log.address}
+        if context.transaction.to_address is not None:
+            expected_addresses.add(context.transaction.to_address)
 
-        refund_event_idx, refund_amount, checked_cost = None, ZERO, logged_cost
-        renewal_event_found = False
+        refund_event_idx, refund_amount = None, ZERO
         for idx, event in enumerate(context.decoded_events):
-            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_ETH and event.address in {context.tx_log.address, context.transaction.to_address}:  # noqa: E501
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.asset == A_ETH and
+                event.address in expected_addresses
+            ):
                 refund_event_idx = idx
                 refund_amount = event.amount
+                break
 
-                if is_old_controller:
-                    # old controller logs actual cost after refund
-                    checked_cost = logged_cost + refund_amount
-                # else new controller logs the msg.value, which is the brutto value
+        # Old controller logs actual net cost after refund, so a refunded payment spent
+        # logged_cost + refund_amount while an unrefunded payment (e.g. with an unrelated
+        # RECEIVE in a batch) spent logged_cost. New controller logs brutto msg.value.
+        # Some extensions go through a wrapper contract that forwards payment to the
+        # registrar controller emitting this event, so also match the tx recipient.
+        spend_targets: list[tuple[FVal, bool]] = []
+        if is_old_controller and refund_event_idx is not None:
+            spend_targets.append((logged_cost + refund_amount, True))
+        spend_targets.append((
+            logged_cost,
+            (
+                not is_old_controller and
+                refund_event_idx is not None and
+                logged_cost >= refund_amount
+            ),
+        ))
 
-            # Find the transfer event which should be before the name renewed event.
-            # Some extensions go through a wrapper contract that forwards the payment to the
-            # registrar controller emitting this event, so also match the transaction recipient.
-            if (
-                event.event_type == HistoryEventType.SPEND and
-                event.asset == A_ETH and
-                event.amount == checked_cost and
-                event.amount >= refund_amount and
-                event.address in {context.tx_log.address, context.transaction.to_address}
-            ):
-                event.amount -= refund_amount  # get correct amount spent
-                event.event_type = HistoryEventType.RENEW
-                event.event_subtype = HistoryEventSubType.NONE
-                event.counterparty = CPT_ENS
-                event.notes = f'Renew ENS name {fullname} for {event.amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
-                event.extra_data = {'name': fullname, 'expires': expires}
-                renewal_event_found = True
+        matched_spend: EvmEvent | None = None
+        consume_refund = False
+        for target_amount, target_consumes_refund in spend_targets:
+            if (matched_spend := next((
+                event for event in context.decoded_events
+                if (
+                    event.event_type == HistoryEventType.SPEND and
+                    event.asset == A_ETH and
+                    event.amount == target_amount and
+                    event.address in expected_addresses
+                )
+            ), None)) is not None:
+                consume_refund = target_consumes_refund
+                break
 
-        consume_refund = renewal_event_found
-        if renewal_event_found is False and self.base.is_tracked(context.transaction.from_address):
+        if matched_spend is not None:
+            if consume_refund:
+                matched_spend.amount -= refund_amount  # get correct amount spent
+            matched_spend.event_type = HistoryEventType.RENEW
+            matched_spend.event_subtype = HistoryEventSubType.NONE
+            matched_spend.counterparty = CPT_ENS
+            matched_spend.notes = f'Renew ENS name {fullname} for {matched_spend.amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
+            matched_spend.extra_data = {'name': fullname, 'expires': expires}
+        elif self.base.is_tracked(context.transaction.from_address):
             if not is_old_controller and ZERO < refund_amount <= logged_cost:
                 renewal_amount = logged_cost - refund_amount
                 consume_refund = True

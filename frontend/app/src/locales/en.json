@@ -253,6 +253,13 @@
   "accounting_overlay": {
     "balance_after": "Balance after this event",
     "blocked": {
+      "invalid_event_amount": {
+        "no_link": "The balance after this event is unknown: an earlier event has a negative amount, so later events could not be applied.",
+        "open_issue": "The balance after this event is unknown: an earlier event has a negative amount. Click to open the data issue and resolve it.",
+        "self_no_link": "The balance after this event is unknown: this event has a negative amount, so it and later events could not be applied.",
+        "self_open_issue": "The balance after this event is unknown: this event has a negative amount. Click to open the data issue and resolve it.",
+        "view_event": "The balance after this event is unknown: an earlier event has a negative amount. Click to go to that event."
+      },
       "no_link": "The balance after this event is unknown: an earlier event took this account's balance of the asset below zero, so later events could not be applied.",
       "open_issue": "The balance after this event is unknown: an earlier event took this account's balance of the asset below zero. Click to open the data issue and resolve it.",
       "self_no_link": "The balance after this event is unknown: this event took this account's balance of the asset below zero, so it and later events could not be applied.",

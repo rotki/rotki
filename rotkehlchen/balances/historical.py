@@ -17,7 +17,7 @@ from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import NotFoundError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.data_issues.constants import IssueState
+from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.events.structures.base import HistoryEvent, get_event_direction
 from rotkehlchen.history.events.structures.types import EventDirection, HistoryEventSubType
 from rotkehlchen.locations.chains import (
@@ -59,11 +59,12 @@ class HistoricalBalanceStop(NamedTuple):
     """The event from which the balance of an account and asset can no longer be trusted.
 
     `group_identifier` is null when the stopping event was deleted, and `issue_id` when the
-    stop has no negative balance issue.
+    stop has no matching data issue.
     """
     event_identifier: int
     group_identifier: str | None
     issue_id: int | None
+    issue_kind: IssueKind = IssueKind.NEGATIVE_BALANCE
 
 
 class HistoricalBalanceSeriesEntry(NamedTuple):
@@ -430,12 +431,19 @@ class HistoricalBalancesManager:
         describes the stop, preferring active over dismissed over resolved.
         """
         stops: dict[int, HistoricalBalanceStop] = {}
-        for identifier, stop_event_identifier, group_identifier, issue_id in cursor.execute(
-            requested + """SELECT r.identifier, s.event_identifier, he.group_identifier, (
+        for (
+            identifier,
+            stop_event_identifier,
+            group_identifier,
+            issue_kind_raw,
+            issue_id,
+        ) in cursor.execute(
+            requested + """SELECT r.identifier, s.event_identifier, he.group_identifier,
+                s.issue_kind, (
                     SELECT di.id FROM data_issues di
                     WHERE di.kind = s.issue_kind AND di.event_identifier = s.event_identifier
                         AND di.location = s.location AND di.location_label = s.location_label
-                        AND di.protocol = s.protocol
+                        AND di.protocol = s.protocol AND di.asset = s.asset
                     ORDER BY CASE di.state WHEN ? THEN 2 WHEN ? THEN 1 ELSE 0 END ASC,
                         di.id DESC
                     LIMIT 1
@@ -461,6 +469,7 @@ class HistoricalBalancesManager:
                 event_identifier=stop_event_identifier,
                 group_identifier=group_identifier,
                 issue_id=issue_id,
+                issue_kind=IssueKind(issue_kind_raw),
             )
 
         return stops

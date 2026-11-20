@@ -6,8 +6,10 @@ const HistoricalBalanceStop = z.object({
   eventIdentifier: z.number(),
   /** Null when the stopping event was deleted after the stop was recorded. */
   groupIdentifier: z.string().nullable(),
-  /** The negative balance data issue of the stop, null when it has none. */
+  /** The data issue of the stop, null when it has none. */
   issueId: z.number().nullable(),
+  /** The kind of issue that stopped the bucket (open string so newer backend kinds still parse). */
+  issueKind: z.string().nullish(),
 });
 
 export type HistoricalBalanceStop = z.infer<typeof HistoricalBalanceStop>;

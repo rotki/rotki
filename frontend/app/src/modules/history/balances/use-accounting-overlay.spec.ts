@@ -1,7 +1,7 @@
 import type { EffectScope, Ref } from 'vue';
-import type { HistoricalBalancesAtEventsResponse } from './types';
 import { bigNumberify } from '@rotki/common';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { HistoricalBalancesAtEventsResponse } from './types';
 import { useAccountingOverlay } from './use-accounting-overlay';
 
 const { fetchSnapshots } = vi.hoisted(() => ({
@@ -116,7 +116,7 @@ describe('useAccountingOverlay event batches', () => {
   });
 
   it('should report an event at or after a stop as blocked, with its stop and no balance', async () => {
-    const stop = { eventIdentifier: 7, groupIdentifier: 'group', issueId: 3 };
+    const stop = { eventIdentifier: 7, groupIdentifier: 'group', issueId: 3, issueKind: 'invalid_event_amount' };
     fetchSnapshots.mockResolvedValue({ entries: {
       1: response([1]).entries['1'],
       2: { ...response([2]).entries['2'], stop },
@@ -197,5 +197,31 @@ describe('useAccountingOverlay event batches', () => {
     set(enabled, true);
     await vi.advanceTimersByTimeAsync(60);
     expect(fetchSnapshots).toHaveBeenCalledExactlyOnceWith([1]);
+  });
+});
+
+describe('historicalBalancesAtEventsResponse schema', () => {
+  it.each([
+    ['negative_balance', 'negative_balance'],
+    ['invalid_event_amount', 'invalid_event_amount'],
+    ['unknown future kind', 'future_stop_kind'],
+    ['null', null],
+    ['omitted', undefined],
+  ])('should parse stop issueKind when %s', (_label, issueKind) => {
+    const rawStop = issueKind === undefined
+      ? { eventIdentifier: 7, groupIdentifier: 'group', issueId: 3 }
+      : { eventIdentifier: 7, groupIdentifier: 'group', issueId: 3, issueKind };
+
+    const parsed = HistoricalBalancesAtEventsResponse.parse({
+      entries: {
+        7: {
+          buckets: [],
+          processingRequired: false,
+          stop: rawStop,
+        },
+      },
+    });
+
+    expect(parsed.entries['7'].stop?.issueKind).toBe(issueKind);
   });
 });
