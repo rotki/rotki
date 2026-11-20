@@ -31,13 +31,13 @@ interface UseAssetBalancesBreakdownReturn {
  * @remarks
  * Queried unless the page provided the history view. In the history view, chain rows come from the
  * history buckets and bank rows from the queried bank balances; manual balances and manual
- * liabilities are left out, matching the history totals. Liabilities have no history buckets, so
- * their breakdown stays the queried blockchain one.
+ * liabilities are left out, matching the history totals. Debt-token liabilities with history
+ * buckets come from those buckets; other protocol liabilities stay queried from on-chain balances.
  */
 export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
   const { bankBalances, exchangeBalances, manualBalances, manualLiabilities, visibleBalances: balances } = storeToRefs(useBalancesStore());
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
-  const { visibleEntries: historicalEntries } = useHistoricalBalanceSource(useAggregationContext());
+  const { liabilityAssets, visibleEntries: historicalEntries, visibleLiabilityEntries } = useHistoricalBalanceSource(useAggregationContext());
   const isHistory = useIsHistoryView();
   const { getEvmChainName, matchChain } = useSupportedChains();
   const { getAssetPrice } = usePriceUtils();
@@ -65,9 +65,9 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
   }
 
   /** History buckets narrowed to the chains and account group the filters ask for. */
-  function filteredEntries({ chains = [], groupId }: BreakdownFilters): HistoricalBalanceEntry[] {
+  function filteredEntries(entries: readonly HistoricalBalanceEntry[], { chains = [], groupId }: BreakdownFilters): HistoricalBalanceEntry[] {
     const addresses = groupId ? new Set(groupAddresses(get(accounts), groupId)) : undefined;
-    return get(historicalEntries).filter(({ location, locationLabel }) => {
+    return entries.filter(({ location, locationLabel }) => {
       const chain = matchChain(location);
       if (chains.length > 0 && (chain === undefined || !chains.includes(chain)))
         return false;
@@ -76,11 +76,14 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
   }
 
   function historyBreakdown(asset: string, liabilities: boolean, filters: BreakdownFilters): AssetBreakdown[] {
-    const blockchainOnly = { accounts: get(accounts), balances: get(balances), exchanges: {}, manual: [] };
-    if (liabilities)
+    if (liabilities) {
+      if (get(liabilityAssets).has(resolveIdentifier(asset)))
+        return historicalAssetBreakdown(asset, filteredEntries(get(visibleLiabilityEntries), filters), historicalPorts);
+      const blockchainOnly = { accounts: get(accounts), balances: get(balances), exchanges: {}, manual: [] };
       return assetBreakdown(asset, blockchainOnly, true, filters, ports);
+    }
 
-    const chainRows = historicalAssetBreakdown(asset, filteredEntries(filters), historicalPorts);
+    const chainRows = historicalAssetBreakdown(asset, filteredEntries(get(historicalEntries), filters), historicalPorts);
     if (filters.blockchainOnly || filters.groupId || (filters.chains?.length ?? 0) > 0)
       return chainRows;
 

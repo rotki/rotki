@@ -28,7 +28,7 @@ const { t } = useI18n({ useScope: 'global' });
 const { activeDashboardMessages } = useDynamicMessages();
 const { available: viewAvailable, isHistory } = useBalanceView();
 provideHistoryView(isHistory);
-const { balances: aggregatedBalances, comparable, comparisons, liabilities: aggregatedLiabilities, liabilitiesHeld } = useBalanceViewData(isHistory);
+const { balances: aggregatedBalances, comparable, comparisons, liabilities: aggregatedLiabilities, liabilitiesHeld, liabilityComparisons } = useBalanceViewData(isHistory);
 
 const { enabled: nftEnabled } = useModuleEnabled(Module.NFTS);
 
@@ -103,7 +103,11 @@ watch(width, (newWidth) => {
         :show-comparison="viewAvailable && comparable"
       >
         <template #comparison="{ row }">
-          <HistoryDeltaCell :comparison="comparisons.get(row.asset)" />
+          <HistoryDeltaCell
+            :asset="row.asset"
+            :is-collection-parent="!!row.breakdown"
+            :comparison="comparisons.get(row.asset)"
+          />
         </template>
       </DashboardAssetTable>
       <PoolTable class="mt-8" />
@@ -115,7 +119,15 @@ watch(width, (newWidth) => {
         :title="t('dashboard.liabilities.title')"
         :loading="isAnyLoading"
         :balances="aggregatedLiabilities"
-      />
+        :show-comparison="viewAvailable && comparable"
+      >
+        <template #comparison="{ row }">
+          <HistoryDeltaCell
+            :asset="row.asset"
+            :comparison="liabilityComparisons.get(row.asset)"
+          />
+        </template>
+      </DashboardAssetTable>
       <NftBalanceTable
         v-if="nftEnabled"
         id="nft-balance-table-section"

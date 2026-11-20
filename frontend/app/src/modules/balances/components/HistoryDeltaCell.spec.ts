@@ -1,8 +1,17 @@
 import type { AssetComparison } from '@/modules/balances/view/history-comparison';
 import { bigNumberify } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent } from 'vue';
 import HistoryDeltaCell from '@/modules/balances/components/HistoryDeltaCell.vue';
+
+const h = vi.hoisted(() => ({
+  getAssetField: vi.fn<(asset: string, field: string) => string | undefined>(),
+}));
+
+vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
+  useAssetInfoRetrieval: (): object => ({ getAssetField: h.getAssetField }),
+}));
 
 function comparison(history: number, queried: number, manual: number): AssetComparison {
   return {
@@ -14,14 +23,24 @@ function comparison(history: number, queried: number, manual: number): AssetComp
   };
 }
 
-function mountCell(value?: AssetComparison): VueWrapper {
+const RouterLinkStub = { props: ['to'], template: '<a><slot /></a>' };
+
+function reconciliationTo(asset: string): object {
+  return { name: '/history/data-issues/[[tab]]', params: { tab: 'reconciliation' }, query: { asset, view: 'all' } };
+}
+
+function mountCell(value?: AssetComparison, asset?: string, isCollectionParent?: boolean): VueWrapper {
   return mount(HistoryDeltaCell, {
-    global: { stubs: { ValueDisplay: true } },
-    props: { comparison: value },
+    global: { stubs: { RouterLink: RouterLinkStub, ValueDisplay: true } },
+    props: { asset, comparison: value, isCollectionParent },
   });
 }
 
 describe('historyDeltaCell', () => {
+  beforeEach(() => {
+    h.getAssetField.mockReset().mockReturnValue('USDC');
+  });
+
   it('should render nothing when history and queried agree', () => {
     expect(mountCell(comparison(15, 15, 3)).find('[data-testid="history-delta-cell"]').exists()).toBe(false);
   });
@@ -50,5 +69,32 @@ describe('historyDeltaCell', () => {
     expect(wrapper.find('[data-testid="history-delta-cell"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="history-delta-cell-manual"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="history-delta-cell-all-manual"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="history-delta-cell-link"]').exists()).toBe(false);
+  });
+
+  it('should link to reconciliation by asset identifier, or by symbol for a folded collection parent', () => {
+    expect(mountCell(comparison(10, 16, 0), 'eip155:1/erc20:0x6df1').getComponent(RouterLinkStub).props('to'))
+      .toEqual(reconciliationTo('eip155:1/erc20:0x6df1'));
+    expect(mountCell(comparison(10, 16, 0), 'eip155:1/erc20:0xA0b8', true).getComponent(RouterLinkStub).props('to'))
+      .toEqual(reconciliationTo('USDC'));
+  });
+
+  it('should stop click propagation on the reconciliation link so parent row clicks do not fire', async () => {
+    const onParentClick = vi.fn<() => void>();
+    const Host = defineComponent({
+      components: { HistoryDeltaCell },
+      setup() {
+        return { comparison: comparison(10, 16, 0), onParentClick };
+      },
+      template: '<div @click="onParentClick"><HistoryDeltaCell asset="ETH" :comparison="comparison" /></div>',
+    });
+
+    const wrapper = mount(Host, {
+      global: { stubs: { RouterLink: RouterLinkStub, ValueDisplay: true } },
+    });
+
+    await wrapper.get('[data-testid="history-delta-cell-link"]').trigger('click');
+
+    expect(onParentClick).not.toHaveBeenCalled();
   });
 });

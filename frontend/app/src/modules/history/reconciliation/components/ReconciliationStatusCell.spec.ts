@@ -1,11 +1,19 @@
+import type { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import type { ReconciliationBucket } from '@/modules/history/reconciliation/schemas';
-import { bigNumberify } from '@rotki/common';
+import { bigNumberify, Blockchain } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import { IssueKind } from '@/modules/history/data-issues/constants';
 import ReconciliationStatusCell from '@/modules/history/reconciliation/components/ReconciliationStatusCell.vue';
+
+vi.mock('@/modules/core/common/use-supported-chains', () => ({
+  useSupportedChains: (): ReturnType<typeof useSupportedChains> => createMock<ReturnType<typeof useSupportedChains>>({
+    matchChain: (location: string) => (location === 'ethereum' ? Blockchain.ETH : undefined),
+  }),
+}));
 
 const RouterLinkStub = defineComponent({
   name: 'RouterLink',
@@ -31,7 +39,10 @@ function bucket(overrides: Partial<ReconciliationBucket> = {}): ReconciliationBu
   };
 }
 
-function mountCell(value: ReconciliationBucket): VueWrapper {
+function mountCell(
+  value: ReconciliationBucket,
+  props: { location?: string; locationLabel?: string | null } = {},
+): VueWrapper {
   return mount(ReconciliationStatusCell, {
     global: {
       plugins: [createPinia()],
@@ -40,7 +51,7 @@ function mountCell(value: ReconciliationBucket): VueWrapper {
         'i18n-t': { template: '<span class="i18n-t"><slot name="date" /><slot /></span>' },
       },
     },
-    props: { bucket: value },
+    props: { bucket: value, ...props },
   });
 }
 
@@ -208,5 +219,43 @@ describe('reconciliation status cell', () => {
 
     expect(wrapper.text()).toContain('data_issues.reconciliation.status.matches');
     expect(wrapper.html()).toContain('lu-circle-check');
+  });
+
+  it('should offer a filtered View events link and Inspect trace action for non-blocked buckets', async () => {
+    const value = bucket({ asset: 'eip155:1/erc20:0x6df1', status: 'pending' });
+    const wrapper = mountCell(value, {
+      location: 'ethereum',
+      locationLabel: '0x006a3aD7251db5D12992B62cce26252ac58492Dd',
+    });
+
+    const eventsLink = wrapper.find('[data-testid="reconciliation-view-events"]');
+    expect(eventsLink.exists()).toBe(true);
+    expect(wrapper.findComponent(RouterLinkStub).props('to')).toEqual({
+      name: '/history/events/',
+      query: {
+        addresses: '0x006a3aD7251db5D12992B62cce26252ac58492Dd',
+        asset: 'eip155:1/erc20:0x6df1',
+        location: 'ethereum',
+      },
+    });
+
+    await wrapper.get('[data-testid="reconciliation-inspect-trace"]').trigger('click');
+    expect(wrapper.emitted('inspect-trace')?.[0]).toStrictEqual([value]);
+  });
+
+  it('should scope exchange View events links via locationLabels instead of addresses', () => {
+    const wrapper = mountCell(bucket({ asset: 'BTC', status: 'not_compared' }), {
+      location: 'kraken',
+      locationLabel: 'Kraken 1',
+    });
+
+    expect(wrapper.findComponent(RouterLinkStub).props('to')).toStrictEqual({
+      name: '/history/events/',
+      query: {
+        asset: 'BTC',
+        location: 'kraken',
+        locationLabels: 'Kraken 1',
+      },
+    });
   });
 });

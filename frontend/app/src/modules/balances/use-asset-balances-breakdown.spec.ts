@@ -188,11 +188,15 @@ describe('useAssetBalancesBreakdown', () => {
 
   describe('balance view', () => {
     /** Runs the breakdown inside a page that provides the history view, as the dashboard does. */
-    function breakdownInHistoryView(asset: string, liabilities = false): AssetBreakdown[] {
+    function breakdownInHistoryView(
+      asset: string,
+      liabilities = false,
+      filters?: Parameters<ReturnType<typeof useAssetBalancesBreakdown>['getAssetBreakdown']>[2],
+    ): AssetBreakdown[] {
       let rows: AssetBreakdown[] = [];
       const Child = defineComponent({
         setup(): () => null {
-          rows = useAssetBalancesBreakdown().getAssetBreakdown(asset, liabilities);
+          rows = useAssetBalancesBreakdown().getAssetBreakdown(asset, liabilities, filters);
           return (): null => null;
         },
       });
@@ -234,6 +238,41 @@ describe('useAssetBalancesBreakdown', () => {
       set(manualLiabilities, [createTestManualBalance('GNO', 7, 7, TRADE_LOCATION_EXTERNAL, BalanceType.LIABILITY)]);
 
       expect(breakdownInHistoryView('GNO', true).map(row => row.location)).not.toContain(TRADE_LOCATION_EXTERNAL);
+    });
+
+    const DEBT_TOKEN = 'eip155:1/erc20:0x6df1C1E379bC5a00a7b4C6e67A203333772f45A8';
+
+    function seedDebtToken(liveByAddress: Record<string, number>, historyAmount: number): void {
+      useBalancesStore().updateBalances('eth', {
+        perAccount: {
+          eth: Object.fromEntries(Object.entries(liveByAddress).map(([address, amount]) => [
+            address,
+            { assets: {}, liabilities: { [DEBT_TOKEN]: { 'aave-v3': { amount: bigNumberify(amount), value: bigNumberify(amount) } } } },
+          ])),
+        },
+        totals: { assets: {}, liabilities: {} },
+      });
+      useHistoricalSnapshotStore().setSnapshot({
+        entries: [{ amount: bigNumberify(historyAmount), asset: DEBT_TOKEN, isLiability: true, location: 'ethereum', locationLabel: '0xaddress1', protocol: null }],
+        processingRequired: false,
+        stale: false,
+      });
+    }
+
+    it('should use history liability buckets instead of live liabilities for tracked debt tokens', () => {
+      seedDebtToken({ '0xaddress1': 120, '0xaddress2': 80 }, 100);
+
+      expect(breakdownInHistoryView(DEBT_TOKEN, true)).toMatchObject([
+        { address: '0xaddress1', amount: bigNumberify(100), location: 'ethereum' },
+      ]);
+      expect(breakdownInHistoryView(DEBT_TOKEN, true, { groupId: '0xaddress2' })).toStrictEqual([]);
+    });
+
+    it('should not fall back to live liabilities when a tracked debt token is filtered out by value threshold', () => {
+      seedDebtToken({ '0xaddress1': 500 }, 1);
+      useSettingsRepo().updateFrontend({ balanceValueThreshold: { [BalanceSource.BLOCKCHAIN]: '10' } });
+
+      expect(breakdownInHistoryView(DEBT_TOKEN, true)).toStrictEqual([]);
     });
   });
 });

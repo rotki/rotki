@@ -4,7 +4,7 @@ import { type AssetBalanceWithPriceAndChains, type BigNumber, Zero } from '@rotk
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useHistoricalSnapshotStore } from '@/modules/balances/use-historical-snapshot-store';
 import { useIsHistoryView } from '@/modules/balances/view/balance-view';
-import { type AssetComparison, compareByAsset, withMissingAssets } from '@/modules/balances/view/history-comparison';
+import { type AssetComparison, compareAsset, compareByAsset, sumValues, withMissingAssets } from '@/modules/balances/view/history-comparison';
 import { useHistoryBalances } from '@/modules/balances/view/use-history-balances';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
@@ -26,20 +26,23 @@ interface UseBalanceViewDataReturn {
   readonly netWorthDifference: ComputedRef<BigNumber>;
   /** Manual balances minus manual liabilities: the part of the difference history cannot see. */
   readonly manualNetValue: ComputedRef<BigNumber>;
-  /** Per-asset comparison for the dashboard table, with collections folded. */
+  /** Per-asset comparison for the dashboard assets table, with collections folded. */
   readonly comparisons: ComputedRef<Map<string, AssetComparison>>;
+  /** Per-asset comparison for liabilities (e.g. debt tokens). */
+  readonly liabilityComparisons: ComputedRef<Map<string, AssetComparison>>;
   readonly getAssetPriceInfo: (identifier: string, groupCollection?: boolean) => AssetPriceInfo;
   readonly getAssetComparison: (identifier: string, groupCollection?: boolean) => AssetComparison;
 }
 
 const NO_COMPARISON: AssetComparison = { delta: Zero, history: Zero, manual: Zero, queried: Zero, valueDelta: Zero };
 
-function sumValues(rows: readonly AssetBalanceWithPriceAndChains[]): BigNumber {
-  return rows.reduce((sum, row) => sum.plus(row.value), Zero);
-}
-
-function priceInfoOf(rows: readonly AssetBalanceWithPriceAndChains[], identifier: string): AssetPriceInfo {
-  const row = rows.find(item => item.asset === identifier);
+function priceInfoOf(
+  rows: readonly AssetBalanceWithPriceAndChains[],
+  identifier: string,
+  fallbackRows: readonly AssetBalanceWithPriceAndChains[] = [],
+): AssetPriceInfo {
+  const row = rows.find(item => item.asset === identifier)
+    ?? fallbackRows.find(item => item.asset === identifier);
   return { amount: row?.amount ?? Zero, price: row?.price ?? Zero, value: row?.value ?? Zero };
 }
 
@@ -64,18 +67,20 @@ export function useBalanceViewData(isHistory: ComputedRef<boolean> = useIsHistor
   const historyBalances = computed<AssetBalanceWithPriceAndChains[]>(() => history.getBalances());
   const historyLiabilities = computed<AssetBalanceWithPriceAndChains[]>(() => history.getLiabilities());
 
-  /** Live rows; once history has data, each view also lists at zero what only the other holds. */
-  const balances = computed<AssetBalanceWithPriceAndChains[]>(() => {
-    const live = getBalances();
+  function viewRows(
+    live: AssetBalanceWithPriceAndChains[],
+    derived: readonly AssetBalanceWithPriceAndChains[],
+  ): AssetBalanceWithPriceAndChains[] {
     if (!get(hasData))
       return live;
-    return get(isHistory) ? withMissingAssets(get(historyBalances), live) : withMissingAssets(live, get(historyBalances));
-  });
+    return get(isHistory) ? withMissingAssets(derived, live) : withMissingAssets(live, derived);
+  }
 
-  /** History liabilities are a subset of the live ones, so only the history view needs zero rows. */
-  const liabilities = computed<AssetBalanceWithPriceAndChains[]>(() => (get(isHistory)
-    ? withMissingAssets(get(historyLiabilities), getLiabilities())
-    : getLiabilities()));
+  /** Live rows; once history has data, each view also lists at zero what only the other holds. */
+  const balances = computed<AssetBalanceWithPriceAndChains[]>(() => viewRows(getBalances(), get(historyBalances)));
+
+  /** Live and history liabilities, keeping zero rows for liabilities held only in the other view. */
+  const liabilities = computed<AssetBalanceWithPriceAndChains[]>(() => viewRows(getLiabilities(), get(historyLiabilities)));
 
   const historyNetWorth = computed<BigNumber>(() => sumValues(get(historyBalances))
     .plus(get(nftsInNetValue) ? get(nftValue) : Zero)
@@ -88,18 +93,28 @@ export function useBalanceViewData(isHistory: ComputedRef<boolean> = useIsHistor
   const comparisons = computed<Map<string, AssetComparison>>(() =>
     compareByAsset(get(historyBalances), getBalances(), history.getManualBalances()));
 
+  const liabilityComparisons = computed<Map<string, AssetComparison>>(() =>
+    compareByAsset(get(historyLiabilities), getLiabilities(), history.getManualLiabilities()));
+
   function getAssetPriceInfo(identifier: string, groupCollection = false): AssetPriceInfo {
     return get(isHistory)
-      ? priceInfoOf(history.getBalances(groupCollection), identifier)
+      ? priceInfoOf(history.getBalances(groupCollection), identifier, get(historyLiabilities))
       : getLiveAssetPriceInfo(identifier, groupCollection);
   }
 
   function getAssetComparison(identifier: string, groupCollection = false): AssetComparison {
-    return compareByAsset(
-      history.getBalances(groupCollection),
-      getBalances(true, groupCollection),
-      history.getManualBalances(groupCollection),
-    ).get(identifier) ?? NO_COMPARISON;
+    const assetComparison = groupCollection
+      ? get(comparisons).get(identifier)
+      : compareAsset(
+          identifier,
+          history.getBalances(false),
+          getBalances(true, false),
+          history.getManualBalances(false),
+        );
+    if (assetComparison)
+      return assetComparison;
+
+    return get(liabilityComparisons).get(identifier) ?? NO_COMPARISON;
   }
 
   return {
@@ -110,7 +125,8 @@ export function useBalanceViewData(isHistory: ComputedRef<boolean> = useIsHistor
     getAssetPriceInfo,
     isHistory,
     liabilities,
-    liabilitiesHeld: computed<boolean>(() => getLiabilities().length > 0),
+    liabilitiesHeld: computed<boolean>(() => getLiabilities().length > 0 || (get(hasData) && get(historyLiabilities).length > 0)),
+    liabilityComparisons,
     manualNetValue,
     netWorth,
     netWorthDifference,

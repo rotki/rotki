@@ -31,6 +31,25 @@ function valueOf(row: AssetBalanceWithPriceAndChains | undefined): BigNumber {
   return row?.value ?? Zero;
 }
 
+/** Total fiat value across a list of balance rows. */
+export function sumValues(rows: readonly AssetBalanceWithPriceAndChains[]): BigNumber {
+  return rows.reduce((sum, row) => sum.plus(row.value), Zero);
+}
+
+function buildComparison(
+  historyRow: AssetBalanceWithPriceAndChains | undefined,
+  queriedRow: AssetBalanceWithPriceAndChains | undefined,
+  manualRow: AssetBalanceWithPriceAndChains | undefined,
+): AssetComparison {
+  return {
+    delta: amountOf(historyRow).minus(amountOf(queriedRow)),
+    history: amountOf(historyRow),
+    manual: amountOf(manualRow),
+    queried: amountOf(queriedRow),
+    valueDelta: valueOf(historyRow).minus(valueOf(queriedRow)),
+  };
+}
+
 /**
  * The rows of the view on show, plus a zero row for every asset of value only the other view holds.
  *
@@ -63,15 +82,66 @@ export function compareByAsset(
   const manualRows = byAsset(manual);
   const assets = new Set([...historyRows.keys(), ...queriedRows.keys()]);
 
-  return new Map(Array.from(assets, (asset): [string, AssetComparison] => {
-    const historyRow = historyRows.get(asset);
-    const queriedRow = queriedRows.get(asset);
-    return [asset, {
-      delta: amountOf(historyRow).minus(amountOf(queriedRow)),
-      history: amountOf(historyRow),
-      manual: amountOf(manualRows.get(asset)),
-      queried: amountOf(queriedRow),
-      valueDelta: valueOf(historyRow).minus(valueOf(queriedRow)),
-    }];
-  }));
+  return new Map(Array.from(assets, (asset): [string, AssetComparison] => [
+    asset,
+    buildComparison(historyRows.get(asset), queriedRows.get(asset), manualRows.get(asset)),
+  ]));
+}
+
+/** Comparison for one asset without indexing the whole portfolio; undefined when neither view holds it. */
+export function compareAsset(
+  identifier: string,
+  history: readonly AssetBalanceWithPriceAndChains[],
+  queried: readonly AssetBalanceWithPriceAndChains[],
+  manual: readonly AssetBalanceWithPriceAndChains[],
+): AssetComparison | undefined {
+  const historyRow = history.find(row => row.asset === identifier);
+  const queriedRow = queried.find(row => row.asset === identifier);
+  if (!historyRow && !queriedRow)
+    return undefined;
+
+  return buildComparison(historyRow, queriedRow, manual.find(row => row.asset === identifier));
+}
+
+/**
+ * The largest non-zero gaps across assets and liabilities, ranked by absolute value delta.
+ *
+ * @remarks
+ * Zero-delta entries are dropped before merging so an agreeing asset row cannot shadow a
+ * mismatching liability row for the same asset. When both sides disagree for one asset, the
+ * larger absolute value delta wins.
+ */
+export function mergeTopGaps(
+  assetComparisons: ReadonlyMap<string, AssetComparison>,
+  liabilityComparisons: ReadonlyMap<string, AssetComparison>,
+  limit: number,
+): [string, AssetComparison][] {
+  const merged = new Map<string, AssetComparison>();
+  for (const map of [assetComparisons, liabilityComparisons]) {
+    for (const [assetId, comparison] of map) {
+      if (comparison.delta.isZero())
+        continue;
+      const existing = merged.get(assetId);
+      if (!existing || comparison.valueDelta.abs().gt(existing.valueDelta.abs()))
+        merged.set(assetId, comparison);
+    }
+  }
+  return [...merged]
+    .sort(([, a], [, b]) => b.valueDelta.abs().comparedTo(a.valueDelta.abs()) ?? 0)
+    .slice(0, limit);
+}
+
+/**
+ * The query value for linking an asset or folded collection to balance reconciliation.
+ *
+ * @remarks
+ * A collection row is headed by its main asset's identifier (for example Ethereum USDC), which
+ * would hide sibling chains in reconciliation. Passing its symbol matches every chain's token.
+ */
+export function reconciliationAssetQuery(
+  identifier: string,
+  isCollectionParent: boolean,
+  symbol?: string,
+): string {
+  return isCollectionParent && symbol ? symbol : identifier;
 }

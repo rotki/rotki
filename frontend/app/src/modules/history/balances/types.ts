@@ -35,6 +35,7 @@ const HistoricalBalanceEntry = z.object({
   protocol: z.string().nullish(),
   asset: z.string(),
   amount: NumericString,
+  isLiability: z.boolean().optional(),
 });
 
 export type HistoricalBalanceEntry = z.infer<typeof HistoricalBalanceEntry>;

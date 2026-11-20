@@ -26,8 +26,11 @@ const RuiMenuStub = {
   template: '<div data-testid="balance-view-picker"><slot name="activator" :attrs="{}" /><slot /></div>',
 };
 
-function mountPicker(): VueWrapper {
-  return mount(BalanceViewPicker, { global: { stubs: { BalanceViewPanel: true, RuiMenu: RuiMenuStub } } });
+function mountPicker(props?: { asset?: string; isCollectionParent?: boolean }): VueWrapper {
+  return mount(BalanceViewPicker, {
+    global: { stubs: { BalanceViewPanel: true, RuiMenu: RuiMenuStub } },
+    props,
+  });
 }
 
 function dotIsShown(wrapper: VueWrapper): boolean {
@@ -98,5 +101,11 @@ describe('balanceViewPicker', () => {
 
     expect(wrapper.find('[data-testid="balance-view-attention"]').exists()).toBe(true);
     expect(dotIsShown(wrapper)).toBe(false);
+  });
+
+  it('should forward asset and isCollectionParent props to the popover panel', () => {
+    const panel = mountPicker({ asset: 'USDC', isCollectionParent: true }).getComponent({ name: 'BalanceViewPanel' });
+
+    expect(panel.props()).toMatchObject({ asset: 'USDC', isCollectionParent: true });
   });
 });

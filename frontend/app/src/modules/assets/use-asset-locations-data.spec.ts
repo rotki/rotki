@@ -109,4 +109,25 @@ describe('useAssetLocationsData', () => {
     const { visibleAssetLocations } = useAssetLocationsData(options({ addresses: ref(['0x2']) }));
     expect(get(visibleAssetLocations).map(l => l.address)).toEqual(['0x2']);
   });
+
+  it('should fall back to liability breakdown when asset breakdown is empty', () => {
+    spies.getAssetBreakdown
+      .mockReturnValueOnce([])
+      .mockReturnValueOnce([breakdown({ address: '0xdebt', location: 'ethereum' })]);
+
+    const { assetLocations } = useAssetLocationsData(options({ identifier: 'DEBT_TOKEN' }));
+
+    expect(get(assetLocations).map(l => l.address)).toStrictEqual(['0xdebt']);
+    expect(spies.getAssetBreakdown).toHaveBeenNthCalledWith(1, 'DEBT_TOKEN');
+    expect(spies.getAssetBreakdown).toHaveBeenNthCalledWith(2, 'DEBT_TOKEN', true);
+  });
+
+  it('should prefer asset breakdown and not query liabilities when asset rows exist', () => {
+    spies.getAssetBreakdown.mockReturnValue([breakdown({ address: '0xasset' })]);
+
+    const { assetLocations } = useAssetLocationsData(options({ identifier: 'DAI' }));
+
+    expect(get(assetLocations).map(l => l.address)).toStrictEqual(['0xasset']);
+    expect(spies.getAssetBreakdown).toHaveBeenCalledExactlyOnceWith('DAI');
+  });
 });

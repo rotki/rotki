@@ -83,6 +83,8 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   function getAssetPriceInfo(identifier: string, groupMultiChain = false): AssetPriceInfo {
     const assetValue = getBalances(true, groupMultiChain).find(
       (value: AssetBalanceWithPrice) => value.asset === identifier,
+    ) ?? getLiabilities(true).find(
+      (value: AssetBalanceWithPrice) => value.asset === identifier,
     );
 
     return {

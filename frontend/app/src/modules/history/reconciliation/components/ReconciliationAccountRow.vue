@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import type { ReconciliationAccount } from '@/modules/history/reconciliation/schemas';
-import { useLocations } from '@/modules/core/common/use-locations';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import ReconciliationAccountIdentity from '@/modules/history/reconciliation/components/ReconciliationAccountIdentity.vue';
 import { ACCOUNT_SUMMARY_LABEL } from '@/modules/history/reconciliation/messages';
 import { type AccountSummary, accountSummaryFor, type ReconciliationView } from '@/modules/history/reconciliation/use-reconciliation-rows';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
-import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const { account, view, isOpen, loading = false, error, colspan } = defineProps<{
   account: ReconciliationAccount;
@@ -23,15 +21,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { useLocationData } = useLocations();
 
-const { matchChain } = useSupportedChains();
-const locationData = useLocationData(() => account.location);
-
-/** Only a blockchain account's label is an address; an exchange or import label is a plain name. */
-const isChainAccount = computed<boolean>(() => matchChain(account.location) !== undefined);
-
-const locationName = computed<string>(() => get(locationData)?.name ?? account.location);
 const summary = computed<AccountSummary>(() => accountSummaryFor(account, view));
 
 /** Red for a mismatch, amber for stopped processing only, matching the headline and the bar. */
@@ -94,26 +84,10 @@ const summaryParts = computed<string[]>(() => {
       </span>
       <div class="flex flex-col min-w-0 grow">
         <div class="flex flex-wrap items-center gap-x-2 min-h-7 text-sm">
-          <span class="font-semibold text-rui-text">{{ locationName }}</span>
-          <HashLink
-            v-if="account.locationLabel && isChainAccount"
-            :text="account.locationLabel"
+          <ReconciliationAccountIdentity
             :location="account.location"
-            reveal-actions
+            :location-label="account.locationLabel"
           />
-          <span
-            v-else-if="account.locationLabel"
-            class="text-rui-text-secondary"
-            data-testid="reconciliation-account-label"
-          >
-            {{ account.locationLabel }}
-          </span>
-          <span
-            v-else
-            class="text-rui-text-secondary"
-          >
-            {{ t('data_issues.reconciliation.no_account_label') }}
-          </span>
         </div>
 
         <div class="flex flex-wrap items-center gap-2 text-xs leading-5 text-rui-text-secondary">

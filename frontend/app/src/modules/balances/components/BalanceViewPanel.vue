@@ -1,20 +1,29 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import type { RouteLocationRaw } from 'vue-router';
-import type { AssetComparison } from '@/modules/balances/view/history-comparison';
 import { startPromise } from '@shared/utils';
 import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
+import ManualAmountNote from '@/modules/balances/components/ManualAmountNote.vue';
 import { useCurrentHistoricalBalances } from '@/modules/balances/use-current-historical-balances';
 import { useHistoricalSnapshotStore } from '@/modules/balances/use-historical-snapshot-store';
 import { BalanceView } from '@/modules/balances/view/balance-view';
+import { type AssetComparison, mergeTopGaps, reconciliationAssetQuery } from '@/modules/balances/view/history-comparison';
 import { useBalanceView } from '@/modules/balances/view/use-balance-view';
 import { useBalanceViewData } from '@/modules/balances/view/use-balance-view-data';
+import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import { type SourceDifference, useSourceDifferences } from '@/modules/dashboard/holdings/use-history-holdings-contributions';
 import { useSourceKindLabel } from '@/modules/dashboard/holdings/use-source-kind-label';
 import { historicalBalancesActivity } from '@/modules/history/balances/historical-balances.activity';
+import { reconciliationRoute } from '@/modules/history/reconciliation/routes';
 import { useBucketReconciliation } from '@/modules/history/reconciliation/use-bucket-reconciliation';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
+
+const { asset, isCollectionParent = false } = defineProps<{
+  /** When scoped to one asset page, show that asset's comparison instead of portfolio-wide figures. */
+  asset?: string;
+  isCollectionParent?: boolean;
+}>();
 
 /** How many of the largest per-asset gaps the panel lists. */
 const TOP_GAPS = 3;
@@ -31,30 +40,46 @@ const ACTION = 'min-w-24 shrink-0';
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 
+const { error, hasData, loaded, loading, processingRequired, stale } = storeToRefs(useHistoricalSnapshotStore());
+
 const { setView, view } = useBalanceView();
-const { comparisons, netWorthDifference, queriedNetWorth } = useBalanceViewData();
-const historyNetWorth = computed<BigNumber>(() => get(queriedNetWorth).plus(get(netWorthDifference)));
+const { balances, comparisons, getAssetComparison, liabilityComparisons, netWorthDifference, queriedNetWorth } = useBalanceViewData();
 const sources = useSourceDifferences();
 const kindLabel = useSourceKindLabel();
 const { getAssetField } = useAssetInfoRetrieval();
-const { error, hasData, loaded, loading, processingRequired, stale } = storeToRefs(useHistoricalSnapshotStore());
 /** Backend processing is running, so a missing or stale snapshot is about to change. */
 const processing = useTaskCenter().useIsActive(historicalBalancesActivity.kind);
 const { refresh, triggerProcessing } = useCurrentHistoricalBalances();
-const { totals } = useBucketReconciliation();
+const reconciliation = isAccountingUpdateEnabled() ? useBucketReconciliation() : undefined;
 
-const reconciliationLink: RouteLocationRaw = {
-  name: '/history/data-issues/[[tab]]',
-  params: { tab: 'reconciliation' },
-};
-
-const gaps = computed<[string, AssetComparison][]>(() => [...get(comparisons)]
-  .filter(([, comparison]) => !comparison.delta.isZero())
-  .sort(([, a], [, b]) => b.valueDelta.abs().comparedTo(a.valueDelta.abs()) ?? 0)
-  .slice(0, TOP_GAPS));
-
+const historyNetWorth = computed<BigNumber>(() => get(queriedNetWorth).plus(get(netWorthDifference)));
+const assetSymbol = computed<string>(() => (asset ? (getAssetField(asset, 'symbol') || asset) : ''));
+const assetComparison = computed<AssetComparison | undefined>(() =>
+  (asset ? getAssetComparison(asset, isCollectionParent) : undefined));
+const showAssetManual = computed<boolean>(() => {
+  const current = get(assetComparison);
+  return !!current && !current.delta.isZero() && current.manual.gt(0);
+});
+const collectionAssets = computed<ReadonlySet<string>>(() => new Set(
+  get(balances).filter(row => !!row.breakdown).map(row => row.asset),
+));
+const reconciliationLink = computed<RouteLocationRaw>(() => (asset
+  ? reconciliationRoute(reconciliationAssetQuery(asset, isCollectionParent, getAssetField(asset, 'symbol')))
+  : reconciliationRoute()));
+const gaps = computed<[string, AssetComparison][]>(() =>
+  (asset ? [] : mergeTopGaps(get(comparisons), get(liabilityComparisons), TOP_GAPS)));
 const behind = computed<boolean>(() => get(processingRequired) || get(stale));
-const reconciliationIssues = computed<boolean>(() => get(totals).mismatch + get(totals).blocked > 0);
+const blockedCount = computed<number>(() => (reconciliation ? get(reconciliation.totals).blocked : 0));
+const mismatchedCount = computed<number>(() => (reconciliation ? get(reconciliation.totals).mismatch : 0));
+const reconciliationIssues = computed<boolean>(() => get(mismatchedCount) + get(blockedCount) > 0);
+
+function gapReconciliationLink(gapAsset: string): RouteLocationRaw {
+  return reconciliationRoute(reconciliationAssetQuery(
+    gapAsset,
+    get(collectionAssets).has(gapAsset),
+    getAssetField(gapAsset, 'symbol'),
+  ));
+}
 
 function basisLabel({ basis }: SourceDifference): string {
   if (basis === 'derived')
@@ -119,7 +144,47 @@ function select(value: BalanceView | BalanceView[] | undefined): void {
     </div>
 
     <div
-      v-if="hasData"
+      v-if="hasData && asset && assetComparison"
+      class="grid grid-cols-[minmax(0,1fr)_auto_5.5rem] items-baseline gap-x-3 gap-y-1 tabular-nums"
+      data-testid="balance-view-panel-asset-figures"
+    >
+      <h4 :class="HEADING">
+        {{ assetSymbol }}
+      </h4>
+      <span class="text-rui-text-secondary">{{ t('balance_view.from_history') }}</span>
+      <ValueDisplay
+        class="justify-self-end"
+        :value="assetComparison.history"
+        :format="{ noRoundingMark: true }"
+      />
+      <span />
+      <span class="text-rui-text-secondary">{{ t('balance_view.live') }}</span>
+      <ValueDisplay
+        class="justify-self-end"
+        :value="assetComparison.queried"
+        :format="{ noRoundingMark: true }"
+      />
+      <span />
+      <span class="col-span-3 border-t border-default my-0.5" />
+      <span class="font-medium">{{ t('balance_view.difference') }}</span>
+      <ValueDisplay
+        class="justify-self-end font-medium"
+        :class="{ 'text-rui-warning': !assetComparison.delta.isZero() }"
+        :value="assetComparison.delta"
+        :format="{ noRoundingMark: true }"
+        data-testid="balance-view-panel-asset-difference"
+      />
+      <ManualAmountNote
+        v-if="showAssetManual"
+        :class="NOTE"
+        :amount="assetComparison.manual"
+        data-testid="balance-view-panel-asset-manual"
+      />
+      <span v-else />
+    </div>
+
+    <div
+      v-else-if="hasData"
       class="grid grid-cols-[minmax(0,1fr)_auto_5.5rem] items-baseline gap-x-3 gap-y-1 tabular-nums"
       data-testid="balance-view-panel-figures"
     >
@@ -151,7 +216,7 @@ function select(value: BalanceView | BalanceView[] | undefined): void {
       <template v-if="sources.length > 0">
         <h4
           class="mt-3"
-          :class="[HEADING]"
+          :class="HEADING"
           data-testid="balance-view-panel-sources"
         >
           {{ t('balance_view.by_source') }}
@@ -178,41 +243,39 @@ function select(value: BalanceView | BalanceView[] | undefined): void {
       <template v-if="gaps.length > 0">
         <h4
           class="mt-3"
-          :class="[HEADING]"
+          :class="HEADING"
           data-testid="balance-view-panel-gaps"
         >
           {{ t('balance_view.largest_gaps') }}
         </h4>
         <template
-          v-for="[asset, comparison] in gaps"
-          :key="asset"
+          v-for="[gapAsset, comparison] in gaps"
+          :key="gapAsset"
         >
           <RouterLink
-            :to="{ name: '/assets/[identifier]', params: { identifier: asset }, query: { view: BalanceView.HISTORY } }"
+            :to="{ name: '/assets/[identifier]', params: { identifier: gapAsset }, query: { view: BalanceView.HISTORY } }"
             class="text-rui-primary truncate"
             data-testid="balance-view-panel-gap"
           >
-            {{ getAssetField(asset, 'symbol') || asset }}
+            {{ getAssetField(gapAsset, 'symbol') || gapAsset }}
           </RouterLink>
-          <ValueDisplay
-            class="justify-self-end text-rui-warning"
-            :value="comparison.delta"
-            :format="{ noRoundingMark: true }"
-          />
-          <i18n-t
-            scope="global"
-            keypath="balance_view.manual_amount"
-            tag="span"
-            :class="[NOTE, { invisible: comparison.manual.isZero() }]"
+          <RouterLink
+            :to="gapReconciliationLink(gapAsset)"
+            class="justify-self-end hover:underline"
+            data-testid="balance-view-panel-gap-reconcile"
           >
-            <template #amount>
-              <ValueDisplay
-                class="inline"
-                :value="comparison.manual"
-                :format="{ noRoundingMark: true }"
-              />
-            </template>
-          </i18n-t>
+            <ValueDisplay
+              class="text-rui-warning"
+              :value="comparison.delta"
+              :format="{ noRoundingMark: true }"
+            />
+          </RouterLink>
+          <ManualAmountNote
+            v-if="comparison.manual.gt(0)"
+            :class="NOTE"
+            :amount="comparison.manual"
+          />
+          <span v-else />
         </template>
       </template>
     </div>
@@ -315,10 +378,15 @@ function select(value: BalanceView | BalanceView[] | undefined): void {
           size="16"
           class="shrink-0"
         />
-        <span class="grow">
-          {{ reconciliationIssues
-            ? t('balance_view.reconciliation_issues', { blocked: totals.blocked, mismatched: totals.mismatch })
-            : t('balance_view.reconciliation_clear') }}
+        <span
+          class="grow"
+          data-testid="balance-view-panel-reconciliation-summary"
+        >
+          {{ asset
+            ? t('data_issues.tabs.reconciliation')
+            : reconciliationIssues
+              ? t('balance_view.reconciliation_issues', { blocked: blockedCount, mismatched: mismatchedCount })
+              : t('balance_view.reconciliation_clear') }}
         </span>
         <RuiButton
           size="sm"

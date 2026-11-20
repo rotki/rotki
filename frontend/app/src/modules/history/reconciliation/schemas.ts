@@ -1,5 +1,6 @@
 import { NumericString } from '@rotki/common';
-import { z } from 'zod';
+import { z, ZodError } from 'zod';
+import { FailureCause } from '@/modules/core/api/failure-cause';
 
 /**
  * The five states the backend classifier reports.
@@ -136,9 +137,89 @@ export const ReconciliationResponse = z.object({
 export type ReconciliationResponse = z.infer<typeof ReconciliationResponse>;
 
 export interface ReconciliationRequest {
+  asset?: string;
   location?: string;
   locationLabel?: string;
   status?: BucketStatus[];
   limit?: number;
   offset?: number;
+}
+
+export interface InspectedBucket {
+  account: ReconciliationAccount;
+  bucket: ReconciliationBucket;
+}
+
+export const BucketTraceRow = z.object({
+  balanceAfter: NumericString,
+  balanceBefore: NumericString,
+  counterparty: z.string().nullable(),
+  customized: z.boolean(),
+  direction: z.enum(['in', 'out']),
+  eventAsset: z.string(),
+  eventIdentifier: z.number().nullable(),
+  eventSubtype: z.string(),
+  eventType: z.string(),
+  groupIdentifier: z.string().nullable(),
+  rebaseYield: NumericString.nullable(),
+  rule: z.string(),
+  sequenceIndex: z.number(),
+  signedAmount: NumericString,
+  status: z.string(),
+  storedBalance: NumericString.nullable(),
+  timestampMs: z.number(),
+});
+
+export type BucketTraceRow = z.infer<typeof BucketTraceRow>;
+
+const BucketTraceSummary = z.object({
+  awaitingRebaseReconciliation: z.boolean(),
+  derivedBalancesStale: z.boolean(),
+  effectsTotal: z.number(),
+  finalBalance: NumericString,
+  rebasingAsset: z.boolean(),
+  skippedAfterStop: z.number(),
+  stopRowIndex: z.number().nullable(),
+  storedBalanceMismatches: z.number(),
+});
+
+const BucketTracePagination = z.object({
+  limit: z.number(),
+  offset: z.number(),
+  total: z.number(),
+  truncated: z.boolean(),
+});
+
+export const BucketTraceResponse = z.object({
+  pagination: BucketTracePagination,
+  rows: z.array(BucketTraceRow),
+  summary: BucketTraceSummary,
+});
+
+export type BucketTraceResponse = z.infer<typeof BucketTraceResponse>;
+
+export interface BucketTraceRequest {
+  asset: string;
+  limit?: number;
+  location: string;
+  locationLabel?: string | null;
+  offset?: number;
+  protocol?: string | null;
+}
+
+/**
+ * Normalizes an error thrown by reconciliation endpoints for `FailureStrip`.
+ *
+ * @remarks
+ * A response that fails Zod parsing means the backend and frontend disagree on the wire format.
+ * Zod's raw error dumps schema paths, so it is replaced with a user-facing message and marked
+ * `UNSUPPORTED` (retrying returns the same payload). Every other error is returned untouched so
+ * its backend message and retryability stay intact.
+ */
+export function namedReconciliationFailure(error: unknown, unexpectedResponseMessage: string): unknown {
+  if (!(error instanceof ZodError))
+    return error;
+  return Object.assign(new Error(unexpectedResponseMessage), {
+    failureCause: FailureCause.UNSUPPORTED,
+  });
 }

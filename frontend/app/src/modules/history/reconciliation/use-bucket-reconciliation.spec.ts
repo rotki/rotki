@@ -431,4 +431,66 @@ describe('useBucketReconciliation', () => {
     expect(detail?.buckets.map(item => item.asset)).toStrictEqual(['A', 'B', 'C']);
     expect(fetchAccount.mock.calls[1][0]).toMatchObject({ offset: 2 });
   });
+
+  it('should return filtered summary results without mutating global summaryFailure', async () => {
+    const store = useBucketReconciliationStore();
+    store.setSummary(response({ totals: counts({ reconciled: 3 }) }));
+    fetchSummary
+      .mockResolvedValueOnce(response({ totals: counts({ pending: 1 }) }))
+      .mockRejectedValueOnce(new Error('filter boom'))
+      .mockRejectedValueOnce(createStatusError(404, 'disabled', { cause: 'not_found', message: 'disabled', result: null }));
+
+    const { fetchFilteredSummary } = useBucketReconciliation();
+
+    const ok = await fetchFilteredSummary('USDC');
+    expect(ok).toMatchObject({ status: 'ok' });
+    expect(store.totals.reconciled).toBe(3);
+
+    const failed = await fetchFilteredSummary('USDC');
+    expect(failed.status).toBe('failed');
+    expect(store.summaryFailed).toBe(false);
+
+    const unavailable = await fetchFilteredSummary('USDC');
+    expect(unavailable).toStrictEqual({ status: 'unavailable' });
+    expect(store.summaryUnavailable).toBe(true);
+  });
+
+  it('should key account cache by normalized asset filter and skip drift refresh when filtered', async () => {
+    const store = useBucketReconciliationStore();
+    const eth = account({ counts: counts({ pending: 2 }) });
+    store.setSummary(response({ accounts: [eth] }));
+    fetchAccount
+      .mockResolvedValueOnce(account({ buckets: [bucket('USDC')], counts: counts({ pending: 1 }) }))
+      .mockResolvedValueOnce(account({ buckets: [bucket('ETH')], counts: counts({ pending: 1 }) }));
+
+    const { ensureAccount } = useBucketReconciliation();
+    await ensureAccount(eth, undefined, '  USDC ');
+    await ensureAccount(eth, undefined, 'usdc');
+    expect(fetchAccount).toHaveBeenCalledTimes(1);
+    expect(fetchSummary).not.toHaveBeenCalled();
+
+    await ensureAccount(eth, undefined, 'ETH');
+    expect(fetchAccount).toHaveBeenCalledTimes(2);
+    expect(fetchAccount.mock.calls[1][0]).toMatchObject({ asset: 'ETH' });
+  });
+
+  it('should reload only accounts present in sourceAccounts and remove missing ones', async () => {
+    const store = useBucketReconciliationStore();
+    const first = account({ locationLabel: '0x1' });
+    const second = account({ locationLabel: '0x2' });
+    store.setSummary(response({ accounts: [first, second] }));
+    fetchAccount.mockResolvedValue(account({ buckets: [bucket('USDC')] }));
+
+    const { ensureAccount, reloadAccounts } = useBucketReconciliation();
+    await ensureAccount(first);
+    await ensureAccount(second);
+    fetchAccount.mockClear();
+
+    await reloadAccounts(undefined, 'USDC', [second]);
+
+    expect(fetchAccount).toHaveBeenCalledTimes(1);
+    expect(fetchAccount).toHaveBeenCalledWith(expect.objectContaining({ asset: 'USDC', locationLabel: '0x2' }));
+    expect(store.accountState(reconciliationAccountKey('ethereum', '0x1'))).toBeUndefined();
+    expect(store.accountState(reconciliationAccountKey('ethereum', '0x2'))).toBeDefined();
+  });
 });
