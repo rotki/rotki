@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+from itertools import batched
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 import requests
@@ -16,6 +17,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.chain.evm.types import NodeName
+from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheStatic
@@ -79,6 +81,7 @@ REMOTE_UPDATE_ERRORS: Final = (
     rsqlite.Error,  # pylint: disable=no-member
 )
 PENDING_RPC_NODES_UPDATE: Final = 'pending_rpc_nodes_update'
+SPAM_ASSETS_UPDATE_BATCH_SIZE: Final = 10
 
 
 def _deserialize_accounting_rule(
@@ -162,6 +165,7 @@ class RotkiDataUpdater:
         since they can depend on it.
         """
         for update_version in range(from_version + 1, to_version + 1):
+            checkpoint()
             version_info = limits.get(str(update_version), {})  # json treats keys as string
             if not isinstance(version_info, dict):
                 raise DeserializationError(
@@ -209,6 +213,7 @@ class RotkiDataUpdater:
                 return False
 
             # At this point we can apply the update. Type ignore is due to different sigs of data
+            checkpoint()
             try:
                 self.update_type_mappings[update_type](updated_data, update_version)  # type: ignore
             except REMOTE_UPDATE_ERRORS:
@@ -220,6 +225,7 @@ class RotkiDataUpdater:
                 )
                 return False
 
+            checkpoint()
             with self.user_db.conn.write_ctx() as write_cursor:
                 write_cursor.execute(  # this was the last update to be applied for this data type, so remember it  # noqa: E501
                     'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',
@@ -262,7 +268,9 @@ class RotkiDataUpdater:
         locally
         """
         log.info(f'Applying update for spam assets to v{version}. {len(data)} tokens to add')
-        update_spam_assets(db=self.user_db, assets_info=data)
+        for batch in batched(data, SPAM_ASSETS_UPDATE_BATCH_SIZE, strict=False):
+            checkpoint()
+            update_spam_assets(db=self.user_db, assets_info=list(batch))
 
     def update_rpc_nodes(self, data: list[dict[str, Any]], version: int) -> None:
         """RPC nodes update code. It also updates the user db with these default nodes."""
@@ -311,6 +319,7 @@ class RotkiDataUpdater:
                     })),
                 )
 
+        checkpoint()
         added, removed = self._update_user_nodes(
             existing_default_nodes=existing_default_nodes,
             new_default_nodes=new_default_nodes,
@@ -318,6 +327,7 @@ class RotkiDataUpdater:
         )
         if self.chains_aggregator is not None:
             for manager in self.chains_aggregator.iterate_chain_managers_with_nodes():
+                checkpoint()
                 inquirer = manager.node_inquirer
                 chain_added = {node for node in added if node.blockchain == inquirer.blockchain}
                 chain_removed = {
@@ -331,6 +341,7 @@ class RotkiDataUpdater:
                         ) if node.node_info in chain_added
                     ])
 
+        checkpoint()
         with GlobalDBHandler().conn.write_ctx() as cursor:
             cursor.execute('DELETE FROM default_rpc_nodes')
             cursor.executemany(
@@ -362,6 +373,7 @@ class RotkiDataUpdater:
         serialized_type = ConflictType.ACCOUNTING_RULE.serialize_for_db()
         conflicts = []
         for rule_data in data:
+            checkpoint()
             try:
                 event_type, event_subtype, counterparty, rule = _deserialize_accounting_rule(rule_data)  # noqa: E501
             except (KeyError, DeserializationError) as e:
@@ -400,6 +412,7 @@ class RotkiDataUpdater:
         if len(conflicts) == 0:
             return
 
+        checkpoint()
         conflicts_db = DBRemoteConflicts(self.user_db)
         conflicts_db.save_conflicts(conflicts=conflicts)
         self.msg_aggregator.add_message(
@@ -428,6 +441,7 @@ class RotkiDataUpdater:
         latest_version, limits = info['latest'], info.get('limits', {})
         applied_version, rules_data = 0, []
         for update_version in range(1, latest_version + 1):  # replay every applicable version
+            checkpoint()
             version_info = limits.get(str(update_version), {})
             if (
                 (min_version := version_info.get('min_version')) is not None and
@@ -459,6 +473,7 @@ class RotkiDataUpdater:
         # lean as possible and we hold the db lock for as little time as we can.
         deserialized_rules = []
         for rule_data in rules_data:
+            checkpoint()
             try:
                 event_type, event_subtype, counterparty, rule = _deserialize_accounting_rule(rule_data)  # noqa: E501
             except (KeyError, DeserializationError) as e:
@@ -468,6 +483,7 @@ class RotkiDataUpdater:
             deserialized_rules.append((event_type, event_subtype, counterparty, rule, rule_data.get('links', {})))  # noqa: E501
 
         # Everything is fetched and ready. Atomically swap the user's rules for the defaults.
+        checkpoint()
         rules_db = DBAccountingRules(self.user_db)
         with self.user_db.conn.write_ctx() as write_cursor:
             write_cursor.execute('DELETE FROM linked_rules_properties')
@@ -502,6 +518,7 @@ class RotkiDataUpdater:
         log.info(f'Applying update for contracts to v{version}')
         remote_id_to_local_id = {}
         for single_abi_data in data['abis_data']:
+            checkpoint()
             # store a mapping of the virtual id to the id in the user's globaldb
             abi_id = GlobalDBHandler.get_or_write_abi(
                 serialized_abi=single_abi_data['value'],
@@ -511,6 +528,7 @@ class RotkiDataUpdater:
 
         new_contracts_data = []
         for single_contract_data in data['contracts_data']:
+            checkpoint()
             if single_contract_data['abi'] not in remote_id_to_local_id:
                 self.msg_aggregator.add_error(
                     f'ABI with id {single_contract_data["abi"]} was missing in a contracts '
@@ -528,6 +546,7 @@ class RotkiDataUpdater:
                 single_contract_data['deployed_block'],
             ))
 
+        checkpoint()
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             write_cursor.executemany(
                 'INSERT OR REPLACE INTO contract_data(address, chain_id, abi, deployed_block) VALUES(?, ?, ?, ?)',  # noqa: E501
@@ -540,6 +559,7 @@ class RotkiDataUpdater:
         db_addressbook = DBAddressbook(self.user_db)
         entries_to_add = []
         for raw_entry in data:
+            checkpoint()
             try:
                 address = deserialize_evm_address(raw_entry['address'])
                 blockchain = SupportedBlockchain.deserialize(raw_entry['blockchain']) if raw_entry['blockchain'] else None  # noqa: E501
@@ -584,6 +604,7 @@ class RotkiDataUpdater:
                 )
                 continue
 
+        checkpoint()
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             db_addressbook.add_or_update_addressbook_entries(
                 write_cursor=write_cursor,
@@ -632,11 +653,13 @@ class RotkiDataUpdater:
         """Common implementation for processing both connector and counterparty asset mapping updates"""  # noqa: E501
         log.info(f'Applying update for {mapping_type} asset mappings to v{version}')
         for update_function, entry_type, raw_data_key in update_functions:
+            checkpoint()
             entries, raw_data = [], data.get(raw_data_key)
             if raw_data is None:
                 continue  # no data to update
 
             for raw_entry in raw_data:
+                checkpoint()
                 try:
                     if (asset_id := raw_entry.get('asset')) is not None:
                         raw_entry['asset'] = Asset(asset_id)
@@ -646,6 +669,7 @@ class RotkiDataUpdater:
                 except DeserializationError as e:
                     log.error(f'Could not deserialize {entry_type.__name__} {raw_entry!s}: {e!s}')
 
+            checkpoint()
             update_function(entries=entries, skip_errors=True)
 
     def check_for_updates(self, updates: Sequence[UpdateType] = tuple(UpdateType)) -> None:
@@ -662,6 +686,7 @@ class RotkiDataUpdater:
                 'SELECT 1 FROM key_value_cache WHERE name=?',
                 (DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS.value,),
             ).fetchone() is None
+        checkpoint()
         try:
             remote_information = self._get_remote_info_json()
         except RemoteError as e:
@@ -669,6 +694,7 @@ class RotkiDataUpdater:
             failed = True
         else:
             for update_type in updates:
+                checkpoint()
                 try:
                     if not isinstance(remote_information, dict):
                         raise DeserializationError('Remote update info is not an object')
@@ -728,6 +754,7 @@ class RotkiDataUpdater:
         if set(updates) != set(UpdateType):
             return  # partial migration checks must not change the full check's retry schedule
 
+        checkpoint()
         with self.user_db.user_write() as cursor:
             cursor.execute(
                 'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',

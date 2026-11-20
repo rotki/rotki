@@ -1,6 +1,7 @@
 import json
 import logging
 from contextlib import ExitStack
+from contextvars import copy_context
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import MagicMock, patch
@@ -9,18 +10,25 @@ import pytest
 from packaging.version import Version
 
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.spam_assets import update_spam_assets as real_update_spam_assets
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import RPCManagerMixin, RPCNode, SolanaNodeCapabilities
 from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
+from rotkehlchen.concurrency import CancellationToken, TaskCancelledError, run_cancellable
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery, AddressbookFilterQuery
 from rotkehlchen.db.unresolved_conflicts import ConflictType
-from rotkehlchen.db.updates import PENDING_RPC_NODES_UPDATE, RotkiDataUpdater, UpdateType
+from rotkehlchen.db.updates import (
+    PENDING_RPC_NODES_UPDATE,
+    SPAM_ASSETS_UPDATE_BATCH_SIZE,
+    RotkiDataUpdater,
+    UpdateType,
+)
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
@@ -752,6 +760,87 @@ def test_invalid_local_version_does_not_stop_other_categories(
         UpdateType.RPC_NODES.serialize(): 'invalid',
         UpdateType.ACCOUNTING_RULES.serialize(): '1',
     }
+
+
+def test_check_for_updates_cancels_promptly_during_spam_assets(
+        data_updater: RotkiDataUpdater,
+) -> None:
+    """Cancellation mid-update exits promptly without marking the version as applied."""
+    consume_warnings(data_updater.msg_aggregator)
+    num_tokens = SPAM_ASSETS_UPDATE_BATCH_SIZE * 2 + 3
+    addresses = [make_evm_address() for _ in range(num_tokens)]
+    spam_assets_payload = {
+        'spam_assets': [
+            {
+                'address': address,
+                'name': f'Spam Token {idx}',
+                'symbol': f'SPAM{idx}',
+                'decimals': 18,
+            }
+            for idx, address in enumerate(addresses)
+        ],
+    }
+    remote_info = {
+        update_type.value: {
+            'latest': 1 if update_type in (UpdateType.SPAM_ASSETS, UpdateType.RPC_NODES) else 0,
+        }
+        for update_type in UpdateType
+    }
+    token = CancellationToken()
+
+    def cancel_after_first_batch(db: DBHandler, assets_info: list[dict[str, Any]]) -> int:
+        added = real_update_spam_assets(db=db, assets_info=assets_info)
+        token.cancel('logout')
+        return added
+
+    with (
+        patch.object(data_updater, '_get_remote_info_json', return_value=remote_info),
+        patch('rotkehlchen.db.updates.query_file', return_value=spam_assets_payload),
+        patch(
+            'rotkehlchen.db.updates.update_spam_assets',
+            side_effect=cancel_after_first_batch,
+        ) as spam_update,
+        patch.object(data_updater, 'update_rpc_nodes') as rpc_update,
+    ):
+        reset_update_type_mappings(data_updater)
+        with pytest.raises(TaskCancelledError):
+            copy_context().run(run_cancellable, token, data_updater.check_for_updates)
+
+    assert spam_update.call_count == 1
+    assert rpc_update.call_count == 0
+    assert _applied_update_versions(data_updater) == {}
+    assert consume_warnings(data_updater.msg_aggregator) == []
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        assert data_updater.user_db.get_static_cache(
+            cursor=cursor, name=DBCacheStatic.LAST_DATA_UPDATES_TS,
+        ) is None
+        assert data_updater.user_db.get_static_cache(
+            cursor=cursor, name=DBCacheStatic.LAST_DATA_UPDATES_FAILED_TS,
+        ) is None
+
+    # A subsequent uncancelled check completes the pending spam_assets update and records v1.
+    with (
+        patch.object(data_updater, '_get_remote_info_json', return_value=remote_info),
+        patch(
+            'rotkehlchen.db.updates.query_file',
+            side_effect=[spam_assets_payload, RPC_NODE_MOCK_DATA],
+        ),
+        patch.object(data_updater, 'update_rpc_nodes') as rpc_update,
+    ):
+        reset_update_type_mappings(data_updater)
+        data_updater.check_for_updates()
+
+    assert rpc_update.call_count == 1
+    assert _applied_update_versions(data_updater) == {
+        UpdateType.SPAM_ASSETS.serialize(): '1',
+        UpdateType.RPC_NODES.serialize(): '1',
+    }
+    expected_ids = {
+        evm_address_to_identifier(address, ChainID.ETHEREUM, TokenKind.ERC20)
+        for address in addresses
+    }
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        assert expected_ids <= data_updater.user_db.get_ignored_asset_ids(cursor)
 
 
 def test_invalid_rpc_weight_does_not_stop_accounting_rules(data_updater: RotkiDataUpdater) -> None:
