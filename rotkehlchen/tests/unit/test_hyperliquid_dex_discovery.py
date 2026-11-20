@@ -1,3 +1,4 @@
+import threading
 import time
 from http import HTTPStatus
 from unittest.mock import MagicMock, call, patch
@@ -315,18 +316,30 @@ def test_list_queries_do_not_overlap() -> None:
     """Their weight is charged after the response, so only one may be in flight at a time, while
     other queries are not held up by it"""
     api = HyperliquidAPI()
-    in_flight, max_in_flight = [0], [0]
+    lock = threading.Lock()
+    in_flight = 0
+    max_in_flight = 0
+    barrier: threading.Barrier | None = None
 
     def post(**kwargs: object) -> MagicMock:
-        in_flight[0] += 1
-        max_in_flight[0] = max(max_in_flight[0], in_flight[0])
-        time.sleep(0.05)
-        in_flight[0] -= 1
+        nonlocal in_flight, max_in_flight
+        with lock:
+            in_flight += 1
+            max_in_flight = max(max_in_flight, in_flight)
+        try:
+            if barrier is not None:
+                barrier.wait()
+            else:
+                time.sleep(0.05)
+        finally:
+            with lock:
+                in_flight -= 1
         return MagicMock(status_code=HTTPStatus.OK, json=MagicMock(return_value=[]))
 
     with patch.object(api.session, 'post', side_effect=post):
         wait([spawn(api._post_info, {'type': 'userFillsByTime'}) for _ in range(3)])
-        assert max_in_flight[0] == 1
-        max_in_flight[0] = 0
+        assert max_in_flight == 1
+        max_in_flight = 0
+        barrier = threading.Barrier(3, timeout=5)
         wait([spawn(api._post_info, {'type': 'spotMeta'}) for _ in range(3)])
-        assert max_in_flight[0] > 1
+        assert max_in_flight == 3
