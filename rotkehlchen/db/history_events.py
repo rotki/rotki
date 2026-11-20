@@ -20,7 +20,7 @@ from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.constants import (
 from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_address
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import HOUR_IN_SECONDS, ZERO
 from rotkehlchen.db.cache import (
     IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX,
     DBCacheDynamic,
@@ -436,6 +436,43 @@ class DBHistoryEvents:
             self._mark_events_modified(
                 write_cursor=write_cursor,
                 timestamp=TimestampMS(first_event[0]),
+            )
+
+    def mark_cost_basis_stale_for_price_change(
+            self,
+            write_cursor: DBCursor,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> None:
+        """Mark materialized cost basis stale from the earliest event at or after
+        `timestamp - HOUR_IN_SECONDS` that could match the changed historical price.
+        """
+        if is_accounting_update_enabled() is False:
+            return
+
+        window_start_ms = ts_sec_to_ms(Timestamp(max(0, timestamp - HOUR_IN_SECONDS)))
+        if from_asset.is_fiat() and to_asset.is_fiat():
+            row = write_cursor.execute(
+                'SELECT MIN(timestamp) FROM history_events WHERE timestamp >= ?',
+                (window_start_ms,),
+            ).fetchone()
+        else:
+            assets = [from_asset.identifier]
+            if to_asset != from_asset and not to_asset.is_fiat():
+                assets.append(to_asset.identifier)
+            placeholders = ','.join('?' * len(assets))
+            row = write_cursor.execute(
+                f'SELECT MIN(timestamp) FROM history_events '
+                f'WHERE asset IN ({placeholders}) AND timestamp >= ?',
+                (*assets, window_start_ms),
+            ).fetchone()
+
+        if row is not None and row[0] is not None:
+            mark_stale_from_ts(
+                write_cursor=write_cursor,
+                from_ts=TimestampMS(row[0]),
+                include_balances=False,
             )
 
     def _execute_and_track_modified(

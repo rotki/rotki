@@ -182,7 +182,8 @@ class _CostBasisPass:
     def _price(self, asset: Asset, timestamp: Timestamp) -> Price | None:
         """The price of the asset in the profit currency, or None if no oracle knows it.
 
-        May raise NoPriceForGivenTimestamp if the price oracles are rate limited.
+        May raise NoPriceForGivenTimestamp or RemoteError if the price oracles are rate limited
+        or fail transiently.
         """
         if asset == self.profit_currency:
             return Price(ONE)
@@ -196,10 +197,10 @@ class _CostBasisPass:
                 to_asset=self.profit_currency,
                 timestamp=timestamp,
             )
-        except (PriceQueryUnsupportedAsset, RemoteError):
+        except PriceQueryUnsupportedAsset:
             price = None
         except NoPriceForGivenTimestamp as e:
-            if e.rate_limited is True:
+            if e.rate_limited or e.remote_error:
                 raise
             price = None
 
@@ -443,27 +444,34 @@ class _CostBasisPass:
             return
 
         proceeds: FVal | None = None
-        realized_pnl = taxfree_pnl = ZERO
+        realized_pnl: FVal | None
+        taxfree_pnl: FVal | None
         counts_cost_basis = False
+        count_entire_amount_spend = False
         if swap_proceeds is not None:
             rate, counts_cost_basis, count_entire_amount_spend = swap_proceeds
-            if count_entire_amount_spend:
-                realized_pnl -= event.amount * (rate or ZERO)
         elif rule is not None:
             rate = self._price(asset=event.asset, timestamp=timestamp)
             counts_cost_basis = rule.taxable and rule.count_cost_basis_pnl
-            if rule.taxable and rule.count_entire_amount_spend:
-                realized_pnl -= event.amount * (rate or ZERO)
+            count_entire_amount_spend = rule.taxable and rule.count_entire_amount_spend
         else:
             rate = None  # an event without a rule realizes nothing, so its worth is not needed
 
         if rate is not None:
             proceeds = event.amount * rate
-        if counts_cost_basis:
-            realized_pnl += result.taxable_amount * (rate or ZERO) - result.taxable_basis
-            taxfree_pnl = (
-                (event.amount - result.taxable_amount) * (rate or ZERO) - result.taxfree_basis
-            )
+            pnl = -proceeds if count_entire_amount_spend else ZERO
+            if counts_cost_basis:
+                pnl += result.taxable_amount * rate - result.taxable_basis
+                taxfree_pnl = (
+                    (event.amount - result.taxable_amount) * rate - result.taxfree_basis
+                )
+            else:
+                taxfree_pnl = ZERO
+            realized_pnl = pnl
+        elif counts_cost_basis or count_entire_amount_spend:
+            realized_pnl = taxfree_pnl = None
+        else:
+            realized_pnl = taxfree_pnl = ZERO
 
         self._add_row(
             event=event,
@@ -572,8 +580,8 @@ class _CostBasisPass:
         """Apply the event to the lots of the buckets it affects.
 
         Afterwards only the next event (and swap fee events) can have pairing state left, see
-        `has_pending_pair`. May raise NoPriceForGivenTimestamp if the price oracles are rate
-        limited.
+        `has_pending_pair`. May raise NoPriceForGivenTimestamp or RemoteError if the price oracles
+        are rate limited or fail transiently.
         """
         self._apply(
             event=event,
@@ -947,9 +955,9 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
     it reads and replays only the events after the checkpoint.
 
     Returns True once the pass ran to completion, and False if it stopped because the price
-    oracles are rate limited. In that case the stale marker is kept and the next pass redoes
-    the same range, by then with the prices that were found cached. The ``skip_if_running``
-    decorator returns None instead when another pass is running.
+    oracles are rate limited or failed transiently. In that case the stale marker is kept and the
+    next pass redoes the same range, by then with the prices that were found cached. The
+    ``skip_if_running`` decorator returns None instead when another pass is running.
     """
     with database.conn.read_ctx() as cursor:
         # Capture before reading settings, rules, checkpoints, or events so any concurrent change
@@ -1065,7 +1073,7 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                     treat_eth2_as_eth=treat_eth2_as_eth,
                     swap_fee_events=swap_fee_events,
                 )
-            except NoPriceForGivenTimestamp as e:
+            except (NoPriceForGivenTimestamp, RemoteError) as e:
                 log.warning('Stopping cost basis processing at event %s: %s', event.identifier, e)
                 interrupted_at = event.timestamp
                 break

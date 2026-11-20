@@ -15,12 +15,14 @@ class NoPriceForGivenTimestamp(Exception):
             time: Timestamp,
             rate_limited: bool = False,
             cacheable_miss: bool = False,
+            remote_error: bool = False,
     ) -> None:
         self.from_asset = from_asset
         self.to_asset = to_asset
         self.time = time
         self.rate_limited = rate_limited
         self.cacheable_miss = cacheable_miss
+        self.remote_error = remote_error
         super().__init__(
             'Unable to query a historical price for "{}" to "{}" at {}'.format(
                 from_asset.identifier,

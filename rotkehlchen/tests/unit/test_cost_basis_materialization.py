@@ -1,7 +1,7 @@
 import json
 import threading
 from typing import TYPE_CHECKING, Any, Final
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -18,7 +18,9 @@ from rotkehlchen.db.constants import HistoryMappingState, UpdateType
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.updates import RotkiDataUpdater
-from rotkehlchen.errors.price import NoPriceForGivenTimestamp
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
@@ -27,6 +29,8 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.price import HistoricalOracleState, PriceHistorian
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.locations.constants import (
     LOCATION_BITCOIN,
     LOCATION_ETHEREUM,
@@ -1987,3 +1991,183 @@ def test_process_balances_and_cost_basis_completion_message_on_skip_balances(
                 skip_balances=False,
             ) is None
         assert completed_count() == 0
+
+
+@pytest.mark.parametrize('transient_error', ['remote_error', 'no_price_remote_error'])
+@pytest.mark.usefixtures('queried_prices')
+def test_transient_oracle_failure_keeps_pass_stale_until_recovery(
+        database: DBHandler,
+        transient_error: str,
+) -> None:
+    """Transient oracle failures (direct RemoteError or NoPriceForGivenTimestamp with
+    remote_error=True) stop the pass and keep the range stale instead of storing zero_cost,
+    and a subsequent pass after recovery materializes the real price."""
+    def fail_at_two(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        if timestamp == 2:
+            if transient_error == 'remote_error':
+                raise RemoteError('oracle timeout', cause=FailureCause.NETWORK)
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+                rate_limited=False,
+                remote_error=True,
+            )
+        return Price(FVal(1000))
+
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=[
+            _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+            _event(at=2, amount='1', event_type=HistoryEventType.RECEIVE),
+        ])
+        write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ?', ('stale_cost_%',))
+
+    with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
+        historian.return_value.query_historical_price = fail_at_two
+        assert process_cost_basis(database, database.msg_aggregator) is False
+
+    assert _rows(database, 'timestamp, basis_per_unit, basis_source') == [
+        (1000, '1000', 'price_oracle'),
+    ]
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == '2000'
+
+    # After oracle recovery, the next pass materializes the real price instead of zero_cost.
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _rows(database, 'timestamp, basis_per_unit, basis_source') == [
+        (1000, '1000', 'price_oracle'),
+        (2000, '3000', 'price_oracle'),
+    ]
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) is None
+
+
+def test_price_historian_sets_remote_error_on_non_429_oracle_failure() -> None:
+    """PriceHistorian.query_historical_price sets remote_error=True on NoPriceForGivenTimestamp
+    when an oracle fails with a non-429 RemoteError, including through the fiat-to-crypto
+    inverse path."""
+    failing_oracle = MagicMock()
+    # Real oracles price crypto in fiat, not fiat in crypto; skipping the outer fiat->crypto
+    # loop ensures the inverse path is what propagates remote_error=True.
+    failing_oracle.can_query_history.side_effect = (
+        lambda from_asset, to_asset, timestamp: from_asset == A_ETH
+    )
+    failing_oracle.query_historical_price.side_effect = RemoteError(
+        'upstream 503',
+        cause=FailureCause.NETWORK,
+        error_code=503,
+    )
+
+    fake_historian = MagicMock()
+    fake_historian.get_price_for_special_asset.return_value = None
+    fake_historian._oracle_state = HistoricalOracleState(
+        oracles=(HistoricalPriceOracle.COINGECKO,),
+        instances=[failing_oracle],
+    )
+
+    with (
+        patch.object(PriceHistorian, '__new__', return_value=fake_historian),
+        patch('rotkehlchen.history.price.GlobalDBHandler.get_historical_price', return_value=None),
+        patch(
+            'rotkehlchen.history.price.GlobalDBHandler.get_historical_price_misses_and_guard',
+            return_value=(set(), 0),
+        ),
+    ):
+        with pytest.raises(NoPriceForGivenTimestamp) as direct_exc:
+            PriceHistorian.query_historical_price(
+                from_asset=A_ETH,
+                to_asset=A_USD,
+                timestamp=Timestamp(1000),
+            )
+        assert direct_exc.value.rate_limited is False
+        assert direct_exc.value.remote_error is True
+
+        with pytest.raises(NoPriceForGivenTimestamp) as inverse_exc:
+            PriceHistorian.query_historical_price(
+                from_asset=A_USD,
+                to_asset=A_ETH,
+                timestamp=Timestamp(1000),
+            )
+        assert inverse_exc.value.rate_limited is False
+        assert inverse_exc.value.remote_error is True
+
+
+@pytest.mark.parametrize('missing_exc', ['no_price', 'unsupported_asset'])
+@pytest.mark.parametrize(('count_cost_basis_pnl', 'count_entire_amount_spend'), [
+    (True, False),
+    (False, True),
+    (True, True),
+])
+def test_unpriced_taxable_spend_leaves_pnl_null_while_consuming_lots(
+        database: DBHandler,
+        missing_exc: str,
+        count_cost_basis_pnl: bool,
+        count_entire_amount_spend: bool,
+) -> None:
+    """When a rule-counted taxable spend has no market price, proceeds, realized_pnl, and
+    taxfree_pnl are stored as NULL rather than booking a phantom loss, while lots are still
+    consumed so subsequent spends stay accurate."""
+    def missing_price_at_two(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        if timestamp == 2:
+            if missing_exc == 'no_price':
+                raise NoPriceForGivenTimestamp(
+                    from_asset=from_asset,
+                    to_asset=to_asset,
+                    time=timestamp,
+                    rate_limited=False,
+                )
+            raise PriceQueryUnsupportedAsset(from_asset.identifier)
+        return Price(FVal(ETH_PRICES[timestamp]))
+
+    _add_rule(
+        database=database,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        taxable=True,
+        count_cost_basis_pnl=count_cost_basis_pnl,
+        count_entire_amount_spend=count_entire_amount_spend,
+    )
+    with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
+        historian.return_value.query_historical_price = missing_price_at_two
+        acquired, unpriced_spend, later_spend = _process(
+            database=database,
+            method=CostBasisMethod.FIFO,
+            events=[
+                _event(at=1, amount='2', event_type=HistoryEventType.RECEIVE),
+                _event(
+                    at=2,
+                    amount='1',
+                    event_type=HistoryEventType.SPEND,
+                    event_subtype=HistoryEventSubType.FEE,
+                ),
+                _event(at=4, amount='1', event_type=HistoryEventType.SPEND),
+            ],
+        )
+
+    rows = _rows(
+        database=database,
+        columns=(
+            'event_identifier, lots_consumed_json, proceeds, realized_pnl, taxfree_pnl, '
+            'basis_removed, post_spend_basis_remaining'
+        ),
+    )
+    unpriced_row = rows[1]
+    assert unpriced_row[0] == int(unpriced_spend)
+    assert [(lot['lot_id'], FVal(lot['amount_consumed'])) for lot in json.loads(unpriced_row[1])] == [  # noqa: E501
+        (acquired, FVal(1)),
+    ]
+    assert unpriced_row[2:] == (None, None, None, '1000', '1000')
+
+    # Subsequent priced spend consumes the remaining 1 ETH lot accurately.
+    later_row = rows[2]
+    assert later_row[0] == int(later_spend)
+    assert [(lot['lot_id'], FVal(lot['amount_consumed'])) for lot in json.loads(later_row[1])] == [
+        (acquired, FVal(1)),
+    ]
+    assert later_row[2:] == ('4000', '3000', '0', '1000', '0')
