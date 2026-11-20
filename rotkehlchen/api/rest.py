@@ -4488,6 +4488,7 @@ class RestAPI:
                         'event_identifier': stop.event_identifier,
                         'group_identifier': stop.group_identifier,
                         'issue_id': stop.issue_id,
+                        'issue_kind': stop.issue_kind.value,
                     },
                 } for identifier, buckets in balances.items()
             },

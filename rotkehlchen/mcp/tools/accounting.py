@@ -55,8 +55,8 @@ async def list_data_issues(
 ) -> dict[str, Any]:
     """List the data issues of rotki's accounting inbox, with issues of one transaction grouped.
 
-    - ``kinds``: any of ``negative_balance``, ``current_balance_mismatch``,
-      ``rebasing_token``, ``unmatched_bridge``. All by default.
+    - ``kinds``: any of ``negative_balance``, ``invalid_event_amount``,
+      ``current_balance_mismatch``, ``rebasing_token``, ``unmatched_bridge``. All by default.
     - ``states``: any of ``open``, ``auto_remediating``, ``unresolved``, ``resolved``,
       ``dismissed``. Defaults to the actionable ones (open, auto_remediating, unresolved).
     - ``account``: an account reference (``anon_…``) from another tool.
@@ -110,8 +110,9 @@ async def trace_bucket(
     any other accounting tool. Each row has the exact ``signed_amount``, ``balance_before`` and
     ``balance_after`` as decimal strings, the ``rule`` that produced the effect, the
     ``stored_balance`` of the last processing pass (a differing one means stale metrics) and a
-    ``status``: ``applied``, ``stop`` (the balance went negative and processing of the bucket
-    stopped), ``negative_awaiting_rebase_reconciliation`` or ``skipped_after_stop``.
+    ``status``: ``applied``, ``stop`` (the balance went negative or an event had a negative
+    amount, so processing of the bucket stopped), ``negative_awaiting_rebase_reconciliation``
+    or ``skipped_after_stop``.
 
     Do not recompute balances yourself: the arithmetic here is exact decimal, while SQL over
     ``amount_float`` is binary floating point. ``timestamp_ms`` is in milliseconds, and so is

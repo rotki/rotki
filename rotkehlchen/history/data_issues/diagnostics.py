@@ -280,6 +280,7 @@ def _serialize_stop(
         'event_timestamp_ms': stop.event_timestamp,
         'derived_balance_before_event': str(stop.derived_balance_before_event),
         'negative_amount': str(stop.negative_amount),
+        'issue_kind': stop.issue_kind.value,
         'event_deleted': stop.group_identifier is None,
     }
 
@@ -509,6 +510,8 @@ def _trace_rows(
             rebase_yield = None
             if stopped:
                 status, after = 'skipped_after_stop', balance
+            elif event.amount < ZERO:  # the processor stops the bucket without applying the amount
+                status, stopped, after, awaiting_rebase = 'stop', True, before, False
             else:
                 after = before + signed
                 if (
@@ -758,24 +761,29 @@ def _action(tool: str, why: str, **arguments: Any) -> dict[str, Any]:
     return {'tool': tool, 'arguments': arguments, 'why': why}
 
 
-def _explain_negative_balance(
+def _stop_matches_issue_kind(stop: BucketStop, issue_kind: str) -> bool:
+    """Whether ``stop`` is the kind of stop that corresponds to ``issue_kind``.
+
+    Off-chain rebasing failures record their stop with ``NEGATIVE_BALANCE``, so
+    ``REBASING_TOKEN`` issues match both ``NEGATIVE_BALANCE`` and ``REBASING_TOKEN`` stops.
+    """
+    if issue_kind == IssueKind.REBASING_TOKEN:
+        return stop.issue_kind in (IssueKind.NEGATIVE_BALANCE, IssueKind.REBASING_TOKEN)
+    return stop.issue_kind == issue_kind
+
+
+def _explain_bucket_stop_issue(
         database: DBHandler,
         issue: DataIssue,
         bucket: Bucket,
         explanation: dict[str, Any],
-) -> None:
-    payload = issue.payload
-    treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
-    facts, hypotheses = explanation['facts'], explanation['hypotheses']
-    if (balance_before := payload.get('derived_balance_before_event')) is not None:
-        facts['derived_balance_before_event'] = balance_before
-    if (negative := payload.get('in_memory_negative_amount')) is not None:
-        facts['balance_after_event'] = negative
-        facts['shortfall'] = str(-FVal(negative))
-    if payload.get('reason') == 'untracked_exchange':
-        facts['withdrawal_from_untracked_exchange'] = True
+) -> tuple[HistoryBaseEntry, list[dict[str, Any]]] | None:
+    """Populate the evidence shared by issues whose trigger event stops a bucket.
 
-    event_identifier = payload.get('event_identifier')
+    Returns ``(trigger, trace_rows)`` when the trigger event still exists, or ``None`` after
+    recording ``trigger_event_missing``.
+    """
+    event_identifier = issue.payload.get('event_identifier')
     if not isinstance(event_identifier, int) or (
         trigger := _get_event(database, event_identifier)
     ) is None:
@@ -783,8 +791,10 @@ def _explain_negative_balance(
             'code': 'trigger_event_missing',
             'detail': 'The event that raised the issue no longer exists',
         })
-        return
+        return None
 
+    treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
+    facts, hypotheses = explanation['facts'], explanation['hypotheses']
     group_events = get_group_events(database, trigger.group_identifier)
     with database.conn.read_ctx() as cursor:
         mapping_states = get_mapping_states(cursor=cursor, events=group_events)
@@ -808,11 +818,19 @@ def _explain_negative_balance(
     ]
 
     rows, stop, summary = _trace_rows(database=database, bucket=bucket)
+    stop_matches_issue = (
+        stop is not None and
+        stop.event_identifier == event_identifier and
+        _stop_matches_issue_kind(stop=stop, issue_kind=issue.kind)
+    )
+    facts['bucket_stopped_at_this_event'] = stop_matches_issue
     if stop is not None:
-        facts['bucket_stopped_at_this_event'] = stop.event_identifier == event_identifier
         facts['bucket_stop_event_timestamp_ms'] = stop.event_timestamp
-    else:
-        facts['bucket_stopped_at_this_event'] = False
+        if stop_matches_issue:
+            facts.setdefault(
+                'derived_balance_before_event',
+                str(stop.derived_balance_before_event),
+            )
     later = [row for row in rows if row['status'] == 'skipped_after_stop']
     explanation['affected_later_history'] = {
         'events_not_applied': len(later),
@@ -820,18 +838,77 @@ def _explain_negative_balance(
         'last_timestamp_ms': later[-1]['timestamp_ms'] if later else None,
         'replayed_final_balance': summary['final_balance'],
     }
-    if stop is None and issue.state not in (IssueState.RESOLVED, IssueState.DISMISSED):
-        explanation['confirmed_conflicts'].append({
-            'code': 'open_issue_without_stop',
-            'detail': 'The issue is open but the bucket has no processing stop anymore, so '
-                      'the last processing pass did not reproduce the negative balance',
+    if issue.state in (IssueState.RESOLVED, IssueState.DISMISSED):
+        if stop_matches_issue:
+            explanation['confirmed_conflicts'].append({
+                'code': 'closed_issue_but_bucket_still_stopped',
+                'detail': f'The issue is {issue.state} but the bucket is still stopped. '
+                          'Dismissing or resolving an issue does not repair the history',
+            })
+    else:
+        problem = (
+            'invalid event amount'
+            if issue.kind == IssueKind.INVALID_EVENT_AMOUNT
+            else 'negative balance'
+        )
+        missing_stop_reason: str | None = None
+        if stop is None:
+            missing_stop_reason = 'has no processing stop anymore'
+        elif stop.event_identifier == event_identifier and not stop_matches_issue:
+            missing_stop_reason = f'stop at this event is now for {stop.issue_kind.value}'
+        if missing_stop_reason is not None:
+            explanation['confirmed_conflicts'].append({
+                'code': 'open_issue_without_stop',
+                'detail': f'The issue is open but the bucket {missing_stop_reason}, so '
+                          f'the last processing pass did not reproduce the {problem}',
+            })
+    if any(
+            HistoryMappingState.CUSTOMIZED in states for states in mapping_states.values()
+    ):
+        hypotheses.append({
+            'code': 'customized_transaction',
+            'detail': 'The transaction has customized events, whose effects the current '
+                      'decoders would not necessarily produce',
+            'basis': ['mapping_states of the transaction events'],
         })
-    if stop is not None and issue.state in (IssueState.RESOLVED, IssueState.DISMISSED):
-        explanation['confirmed_conflicts'].append({
-            'code': 'closed_issue_but_bucket_still_stopped',
-            'detail': f'The issue is {issue.state} but the bucket is still stopped. '
-                      'Dismissing or resolving an issue does not repair the history',
-        })
+    if (
+        (attempts := issue.auto_remediation_attempts) and
+        (last_result := attempts[-1].get('result')) is not None
+    ):
+        facts['last_redecode_comparison'] = last_result
+
+    explanation['next_actions'].extend([
+        _action('trace_bucket', 'See every effect on the bucket up to and after the stop', bucket=serialize_bucket(bucket)),  # noqa: E501
+        _action('inspect_transaction', 'Compare the decoded effects with the receipt transfers', group_identifier=trigger.group_identifier),  # noqa: E501
+        _action('preview_remediation', 'See what the current decoders would change', group_identifiers=[trigger.group_identifier]),  # noqa: E501
+    ])
+    return trigger, rows
+
+
+def _explain_negative_balance(
+        database: DBHandler,
+        issue: DataIssue,
+        bucket: Bucket,
+        explanation: dict[str, Any],
+) -> None:
+    payload = issue.payload
+    facts, hypotheses = explanation['facts'], explanation['hypotheses']
+    if (balance_before := payload.get('derived_balance_before_event')) is not None:
+        facts['derived_balance_before_event'] = balance_before
+    if (negative := payload.get('in_memory_negative_amount')) is not None:
+        facts['balance_after_event'] = negative
+        facts['shortfall'] = str(-FVal(negative))
+    if payload.get('reason') == 'untracked_exchange':
+        facts['withdrawal_from_untracked_exchange'] = True
+
+    if (context := _explain_bucket_stop_issue(
+        database=database,
+        issue=issue,
+        bucket=bucket,
+        explanation=explanation,
+    )) is None:
+        return
+    trigger, rows = context
 
     applied_before = [
         row for row in rows
@@ -857,26 +934,22 @@ def _explain_negative_balance(
                       'history, would explain it',
             'basis': ['shortfall', 'trigger_event.amount'],
         })
-    if any(
-            HistoryMappingState.CUSTOMIZED in states for states in mapping_states.values()
-    ):
-        hypotheses.append({
-            'code': 'customized_transaction',
-            'detail': 'The transaction has customized events, whose effects the current '
-                      'decoders would not necessarily produce',
-            'basis': ['mapping_states of the transaction events'],
-        })
-    if (
-        (attempts := issue.auto_remediation_attempts) and
-        (last_result := attempts[-1].get('result')) is not None
-    ):
-        facts['last_redecode_comparison'] = last_result
 
-    explanation['next_actions'].extend([
-        _action('trace_bucket', 'See every effect on the bucket up to and after the stop', bucket=serialize_bucket(bucket)),  # noqa: E501
-        _action('inspect_transaction', 'Compare the decoded effects with the receipt transfers', group_identifier=trigger.group_identifier),  # noqa: E501
-        _action('preview_remediation', 'See what the current decoders would change', group_identifiers=[trigger.group_identifier]),  # noqa: E501
-    ])
+
+def _explain_invalid_event_amount(
+        database: DBHandler,
+        issue: DataIssue,
+        bucket: Bucket,
+        explanation: dict[str, Any],
+) -> None:
+    if (invalid_amount := issue.payload.get('amount')) is not None:
+        explanation['facts']['invalid_amount'] = invalid_amount
+    _explain_bucket_stop_issue(
+        database=database,
+        issue=issue,
+        bucket=bucket,
+        explanation=explanation,
+    )
 
 
 def explain_data_issue(database: DBHandler, issue_id: int) -> dict[str, Any]:
@@ -938,6 +1011,13 @@ def explain_data_issue(database: DBHandler, issue_id: int) -> dict[str, Any]:
                     'code': 'archive_node_unavailable',
                     'detail': 'Reconciling a rebasing balance needs an archive node',
                 })
+    elif issue.kind == IssueKind.INVALID_EVENT_AMOUNT:
+        _explain_invalid_event_amount(
+            database=database,
+            issue=issue,
+            bucket=bucket,
+            explanation=explanation,
+        )
     elif issue.kind == IssueKind.CURRENT_BALANCE_MISMATCH:
         payload = issue.payload
         explanation['facts'] |= {

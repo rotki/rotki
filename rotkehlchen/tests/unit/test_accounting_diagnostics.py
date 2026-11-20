@@ -152,12 +152,14 @@ def test_trace_and_explain_decimal_residue_stop(database: DBHandler) -> None:
     assert trace['summary']['stop_row_index'] == 2
     assert trace['summary']['stored_balance_mismatches'] == 0
     assert trace['stop']['event_identifier'] == spend_id
+    assert trace['stop']['issue_kind'] == IssueKind.NEGATIVE_BALANCE.value
     assert trace['rows'][0]['event_identifier'] == receive_id
 
     health = get_accounting_health(database)
     assert health['status'] == 'blocked'
     assert health['stops']['count'] == 1
     assert health['stops']['entries'][0]['negative_amount'] == '-0.000000000000000001'
+    assert health['stops']['entries'][0]['issue_kind'] == IssueKind.NEGATIVE_BALANCE.value
 
     issue_id, = _issues(database, IssueKind.NEGATIVE_BALANCE)
     explanation = explain_data_issue(database=database, issue_id=issue_id)
@@ -912,6 +914,161 @@ def test_trace_stops_a_negative_off_chain_rebasing_bucket(database: DBHandler) -
     assert trace['stop']['event_identifier'] == spend_id
     assert [row['status'] for row in trace['rows']] == ['stop', 'skipped_after_stop']
     assert trace['summary']['awaiting_rebase_reconciliation'] is False
+
+    rebasing_issue_id, = _issues(database, IssueKind.REBASING_TOKEN)
+    rebasing_explanation = explain_data_issue(database=database, issue_id=rebasing_issue_id)
+    assert rebasing_explanation['facts']['bucket_stopped_at_this_event'] is True
+    assert rebasing_explanation['confirmed_conflicts'] == []
+    DataIssuesManager(database).dismiss(rebasing_issue_id)
+    assert [x['code'] for x in explain_data_issue(
+        database=database,
+        issue_id=rebasing_issue_id,
+    )['confirmed_conflicts']] == ['closed_issue_but_bucket_still_stopped']
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+def test_trace_stops_on_negative_event_amount(database: DBHandler) -> None:
+    """An event with a negative amount stops the bucket without changing the balance,
+    and later events are skipped in the trace just as in the processor."""
+    receive_id, bad_spend_id, later_spend_id = _add(database, [
+        _event(1_000, HistoryEventType.RECEIVE, '1'),
+        _event(2_000, HistoryEventType.SPEND, '-0.5'),
+        _event(3_000, HistoryEventType.SPEND, '0.25'),
+    ])
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+
+    trace = trace_bucket(database=database, bucket=WALLET, offset=0)
+    assert [
+        (row['event_identifier'], row['status'], row['balance_before'], row['balance_after'], row['stored_balance'])  # noqa: E501
+        for row in trace['rows']
+    ] == [
+        (receive_id, 'applied', '0', '1', '1'),
+        (bad_spend_id, 'stop', '1', '1', None),
+        (later_spend_id, 'skipped_after_stop', '1', '1', None),
+    ]
+    assert trace['stop']['event_identifier'] == bad_spend_id
+    assert trace['stop']['derived_balance_before_event'] == '1'
+    assert trace['stop']['negative_amount'] == '-0.5'
+    assert trace['stop']['issue_kind'] == IssueKind.INVALID_EVENT_AMOUNT.value
+    assert trace['summary']['stop_row_index'] == 1
+    assert trace['summary']['skipped_after_stop'] == 1
+    assert trace['summary']['final_balance'] == '1'
+    assert trace['summary']['stored_balance_mismatches'] == 0
+
+    health = get_accounting_health(database)
+    assert health['status'] == 'blocked'
+    assert health['stops']['count'] == 1
+    assert health['stops']['entries'][0]['issue_kind'] == IssueKind.INVALID_EVENT_AMOUNT.value
+    assert health['stops']['entries'][0]['negative_amount'] == '-0.5'
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+def test_explain_invalid_event_amount_issue(database: DBHandler) -> None:
+    """Explaining an invalid_event_amount issue reports the stop facts, trigger event,
+    skipped history, conflicts and next actions without negative-balance hypotheses."""
+    _, bad_spend_id, later_spend_id = _add(database, [
+        _event(1_000, HistoryEventType.RECEIVE, '1'),
+        _event(2_000, HistoryEventType.SPEND, '-0.5'),
+        _event(3_000, HistoryEventType.SPEND, '0.25'),
+    ])
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+
+    issue_id, = _issues(database, IssueKind.INVALID_EVENT_AMOUNT)
+    explanation = explain_data_issue(database=database, issue_id=issue_id)
+    assert explanation['facts']['invalid_amount'] == '-0.5'
+    assert explanation['facts']['derived_balance_before_event'] == '1'
+    assert explanation['facts']['bucket_stopped_at_this_event'] is True
+    assert explanation['facts']['bucket_stop_event_timestamp_ms'] == 2_000
+    assert 'shortfall' not in explanation['facts']
+    assert explanation['trigger_event']['event_identifier'] == bad_spend_id
+    assert explanation['trigger_event']['amount'] == '-0.5'
+    assert explanation['trigger_event']['rule'] == BucketEffectRule.WALLET
+    assert [
+        x['event_identifier'] for x in explanation['same_transaction_effects_on_bucket']
+    ] == [bad_spend_id]
+    assert later_spend_id not in {
+        x['event_identifier'] for x in explanation['same_transaction_effects_on_bucket']
+    }
+    assert explanation['affected_later_history'] == {
+        'events_not_applied': 1,
+        'first_timestamp_ms': 3_000,
+        'last_timestamp_ms': 3_000,
+        'replayed_final_balance': '1',
+    }
+    assert explanation['hypotheses'] == []
+    assert explanation['confirmed_conflicts'] == []
+    assert [x['tool'] for x in explanation['next_actions']] == [
+        'trace_bucket',
+        'inspect_transaction',
+        'preview_remediation',
+    ]
+
+    DataIssuesManager(database).dismiss(issue_id)
+    assert [x['code'] for x in explain_data_issue(
+        database=database,
+        issue_id=issue_id,
+    )['confirmed_conflicts']] == ['closed_issue_but_bucket_still_stopped']
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+def test_explain_invalid_event_amount_without_prior_inflow_or_stop(database: DBHandler) -> None:
+    """An invalid_event_amount on an empty bucket never emits missing_inflow_history, and
+    clearing the stop while the issue stays open surfaces open_issue_without_stop."""
+    _add(database, [_event(1_000, HistoryEventType.SPEND, '-0.5')])
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+
+    issue_id, = _issues(database, IssueKind.INVALID_EVENT_AMOUNT)
+    explanation = explain_data_issue(database=database, issue_id=issue_id)
+    assert explanation['facts']['invalid_amount'] == '-0.5'
+    assert explanation['facts']['derived_balance_before_event'] == '0'
+    assert explanation['hypotheses'] == []
+
+    with database.user_write() as write_cursor:
+        write_cursor.execute('DELETE FROM bucket_processing_stops')
+    after_clear = explain_data_issue(database=database, issue_id=issue_id)
+    assert after_clear['facts']['bucket_stopped_at_this_event'] is False
+    assert 'derived_balance_before_event' not in after_clear['facts']
+    assert [x['code'] for x in after_clear['confirmed_conflicts']] == ['open_issue_without_stop']
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+def test_explain_resolved_invalid_event_amount_when_same_event_now_has_negative_balance_stop(
+        database: DBHandler,
+) -> None:
+    """Editing a negative-amount event into an over-spend resolves invalid_event_amount and
+    stops the bucket with negative_balance at the same event; explaining the resolved issue
+    must not treat the new negative_balance stop as belonging to the old issue."""
+    _, spend_id = _add(database, [
+        _event(1_000, HistoryEventType.RECEIVE, '1'),
+        _event(2_000, HistoryEventType.SPEND, '-0.5'),
+    ])
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+    invalid_issue_id, = _issues(database, IssueKind.INVALID_EVENT_AMOUNT)
+
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'UPDATE history_events SET amount = ? WHERE identifier = ?',
+            ('2', spend_id),
+        )
+    process_historical_balances(database=database, msg_aggregator=database.msg_aggregator)
+
+    resolved_explanation = explain_data_issue(database=database, issue_id=invalid_issue_id)
+    assert resolved_explanation['issue']['state'] == IssueState.RESOLVED
+    assert resolved_explanation['facts']['invalid_amount'] == '-0.5'
+    assert resolved_explanation['facts']['bucket_stopped_at_this_event'] is False
+    assert 'derived_balance_before_event' not in resolved_explanation['facts']
+    assert resolved_explanation['confirmed_conflicts'] == []
+
+    negative_issue_id, = _issues(database, IssueKind.NEGATIVE_BALANCE)
+    negative_explanation = explain_data_issue(database=database, issue_id=negative_issue_id)
+    assert negative_explanation['facts']['bucket_stopped_at_this_event'] is True
+    assert negative_explanation['confirmed_conflicts'] == []
+
+    DataIssuesManager(database).dismiss(negative_issue_id)
+    assert [x['code'] for x in explain_data_issue(
+        database=database,
+        issue_id=negative_issue_id,
+    )['confirmed_conflicts']] == ['closed_issue_but_bucket_still_stopped']
 
 
 def test_explanation_counts_pending_decoding_of_the_issue_chain(database: DBHandler) -> None:

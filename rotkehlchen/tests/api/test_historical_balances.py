@@ -23,7 +23,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.bucket_checks import BucketStatus
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
-from rotkehlchen.history.data_issues.types import NegativeBalanceIssuePayload
+from rotkehlchen.history.data_issues.types import (
+    InvalidEventAmountIssuePayload,
+    NegativeBalanceIssuePayload,
+)
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -328,6 +331,7 @@ def test_historical_balances_at_events(rotkehlchen_api_server: APIServer) -> Non
         'event_identifier': identifiers[7],
         'group_identifier': group_identifier,
         'issue_id': issue_id,
+        'issue_kind': IssueKind.NEGATIVE_BALANCE.value,
     }
     assert [entries[str(identifier)]['stop'] for identifier in identifiers[6:]] == [None, stop, stop, None]  # noqa: E501
 
@@ -402,12 +406,48 @@ def test_historical_balances_at_events_invalid_event_amount_stop(
         'event_identifier': identifiers[1],
         'group_identifier': group_identifier,
         'issue_id': invalid_amount_issue_id,
+        'issue_kind': IssueKind.INVALID_EVENT_AMOUNT.value,
     }
     assert [entries[str(identifier)]['stop'] for identifier in identifiers] == [
         None,
         expected_stop,
         expected_stop,
     ]
+
+    # Dismiss the ETH issue and seed an OPEN issue of the same kind/event/location/label/protocol
+    # for a different asset: asset scoping must prevent linking the other asset's open issue.
+    issues_manager.dismiss(invalid_amount_issue_id)
+    other_asset_issue_id = issues_manager.write_issue(
+        kind=IssueKind.INVALID_EVENT_AMOUNT,
+        location=LOCATION_ETHEREUM,
+        location_label=account,
+        protocol=None,
+        asset=A_BTC.identifier,
+        payload=InvalidEventAmountIssuePayload(
+            event_identifier=identifiers[1],
+            amount='-1',
+        ),
+        ts_start=ts_sec_to_ms(Timestamp(START_TS + 10)),
+        ts_end=ts_sec_to_ms(Timestamp(START_TS + 10)),
+    )
+    assert other_asset_issue_id != invalid_amount_issue_id
+    entries = assert_proper_sync_response_with_result(requests.post(
+        url, json={'event_identifiers': [identifiers[1]]},
+    ))['entries']
+    assert entries[str(identifiers[1])]['stop'] == expected_stop
+
+    # Even if the ETH issue is deleted, the stop must not fall back to the other asset's issue.
+    with db.user_write() as cursor:
+        cursor.execute('DELETE FROM data_issues WHERE id = ?', (invalid_amount_issue_id,))
+    entries = assert_proper_sync_response_with_result(requests.post(
+        url, json={'event_identifiers': [identifiers[1]]},
+    ))['entries']
+    assert entries[str(identifiers[1])]['stop'] == {
+        'event_identifier': identifiers[1],
+        'group_identifier': group_identifier,
+        'issue_id': None,
+        'issue_kind': IssueKind.INVALID_EVENT_AMOUNT.value,
+    }
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -465,12 +505,12 @@ def test_reconciliation_report_invalid_event_amount_stop(
         ))
         return report['accounts'][0]['buckets'][0]
 
-    def _fetch_overlay_issue_id() -> int | None:
+    def _fetch_overlay_stop() -> dict:
         entries = assert_proper_sync_response_with_result(requests.post(
             overlay_url,
             json={'event_identifiers': [identifiers[1]]},
         ))['entries']
-        return entries[str(identifiers[1])]['stop']['issue_id']
+        return entries[str(identifiers[1])]['stop']
 
     # Step 1: negative event amount stops the bucket with an INVALID_EVENT_AMOUNT issue.
     process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
@@ -487,7 +527,9 @@ def test_reconciliation_report_invalid_event_amount_stop(
     assert bucket['issue_kind'] == IssueKind.INVALID_EVENT_AMOUNT.value
     assert bucket['stop']['event_identifier'] == identifiers[1]
     assert bucket['stop']['negative_amount'] == '-0.5'
-    assert _fetch_overlay_issue_id() == invalid_amount_issue_id
+    overlay_stop = _fetch_overlay_stop()
+    assert overlay_stop['issue_id'] == invalid_amount_issue_id
+    assert overlay_stop['issue_kind'] == IssueKind.INVALID_EVENT_AMOUNT.value
 
     # Step 2: user edits the event so it now overdraws the bucket (1 - 2 = -1).
     # Reprocessing creates a newer NEGATIVE_BALANCE issue and resolves the old one.
@@ -512,7 +554,9 @@ def test_reconciliation_report_invalid_event_amount_stop(
     assert bucket['issue_id'] == neg_balance_issue_id
     assert bucket['issue_kind'] == IssueKind.NEGATIVE_BALANCE.value
     assert bucket['stop']['negative_amount'] == '-1'
-    assert _fetch_overlay_issue_id() == neg_balance_issue_id
+    overlay_stop = _fetch_overlay_stop()
+    assert overlay_stop['issue_id'] == neg_balance_issue_id
+    assert overlay_stop['issue_kind'] == IssueKind.NEGATIVE_BALANCE.value
 
     # Step 3: user edits the event back to a negative amount.
     # Reprocessing reopens the original INVALID_EVENT_AMOUNT issue in place (id stays older)
@@ -532,7 +576,9 @@ def test_reconciliation_report_invalid_event_amount_stop(
     assert bucket['issue_id'] == invalid_amount_issue_id
     assert bucket['issue_kind'] == IssueKind.INVALID_EVENT_AMOUNT.value
     assert bucket['stop']['negative_amount'] == '-0.5'
-    assert _fetch_overlay_issue_id() == invalid_amount_issue_id
+    overlay_stop = _fetch_overlay_stop()
+    assert overlay_stop['issue_id'] == invalid_amount_issue_id
+    assert overlay_stop['issue_kind'] == IssueKind.INVALID_EVENT_AMOUNT.value
 
     # Step 4: even if the user dismisses both issues and switches back to -0.5, the stop's own
     # issue_kind still identifies INVALID_EVENT_AMOUNT and links to invalid_amount_issue_id.
@@ -562,7 +608,9 @@ def test_reconciliation_report_invalid_event_amount_stop(
     assert bucket['issue_id'] == invalid_amount_issue_id
     assert bucket['issue_kind'] == IssueKind.INVALID_EVENT_AMOUNT.value
     assert bucket['stop']['negative_amount'] == '-0.5'
-    assert _fetch_overlay_issue_id() == invalid_amount_issue_id
+    overlay_stop = _fetch_overlay_stop()
+    assert overlay_stop['issue_id'] == invalid_amount_issue_id
+    assert overlay_stop['issue_kind'] == IssueKind.INVALID_EVENT_AMOUNT.value
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
