@@ -103,11 +103,12 @@ describe('reconciliation row rules', () => {
   it('should show the saved comparison for a verdict and the current values for a pending bucket', () => {
     const checked = bucket({
       check: {
+        accruedInterest: bigNumberify('0.5'),
         comparedAt: 1_700_000_100,
         delta: bigNumberify('1.5'),
         derivedBalance: bigNumberify('10'),
         observedAt: 1_700_000_000,
-        observedBalance: bigNumberify('11.5'),
+        observedBalance: bigNumberify('12'),
       },
       derivedBalance: bigNumberify('99'),
       observedBalance: bigNumberify('88'),
@@ -122,12 +123,14 @@ describe('reconciliation row rules', () => {
     });
 
     const checkedAmounts = amountsFor(checked);
+    expect(checkedAmounts.accruedInterest?.toFixed()).toBe('0.5');
     expect(checkedAmounts.derived?.toFixed()).toBe('10');
-    expect(checkedAmounts.observed?.toFixed()).toBe('11.5');
+    expect(checkedAmounts.observed?.toFixed()).toBe('12');
     expect(checkedAmounts.comparedAt).toBe(1_700_000_100);
     expect(checkedAmounts.delta?.toFixed()).toBe('1.5');
 
     const pendingAmounts = amountsFor(pending);
+    expect(pendingAmounts.accruedInterest).toBeNull();
     expect(pendingAmounts.derived?.toFixed()).toBe('3');
     expect(pendingAmounts.observed).toBeNull();
     expect(pendingAmounts.comparedAt).toBeNull();
@@ -147,6 +150,7 @@ describe('reconciliation row rules', () => {
   it('should pick the sentence from the difference sign and the most actionable pending reason', () => {
     expect(reasonLabel(bucket({
       check: {
+        accruedInterest: null,
         comparedAt: 1,
         delta: bigNumberify('1'),
         derivedBalance: bigNumberify('1'),
@@ -158,6 +162,7 @@ describe('reconciliation row rules', () => {
 
     expect(reasonLabel(bucket({
       check: {
+        accruedInterest: null,
         comparedAt: 1,
         delta: bigNumberify('-1'),
         derivedBalance: bigNumberify('2'),
@@ -172,10 +177,88 @@ describe('reconciliation row rules', () => {
       status: 'pending',
     }))).toBe('data_issues.reconciliation.reason.history_not_synced');
 
+    expect(reasonLabel(bucket({
+      reasons: ['derived_snapshot_changed', 'interest_index_missing'],
+      status: 'pending',
+    }))).toBe('data_issues.reconciliation.reason.interest_index_missing');
+
+    expect(reasonLabel(bucket({
+      reasons: ['derived_snapshot_changed', 'interest_anchor_unavailable'],
+      status: 'pending',
+    }))).toBe('data_issues.reconciliation.reason.interest_anchor_unavailable');
+
+    expect(reasonLabel(bucket({
+      reasons: ['interest_index_missing', 'observation_stale'],
+      status: 'pending',
+    }))).toBe('data_issues.reconciliation.reason.observation_stale');
+
     expect(reasonLabel(bucket({ reasons: ['rebasing'], status: 'not_compared' })))
       .toBe('data_issues.reconciliation.reason.rebasing');
     expect(reasonLabel(bucket({ reasons: ['future_reason'], status: 'not_compared' })))
       .toBe('data_issues.reconciliation.reason.unknown_not_compared');
+  });
+
+  it('should use interest-adjusted match and mismatch reasons based on unexplained delta sign', () => {
+    expect(reasonLabel(bucket({
+      check: {
+        accruedInterest: bigNumberify('5'),
+        comparedAt: 1,
+        delta: bigNumberify('0'),
+        derivedBalance: bigNumberify('100'),
+        observedAt: 1,
+        observedBalance: bigNumberify('105'),
+      },
+      status: 'reconciled',
+    }))).toBe('data_issues.reconciliation.reason.matches_with_interest');
+
+    expect(reasonLabel(bucket({
+      check: {
+        accruedInterest: bigNumberify('0'),
+        comparedAt: 1,
+        delta: bigNumberify('0'),
+        derivedBalance: bigNumberify('100'),
+        observedAt: 1,
+        observedBalance: bigNumberify('100'),
+      },
+      status: 'reconciled',
+    }))).toBe('data_issues.reconciliation.reason.matches');
+
+    expect(reasonLabel(bucket({
+      check: {
+        accruedInterest: bigNumberify('5'),
+        comparedAt: 1,
+        delta: bigNumberify('50'),
+        derivedBalance: bigNumberify('100'),
+        observedAt: 1,
+        observedBalance: bigNumberify('155'),
+      },
+      status: 'mismatch',
+    }))).toBe('data_issues.reconciliation.reason.mismatch_higher_with_interest');
+
+    // Observed (120) > derived (100), but below derived + interest (150), so delta is -30 (lower).
+    expect(reasonLabel(bucket({
+      check: {
+        accruedInterest: bigNumberify('50'),
+        comparedAt: 1,
+        delta: bigNumberify('-30'),
+        derivedBalance: bigNumberify('100'),
+        observedAt: 1,
+        observedBalance: bigNumberify('120'),
+      },
+      status: 'mismatch',
+    }))).toBe('data_issues.reconciliation.reason.mismatch_lower_with_interest');
+
+    expect(reasonLabel(bucket({
+      check: {
+        accruedInterest: bigNumberify('0'),
+        comparedAt: 1,
+        delta: bigNumberify('50'),
+        derivedBalance: bigNumberify('100'),
+        observedAt: 1,
+        observedBalance: bigNumberify('150'),
+      },
+      status: 'mismatch',
+    }))).toBe('data_issues.reconciliation.reason.mismatch_higher');
   });
 
   it('should sort mismatches before blocked, then not checked, then matches', () => {

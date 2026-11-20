@@ -37,13 +37,15 @@ const BucketReason = z.string();
  * that never ran.
  */
 const BucketCheck = z.object({
+  /** Unrecorded interest accrued since the last event; null when none applies. */
+  accruedInterest: NumericString.nullable().default(null),
   derivedBalance: NumericString,
   observedBalance: NumericString,
   /** Unix seconds; when the observed balance was queried. */
   observedAt: z.number(),
   /** Unix seconds; when the comparison was saved. */
   comparedAt: z.number(),
-  /** Signed `observed - derived`, as computed by the backend. */
+  /** Signed `observed - (derived + accruedInterest)`, as computed by the backend. */
   delta: NumericString,
 });
 

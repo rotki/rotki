@@ -1014,6 +1014,7 @@ CREATE TABLE IF NOT EXISTS bucket_balance_checks (
     observed_at INTEGER NOT NULL,
     compared_at INTEGER NOT NULL,
     observation_id INTEGER,
+    accrued_interest TEXT,
     PRIMARY KEY (location, location_label, asset)
 ) WITHOUT ROWID;
 """
@@ -1022,6 +1023,8 @@ CREATE TABLE IF NOT EXISTS bucket_balance_checks (
 # an asset a query covered, and its amount can be zero: that is a certified zero. A missing row
 # is unknown coverage, never zero. observation_id comes from a monotonic counter so replacing a
 # row gives the new observation a greater identity even when both happened in the same second.
+# observation_index is the optional same-block reserve index (integer ray string, 1e27) for
+# index-accruing tokens such as Aave v3 / Spark Lend aTokens and variable debt tokens.
 DB_CREATE_WALLET_BALANCE_OBSERVATIONS = """
 CREATE TABLE IF NOT EXISTS wallet_balance_observations (
     blockchain TEXT NOT NULL,
@@ -1031,6 +1034,7 @@ CREATE TABLE IF NOT EXISTS wallet_balance_observations (
     observed_at INTEGER NOT NULL,
     source TEXT NOT NULL,
     observation_id INTEGER NOT NULL,
+    observation_index TEXT,
     PRIMARY KEY (blockchain, address, asset)
 ) WITHOUT ROWID;
 """

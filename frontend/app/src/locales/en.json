@@ -3093,6 +3093,7 @@
     "visible_columns": "Visible columns"
   },
   "data_issues": {
+    "accrued_interest": "({amount} interest)",
     "action": {
       "dismiss": {
         "confirm": {
@@ -3117,6 +3118,7 @@
     },
     "description": {
       "current_balance_mismatch": "rotki's calculated {asset} balance ({derived}) doesn't match the actual on-chain balance ({observed}), a difference of {delta}. Some {asset} transactions are probably missing or were recorded incorrectly.",
+      "current_balance_mismatch_with_interest": "rotki's calculated {asset} balance ({derived}, plus {accruedInterest} accrued interest) doesn't match the actual on-chain balance ({observed}), a difference of {delta}. Some {asset} transactions are probably missing or were recorded incorrectly.",
       "invalid_event_amount": "An event has a negative {asset} amount ({amount}), so rotki stopped calculating balances for this bucket. Review and correct or re-decode the event to resume balance tracking.",
       "negative_balance": "An event spent more {asset} than rotki had tracked, so your balance went negative to {amount} (it was {before} just before). This usually means an earlier {asset} transaction is missing or was recorded incorrectly.",
       "negative_balance_untracked_exchange": "This event was decoded as a withdrawal from an exchange that you are not tracking in rotki, causing your {asset} balance to go negative to {amount} (it was {before} just before). Track the exchange and sync its history so rotki can match the withdrawal, or change this event to Receive / Payment if you want to record it as a received payment.",
@@ -3295,10 +3297,15 @@
         "exchange": "Exchange balances are not compared with on-chain queries.",
         "history_not_synced": "Waiting for this account's transactions to finish syncing.",
         "history_pending_decoding": "Some transactions are not decoded yet, so history cannot be compared.",
+        "interest_anchor_unavailable": "The latest event has no on-chain interest index, so accrued interest cannot be calculated.",
+        "interest_index_missing": "Refresh balances to capture the latest interest index, then check again.",
         "matches": "The current on-chain balance matches the balance from your history.",
+        "matches_with_interest": "The current on-chain balance matches your history after accounting for accrued interest.",
         "mismatch_higher": "On-chain balance is higher than your history explains. An incoming event may be missing.",
+        "mismatch_higher_with_interest": "On-chain balance is higher than your history plus accrued interest explains. An incoming event may be missing.",
         "mismatch_history_free": "Held on chain with no events explaining this balance. Sync or review the account history.",
         "mismatch_lower": "Less on chain than your history says. An outgoing transfer may be missing.",
+        "mismatch_lower_with_interest": "Less on chain than your history plus accrued interest says. An outgoing transfer may be missing.",
         "never_compared": "Not compared yet. Run Check now to compare this balance.",
         "non_evm_chain": "Balances on this chain are not compared yet.",
         "observation_missing": "No on-chain balance observation is available yet.",

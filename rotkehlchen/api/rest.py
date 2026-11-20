@@ -4135,6 +4135,10 @@ class RestAPI:
             'check': None if bucket.check is None else {
                 'derived_balance': str(bucket.check.derived_balance),
                 'observed_balance': str(bucket.check.observed_balance),
+                'accrued_interest': (
+                    None if bucket.check.accrued_interest is None
+                    else str(bucket.check.accrued_interest)
+                ),
                 'observed_at': int(bucket.check.observed_at),
                 'compared_at': int(bucket.check.compared_at),
                 'delta': str(bucket.delta),

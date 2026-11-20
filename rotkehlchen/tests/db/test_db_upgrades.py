@@ -5173,6 +5173,8 @@ def test_upgrade_db_53_to_54(
         assert table_exists(cursor=cursor, name='remediation_plans')
         assert table_exists(cursor=cursor, name='remediation_plan_audit')
         assert column_exists(cursor, 'bucket_balance_checks', 'observation_id')
+        assert column_exists(cursor, 'bucket_balance_checks', 'accrued_interest')
+        assert column_exists(cursor, 'wallet_balance_observations', 'observation_index')
         assert cursor.execute(  # processing is asked to run again to find the stopped buckets
             'SELECT value FROM key_value_cache WHERE name=?',
             (DBCacheStatic.STALE_BALANCES_FROM_TS.value,),

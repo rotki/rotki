@@ -1,8 +1,9 @@
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import { bigNumberify } from '@rotki/common';
 import { createDecodingComparison } from '@test/fixtures/decoding-comparison';
 import { describe, expect, it } from 'vitest';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
-import { describeIssue, humanizeStrategy, negativeBalanceValues, relatedEventRoute, strategyMessageKey, toTimelineItems } from '@/modules/history/data-issues/transforms';
+import { describeIssue, exactDecimals, hasAccruedInterest, humanizeStrategy, MAX_EXACT_DECIMALS, negativeBalanceValues, relatedEventRoute, strategyMessageKey, toTimelineItems } from '@/modules/history/data-issues/transforms';
 
 function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
   return {
@@ -26,6 +27,30 @@ function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
 }
 
 describe('data-issues transforms', () => {
+  describe('exactDecimals', () => {
+    it('should preserve exact decimal counts up to standard token precision', () => {
+      expect(exactDecimals(bigNumberify('100'))).toBe(0);
+      expect(exactDecimals(bigNumberify('0.00525'))).toBe(5);
+      expect(exactDecimals(bigNumberify(`0.${'1'.repeat(MAX_EXACT_DECIMALS)}`))).toBe(MAX_EXACT_DECIMALS);
+    });
+
+    it('should return undefined when ray-derived precision exceeds the exact-decimal limit', () => {
+      expect(exactDecimals(bigNumberify(`0.${'1'.repeat(MAX_EXACT_DECIMALS + 1)}`))).toBeUndefined();
+      expect(exactDecimals(bigNumberify('46.4638039999999999999999900379158777898096267801723634815456113170195509546138'))).toBeUndefined();
+      expect(exactDecimals(bigNumberify('500.0000000000000000000000099620841222101903732198276365184543886829804490453862'))).toBeUndefined();
+    });
+  });
+
+  describe('hasAccruedInterest', () => {
+    it('should treat only non-zero accrued interest as present', () => {
+      expect(hasAccruedInterest(null)).toBe(false);
+      expect(hasAccruedInterest(undefined)).toBe(false);
+      expect(hasAccruedInterest(bigNumberify('0'))).toBe(false);
+      expect(hasAccruedInterest(bigNumberify('5'))).toBe(true);
+      expect(hasAccruedInterest(bigNumberify('-0.5'))).toBe(true);
+    });
+  });
+
   describe('humanizeStrategy', () => {
     it('should turn a snake_case strategy into a readable label', () => {
       expect(humanizeStrategy('reprocess_event')).toBe('Reprocess event');
@@ -126,6 +151,47 @@ describe('data-issues transforms', () => {
       expect(result.shortMessageKey).toBe('data_issues.description_short.current_balance_mismatch');
       expect(result.eventIdentifier).toBe(7);
       expect(result.amounts.delta?.toString()).toBe('5');
+      expect(result.amounts.accruedInterest).toBeUndefined();
+    });
+
+    it('should include accrued interest in a balance mismatch description when non-zero', () => {
+      const issue = createIssue({
+        kind: IssueKind.CURRENT_BALANCE_MISMATCH,
+        payload: {
+          accruedInterest: '5',
+          delta: '50',
+          derivedBalance: '100',
+          latestEventIdentifier: 7,
+          observedBalance: '155',
+          queriedAtTs: 1710000000,
+        },
+      });
+
+      const result = describeIssue(issue);
+
+      expect(result.messageKey).toBe('data_issues.description.current_balance_mismatch_with_interest');
+      expect(result.shortMessageKey).toBe('data_issues.description_short.current_balance_mismatch');
+      expect(result.amounts.accruedInterest?.toString()).toBe('5');
+      expect(result.amounts.delta?.toString()).toBe('50');
+    });
+
+    it('should use the standard mismatch description when accrued interest is zero', () => {
+      const issue = createIssue({
+        kind: IssueKind.CURRENT_BALANCE_MISMATCH,
+        payload: {
+          accruedInterest: '0',
+          delta: '5',
+          derivedBalance: '10',
+          latestEventIdentifier: 7,
+          observedBalance: '15',
+          queriedAtTs: 1710000000,
+        },
+      });
+
+      const result = describeIssue(issue);
+
+      expect(result.messageKey).toBe('data_issues.description.current_balance_mismatch');
+      expect(result.amounts.accruedInterest).toBeUndefined();
     });
 
     it('should leave the event identifier undefined when the mismatch has no latest event', () => {

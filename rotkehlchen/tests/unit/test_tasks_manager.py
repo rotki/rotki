@@ -10,6 +10,7 @@ from freezegun import freeze_time
 
 from rotkehlchen.api.websockets.typedefs import BackgroundTaskKind
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
+from rotkehlchen.assets.types import AssetFlag
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -1620,6 +1621,35 @@ def test_update_lending_protocol_underlying_assets_task(
                 token_kind=TokenKind.ERC20,
                 weight=ONE,
             ),) == db_token.underlying_tokens
+
+        flags_map = globaldb.get_asset_ids_with_flags((
+            AssetFlag.ACCRUING_INTEREST_SUPPLY,
+            AssetFlag.ACCRUING_INTEREST_DEBT,
+            AssetFlag.REBASING,
+        ))
+        with globaldb.conn.read_ctx() as cursor:
+            protocol_tokens = cursor.execute(
+                'SELECT et.identifier, cad.symbol FROM evm_tokens AS et '
+                'JOIN common_asset_details AS cad ON cad.identifier = et.identifier '
+                'WHERE et.protocol = ?',
+                (counterparty,),
+            ).fetchall()
+
+        supply_count = variable_debt_count = stable_debt_count = 0
+        for identifier, symbol in protocol_tokens:
+            if symbol.startswith('variableDebt'):
+                assert identifier in flags_map[AssetFlag.ACCRUING_INTEREST_DEBT]
+                variable_debt_count += 1
+            elif symbol.startswith('stableDebt'):
+                assert identifier in flags_map[AssetFlag.REBASING]
+                stable_debt_count += 1
+            else:
+                assert identifier in flags_map[AssetFlag.ACCRUING_INTEREST_SUPPLY]
+                supply_count += 1
+
+        assert supply_count > 0
+        assert variable_debt_count > 0
+        assert stable_debt_count > 0
 
         with task_manager.database.conn.read_ctx() as cursor:
             cache_key = (

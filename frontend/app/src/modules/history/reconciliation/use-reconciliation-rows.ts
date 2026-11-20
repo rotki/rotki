@@ -37,6 +37,8 @@ export function notCheckedCount(counts: StatusCounts): number {
 }
 
 export interface BucketAmounts {
+  /** Unrecorded interest accrued since the last event; null when none applies. */
+  accruedInterest: BigNumber | null;
   /** The amount the verdict was made from, or the current derived amount when no verdict exists. */
   derived: BigNumber | null;
   observed: BigNumber | null;
@@ -44,7 +46,7 @@ export interface BucketAmounts {
   observedAt: number | null;
   /** Unix seconds; null unless a saved comparison is shown. */
   comparedAt: number | null;
-  /** Signed `observed - derived`; only a current mismatch has one. */
+  /** Signed `observed - (derived + accruedInterest)`; only a current mismatch has one. */
   delta: BigNumber | null;
 }
 
@@ -174,6 +176,7 @@ export function isHistoryFree(bucket: ReconciliationBucket): boolean {
 export function amountsFor(bucket: ReconciliationBucket): BucketAmounts {
   if ((bucket.status === 'reconciled' || bucket.status === 'mismatch') && bucket.check) {
     return {
+      accruedInterest: bucket.check.accruedInterest,
       comparedAt: bucket.check.comparedAt,
       delta: bucket.status === 'mismatch' ? bucket.check.delta : null,
       derived: bucket.check.derivedBalance,
@@ -183,6 +186,7 @@ export function amountsFor(bucket: ReconciliationBucket): BucketAmounts {
   }
 
   return {
+    accruedInterest: null,
     comparedAt: null,
     delta: null,
     derived: bucket.derivedBalance,

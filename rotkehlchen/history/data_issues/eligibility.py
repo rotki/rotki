@@ -28,6 +28,7 @@ from rotkehlchen.db.evmtx import evm_tx_query_range_prefixes, intersect_evm_tx_q
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.accrued_interest import resolve_accrued_interest
 from rotkehlchen.history.data_issues.bucket_checks import (
     BucketReason,
     DerivedSnapshot,
@@ -41,6 +42,7 @@ from rotkehlchen.history.data_issues.bucket_state import (
 from rotkehlchen.history.data_issues.observations import (
     ObservationSource,
     WalletObservation,
+    deserialize_observation_index,
     get_wallet_observations_from_cursor,
 )
 from rotkehlchen.locations.chains import EVM_LOCATIONS, is_evm_location, location_to_chain
@@ -84,6 +86,8 @@ class WalletEvidence:
     verified_history_free: bool
     history_synced_to: Timestamp | None
     derived_snapshot: DerivedSnapshot | None
+    observation_index: int | None = None
+    accrued_interest: FVal | None = None
 
 
 @dataclass(frozen=True)
@@ -96,10 +100,12 @@ class WalletEvidenceContext:
     accounts_with_pending_decoding: set[tuple[str, str]]
     stopped_buckets: set[tuple[str, str, str, str]]
     rebasing_assets: frozenset[str]
+    accruing_asset_protocols: Mapping[str, str | None]
     treat_eth2_as_eth: bool
     accounts_queried: set[tuple[str, str]]
     balance_checks: dict[CheckKey, BucketBalanceCheck]
     swapped_assets: frozenset[str]
+    tolerance: FVal
 
 
 def get_swapped_asset_ids() -> frozenset[str]:
@@ -228,8 +234,13 @@ def _get_accounts_queried(
     return queried
 
 
-def load_wallet_evidence(database: DBHandler) -> WalletEvidenceContext:
+def load_wallet_evidence(
+        database: DBHandler,
+        tolerance: FVal | None = None,
+) -> WalletEvidenceContext:
     """Load, in one read pass, everything the per-bucket evidence needs."""
+    if tolerance is None:
+        tolerance = CachedSettings().get_settings().asset_movement_amount_tolerance
     with database.conn.read_ctx() as cursor:
         observations = get_wallet_observations_from_cursor(cursor)
         stopped_buckets = set(get_bucket_stops(cursor))
@@ -287,10 +298,12 @@ def load_wallet_evidence(database: DBHandler) -> WalletEvidenceContext:
         accounts_with_pending_decoding=pending_decoding,
         stopped_buckets=stopped_buckets,
         rebasing_assets=frozenset(GlobalDBHandler.get_asset_ids_with_flag(AssetFlag.REBASING)),
+        accruing_asset_protocols=GlobalDBHandler.get_accruing_asset_protocols(),
         treat_eth2_as_eth=CachedSettings().get_entry('treat_eth2_as_eth') is True,
         accounts_queried=accounts_queried,
         balance_checks=balance_checks,
         swapped_assets=get_swapped_asset_ids(),
+        tolerance=tolerance,
     )
 
 
@@ -358,6 +371,9 @@ def _assemble_evidence(
         rebasing_assets: frozenset[str],
         is_swapped_identity: bool,
         treat_eth2_as_eth: bool,
+        cursor: DBCursor | None = None,
+        accruing_asset_protocols: Mapping[str, str | None] | None = None,
+        tolerance: FVal = ZERO,
 ) -> WalletEvidence:
     if is_evm_location(location) is False:
         return WalletEvidence(
@@ -425,6 +441,30 @@ def _assemble_evidence(
             is_history_free=True,
         )
 
+    accrued_interest: FVal | None = None
+    if (
+        len(unsupported) == 0 and
+        is_swapped_identity is False and
+        snapshot is not None and
+        accruing_asset_protocols is not None and
+        asset in accruing_asset_protocols and
+        cursor is not None
+    ):
+        resolution = resolve_accrued_interest(
+            cursor=cursor,
+            location=location,
+            user_address=address,
+            asset=asset,
+            protocol=accruing_asset_protocols[asset],
+            derived=snapshot,
+            observed_amount=None if observation is None else observation.amount,
+            observation_index=None if observation is None else observation.observation_index,
+            tolerance=tolerance,
+        )
+        if resolution.pending_reason is not None and resolution.pending_reason not in pending:
+            pending.append(resolution.pending_reason)
+        accrued_interest = resolution.accrued_interest
+
     return WalletEvidence(
         amount=None if observation is None else observation.amount,
         observed_at=None if observation is None else observation.observed_at,
@@ -434,6 +474,8 @@ def _assemble_evidence(
         verified_history_free=verified_history_free,
         history_synced_to=account_sync.synced_to,
         derived_snapshot=snapshot,
+        observation_index=None if observation is None else observation.observation_index,
+        accrued_interest=accrued_interest,
     )
 
 
@@ -502,6 +544,9 @@ def _get_bucket_evidence(
         rebasing_assets=context.rebasing_assets,
         is_swapped_identity=asset in context.swapped_assets,
         treat_eth2_as_eth=context.treat_eth2_as_eth,
+        cursor=cursor,
+        accruing_asset_protocols=context.accruing_asset_protocols,
+        tolerance=context.tolerance,
     )
 
 
@@ -531,6 +576,8 @@ def get_wallet_evidence(
         asset: str,
         derived: DerivedSnapshot | None,
         swapped_assets: frozenset[str] | None = None,
+        accruing_asset_protocols: Mapping[str, str | None] | None = None,
+        tolerance: FVal | None = None,
 ) -> WalletEvidence:
     """Fresh evidence for one bucket, read inside the caller's write transaction.
 
@@ -557,9 +604,19 @@ def get_wallet_evidence(
 
     chain = location_to_chain(location)
     treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
+    if tolerance is None:
+        tolerance = CachedSettings().get_settings().asset_movement_amount_tolerance
     asset_candidates = wallet_bucket_assets(
         asset=asset,
         treat_eth2_as_eth=treat_eth2_as_eth,
+    )
+    rebasing_assets = frozenset(GlobalDBHandler.get_asset_ids_with_flag(AssetFlag.REBASING))
+    resolved_accruing = (
+        GlobalDBHandler.get_accruing_asset_protocols()
+        if accruing_asset_protocols is None else accruing_asset_protocols
+    )
+    is_swapped_identity = asset in (
+        get_swapped_asset_ids() if swapped_assets is None else swapped_assets
     )
     with database.conn.read_ctx() as cursor:
         observations = {
@@ -568,9 +625,14 @@ def get_wallet_evidence(
                 observed_at=Timestamp(observed_at),
                 observation_id=identifier,
                 source=ObservationSource(source),
+                observation_index=deserialize_observation_index(observation_index, row_asset),
             )
-            for identifier, address_key, row_asset, amount, observed_at, source in cursor.execute(
-                'SELECT observation_id, address, asset, amount, observed_at, source '
+            for (
+                identifier, address_key, row_asset, amount,
+                observed_at, source, observation_index,
+            ) in cursor.execute(
+                'SELECT observation_id, address, asset, amount, observed_at, source, '
+                'observation_index '
                 'FROM wallet_balance_observations WHERE blockchain = ? AND address = ? '
                 f'AND asset IN ({",".join("?" * len(asset_candidates))})',
                 (chain.serialize(), address, *asset_candidates),
@@ -594,30 +656,31 @@ def get_wallet_evidence(
         has_stop = _has_stop(cursor, location, address, asset_candidates)
         has_history_events = _has_history_events(cursor, location, address, asset_candidates)
 
-    return _assemble_evidence(
-        location=location,
-        address=address,
-        asset=asset,
-        derived=derived,
-        observation=_get_observation(
+        return _assemble_evidence(
             location=location,
             address=address,
             asset=asset,
-            observations=observations,
+            derived=derived,
+            observation=_get_observation(
+                location=location,
+                address=address,
+                asset=asset,
+                observations=observations,
+                treat_eth2_as_eth=treat_eth2_as_eth,
+            ),
+            account_sync=account_sync,
+            pending_decoding=pending_decoding,
+            is_disabled=are_queries_disabled(chain, address),
+            is_queried=is_queried,
+            has_stop=has_stop,
+            has_history_events=has_history_events,
+            rebasing_assets=rebasing_assets,
+            is_swapped_identity=is_swapped_identity,
             treat_eth2_as_eth=treat_eth2_as_eth,
-        ),
-        account_sync=account_sync,
-        pending_decoding=pending_decoding,
-        is_disabled=are_queries_disabled(chain, address),
-        is_queried=is_queried,
-        has_stop=has_stop,
-        has_history_events=has_history_events,
-        rebasing_assets=frozenset(GlobalDBHandler.get_asset_ids_with_flag(AssetFlag.REBASING)),
-        is_swapped_identity=asset in (
-            get_swapped_asset_ids() if swapped_assets is None else swapped_assets
-        ),
-        treat_eth2_as_eth=treat_eth2_as_eth,
-    )
+            cursor=cursor,
+            accruing_asset_protocols=resolved_accruing,
+            tolerance=tolerance,
+        )
 
 
 def get_wallet_evidence_bulk(

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING, Final
 
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Timestamp
@@ -54,10 +55,20 @@ class BucketBalanceCheck:
     can share an observed_at second, so the saved identity is what detects that one replaced
     the other. None is a check written before identities were stored, where only observed_at
     can decide."""
+    accrued_interest: FVal | None = None
+    """Nominal interest accrued between the latest event's index and the observation's index for
+    index-accruing tokens (e.g. Aave v3 / Spark Lend aTokens and variable debt tokens). Kept
+    separate from derived_balance so DERIVED_SNAPSHOT_CHANGED invalidates cleanly and later
+    interest-booking events never double-count. None for standard tokens or checks saved without
+    an interest adjustment."""
 
     @property
     def key(self) -> CheckKey:
         return self.location, self.location_label, self.asset
+
+    @property
+    def expected_balance(self) -> FVal:
+        return self.derived_balance + (self.accrued_interest or ZERO)
 
 
 def get_balance_checks(cursor: DBCursor) -> dict[CheckKey, BucketBalanceCheck]:
@@ -73,12 +84,13 @@ def get_balance_checks(cursor: DBCursor) -> dict[CheckKey, BucketBalanceCheck]:
             observed_at=Timestamp(observed_at),
             compared_at=Timestamp(compared_at),
             observation_id=observation_id,
+            accrued_interest=None if accrued_interest is None else FVal(accrued_interest),
         ) for (
             location, label, asset, derived_balance, observed_balance,
-            latest_event_identifier, observed_at, compared_at, observation_id,
+            latest_event_identifier, observed_at, compared_at, observation_id, accrued_interest,
         ) in cursor.execute(
             'SELECT location, location_label, asset, derived_balance, observed_balance, '
-            'latest_event_identifier, observed_at, compared_at, observation_id '
+            'latest_event_identifier, observed_at, compared_at, observation_id, accrued_interest '
             'FROM bucket_balance_checks',
         )
     }
@@ -89,7 +101,7 @@ def save_balance_check(write_cursor: DBCursor, check: BucketBalanceCheck) -> Non
     write_cursor.execute(
         'INSERT OR REPLACE INTO bucket_balance_checks(location, location_label, asset, '
         'derived_balance, observed_balance, latest_event_identifier, observed_at, compared_at, '
-        'observation_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'observation_id, accrued_interest) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         (
             *check.key,
             str(check.derived_balance),
@@ -98,6 +110,7 @@ def save_balance_check(write_cursor: DBCursor, check: BucketBalanceCheck) -> Non
             check.observed_at,
             check.compared_at,
             check.observation_id,
+            None if check.accrued_interest is None else str(check.accrued_interest),
         ),
     )
 
@@ -127,6 +140,9 @@ class BucketReason(StrEnum):
     ASSET_COVERAGE_MISSING = 'asset_coverage_missing'
     OBSERVATION_MISSING = 'observation_missing'
     OBSERVATION_STALE = 'observation_stale'
+    # why accrued interest cannot be projected for an index-accruing token
+    INTEREST_INDEX_MISSING = 'interest_index_missing'
+    INTEREST_ANCHOR_UNAVAILABLE = 'interest_anchor_unavailable'
     # why the history side is not ready
     HISTORY_NOT_SYNCED = 'history_not_synced'
     HISTORY_PENDING_DECODING = 'history_pending_decoding'
@@ -175,6 +191,7 @@ def classify_bucket(
         tolerance: FVal,
         latest_observation_id: int | None = None,
         pending_reasons: Collection[BucketReason] = (),
+        expected_accrued_interest: FVal | None = None,
 ) -> BucketClassification:
     """Classify a bucket that is in scope. Ignored assets and untracked accounts are left out
     before this, and the first rule that matches decides the status:
@@ -203,18 +220,24 @@ def classify_bucket(
     if check is None:
         reasons.append(BucketReason.NEVER_COMPARED)
     else:
-        if derived is None or (
-            derived.balance != check.derived_balance or
-            derived.latest_event_identifier != check.latest_event_identifier
-        ):
-            reasons.append(BucketReason.DERIVED_SNAPSHOT_CHANGED)
-        if (
+        observation_superseded = (
             (latest_observed_at is not None and latest_observed_at > check.observed_at) or
             (
                 latest_observation_id is not None and
                 latest_observation_id != check.observation_id
             )
+        )
+        if derived is None or (
+            derived.balance != check.derived_balance or
+            derived.latest_event_identifier != check.latest_event_identifier
+        ) or (
+            not observation_superseded and
+            len(pending_reasons) == 0 and
+            len(unsupported) == 0 and
+            check.accrued_interest != expected_accrued_interest
         ):
+            reasons.append(BucketReason.DERIVED_SNAPSHOT_CHANGED)
+        if observation_superseded:
             # The identity catches a replacement within the same second, which the timestamp
             # alone can't see.
             reasons.append(BucketReason.OBSERVATION_SUPERSEDED)
@@ -234,7 +257,7 @@ def classify_bucket(
     return BucketClassification(
         status=(
             BucketStatus.RECONCILED
-            if balances_match(check.derived_balance, check.observed_balance, tolerance)
+            if balances_match(check.expected_balance, check.observed_balance, tolerance)
             else BucketStatus.MISMATCH
         ),
         reasons=(),

@@ -3,9 +3,10 @@ import type { BigNumber } from '@rotki/common';
 import { useAmountDisplaySettings } from '@/modules/assets/amount-display';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 
-const { amount, asset, signed = false } = defineProps<{
+const { amount, asset, noCollectionParent = false, signed = false } = defineProps<{
   amount: BigNumber | null;
   asset?: string;
+  noCollectionParent?: boolean;
   /** Show a leading `+` for a positive value, as for a balance difference. */
   signed?: boolean;
 }>();
@@ -33,6 +34,7 @@ const showPlus = computed<boolean>(() => signed && !!amount && amount.gt(0) && g
     <AssetAmountDisplay
       :amount="amount"
       :asset="asset"
+      :no-collection-parent="noCollectionParent"
     />
   </span>
 </template>

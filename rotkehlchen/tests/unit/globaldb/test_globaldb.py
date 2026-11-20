@@ -17,13 +17,14 @@ from rotkehlchen.assets.asset import (
     UnderlyingToken,
 )
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.types import AssetFlag, AssetType
 from rotkehlchen.assets.utils import (
     check_if_spam_token,
     get_or_create_evm_token,
     symbol_to_asset_or_token,
 )
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -1310,3 +1311,84 @@ def test_resolve_asset_from_packaged_and_store_edit_solana_token(globaldb: Globa
     restored_asset = catino_asset.resolve_to_solana_token()
     assert restored_asset.asset_type == AssetType.SOLANA_TOKEN
     assert restored_asset.name != 'Modified Test Name'  # Should be restored to original name
+
+
+def test_get_asset_ids_with_flags(globaldb: GlobalDBHandler) -> None:
+    """Verify batch flag queries and packaged global.db lending/Spark Savings classifications."""
+    assert globaldb.get_asset_ids_with_flags(()) == {}
+
+    flags = globaldb.get_asset_ids_with_flags((
+        AssetFlag.REBASING,
+        AssetFlag.ACCRUING_INTEREST_SUPPLY,
+        AssetFlag.ACCRUING_INTEREST_DEBT,
+    ))
+    assert set(flags.keys()) == {
+        AssetFlag.REBASING,
+        AssetFlag.ACCRUING_INTEREST_SUPPLY,
+        AssetFlag.ACCRUING_INTEREST_DEBT,
+    }
+    # Aave v1 (aDAI) and Aave v2 (aDAI) are rebasing.
+    assert 'eip155:1/erc20:0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d' in flags[AssetFlag.REBASING]
+    assert 'eip155:1/erc20:0x028171bCA77440897B824Ca71D1c56caC55b68A3' in flags[AssetFlag.REBASING]
+    # Aave v3 aTokens & variableDebt tokens are flagged for accrued-interest reconciliation.
+    assert 'eip155:1/erc20:0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c' in flags[AssetFlag.ACCRUING_INTEREST_SUPPLY]  # aEthUSDC  # noqa: E501
+    assert 'eip155:1/erc20:0x72E95b8931767C79bA4EeE721354d6E99a61D004' in flags[AssetFlag.ACCRUING_INTEREST_DEBT]  # variableDebtEthUSDC  # noqa: E501
+    # Spark Savings ERC-4626 vaults (V1 & V2) are not flagged.
+    all_flagged = set().union(*flags.values())
+    for spark_savings_id in (
+        'eip155:100/erc20:0xaf204776c7245bF4147c2612BF6e5972Ee483701',  # sDAI
+        'eip155:1/erc20:0xBc65ad17c5C0a2A4D159fa5a503f4992c7B545FE',  # sUSDC
+        'eip155:1/erc20:0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD',  # sUSDS
+        'eip155:1/erc20:0x28B3a8fb53B741A8Fd78c0fb9A6B2393d896a43d',  # spUSDC V2
+        'eip155:1/erc20:0xe2e7a17dFf93280dec073C995595155283e3C372',  # spUSDT V2
+    ):
+        assert spark_savings_id not in all_flagged
+
+
+def test_set_asset_flag_skips_write_ctx_on_noop(globaldb: GlobalDBHandler) -> None:
+    """set_asset_flag avoids acquiring write_ctx when the flag already has the desired state."""
+    identifier = A_DAI.identifier
+    flag = AssetFlag.ACCRUING_INTEREST_SUPPLY
+    assert identifier not in globaldb.get_asset_ids_with_flag(flag)
+
+    with patch.object(globaldb.conn, 'write_ctx', wraps=globaldb.conn.write_ctx) as write_ctx_spy:
+        assert globaldb.set_asset_flag(identifier, flag, enabled=False) is False
+        assert write_ctx_spy.call_count == 0
+
+        assert globaldb.set_asset_flag(identifier, flag, enabled=True) is True
+        assert write_ctx_spy.call_count == 1
+        assert identifier in globaldb.get_asset_ids_with_flag(flag)
+
+        assert globaldb.set_asset_flag(identifier, flag, enabled=True) is False
+        assert write_ctx_spy.call_count == 1
+
+        assert globaldb.set_asset_flag(identifier, flag, enabled=False) is True
+        assert write_ctx_spy.call_count == 2
+        assert identifier not in globaldb.get_asset_ids_with_flag(flag)
+
+        assert globaldb.set_asset_flag(identifier, flag, enabled=False) is False
+        assert write_ctx_spy.call_count == 2
+
+
+def test_get_accruing_asset_protocols(globaldb: GlobalDBHandler) -> None:
+    """get_accruing_asset_protocols returns supply/debt accruing assets and their protocol."""
+    protocols = globaldb.get_accruing_asset_protocols()
+    # Packaged Aave v3 aToken & variableDebt token are included with protocol.
+    assert protocols['eip155:1/erc20:0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c'] == CPT_AAVE_V3
+    assert protocols['eip155:1/erc20:0x72E95b8931767C79bA4EeE721354d6E99a61D004'] == CPT_AAVE_V3
+    # Rebasing-only and unflagged assets are excluded.
+    assert 'eip155:1/erc20:0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d' not in protocols
+    assert 'eip155:100/erc20:0xaf204776c7245bF4147c2612BF6e5972Ee483701' not in protocols
+
+    # A flagged asset with no protocol in evm_tokens (or non-EVM asset) maps to None.
+    assert globaldb.set_asset_flag(
+        A_ETH.identifier, AssetFlag.ACCRUING_INTEREST_SUPPLY, enabled=True,
+    ) is True
+    try:
+        updated = globaldb.get_accruing_asset_protocols()
+        assert A_ETH.identifier in updated
+        assert updated[A_ETH.identifier] is None
+    finally:
+        globaldb.set_asset_flag(
+            A_ETH.identifier, AssetFlag.ACCRUING_INTEREST_SUPPLY, enabled=False,
+        )

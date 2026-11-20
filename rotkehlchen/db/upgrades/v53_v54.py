@@ -178,6 +178,7 @@ CREATE TABLE {table} (
     observed_at INTEGER NOT NULL,
     compared_at INTEGER NOT NULL,
     observation_id INTEGER,
+    accrued_interest TEXT,
     PRIMARY KEY (location, location_label, asset)
 ) WITHOUT ROWID;"""),
     ('user_credentials', 'location', False, """
@@ -575,6 +576,7 @@ CREATE TABLE IF NOT EXISTS bucket_balance_checks (
     observed_at INTEGER NOT NULL,
     compared_at INTEGER NOT NULL,
     observation_id INTEGER,
+    accrued_interest TEXT,
     PRIMARY KEY (location, location_label, asset)
 ) WITHOUT ROWID;
         """)
@@ -587,6 +589,7 @@ CREATE TABLE IF NOT EXISTS wallet_balance_observations (
     observed_at INTEGER NOT NULL,
     source TEXT NOT NULL,
     observation_id INTEGER NOT NULL,
+    observation_index TEXT,
     PRIMARY KEY (blockchain, address, asset)
 ) WITHOUT ROWID;
         """)

@@ -162,6 +162,7 @@ export const RebasingTokenPayload = z.object({
 export type RebasingTokenPayload = z.infer<typeof RebasingTokenPayload>;
 
 export const CurrentBalanceMismatchPayload = z.object({
+  accruedInterest: NumericString.nullable().optional(),
   delta: NumericString,
   derivedBalance: NumericString,
   latestEventIdentifier: z.number().nullable(),
