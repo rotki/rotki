@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library';
-import type { ReconciliationAccount, ReconciliationBucket } from '@/modules/history/reconciliation/schemas';
+import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
+import type { InspectedBucket, ReconciliationAccount, ReconciliationBucket } from '@/modules/history/reconciliation/schemas';
 import type { AccountDetailState } from '@/modules/history/reconciliation/use-bucket-reconciliation-store';
 import { toHumanReadable } from '@rotki/common';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
@@ -44,8 +44,10 @@ interface MoreRow {
 
 type Row = BucketRow | PlaceholderRow | MoreRow;
 
-const { accounts, details, view, loading = false } = defineProps<{
+const { accounts, autoExpand = false, details, loading = false, view } = defineProps<{
   accounts: ReconciliationAccount[];
+  /** Automatically open matching accounts when a search filter narrows the table. */
+  autoExpand?: boolean;
   details: Record<string, AccountDetailState | undefined>;
   view: ReconciliationView;
   loading?: boolean;
@@ -53,20 +55,58 @@ const { accounts, details, view, loading = false } = defineProps<{
 
 const emit = defineEmits<{
   'expand': [account: ReconciliationAccount];
+  'inspect-trace': [target: InspectedBucket];
   'load-more': [account: ReconciliationAccount];
   'mark-spam': [bucket: ReconciliationBucket];
   'open-issue': [issueId: number];
   'retry': [account: ReconciliationAccount];
 }>();
 
+/** Cap auto-expanded accounts on a broad filter so one keystroke does not fire dozens of fetches. */
+const AUTO_EXPAND_LIMIT = 20;
+
 const { t } = useI18n({ useScope: 'global' });
-const { getBaseCounterpartyData } = useHistoryEventCounterpartyMappings();
 
 /** Account keys the user opened. Rows are fetched only when an account lands here. */
 const expandedKeys = ref<string[]>([]);
 
+const { getBaseCounterpartyData } = useHistoryEventCounterpartyMappings();
+
+const expandedSet = computed<Set<string>>(() => new Set(get(expandedKeys)));
 const accountByKey = computed<Record<string, ReconciliationAccount>>(() =>
   Object.fromEntries(accounts.map(account => [accountKeyOf(account), account])));
+
+const rows = computed<Row[]>(() => accounts.flatMap(rowsForAccount));
+
+/** Single page covering every rendered row so RuiDataTable does not clip past 10 rows. */
+const wholeTable = computed<TablePaginationData>(() => ({
+  limit: Math.max(get(rows).length, 1),
+  page: 1,
+  total: get(rows).length,
+}));
+
+/**
+ * Rows handed to the table as collapsed.
+ *
+ * @remarks
+ * The table's grouping keeps one group per account, and hiding an account means handing it every
+ * row of that group. Rows of an open account are never in this list, including rows that arrived
+ * after it was opened.
+ */
+const collapsedRows = computed<Row[]>(() =>
+  get(rows).filter(row => !get(expandedSet).has(row.accountKey)));
+
+const cols = computed<DataTableColumn<Row>[]>(() => [
+  { class: 'min-w-40 w-[22%]', key: 'asset', label: t('common.asset') },
+  { align: 'end', class: 'text-no-wrap w-[11%]', key: 'fromHistory', label: t('data_issues.reconciliation.table.from_history') },
+  { align: 'end', class: 'text-no-wrap w-[11%]', key: 'onChain', label: t('data_issues.reconciliation.table.on_chain') },
+  { align: 'end', class: 'text-no-wrap w-[10%]', key: 'difference', label: t('data_issues.reconciliation.table.difference') },
+  { class: 'min-w-80 w-[46%]', key: 'status', label: t('data_issues.reconciliation.table.status') },
+]);
+
+const emptyDescription = computed<string>(() => (view === 'attention'
+  ? t('data_issues.reconciliation.table.empty_attention')
+  : t('data_issues.reconciliation.table.empty_all')));
 
 function placeholder(account: ReconciliationAccount, state: PlaceholderRow['state']): PlaceholderRow {
   const accountKey = accountKeyOf(account);
@@ -93,7 +133,7 @@ function rowsForAccount(account: ReconciliationAccount): Row[] {
   const accountKey = accountKeyOf(account);
   const detail = details[accountKey];
 
-  if (!get(expandedKeys).includes(accountKey))
+  if (!get(expandedSet).has(accountKey))
     return [placeholder(account, 'empty')];
   if (!detail || (detail.loading && detail.buckets.length === 0))
     return [placeholder(account, 'loading')];
@@ -118,25 +158,29 @@ function rowsForAccount(account: ReconciliationAccount): Row[] {
   return result;
 }
 
-const rows = computed<Row[]>(() => accounts.flatMap(rowsForAccount));
+function autoExpandMatchingAccounts(): void {
+  if (!autoExpand)
+    return;
 
-/**
- * Rows handed to the table as collapsed.
- *
- * @remarks
- * The table's grouping keeps one group per account, and hiding an account means handing it every
- * row of that group. Rows of an open account are never in this list, including rows that arrived
- * after it was opened.
- */
-const collapsedRows = computed<Row[]>(() => get(rows).filter(row => !get(expandedKeys).includes(row.accountKey)));
+  const current = new Set(get(expandedKeys));
+  const next = [...current];
+  for (const account of accounts.slice(0, AUTO_EXPAND_LIMIT)) {
+    const key = accountKeyOf(account);
+    if (!current.has(key))
+      next.push(key);
+    if (!details[key]?.loading)
+      emit('expand', account);
+  }
+  set(expandedKeys, next);
+}
 
 /**
  * Applies the table's collapsed set to the open accounts.
  *
  * @remarks
  * Every account has at least a placeholder row, so an account missing from the collapsed set is
- * the one just opened. Only that opening is forwarded: re-rendering must not refetch every open
- * account.
+ * the one just opened. Only newly opened accounts are forwarded; `ensureAccount` decides via
+ * `statusKey` whether cached rows can be reused.
  */
 function onCollapsedUpdate(collapsed: Row[]): void {
   const collapsedKeys = new Set(collapsed.map(row => row.accountKey));
@@ -149,19 +193,11 @@ function onCollapsedUpdate(collapsed: Row[]): void {
 
   for (const key of opened) {
     const account = get(accountByKey)[key];
-    if (!account || previouslyOpen.has(key) || details[key]?.loaded)
+    if (!account || previouslyOpen.has(key))
       continue;
     emit('expand', account);
   }
 }
-
-const cols = computed<DataTableColumn<Row>[]>(() => [
-  { class: 'min-w-40 w-[22%]', key: 'asset', label: t('common.asset') },
-  { align: 'end', class: 'text-no-wrap w-[11%]', key: 'fromHistory', label: t('data_issues.reconciliation.table.from_history') },
-  { align: 'end', class: 'text-no-wrap w-[11%]', key: 'onChain', label: t('data_issues.reconciliation.table.on_chain') },
-  { align: 'end', class: 'text-no-wrap w-[10%]', key: 'difference', label: t('data_issues.reconciliation.table.difference') },
-  { class: 'min-w-80 w-[46%]', key: 'status', label: t('data_issues.reconciliation.table.status') },
-]);
 
 /** The protocol's display name, at the size of the line it sits in rather than the badge's own. */
 function protocolLabel(protocol: string): string {
@@ -172,9 +208,11 @@ function amountsOf(row: BucketRow): ReturnType<typeof amountsFor> {
   return amountsFor(row.bucket);
 }
 
-const emptyDescription = computed<string>(() => (view === 'attention'
-  ? t('data_issues.reconciliation.table.empty_attention')
-  : t('data_issues.reconciliation.table.empty_all')));
+watch(
+  [() => autoExpand, () => accounts.map(accountKeyOf).join('\n')],
+  () => autoExpandMatchingAccounts(),
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -184,6 +222,8 @@ const emptyDescription = computed<string>(() => (view === 'attention'
     :loading="loading"
     group="accountKey"
     :collapsed="collapsedRows"
+    :pagination="wholeTable"
+    :global-items-per-page="false"
     row-attr="key"
     item-class="bg-rui-grey-50 dark:bg-white/[0.03]"
     outlined
@@ -292,8 +332,11 @@ const emptyDescription = computed<string>(() => (view === 'attention'
       <ReconciliationStatusCell
         v-if="row.kind === 'bucket'"
         :bucket="row.bucket"
+        :location="row.account.location"
+        :location-label="row.account.locationLabel"
         @open-issue="emit('open-issue', $event)"
         @mark-spam="emit('mark-spam', $event)"
+        @inspect-trace="emit('inspect-trace', { account: row.account, bucket: $event })"
       />
     </template>
 

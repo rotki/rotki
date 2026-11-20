@@ -133,3 +133,17 @@ export function reasonLabel(bucket: ReconciliationBucket): MessageKey {
 
   return bucket.status === 'pending' ? REASON_LABEL.unknown_pending : REASON_LABEL.unknown_not_compared;
 }
+
+const TRACE_ROW_STATUS_LABEL = new Map<string, MessageKey>([
+  ['applied', msg.$t('data_issues.reconciliation.trace.row_status.applied')],
+  ['negative_awaiting_rebase_reconciliation', msg.$t('data_issues.reconciliation.trace.row_status.negative_awaiting_rebase_reconciliation')],
+  ['skipped_after_stop', msg.$t('data_issues.reconciliation.trace.row_status.skipped_after_stop')],
+  ['stop', msg.$t('data_issues.reconciliation.trace.row_status.stop')],
+]);
+
+const UNKNOWN_TRACE_ROW_STATUS_LABEL = msg.$t('data_issues.reconciliation.trace.row_status.unknown');
+
+/** Localized label for a bucket trace row status, falling back for newer backend statuses. */
+export function traceRowStatusLabel(status: string): MessageKey {
+  return TRACE_ROW_STATUS_LABEL.get(status) ?? UNKNOWN_TRACE_ROW_STATUS_LABEL;
+}

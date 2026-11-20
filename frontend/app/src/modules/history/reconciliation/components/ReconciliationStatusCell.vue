@@ -2,8 +2,10 @@
 import type { RouteLocationRaw } from 'vue-router';
 import type { MessageKey } from '@/message-key';
 import type { ReconciliationBucket } from '@/modules/history/reconciliation/schemas';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import ReconciliationAmount from '@/modules/history/reconciliation/components/ReconciliationAmount.vue';
 import { blockedReasonLabel, reasonLabel, STATUS_LABEL } from '@/modules/history/reconciliation/messages';
+import { bucketEventsRoute as buildBucketEventsRoute } from '@/modules/history/reconciliation/routes';
 import {
   amountsFor,
   type BucketAmounts,
@@ -12,25 +14,27 @@ import {
   displayStatusColor,
   displayStatusIcon,
   isHistoryFree,
-  needsAttention,
 } from '@/modules/history/reconciliation/use-reconciliation-rows';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 
-const { bucket } = defineProps<{
+const { bucket, location, locationLabel = null } = defineProps<{
   bucket: ReconciliationBucket;
+  location?: string;
+  locationLabel?: string | null;
 }>();
 
 const emit = defineEmits<{
+  'inspect-trace': [bucket: ReconciliationBucket];
   'mark-spam': [bucket: ReconciliationBucket];
   'open-issue': [issueId: number];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const { matchChain } = useSupportedChains();
 
 const status = computed<DisplayStatus>(() => displayStatus(bucket.status));
 const amounts = computed<BucketAmounts>(() => amountsFor(bucket));
-const attention = computed<boolean>(() => needsAttention(bucket.status));
 
 const statusLabel = computed<string>(() => t(STATUS_LABEL[get(status)]));
 const statusIcon = computed<string>(() => displayStatusIcon(get(status)));
@@ -67,6 +71,14 @@ const eventRoute = computed<RouteLocationRaw | undefined>(() => {
     },
   };
 });
+
+/** Filtered history events link for this bucket, offered whenever there is no stopping-event jump. */
+const bucketEventsRoute = computed<RouteLocationRaw>(() => buildBucketEventsRoute({
+  asset: bucket.asset,
+  isChainAccount: !!location && matchChain(location) !== undefined,
+  location,
+  locationLabel,
+}));
 
 /**
  * Whether the spam action is offered.
@@ -160,10 +172,7 @@ function openIssue(): void {
       </i18n-t>
     </div>
 
-    <div
-      v-if="attention || canMarkSpam"
-      class="flex flex-wrap items-center gap-1 mt-1 -ml-2"
-    >
+    <div class="flex flex-wrap items-center gap-1 mt-1 -ml-2">
       <RuiButton
         v-if="bucket.issueId !== null"
         size="sm"
@@ -198,6 +207,29 @@ function openIssue(): void {
           {{ t('data_issues.reconciliation.action.view_event') }}
         </RuiButton>
       </RouterLink>
+      <RouterLink
+        v-else
+        :to="bucketEventsRoute"
+        data-testid="reconciliation-view-events"
+      >
+        <RuiButton
+          size="sm"
+          variant="text"
+          color="primary"
+          tabindex="-1"
+        >
+          {{ t('data_issues.reconciliation.action.view_events') }}
+        </RuiButton>
+      </RouterLink>
+      <RuiButton
+        size="sm"
+        variant="text"
+        color="primary"
+        data-testid="reconciliation-inspect-trace"
+        @click="emit('inspect-trace', bucket)"
+      >
+        {{ t('data_issues.reconciliation.action.inspect_trace') }}
+      </RuiButton>
       <span
         v-if="bucket.status === 'mismatch' && bucket.issueId === null"
         class="text-xs text-rui-text-secondary"

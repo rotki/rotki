@@ -56,7 +56,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.tests.utils.reconciliation import track_blockchain_account
+from rotkehlchen.tests.utils.reconciliation import add_balance_bucket, track_blockchain_account
 from rotkehlchen.types import (
     AssetAmount,
     ChainID,
@@ -771,36 +771,41 @@ def test_get_historical_balance_with_filters(
         api_url_for(rotkehlchen_api_server, 'timestamphistoricalbalanceresource'),
         json={'timestamp': day3_ts, 'group_by_account': True},
     ))
-    expected_entries: list[dict[str, str | None]] = [{
+    expected_entries: list[dict[str, str | bool | None]] = [{
         'location': 'base',
         'location_label': addr1,
         'protocol': None,
         'asset': 'ETH',
         'amount': '2',
+        'is_liability': False,
     }, {
         'location': 'ethereum',
         'location_label': addr2,
         'protocol': None,
         'asset': 'ETH',
         'amount': '4',
+        'is_liability': False,
     }, {
         'location': 'ethereum',
         'location_label': addr1,
         'protocol': None,
         'asset': 'ETH',
         'amount': '21',  # 5 + 10 - 1 (aave) + 2 + 6 - 1 (compound)
+        'is_liability': False,
     }, {
         'location': 'ethereum',
         'location_label': addr1,
         'protocol': 'aave',
         'asset': 'ETH',
         'amount': '1',
+        'is_liability': False,
     }, {
         'location': 'ethereum',
         'location_label': addr1,
         'protocol': 'compound',
         'asset': 'ETH',
         'amount': '1',
+        'is_liability': False,
     }]
     assert result['processing_required'] is False
     assert len(result['entries']) == len(expected_entries)
@@ -817,6 +822,7 @@ def test_get_historical_balance_with_filters(
         'protocol': None,
         'asset': 'ETH',
         'amount': '4',
+        'is_liability': False,
     }]
 
     result = assert_proper_sync_response_with_result(requests.post(
@@ -832,6 +838,7 @@ def test_get_historical_balance_with_filters(
             'protocol': None,
             'asset': 'ETH',
             'amount': '2',
+            'is_liability': False,
         }],
     }
 
@@ -1503,6 +1510,7 @@ def test_current_historical_balances_stale_flag(
         'protocol': None,
         'asset': A_BTC.identifier,
         'amount': '2',
+        'is_liability': False,
     }]
 
     # Editing an event marks the derived balances stale until processing runs again.
@@ -1517,6 +1525,100 @@ def test_current_historical_balances_stale_flag(
         json={},
     ))
     assert result['stale'] is True
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('have_decoders', [True])
+def test_current_historical_balances_marks_debt_tokens_as_liabilities(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Aave V3 debt tokens are flagged with is_liability=True while regular EVM tokens,
+    native assets, and unknown asset identifiers return is_liability=False.
+    """
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    user_address = make_evm_address()
+    usdc_token = get_or_create_evm_token(
+        userdb=db,
+        evm_address=string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+        chain_id=ChainID.ETHEREUM,
+        name='USD Coin',
+        symbol='USDC',
+        decimals=6,
+    )
+    debt_token = get_or_create_evm_token(
+        userdb=db,
+        evm_address=string_to_evm_address('0x6df1C1E379bC5a00a7b4C6e67A203333772f45A8'),
+        chain_id=ChainID.ETHEREUM,
+        name='Aave Ethereum Variable Debt USDT',
+        symbol='variableDebtEthUSDT',
+        decimals=6,
+        protocol='aave-v3',
+    )
+    unknown_asset = Asset('UNKNOWN_REMOVED_TOKEN')
+    with db.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO assets(identifier) VALUES (?)',
+            (unknown_asset.identifier,),
+        )
+        DBHistoryEvents(database=db).add_history_events(
+            write_cursor=write_cursor,
+            history=[
+                EvmEvent(
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=0,
+                    timestamp=ts_sec_to_ms(START_TS),
+                    location=LOCATION_ETHEREUM,
+                    location_label=user_address,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=A_ETH,
+                    amount=FVal('2'),
+                ),
+                EvmEvent(
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=0,
+                    timestamp=ts_sec_to_ms(Timestamp(START_TS + 5)),
+                    location=LOCATION_ETHEREUM,
+                    location_label=user_address,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=usdc_token,
+                    amount=FVal('500'),
+                ),
+                EvmEvent(
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=0,
+                    timestamp=ts_sec_to_ms(Timestamp(START_TS + 10)),
+                    location=LOCATION_ETHEREUM,
+                    location_label=user_address,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=debt_token,
+                    amount=FVal('1000'),
+                ),
+            ],
+        )
+    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
+    add_balance_bucket(
+        database=db,
+        address=user_address,
+        amount='3',
+        ts=Timestamp(START_TS + 15),
+        asset=unknown_asset,
+        apply_stale_marker=False,
+    )
+
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'currenthistoricalbalanceresource'),
+        json={},
+    ))
+    by_asset = {entry['asset']: entry for entry in result['entries']}
+    assert by_asset[A_ETH.identifier]['is_liability'] is False
+    assert by_asset[usdc_token.identifier]['is_liability'] is False
+    assert by_asset[debt_token.identifier]['is_liability'] is True
+    assert by_asset[debt_token.identifier]['amount'] == '1000'
+    assert by_asset[unknown_asset.identifier]['is_liability'] is False
+    assert by_asset[unknown_asset.identifier]['amount'] == '3'
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

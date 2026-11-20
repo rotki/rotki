@@ -4357,6 +4357,7 @@ class RestAPI:
             self,
             location: str | None,
             location_label: str | None,
+            asset: str | None,
             statuses: list[BucketStatus] | None,
             limit: int,
             offset: int,
@@ -4365,11 +4366,19 @@ class RestAPI:
             database=self.rotkehlchen.data.db,
             location=location,
             location_label=location_label,
+            asset=asset,
             statuses=statuses,
             limit=limit,
             offset=offset,
         )
         return api_response(OkResult(self._serialize_reconciliation_report(report)))
+
+    @staticmethod
+    def _is_liability_asset(asset: Asset) -> bool:
+        try:
+            return asset.is_evm_token() and asset.resolve_to_evm_token().is_liability()
+        except (UnknownAsset, WrongAssetType):
+            return False
 
     @async_api_call()
     @accounting_update_required('Historical balances are disabled')
@@ -4406,6 +4415,7 @@ class RestAPI:
                     'protocol': entry.protocol,
                     'asset': entry.asset.identifier,
                     'amount': str(entry.amount),
+                    'is_liability': self._is_liability_asset(entry.asset),
                 }
                 for entry in balances
                 if isinstance(entry, HistoricalBalanceEntry)

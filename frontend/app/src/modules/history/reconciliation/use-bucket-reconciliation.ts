@@ -1,11 +1,4 @@
 import type { Ref } from 'vue';
-import type {
-  BucketStatus,
-  ReconciliationAccount,
-  ReconciliationBucket,
-  StatusCounts,
-} from '@/modules/history/reconciliation/schemas';
-import { ZodError } from 'zod';
 import { FailureCause } from '@/modules/core/api/failure-cause';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { failureCauseOf } from '@/modules/core/api/request-result';
@@ -14,6 +7,14 @@ import {
   MAX_ACCOUNT_BUCKETS,
   useBucketReconciliationApi,
 } from '@/modules/history/reconciliation/api/use-bucket-reconciliation-api';
+import {
+  type BucketStatus,
+  namedReconciliationFailure,
+  type ReconciliationAccount,
+  type ReconciliationBucket,
+  type ReconciliationResponse,
+  type StatusCounts,
+} from '@/modules/history/reconciliation/schemas';
 import {
   type AccountDetailState,
   useBucketReconciliationStore,
@@ -39,22 +40,28 @@ function nextAccountRequest(key: string): number {
   return next;
 }
 
+type FilteredSummaryResult =
+  | { status: 'ok'; response: ReconciliationResponse }
+  | { status: 'cancelled' }
+  | { status: 'unavailable' }
+  | { status: 'failed'; failure: unknown };
+
 interface UseBucketReconciliationReturn {
-  accounts: Ref<ReconciliationAccount[]>;
-  attention: Ref<number>;
-  ensureAccount: (account: ReconciliationAccount, statuses?: BucketStatus[]) => Promise<void>;
+  accounts: Readonly<Ref<ReconciliationAccount[]>>;
+  attention: Readonly<Ref<number>>;
+  ensureAccount: (account: ReconciliationAccount, statuses?: BucketStatus[], asset?: string) => Promise<void>;
   ensureSummary: () => Promise<void>;
-  loadMore: (account: ReconciliationAccount, statuses?: BucketStatus[]) => Promise<void>;
-  refreshAll: (statuses?: BucketStatus[]) => Promise<void>;
+  fetchFilteredSummary: (asset: string) => Promise<FilteredSummaryResult>;
+  loadMore: (account: ReconciliationAccount, statuses?: BucketStatus[], asset?: string) => Promise<void>;
   refreshSummary: () => Promise<void>;
-  reloadAccounts: (statuses?: BucketStatus[]) => Promise<void>;
-  retryAccount: (account: ReconciliationAccount, statuses?: BucketStatus[]) => Promise<void>;
-  summaryFailed: Ref<boolean>;
+  reloadAccounts: (statuses?: BucketStatus[], asset?: string, sourceAccounts?: ReconciliationAccount[]) => Promise<void>;
+  retryAccount: (account: ReconciliationAccount, statuses?: BucketStatus[], asset?: string) => Promise<void>;
+  summaryFailed: Readonly<Ref<boolean>>;
   /** Why the last refresh failed, for a `FailureStrip` to word; undefined after a success. */
-  summaryFailure: Ref<unknown>;
-  summaryLoading: Ref<boolean>;
-  summaryUnavailable: Ref<boolean>;
-  totals: Ref<StatusCounts>;
+  summaryFailure: Readonly<Ref<unknown>>;
+  summaryLoading: Readonly<Ref<boolean>>;
+  summaryUnavailable: Readonly<Ref<boolean>>;
+  totals: Readonly<Ref<StatusCounts>>;
 }
 
 /**
@@ -65,29 +72,14 @@ interface UseBucketReconciliationReturn {
  * per account and status filter, and are never loaded just because the summary lists the account.
  */
 export function useBucketReconciliation(): UseBucketReconciliationReturn {
-  const api = useBucketReconciliationApi();
+  const { t } = useI18n({ useScope: 'global' });
   const store = useBucketReconciliationStore();
-  const { attention, summaryFailed, summaryLoading, summaryUnavailable, totals } = storeToRefs(store);
-  const { summaryFailure } = storeToRefs(store);
+  const { attention, summaryFailed, summaryFailure, summaryLoading, summaryUnavailable, totals } = storeToRefs(store);
+  const api = useBucketReconciliationApi();
   const accounts = computed<ReconciliationAccount[]>(() => get(store.summary)?.accounts ?? []);
 
-  const { t } = useI18n({ useScope: 'global' });
-
-  /**
-   * The failure as the page should name it.
-   *
-   * @remarks
-   * A response that does not parse means the backend and this build disagree on the format. Zod's
-   * own message is a dump of paths, so it is worded instead, and marked unsupported because asking
-   * again returns the same answer. Every other failure is kept as thrown: it carries the backend's
-   * message and cause, which decide the wording and whether a retry is offered.
-   */
   function namedFailure(error: unknown): unknown {
-    if (!(error instanceof ZodError))
-      return error;
-    return Object.assign(new Error(t('data_issues.reconciliation.failure.unexpected_response')), {
-      failureCause: FailureCause.UNSUPPORTED,
-    });
+    return namedReconciliationFailure(error, t('data_issues.reconciliation.failure.unexpected_response'));
   }
 
   async function refreshSummary(): Promise<void> {
@@ -113,8 +105,30 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
     }
   }
 
-  function statusSignature(statuses?: BucketStatus[]): string {
-    return statuses?.length ? [...statuses].sort().join(',') : 'all';
+  async function fetchFilteredSummary(asset: string): Promise<FilteredSummaryResult> {
+    try {
+      return { response: await api.fetchSummary(asset), status: 'ok' };
+    }
+    catch (error: unknown) {
+      if (isRequestCancellation(error))
+        return { status: 'cancelled' };
+      if (failureCauseOf(error) === FailureCause.NOT_FOUND) {
+        store.markSummaryUnavailable();
+        return { status: 'unavailable' };
+      }
+      return { failure: namedFailure(error), status: 'failed' };
+    }
+  }
+
+  function normalizedAsset(asset?: string): string | undefined {
+    const trimmed = asset?.trim();
+    return trimmed && trimmed.length > 0 ? trimmed : undefined;
+  }
+
+  function statusSignature(statuses?: BucketStatus[], asset?: string): string {
+    const base = statuses?.length ? [...statuses].sort().join(',') : 'all';
+    const normalized = normalizedAsset(asset);
+    return normalized ? `${base}\u0000${normalized.toLowerCase()}` : base;
   }
 
   async function ensureSummary(): Promise<void> {
@@ -213,10 +227,11 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
   async function fetchAccountRows(
     account: ReconciliationAccount,
     statuses: BucketStatus[] | undefined,
-    options: { append?: boolean; force?: boolean; offset?: number } = {},
+    options: { append?: boolean; asset?: string; force?: boolean; offset?: number } = {},
   ): Promise<void> {
     const key = accountKeyOf(account);
-    const statusKey = statusSignature(statuses);
+    const asset = normalizedAsset(options.asset);
+    const statusKey = statusSignature(statuses, asset);
     const current = store.accountState(key);
 
     if (canReuseAccount(current, statusKey, options))
@@ -229,6 +244,7 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
 
     try {
       const response = await api.fetchAccount({
+        asset,
         limit: accountRequestLimit(current, statusKey, options),
         location: account.location,
         locationLabel: account.locationLabel ?? '',
@@ -236,7 +252,7 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
         status: statuses,
       });
       if (isLatestAccountRequest(key, request))
-        await applyAccountResponse(key, loadedAccountState(base, response, !!options.append, offset), response);
+        await applyAccountResponse(key, loadedAccountState(base, response, !!options.append, offset), response, !asset);
     }
     catch (error: unknown) {
       if (isLatestAccountRequest(key, request))
@@ -249,9 +265,10 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
     key: string,
     state: AccountDetailState,
     response: ReconciliationAccount | undefined,
+    checkSummaryDrift: boolean,
   ): Promise<void> {
     store.setAccountState(key, state);
-    if (response && summaryCountsDiffer(key, response.counts))
+    if (checkSummaryDrift && response && summaryCountsDiffer(key, response.counts))
       await refreshSummary();
   }
 
@@ -271,30 +288,35 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
       store.setAccountState(key, failedAccountState(base, error));
   }
 
-  async function ensureAccount(account: ReconciliationAccount, statuses?: BucketStatus[]): Promise<void> {
-    await fetchAccountRows(account, statuses);
+  async function ensureAccount(account: ReconciliationAccount, statuses?: BucketStatus[], asset?: string): Promise<void> {
+    await fetchAccountRows(account, statuses, { asset });
   }
 
-  async function retryAccount(account: ReconciliationAccount, statuses?: BucketStatus[]): Promise<void> {
-    await fetchAccountRows(account, statuses, { force: true });
+  async function retryAccount(account: ReconciliationAccount, statuses?: BucketStatus[], asset?: string): Promise<void> {
+    await fetchAccountRows(account, statuses, { asset, force: true });
   }
 
-  async function loadMore(account: ReconciliationAccount, statuses?: BucketStatus[]): Promise<void> {
+  async function loadMore(account: ReconciliationAccount, statuses?: BucketStatus[], asset?: string): Promise<void> {
     const state = store.accountState(accountKeyOf(account));
     if (!state || state.loading || state.buckets.length >= MAX_ACCOUNT_BUCKETS)
       return;
 
     await fetchAccountRows(account, statuses, {
       append: true,
+      asset,
       force: true,
       offset: state.buckets.length,
     });
   }
 
-  async function reloadAccounts(statuses?: BucketStatus[]): Promise<void> {
-    const latest = get(store.summary)?.accounts ?? [];
+  async function reloadAccounts(
+    statuses?: BucketStatus[],
+    asset?: string,
+    sourceAccounts?: ReconciliationAccount[],
+  ): Promise<void> {
+    const latest = sourceAccounts ?? get(store.summary)?.accounts ?? [];
     const byKey = new Map(latest.map(account => [accountKeyOf(account), account]));
-    const statusKey = statusSignature(statuses);
+    const statusKey = statusSignature(statuses, asset);
     const loadedKeys = Object.entries(get(store.accounts))
       .filter(([, state]) => state.loaded || (state.loading && state.statusKey !== statusKey))
       .map(([key]) => key);
@@ -305,13 +327,8 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
         store.removeAccountState(key);
         return;
       }
-      await fetchAccountRows(account, statuses, { force: true });
+      await fetchAccountRows(account, statuses, { asset, force: true });
     }));
-  }
-
-  async function refreshAll(statuses?: BucketStatus[]): Promise<void> {
-    await refreshSummary();
-    await reloadAccounts(statuses);
   }
 
   return {
@@ -319,15 +336,15 @@ export function useBucketReconciliation(): UseBucketReconciliationReturn {
     attention,
     ensureAccount,
     ensureSummary,
+    fetchFilteredSummary,
     loadMore,
-    refreshAll,
     refreshSummary,
     reloadAccounts,
     retryAccount,
     summaryFailed,
-    summaryFailure,
-    summaryLoading,
-    summaryUnavailable,
+    summaryFailure: readonly(summaryFailure),
+    summaryLoading: readonly(summaryLoading),
+    summaryUnavailable: readonly(summaryUnavailable),
     totals,
   };
 }

@@ -16,6 +16,7 @@ export const ACCOUNT_PAGE_SIZE = 50;
 
 function queryFor(request: ReconciliationRequest): Record<string, unknown> {
   return {
+    asset: request.asset,
     location: request.location,
     locationLabel: request.locationLabel,
     status: request.status,
@@ -25,7 +26,7 @@ function queryFor(request: ReconciliationRequest): Record<string, unknown> {
 }
 
 export interface UseBucketReconciliationApiReturn {
-  fetchSummary: () => Promise<ReconciliationResponse>;
+  fetchSummary: (asset?: string) => Promise<ReconciliationResponse>;
   fetchAccount: (request: Required<Pick<ReconciliationRequest, 'location'>> & ReconciliationRequest) => Promise<ReconciliationAccount | undefined>;
 }
 
@@ -38,8 +39,8 @@ export interface UseBucketReconciliationApiReturn {
  * turning either into zero would invent a balance the backend could not observe.
  */
 export function useBucketReconciliationApi(): UseBucketReconciliationApiReturn {
-  const fetchSummary = async (): Promise<ReconciliationResponse> => {
-    const response = await api.get<unknown>(BASE, { query: queryFor({}) });
+  const fetchSummary = async (asset?: string): Promise<ReconciliationResponse> => {
+    const response = await api.get<unknown>(BASE, { query: queryFor({ asset }) });
     return ReconciliationResponseSchema.parse(response);
   };
 
