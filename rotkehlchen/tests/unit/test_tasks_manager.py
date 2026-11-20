@@ -2498,7 +2498,7 @@ def test_stale_cost_basis_alone_is_processed_without_the_balances(
         # a change after the last pass, like another cost basis method, is picked up at once
         set_cache(DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS, ts_now() * 1000)
         assert task_manager._maybe_process_historical_balances() == [spawn_task.return_value]
-        set_cache(DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS, 1)
+        set_cache(DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS, 0)
 
         set_cache(DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS, ts_now() - HOUR_IN_SECONDS)
         assert task_manager._maybe_process_historical_balances() == [spawn_task.return_value]
@@ -2508,3 +2508,30 @@ def test_stale_cost_basis_alone_is_processed_without_the_balances(
         assert task_manager._maybe_process_historical_balances() == [spawn_task.return_value]
         processing_kwargs = spawn_task.call_args.kwargs
         assert (processing_kwargs['skip_balances'], processing_kwargs['from_ts']) == (False, 7)
+
+
+def test_cost_basis_modified_during_pass_is_reprocessed_immediately(
+        task_manager: TaskManager,
+) -> None:
+    """A cost-basis modification recorded before a pass finishes is reprocessed without waiting
+    for the retry cooldown.
+    """
+    def set_cache(name: DBCacheStatic, value: int) -> None:
+        with task_manager.database.user_write() as write_cursor:
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+                (name.value, str(value)),
+            )
+
+    now = ts_now()
+    with task_manager.database.user_write() as write_cursor:
+        write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ?', ('stale_cost_%',))
+
+    with patch.object(task_manager.task_supervisor, 'spawn_and_track') as spawn_task:
+        set_cache(DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS, now)
+        set_cache(DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS, now)
+        set_cache(DBCacheStatic.STALE_COST_BASIS_FROM_TS, 5)
+        set_cache(DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS, (now - 5) * 1000)
+
+        assert task_manager._maybe_process_historical_balances() == [spawn_task.return_value]
+        assert spawn_task.call_args.kwargs['skip_balances'] is True

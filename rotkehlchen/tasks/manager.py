@@ -791,7 +791,7 @@ class TaskManager:
             last_cost_basis_processing_ts is None or stale_cost_basis_from_ts is not None
         ) and (
             last_cost_basis_attempt_ts == 0 or
-            int(cost_basis_modification_ts or 0) // 1000 >= last_cost_basis_attempt_ts or
+            int(cost_basis_modification_ts or 0) > 0 or
             ts_now() - Timestamp(last_cost_basis_attempt_ts) >= COST_BASIS_PROCESSING_RETRY
         )
         if (skip_balances := (
