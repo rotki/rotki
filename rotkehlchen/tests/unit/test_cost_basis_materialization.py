@@ -22,7 +22,7 @@ from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError, remote_error_for_status
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.globaldb.handler import MANUAL_PRICE_CHANGES_RETENTION_MS, GlobalDBHandler
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.types import DataIssueFilters
@@ -49,6 +49,7 @@ from rotkehlchen.tasks.historical_balances import Bucket, process_historical_bal
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import (
+    CacheType,
     CostBasisMethod,
     Price,
     SupportedBlockchain,
@@ -2279,6 +2280,56 @@ def test_manual_prices_turned_historical_mark_cost_basis_stale(database: DBHandl
     _clear_stale_cost_basis_markers(database)
     with patch('rotkehlchen.rotkehlchen.ts_now', return_value=Timestamp(2)):
         Rotkehlchen._save_manual_prices_as_historical(snapshot)  # the price is already stored
+    DBHistoryEvents(database).apply_manual_price_changes()
+    assert _stale_cost_basis_from_ts(database) is None
+
+
+def test_old_manual_price_changes_are_pruned(database: DBHandler) -> None:
+    """Only the recent manual price changes stay recorded. A profile that applied the removed
+    ones keeps applying just the newer changes, while one that missed a removed change marks
+    its whole cost basis stale once, since it can't know which prices it missed."""
+    def add_price(recorded_at: int, timestamp: int) -> None:
+        with patch('rotkehlchen.globaldb.handler.ts_now_in_ms', return_value=recorded_at):
+            assert GlobalDBHandler.add_single_historical_price(HistoricalPrice(
+                from_asset=A_ETH,
+                to_asset=A_USD,
+                source=HistoricalPriceOracle.MANUAL,
+                timestamp=Timestamp(timestamp),
+                price=Price(FVal(1500)),
+            )) is True
+
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=[
+            _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+            _event(at=10_000, amount='1', event_type=HistoryEventType.RECEIVE),
+        ])
+
+    DBHistoryEvents(database).apply_manual_price_changes()
+    add_price(recorded_at=(first_id := 1_700_000_000_000), timestamp=10_000)
+    DBHistoryEvents(database).apply_manual_price_changes()
+    _clear_stale_cost_basis_markers(database)
+
+    add_price(recorded_at=first_id + MANUAL_PRICE_CHANGES_RETENTION_MS + 1, timestamp=10_001)
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM general_cache WHERE key=?',
+            (CacheType.MANUAL_PRICE_CHANGES.serialize(),),
+        ).fetchone()[0] == 1  # the first change was removed
+
+    DBHistoryEvents(database).apply_manual_price_changes()  # applied the removed change
+    assert _stale_cost_basis_from_ts(database) == '10000000'  # only from the new price
+
+    _clear_stale_cost_basis_markers(database)
+    with database.user_write() as write_cursor:  # a profile that never saw the first change
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.LAST_MANUAL_PRICE_CHANGE_ID,
+            value=str(first_id - 1),
+        )
+    DBHistoryEvents(database).apply_manual_price_changes()
+    assert _stale_cost_basis_from_ts(database) == '1000'  # from its first event
+
+    _clear_stale_cost_basis_markers(database)
     DBHistoryEvents(database).apply_manual_price_changes()
     assert _stale_cost_basis_from_ts(database) is None
 

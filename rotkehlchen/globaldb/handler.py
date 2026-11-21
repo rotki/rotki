@@ -5,7 +5,7 @@ from collections import defaultdict
 from pathlib import Path
 from threading import Lock
 from time import perf_counter
-from typing import TYPE_CHECKING, Any, Final, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, cast, overload
 
 import rsqlite
 
@@ -40,12 +40,16 @@ from rotkehlchen.constants.misc import (
     NFT_DIRECTIVE,
 )
 from rotkehlchen.constants.resolver import evm_address_to_identifier, tokenid_to_collectible_id
-from rotkehlchen.constants.timing import MONTH_IN_SECONDS
+from rotkehlchen.constants.timing import DAY_IN_MILLISECONDS, MONTH_IN_SECONDS
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.globaldb.cache import (
+    globaldb_get_unique_cache_value,
+    globaldb_set_unique_cache_value,
+)
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -92,8 +96,18 @@ if TYPE_CHECKING:
 
 MANUAL_SERIALIZED: Final = HistoricalPriceOracle.MANUAL.serialize_for_db()
 HISTORICAL_PRICE_MISS_TTL_SECONDS: Final = MONTH_IN_SECONDS
+# How long a manual price change stays recorded for the profiles that did not apply it yet
+MANUAL_PRICE_CHANGES_RETENTION_MS: Final = 30 * DAY_IN_MILLISECONDS
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+class ManualPriceChanges(NamedTuple):
+    # (change id, from asset identifier, to asset identifier, price timestamp)
+    changes: list[tuple[int, str, str, Timestamp]]
+    # Changes with an id up to this one were removed for being older than the retention.
+    # A profile that applied the changes only up to a lower id may have missed some of them.
+    pruned_through: int
 
 
 _ALL_ASSETS_TABLES_JOINS = """
@@ -1760,16 +1774,30 @@ class GlobalDBHandler:
             (
                 CacheType.MANUAL_PRICE_CHANGES.serialize(),
                 json.dumps([from_asset.identifier, to_asset.identifier, timestamp]),
-                ts_now_in_ms(),
+                now_ms := ts_now_in_ms(),
             ),
         )
+        # Every balance snapshot records the manual current prices it turns historical, so
+        # the log is kept to the recent changes. An id is never below the time it was recorded
+        # at, so the ones below the cutoff are older than the retention.
+        if len(pruned := write_cursor.execute(
+            'DELETE FROM general_cache WHERE key=? AND last_queried_ts < ? '
+            'RETURNING last_queried_ts',
+            (
+                CacheType.MANUAL_PRICE_CHANGES.serialize(),
+                now_ms - MANUAL_PRICE_CHANGES_RETENTION_MS,
+            ),
+        ).fetchall()) != 0:
+            globaldb_set_unique_cache_value(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.MANUAL_PRICE_CHANGES_PRUNED_THROUGH,),
+                value=str(max(row[0] for row in pruned)),
+            )
 
     @staticmethod
-    def get_manual_price_changes(
-            after_id: int,
-    ) -> list[tuple[int, str, str, Timestamp]]:
-        """The manual price changes recorded with an id greater than `after_id`, as
-        (change id, from asset identifier, to asset identifier, price timestamp)."""
+    def get_manual_price_changes(after_id: int) -> ManualPriceChanges:
+        """The manual price changes recorded with an id greater than `after_id`, and the id up
+        to which older changes were removed (-1 if none were). See ManualPriceChanges."""
         changes = []
         with GlobalDBHandler().conn.read_ctx() as cursor:
             for value, change_id in cursor.execute(
@@ -1780,7 +1808,15 @@ class GlobalDBHandler:
                 from_identifier, to_identifier, timestamp = json.loads(value)
                 changes.append((change_id, from_identifier, to_identifier, Timestamp(timestamp)))
 
-        return changes
+            pruned_through = globaldb_get_unique_cache_value(
+                cursor=cursor,
+                key_parts=(CacheType.MANUAL_PRICE_CHANGES_PRUNED_THROUGH,),
+            )
+
+        return ManualPriceChanges(
+            changes=changes,
+            pruned_through=-1 if pruned_through is None else int(pruned_through),
+        )
 
     @staticmethod
     def add_manual_historical_prices(entries: list[HistoricalPrice]) -> None:
