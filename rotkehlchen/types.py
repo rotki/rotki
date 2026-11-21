@@ -1227,6 +1227,8 @@ class CacheType(Enum):
     TOKEN_WITHOUT_DECIMALS = auto()
     # manual historical prices that changed, for every profile to invalidate its cost basis
     MANUAL_PRICE_CHANGES = auto()
+    # the greatest id of the MANUAL_PRICE_CHANGES entries removed for being too old
+    MANUAL_PRICE_CHANGES_PRUNED_THROUGH = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1293,6 +1295,7 @@ UniqueCacheType = Literal[
     CacheType.CURVE_CRVUSD_AMM,
     CacheType.MERKL_REWARD_PROTOCOLS,
     CacheType.SUPERFLUID_TOKEN_LIST_VERSION,
+    CacheType.MANUAL_PRICE_CHANGES_PRUNED_THROUGH,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)

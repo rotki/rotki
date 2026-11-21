@@ -445,7 +445,9 @@ class DBHistoryEvents:
         this profile last looked, whichever profile changed them.
 
         Manual prices live in the global DB, which all profiles of the data directory share,
-        so this runs both right after a change and at login.
+        so this runs both right after a change and at login. Only the recent changes are kept
+        there, so a profile that missed some that were removed since marks its whole cost
+        basis stale instead.
         """
         if is_accounting_update_enabled() is False:
             return  # keep the changes pending, to apply them once cost basis is computed
@@ -455,27 +457,37 @@ class DBHistoryEvents:
                 'SELECT value FROM key_value_cache WHERE name=?',
                 (DBCacheStatic.LAST_MANUAL_PRICE_CHANGE_ID.value,),
             ).fetchone()
-            if len(changes := GlobalDBHandler.get_manual_price_changes(
-                after_id=-1 if last_change_id is None else int(last_change_id[0]),
-            )) == 0:
-                return
-
-            for _, from_identifier, to_identifier, timestamp in changes:
-                try:
-                    self._mark_cost_basis_stale_for_price_change(
+            changes, pruned_through = GlobalDBHandler.get_manual_price_changes(
+                after_id=(after_id := -1 if last_change_id is None else int(last_change_id[0])),
+            )
+            if after_id < pruned_through:  # changes this profile did not apply were removed
+                if (first_event := write_cursor.execute(
+                    'SELECT MIN(timestamp) FROM history_events',
+                ).fetchone()[0]) is not None:
+                    mark_stale_from_ts(
                         write_cursor=write_cursor,
-                        from_asset=Asset(from_identifier),
-                        to_asset=Asset(to_identifier),
-                        timestamp=timestamp,
+                        from_ts=TimestampMS(first_event),
+                        include_balances=False,
                     )
-                except UnknownAsset as e:  # the asset was deleted along with its prices
-                    log.debug('Skipping manual price change of a deleted asset: %s', e)
+            elif len(changes) == 0:
+                return
+            else:
+                for _, from_identifier, to_identifier, timestamp in changes:
+                    try:
+                        self._mark_cost_basis_stale_for_price_change(
+                            write_cursor=write_cursor,
+                            from_asset=Asset(from_identifier),
+                            to_asset=Asset(to_identifier),
+                            timestamp=timestamp,
+                        )
+                    except UnknownAsset as e:  # the asset was deleted along with its prices
+                        log.debug('Skipping manual price change of a deleted asset: %s', e)
 
             write_cursor.execute(
                 'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
                 (
                     DBCacheStatic.LAST_MANUAL_PRICE_CHANGE_ID.value,
-                    str(max(change[0] for change in changes)),
+                    str(max((change[0] for change in changes), default=pruned_through)),
                 ),
             )
 
