@@ -27,8 +27,10 @@ from rotkehlchen.db.constants import EVM_ACCOUNTS_DETAILS_TOKENS
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import InputError, RemoteError, RequestTooLargeError
+from rotkehlchen.feature_flags import ROTKI_ACCOUNTING_UPDATE
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.observations import record_token_detection_observations
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -43,6 +45,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     SupportedBlockchain,
+    Timestamp,
     TimestampMS,
     TokenKind,
 )
@@ -1306,3 +1309,53 @@ def test_superfluid_constant_flow_nfts_are_in_token_exceptions(
             exceptions=(exceptions := manager.tokens._per_chain_token_exceptions()),
         )
         assert all(i.address not in exceptions for i in erc721_tokens)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.parametrize('accounting_update_enabled', [False, True])
+def test_balance_queries_observe_wallets_only_with_accounting_update(
+        blockchain: ChainsAggregator,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        database: DBHandler,
+        accounting_update_enabled: bool,
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Only the accounting update reads the wallet observations, so the balance queries and
+    token detection must not write them while it is disabled."""
+    monkeypatch.setenv(ROTKI_ACCOUNTING_UPDATE, str(accounting_update_enabled))
+    with database.user_write() as write_cursor:
+        database.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=(user_address := ethereum_accounts[0]),
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=[dai := A_DAI.resolve_to_evm_token()],
+        )
+
+    with (
+        patch.object(blockchain.ethereum.node_inquirer, 'get_multi_balance', return_value={user_address: ONE}),  # noqa: E501
+        patch.object(blockchain.ethereum.tokens, '_get_multicall_token_balances', return_value={user_address: {dai: FVal(5)}}),  # noqa: E501
+        patch.object(Inquirer, 'find_main_currency_prices', return_value={dai: ONE}),
+        patch.object(Inquirer, 'find_price', return_value=ONE),
+    ):
+        blockchain.ethereum.query_evm_chain_balances(accounts=[user_address])
+
+    with database.user_write() as write_cursor:
+        record_token_detection_observations(
+            write_cursor=write_cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            address=user_address,
+            amounts={A_OMG.identifier: ONE},
+            previous_assets=(),
+            queried_assets=(A_OMG.identifier,),
+            observed_at=Timestamp(1),
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert dict(cursor.execute(
+            'SELECT asset, amount FROM wallet_balance_observations WHERE address = ?',
+            (user_address,),
+        )) == ({
+            A_ETH.identifier: '1',
+            dai.identifier: '5',
+            A_OMG.identifier: '1',
+        } if accounting_update_enabled else {})

@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.locations.chains import location_from_chain, location_to_chain
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -215,6 +216,9 @@ def record_token_detection_observations(
     Failed or partial detection runs never reach this function; the caller skips those
     addresses entirely, so no omission is ever turned into a zero.
     """
+    if is_accounting_update_enabled() is False:  # only the accounting update reads them
+        return
+
     amounts = dict(amounts)
     relevant: set[str] = set(previous_assets)
     if len(amounts) > 0 or len(previous_assets) > 0 or len(queried_assets) > 0:
