@@ -19,6 +19,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import NotFoundError, RemoteError, RequestTooLargeError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.observations import (
@@ -829,21 +830,23 @@ class EvmTokens(ABC):  # noqa: B024
         # Publish the queried token scope only now that every multicall chunk succeeded. The
         # queried list is the actual input of this query, so a token missing from the balances
         # was queried and found zero; a failed chunk would have raised above and written nothing.
-        with self.db.user_write() as write_cursor:
-            for address, queried_tokens in addresses_to_tokens.items():
-                amounts = {token.identifier: ZERO for token in queried_tokens}
-                amounts.update({
-                    token.identifier: balance
-                    for token, balance in addresses_to_balances.get(address, {}).items()
-                })
-                record_wallet_observations(
-                    write_cursor=write_cursor,
-                    blockchain=self.evm_inquirer.blockchain,
-                    address=address,
-                    amounts=amounts,
-                    observed_at=observed_at,
-                    source=ObservationSource.BALANCE_QUERY,
-                )
+        # Only the accounting update reads the observations, so skip the write without it.
+        if is_accounting_update_enabled():
+            with self.db.user_write() as write_cursor:
+                for address, queried_tokens in addresses_to_tokens.items():
+                    amounts = {token.identifier: ZERO for token in queried_tokens}
+                    amounts.update({
+                        token.identifier: balance
+                        for token, balance in addresses_to_balances.get(address, {}).items()
+                    })
+                    record_wallet_observations(
+                        write_cursor=write_cursor,
+                        blockchain=self.evm_inquirer.blockchain,
+                        address=address,
+                        amounts=amounts,
+                        observed_at=observed_at,
+                        source=ObservationSource.BALANCE_QUERY,
+                    )
 
         token_price = cast('dict[EvmToken, Price]', Inquirer.find_main_currency_prices(list(tokens_with_balance)))  # noqa: E501
         # the NFT's manual price only fills in for a token without a price of its own, so that

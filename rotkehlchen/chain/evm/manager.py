@@ -22,6 +22,7 @@ from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import EthSyncError, InputError, RemoteError
+from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.history.data_issues.observations import (
     ObservationSource,
     record_wallet_observations,
@@ -209,16 +210,18 @@ class EvmManager(
         native_token = self.node_inquirer.native_token
         # The native balance was queried for every requested address, so a missing result is an
         # explicit zero and not unknown coverage. Publish it only from this successful output.
-        with self.node_inquirer.database.user_write() as write_cursor:
-            for account in accounts:
-                record_wallet_observations(
-                    write_cursor=write_cursor,
-                    blockchain=self.node_inquirer.blockchain,
-                    address=account,
-                    amounts={native_token.identifier: native_balances.get(account, ZERO)},
-                    observed_at=observed_at,
-                    source=ObservationSource.BALANCE_QUERY,
-                )
+        # Only the accounting update reads the observations, so skip the write without it.
+        if is_accounting_update_enabled():
+            with self.node_inquirer.database.user_write() as write_cursor:
+                for account in accounts:
+                    record_wallet_observations(
+                        write_cursor=write_cursor,
+                        blockchain=self.node_inquirer.blockchain,
+                        address=account,
+                        amounts={native_token.identifier: native_balances.get(account, ZERO)},
+                        observed_at=observed_at,
+                        source=ObservationSource.BALANCE_QUERY,
+                    )
 
         native_token_price = Inquirer.find_price(
             from_asset=native_token,
