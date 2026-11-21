@@ -42,6 +42,7 @@ from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.names import NamePrioritizer
 from rotkehlchen.chain.evm.nodes import populate_rpc_nodes_in_database
+from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.chain.gnosis.manager import GnosisManager
 from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
@@ -108,6 +109,7 @@ from rotkehlchen.externalapis.jupiter import Jupiter
 from rotkehlchen.externalapis.kraken import Kraken
 from rotkehlchen.externalapis.monerium import Monerium
 from rotkehlchen.externalapis.moralis import Moralis
+from rotkehlchen.externalapis.nuthatch import Nuthatch
 from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
@@ -684,6 +686,12 @@ class Rotkehlchen:
             (chain.to_chain_id(), self.chains_aggregator.get_chain_manager(chain))
             for chain in EVM_CHAINS_WITH_TRANSACTIONS
         ])
+        # Only asked once the user puts it in Ethereum's indexer order.
+        self.chains_aggregator.ethereum.node_inquirer.available_indexers[EvmIndexer.NUTHATCH] = Nuthatch(  # noqa: E501
+            database=self.data.db,
+            msg_aggregator=self.msg_aggregator,
+            indexer_stats=self.indexer_stats,
+        )
 
         price_historian = PriceHistorian(  # Initialize the price historian singleton
             data_directory=self.data_dir,
