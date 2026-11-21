@@ -69,6 +69,7 @@ from rotkehlchen.tasks.manager import (
     CURRENT_BALANCE_DETECTION_TASK_NAME,
     CURRENT_BALANCE_DETECTION_TIME_BUDGET,
     DATA_ISSUE_REMEDIATION_TASK_NAME,
+    FLYING_TULIP_DEPOSITS_RETRY,
     HISTORICAL_BALANCE_PROCESSING_TASK_NAME,
     PREMIUM_STATUS_CHECK,
     TaskManager,
@@ -428,6 +429,24 @@ def test_cryptocompare_task_not_scheduled_without_api_key(task_manager: TaskMana
         assert spawn_mock.call_count == 0
 
     assert len(task_manager.cryptocompare_queries) == 0
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+def test_flying_tulip_deposits_scan_waits_after_unfinished_run(task_manager, ethereum_accounts):
+    """A scan that did not finish saves no query timestamp. It must not be spawned again on
+    every scheduler tick, but only once FLYING_TULIP_DEPOSITS_RETRY has passed."""
+    with (
+        freeze_time(start := datetime.datetime(2026, 11, 21, tzinfo=datetime.UTC)) as frozen,
+        patch.object(task_manager.task_supervisor, 'spawn_and_track') as spawn_task,
+    ):
+        assert task_manager._maybe_query_flying_tulip_deposits() == [spawn_task.return_value]
+        assert spawn_task.call_args.kwargs['addresses'] == tuple(ethereum_accounts)
+        frozen.move_to(start + datetime.timedelta(seconds=FLYING_TULIP_DEPOSITS_RETRY - 1))
+        assert task_manager._maybe_query_flying_tulip_deposits() is None  # spawned task saved nothing  # noqa: E501
+        assert spawn_task.call_count == 1
+        frozen.move_to(start + datetime.timedelta(seconds=FLYING_TULIP_DEPOSITS_RETRY))
+        assert task_manager._maybe_query_flying_tulip_deposits() == [spawn_task.return_value]
+        assert spawn_task.call_count == 2
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
