@@ -79,6 +79,7 @@ from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SUPPORTED_BITCOIN_CHAINS,
     CacheType,
+    ChainID,
     ChecksumEvmAddress,
     SupportedBlockchain,
     Timestamp,
@@ -92,6 +93,9 @@ HISTORICAL_BALANCE_PROCESSING_REFRESH: Final = DAY_IN_SECONDS
 # How long to wait before retrying a cost basis pass that stopped early, which is what a stale
 # cost basis that nothing changed since its last pass means.
 COST_BASIS_PROCESSING_RETRY: Final = HOUR_IN_SECONDS
+# How long to wait before retrying a Flying Tulip deposit scan of a chain that did not finish.
+# Only a finished scan is saved, so without this a failing one would rerun every scheduler tick.
+FLYING_TULIP_DEPOSITS_RETRY: Final = HOUR_IN_SECONDS
 HISTORICAL_BALANCE_PROCESSING_TASK_NAME: Final = 'Process historical balances'
 DATA_ISSUE_REMEDIATION_REFRESH: Final = DAY_IN_SECONDS
 TX_DECODING_TASK_NAME_PREFIX: Final = 'decode '
@@ -197,6 +201,7 @@ class TaskManager:
         self.last_xpub_derivation_ts = 0
         self.last_evm_tx_query_ts: defaultdict[tuple[ChecksumEvmAddress, SupportedBlockchain], int] = defaultdict(int)  # noqa: E501
         self.last_exchange_query_ts: defaultdict[ConnectionIdentifier, int] = defaultdict(int)
+        self.last_flying_tulip_deposits_attempt_ts: defaultdict[ChainID, int] = defaultdict(int)
         self.prepared_cryptocompare_query = False
         self.running_tasks: dict[SchedulerTask, list[Task]] = {}
         # Per-tick snapshot of periodic-task last-run timestamps, set for the duration of a
@@ -1386,11 +1391,14 @@ class TaskManager:
         Such a transaction moves no funds of the beneficiary, it only names them in a
         DepositFor log, so the per address transaction query never brings it in.
         """
-        tasks = []
+        tasks, now = [], ts_now()
         for deployed_chain_id in FLYING_TULIP_LEND_DEPLOYMENTS:
             chain_id = cast('SUPPORTED_CHAIN_IDS', deployed_chain_id)
             blockchain = chain_id.to_blockchain()
-            if len(accounts := self.chains_aggregator.accounts.get(blockchain)) == 0:
+            if (
+                len(accounts := self.chains_aggregator.accounts.get(blockchain)) == 0 or
+                now - self.last_flying_tulip_deposits_attempt_ts[chain_id] < FLYING_TULIP_DEPOSITS_RETRY  # noqa: E501
+            ):
                 continue
 
             with self.database.conn.read_ctx() as cursor:
@@ -1401,9 +1409,10 @@ class TaskManager:
                     location_name=LAST_DEPOSIT_FOR_QUERY,
                     account_id='positions',
                 )
-            if last_query_ts is not None and ts_now() - last_query_ts < 3 * DAY_IN_SECONDS:
+            if last_query_ts is not None and now - last_query_ts < 3 * DAY_IN_SECONDS:
                 continue
 
+            self.last_flying_tulip_deposits_attempt_ts[chain_id] = now
             tasks.append(self.task_supervisor.spawn_and_track(
                 after_seconds=None,
                 task_name=f'Search for Flying Tulip deposits made for {blockchain!s} accounts',
