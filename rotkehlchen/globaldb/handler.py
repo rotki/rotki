@@ -40,7 +40,7 @@ from rotkehlchen.constants.misc import (
     NFT_DIRECTIVE,
 )
 from rotkehlchen.constants.resolver import evm_address_to_identifier, tokenid_to_collectible_id
-from rotkehlchen.constants.timing import DAY_IN_MILLISECONDS, MONTH_IN_SECONDS
+from rotkehlchen.constants.timing import DAY_IN_MILLISECONDS, DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -96,6 +96,9 @@ if TYPE_CHECKING:
 
 MANUAL_SERIALIZED: Final = HistoricalPriceOracle.MANUAL.serialize_for_db()
 HISTORICAL_PRICE_MISS_TTL_SECONDS: Final = MONTH_IN_SECONDS
+# How often expired price misses are deleted. A deletion scans the whole table, since
+# nothing indexes checked_at, so it runs at most this often instead of with every write.
+HISTORICAL_PRICE_MISS_PRUNE_INTERVAL_SECONDS: Final = DAY_IN_SECONDS
 # How long a manual price change stays recorded for the profiles that did not apply it yet
 MANUAL_PRICE_CHANGES_RETENTION_MS: Final = 30 * DAY_IN_MILLISECONDS
 logger = logging.getLogger(__name__)
@@ -186,6 +189,7 @@ class GlobalDBHandler:
     msg_aggregator: MessagesAggregator | None = None
     _price_misses_global_generation: int = 0
     _price_misses_asset_generation: defaultdict[str, int]
+    _price_misses_last_prune_ts: int  # when expired misses were last deleted by this process
 
     def __new__(   # noqa: PYI034  # singleton is an exception
             cls,
@@ -219,6 +223,7 @@ class GlobalDBHandler:
         GlobalDBHandler.__instance.msg_aggregator = msg_aggregator
         GlobalDBHandler.__instance._price_misses_global_generation = 0
         GlobalDBHandler.__instance._price_misses_asset_generation = defaultdict(int)
+        GlobalDBHandler.__instance._price_misses_last_prune_ts = 0
 
         global_dir = data_dir / GLOBALDIR_NAME
         global_dir.mkdir(parents=True, exist_ok=True)
@@ -2254,6 +2259,10 @@ class GlobalDBHandler:
         When `expected_guard` is provided, the current generation guard is checked inside the
         write transaction; if the asset mapping or miss cache was invalidated while the query
         was in flight, the stale misses are dropped instead of being written.
+
+        Expired misses are never read again, so the same transaction also deletes them, at most
+        once per HISTORICAL_PRICE_MISS_PRUNE_INTERVAL_SECONDS. Otherwise the table would keep
+        every miss ever recorded, since point-in-time misses are keyed by the exact timestamp.
         """
         if len(misses) == 0:
             return
@@ -2283,6 +2292,15 @@ class GlobalDBHandler:
                     ')',
                     entries,
                 )
+                if (
+                    (current_ts := ts_now()) - (instance := GlobalDBHandler())._price_misses_last_prune_ts >=  # noqa: E501
+                    HISTORICAL_PRICE_MISS_PRUNE_INTERVAL_SECONDS
+                ):
+                    write_cursor.execute(
+                        'DELETE FROM historical_price_misses WHERE checked_at < ?',
+                        (current_ts - HISTORICAL_PRICE_MISS_TTL_SECONDS,),
+                    )
+                    instance._price_misses_last_prune_ts = current_ts
         except rsqlite.IntegrityError as e:
             log.error(
                 'Failed to add historical price misses for %s due to %s',
