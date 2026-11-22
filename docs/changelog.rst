@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Two obsolete accounting rule conflicts for adjustment events no longer appear after upgrading an older profile. They came from a duplicated remote update and asked for a choice even though the rules had not changed.
 * :bug:`-` Unmapped exchange assets that rotki now recognises are cleared from the Missing CEX Mappings page and the Action Center automatically. Before, they stayed there with no way to remove them. Entries you do not care about can now also be dismissed.
 * :feature:`-` Legacy Zapper.fi swaps on Ethereum are now decoded in transaction history.
 * :feature:`10940` ether.fi card cashback on Scroll and Optimism, including cashback paid out after a delay, is now decoded as cashback in transaction history.
