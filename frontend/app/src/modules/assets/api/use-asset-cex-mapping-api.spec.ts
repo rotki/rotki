@@ -353,4 +353,33 @@ describe('composables/api/assets/cex-mapping', () => {
         .toThrow('Mapping does not exist');
     });
   });
+
+  describe('resolveCexSymbols', () => {
+    it('should send each symbol with its connector and return the resolved ones in the module\'s names', async () => {
+      let capturedBody: DefaultBodyType = null;
+
+      server.use(
+        http.post(`${backendUrl}/api/1/assets/connectormappings/resolve`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({
+            result: [{ asset: 'BTT', connector: 'binance', connector_symbol: 'BTTC' }],
+            message: '',
+          });
+        }),
+      );
+
+      const result = await useAssetCexMappingApi().resolveCexSymbols([
+        { location: 'binance', locationSymbol: 'BTTC' },
+        { location: 'kraken', locationSymbol: 'NOPE' },
+      ]);
+
+      expect(capturedBody).toEqual({
+        entries: [
+          { connector: 'binance', connector_symbol: 'BTTC' },
+          { connector: 'kraken', connector_symbol: 'NOPE' },
+        ],
+      });
+      expect(result).toEqual([{ asset: 'BTT', location: 'binance', locationSymbol: 'BTTC' }]);
+    });
+  });
 });

@@ -2986,6 +2986,12 @@ class RestAPI:
         )
         return api_response(response_data)
 
+    def resolve_connector_symbols(
+            self,
+            entries: list[tuple[LocationIdentifier, str]],
+    ) -> Response:
+        return api_response(self.assets_service.resolve_connector_symbols(entries=entries))
+
     @async_api_call()
     def get_historical_assets_price(
             self,

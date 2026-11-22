@@ -76,6 +76,7 @@ from rotkehlchen.api.v1.schemas import (
     ConnectorAssetMappingsDeleteSchema,
     ConnectorAssetMappingsPostSchema,
     ConnectorAssetMappingsUpdateSchema,
+    ConnectorSymbolsResolveSchema,
     ConnectToRPCNodes,
     CounterpartyAssetMappingDeleteEntrySchema,
     CounterpartyAssetMappingsPostSchema,
@@ -2918,6 +2919,14 @@ class ConnectorAssetMappingsResource(BaseMethodView):
             mapping_fn=GlobalDBHandler.delete_connector_asset_mappings,
             entries=entries,
         )
+
+
+class ConnectorAssetMappingsResolveResource(BaseMethodView):
+    post_schema = ConnectorSymbolsResolveSchema()
+
+    @use_kwargs(post_schema, location='json')
+    def post(self, entries: list[tuple[LocationIdentifier, str]]) -> Response:
+        return self.rest_api.resolve_connector_symbols(entries=entries)
 
 
 class CounterpartyAssetMappingsResource(BaseMethodView):

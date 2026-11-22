@@ -10,6 +10,7 @@ import {
   useMissingMappingsDB,
 } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-db';
 import { useMissingMappingsFields } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-fields';
+import { usePruneResolvedMappings } from '@/modules/assets/admin/missing-mappings/use-prune-resolved-mappings';
 import { fromRequest } from '@/modules/core/api/request-result';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 
@@ -29,6 +30,8 @@ interface UseAssetMissingMappingsReturn {
    * The asset is left empty on purpose: choosing it is the whole point of the dialog.
    */
   modelMapping: Ref<CexMapping | undefined>;
+  /** Drops the rows the backend resolves by now, then reads the page. */
+  load: () => Promise<void>;
   /** The page of missing mappings the table renders. */
   mappings: Ref<Collection<MissingMapping>>;
   /** Opens the dialog on a mapping seeded from this row. */
@@ -41,6 +44,13 @@ interface UseAssetMissingMappingsReturn {
    * empty string.
    */
   onAddComplete: (item: CexMapping) => Promise<void>;
+  /**
+   * Drops this row without adding a mapping.
+   *
+   * @remarks
+   * The row is a past report, so it comes back if the exchange reports the symbol again.
+   */
+  onDismiss: (item: MissingMapping) => Promise<void>;
   /** Current page and size. */
   pagination: WritableComputedRef<TablePaginationData>;
   /** Refetches the current page. */
@@ -63,6 +73,7 @@ export function useAssetMissingMappings(): UseAssetMissingMappingsReturn {
   const { getData, remove } = useMissingMappingsDB();
   const { refresh: refreshCount } = useMissingMappingsCount();
   const fields = useMissingMappingsFields();
+  const { prune } = usePruneResolvedMappings();
 
   const cols = computed<DataTableColumn<MissingMapping>[]>(() => [{
     cellClass: 'py-2',
@@ -111,6 +122,17 @@ export function useAssetMissingMappings(): UseAssetMissingMappingsReturn {
     });
   }
 
+  async function load(): Promise<void> {
+    if (await prune() > 0)
+      await refreshCount();
+    await refetch();
+  }
+
+  async function onDismiss({ identifier, location }: MissingMapping): Promise<void> {
+    await remove({ identifier, location });
+    await Promise.all([refetch(), refreshCount()]);
+  }
+
   async function onAddComplete(item: CexMapping): Promise<void> {
     await remove({
       identifier: item.locationSymbol,
@@ -123,11 +145,13 @@ export function useAssetMissingMappings(): UseAssetMissingMappingsReturn {
     cols,
     error,
     fields,
+    load,
     mappings,
     modelFilter: filter,
     modelMapping,
     onAddClick,
     onAddComplete,
+    onDismiss,
     pagination,
     refetch,
     sort,

@@ -28,6 +28,7 @@ from rotkehlchen.assets.asset import (
     EvmToken,
     SolanaToken,
 )
+from rotkehlchen.assets.converters import asset_from_connector
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetFlag, AssetType
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
@@ -61,7 +62,7 @@ from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.search_assets import search_assets_levenshtein
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     EthSyncError,
@@ -72,6 +73,7 @@ from rotkehlchen.errors.misc import (
     cause_of,
     combined_cause,
 )
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
@@ -125,6 +127,7 @@ if TYPE_CHECKING:
         LevenshteinFilterQuery,
         NFTFilterQuery,
     )
+    from rotkehlchen.locations.types import LocationIdentifier
     from rotkehlchen.rotkehlchen import Rotkehlchen
     from rotkehlchen.types import (
         SUPPORTED_CHAIN_IDS,
@@ -649,6 +652,29 @@ class AssetsService:
             return FailResult(str(e), HTTPStatus.CONFLICT, FailureCause.INVALID_INPUT)
 
         return OkResult(True)
+
+    @staticmethod
+    def resolve_connector_symbols(
+            entries: list[tuple[LocationIdentifier, str]],
+    ) -> ApiResult:
+        """Return the (connector, symbol) entries that now resolve to an asset, with that asset.
+
+        An entry whose symbol is still unknown or unsupported is left out.
+        """
+        resolved = []
+        for connector, symbol in entries:
+            try:
+                asset = asset_from_connector(connector=connector, symbol=symbol)
+            except (DeserializationError, UnknownAsset, UnsupportedAsset, WrongAssetType):
+                continue
+
+            resolved.append({
+                'connector': connector,
+                'connector_symbol': symbol,
+                'asset': asset.identifier,
+            })
+
+        return OkResult(resolved)
 
     def get_historical_assets_price(
             self,

@@ -5670,6 +5670,49 @@ Delete connector asset mappings
     :statuscode 409: Some of the provided asset identifiers don't exist in the database for the given location or their format is incorrect.
     :statuscode 500: Internal rotki error.
 
+Resolving connector symbols
+===========================
+
+.. http:post:: /api/(version)/assets/connectormappings/resolve
+
+    Doing a POST on this endpoint with a list of connector symbols returns the ones that now resolve to an asset, using the same resolution the connector applies to its own data. It is used to find reported unknown exchange assets that a mapping or asset added since then has resolved.
+
+    **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+        POST /api/1/assets/connectormappings/resolve HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "entries": [
+            {"connector_symbol": "BTTC", "connector": "binance"},
+            {"connector_symbol": "NOTANASSET", "connector": "kraken"}
+          ]
+        }
+
+    :reqjson object entries: A list of objects containing ``"connector_symbol"`` and ``"connector"``. The connector is not validated, so an entry naming a connector rotki no longer supports is resolved through its symbol mappings alone.
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "result": [
+                {"connector": "binance", "connector_symbol": "BTTC", "asset": "eip155:1/erc20:0xC669928185DbCE49d2230CC9B0979BE6DC797957"}
+            ],
+            "message": ""
+        }
+
+    :resjson list result: The entries that resolve to an asset, each with the ``"asset"`` identifier it resolves to. Entries that are still unknown or unsupported are left out.
+    :statuscode 200: Symbols were resolved successfully.
+    :statuscode 400: Provided JSON is in some way malformed.
+    :statuscode 500: Internal rotki error.
+
 
 Get asset mappings for a counterparty
 ======================================

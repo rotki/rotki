@@ -21,6 +21,10 @@ type DeleteMissingMapping = Pick<MissingMapping, 'location' | 'identifier'>;
 interface UseMissingMappingsDBReturn {
   put: (mapping: AddMissingMapping) => Promise<number>;
   remove: (mapping: DeleteMissingMapping) => Promise<void>;
+  /** Every recorded mapping, unpaged. */
+  getAll: () => Promise<MissingMapping[]>;
+  /** Deletes the recorded mappings with these ids. */
+  removeByIds: (ids: number[]) => Promise<void>;
   count: () => Promise<number>;
   getData: (payload: MaybeRef<PaginationRequestPayload<MissingMapping>>) => Promise<Collection<MissingMapping>>;
 }
@@ -44,6 +48,14 @@ export function useMissingMappingsDB(): UseMissingMappingsDBReturn {
     }
 
     await db().missingMappings.delete(matchingMapping.id);
+  }
+
+  async function getAll(): Promise<MissingMapping[]> {
+    return db().missingMappings.toArray();
+  }
+
+  async function removeByIds(ids: number[]): Promise<void> {
+    await db().missingMappings.bulkDelete(ids);
   }
 
   async function count(): Promise<number> {
@@ -91,6 +103,8 @@ export function useMissingMappingsDB(): UseMissingMappingsDBReturn {
     count,
     getData,
     put,
+    getAll,
     remove,
+    removeByIds,
   };
 }
