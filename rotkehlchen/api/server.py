@@ -783,6 +783,10 @@ class APIServer:
 
         An origin passes when it matches the same `--api-cors` patterns flask-cors
         uses, or when it names the API's own host and port.
+
+        A `Host` without a port only has its hostname compared. Reverse proxies that forward
+        the hostname alone, such as nginx with `proxy_set_header Host $host;`, drop the port
+        the browser used, so no port can be assumed for it.
         """
         if any(pattern.match(origin) for pattern in self.cors_origins):
             return True
@@ -797,14 +801,17 @@ class APIServer:
             return False
 
         parsed_host = urlsplit(f'//{request.host}')
-        is_https = parsed_origin.scheme.casefold() == 'https'
-        origin_port = parsed_origin.port or (443 if is_https else 80)
-        host_port = parsed_host.port or (443 if is_https else 80)
-        origin_host = (parsed_origin.hostname or '').casefold()
-        request_host = (parsed_host.hostname or '').casefold()
-        return (
-            origin_host == request_host and
-            origin_port == host_port
+        if (
+                not (origin_host := (parsed_origin.hostname or '').casefold()) or
+                origin_host != (parsed_host.hostname or '').casefold()
+        ):
+            return False
+
+        if parsed_host.port is None:
+            return True
+
+        return parsed_host.port == (
+            parsed_origin.port or (443 if parsed_origin.scheme.casefold() == 'https' else 80)
         )
 
     def after_request_callback(self, response: Response) -> Response:

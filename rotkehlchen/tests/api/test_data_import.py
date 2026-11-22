@@ -185,6 +185,33 @@ def test_data_import_allows_same_origin(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize(('origin', 'host', 'expected_status'), [
+    ('http://nas.lan:8084', 'nas.lan', HTTPStatus.OK),  # nginx `Host $host` drops the port
+    ('https://rotki.example.com:8443', 'rotki.example.com', HTTPStatus.OK),
+    ('http://nas.lan:8084', 'nas.lan:8084', HTTPStatus.OK),  # nginx `Host $http_host`
+    ('http://nas.lan:9000', 'nas.lan:8084', HTTPStatus.FORBIDDEN),
+    ('http://evil.example:8084', 'nas.lan', HTTPStatus.FORBIDDEN),
+])
+def test_data_import_behind_reverse_proxy(
+        rotkehlchen_api_server: APIServer,
+        origin: str,
+        host: str,
+        expected_status: HTTPStatus,
+) -> None:
+    """A proxy forwarding the hostname without the port still lets its own origin write."""
+    filepath = Path(__file__).resolve().parent.parent / 'data' / 'cointracking_trades_list.csv'
+    with filepath.open('rb') as infile:
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'dataimportresource'),
+            files={'file': infile},
+            data={'source': 'cointracking'},
+            headers={'Origin': origin, 'Host': host},
+        )
+
+    assert response.status_code == expected_status
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize(('origin', 'expected_status'), [
     ('app://localhost', HTTPStatus.OK),  # the packaged desktop app
     ('http://localhost:5173', HTTPStatus.OK),  # the dev server
