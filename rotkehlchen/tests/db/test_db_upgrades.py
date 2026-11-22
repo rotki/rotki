@@ -4989,6 +4989,29 @@ def test_upgrade_db_53_to_54(
         assert write_cursor.execute(
             "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
         ).fetchone()[0] == 0
+        obsolete_conflicts = [{
+            'event_type': 'adjustment',
+            'event_subtype': subtype,
+            'counterparty': None,
+            'taxable': True,
+            'count_entire_amount_spend': True,
+            'count_cost_basis_pnl': True,
+            'accounting_treatment': None,
+        } for subtype in ('receive', 'spend')]
+        write_cursor.executemany(
+            'INSERT INTO unresolved_remote_conflicts(local_id, remote_data, type) '
+            'VALUES (?, ?, 1)',
+            [(idx, json.dumps(conflict)) for idx, conflict in enumerate(obsolete_conflicts, 1)] +
+            [(3, json.dumps(unrelated_conflict := {
+                'event_type': 'receive',
+                'event_subtype': 'reward',
+                'counterparty': None,
+                'taxable': True,
+                'count_entire_amount_spend': False,
+                'count_cost_basis_pnl': True,
+                'accounting_treatment': None,
+            }))],
+        )
 
         # events whose notes rotki generates from now on. The expected note after the
         # upgrade is None for the ones matching the generated text and unchanged otherwise.
@@ -5165,6 +5188,11 @@ def test_upgrade_db_53_to_54(
         assert cursor.execute(
             "SELECT COUNT(*) FROM settings WHERE name='location_unsupported_assets_version'",
         ).fetchone()[0] == 0
+        assert [
+            json.loads(row[0]) for row in cursor.execute(
+                'SELECT remote_data FROM unresolved_remote_conflicts ORDER BY identifier',
+            )
+        ] == [unrelated_conflict]
         # generated notes were removed, edited and protocol specific ones were kept
         for identifier, (_, _, expected_notes) in zip(notes_event_ids, notes_events, strict=True):
             assert cursor.execute(

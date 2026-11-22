@@ -25,6 +25,19 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+_OBSOLETE_ADJUSTMENT_CONFLICTS: Final = tuple(
+    {
+        'event_type': 'adjustment',
+        'event_subtype': subtype,
+        'counterparty': None,
+        'taxable': True,
+        'count_entire_amount_spend': True,
+        'count_cost_basis_pnl': True,
+        'accounting_treatment': None,
+    }
+    for subtype in ('receive', 'spend')
+)
+
 
 # v54 definitions of every table whose location column moves from the one-character encoding to
 # a text identifier, with the name of that column. `{table}` is the name to create the table as.
@@ -841,5 +854,24 @@ CREATE TABLE IF NOT EXISTS cost_basis_checkpoints (
     state TEXT NOT NULL
 );
         """)
+
+    @progress_step(description='Remove obsolete adjustment accounting rule conflicts.')
+    def _remove_obsolete_accounting_rule_conflicts(write_cursor: DBCursor) -> None:
+        identifiers = []
+        for identifier, remote_data in write_cursor.execute(
+            'SELECT identifier, remote_data FROM unresolved_remote_conflicts WHERE type=1',
+        ):
+            try:
+                rule_data = json.loads(remote_data)
+            except json.JSONDecodeError:
+                continue
+
+            if rule_data in _OBSOLETE_ADJUSTMENT_CONFLICTS:
+                identifiers.append((identifier,))
+
+        write_cursor.executemany(
+            'DELETE FROM unresolved_remote_conflicts WHERE identifier=?',
+            identifiers,
+        )
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)
