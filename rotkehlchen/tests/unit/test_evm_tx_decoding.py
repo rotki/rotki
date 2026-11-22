@@ -911,6 +911,56 @@ def test_reward_fallback_only_persists_after_normal_decoding(
         fallback.assert_not_called()
 
 
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+def test_reward_fallback_keeps_write_batch_without_validators(
+        database: DBHandler,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
+    """Without validators a plain ETH receive leaves the batched event writes deferred."""
+    decoder = ethereum_transaction_decoder
+    transaction = EvmTransaction(
+        tx_hash=make_evm_tx_hash(),
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1739574323),
+        block_number=21847848,
+        from_address=TEST_ADDR2,
+        to_address=TEST_ADDR1,
+        value=2 * 10**18,
+        gas=21000,
+        gas_price=0,
+        gas_used=21000,
+        input_data=b'',
+        nonce=0,
+    )
+    with database.user_write() as cursor:
+        DBEvmTx(database).add_transactions(cursor, [transaction], relevant_address=TEST_ADDR1)
+
+    write_buffer: list[tuple[list[EvmEvent], str, int]] = []
+    with (
+        patch.object(decoder, 'beacon_chain', Mock(has_api_key=Mock(return_value=False))),
+        patch.object(decoder, '_get_beacon_node') as get_beacon_node,
+    ):
+        events, _, _ = decoder._get_or_decode_transaction_events(
+            transaction,
+            EvmTxReceipt(
+                tx_hash=transaction.tx_hash,
+                chain_id=ChainID.ETHEREUM,
+                contract_address=None,
+                status=True,
+                tx_type=0,
+            ),
+            ignore_cache=True,
+            delete_customized=True,
+            write_buffer=write_buffer,
+        )
+
+    get_beacon_node.assert_not_called()
+    assert [(event.event_type, event.amount) for event in events] == [
+        (HistoryEventType.RECEIVE, FVal(2)),
+    ]
+    assert [buffered_events for buffered_events, _, _ in write_buffer] == [events]
+
+
 def test_decode_transaction_without_persistence_discards_write_buffer(
         ethereum_transaction_decoder: EthereumTransactionDecoder,
 ) -> None:

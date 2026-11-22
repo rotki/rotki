@@ -166,6 +166,13 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
         ):
             return
 
+        # Without validators there is no block to produce nor an MEV event to update, since
+        # removing a validator deletes its block events. Checked before the flush below so
+        # that the plain ETH receives of most users don't break up the decoding write batch.
+        with self.database.conn.read_ctx() as cursor:
+            if cursor.execute('SELECT 1 FROM eth2_validators LIMIT 1').fetchone() is None:
+                return
+
         if write_buffer is not None:
             # The logic below writes block events directly to the DB. Persist any deferred
             # event writes first so the DB insertion order (and thus the assigned event
