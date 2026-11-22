@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AssetManagerMoreTitle from '@/modules/assets/admin/AssetManagerMoreTitle.vue';
 import ManageCexMappingFormDialog from '@/modules/assets/admin/cex-mapping/ManageCexMappingFormDialog.vue';
+import MissingMappingDismissButton from '@/modules/assets/admin/missing-mappings/MissingMappingDismissButton.vue';
 import { useAssetMissingMappings } from '@/modules/assets/admin/missing-mappings/use-asset-missing-mappings';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
@@ -20,13 +21,14 @@ const {
   cols,
   error,
   fields,
+  load,
   mappings,
   modelFilter,
   modelMapping,
   onAddClick,
   onAddComplete,
+  onDismiss,
   pagination,
-  refetch,
   sort,
 } = useAssetMissingMappings();
 
@@ -35,7 +37,7 @@ const emptyState = useTableEmptyState({ error });
 useRememberTableSorting(TableId.ASSET_MISSING_MAPPINGS, sort, cols);
 
 onMounted(async () => {
-  await refetch();
+  await load();
 });
 </script>
 
@@ -83,7 +85,7 @@ onMounted(async () => {
         </template>
 
         <template #item.actions="{ row }">
-          <div class="flex justify-end">
+          <div class="flex justify-end gap-1">
             <RuiButton
               size="sm"
               variant="text"
@@ -100,6 +102,7 @@ onMounted(async () => {
               </template>
               {{ t('asset_management.cex_mapping.add_mapping') }}
             </RuiButton>
+            <MissingMappingDismissButton @dismiss="onDismiss(row)" />
           </div>
         </template>
       </RuiDataTable>

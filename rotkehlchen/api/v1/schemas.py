@@ -168,7 +168,7 @@ from rotkehlchen.locations.constants import (
     LOCATION_COINBASEPRO,
     LOCATION_KRAKEN,
 )
-from rotkehlchen.locations.types import LocationScope
+from rotkehlchen.locations.types import LocationIdentifier, LocationScope
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.oracles.structures import SETTABLE_CURRENT_PRICE_ORACLES
 from rotkehlchen.serialization.deserialize import (
@@ -272,7 +272,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.inquirer import CurrentPriceOracle
-    from rotkehlchen.locations.types import LocationIdentifier
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -3318,6 +3317,24 @@ class ConnectorAssetMappingsUpdateSchema(Schema):
 
 class ConnectorAssetMappingsDeleteSchema(Schema):
     entries = NonEmptyList(fields.Nested(ConnectorAssetMappingDeleteEntrySchema), required=True)
+
+
+class ConnectorSymbolEntrySchema(Schema):
+    """A connector symbol to resolve. The connector is a plain string since the entry may
+    name a connector rotki no longer supports, which must not fail the other entries."""
+    connector = NonEmptyStringField(required=True)
+    connector_symbol = NonEmptyStringField(required=True)
+
+
+class ConnectorSymbolsResolveSchema(Schema):
+    entries = NonEmptyList(fields.Nested(ConnectorSymbolEntrySchema), required=True)
+
+    @post_load
+    def make_entries(self, data: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:
+        return {'entries': [
+            (LocationIdentifier(entry['connector']), entry['connector_symbol'])
+            for entry in data['entries']
+        ]}
 
 
 class CounterpartyAssetMappingsBaseSchema(Schema):

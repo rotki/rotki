@@ -1,5 +1,6 @@
 import type { ComputedRef } from 'vue';
 import { useMissingMappingsCount } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-count';
+import { usePruneResolvedMappings } from '@/modules/assets/admin/missing-mappings/use-prune-resolved-mappings';
 import { useSolanaTokenMigrationStore } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-store';
 import { useMissingPrices } from '@/modules/assets/prices/missing/use-missing-prices';
 import { useMissingPricesDialog } from '@/modules/assets/prices/missing/use-missing-prices-dialog';
@@ -7,7 +8,7 @@ import { type ActionItem, type ActionTarget, ActionUrgency, createActionItem } f
 
 interface UseAssetRowsReturn {
   rows: ComputedRef<ActionItem[]>;
-  /** Re-reads what the rows count. */
+  /** Drops exchange assets that resolve by now, then re-reads what the rows count. */
   refresh: () => Promise<void>;
 }
 
@@ -18,7 +19,8 @@ interface UseAssetRowsReturn {
 export function useAssetRows(): UseAssetRowsReturn {
   const { t } = useI18n({ useScope: 'global' });
 
-  const { count, refresh } = useMissingMappingsCount();
+  const { count, refresh: refreshCount } = useMissingMappingsCount();
+  const { prune } = usePruneResolvedMappings();
   const { identifiers: solanaTokens } = storeToRefs(useSolanaTokenMigrationStore());
   const { missingPricesCount } = useMissingPrices();
   const { show: showMissingPrices } = useMissingPricesDialog();
@@ -57,6 +59,11 @@ export function useAssetRows(): UseAssetRowsReturn {
       title: t('action_center.rows.assets.solana_token_migration.title'),
     }),
   ]);
+
+  async function refresh(): Promise<void> {
+    await prune();
+    await refreshCount();
+  }
 
   return { refresh, rows };
 }

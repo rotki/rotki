@@ -610,3 +610,23 @@ LOCATION_TO_ASSET_MAPPING: dict[LocationIdentifier, Callable[[str], AssetWithOra
     LOCATION_GATE: asset_from_gate,
     LOCATION_EXTERNAL: asset_from_common_identifier,
 }
+
+
+def asset_from_connector(connector: LocationIdentifier, symbol: str) -> AssetWithOracles:
+    """Resolve an exchange symbol as the connector's own converter does, or through the
+    connector's symbol mappings for a connector without a dedicated converter.
+
+    May raise:
+    - DeserializationError
+    - UnknownAsset
+    - UnsupportedAsset
+    - WrongAssetType
+    """
+    if (converter := LOCATION_TO_ASSET_MAPPING.get(connector)) is not None:
+        return converter(symbol)
+
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=connector,
+        symbol=symbol,
+        default=symbol,
+    ))

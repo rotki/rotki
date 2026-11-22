@@ -6,6 +6,7 @@ import { useAssetRows } from '@/modules/shell/action-center/use-asset-rows';
 const missingPricesCount = ref<number>(0);
 const mappingsCount = ref<number>(0);
 const refreshMappings = vi.fn<() => Promise<void>>();
+const prune = vi.fn<() => Promise<number>>();
 const showMissingPrices = vi.fn<() => void>();
 
 vi.mock('@/modules/assets/prices/missing/use-missing-prices', () => ({
@@ -18,6 +19,10 @@ vi.mock('@/modules/assets/prices/missing/use-missing-prices-dialog', () => ({
 
 vi.mock('@/modules/assets/admin/missing-mappings/use-missing-mappings-count', () => ({
   useMissingMappingsCount: (): object => ({ count: mappingsCount, refresh: refreshMappings }),
+}));
+
+vi.mock('@/modules/assets/admin/missing-mappings/use-prune-resolved-mappings', () => ({
+  usePruneResolvedMappings: (): object => ({ prune }),
 }));
 
 let scope: EffectScope | undefined;
@@ -68,6 +73,21 @@ describe('modules/shell/action-center/use-asset-rows', () => {
 
     expect(row.count).toBe(2);
     expect(row.target).toEqual({ kind: 'route', to: { name: '/asset-manager/more/missing-mappings/' } });
+  });
+
+  it('should drop the exchange assets that resolve by now before re-reading their count', async () => {
+    const order: string[] = [];
+    prune.mockImplementation(async () => {
+      order.push('prune');
+      return 0;
+    });
+    refreshMappings.mockImplementation(async () => {
+      order.push('count');
+    });
+
+    await assetRows().refresh();
+
+    expect(order).toEqual(['prune', 'count']);
   });
 
   it('should count the Solana tokens left to migrate, and drop one as soon as it is migrated', () => {

@@ -5,6 +5,7 @@ import {
   type CexMapping,
   CexMappingCollectionResponse,
   type CexMappingDeletePayload,
+  CexMappingListResponse,
   type CexMappingRequestPayload,
 } from '@/modules/assets/types';
 import { api } from '@/modules/core/api/rotki-api';
@@ -15,6 +16,13 @@ interface UseAssetCexMappingApiReturn {
   addCexMapping: (payload: CexMapping) => Promise<boolean>;
   editCexMapping: (payload: CexMapping) => Promise<boolean>;
   deleteCexMapping: (payload: CexMappingDeletePayload) => Promise<boolean>;
+  /**
+   * Asks which exchange symbols now resolve to an asset, by the same rules the exchange's own
+   * queries use.
+   *
+   * @returns the symbols that resolve, with their asset; symbols that are still unknown are left out
+   */
+  resolveCexSymbols: (payload: CexMappingDeletePayload[]) => Promise<CexMapping[]>;
 }
 
 interface CexMappingWireKey {
@@ -63,10 +71,19 @@ export function useAssetCexMappingApi(): UseAssetCexMappingApiReturn {
     },
   });
 
+  const resolveCexSymbols = async (payload: CexMappingDeletePayload[]): Promise<CexMapping[]> => {
+    const response = await api.post<unknown>('/assets/connectormappings/resolve', {
+      entries: payload.map(toWireKey),
+    });
+
+    return CexMappingListResponse.parse(response);
+  };
+
   return {
     addCexMapping,
     deleteCexMapping,
     editCexMapping,
     fetchAllCexMapping,
+    resolveCexSymbols,
   };
 }

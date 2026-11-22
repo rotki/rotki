@@ -1236,6 +1236,8 @@
         "title": "Delete Exchange Asset Mapping"
       },
       "delete_error": "Could not delete the mapping",
+      "dismiss": "Dismiss",
+      "dismiss_hint": "Remove this entry without adding a mapping. It comes back if the exchange reports the asset again.",
       "edit_error": "Could not edit the mapping",
       "edit_title": "Edit the mapping",
       "exchange_name": "The exchange calls it {name}",

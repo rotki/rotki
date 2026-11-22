@@ -7,8 +7,9 @@ import { useAssetMissingMappings } from './use-asset-missing-mappings';
 
 let mappings: Ref<Collection<MissingMapping>>;
 
-const { getData, refetch, refreshCount, remove } = vi.hoisted(() => ({
+const { getData, prune, refetch, refreshCount, remove } = vi.hoisted(() => ({
   getData: vi.fn(),
+  prune: vi.fn<() => Promise<number>>(),
   refetch: vi.fn(async () => Promise.resolve()),
   refreshCount: vi.fn(async () => Promise.resolve()),
   remove: vi.fn(async () => Promise.resolve()),
@@ -20,6 +21,10 @@ vi.mock('@/modules/assets/admin/missing-mappings/use-missing-mappings-db', () =>
 
 vi.mock('@/modules/assets/admin/missing-mappings/use-missing-mappings-count', () => ({
   useMissingMappingsCount: (): Record<string, unknown> => ({ refresh: refreshCount }),
+}));
+
+vi.mock('@/modules/assets/admin/missing-mappings/use-prune-resolved-mappings', () => ({
+  usePruneResolvedMappings: (): Record<string, unknown> => ({ prune }),
 }));
 
 vi.mock('@/modules/assets/admin/missing-mappings/use-missing-mappings-fields', () => ({
@@ -148,6 +153,45 @@ describe('modules/assets/admin/missing-mappings/useAssetMissingMappings', () => 
       await onAddComplete({ asset: 'BTC', location: 'kraken', locationSymbol: 'XBT' });
 
       expect(order).toEqual(['remove', 'refetch']);
+    });
+  });
+
+  describe('opening the page', () => {
+    it('should drop the rows that resolve by now before reading the page, and re-read the count', async () => {
+      const order: string[] = [];
+      prune.mockImplementation(async () => {
+        order.push('prune');
+        return 2;
+      });
+      refetch.mockImplementation(async () => {
+        order.push('refetch');
+        return Promise.resolve();
+      });
+
+      await page().load();
+
+      expect(order).toEqual(['prune', 'refetch']);
+      expect(refreshCount).toHaveBeenCalledOnce();
+    });
+
+    it('should leave the count alone when nothing was dropped', async () => {
+      prune.mockResolvedValue(0);
+
+      await page().load();
+
+      expect(refetch).toHaveBeenCalledOnce();
+      expect(refreshCount).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('dismissing a row', () => {
+    it('should drop the row by its exchange and symbol, then re-read the page and the count', async () => {
+      const { onDismiss } = page();
+      await onDismiss(missing({ identifier: 'BTTC', location: 'binance' }));
+
+      expect(remove).toHaveBeenCalledExactlyOnceWith({ identifier: 'BTTC', location: 'binance' });
+      expect(refetch).toHaveBeenCalledOnce();
+      expect(refreshCount).toHaveBeenCalledOnce();
     });
   });
 });

@@ -297,3 +297,44 @@ def test_connector_asset_mappings_errors(rotkehlchen_api_server: APIServer) -> N
             'Failed to update the connector asset mapping DNE in kraken because it does not exist in the DB.'  # noqa: E501
         ),
     )
+
+
+def test_resolve_connector_symbols(rotkehlchen_api_server: APIServer) -> None:
+    """Only symbols that resolve through the connector's converter or mappings come back,
+    and a symbol resolves once a mapping for it is added."""
+    def resolve(entries: list[dict[str, str]]) -> Any:
+        return assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'connectorassetmappingsresolveresource'),
+            json={'entries': entries},
+        ))
+
+    assert resolve(entries := [
+        {'connector': 'binance', 'connector_symbol': 'BTTC'},  # packaged binance mapping
+        {'connector': 'kraken', 'connector_symbol': 'XXBT.S'},  # kraken converter strips .S
+        {'connector': 'nolongersupported', 'connector_symbol': 'ETH'},  # generic fallback
+        {'connector': 'kraken', 'connector_symbol': 'ROTKIUNKNOWN'},
+    ]) == [
+        {**entries[0], 'asset': 'eip155:1/erc20:0xC669928185DbCE49d2230CC9B0979BE6DC797957'},
+        {**entries[1], 'asset': 'BTC'},
+        {**entries[2], 'asset': 'ETH'},
+    ]
+
+    assert_proper_sync_response_with_result(requests.put(
+        api_url_for(rotkehlchen_api_server, 'connectorassetmappingsresource'),
+        json={'entries': [{
+            'asset': 'BTC',
+            'connector_symbol': (symbol := 'ROTKIUNKNOWN'),
+            'connector': 'kraken',
+        }]},
+    ))
+    assert resolve([{'connector': 'kraken', 'connector_symbol': symbol}]) == [
+        {'connector': 'kraken', 'connector_symbol': symbol, 'asset': 'BTC'},
+    ]
+
+    assert_error_response(
+        response=requests.post(
+            api_url_for(rotkehlchen_api_server, 'connectorassetmappingsresolveresource'),
+            json={'entries': []},
+        ),
+        status_code=HTTPStatus.BAD_REQUEST,
+    )

@@ -244,6 +244,9 @@ const CexMappingWire = z.object({
   locationSymbol: connectorSymbol,
 }));
 
+/** The symbols the backend now resolves, each with the asset it resolves to. */
+export const CexMappingListResponse = z.array(CexMappingWire);
+
 export const CexMappingCollectionResponse = CollectionCommonFields.extend({
   entries: z.array(CexMappingWire),
 });
