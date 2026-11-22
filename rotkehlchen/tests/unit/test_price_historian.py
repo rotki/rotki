@@ -39,6 +39,7 @@ from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.externalapis.moralis import Moralis
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import (
+    HISTORICAL_PRICE_MISS_PRUNE_INTERVAL_SECONDS,
     HISTORICAL_PRICE_MISS_TTL_SECONDS,
     _prioritize_manual_balances_query,
 )
@@ -1003,6 +1004,48 @@ def test_historical_price_misses_selective_recording_recency_and_ttl(
         (HistoricalPriceOracle.DEFILLAMA, old_ts),
         (HistoricalPriceOracle.COINGECKO, old_day),
     }
+
+
+def test_historical_price_misses_prune_expired(globaldb: GlobalDBHandler) -> None:
+    """Writing misses deletes the expired ones, at most once per prune interval."""
+    expired_checked_at = (now := ts_now()) - HISTORICAL_PRICE_MISS_TTL_SECONDS - 60
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO historical_price_misses(from_asset, source_type, timestamp, checked_at) '
+            'VALUES (?, ?, ?, ?)',
+            [
+                (A_BTC.identifier, HistoricalPriceOracle.DEFILLAMA.serialize_for_db(), ts, expired_checked_at)  # noqa: E501
+                for ts in (1611565200, 1611568800)
+            ],
+        )
+
+    def stored_misses() -> list[tuple[str, int]]:
+        with globaldb.conn.read_ctx() as cursor:
+            return cursor.execute(
+                'SELECT from_asset, timestamp FROM historical_price_misses ORDER BY timestamp',
+            ).fetchall()
+
+    globaldb._price_misses_last_prune_ts = now  # pruned recently, so this write keeps them
+    globaldb.add_historical_price_misses(
+        from_asset=A_ETH,
+        misses=[(HistoricalPriceOracle.DEFILLAMA, Timestamp(1611572400))],
+    )
+    assert stored_misses() == [
+        (A_BTC.identifier, 1611565200),
+        (A_BTC.identifier, 1611568800),
+        (A_ETH.identifier, 1611572400),
+    ]
+
+    globaldb._price_misses_last_prune_ts = now - HISTORICAL_PRICE_MISS_PRUNE_INTERVAL_SECONDS
+    globaldb.add_historical_price_misses(
+        from_asset=A_ETH,
+        misses=[(HistoricalPriceOracle.DEFILLAMA, Timestamp(1611576000))],
+    )
+    assert stored_misses() == [
+        (A_ETH.identifier, 1611572400),
+        (A_ETH.identifier, 1611576000),
+    ]
+    assert globaldb._price_misses_last_prune_ts >= now
 
 
 def test_historical_price_misses_invalidation_and_fk_safety(
