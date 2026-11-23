@@ -6,6 +6,12 @@ import { useBalanceView } from '@/modules/balances/view/use-balance-view';
 import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import { useBucketReconciliation } from '@/modules/history/reconciliation/use-bucket-reconciliation';
 
+const { asset, isCollectionParent = false } = defineProps<{
+  /** When shown on an asset detail page, scope the popover to that asset. */
+  asset?: string;
+  isCollectionParent?: boolean;
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 const { available, isHistory } = useBalanceView();
@@ -70,6 +76,9 @@ watch(available, loadSummaryWhenAvailable, { immediate: true });
         />
       </button>
     </template>
-    <BalanceViewPanel />
+    <BalanceViewPanel
+      :asset="asset"
+      :is-collection-parent="isCollectionParent"
+    />
   </RuiMenu>
 </template>

@@ -3,17 +3,27 @@ import type { AggregationContext, AssetBalanceEntries } from '@/modules/balances
 import type { HistoricalBalanceEntry } from '@/modules/history/balances/types';
 import { type BigNumber, bigNumberify } from '@rotki/common';
 import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
+import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { fromHistoricalEntries, type HistoricalSourceContext, visibleHistoricalEntries } from '@/modules/balances/aggregation/core/historical-source';
 import { useHistoricalSnapshotStore } from '@/modules/balances/use-historical-snapshot-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 
 interface UseHistoricalBalanceSourceReturn {
-  /** The buckets every history surface shows: small chain balances and bank buckets left out. */
+  /** The asset buckets every history surface shows: small chain balances, liabilities and bank buckets left out. */
   visibleEntries: ComputedRef<HistoricalBalanceEntry[]>;
-  /** The visible buckets, priced at current prices, as one aggregation source. */
+  /** The liability buckets (e.g. ERC-20 debt tokens) visible after threshold filtering. */
+  visibleLiabilityEntries: ComputedRef<HistoricalBalanceEntry[]>;
+  /**
+   * Whether history derives this liability from events (e.g. Aave v3/Spark debt tokens), so live
+   * balances must not fill in when history has no positive bucket for it.
+   */
+  isTrackedLiability: (asset: string) => boolean;
+  /** The visible asset buckets, priced at current prices, as one aggregation source. */
   source: ComputedRef<AssetBalanceEntries>;
-  /** Every held asset regardless of the small-balance threshold, for price discovery. */
+  /** The visible liability buckets, priced at current prices, as one aggregation source. */
+  liabilitySource: ComputedRef<AssetBalanceEntries>;
+  /** Every held asset and liability regardless of the small-balance threshold, for price discovery. */
   unfilteredSource: ComputedRef<AssetBalanceEntries>;
 }
 
@@ -22,6 +32,7 @@ export function useHistoricalBalanceSource(
   aggregation: Pick<AggregationContext, 'priceOf' | 'resolveIdentifier'>,
 ): UseHistoricalBalanceSourceReturn {
   const { entries } = storeToRefs(useHistoricalSnapshotStore());
+  const { resolve: resolveAssetInfo } = useAssetInfoCache();
   const { matchChain } = useSupportedChains();
   const thresholdSetting = useValueThreshold(BalanceSource.BLOCKCHAIN);
 
@@ -36,9 +47,22 @@ export function useHistoricalBalanceSource(
     return value === undefined ? undefined : bigNumberify(value);
   });
 
-  const visibleEntries = computed<HistoricalBalanceEntry[]>(() => visibleHistoricalEntries(get(entries), context, get(threshold)));
+  const allVisibleEntries = computed<HistoricalBalanceEntry[]>(() => visibleHistoricalEntries(get(entries), context, get(threshold)));
+  const visibleEntries = computed<HistoricalBalanceEntry[]>(() => get(allVisibleEntries).filter(entry => !entry.isLiability));
+  const visibleLiabilityEntries = computed<HistoricalBalanceEntry[]>(() => get(allVisibleEntries).filter(entry => entry.isLiability === true));
+  const snapshotLiabilityAssets = computed<ReadonlySet<string>>(() => new Set(
+    get(entries)
+      .filter(entry => entry.isLiability === true)
+      .map(entry => context.resolveIdentifier(entry.asset)),
+  ));
   const source = computed<AssetBalanceEntries>(() => fromHistoricalEntries(get(visibleEntries), context));
+  const liabilitySource = computed<AssetBalanceEntries>(() => fromHistoricalEntries(get(visibleLiabilityEntries), context));
   const unfilteredSource = computed<AssetBalanceEntries>(() => fromHistoricalEntries(get(entries), context));
 
-  return { source, unfilteredSource, visibleEntries };
+  function isTrackedLiability(asset: string): boolean {
+    const resolved = context.resolveIdentifier(asset);
+    return get(snapshotLiabilityAssets).has(resolved) || resolveAssetInfo(resolved)?.isLiability === true;
+  }
+
+  return { isTrackedLiability, liabilitySource, source, unfilteredSource, visibleEntries, visibleLiabilityEntries };
 }

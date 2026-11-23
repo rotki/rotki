@@ -2,7 +2,7 @@ import type { UseDataIssuesDetectionReturn } from '@/modules/history/data-issues
 import type { UseBucketReconciliationApiReturn } from '@/modules/history/reconciliation/api/use-bucket-reconciliation-api';
 import type { ReconciliationAccount, ReconciliationResponse, StatusCounts } from '@/modules/history/reconciliation/schemas';
 import type { NamedFailure } from '@/modules/shell/components/named-failure';
-import { flushPromises, mount } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { FetchError } from 'ofetch';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,7 +15,7 @@ import { createRuiPlugin } from '@/plugins/rui';
 
 const { fetchAccount, fetchSummary } = vi.hoisted(() => ({
   fetchAccount: vi.fn<() => Promise<ReconciliationAccount | undefined>>(),
-  fetchSummary: vi.fn<() => Promise<ReconciliationResponse>>(),
+  fetchSummary: vi.fn<(asset?: string) => Promise<ReconciliationResponse>>(),
 }));
 
 vi.mock('@/modules/history/reconciliation/api/use-bucket-reconciliation-api', () => ({
@@ -39,32 +39,62 @@ vi.mock('@/modules/history/data-issues/use-data-issues-detection', async () => {
   };
 });
 
-function report(stale: boolean): ReconciliationResponse {
-  const counts: StatusCounts = {
-    blocked: 0,
-    mismatch: 0,
-    notCompared: 0,
-    pending: stale ? 1 : 0,
-    reconciled: stale ? 0 : 1,
-  };
+function counts(overrides: Partial<StatusCounts> = {}): StatusCounts {
+  return { blocked: 0, mismatch: 0, notCompared: 0, pending: 0, reconciled: 0, ...overrides };
+}
+
+function account(overrides: Partial<ReconciliationAccount> = {}): ReconciliationAccount {
   return {
-    accounts: [{
-      counts,
-      historySyncedTo: 100,
-      isExchange: false,
-      lastComparedAt: 100,
-      lastEventTs: 1000,
-      location: 'ethereum',
-      locationLabel: '0x0000000000000000000000000000000000000001',
-    }],
-    bucketsTotal: 1,
-    processing: false,
-    stale,
-    totals: counts,
+    counts: counts({ reconciled: 1 }),
+    historySyncedTo: 100,
+    isExchange: false,
+    lastComparedAt: 100,
+    lastEventTs: 1000,
+    location: 'ethereum',
+    locationLabel: '0x0000000000000000000000000000000000000001',
+    ...overrides,
   };
 }
 
-describe('reconciliation view freshness', () => {
+function report(stale = false, overrides: Partial<ReconciliationResponse> = {}): ReconciliationResponse {
+  const totals = counts(stale ? { pending: 1 } : { reconciled: 1 });
+  return {
+    accounts: [account({ counts: totals })],
+    bucketsTotal: 1,
+    processing: false,
+    stale,
+    totals,
+    ...overrides,
+  };
+}
+
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
+}
+
+function mountView(options: { rui?: boolean; seed?: ReconciliationResponse; stubTable?: boolean } = {}): VueWrapper {
+  const pinia = createPinia();
+  setActivePinia(pinia);
+  if (options.seed)
+    useBucketReconciliationStore().setSummary(options.seed);
+  return mount(ReconciliationView, {
+    global: {
+      plugins: options.rui === false ? [pinia] : [pinia, createRuiPlugin({})],
+      stubs: {
+        BucketTraceDrawer: true,
+        DataIssuesTabs: true,
+        ...(options.stubTable === false ? {} : { ReconciliationTable: true }),
+        TablePageLayout: { template: '<main><slot /></main>' },
+      },
+    },
+  });
+}
+
+describe('reconciliationView', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     fetchAccount.mockResolvedValue(undefined);
@@ -72,21 +102,8 @@ describe('reconciliation view freshness', () => {
   });
 
   it('should stop offering a check when returning to a cached view after history becomes stale', async () => {
-    const pinia = createPinia();
-    setActivePinia(pinia);
-    useBucketReconciliationStore().setSummary(report(false));
     fetchSummary.mockResolvedValue(report(true));
-
-    const wrapper = mount(ReconciliationView, {
-      global: {
-        plugins: [pinia],
-        stubs: {
-          DataIssuesTabs: true,
-          ReconciliationTable: true,
-          TablePageLayout: { template: '<main><slot /></main>' },
-        },
-      },
-    });
+    const wrapper = mountView({ rui: false, seed: report(false) });
     await flushPromises();
 
     expect(wrapper.get('[data-testid="reconciliation-check-now"]').attributes('disabled')).toBeDefined();
@@ -94,103 +111,44 @@ describe('reconciliation view freshness', () => {
   });
 
   it.each(['attention', 'all'])('should display a blocked exchange account in the %s view', async (view) => {
-    const pinia = createPinia();
-    setActivePinia(pinia);
     await useRouter().replace({ query: { view } });
-    const counts: StatusCounts = { blocked: 1, mismatch: 0, notCompared: 0, pending: 0, reconciled: 0 };
-    const summary: ReconciliationResponse = {
-      ...report(false),
-      accounts: [{
-        counts,
-        historySyncedTo: 100,
-        isExchange: true,
-        lastComparedAt: null,
-        lastEventTs: 1000,
-        location: 'kraken',
-        locationLabel: 'Kraken 1',
-      }],
-      totals: counts,
-    };
-    useBucketReconciliationStore().setSummary(summary);
+    const blocked = counts({ blocked: 1 });
+    const summary = report(false, {
+      accounts: [account({ counts: blocked, isExchange: true, lastComparedAt: null, location: 'kraken', locationLabel: 'Kraken 1' })],
+      totals: blocked,
+    });
     fetchSummary.mockResolvedValue(summary);
 
-    const wrapper = mount(ReconciliationView, {
-      global: {
-        plugins: [pinia, createRuiPlugin({})],
-        stubs: {
-          DataIssuesTabs: true,
-          TablePageLayout: { template: '<main><slot /></main>' },
-        },
-      },
-    });
+    const wrapper = mountView({ seed: summary, stubTable: false });
     await flushPromises();
 
     expect(wrapper.get('[data-testid="reconciliation-table"]').text()).toContain('Kraken 1');
     expect(wrapper.find('[data-testid="reconciliation-nothing-attention"]').exists()).toBe(false);
   });
-});
 
-describe('reconciliation view against a backend without the accounting update', () => {
-  beforeEach(async () => {
-    vi.clearAllMocks();
-    await useRouter().replace({ query: {} });
-  });
-
-  it('should explain that the report is unavailable instead of offering a retry or a check', async () => {
-    const pinia = createPinia();
-    setActivePinia(pinia);
+  it('should explain that the report is unavailable on 404 instead of offering a retry or check', async () => {
     fetchSummary.mockRejectedValue(createStatusError(404, 'Historical balance reconciliation is disabled', {
       cause: 'not_found',
       message: 'Historical balance reconciliation is disabled',
       result: null,
     }));
 
-    const wrapper = mount(ReconciliationView, {
-      global: {
-        plugins: [pinia],
-        stubs: {
-          DataIssuesTabs: true,
-          TablePageLayout: { template: '<main><slot /></main>' },
-        },
-      },
-    });
+    const wrapper = mountView({ rui: false });
     await flushPromises();
 
     expect(wrapper.find('[data-testid="reconciliation-unavailable"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="reconciliation-summary-error"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="reconciliation-check-now"]').exists()).toBe(false);
   });
-});
 
-describe('reconciliation view load failure', () => {
-  beforeEach(async () => {
-    vi.clearAllMocks();
-    await useRouter().replace({ query: {} });
-  });
-
-  function mountView(): ReturnType<typeof mount> {
-    const pinia = createPinia();
-    setActivePinia(pinia);
-    return mount(ReconciliationView, {
-      global: {
-        plugins: [pinia],
-        stubs: {
-          DataIssuesTabs: true,
-          ReconciliationTable: true,
-          TablePageLayout: { template: '<main><slot /></main>' },
-        },
-      },
-    });
-  }
-
-  it('should name the backend\'s reason and offer no retry for an internal error', async () => {
+  it('should name the backend reason without retry for an internal error', async () => {
     fetchSummary.mockRejectedValue(createStatusError(500, 'database is locked', {
       cause: 'internal',
       message: 'database is locked',
       result: null,
     }));
 
-    const wrapper = mountView();
+    const wrapper = mountView({ rui: false });
     await flushPromises();
 
     const strip = wrapper.get('[data-testid="reconciliation-summary-error"]');
@@ -199,11 +157,12 @@ describe('reconciliation view load failure', () => {
     expect(strip.find('[data-testid="failure-strip-retry"]').exists()).toBe(false);
   });
 
-  it('should say the backend is unreachable and offer a retry that loads again', async () => {
-    fetchSummary.mockRejectedValueOnce(new FetchError('[GET] "http://127.0.0.1/api": <no response>'));
-    fetchSummary.mockResolvedValue(report(false));
+  it('should say the backend is unreachable and recover on retry', async () => {
+    fetchSummary
+      .mockRejectedValueOnce(new FetchError('[GET] "http://127.0.0.1/api": <no response>'))
+      .mockResolvedValue(report(false));
 
-    const wrapper = mountView();
+    const wrapper = mountView({ rui: false });
     await flushPromises();
 
     const strip = wrapper.get('[data-testid="reconciliation-summary-error"]');
@@ -214,33 +173,14 @@ describe('reconciliation view load failure', () => {
     expect(fetchSummary).toHaveBeenCalledTimes(2);
     expect(wrapper.find('[data-testid="reconciliation-summary-error"]').exists()).toBe(false);
   });
-});
-
-describe('reconciliation view default', () => {
-  beforeEach(async () => {
-    vi.clearAllMocks();
-    fetchAccount.mockResolvedValue(undefined);
-    await useRouter().replace({ query: {} });
-  });
 
   it('should stay on needs attention when a refresh clears the last mismatch', async () => {
-    const pinia = createPinia();
-    setActivePinia(pinia);
-    const mismatch: StatusCounts = { blocked: 0, mismatch: 1, notCompared: 0, pending: 0, reconciled: 0 };
+    const mismatch = counts({ mismatch: 1 });
     fetchSummary
-      .mockResolvedValueOnce({ ...report(false), accounts: [{ ...report(false).accounts[0], counts: mismatch }], totals: mismatch })
+      .mockResolvedValueOnce(report(false, { accounts: [account({ counts: mismatch })], totals: mismatch }))
       .mockResolvedValue(report(false));
 
-    const wrapper = mount(ReconciliationView, {
-      global: {
-        plugins: [pinia, createRuiPlugin({})],
-        stubs: {
-          DataIssuesTabs: true,
-          ReconciliationTable: true,
-          TablePageLayout: { template: '<main><slot /></main>' },
-        },
-      },
-    });
+    const wrapper = mountView();
     await flushPromises();
     expect(wrapper.find('[data-testid="reconciliation-nothing-attention"]').exists()).toBe(false);
 
@@ -249,5 +189,198 @@ describe('reconciliation view default', () => {
     await flushPromises();
 
     expect(wrapper.find('[data-testid="reconciliation-nothing-attention"]').exists()).toBe(true);
+  });
+
+  it('should fetch an asset-filtered summary on deep link without overwriting global badge totals', async () => {
+    const assetId = 'eip155:1/erc20:0x6df1C1E379bC5a00a7b4C6e67A203333772f45A8';
+    const globalTotals = counts({ blocked: 2, mismatch: 1, pending: 10, reconciled: 5 });
+    const filteredTotals = counts({ pending: 1 });
+    const acc1 = account({ counts: globalTotals, locationLabel: '0x1111' });
+    const acc2 = account({ counts: filteredTotals, locationLabel: '0x2222' });
+    const globalReport = report(false, { accounts: [acc1, acc2], bucketsTotal: 18, totals: globalTotals });
+    const filteredReport = report(false, { accounts: [acc2], bucketsTotal: 1, totals: filteredTotals });
+    fetchSummary.mockImplementation(async (asset?: string) => (asset === assetId ? filteredReport : globalReport));
+
+    await useRouter().replace({ query: { asset: assetId, view: 'all' } });
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(useBucketReconciliationStore().attention).toBe(3);
+    const table = wrapper.getComponent({ name: 'ReconciliationTable' });
+    expect(table.props('autoExpand')).toBe(true);
+    expect(table.props('accounts')).toEqual([acc2]);
+
+    await wrapper.get('[data-testid="reconciliation-clear-filters"]').trigger('click');
+    await flushPromises();
+    expect(useRouter().currentRoute.value.query.asset).toBeUndefined();
+    expect(table.props('autoExpand')).toBe(false);
+    expect(table.props('accounts')).toHaveLength(2);
+  });
+
+  it('should ignore stale asset filter responses that resolve late', async () => {
+    const acc = account({ locationLabel: '0x1111' });
+    const base = report(false, { accounts: [acc] });
+    const slow = deferred<ReconciliationResponse>();
+    fetchSummary.mockImplementation(async (asset?: string) => (asset === 'ET' ? slow.promise : base));
+    fetchAccount.mockResolvedValue({ ...acc, buckets: [], pagination: { limit: 50, offset: 0, total: 0 } });
+
+    const wrapper = mountView();
+    await flushPromises();
+    wrapper.getComponent({ name: 'ReconciliationTable' }).vm.$emit('expand', acc);
+    await flushPromises();
+    fetchAccount.mockClear();
+
+    await useRouter().replace({ query: { asset: 'ET', view: 'all' } });
+    await useRouter().replace({ query: { asset: 'ETH', view: 'all' } });
+    await flushPromises();
+    expect(fetchAccount).toHaveBeenCalledTimes(1);
+    expect(fetchAccount).toHaveBeenLastCalledWith(expect.objectContaining({ asset: 'ETH' }));
+
+    slow.resolve(base);
+    await flushPromises();
+    expect(fetchAccount).toHaveBeenCalledTimes(1);
+  });
+
+  it('should isolate filtered summary failures from global summaryFailure and recover on retry', async () => {
+    const globalReport = report(false);
+    let failFilter = true;
+    fetchSummary.mockImplementation(async (asset?: string) => {
+      if (asset && failFilter)
+        throw new FetchError('[GET] "http://127.0.0.1/api": <no response>');
+      return globalReport;
+    });
+
+    await useRouter().replace({ query: { asset: 'USDC', view: 'all' } });
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(useBucketReconciliationStore().summaryFailed).toBe(false);
+    expect(wrapper.find('[data-testid="reconciliation-empty-filtered"]').exists()).toBe(false);
+    const strip = wrapper.get('[data-testid="reconciliation-filter-error"]');
+
+    failFilter = false;
+    await strip.get('[data-testid="failure-strip-retry"]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="reconciliation-filter-error"]').exists()).toBe(false);
+    expect(wrapper.getComponent({ name: 'ReconciliationTable' }).props('accounts')).toEqual(globalReport.accounts);
+  });
+
+  it('should filter accounts by human-readable chain name and show empty-filtered notice', async () => {
+    const arb = account({ location: 'arbitrum_one', locationLabel: '0x1111' });
+    const eth = account({ location: 'ethereum', locationLabel: '0x2222' });
+    fetchSummary.mockResolvedValue(report(false, { accounts: [arb, eth] }));
+
+    await useRouter().replace({ query: { account: 'arbitrum one', view: 'all' } });
+    const wrapper = mountView();
+    await flushPromises();
+
+    const table = wrapper.getComponent({ name: 'ReconciliationTable' });
+    expect(table.props('accounts')).toEqual([arb]);
+
+    await useRouter().replace({ query: { account: 'no-such-account', view: 'all' } });
+    await flushPromises();
+    expect(table.props('accounts')).toEqual([]);
+    expect(wrapper.find('[data-testid="reconciliation-empty-filtered"]').exists()).toBe(true);
+  });
+
+  it('should keep the table visible for deep links even when nothing has been compared yet', async () => {
+    const pending = counts({ pending: 2 });
+    fetchSummary.mockResolvedValue(report(false, {
+      accounts: [account({ counts: pending, lastComparedAt: null })],
+      bucketsTotal: 2,
+      totals: pending,
+    }));
+
+    await useRouter().replace({ query: { asset: 'ETH', view: 'all' } });
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="reconciliation-never-checked"]').exists()).toBe(false);
+    expect(wrapper.findComponent({ name: 'ReconciliationTable' }).exists()).toBe(true);
+  });
+
+  it('should open the trace drawer with the selected bucket when inspect-trace is emitted', async () => {
+    const base = report(false);
+    fetchSummary.mockResolvedValue(base);
+    const wrapper = mountView();
+    await flushPromises();
+
+    const target = {
+      account: base.accounts[0],
+      bucket: {
+        asset: 'ETH',
+        check: null,
+        derivedBalance: null,
+        issueId: null,
+        issueKind: null,
+        lastEventTs: null,
+        observedAt: null,
+        observedBalance: null,
+        protocol: null,
+        reasons: [],
+        status: 'pending' as const,
+        stop: null,
+      },
+    };
+    wrapper.getComponent({ name: 'ReconciliationTable' }).vm.$emit('inspect-trace', target);
+    await flushPromises();
+
+    const drawer = wrapper.getComponent({ name: 'BucketTraceDrawer' });
+    expect(drawer.props('modelValue')).toBe(true);
+    expect(drawer.props('target')).toEqual(target);
+  });
+
+  it('should reload open accounts only once when adding or clearing an asset filter flips the default view', async () => {
+    const mismatch = counts({ mismatch: 1 });
+    const acc = account({ counts: mismatch, locationLabel: '0x1111' });
+    const globalReport = report(false, { accounts: [acc], totals: mismatch });
+    const filtered = deferred<ReconciliationResponse>();
+    fetchSummary.mockImplementation(async (asset?: string) => (asset ? filtered.promise : globalReport));
+    fetchAccount.mockResolvedValue({ ...acc, buckets: [], pagination: { limit: 50, offset: 0, total: 0 } });
+
+    const wrapper = mountView();
+    await flushPromises();
+    wrapper.getComponent({ name: 'ReconciliationTable' }).vm.$emit('expand', acc);
+    await flushPromises();
+    fetchAccount.mockClear();
+
+    await useRouter().replace({ query: { asset: 'USDC' } });
+    await flushPromises();
+    expect(fetchAccount).not.toHaveBeenCalled();
+
+    filtered.resolve(globalReport);
+    await flushPromises();
+    expect(fetchAccount).toHaveBeenCalledTimes(1);
+    expect(fetchAccount).toHaveBeenLastCalledWith(expect.objectContaining({ asset: 'USDC', status: undefined }));
+
+    fetchAccount.mockClear();
+    await wrapper.get('[data-testid="reconciliation-clear-filters"]').trigger('click');
+    await flushPromises();
+    expect(fetchAccount).toHaveBeenCalledTimes(1);
+    expect(fetchAccount).toHaveBeenLastCalledWith(expect.objectContaining({ asset: undefined, status: ['mismatch', 'blocked'] }));
+  });
+
+  it('should not show the nothing-needs-attention notice while an asset filter is loading or failed in attention view', async () => {
+    const pending = deferred<ReconciliationResponse>();
+    const globalReport = report(false);
+    fetchSummary.mockImplementation(async (asset?: string) => (asset ? pending.promise : globalReport));
+
+    await useRouter().replace({ query: { asset: 'USDC', view: 'attention' } });
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="reconciliation-nothing-attention"]').exists()).toBe(false);
+
+    fetchSummary.mockImplementation(async (asset?: string) => {
+      if (asset)
+        throw new FetchError('[GET] "http://127.0.0.1/api": <no response>');
+      return globalReport;
+    });
+    await useRouter().replace({ query: { asset: 'DAI', view: 'attention' } });
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="reconciliation-filter-error"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="reconciliation-nothing-attention"]').exists()).toBe(false);
   });
 });

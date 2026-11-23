@@ -29,10 +29,13 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
+from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.balances.historical import HistoricalBalancesManager
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.bucket_checks import (
@@ -440,10 +443,40 @@ def _observed_wallet_keys(
     return keys
 
 
+def _matches_asset_filter(
+        asset_id: str,
+        needle: str,
+        cache: dict[str, bool],
+) -> bool:
+    """Whether an asset matches a case-insensitive identifier, symbol, or name substring."""
+    if (cached := cache.get(asset_id)) is not None:
+        return cached
+
+    if needle in asset_id.lower():
+        cache[asset_id] = True
+        return True
+
+    matched = False
+    try:
+        resolved = AssetResolver.resolve_asset(asset_id)
+    except (UnknownAsset, WrongAssetType):
+        resolved = None
+
+    if resolved is not None:
+        matched = (
+            (isinstance(resolved, AssetWithSymbol) and needle in resolved.symbol.lower()) or
+            needle in resolved.name.lower()
+        )
+
+    cache[asset_id] = matched
+    return matched
+
+
 def get_reconciliation_report(  # one branch per scope rule
         database: DBHandler,
         location: str | None = None,
         location_label: str | None = None,
+        asset: str | None = None,
         statuses: Collection[BucketStatus] | None = None,
         limit: int = DEFAULT_PAGE_SIZE,
         offset: int = 0,
@@ -452,8 +485,9 @@ def get_reconciliation_report(  # one branch per scope rule
     """Build the reconciliation report. Pure read: no writes, no network, no event scans.
 
     location/location_label scope the accounts. Giving both also returns the bucket rows of that
-    account. statuses filters those rows only; summary totals and per-account counts are always
-    unfiltered. limit/offset page the filtered rows.
+    account. asset narrows the scope to matching assets (by identifier, symbol, or name) and
+    omits accounts with no matching buckets. statuses filters scoped rows only; summary totals
+    and per-account counts are always unfiltered by status. limit/offset page the filtered rows.
     """
     now = ts_now() if now is None else now
     treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
@@ -463,6 +497,11 @@ def get_reconciliation_report(  # one branch per scope rule
     # real scope, not the absence of one: protocol buckets without an account live there.
     null_label = location_label is not None and location_label.strip() == ''
     scope_label = None if null_label else location_label
+    asset_query = (
+        stripped.lower()
+        if asset is not None and (stripped := asset.strip()) != ''
+        else None
+    )
     limit = min(max(limit, 1), MAX_PAGE_SIZE)
     offset = max(offset, 0)
 
@@ -492,6 +531,7 @@ def get_reconciliation_report(  # one branch per scope rule
         },
         treat_eth2_as_eth=treat_eth2_as_eth,
     )
+    asset_match_cache: dict[str, bool] = {}
     candidates = {
         key for key in (*metrics, *checks, *stops, *observations)
         if _in_scope(
@@ -501,6 +541,9 @@ def get_reconciliation_report(  # one branch per scope rule
             location=location,
             location_label=scope_label,
             null_label=null_label,
+        ) and (
+            asset_query is None or
+            _matches_asset_filter(asset_id=key[3], needle=asset_query, cache=asset_match_cache)
         )
     }
     wallet_keys = {
@@ -585,11 +628,12 @@ def get_reconciliation_report(  # one branch per scope rule
         totals[bucket.status] += 1
         grouped[bucket.location, bucket.location_label].append(bucket)
 
-    for tracked_location, tracked_labels in tracked_accounts.items():
-        for tracked_account in tracked_labels:
-            # A tracked account exists for the view even before it has any bucket: no metric,
-            # no check and no observation is not the same as no account.
-            grouped.setdefault((tracked_location, tracked_account), [])
+    if asset_query is None:
+        for tracked_location, tracked_labels in tracked_accounts.items():
+            for tracked_account in tracked_labels:
+                # A tracked account exists for the view even before it has any bucket: no metric,
+                # no check and no observation is not the same as no account.
+                grouped.setdefault((tracked_location, tracked_account), [])
 
     scoped_rows: list[ReconciliationBucket] = []
     scoped_page: list[ReconciliationBucket] = []

@@ -5100,12 +5100,14 @@ class HistoricalBalanceReconciliationSchema(DBPaginationSchema):
     """Filters for the reconciliation report.
 
     location/location_label scope the accounts; both together also return that account's bucket
-    rows. status filters those rows only, never the summary totals or the per-account counts.
+    rows. asset filters buckets (and summary accounts) by identifier, symbol, or name.
+    status filters scoped rows only, never the summary totals or the per-account counts.
     """
     location = LocationField(load_default=None)
     # Unlike the other filters this one keeps an empty string: it is the explicit scope of the
     # account whose label is missing, not an absent filter.
     location_label = fields.String(load_default=None, allow_none=True)
+    asset = EmptyAsNoneStringField(load_default=None, allow_none=True)
     status = DelimitedOrNormalList(
         StrEnumField(enum_class=BucketStatus),
         load_default=None,

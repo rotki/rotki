@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import pytest
 import requests
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.history.data_issues.bucket_checks import BucketReason, BucketStatus
@@ -671,6 +672,85 @@ def test_mismatch_issue_is_linked_after_asset_folding(rotkehlchen_api_server: AP
     assert bucket['asset'] == A_ETH.identifier
     assert bucket['status'] == BucketStatus.MISMATCH
     assert bucket['issue_id'] == issue_id
+
+
+def test_asset_filter_scopes_summary_accounts_and_bucket_rows(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Filtering by asset narrows both summary accounts and scoped bucket rows by id, address, symbol, or name."""  # noqa: E501
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    now = ts_now()
+    usdc_id = 'eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+    unknown_asset = Asset('UNKNOWN_CUSTOM_TOKEN')
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO assets(identifier) VALUES (?)',
+            (unknown_asset.identifier,),
+        )
+    empty_account = make_evm_address()
+    track_blockchain_account(database, empty_account)
+    add_balance_bucket(database, TEST_ADDR1, '5', now - 3_600, asset=A_ETH)
+    add_balance_bucket(database, TEST_ADDR2, '3', now - 3_600, asset=A_ETH)
+    add_balance_bucket(database, TEST_ADDR2, '100', now - 3_600, asset=Asset(usdc_id))
+    add_balance_bucket(database, TEST_ADDR2, '7', now - 3_600, asset=unknown_asset)
+
+    # Exact identifier match in summary omits accounts without a matching bucket
+    by_id = _report(rotkehlchen_api_server, asset=usdc_id)
+    assert by_id['buckets_total'] == 1
+    assert [(a['location'], a['location_label']) for a in by_id['accounts']] == [
+        (LOCATION_ETHEREUM, TEST_ADDR2),
+    ]
+
+    # Case-insensitive contract address substring match works
+    by_address = _report(
+        rotkehlchen_api_server,
+        asset='0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    )
+    assert by_address['buckets_total'] == 1
+    assert [a['location_label'] for a in by_address['accounts']] == [TEST_ADDR2]
+
+    # Case-insensitive symbol match narrows scoped buckets and counts (excludes ETH/unknown)
+    by_symbol = _report(
+        rotkehlchen_api_server,
+        location=LOCATION_ETHEREUM,
+        location_label=TEST_ADDR2,
+        asset='usdc',
+    )
+    assert by_symbol['buckets_total'] == 1
+    assert len(by_symbol['accounts']) == 1
+    assert sum(by_symbol['accounts'][0]['counts'].values()) == 1
+    assert [bucket['asset'] for bucket in by_symbol['accounts'][0]['buckets']] == [usdc_id]
+    assert by_symbol['accounts'][0]['pagination']['total'] == 1
+
+    # Case-insensitive name match works and safely skips unknown asset identifiers
+    by_name = _report(rotkehlchen_api_server, asset='usd coin')
+    assert by_name['buckets_total'] == 1
+    assert [a['location_label'] for a in by_name['accounts']] == [TEST_ADDR2]
+
+    # Scoped account with non-matching asset returns no accounts and zero totals
+    scoped_empty = _report(
+        rotkehlchen_api_server,
+        location=LOCATION_ETHEREUM,
+        location_label=TEST_ADDR1,
+        asset='usdc',
+    )
+    assert scoped_empty['buckets_total'] == 0
+    assert scoped_empty['accounts'] == []
+
+    # Non-matching asset returns no accounts and zero totals
+    empty = _report(rotkehlchen_api_server, asset='nonexistent_token_xyz')
+    assert empty['buckets_total'] == 0
+    assert empty['accounts'] == []
+
+    # Empty or whitespace-only asset behaves as unfiltered (keeps tracked empty accounts)
+    for blank_asset in ('', '   '):
+        unfiltered = _report(rotkehlchen_api_server, asset=blank_asset)
+        assert unfiltered['buckets_total'] == 4
+        assert {a['location_label'] for a in unfiltered['accounts']} == {
+            TEST_ADDR1,
+            TEST_ADDR2,
+            empty_account,
+        }
 
 
 def test_feature_gate(rotkehlchen_api_server: APIServer, monkeypatch: pytest.MonkeyPatch) -> None:

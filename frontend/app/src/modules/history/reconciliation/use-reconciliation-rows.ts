@@ -105,10 +105,6 @@ function statusRank(status: BucketStatus): number {
   }
 }
 
-export function needsAttention(status: BucketStatus): boolean {
-  return status === 'mismatch' || status === 'blocked';
-}
-
 /**
  * The statuses an account is asked for in each view.
  *

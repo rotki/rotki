@@ -16632,21 +16632,24 @@ Historical Balance Queries
               "location_label": "0x52908400098527886E0F7030069857D2E4169EE7",
               "protocol": null,
               "asset": "ETH",
-              "amount": "1.2"
+              "amount": "1.2",
+              "is_liability": false
             },
             {
               "location": "ethereum",
               "location_label": "0x8617E340B3D01FA5F11F306F4090FD50E238070D",
               "protocol": null,
               "asset": "ETH",
-              "amount": "0.8"
+              "amount": "0.8",
+              "is_liability": false
             },
             {
               "location": "ethereum",
               "location_label": "0x52908400098527886E0F7030069857D2E4169EE7",
               "protocol": "aave_v3",
               "asset": "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-              "amount": "250.12"
+              "amount": "250.12",
+              "is_liability": false
             }
           ]
         },
@@ -16670,7 +16673,7 @@ Historical Balance Queries
 
       :resjson bool processing_required: Whether historical events exist but need processing. If true, call the processing endpoint and retry.
       :resjson object entries: (Only present when data is available and ``group_by_account`` is false) A mapping of asset identifiers to their amount as string.
-      :resjson list entries: (Only present when data is available and ``group_by_account`` is true) Records with ``location``, ``location_label``, ``protocol``, ``asset`` and ``amount``.
+      :resjson list entries: (Only present when data is available and ``group_by_account`` is true) Records with ``location``, ``location_label``, ``protocol``, ``asset``, ``amount`` and ``is_liability`` (``true`` for liability tokens such as Aave v3/Spark debt tokens; ``false`` for other assets and for unknown asset identifiers).
       :statuscode 200: Historical balances returned
       :statuscode 400: Malformed query
       :statuscode 403: User does not have premium access
@@ -16725,7 +16728,8 @@ Historical Balance Queries
               "location_label": "0x1234567890AbcdEF1234567890aBcdef12345678",
               "protocol": null,
               "asset": "ETH",
-              "amount": "1.25"
+              "amount": "1.25",
+              "is_liability": false
             }
           ]
         },
@@ -16733,7 +16737,7 @@ Historical Balance Queries
       }
 
       :resjson bool processing_required: Whether historical events exist but need processing.
-      :resjson list entries: (Only present when data is available) Records with ``location``, ``location_label``, ``protocol``, ``asset`` and ``amount``.
+      :resjson list entries: (Only present when data is available) Records with ``location``, ``location_label``, ``protocol``, ``asset``, ``amount`` and ``is_liability`` (``true`` for liability tokens such as Aave v3/Spark debt tokens; ``false`` for other assets and for unknown asset identifiers).
       :statuscode 200: Current derived historical balances returned
       :statuscode 400: Malformed query
       :statuscode 403: User does not have premium access

@@ -4211,6 +4211,7 @@ class HistoricalBalancesReconciliationResource(BaseMethodView):
             self,
             location: LocationIdentifier | None,
             location_label: str | None,
+            asset: str | None,
             status: list[BucketStatus] | None,
             limit: int,
             offset: int,
@@ -4218,6 +4219,7 @@ class HistoricalBalancesReconciliationResource(BaseMethodView):
         return self.rest_api.get_historical_balance_reconciliation(
             location=location,
             location_label=location_label,
+            asset=asset,
             statuses=status,
             limit=limit,
             offset=offset,

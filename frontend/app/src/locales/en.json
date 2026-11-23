@@ -3244,10 +3244,12 @@
         "reconciled": "{count} match | {count} matches"
       },
       "action": {
+        "inspect_trace": "Inspect trace",
         "mark_spam": "Mark as spam",
         "open_issue": "Open issue",
         "sync_hint": "Sync this account's history, then check again.",
-        "view_event": "View event"
+        "view_event": "View event",
+        "view_events": "View events"
       },
       "bar_label": "Distribution of balance statuses",
       "check": {
@@ -3266,9 +3268,16 @@
       },
       "failure": {
         "account": "Couldn't load this account's balances",
+        "filter": "Couldn't filter balances",
         "load": "Couldn't load balance reconciliation",
         "refresh": "Couldn't refresh, showing the last result",
         "unexpected_response": "The backend sent data this version of rotki can't read. Make sure the app and the backend are the same version."
+      },
+      "filter": {
+        "account_placeholder": "Filter by account or chain",
+        "asset_placeholder": "Filter by token symbol or address",
+        "clear": "Clear filters",
+        "no_matches": "No balances match these filters."
       },
       "footer": {
         "accounts": "{count} account has nothing listed | {count} accounts have nothing listed",
@@ -3346,6 +3355,26 @@
         "on_chain": "On chain",
         "protocol_position": "{protocol} position",
         "status": "Status"
+      },
+      "trace": {
+        "effects_count": "{count} event | {count} events",
+        "empty": "No history events affect this balance bucket.",
+        "error": "Couldn't load the event trace for this balance",
+        "last_synced": "History synced",
+        "load_earlier": "Load earlier events ({count} before)",
+        "load_more": "Load more events ({shown} of {total})",
+        "load_more_error": "Couldn't load more events",
+        "load_more_range": "Load more events ({from}–{to} of {total})",
+        "observed_at": "Observed",
+        "rebasing_note": "This is a rebasing asset. On-chain balance changes from rebases are reconciled separately from transfers.",
+        "row_status": {
+          "applied": "Applied",
+          "negative_awaiting_rebase_reconciliation": "Awaiting rebase",
+          "skipped_after_stop": "Skipped after stop",
+          "stop": "Stopped here",
+          "unknown": "Other"
+        },
+        "title": "Balance trace"
       },
       "unavailable": {
         "description": "The rotki backend is running without the accounting update, so it cannot compare balances. Start it with the accounting update enabled to use this page.",

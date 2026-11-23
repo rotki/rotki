@@ -116,7 +116,10 @@ const chainName = computed<string | undefined>(() => {
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <BalanceViewPicker />
+        <BalanceViewPicker
+          :asset="identifier"
+          :is-collection-parent="isCollectionParent"
+        />
         <div
           v-if="!isCustomAsset"
           class="flex items-center gap-2"

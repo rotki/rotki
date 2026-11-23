@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import type { RouteLocationRaw } from 'vue-router';
-import type { AssetComparison } from '@/modules/balances/view/history-comparison';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
+import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
+import ManualAmountNote from '@/modules/balances/components/ManualAmountNote.vue';
+import { type AssetComparison, reconciliationAssetQuery } from '@/modules/balances/view/history-comparison';
 import { useBalanceView } from '@/modules/balances/view/use-balance-view';
 import { useBalanceViewData } from '@/modules/balances/view/use-balance-view-data';
+import { reconciliationRoute } from '@/modules/history/reconciliation/routes';
 
 const { identifier, isCollectionParent = false } = defineProps<{
   identifier: string;
@@ -13,14 +16,12 @@ const { identifier, isCollectionParent = false } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+const { getAssetField } = useAssetInfoRetrieval();
 const { available } = useBalanceView();
 const { comparable, getAssetComparison, isHistory } = useBalanceViewData();
 
-const reconciliationLink: RouteLocationRaw = {
-  name: '/history/data-issues/[[tab]]',
-  params: { tab: 'reconciliation' },
-};
-
+const reconciliationLink = computed<RouteLocationRaw>(() =>
+  reconciliationRoute(reconciliationAssetQuery(identifier, isCollectionParent, getAssetField(identifier, 'symbol'))));
 const comparison = computed<AssetComparison>(() => getAssetComparison(identifier, isCollectionParent));
 const show = computed<boolean>(() => get(available) && get(comparable));
 /** The amount under the view the page is not showing. */
@@ -55,21 +56,11 @@ const hasManual = computed<boolean>(() => get(differs) && get(comparison).manual
         />
       </RouterLink>
     </div>
-    <i18n-t
+    <ManualAmountNote
       v-if="hasManual"
-      scope="global"
-      keypath="balance_view.manual_amount"
-      tag="span"
+      :amount="comparison.manual"
+      :asset="identifier"
       data-testid="asset-view-comparison-manual"
-    >
-      <template #amount>
-        <AssetAmountDisplay
-          class="inline"
-          :amount="comparison.manual"
-          :asset="identifier"
-          no-truncate
-        />
-      </template>
-    </i18n-t>
+    />
   </div>
 </template>

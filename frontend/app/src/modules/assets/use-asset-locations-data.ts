@@ -60,7 +60,9 @@ export function useAssetLocationsData(options: UseAssetLocationsDataOptions): Us
   const totalValue = computed<BigNumber>(() => getAssetPriceInfo(toValue(identifier)).value);
 
   const assetLocations = computed<AssetLocations>(() => {
-    const breakdowns = getAssetBreakdown(toValue(identifier));
+    const id = toValue(identifier);
+    const assetRows = getAssetBreakdown(id);
+    const breakdowns = assetRows.length > 0 ? assetRows : getAssetBreakdown(id, true);
     return breakdowns.map((item: AssetBreakdown) => {
       const account = item.address ? getAccountByAddress(item.address, item.location) : undefined;
       return {

@@ -130,4 +130,21 @@ describe('useBucketReconciliationApi', () => {
     assert(account);
     expect(account.locationLabel).toBeNull();
   });
+
+  it('should forward the asset query filter for both summary and account requests', async () => {
+    const sent: URLSearchParams[] = [];
+    server.use(http.get(ENDPOINT, ({ request }) => {
+      sent.push(new URL(request.url).searchParams);
+      return HttpResponse.json(summaryBody());
+    }));
+
+    const { fetchAccount, fetchSummary } = useBucketReconciliationApi();
+    await fetchSummary('USDC');
+    await fetchAccount({ asset: 'USDC', location: 'ethereum', locationLabel: '0xA' });
+
+    expect(sent[0]?.get('asset')).toBe('USDC');
+    expect(sent[1]?.get('asset')).toBe('USDC');
+    expect(sent[1]?.get('location')).toBe('ethereum');
+    expect(sent[1]?.get('location_label')).toBe('0xA');
+  });
 });

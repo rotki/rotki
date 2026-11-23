@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { addAccountLink } from '@/modules/accounts/add-account-link';
 import DataIssuesTabs from '@/modules/history/data-issues/DataIssuesTabs.vue';
+import BucketTraceDrawer from '@/modules/history/reconciliation/components/BucketTraceDrawer.vue';
 import ReconciliationHeader from '@/modules/history/reconciliation/components/ReconciliationHeader.vue';
 import ReconciliationStatusBar from '@/modules/history/reconciliation/components/ReconciliationStatusBar.vue';
 import ReconciliationTable from '@/modules/history/reconciliation/components/ReconciliationTable.vue';
@@ -17,19 +18,29 @@ const {
   attention,
   checkError,
   checkNow,
+  clearFilters,
   details,
   detecting,
   expandAccount,
+  filterFailure,
+  filterLoading,
+  hasActiveFilters,
   hasNoAccounts,
   hiddenBalanceCount,
   hiddenSummary,
+  inspectedBucket,
+  inspectTrace,
   isNeverCompared,
   lastComparedAt,
   loadMore,
   markSpam,
+  modelAccountFilter,
+  modelAssetFilter,
+  modelTraceOpen,
   openIssue,
-  refreshSummary,
+  refresh,
   retryAccount,
+  retryFilter,
   selectView,
   summary,
   summaryFailure,
@@ -79,7 +90,7 @@ const {
         :title="t('data_issues.reconciliation.failure.load')"
         :failure="summaryFailure"
         data-testid="reconciliation-summary-error"
-        @retry="refreshSummary()"
+        @retry="refresh()"
       />
 
       <NoDataScreen
@@ -113,7 +124,7 @@ const {
           :title="t('data_issues.reconciliation.failure.refresh')"
           :failure="summaryFailure"
           data-testid="reconciliation-summary-stale"
-          @retry="refreshSummary()"
+          @retry="refresh()"
         />
 
         <div
@@ -137,10 +148,11 @@ const {
             :totals="totals"
           />
 
-          <div class="flex flex-wrap items-center gap-2">
+          <div class="flex flex-wrap items-center gap-3">
             <RuiTabs
               variant="segmented"
               :model-value="view"
+              class="mr-auto"
               data-testid="reconciliation-view-switch"
               @update:model-value="selectView($event)"
             >
@@ -151,10 +163,48 @@ const {
                 {{ t('data_issues.reconciliation.view.all', { count: totalBuckets(totals) }, totalBuckets(totals)) }}
               </RuiTab>
             </RuiTabs>
+
+            <RuiTextField
+              v-model="modelAssetFilter"
+              dense
+              clearable
+              details="hidden"
+              prepend-icon="lu-search"
+              class="w-full sm:w-64"
+              :placeholder="t('data_issues.reconciliation.filter.asset_placeholder')"
+              data-testid="reconciliation-asset-filter"
+            />
+            <RuiTextField
+              v-model="modelAccountFilter"
+              dense
+              clearable
+              details="hidden"
+              class="w-full sm:w-52"
+              :placeholder="t('data_issues.reconciliation.filter.account_placeholder')"
+              data-testid="reconciliation-account-filter"
+            />
+            <RuiButton
+              v-if="hasActiveFilters"
+              size="sm"
+              variant="text"
+              color="primary"
+              data-testid="reconciliation-clear-filters"
+              @click="clearFilters()"
+            >
+              {{ t('data_issues.reconciliation.filter.clear') }}
+            </RuiButton>
           </div>
 
+          <FailureStrip
+            v-if="filterFailure !== undefined"
+            :title="t('data_issues.reconciliation.failure.filter')"
+            :failure="filterFailure"
+            data-testid="reconciliation-filter-error"
+            @retry="retryFilter()"
+          />
+
           <NoDataScreen
-            v-if="isNeverCompared"
+            v-if="isNeverCompared && !hasActiveFilters"
             icon="lu-scale"
             data-testid="reconciliation-never-checked"
           >
@@ -167,18 +217,36 @@ const {
           <template v-else-if="accounts.length > 0">
             <ReconciliationTable
               :accounts="visible"
+              :auto-expand="hasActiveFilters"
               :details="details"
               :view="view"
-              :loading="summaryLoading"
+              :loading="summaryLoading || filterLoading"
               @expand="expandAccount($event)"
               @retry="retryAccount($event)"
               @load-more="loadMore($event)"
               @open-issue="openIssue($event)"
               @mark-spam="markSpam($event)"
+              @inspect-trace="inspectTrace($event)"
             />
 
             <div
-              v-if="view === 'attention' && visible.length === 0"
+              v-if="hasActiveFilters && visible.length === 0 && !filterLoading && filterFailure === undefined"
+              class="flex flex-wrap items-center gap-3 text-sm text-rui-text-secondary"
+              data-testid="reconciliation-empty-filtered"
+            >
+              <span>{{ t('data_issues.reconciliation.filter.no_matches') }}</span>
+              <RuiButton
+                size="sm"
+                variant="text"
+                color="primary"
+                @click="clearFilters()"
+              >
+                {{ t('data_issues.reconciliation.filter.clear') }}
+              </RuiButton>
+            </div>
+
+            <div
+              v-else-if="!hasActiveFilters && view === 'attention' && visible.length === 0"
               class="flex flex-wrap items-center gap-3 text-sm"
               data-testid="reconciliation-nothing-attention"
             >
@@ -200,7 +268,7 @@ const {
             </div>
 
             <div
-              v-else-if="view === 'attention' && hiddenBalanceCount > 0"
+              v-else-if="view === 'attention' && hiddenBalanceCount > 0 && !hasActiveFilters"
               class="flex flex-wrap items-center gap-2 text-sm text-rui-text-secondary border-t border-default pt-3"
               data-testid="reconciliation-hidden-footer"
             >
@@ -223,5 +291,10 @@ const {
         </div>
       </template>
     </div>
+
+    <BucketTraceDrawer
+      v-model="modelTraceOpen"
+      :target="inspectedBucket"
+    />
   </TablePageLayout>
 </template>
