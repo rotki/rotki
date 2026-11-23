@@ -14364,6 +14364,164 @@ Event Group Position
    :statuscode 500: Internal rotki error.
 
 
+Realized PnL of history events
+================================
+
+.. http:post:: /api/(version)/history/events/pnl
+
+   Doing a POST on this endpoint will return the realized PnL of the history events that match the given filter, optionally broken down by a grouping. The amounts are read from the cost basis that is materialized on the history events and are not computed by the query, so they are in the profit currency and cost basis method that the materialization ran with. Only spends realize anything. Taxable acquisitions, like airdrops or staking rewards, are not included.
+
+   .. note::
+      This endpoint is only available when the experimental accounting update is enabled.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/history/events/pnl HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"from_timestamp": 1672531200, "to_timestamp": 1704067199, "group_by": "asset"}
+
+   The request takes the same filters as the history events endpoint, documented `here <filter-request-args-label_>`_, other than the ordering and pagination ones. All filters apply to the history event that realized the PnL. The events of the swaps, transfers and basis transfers that realized nothing, as well as unpriced spends whose realized PnL is unknown, still count in ``basis_removed`` and ``num_events`` while adding nothing to ``realized_pnl``. Unpriced taxable spends are counted in ``num_unpriced_events`` so callers can tell that the realized PnL total is incomplete.
+
+   :reqjson string[optional] group_by: What to break the result down by. One of ``"asset"``, ``"location"``, ``"location_label"``, ``"protocol"``, which are parts of the bucket the spend was made from, or ``"day"``, ``"week"``, ``"month"``, ``"year"``, which are the period of the spend in UTC using ISO 8601 weeks (``YYYY-Www``). If missing the breakdown has a single entry.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "total_realized_pnl": "1520.5",
+              "num_unpriced_events": 0,
+              "breakdown": [
+                  {"group_key": "BTC", "realized_pnl": "1020.5", "basis_removed": "30000", "num_events": 2, "num_unpriced_events": 0},
+                  {"group_key": "ETH", "realized_pnl": "500", "basis_removed": "1000", "num_events": 1, "num_unpriced_events": 0}
+              ],
+              "stale": false,
+              "method": "fifo"
+          },
+          "message": ""
+      }
+
+   :resjson string total_realized_pnl: The sum of the realized PnL of all matching priced events.
+   :resjson int num_unpriced_events: The number of matching taxable spend events whose realized PnL is unknown because no historical price was available.
+   :resjson list breakdown: One entry per group, ordered by ``group_key``. Empty if no event matches. ``group_key`` is the value of the grouping, e.g. the asset identifier or ``"2023-05"`` for a month, and is null when no grouping was requested or when the bucket has no value for it, e.g. no protocol. ``basis_removed`` is the cost basis of what was spent, ``num_events`` the number of events in the group, and ``num_unpriced_events`` how many of those had no price for their realized PnL.
+   :resjson bool stale: True if the cost basis has not been processed yet or is waiting to be processed again, in which case the amounts may be incomplete.
+   :resjson string method: The cost basis method of the amounts.
+
+   :statuscode 200: The realized PnL was returned successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 404: The accounting update is not enabled.
+   :statuscode 500: Internal rotki error.
+
+
+Cost basis of history events
+==============================
+
+.. http:post:: /api/(version)/history/events/cost_basis
+
+   Doing a POST on this endpoint will return the cost basis that is materialized for each of the given history events: the lots that an acquisition created and where their basis comes from, and the lots that a disposal consumed along with what it realized. Nothing is computed by the query.
+
+   .. note::
+      This endpoint is only available when the experimental accounting update is enabled.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/history/events/cost_basis HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"event_identifiers": [12, 57]}
+
+   :reqjson list[int] event_identifiers: The identifiers of the history events to return the cost basis of. Between 1 and 500.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "entries": {
+                  "12": [{
+                      "direction": "receive",
+                      "location": "ethereum",
+                      "location_label": "0x9531C059098e3d194fF87FebB587aB07B30B1306",
+                      "protocol": null,
+                      "asset": "ETH",
+                      "method": "fifo",
+                      "lot_ids": ["12"],
+                      "basis_per_unit": "1000",
+                      "basis_source": "price_oracle"
+                  }],
+                  "57": [{
+                      "direction": "spend",
+                      "location": "ethereum",
+                      "location_label": "0x9531C059098e3d194fF87FebB587aB07B30B1306",
+                      "protocol": null,
+                      "asset": "ETH",
+                      "method": "fifo",
+                      "lots": [{
+                          "lot_id": "12",
+                          "acquired_at": 1675209600,
+                          "amount": "0.5",
+                          "basis_per_unit": "1000",
+                          "taxable": true,
+                          "acquisition": {
+                              "identifier": 12,
+                              "group_identifier": "10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+                              "location": "ethereum",
+                              "location_label": "0x9531C059098e3d194fF87FebB587aB07B30B1306",
+                              "timestamp": 1675209600000
+                          }
+                      }],
+                      "proceeds": "900",
+                      "realized_pnl": "400",
+                      "taxfree_pnl": "0",
+                      "basis_removed": "500",
+                      "basis_remaining": "500"
+                  }]
+              },
+              "stale": [],
+              "method": "fifo"
+          },
+          "message": ""
+      }
+
+   :resjson object entries: A mapping of event identifier to its entries, one per bucket and direction that the event affected. An event that moves an asset between two accounts of the user has a ``"spend"`` and a ``"receive"`` entry. Events that affect no lots or are in ``stale`` are missing from the mapping.
+   :resjson string direction: ``"receive"`` or ``"spend"``.
+   :resjson string location: The location of the bucket. ``location_label``, ``protocol`` and ``asset`` are the rest of it. ``location_label`` and ``protocol`` can be null.
+   :resjson string method: The cost basis method the entry was computed with.
+   :resjson list[string] lot_ids: Receive only. The lots that the event added to the bucket. A lot is named after the identifier of the history event that acquired it and keeps that name when it moves to another bucket, so for a transfer these are the lots carried over.
+   :resjson string basis_per_unit: Receive only. The basis of each unit received, in the profit currency.
+   :resjson string basis_source: Receive only. Where the basis comes from: ``"event_amount"`` for what was paid according to the events themselves, ``"price_oracle"`` for the market price, ``"transfer_in"`` for lots carried over from another bucket, ``"zero_cost"`` if acquired at no cost or no price was found, and ``"free_acquisition"``.
+   :resjson list lots: Spend only. The lots consumed, in the order of the cost basis method. ``amount`` is what was taken from the lot, ``basis_per_unit`` its basis, which for the average cost basis method is the average of the bucket, and ``taxable`` is false if the lot was held for longer than the tax free period. ``acquired_at`` is when the lot was acquired in seconds, and ``acquisition`` the history event that acquired it, or null if that event does not exist anymore.
+   :resjson string proceeds: Spend only. What the amount spent was worth, in the profit currency. Null if it is not known, as for a move between two buckets of the user or an unpriced spend.
+   :resjson string realized_pnl: Spend only. The taxable profit or loss realized. Null if the spend could not be priced.
+   :resjson string taxfree_pnl: Spend only. The profit or loss on the lots held for longer than the tax free period. Null for a move between two buckets of the user or an unpriced spend.
+   :resjson string basis_removed: Spend only. The total basis of the lots consumed.
+   :resjson string basis_remaining: Spend only. The total basis of what the bucket holds after the event.
+   :resjson list[int] stale: The requested event identifiers whose cost basis has not been processed yet or is waiting to be processed again.
+   :resjson string method: The cost basis method that is currently set.
+
+   :statuscode 200: The cost basis was returned successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 404: The accounting update is not enabled.
+   :statuscode 500: Internal rotki error.
+
+
 Get Binance Savings Interests History
 =======================================
 

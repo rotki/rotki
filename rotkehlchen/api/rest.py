@@ -20,6 +20,11 @@ from sqlcipher3 import dbapi2 as sqlcipher
 from web3.exceptions import BadFunctionCallOutput
 from werkzeug.datastructures import FileStorage
 
+from rotkehlchen.accounting.cost_basis.pnl import (
+    RealizedPnlGroupBy,
+    query_events_cost_basis,
+    query_realized_pnl,
+)
 from rotkehlchen.accounting.export.csv import (
     FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV,
     CSVWriteError,
@@ -3740,6 +3745,25 @@ class RestAPI:
         return api_response(OkResult(
             {'position': position if position is not None else -1},
         ))
+
+    @accounting_update_required('Realized PnL from history events is disabled', response=True)
+    def get_realized_pnl(
+            self,
+            filter_query: HistoryBaseEntryFilterQuery,
+            group_by: RealizedPnlGroupBy | None,
+    ) -> Response:
+        return api_response(OkResult(query_realized_pnl(
+            database=self.rotkehlchen.data.db,
+            filter_query=filter_query,
+            group_by=group_by,
+        )))
+
+    @accounting_update_required('Cost basis of history events is disabled', response=True)
+    def get_events_cost_basis(self, event_identifiers: list[int]) -> Response:
+        return api_response(OkResult(query_events_cost_basis(
+            database=self.rotkehlchen.data.db,
+            event_identifiers=event_identifiers,
+        )))
 
     @async_api_call()
     def add_transaction_by_reference(
