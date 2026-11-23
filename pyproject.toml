@@ -26,7 +26,7 @@ dependencies = [
     "rotki-sqlite==2026.07.2",
     "requests==2.34.2",
     "bech32==1.2.0",
-    "gql[requests]==3.5.3",
+    "gql[requests]==4.0.0",
     "scalecodec==1.2.12",
     "substrate-interface @ git+https://github.com/rotki/py-polkadot-sdk@8368cea674b1234dadee0c9575f19b220a7c8b9c",
     "beautifulsoup4==4.15.0",

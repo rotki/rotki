@@ -4,7 +4,7 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final
 
 import requests
-from gql import Client, gql
+from gql import Client, GraphQLRequest
 from gql.transport.exceptions import TransportError, TransportQueryError, TransportServerError
 from gql.transport.requests import RequestsHTTPTransport
 from graphql.error import GraphQLError
@@ -113,7 +113,7 @@ class Graph(ExternalServiceWithApiKey):
         client = self._maybe_create_client()
         while retries_left > 0:
             try:
-                result = client.execute(gql(querystr), variable_values=param_values)
+                result = client.execute(GraphQLRequest(querystr, variable_values=param_values))
             except (TransportServerError, TransportQueryError) as e:
                 # https://gql.readthedocs.io/en/latest/advanced/error_handling.html
                 # Kind of guessing here ... these may be the only ones we can backoff for
