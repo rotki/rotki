@@ -114,10 +114,12 @@ def _group(
         pnl: int,
         events: int = 1,
         unpriced_events: int = 0,
+        taxfree_pnl: int = 0,
 ) -> dict[str, Any]:
     return {
         'group_key': key,
         'realized_pnl': str(pnl),
+        'taxfree_pnl': str(taxfree_pnl),
         'basis_removed': str(100 * events),
         'num_events': events,
         'num_unpriced_events': unpriced_events,
@@ -143,6 +145,7 @@ def test_realized_pnl_is_broken_down_by_group(
 ) -> None:
     assert _query(rotkehlchen_api_server, group_by=group_by) == {
         'total_realized_pnl': '5700',
+        'total_taxfree_pnl': '0',
         'num_unpriced_events': 0,
         'breakdown': sorted(breakdown, key=lambda group: group['group_key'] or ''),
         'stale': False,
@@ -155,7 +158,7 @@ def test_realized_pnl_is_broken_down_by_group(
     ({'asset': 'ETH'}, '3800'),
     ({'location': 'optimism'}, '2900'),
     ({'location_labels': [TEST_ADDR1], 'to_timestamp': JAN_12_2023}, '900'),
-    ({'event_types': ['receive']}, '0'),  # only spends realize anything
+    ({'event_types': ['receive']}, '0'),  # non-taxable receives realize nothing
     ({'asset': 'ETH', 'location_labels': [TEST_ADDR2]}, '0'),
     ({'state_markers': ['customized']}, '0'),
     ({'state_markers': ['matched']}, '0'),
@@ -169,6 +172,7 @@ def test_realized_pnl_only_counts_the_events_matching_the_filter(
 ) -> None:
     result = _query(rotkehlchen_api_server, **filters)
     assert result['total_realized_pnl'] == total
+    assert result['total_taxfree_pnl'] == '0'
     assert result['num_unpriced_events'] == 0
     assert (result['breakdown'] == []) is (total == '0')
 
@@ -186,6 +190,7 @@ def test_realized_pnl_filters_by_identifiers(
 
     assert _query(rotkehlchen_api_server, identifiers=[optimism_spend_id]) == {
         'total_realized_pnl': '2900',
+        'total_taxfree_pnl': '0',
         'num_unpriced_events': 0,
         'breakdown': [_group(None, 2900, events=1)],
         'stale': False,
@@ -199,6 +204,7 @@ def test_realized_pnl_is_stale_until_the_cost_basis_is_processed(
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     empty = {
         'total_realized_pnl': '0',
+        'total_taxfree_pnl': '0',
         'num_unpriced_events': 0,
         'breakdown': [],
         'method': 'fifo',
@@ -357,6 +363,7 @@ def test_unpriced_spend_returns_null_pnl_and_does_not_fail_summary(
 
     assert _query(rotkehlchen_api_server, group_by='asset') == {
         'total_realized_pnl': '1900',
+        'total_taxfree_pnl': '0',
         'num_unpriced_events': 1,
         'breakdown': [
             _group('BTC', 1900, events=1, unpriced_events=0),
@@ -412,6 +419,7 @@ def test_realized_pnl_groups_year_boundary_week_together(
 
     assert _query(rotkehlchen_api_server, group_by='week') == {
         'total_realized_pnl': '2800',
+        'total_taxfree_pnl': '0',
         'num_unpriced_events': 0,
         'breakdown': [_group('2025-W01', 2800, events=2)],
         'stale': False,

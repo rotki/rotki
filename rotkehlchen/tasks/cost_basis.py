@@ -31,10 +31,11 @@ from rotkehlchen.api.websockets.typedefs import (
     WSMessageType,
 )
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
+from rotkehlchen.chain.ethereum.modules.eth2.constants import MIN_EFFECTIVE_BALANCE
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.concurrency import TaskCancelledError, checkpoint
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_ETH2
+from rotkehlchen.constants.assets import A_ETH2, A_KFEE
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery, HistoryEventFilterQuery
@@ -45,6 +46,8 @@ from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsuppo
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
@@ -57,6 +60,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.historical_balances import (
     MIN_EVENTS_PROCESSED_TO_SLEEP,
     Bucket,
+    _get_wallet_protocol,
     process_historical_balances,
 )
 from rotkehlchen.types import Price, Timestamp, TimestampMS
@@ -161,11 +165,13 @@ class _CostBasisPass:
             rules: _Rules,
             from_ts: TimestampMS | None,
             stored_basis: dict[int, FVal],
+            tracked_eth_accounts: set[str] | None = None,
     ) -> None:
         self.settings = settings
         self.rules = rules
         self.from_ts = from_ts
         self.stored_basis = stored_basis
+        self.tracked_eth_accounts = tracked_eth_accounts
         self.method = settings.cost_basis_method.serialize()
         self.profit_currency = settings.main_currency.resolve_to_asset_with_oracles()
         self.lots = BucketLots[Bucket](settings)
@@ -270,6 +276,9 @@ class _CostBasisPass:
         fee_proceeds: list[tuple[int, tuple[FVal | None, bool, bool]]] = []
         for fee_event in fee_events:
             assert fee_event.identifier is not None
+            if fee_event.asset == A_KFEE:
+                fee_proceeds.append((fee_event.identifier, (None, False, False)))
+                continue
             if fee_event.asset == self.profit_currency:
                 fee_rate: FVal | None = ONE
             elif fee_event.asset == in_event.asset and priced:
@@ -393,18 +402,52 @@ class _CostBasisPass:
                 basis_source=BasisSource.TRANSFER_IN,
             )
 
+    def _is_taxable_receive(
+            self,
+            event: HistoryBaseEntry,
+            rule: BaseEventSettings | None,
+    ) -> bool:
+        """Whether an incoming non-swap, non-transfer event realizes taxable income."""
+        if isinstance(event, AssetMovement):
+            return False
+
+        if (
+            event.location == LOCATION_KRAKEN and
+            event.event_type == HistoryEventType.STAKING and
+            event.event_subtype == HistoryEventSubType.REWARD
+        ):
+            return True
+
+        if isinstance(event, EthBlockEvent):
+            return (
+                event.event_type == HistoryEventType.STAKING and
+                (
+                    self.tracked_eth_accounts is None or
+                    event.location_label in self.tracked_eth_accounts
+                )
+            )
+
+        if isinstance(event, EthWithdrawalEvent):
+            if event.is_exit_or_blocknumber == 0 and event.amount < MIN_EFFECTIVE_BALANCE:
+                return self.settings.eth_staking_taxable_after_withdrawal_enabled
+            return False
+
+        return rule is not None and rule.taxable
+
     def _receive(
             self,
             event: HistoryBaseEntry,
             bucket: Bucket,
             timestamp: Timestamp,
             is_stale: bool,
+            rule: BaseEventSettings | None,
     ) -> None:
         assert event.identifier is not None
         basis_source = BasisSource.PRICE_ORACLE
+        swap_basis = self._swap_basis.pop(event.identifier, None)
         if not is_stale and (stored := self.stored_basis.get(event.identifier)) is not None:
             basis: FVal = stored
-        elif (swap_basis := self._swap_basis.pop(event.identifier, None)) is not None:
+        elif swap_basis is not None:
             basis, basis_source = swap_basis
         elif (price := self._price(asset=event.asset, timestamp=timestamp)) is not None:
             basis = price
@@ -419,6 +462,11 @@ class _CostBasisPass:
             timestamp=timestamp,
         )
         if is_stale:
+            realized_pnl: FVal | None = None
+            taxfree_pnl: FVal | None = None
+            if swap_basis is None and self._is_taxable_receive(event, rule):
+                realized_pnl = event.amount * basis
+                taxfree_pnl = ZERO
             self._add_row(
                 event=event,
                 bucket=bucket,
@@ -426,6 +474,8 @@ class _CostBasisPass:
                 lot_created_id=lot_id,
                 basis_per_unit=basis,
                 basis_source=basis_source,
+                realized_pnl=realized_pnl,
+                taxfree_pnl=taxfree_pnl,
             )
 
     def _spend(
@@ -459,12 +509,18 @@ class _CostBasisPass:
         taxfree_pnl: FVal | None
         counts_cost_basis = False
         count_entire_amount_spend = False
-        if swap_proceeds is not None:
+        if event.asset == A_KFEE:
+            rate: FVal | None = None
+        elif swap_proceeds is not None:
             rate, counts_cost_basis, count_entire_amount_spend = swap_proceeds
         elif rule is not None:
             rate = self._price(asset=event.asset, timestamp=timestamp)
             counts_cost_basis = rule.taxable and rule.count_cost_basis_pnl
             count_entire_amount_spend = rule.taxable and rule.count_entire_amount_spend
+        elif isinstance(event, AssetMovement) and event.event_subtype == HistoryEventSubType.FEE:
+            rate = self._price(asset=event.asset, timestamp=timestamp)
+            counts_cost_basis = True
+            count_entire_amount_spend = True
         else:
             rate = None  # an event without a rule realizes nothing, so its worth is not needed
 
@@ -495,6 +551,82 @@ class _CostBasisPass:
             basis_removed=result.basis_removed,
             post_spend_basis_remaining=self.lots.basis_remaining(bucket),
         )
+
+    def _apply_fiat_event(
+            self,
+            event: HistoryBaseEntry,
+            timestamp: Timestamp,
+            is_stale: bool,
+            rule: BaseEventSettings | None,
+    ) -> None:
+        """Record PnL for taxable fiat expenses/fees and fiat income without tracking fiat lots."""
+        assert event.identifier is not None
+        swap_proceeds = self._swap_proceeds.pop(event.identifier, None)
+        swap_basis = self._swap_basis.pop(event.identifier, None)
+        if not is_stale:
+            return
+
+        bucket = Bucket(
+            location=event.location,
+            location_label=event.location_label,
+            protocol=_get_wallet_protocol(event),
+            asset=event.asset.identifier,
+        )
+        direction = event.maybe_get_direction()
+        if swap_proceeds is not None or direction == EventDirection.OUT:
+            if swap_proceeds is not None:
+                rate, _counts_cost_basis, count_entire_amount_spend = swap_proceeds
+            elif rule is not None:
+                count_entire_amount_spend = rule.taxable and rule.count_entire_amount_spend
+                rate = self._price(asset=event.asset, timestamp=timestamp) if count_entire_amount_spend else None  # noqa: E501
+            elif isinstance(event, AssetMovement) and event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
+                count_entire_amount_spend = True
+                rate = self._price(asset=event.asset, timestamp=timestamp)
+            else:
+                count_entire_amount_spend = False
+                rate = None
+
+            if not count_entire_amount_spend:
+                return
+
+            proceeds: FVal | None
+            realized_pnl: FVal | None
+            taxfree_pnl: FVal | None
+            if rate is not None:
+                spend_value = event.amount * rate
+                proceeds = spend_value
+                realized_pnl = -spend_value
+                taxfree_pnl = ZERO
+            else:
+                proceeds = realized_pnl = taxfree_pnl = None
+
+            self._add_row(
+                event=event,
+                bucket=bucket,
+                direction=CostBasisDirection.SPEND,
+                lots_consumed=[],
+                proceeds=proceeds,
+                realized_pnl=realized_pnl,
+                taxfree_pnl=taxfree_pnl,
+                basis_removed=ZERO,
+                post_spend_basis_remaining=ZERO,
+            )
+            return
+
+        if swap_basis is None and direction == EventDirection.IN and self._is_taxable_receive(event, rule):  # noqa: E501
+            rate = self._price(asset=event.asset, timestamp=timestamp)
+            basis = rate if rate is not None else ZERO
+            basis_source = BasisSource.PRICE_ORACLE if rate is not None else BasisSource.ZERO_COST
+            self._add_row(
+                event=event,
+                bucket=bucket,
+                direction=CostBasisDirection.RECEIVE,
+                lot_created_id=None,
+                basis_per_unit=basis,
+                basis_source=basis_source,
+                realized_pnl=event.amount * basis,
+                taxfree_pnl=ZERO,
+            )
 
     def _maybe_transfer_basis(
             self,
@@ -675,8 +807,17 @@ class _CostBasisPass:
                     is_taxable=rule.taxable,
                 )
 
+        if event.asset.is_fiat():
+            self._apply_fiat_event(
+                event=event,
+                timestamp=timestamp,
+                is_stale=is_stale,
+                rule=rule,
+            )
+            return
+
         if len(bucket_directions) == 0:
-            return  # fiat has no cost basis to track
+            return
 
         if len(bucket_directions) == 1:
             bucket, direction = bucket_directions[0]
@@ -684,6 +825,13 @@ class _CostBasisPass:
                 return
 
             if direction == EventDirection.IN:
+                if (
+                    isinstance(event, EthBlockEvent | EthWithdrawalEvent) and
+                    self.tracked_eth_accounts is not None and
+                    event.location_label not in self.tracked_eth_accounts
+                ):
+                    return
+
                 if (
                     self.settings.eth_staking_taxable_after_withdrawal_enabled and
                     event.location == LOCATION_KRAKEN and
@@ -694,7 +842,7 @@ class _CostBasisPass:
                 ):
                     return
 
-                self._receive(event, bucket, timestamp, is_stale)
+                self._receive(event, bucket, timestamp, is_stale, rule)
             else:
                 self._spend(event, bucket, timestamp, is_stale, rule)
             return
@@ -984,6 +1132,7 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
 
         settings = database.get_settings(cursor)
         rules = _Rules(database=database, cursor=cursor)
+        tracked_eth_accounts: set[str] = set(database.get_blockchain_accounts(cursor).eth)
         from_ts: TimestampMS | None = None
         if (
             unprocessed_from_ts > 0 and
@@ -1000,6 +1149,7 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             rules=rules,
             from_ts=from_ts,
             stored_basis={},
+            tracked_eth_accounts=tracked_eth_accounts,
         )
         start_ts = TimestampMS(0)
         restored_terminal_ts: TimestampMS | None = None
