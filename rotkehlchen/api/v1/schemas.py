@@ -915,6 +915,15 @@ class RealizedPnlSchema(HistoryEventFilterSchema):
         return {'group_by': data['group_by']}
 
 
+class EventsCostBasisSchema(Schema):
+    """Schema for querying the cost basis materialized for a page of history events."""
+    event_identifiers = fields.List(
+        fields.Integer(strict=True, validate=validate.Range(min=1)),
+        required=True,
+        validate=validate.Length(min=1, max=500),
+    )
+
+
 class HistoryEventSchema(
     HistoryEventFilterSchema,
     DBPaginationSchema,

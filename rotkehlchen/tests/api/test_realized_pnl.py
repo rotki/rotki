@@ -175,3 +175,97 @@ def test_realized_pnl_is_stale_until_the_cost_basis_is_processed(
             (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, '5'),
         )
     assert _query(rotkehlchen_api_server) == empty | {'stale': True}
+
+
+@pytest.mark.usefixtures('materialized_pnl')
+def test_events_cost_basis_shows_the_lots_behind_each_event(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with database.conn.read_ctx() as cursor:
+        acquired, spent = (row[0] for row in cursor.execute(
+            'SELECT identifier FROM history_events WHERE location=? AND asset=? '
+            'ORDER BY timestamp',
+            (LOCATION_OPTIMISM, A_ETH.identifier),
+        ))
+        group_identifier = cursor.execute(
+            'SELECT group_identifier FROM history_events WHERE identifier=?',
+            (acquired,),
+        ).fetchone()[0]
+
+    bucket = {
+        'location': 'optimism',
+        'location_label': TEST_ADDR1,
+        'protocol': None,
+        'asset': 'ETH',
+        'method': 'fifo',
+    }
+    acquired_entry = [bucket | {
+        'direction': 'receive',
+        'lot_ids': [str(acquired)],
+        'basis_per_unit': '100',
+        'basis_source': 'price_oracle',
+    }]
+    assert assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'eventscostbasisresource'),
+        json={'event_identifiers': [acquired, spent, 999]},  # 999 does not exist
+    )) == {
+        'entries': {
+            str(acquired): acquired_entry,
+            str(spent): [bucket | {
+                'direction': 'spend',
+                'lots': [{
+                    'lot_id': str(acquired),
+                    'acquired_at': FEB_20_2024 - 100,
+                    'amount': '1',
+                    'basis_per_unit': '100',
+                    'taxable': True,
+                    'acquisition': {
+                        'identifier': acquired,
+                        'group_identifier': group_identifier,
+                        'location': 'optimism',
+                        'location_label': TEST_ADDR1,
+                        'timestamp': (FEB_20_2024 - 100) * 1000,
+                    },
+                }],
+                'proceeds': '3000',
+                'realized_pnl': '2900',
+                'taxfree_pnl': '0',
+                'basis_removed': '100',
+                'basis_remaining': '0',
+            }],
+        },
+        'stale': [],
+        'method': 'fifo',
+    }
+
+    # Only events at or after the stale marker are reported as stale and hidden from entries.
+    with database.user_write() as write_cursor:
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            value=str(FEB_20_2024 * 1000),
+        )
+    assert assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'eventscostbasisresource'),
+        json={'event_identifiers': [acquired, spent, 999]},
+    )) == {
+        'entries': {str(acquired): acquired_entry},
+        'stale': [spent],
+        'method': 'fifo',
+    }
+
+    with database.user_write() as write_cursor:
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            value='0',
+        )
+    assert assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'eventscostbasisresource'),
+        json={'event_identifiers': [acquired, spent, 999]},
+    )) == {
+        'entries': {},
+        'stale': [acquired, spent],
+        'method': 'fifo',
+    }

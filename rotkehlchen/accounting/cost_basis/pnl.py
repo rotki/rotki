@@ -1,4 +1,5 @@
 """Reads of the cost basis that is materialized on history events."""
+import json
 from enum import StrEnum, auto
 from typing import TYPE_CHECKING, Any, Final
 
@@ -6,6 +7,7 @@ from rotkehlchen.accounting.cost_basis.lots import CostBasisDirection
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import ALL_EVENTS_DATA_JOIN
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import TimestampMS
 
@@ -132,3 +134,108 @@ def get_unprocessed_from_ts(
         unprocessed_from_ts = max(unprocessed_from_ts, int(pass_processed_ts))
 
     return None if unprocessed_from_ts is None else TimestampMS(unprocessed_from_ts)
+
+
+def query_events_cost_basis(
+        database: DBHandler,
+        event_identifiers: list[int],
+) -> dict[str, Any]:
+    """Return what the cost basis pass materialized for each of the given history events.
+
+    An event has one entry per bucket and direction it affected, so a transfer between two
+    accounts has two, and events that do not affect any lots have none and are left out. Events
+    at or after the stale marker are waiting to be calculated, so their identifiers are returned
+    in `stale` instead of their entries. That excludes the events a pass that has not finished
+    already wrote the rows of, as long as nothing changed since it started.
+
+    Each lot a spend consumed comes with the history event that acquired it, if that event
+    still exists. That is the original acquisition also for lots that have since moved between
+    accounts. A lot named after a transfer is what arrived with no known history.
+    """
+    entries: dict[str, list[dict[str, Any]]] = {}
+    lots: list[dict[str, Any]] = []
+    stale: list[int] = []
+    with database.conn.read_ctx() as cursor:
+        method = database.get_settings(cursor).cost_basis_method.serialize()
+        unprocessed_from_ts = get_unprocessed_from_ts(cursor=cursor, database=database)
+        for chunk, placeholders in get_query_chunks(data=event_identifiers):
+            if unprocessed_from_ts is not None:
+                stale.extend(
+                    identifier for (identifier,) in cursor.execute(
+                        'SELECT identifier FROM history_events '
+                        f'WHERE identifier IN ({placeholders}) AND timestamp >= ? '
+                        'ORDER BY identifier',
+                        (*chunk, unprocessed_from_ts),
+                    )
+                )
+                if unprocessed_from_ts <= 0:
+                    continue
+
+            timestamp_filter = '' if unprocessed_from_ts is None else ' AND timestamp < ?'
+            bindings = chunk if unprocessed_from_ts is None else [*chunk, unprocessed_from_ts]
+            for row in cursor.execute(
+                'SELECT event_identifier, direction, location, location_label, protocol, asset, '
+                'method, lot_created_id, basis_per_unit, basis_source, lots_consumed_json, '
+                'proceeds, realized_pnl, taxfree_pnl, basis_removed, post_spend_basis_remaining '
+                f'FROM event_cost_basis WHERE event_identifier IN ({placeholders})'
+                f'{timestamp_filter} ORDER BY timestamp, sequence_index, id',
+                bindings,
+            ):
+                entry: dict[str, Any] = {
+                    'direction': row[1],
+                    'location': row[2],
+                    'location_label': row[3],
+                    'protocol': row[4],
+                    'asset': row[5],
+                    'method': row[6],
+                }
+                if row[1] == CostBasisDirection.RECEIVE.value:
+                    entry |= {
+                        'lot_ids': row[7].split(','),
+                        'basis_per_unit': row[8],
+                        'basis_source': row[9],
+                    }
+                else:
+                    entry |= {
+                        'lots': (consumed_lots := [{
+                            'lot_id': lot['lot_id'],
+                            'acquired_at': lot['acquired_at'],
+                            'amount': lot['amount_consumed'],
+                            'basis_per_unit': lot['basis_per_unit'],
+                            'taxable': lot['taxable'],
+                            'acquisition': None,
+                        } for lot in json.loads(row[10])]),
+                        'proceeds': row[11],
+                        'realized_pnl': row[12],
+                        'taxfree_pnl': row[13],
+                        'basis_removed': row[14],
+                        'basis_remaining': row[15],
+                    }
+                    lots.extend(consumed_lots)
+
+                entries.setdefault(str(row[0]), []).append(entry)
+
+        acquisitions: dict[str, dict[str, Any]] = {}
+        for chunk, placeholders in get_query_chunks(
+            data=list({int(lot['lot_id']) for lot in lots}),
+        ):
+            acquisitions.update({str(identifier): {
+                'identifier': identifier,
+                'group_identifier': group_identifier,
+                'location': location,
+                'location_label': location_label,
+                'timestamp': timestamp,
+            } for identifier, group_identifier, location, location_label, timestamp in cursor.execute(  # noqa: E501
+                'SELECT identifier, group_identifier, location, location_label, timestamp '
+                f'FROM history_events WHERE identifier IN ({placeholders})',
+                chunk,
+            )})
+
+    for lot in lots:
+        lot['acquisition'] = acquisitions.get(lot['lot_id'])
+
+    return {
+        'entries': entries,
+        'stale': stale,
+        'method': method,
+    }

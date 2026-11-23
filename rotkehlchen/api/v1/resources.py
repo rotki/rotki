@@ -110,6 +110,7 @@ from rotkehlchen.api.v1.schemas import (
     Eth2ValidatorsGetSchema,
     EventDetailsQuerySchema,
     EventGroupPositionSchema,
+    EventsCostBasisSchema,
     EventsOnlineQuerySchema,
     EvmAccountsPutSchema,
     EvmTransactionLookupSchema,
@@ -3635,6 +3636,15 @@ class RealizedPnlResource(BaseMethodView):
             group_by: RealizedPnlGroupBy | None,
     ) -> Response:
         return self.rest_api.get_realized_pnl(filter_query=filter_query, group_by=group_by)
+
+
+class EventsCostBasisResource(BaseMethodView):
+    post_schema = EventsCostBasisSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(self, event_identifiers: list[int]) -> Response:
+        return self.rest_api.get_events_cost_basis(event_identifiers=event_identifiers)
 
 
 class AllEvmChainsResource(BaseMethodView):
