@@ -31,13 +31,16 @@ use unicode_normalization::UnicodeNormalization;
 
 const SPAM_MODEL_JSON: &str = include_str!("../data/spam_mlp_no_provenance.json");
 
-/// Common Greek/Cyrillic Latin lookalikes, applied after NFKC and casefold.
-const CONFUSABLES: [(char, char); 36] = [
+/// Common Latin lookalikes (Cyrillic, Greek, Lisu, Cherokee, Armenian, Coptic,
+/// and observed punctuation/symbol homoglyphs), applied after NFKC and casefold.
+const CONFUSABLES: [(char, char); 115] = [
+    // Cyrillic
     ('\u{0430}', 'a'),
     ('\u{0432}', 'b'),
     ('\u{0441}', 'c'),
     ('\u{0501}', 'd'),
     ('\u{0435}', 'e'),
+    ('\u{04bd}', 'e'),
     ('\u{04bb}', 'h'),
     ('\u{0456}', 'i'),
     ('\u{0458}', 'j'),
@@ -53,6 +56,7 @@ const CONFUSABLES: [(char, char); 36] = [
     ('\u{051d}', 'w'),
     ('\u{04cf}', 'l'),
     ('\u{051b}', 'q'),
+    // Greek
     ('\u{03b1}', 'a'),
     ('\u{03b2}', 'b'),
     ('\u{03f2}', 'c'),
@@ -69,6 +73,89 @@ const CONFUSABLES: [(char, char); 36] = [
     ('\u{03c5}', 'u'),
     ('\u{03c7}', 'x'),
     ('\u{03f3}', 'j'),
+    // Lisu (Fraser script derived from uppercase Latin glyphs)
+    ('\u{a4ee}', 'a'),
+    ('\u{a4d0}', 'b'),
+    ('\u{a4da}', 'c'),
+    ('\u{a4d3}', 'd'),
+    ('\u{a4f0}', 'e'),
+    ('\u{a4dd}', 'f'),
+    ('\u{a4d6}', 'g'),
+    ('\u{a4e7}', 'h'),
+    ('\u{a4f2}', 'i'),
+    ('\u{a4d9}', 'j'),
+    ('\u{a4d7}', 'k'),
+    ('\u{a4e1}', 'l'),
+    ('\u{a4df}', 'm'),
+    ('\u{a4e0}', 'n'),
+    ('\u{a4f3}', 'o'),
+    ('\u{a4d1}', 'p'),
+    ('\u{a4e3}', 'r'),
+    ('\u{a4e2}', 's'),
+    ('\u{a4d4}', 't'),
+    ('\u{a4f4}', 'u'),
+    ('\u{a4e6}', 'v'),
+    ('\u{a4ea}', 'w'),
+    ('\u{a4eb}', 'x'),
+    ('\u{a4ec}', 'y'),
+    ('\u{a4dc}', 'z'),
+    ('\u{a4f8}', '.'),
+    // Cherokee (Unicode casefold maps Cherokee letters to uppercase U+13A0..U+13F5)
+    ('\u{13aa}', 'a'),
+    ('\u{13f4}', 'b'),
+    ('\u{13df}', 'c'),
+    ('\u{13e3}', 'c'),
+    ('\u{13a0}', 'd'),
+    ('\u{13ac}', 'e'),
+    ('\u{13c0}', 'g'),
+    ('\u{13bb}', 'h'),
+    ('\u{13a2}', 'i'),
+    ('\u{13a5}', 'i'),
+    ('\u{13ab}', 'j'),
+    ('\u{13e6}', 'k'),
+    ('\u{13de}', 'l'),
+    ('\u{13b7}', 'm'),
+    ('\u{13e2}', 'p'),
+    ('\u{13a1}', 'r'),
+    ('\u{13da}', 's'),
+    ('\u{13d9}', 'v'),
+    ('\u{13d4}', 'w'),
+    ('\u{13bd}', 'y'),
+    ('\u{13c3}', 'z'),
+    // Armenian
+    ('\u{0570}', 'h'),
+    ('\u{0578}', 'n'),
+    ('\u{0585}', 'o'),
+    ('\u{057f}', 's'),
+    ('\u{057d}', 'u'),
+    // Coptic
+    ('\u{2c81}', 'a'),
+    ('\u{2c83}', 'b'),
+    ('\u{2c89}', 'e'),
+    ('\u{2c8f}', 'h'),
+    ('\u{2c93}', 'i'),
+    ('\u{2c95}', 'k'),
+    ('\u{2c99}', 'm'),
+    ('\u{2c9b}', 'n'),
+    ('\u{2c9f}', 'o'),
+    ('\u{2ca1}', 'p'),
+    ('\u{2ca3}', 'r'),
+    ('\u{2ca5}', 'c'),
+    ('\u{2ca7}', 't'),
+    ('\u{2ca9}', 'y'),
+    ('\u{2cad}', 'x'),
+    // Other observed Latin/symbol/dot lookalikes
+    ('\u{144c}', 'u'),
+    ('\u{2d39}', 'e'),
+    ('\u{0257}', 'd'),
+    ('\u{01a8}', 's'),
+    ('\u{0131}', 'i'),
+    ('\u{222a}', 'u'),
+    ('\u{22c3}', 'u'),
+    ('\u{22a4}', 't'),
+    ('\u{02f3}', '.'),
+    ('\u{06d4}', '.'),
+    ('\u{0702}', '.'),
 ];
 
 const CANONICAL_SYMBOLS: [&str; 13] = [
@@ -362,7 +449,10 @@ fn is_digit(char: char, category: GeneralCategory) -> bool {
 fn is_invisible(char: char) -> bool {
     let category = get_general_category(char);
     category == GeneralCategory::Format
-        || matches!(char, '\u{034f}' | '\u{180b}' | '\u{180c}' | '\u{180d}')
+        || matches!(
+            char,
+            '\u{034f}' | '\u{17b4}' | '\u{17b5}' | '\u{180b}'..='\u{180e}' | '\u{fff0}'..='\u{fff8}'
+        )
         || unicode_name(char).is_some_and(|name| name.contains("VARIATION SELECTOR"))
 }
 
@@ -387,6 +477,14 @@ pub(crate) fn skeleton(text: &str) -> String {
         .chars()
         .filter(|char| !is_invisible(*char))
         .map(|char| confusable(char).unwrap_or(char))
+        .collect()
+}
+
+/// Strip nonspacing diacritics from [`skeleton`] for canonical-symbol matching.
+fn canonical_skeleton(text: &str) -> String {
+    skeleton(text)
+        .nfd()
+        .filter(|char| get_general_category(*char) != GeneralCategory::NonspacingMark)
         .collect()
 }
 
@@ -505,6 +603,7 @@ fn vectorize(record: &SpamRecord) -> Vec<f64> {
     let symbol = &record.symbol;
     let normal_symbol = casefold(python_strip(symbol));
     let symbol_key = skeleton(symbol);
+    let canonical_symbol_key = canonical_skeleton(symbol);
     let name_key = skeleton(name);
 
     let mut values = text_vector(name);
@@ -515,7 +614,9 @@ fn vectorize(record: &SpamRecord) -> Vec<f64> {
         0.0
     });
     values.push(
-        if CANONICAL_SYMBOLS.contains(&symbol_key.as_str()) && symbol_key != normal_symbol {
+        if CANONICAL_SYMBOLS.contains(&canonical_symbol_key.as_str())
+            && canonical_symbol_key != normal_symbol
+        {
             1.0
         } else {
             0.0
@@ -706,7 +807,7 @@ fn evidence(record: &SpamRecord) -> Vec<SpamSignal> {
     let symbol = &record.symbol;
     if CANONICAL_SYMBOLS.contains(&casefold(python_strip(symbol)).as_str()) {
         facts.push(SpamSignal::new(Field::Symbol, Code::CommonSymbol));
-    } else if CANONICAL_SYMBOLS.contains(&skeleton(symbol).as_str()) {
+    } else if CANONICAL_SYMBOLS.contains(&canonical_skeleton(symbol).as_str()) {
         facts.push(SpamSignal::new(Field::Symbol, Code::LookalikeSymbol));
     }
 
@@ -864,7 +965,7 @@ mod tests {
         assert_eq!(FEATURE_NAMES.len(), 59);
         assert_eq!(model.w1.len(), 16);
         assert!(model.w1.iter().all(|row| row.len() == 59));
-        assert_eq!(model.threshold, 0.8708363650723653);
+        assert_eq!(model.threshold, 0.8441724085965705);
         assert!(model.exclude_provenance);
     }
 
