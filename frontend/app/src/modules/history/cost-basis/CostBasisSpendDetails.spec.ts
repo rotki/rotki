@@ -76,11 +76,17 @@ describe('costBasisSpendDetails.vue', () => {
     expect(figure(mountDetails({ taxfreePnl: bigNumberify('60') }), 'taxfree-gain')).toBe('60');
   });
 
-  it('should show no gain for a move between own accounts', () => {
-    const wrapper = mountDetails({ proceeds: null, realizedPnl: bigNumberify('0'), taxfreePnl: null });
-    expect(figure(wrapper, 'gain')).toBeUndefined();
-    expect(figure(wrapper, 'basis')).toBe('1000');
-    expect(figure(wrapper, 'cost-value')).toBe('500');
+  it('should show no gain for a move between own accounts or an unpriced spend', () => {
+    const transfer = mountDetails({ proceeds: null, realizedPnl: bigNumberify('0'), taxfreePnl: null });
+    expect(figure(transfer, 'gain')).toBeUndefined();
+    expect(figure(transfer, 'basis')).toBe('1000');
+    expect(figure(transfer, 'cost-value')).toBe('500');
+
+    const unpriced = mountDetails({ proceeds: null, realizedPnl: null, taxfreePnl: null });
+    expect(figure(unpriced, 'gain')).toBeUndefined();
+    expect(figure(unpriced, 'basis')).toBe('1000');
+    expect(figure(unpriced, 'cost-value')).toBe('500');
+    expect(figure(mountDetails({ realizedPnl: null }), 'gain')).toBeUndefined();
   });
 
   it('should list each lot with its acquisition date, amount and basis per unit', () => {

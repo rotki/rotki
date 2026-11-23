@@ -46,15 +46,15 @@ const basisPerUnit = computed<BigNumber>(() => {
  * The figures of the spend, top to bottom.
  *
  * @remarks
- * A move between two own accounts has no proceeds and realizes nothing, so only the cost basis
- * per unit and the cost value are shown. A tax free gain of zero is omitted.
+ * A move between two own accounts or an unpriced spend has no proceeds or realized gain, so only
+ * the cost basis per unit and the cost value are shown. A tax free gain of zero is omitted.
  */
 const figures = computed<FigureRow[]>(() => {
   const rows: FigureRow[] = [
     { key: 'basis', label: t('cost_basis_overlay.cost_basis'), pnl: false, value: get(basisPerUnit) },
     { key: 'cost-value', label: t('cost_basis_overlay.cost_value'), pnl: false, value: entry.basisRemoved },
   ];
-  if (entry.proceeds !== null)
+  if (entry.proceeds !== null && entry.realizedPnl !== null)
     rows.push({ key: 'gain', label: t('cost_basis_overlay.gain'), pnl: true, value: entry.realizedPnl });
   if (entry.taxfreePnl !== null && !entry.taxfreePnl.isZero())
     rows.push({ key: 'taxfree-gain', label: t('cost_basis_overlay.taxfree_gain'), pnl: true, value: entry.taxfreePnl });

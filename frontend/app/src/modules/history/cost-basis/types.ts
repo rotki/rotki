@@ -54,9 +54,10 @@ const CostBasisSpend = CostBasisBucket.extend({
   basisRemoved: NumericString,
   direction: z.literal(CostBasisDirection.SPEND),
   lots: z.array(CostBasisLot),
-  /** Null when what was spent has no known worth, as for a move between two own accounts. */
+  /** Null when what was spent has no known worth, as for a move between two own accounts or an unpriced spend. */
   proceeds: NumericString.nullable(),
-  realizedPnl: NumericString,
+  /** Null when the spend could not be priced. */
+  realizedPnl: NumericString.nullable(),
   taxfreePnl: NumericString.nullable(),
 });
 
