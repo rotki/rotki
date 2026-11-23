@@ -14384,7 +14384,7 @@ Realized PnL of history events
 
       {"from_timestamp": 1672531200, "to_timestamp": 1704067199, "group_by": "asset"}
 
-   The request takes the same filters as the history events endpoint, documented `here <filter-request-args-label_>`_, other than the ordering and pagination ones. All filters apply to the history event that realized the PnL. The events of the swaps, transfers and basis transfers that realized nothing still count in ``num_events``.
+   The request takes the same filters as the history events endpoint, documented `here <filter-request-args-label_>`_, other than the ordering and pagination ones. All filters apply to the history event that realized the PnL. The events of the swaps, transfers and basis transfers that realized nothing, as well as unpriced spends whose realized PnL is unknown, still count in ``basis_removed`` and ``num_events`` while adding nothing to ``realized_pnl``.
 
    :reqjson string[optional] group_by: What to break the result down by. One of ``"asset"``, ``"location"``, ``"location_label"``, ``"protocol"``, which are parts of the bucket the spend was made from, or ``"day"``, ``"week"``, ``"month"``, ``"year"``, which are the period of the spend in UTC with weeks starting on Monday. If missing the breakdown has a single entry.
 
@@ -14505,9 +14505,9 @@ Cost basis of history events
    :resjson string basis_per_unit: Receive only. The basis of each unit received, in the profit currency.
    :resjson string basis_source: Receive only. Where the basis comes from: ``"event_amount"`` for what was paid according to the events themselves, ``"price_oracle"`` for the market price, ``"transfer_in"`` for lots carried over from another bucket, ``"zero_cost"`` if acquired at no cost or no price was found, and ``"free_acquisition"``.
    :resjson list lots: Spend only. The lots consumed, in the order of the cost basis method. ``amount`` is what was taken from the lot, ``basis_per_unit`` its basis, which for the average cost basis method is the average of the bucket, and ``taxable`` is false if the lot was held for longer than the tax free period. ``acquired_at`` is when the lot was acquired in seconds, and ``acquisition`` the history event that acquired it, or null if that event does not exist anymore.
-   :resjson string proceeds: Spend only. What the amount spent was worth, in the profit currency. Null if it is not known, as for a move between two buckets of the user.
-   :resjson string realized_pnl: Spend only. The taxable profit or loss realized.
-   :resjson string taxfree_pnl: Spend only. The profit or loss on the lots held for longer than the tax free period. Null for a move between two buckets of the user.
+   :resjson string proceeds: Spend only. What the amount spent was worth, in the profit currency. Null if it is not known, as for a move between two buckets of the user or an unpriced spend.
+   :resjson string realized_pnl: Spend only. The taxable profit or loss realized. Null if the spend could not be priced.
+   :resjson string taxfree_pnl: Spend only. The profit or loss on the lots held for longer than the tax free period. Null for a move between two buckets of the user or an unpriced spend.
    :resjson string basis_removed: Spend only. The total basis of the lots consumed.
    :resjson string basis_remaining: Spend only. The total basis of what the bucket holds after the event.
    :resjson list[int] stale: The requested event identifiers whose cost basis has not been processed yet or is waiting to be processed again.

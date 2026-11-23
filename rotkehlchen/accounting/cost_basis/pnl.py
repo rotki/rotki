@@ -79,7 +79,11 @@ def query_realized_pnl(
         ):
             pnl, basis, events = groups.get(group_key, (ZERO, ZERO, set()))
             events.add(event_identifier)
-            groups[group_key] = (pnl + FVal(realized_pnl), basis + FVal(basis_removed), events)
+            groups[group_key] = (
+                pnl + (ZERO if realized_pnl is None else FVal(realized_pnl)),
+                basis + FVal(basis_removed),
+                events,
+            )
 
     return {
         'total_realized_pnl': str(sum((pnl for pnl, _, _ in groups.values()), start=ZERO)),

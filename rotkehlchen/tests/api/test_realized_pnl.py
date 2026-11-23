@@ -9,6 +9,7 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -269,3 +270,118 @@ def test_events_cost_basis_shows_the_lots_behind_each_event(
         'stale': [acquired, spent],
         'method': 'fifo',
     }
+
+
+def test_unpriced_spend_returns_null_pnl_and_does_not_fail_summary(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    DBAccountingRules(database).add_accounting_rule(
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        counterparty=None,
+        rule=BaseEventSettings(
+            taxable=True,
+            count_entire_amount_spend=False,
+            count_cost_basis_pnl=True,
+        ),
+        links={},
+    )
+    with database.user_write() as write_cursor:
+        acquired = DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=_event(timestamp=Timestamp(JAN_10_2023 - 100), event_type=HistoryEventType.RECEIVE),  # noqa: E501
+        )
+        spent = DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=_event(timestamp=JAN_10_2023, event_type=HistoryEventType.SPEND),
+        )
+    assert acquired is not None and spent is not None
+
+    def query_historical_price(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        if timestamp == JAN_10_2023:
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+            )
+        return Price(FVal(100))
+
+    with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
+        historian.return_value.query_historical_price = query_historical_price
+        assert process_cost_basis(database, database.msg_aggregator) is True
+
+    assert _query(rotkehlchen_api_server, group_by='asset') == {
+        'total_realized_pnl': '0',
+        'breakdown': [_group('ETH', 0, events=1)],
+        'stale': False,
+        'method': 'fifo',
+    }
+
+    cost_basis = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'eventscostbasisresource'),
+        json={'event_identifiers': [spent]},
+    ))
+    assert cost_basis['stale'] == []
+    spend_entry = cost_basis['entries'][str(spent)][0]
+    assert spend_entry['proceeds'] is None
+    assert spend_entry['realized_pnl'] is None
+    assert spend_entry['taxfree_pnl'] is None
+    assert spend_entry['basis_removed'] == '100'
+    assert spend_entry['basis_remaining'] == '0'
+
+
+@pytest.mark.usefixtures('materialized_pnl')
+def test_events_cost_basis_serves_completed_prefix_of_unfinished_pass(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with database.conn.read_ctx() as cursor:
+        acquired, spent = (row[0] for row in cursor.execute(
+            'SELECT identifier FROM history_events WHERE location=? AND asset=? '
+            'ORDER BY timestamp',
+            (LOCATION_OPTIMISM, A_ETH.identifier),
+        ))
+
+    with database.user_write() as write_cursor:
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            value='0',
+        )
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
+            value='42',
+        )
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS,
+            value=str(FEB_20_2024 * 1000),
+        )
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS,
+            value='42',
+        )
+
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'eventscostbasisresource'),
+        json={'event_identifiers': [acquired, spent]},
+    ))
+    assert list(result['entries']) == [str(acquired)]
+    assert result['stale'] == [spent]
+
+    # Once a newer modification happens, the unfinished pass progress is ignored.
+    with database.user_write() as write_cursor:
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
+            value='43',
+        )
+    invalidated = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'eventscostbasisresource'),
+        json={'event_identifiers': [acquired, spent]},
+    ))
+    assert invalidated['entries'] == {}
+    assert invalidated['stale'] == [acquired, spent]
