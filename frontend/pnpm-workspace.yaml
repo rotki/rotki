@@ -30,6 +30,12 @@ packages:
 
 overrides:
   chokidar: 5.0.0
+  # GHSA-3g3m-2fjr-6pw4, pulled in by eslint-plugin-vue-i18n, js-beautify and rimraf
+  glob@>=9.0.0 <14.0.2: 14.0.4
+  # GHSA-238p-pmpm-9mq7, pulled in by @eslint/markdown
+  katex@<0.18.2: 0.18.11
+  # GHSA-g3hv-75wg-m249, pulled in by electron-builder and eslint tooling
+  minimatch@>=7.0.0 <11.0.1: 11.0.8
   tinypool: 2.2.0
   ws: 8.22.0
 
