@@ -235,9 +235,9 @@
         }
       ],
       "prediction": {
-        "spam_probability": 0.05097038595323972,
+        "spam_probability": 0.06044920184603042,
         "flagged": false,
-        "threshold": 0.8708363650723653,
+        "threshold": 0.8441724085965705,
         "observed_signals": [
           {
             "field": "symbol",
@@ -270,27 +270,27 @@
           {
             "feature": "context_max_token_transfer_count_value",
             "value": 4.948759890378168,
-            "probability_delta": 0.03956609661401036
+            "probability_delta": 0.04762589279625732
           },
           {
             "feature": "symbol_canonical_match",
             "value": 1.0,
-            "probability_delta": 0.03907174462644025
+            "probability_delta": 0.045153678070527635
           },
           {
             "feature": "context_mean_token_transfer_count_value",
             "value": 1.4431572230144338,
-            "probability_delta": 0.02266722818623658
+            "probability_delta": 0.029554320765397945
           },
           {
             "feature": "context_outgoing_fraction_missing",
             "value": 0.0,
-            "probability_delta": 0.013322517633083314
+            "probability_delta": 0.02010951749500478
           },
           {
-            "feature": "decimals_scaled",
-            "value": 0.023529411764705882,
-            "probability_delta": 0.007932145334438458
+            "feature": "name_length_log1p",
+            "value": 2.1972245773362196,
+            "probability_delta": 0.007866013564363089
           }
         ]
       }
@@ -456,9 +456,9 @@
         }
       ],
       "prediction": {
-        "spam_probability": 0.9793504767071407,
+        "spam_probability": 0.9965984920431727,
         "flagged": true,
-        "threshold": 0.8708363650723653,
+        "threshold": 0.8441724085965705,
         "observed_signals": [
           {
             "field": "name",
@@ -489,27 +489,22 @@
           {
             "feature": "symbol_confusable_canonical_match",
             "value": 1.0,
-            "probability_delta": 0.13661926873046626
+            "probability_delta": 0.23386304359636856
           },
           {
-            "feature": "name_mixed_scripts",
-            "value": 1.0,
-            "probability_delta": 0.03790662650851262
-          },
-          {
-            "feature": "symbol_mixed_scripts",
-            "value": 1.0,
-            "probability_delta": 0.02746757067688521
-          },
-          {
-            "feature": "symbol_script_count",
+            "feature": "name_script_count",
             "value": 2.0,
-            "probability_delta": 0.01101454448462258
+            "probability_delta": 0.0033477106934669543
           },
           {
             "feature": "name_skeleton_changed",
             "value": 1.0,
-            "probability_delta": 0.006873065219306529
+            "probability_delta": 0.002886687313714109
+          },
+          {
+            "feature": "name_nonascii_fraction",
+            "value": 0.1,
+            "probability_delta": 0.001138762626341272
           }
         ]
       }
@@ -667,9 +662,9 @@
         }
       ],
       "prediction": {
-        "spam_probability": 0.9999990282688608,
+        "spam_probability": 0.9999996631338803,
         "flagged": true,
-        "threshold": 0.8708363650723653,
+        "threshold": 0.8441724085965705,
         "observed_signals": [
           {
             "field": "name",
@@ -856,9 +851,9 @@
         }
       ],
       "prediction": {
-        "spam_probability": 0.9596773109537396,
+        "spam_probability": 0.8857764725769157,
         "flagged": true,
-        "threshold": 0.8708363650723653,
+        "threshold": 0.8441724085965705,
         "observed_signals": [
           {
             "field": "name",
@@ -889,27 +884,27 @@
           {
             "feature": "name_skeleton_changed",
             "value": 1.0,
-            "probability_delta": 0.11317925373563564
-          },
-          {
-            "feature": "name_nfkc_changed",
-            "value": 1.0,
-            "probability_delta": 0.04341936055814932
-          },
-          {
-            "feature": "symbol_skeleton_changed",
-            "value": 1.0,
-            "probability_delta": 0.032489110116142084
+            "probability_delta": 0.3818180798318984
           },
           {
             "feature": "name_nonascii_fraction",
             "value": 0.4444444444444444,
-            "probability_delta": 0.025371243144179823
+            "probability_delta": 0.1702334777554919
           },
           {
-            "feature": "symbol_invisible_fraction",
-            "value": 0.4,
-            "probability_delta": 0.01494510687215822
+            "feature": "name_nfkc_changed",
+            "value": 1.0,
+            "probability_delta": 0.07634034811692125
+          },
+          {
+            "feature": "symbol_length_log1p",
+            "value": 1.791759469228055,
+            "probability_delta": 0.028765831112952833
+          },
+          {
+            "feature": "decimals_scaled",
+            "value": 0.0,
+            "probability_delta": 0.014465092393819212
           }
         ]
       }
@@ -1100,9 +1095,9 @@
         }
       ],
       "prediction": {
-        "spam_probability": 0.007649779993860275,
+        "spam_probability": 0.10806543448621171,
         "flagged": false,
-        "threshold": 0.8708363650723653,
+        "threshold": 0.8441724085965705,
         "observed_signals": [
           {
             "field": "name",
@@ -1147,27 +1142,27 @@
           {
             "feature": "context_mean_token_transfer_count_value",
             "value": 13.122365377402328,
-            "probability_delta": 0.007649264761334983
+            "probability_delta": 0.10805351407983604
           },
           {
             "feature": "context_max_token_transfer_count_value",
             "value": 13.815511557963774,
-            "probability_delta": 0.0076390484737756306
+            "probability_delta": 0.10799981016711077
+          },
+          {
+            "feature": "name_script_count",
+            "value": 2.0,
+            "probability_delta": 0.09202478154650291
           },
           {
             "feature": "context_min_prior_tx_gap_seconds_value",
             "value": 19.569910101585812,
-            "probability_delta": 0.005335071756315561
-          },
-          {
-            "feature": "symbol_nfkc_changed",
-            "value": 1.0,
-            "probability_delta": 0.0044975649795296595
+            "probability_delta": 0.08136899297266788
           },
           {
             "feature": "name_nonascii_fraction",
             "value": 0.3333333333333333,
-            "probability_delta": 0.00361673796014345
+            "probability_delta": 0.06848554013557037
           }
         ]
       }
@@ -1313,9 +1308,9 @@
         }
       ],
       "prediction": {
-        "spam_probability": 0.9997793983634473,
-        "flagged": true,
-        "threshold": 0.8708363650723653,
+        "spam_probability": 0.021577044096067737,
+        "flagged": false,
+        "threshold": 0.8441724085965705,
         "observed_signals": [
           {
             "field": "context",
@@ -1326,17 +1321,17 @@
           {
             "feature": "symbol_script_count",
             "value": 0.0,
-            "probability_delta": 0.7318777084318352
-          },
-          {
-            "feature": "name_script_count",
-            "value": 0.0,
-            "probability_delta": 0.0060295386056223865
+            "probability_delta": 0.02128724411859523
           },
           {
             "feature": "name_length_log1p",
             "value": 0.0,
-            "probability_delta": 0.003998409970755734
+            "probability_delta": 0.015825933382122993
+          },
+          {
+            "feature": "decimals_scaled",
+            "value": 0.0,
+            "probability_delta": 0.006764654402926633
           }
         ]
       }
@@ -1511,9 +1506,9 @@
         }
       ],
       "prediction": {
-        "spam_probability": 0.99676415469065,
+        "spam_probability": 0.9457555297676725,
         "flagged": true,
-        "threshold": 0.8708363650723653,
+        "threshold": 0.8441724085965705,
         "observed_signals": [
           {
             "field": "symbol",
@@ -1542,27 +1537,27 @@
           {
             "feature": "symbol_canonical_match",
             "value": 1.0,
-            "probability_delta": 0.025128039038864736
-          },
-          {
-            "feature": "name_script_count",
-            "value": 0.0,
-            "probability_delta": 0.02354296512483034
+            "probability_delta": 0.6069578146993886
           },
           {
             "feature": "symbol_whitespace_fraction",
             "value": 0.4,
-            "probability_delta": 0.005758745122856679
+            "probability_delta": 0.06024889347845308
           },
           {
             "feature": "name_length_log1p",
             "value": 1.0986122886681098,
-            "probability_delta": 0.0025706381627745856
+            "probability_delta": 0.04242938305973254
           },
           {
-            "feature": "symbol_length_log1p",
-            "value": 1.791759469228055,
-            "probability_delta": 0.001722071436862871
+            "feature": "name_whitespace_fraction",
+            "value": 1.0,
+            "probability_delta": 0.032050786968513045
+          },
+          {
+            "feature": "context_outgoing_fraction_missing",
+            "value": 0.0,
+            "probability_delta": 0.022219029093538456
           }
         ]
       }
@@ -1732,9 +1727,9 @@
         }
       ],
       "prediction": {
-        "spam_probability": 0.9999996277111827,
+        "spam_probability": 0.9998684967111207,
         "flagged": true,
-        "threshold": 0.8708363650723653,
+        "threshold": 0.8441724085965705,
         "observed_signals": [
           {
             "field": "name",
@@ -1761,7 +1756,23 @@
             "code": "known_origin_unavailable"
           }
         ],
-        "model_reasons": []
+        "model_reasons": [
+          {
+            "feature": "name_exclamation_count",
+            "value": 3.0,
+            "probability_delta": 0.004103097506449882
+          },
+          {
+            "feature": "name_has_url",
+            "value": 1.0,
+            "probability_delta": 0.0013680756681716533
+          },
+          {
+            "feature": "name_has_promotion",
+            "value": 1.0,
+            "probability_delta": 0.0011960773237121858
+          }
+        ]
       }
     },
     {
@@ -1939,9 +1950,9 @@
         }
       ],
       "prediction": {
-        "spam_probability": 0.9904043021957156,
+        "spam_probability": 0.9986440903389489,
         "flagged": true,
-        "threshold": 0.8708363650723653,
+        "threshold": 0.8441724085965705,
         "observed_signals": [
           {
             "field": "name",
@@ -1982,27 +1993,844 @@
           {
             "feature": "name_has_promotion",
             "value": 1.0,
-            "probability_delta": 0.05129720534520954
+            "probability_delta": 0.018401539407035594
           },
           {
             "feature": "symbol_canonical_match",
             "value": 1.0,
-            "probability_delta": 0.030912680130346315
+            "probability_delta": 0.01779247481269386
           },
           {
-            "feature": "name_mixed_scripts",
+            "feature": "name_skeleton_changed",
             "value": 1.0,
-            "probability_delta": 0.00439437159136713
+            "probability_delta": 0.004072959246960606
+          },
+          {
+            "feature": "name_script_count",
+            "value": 2.0,
+            "probability_delta": 0.0012762459531333592
+          }
+        ]
+      }
+    },
+    {
+      "label": "lisu_usdt_impostor",
+      "record": {
+        "name": "ꓴꓢꓓꓔ",
+        "symbol": "ꓴꓢꓓꓔ",
+        "decimals": 6,
+        "context": {}
+      },
+      "skeleton": {
+        "name": "usdt",
+        "symbol": "usdt"
+      },
+      "vector": [
+        1.6094379124341003,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.6094379124341003,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        0.023529411764705882,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "feature_values": [
+        1.6094379124341003,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.6094379124341003,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        0.023529411764705882,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "evidence": [
+        {
+          "field": "name",
+          "code": "non_ascii"
+        },
+        {
+          "field": "symbol",
+          "code": "non_ascii"
+        },
+        {
+          "field": "symbol",
+          "code": "lookalike_symbol"
+        },
+        {
+          "field": "context",
+          "code": "known_origin_unavailable"
+        }
+      ],
+      "prediction": {
+        "spam_probability": 0.9956025374385735,
+        "flagged": true,
+        "threshold": 0.8441724085965705,
+        "observed_signals": [
+          {
+            "field": "name",
+            "code": "non_ascii"
+          },
+          {
+            "field": "symbol",
+            "code": "non_ascii"
+          },
+          {
+            "field": "symbol",
+            "code": "lookalike_symbol"
+          },
+          {
+            "field": "context",
+            "code": "known_origin_unavailable"
+          }
+        ],
+        "model_reasons": [
+          {
+            "feature": "symbol_confusable_canonical_match",
+            "value": 1.0,
+            "probability_delta": 0.3728421285492848
           },
           {
             "feature": "name_nonascii_fraction",
-            "value": 0.13333333333333333,
-            "probability_delta": 0.0016515821986479162
+            "value": 1.0,
+            "probability_delta": 0.1222810273252638
           },
           {
-            "feature": "context_max_token_transfer_count_value",
-            "value": 0.6931471805599453,
-            "probability_delta": 0.0012623565867330155
+            "feature": "name_skeleton_changed",
+            "value": 1.0,
+            "probability_delta": 0.02530327013290634
+          },
+          {
+            "feature": "name_length_log1p",
+            "value": 1.6094379124341003,
+            "probability_delta": 0.0029815138705860944
+          },
+          {
+            "feature": "symbol_skeleton_changed",
+            "value": 1.0,
+            "probability_delta": 0.0018759417798659417
+          }
+        ]
+      }
+    },
+    {
+      "label": "cherokee_coptic_khmer_impostor",
+      "record": {
+        "name": "ꓴ឵ՏᎠ឵Ⲧ",
+        "symbol": "ꓴ឵ՏᎠ឵Ⲧ",
+        "decimals": 6,
+        "context": {}
+      },
+      "skeleton": {
+        "name": "usdt",
+        "symbol": "usdt"
+      },
+      "vector": [
+        1.9459101490553132,
+        1.0,
+        0.3333333333333333,
+        0.3333333333333333,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        4.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.9459101490553132,
+        1.0,
+        0.3333333333333333,
+        0.3333333333333333,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        4.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        0.023529411764705882,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "feature_values": [
+        1.9459101490553132,
+        1.0,
+        0.3333333333333333,
+        0.3333333333333333,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        4.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.9459101490553132,
+        1.0,
+        0.3333333333333333,
+        0.3333333333333333,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        4.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        0.023529411764705882,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "evidence": [
+        {
+          "field": "name",
+          "code": "non_ascii"
+        },
+        {
+          "field": "name",
+          "code": "invisible_characters"
+        },
+        {
+          "field": "name",
+          "code": "combining_marks"
+        },
+        {
+          "field": "name",
+          "code": "mixed_scripts"
+        },
+        {
+          "field": "symbol",
+          "code": "non_ascii"
+        },
+        {
+          "field": "symbol",
+          "code": "invisible_characters"
+        },
+        {
+          "field": "symbol",
+          "code": "combining_marks"
+        },
+        {
+          "field": "symbol",
+          "code": "mixed_scripts"
+        },
+        {
+          "field": "symbol",
+          "code": "lookalike_symbol"
+        },
+        {
+          "field": "context",
+          "code": "known_origin_unavailable"
+        }
+      ],
+      "prediction": {
+        "spam_probability": 0.9999121976650973,
+        "flagged": true,
+        "threshold": 0.8441724085965705,
+        "observed_signals": [
+          {
+            "field": "name",
+            "code": "non_ascii"
+          },
+          {
+            "field": "name",
+            "code": "invisible_characters"
+          },
+          {
+            "field": "name",
+            "code": "combining_marks"
+          },
+          {
+            "field": "name",
+            "code": "mixed_scripts"
+          },
+          {
+            "field": "symbol",
+            "code": "non_ascii"
+          },
+          {
+            "field": "symbol",
+            "code": "invisible_characters"
+          },
+          {
+            "field": "symbol",
+            "code": "combining_marks"
+          },
+          {
+            "field": "symbol",
+            "code": "mixed_scripts"
+          },
+          {
+            "field": "symbol",
+            "code": "lookalike_symbol"
+          },
+          {
+            "field": "context",
+            "code": "known_origin_unavailable"
+          }
+        ],
+        "model_reasons": [
+          {
+            "feature": "symbol_confusable_canonical_match",
+            "value": 1.0,
+            "probability_delta": 0.007851640806818772
+          },
+          {
+            "feature": "name_script_count",
+            "value": 4.0,
+            "probability_delta": 0.0029738972091918336
+          },
+          {
+            "feature": "name_nonascii_fraction",
+            "value": 1.0,
+            "probability_delta": 0.0015041132548392344
+          }
+        ]
+      }
+    },
+    {
+      "label": "diacritic_eth_impostor",
+      "record": {
+        "name": "ĖTḨ",
+        "symbol": "ĖTḨ",
+        "decimals": 18,
+        "context": {}
+      },
+      "skeleton": {
+        "name": "ėtḩ",
+        "symbol": "ėtḩ"
+      },
+      "vector": [
+        1.3862943611198906,
+        0.6666666666666666,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.3862943611198906,
+        0.6666666666666666,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        0.07058823529411765,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "feature_values": [
+        1.3862943611198906,
+        0.6666666666666666,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.3862943611198906,
+        0.6666666666666666,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+        0.07058823529411765,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "evidence": [
+        {
+          "field": "name",
+          "code": "non_ascii"
+        },
+        {
+          "field": "symbol",
+          "code": "non_ascii"
+        },
+        {
+          "field": "symbol",
+          "code": "lookalike_symbol"
+        },
+        {
+          "field": "context",
+          "code": "known_origin_unavailable"
+        }
+      ],
+      "prediction": {
+        "spam_probability": 0.9353081408929729,
+        "flagged": true,
+        "threshold": 0.8441724085965705,
+        "observed_signals": [
+          {
+            "field": "name",
+            "code": "non_ascii"
+          },
+          {
+            "field": "symbol",
+            "code": "non_ascii"
+          },
+          {
+            "field": "symbol",
+            "code": "lookalike_symbol"
+          },
+          {
+            "field": "context",
+            "code": "known_origin_unavailable"
+          }
+        ],
+        "model_reasons": [
+          {
+            "feature": "symbol_confusable_canonical_match",
+            "value": 1.0,
+            "probability_delta": 0.846496167882915
+          },
+          {
+            "feature": "name_nonascii_fraction",
+            "value": 0.6666666666666666,
+            "probability_delta": 0.385235756704964
+          },
+          {
+            "feature": "name_length_log1p",
+            "value": 1.3862943611198906,
+            "probability_delta": 0.04421950498694116
+          }
+        ]
+      }
+    },
+    {
+      "label": "dot_lookalike_url_spam",
+      "record": {
+        "name": "SWAPSHIBA˳COM",
+        "symbol": "SHIB",
+        "decimals": 0,
+        "context": {}
+      },
+      "skeleton": {
+        "name": "swapshiba.com",
+        "symbol": "shib"
+      },
+      "vector": [
+        2.6390573296152584,
+        0.07692307692307693,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.6094379124341003,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "feature_values": [
+        2.6390573296152584,
+        0.07692307692307693,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.6094379124341003,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        1.0
+      ],
+      "evidence": [
+        {
+          "field": "name",
+          "code": "non_ascii"
+        },
+        {
+          "field": "name",
+          "code": "url"
+        },
+        {
+          "field": "context",
+          "code": "known_origin_unavailable"
+        }
+      ],
+      "prediction": {
+        "spam_probability": 0.9958005796784375,
+        "flagged": true,
+        "threshold": 0.8441724085965705,
+        "observed_signals": [
+          {
+            "field": "name",
+            "code": "non_ascii"
+          },
+          {
+            "field": "name",
+            "code": "url"
+          },
+          {
+            "field": "context",
+            "code": "known_origin_unavailable"
+          }
+        ],
+        "model_reasons": [
+          {
+            "feature": "name_skeleton_changed",
+            "value": 1.0,
+            "probability_delta": 0.21591694586447296
+          },
+          {
+            "feature": "name_has_url",
+            "value": 1.0,
+            "probability_delta": 0.17211866918713903
+          },
+          {
+            "feature": "decimals_scaled",
+            "value": 0.0,
+            "probability_delta": 0.0010665537904220868
           }
         ]
       }
@@ -2028,6 +2856,26 @@
     {
       "input": "ǅ",
       "expected": "dž"
+    },
+    {
+      "input": "ꓴꓢꓓꓔ",
+      "expected": "usdt"
+    },
+    {
+      "input": "ꓪᏴꓔᏟ",
+      "expected": "wbtc"
+    },
+    {
+      "input": "ꓴ឵ՏᎠ឵Ⲧ",
+      "expected": "usdt"
+    },
+    {
+      "input": "USD￰C",
+      "expected": "usdc"
+    },
+    {
+      "input": "SWAPSHIBA˳COM",
+      "expected": "swapshiba.com"
     }
   ]
 }

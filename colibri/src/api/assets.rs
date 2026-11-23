@@ -602,11 +602,28 @@ pub async fn search_assets_levenshtein(
     )
 }
 
+/// Filter out absent, blank, or placeholder name/symbol text (such as the asset identifier,
+/// raw contract address, or legacy `chain:address` string) so it is not treated as real metadata.
+fn usable_token_text(value: Option<String>, identifier: &str, address: &str) -> String {
+    value
+        .filter(|text| {
+            let trimmed = text.trim();
+            !trimmed.is_empty()
+                && trimmed != identifier
+                && !trimmed.eq_ignore_ascii_case(address)
+                && !trimmed
+                    .rsplit_once(':')
+                    .is_some_and(|(_, suffix)| suffix.eq_ignore_ascii_case(address))
+        })
+        .unwrap_or_default()
+}
+
 /// Advisory spam estimate for each requested token.
 ///
 /// Only local metadata and the referenced local transaction receipt are used. Tokens that
-/// cannot be resolved to a local ERC20 token, or whose local data cannot be read, get a
-/// `null` prediction so the caller keeps its rows and can show that no estimate is available.
+/// cannot be resolved to a local ERC20 token, whose local data cannot be read, or that lack
+/// both a usable name and symbol get a `null` prediction so the caller keeps its rows and can
+/// show that no estimate is available.
 pub async fn get_spam_predictions(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<SpamPredictionsRequest>,
@@ -687,18 +704,18 @@ pub async fn get_spam_predictions(
             let prediction = metadata
                 .remove(&identifier)
                 .zip(contexts.remove(&identifier))
-                .map(|(token, context)| {
-                    predict_spam(&SpamRecord {
-                        // A token whose name could not be queried carries its identifier as
-                        // name. The model was trained on missing text, so it gets none.
-                        name: token
-                            .name
-                            .filter(|name| *name != token.identifier)
-                            .unwrap_or_default(),
-                        symbol: token.symbol.unwrap_or_default(),
+                .and_then(|(token, context)| {
+                    let name = usable_token_text(token.name, &token.identifier, &token.address);
+                    let symbol = usable_token_text(token.symbol, &token.identifier, &token.address);
+                    if name.is_empty() && symbol.is_empty() {
+                        return None;
+                    }
+                    Some(predict_spam(&SpamRecord {
+                        name,
+                        symbol,
                         decimals: token.decimals,
                         context,
-                    })
+                    }))
                 });
             (identifier, prediction)
         })
@@ -1428,6 +1445,69 @@ mod tests {
         assert_eq!(status, StatusCode::OK);
         assert!(body["result"][SPAM_TOKEN_IDENTIFIER]["spam_probability"].is_number());
         assert!(body["result"][broken].is_null());
+    }
+
+    #[tokio::test]
+    async fn test_spam_predict_returns_null_when_name_and_symbol_are_missing_or_identifier() {
+        let (state, _tmp_dirs) = create_test_state().await;
+        let id_as_name = "eip155:146/erc20:0x0555E30da8f98308EdB960aa94C0Db47230d2B9c";
+        let empty_both = "eip155:1/erc20:0x48A0ED83E4F24f864b40dD8E6d134B480451fC48";
+        let chain_addr_name = "eip155:1/erc20:0x8EEE54d3D9a85123985A17EcF47aF939E12B72bD";
+        let symbol_only = "eip155:1/erc20:0xfFED56a180f23fD32Bc6A1d8d3c09c283aB594A8";
+
+        {
+            let conn = state.globaldb.conn.lock().await;
+            let token_type = AssetType::EvmToken.serialize_for_db();
+            for (ident, chain, name, symbol) in [
+                (id_as_name, 146, id_as_name, None),
+                (empty_both, 1, "", Some("")),
+                (
+                    chain_addr_name,
+                    1,
+                    "1:0x8EEE54d3D9a85123985A17EcF47aF939E12B72bD",
+                    None,
+                ),
+                (symbol_only, 1, "", Some("FL")),
+            ] {
+                let address = ident.rsplit(':').next().unwrap();
+                conn.execute(
+                    "INSERT OR REPLACE INTO assets(identifier, name, type) VALUES (?, ?, ?)",
+                    rusqlite::params![ident, name, token_type],
+                )
+                .unwrap();
+                if let Some(symbol) = symbol {
+                    conn.execute(
+                        "INSERT OR REPLACE INTO common_asset_details(identifier, symbol) VALUES (?, ?)",
+                        rusqlite::params![ident, symbol],
+                    )
+                    .unwrap();
+                }
+                conn.execute(
+                    "INSERT OR REPLACE INTO evm_tokens(identifier, token_kind, chain, address, decimals)
+                     VALUES (?, ?, ?, ?, ?)",
+                    rusqlite::params![ident, "A", chain, address, 18],
+                )
+                .unwrap();
+            }
+        }
+
+        let (status, body) = call_predictions(
+            state,
+            vec![
+                (id_as_name.to_string(), None),
+                (empty_both.to_string(), None),
+                (chain_addr_name.to_string(), None),
+                (symbol_only.to_string(), None),
+            ],
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::OK);
+        assert!(body["result"][id_as_name].is_null());
+        assert!(body["result"][empty_both].is_null());
+        assert!(body["result"][chain_addr_name].is_null());
+        assert!(body["result"][symbol_only]["spam_probability"].is_number());
+        assert_eq!(body["result"][symbol_only]["flagged"], false);
     }
 
     #[tokio::test]
