@@ -14384,9 +14384,9 @@ Realized PnL of history events
 
       {"from_timestamp": 1672531200, "to_timestamp": 1704067199, "group_by": "asset"}
 
-   The request takes the same filters as the history events endpoint, documented `here <filter-request-args-label_>`_, other than the ordering and pagination ones. All filters apply to the history event that realized the PnL. The events of the swaps, transfers and basis transfers that realized nothing, as well as unpriced spends whose realized PnL is unknown, still count in ``basis_removed`` and ``num_events`` while adding nothing to ``realized_pnl``.
+   The request takes the same filters as the history events endpoint, documented `here <filter-request-args-label_>`_, other than the ordering and pagination ones. All filters apply to the history event that realized the PnL. The events of the swaps, transfers and basis transfers that realized nothing, as well as unpriced spends whose realized PnL is unknown, still count in ``basis_removed`` and ``num_events`` while adding nothing to ``realized_pnl``. Unpriced taxable spends are counted in ``num_unpriced_events`` so callers can tell that the realized PnL total is incomplete.
 
-   :reqjson string[optional] group_by: What to break the result down by. One of ``"asset"``, ``"location"``, ``"location_label"``, ``"protocol"``, which are parts of the bucket the spend was made from, or ``"day"``, ``"week"``, ``"month"``, ``"year"``, which are the period of the spend in UTC with weeks starting on Monday. If missing the breakdown has a single entry.
+   :reqjson string[optional] group_by: What to break the result down by. One of ``"asset"``, ``"location"``, ``"location_label"``, ``"protocol"``, which are parts of the bucket the spend was made from, or ``"day"``, ``"week"``, ``"month"``, ``"year"``, which are the period of the spend in UTC using ISO 8601 weeks (``YYYY-Www``). If missing the breakdown has a single entry.
 
    **Example Response**:
 
@@ -14398,9 +14398,10 @@ Realized PnL of history events
       {
           "result": {
               "total_realized_pnl": "1520.5",
+              "num_unpriced_events": 0,
               "breakdown": [
-                  {"group_key": "BTC", "realized_pnl": "1020.5", "basis_removed": "30000", "num_events": 2},
-                  {"group_key": "ETH", "realized_pnl": "500", "basis_removed": "1000", "num_events": 1}
+                  {"group_key": "BTC", "realized_pnl": "1020.5", "basis_removed": "30000", "num_events": 2, "num_unpriced_events": 0},
+                  {"group_key": "ETH", "realized_pnl": "500", "basis_removed": "1000", "num_events": 1, "num_unpriced_events": 0}
               ],
               "stale": false,
               "method": "fifo"
@@ -14408,8 +14409,9 @@ Realized PnL of history events
           "message": ""
       }
 
-   :resjson string total_realized_pnl: The sum of the realized PnL of all matching events.
-   :resjson list breakdown: One entry per group, ordered by ``group_key``. Empty if no event matches. ``group_key`` is the value of the grouping, e.g. the asset identifier or ``"2023-05"`` for a month, and is null when no grouping was requested or when the bucket has no value for it, e.g. no protocol. ``basis_removed`` is the cost basis of what was spent and ``num_events`` the number of events in the group.
+   :resjson string total_realized_pnl: The sum of the realized PnL of all matching priced events.
+   :resjson int num_unpriced_events: The number of matching taxable spend events whose realized PnL is unknown because no historical price was available.
+   :resjson list breakdown: One entry per group, ordered by ``group_key``. Empty if no event matches. ``group_key`` is the value of the grouping, e.g. the asset identifier or ``"2023-05"`` for a month, and is null when no grouping was requested or when the bucket has no value for it, e.g. no protocol. ``basis_removed`` is the cost basis of what was spent, ``num_events`` the number of events in the group, and ``num_unpriced_events`` how many of those had no price for their realized PnL.
    :resjson bool stale: True if the cost basis has not been processed yet or is waiting to be processed again, in which case the amounts may be incomplete.
    :resjson string method: The cost basis method of the amounts.
 

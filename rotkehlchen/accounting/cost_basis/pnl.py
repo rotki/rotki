@@ -21,7 +21,7 @@ class RealizedPnlGroupBy(StrEnum):
     """What the realized PnL can be broken down by.
 
     The first four are parts of the bucket that the spend was made from. The rest are the
-    period of the spend in UTC, with weeks starting on Monday.
+    period of the spend in UTC, using ISO 8601 weeks.
     """
     ASSET = auto()
     LOCATION = auto()
@@ -39,7 +39,7 @@ GROUP_KEY_SQL: Final = {
     RealizedPnlGroupBy.LOCATION_LABEL: 'cost_basis.location_label',
     RealizedPnlGroupBy.PROTOCOL: 'cost_basis.protocol',
     RealizedPnlGroupBy.DAY: "strftime('%Y-%m-%d', cost_basis.timestamp / 1000, 'unixepoch')",
-    RealizedPnlGroupBy.WEEK: "strftime('%Y-W%W', cost_basis.timestamp / 1000, 'unixepoch')",
+    RealizedPnlGroupBy.WEEK: "strftime('%G-W%V', cost_basis.timestamp / 1000, 'unixepoch')",
     RealizedPnlGroupBy.MONTH: "strftime('%Y-%m', cost_basis.timestamp / 1000, 'unixepoch')",
     RealizedPnlGroupBy.YEAR: "strftime('%Y', cost_basis.timestamp / 1000, 'unixepoch')",
 }
@@ -59,7 +59,8 @@ def query_realized_pnl(
     The amounts are summed here and not in SQLite, where they would be summed as floats.
     """
     filters, bindings = filter_query.prepare(with_pagination=False, with_order=False)
-    groups: dict[str | None, tuple[FVal, FVal, set[int]]] = {}
+    groups: dict[str | None, tuple[FVal, FVal, set[int], set[int]]] = {}
+    all_unpriced_events: set[int] = set()
     with database.conn.read_ctx() as cursor:
         stale_from_ts, last_processing_ts = database.get_static_caches(
             cursor=cursor,
@@ -77,22 +78,30 @@ def query_realized_pnl(
             f'(SELECT history_events.identifier {ALL_EVENTS_DATA_JOIN} {filters})',
             (CostBasisDirection.SPEND.value, *bindings),
         ):
-            pnl, basis, events = groups.get(group_key, (ZERO, ZERO, set()))
+            pnl, basis, events, unpriced_events = groups.get(group_key, (ZERO, ZERO, set(), set()))
             events.add(event_identifier)
+            if realized_pnl is None:
+                unpriced_events.add(event_identifier)
+                all_unpriced_events.add(event_identifier)
+            else:
+                pnl += FVal(realized_pnl)
             groups[group_key] = (
-                pnl + (ZERO if realized_pnl is None else FVal(realized_pnl)),
+                pnl,
                 basis + FVal(basis_removed),
                 events,
+                unpriced_events,
             )
 
     return {
-        'total_realized_pnl': str(sum((pnl for pnl, _, _ in groups.values()), start=ZERO)),
+        'total_realized_pnl': str(sum((pnl for pnl, _, _, _ in groups.values()), start=ZERO)),
+        'num_unpriced_events': len(all_unpriced_events),
         'breakdown': [{
             'group_key': group_key,
             'realized_pnl': str(pnl),
             'basis_removed': str(basis),
             'num_events': len(events),
-        } for group_key, (pnl, basis, events) in sorted(
+            'num_unpriced_events': len(unpriced_events),
+        } for group_key, (pnl, basis, events, unpriced_events) in sorted(
             groups.items(),
             key=lambda item: item[0] or '',
         )],

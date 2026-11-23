@@ -31,6 +31,8 @@ pytestmark = pytest.mark.accounting_update
 JAN_10_2023: Timestamp = Timestamp(1673308800)
 JAN_12_2023: Timestamp = Timestamp(1673481600)  # same week as the 10th
 FEB_20_2024: Timestamp = Timestamp(1708387200)
+DEC_31_2024: Timestamp = Timestamp(1735603200)  # ISO week 2025-W01
+JAN_01_2025: Timestamp = Timestamp(1735689600)  # ISO week 2025-W01
 
 
 def _event(
@@ -107,12 +109,18 @@ def _query(server: APIServer, **json: Any) -> dict[str, Any]:
     ))
 
 
-def _group(key: str | None, pnl: int, events: int = 1) -> dict[str, Any]:
+def _group(
+        key: str | None,
+        pnl: int,
+        events: int = 1,
+        unpriced_events: int = 0,
+) -> dict[str, Any]:
     return {
         'group_key': key,
         'realized_pnl': str(pnl),
         'basis_removed': str(100 * events),
         'num_events': events,
+        'num_unpriced_events': unpriced_events,
     }
 
 
@@ -135,6 +143,7 @@ def test_realized_pnl_is_broken_down_by_group(
 ) -> None:
     assert _query(rotkehlchen_api_server, group_by=group_by) == {
         'total_realized_pnl': '5700',
+        'num_unpriced_events': 0,
         'breakdown': sorted(breakdown, key=lambda group: group['group_key'] or ''),
         'stale': False,
         'method': 'fifo',
@@ -157,6 +166,7 @@ def test_realized_pnl_only_counts_the_events_matching_the_filter(
 ) -> None:
     result = _query(rotkehlchen_api_server, **filters)
     assert result['total_realized_pnl'] == total
+    assert result['num_unpriced_events'] == 0
     assert (result['breakdown'] == []) is (total == '0')
 
 
@@ -164,7 +174,12 @@ def test_realized_pnl_is_stale_until_the_cost_basis_is_processed(
         rotkehlchen_api_server: APIServer,
 ) -> None:
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
-    empty = {'total_realized_pnl': '0', 'breakdown': [], 'method': 'fifo'}
+    empty = {
+        'total_realized_pnl': '0',
+        'num_unpriced_events': 0,
+        'breakdown': [],
+        'method': 'fifo',
+    }
     assert _query(rotkehlchen_api_server) == empty | {'stale': True}  # never processed
 
     assert process_cost_basis(database, database.msg_aggregator) is True
@@ -296,6 +311,10 @@ def test_unpriced_spend_returns_null_pnl_and_does_not_fail_summary(
             write_cursor=write_cursor,
             event=_event(timestamp=JAN_10_2023, event_type=HistoryEventType.SPEND),
         )
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=[
+            _event(timestamp=Timestamp(JAN_12_2023 - 100), event_type=HistoryEventType.RECEIVE, asset=A_BTC),  # noqa: E501
+            _event(timestamp=JAN_12_2023, event_type=HistoryEventType.SPEND, asset=A_BTC),
+        ])
     assert acquired is not None and spent is not None
 
     def query_historical_price(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
@@ -305,6 +324,8 @@ def test_unpriced_spend_returns_null_pnl_and_does_not_fail_summary(
                 to_asset=to_asset,
                 time=timestamp,
             )
+        if timestamp == JAN_12_2023:
+            return Price(FVal(2000))
         return Price(FVal(100))
 
     with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
@@ -312,8 +333,12 @@ def test_unpriced_spend_returns_null_pnl_and_does_not_fail_summary(
         assert process_cost_basis(database, database.msg_aggregator) is True
 
     assert _query(rotkehlchen_api_server, group_by='asset') == {
-        'total_realized_pnl': '0',
-        'breakdown': [_group('ETH', 0, events=1)],
+        'total_realized_pnl': '1900',
+        'num_unpriced_events': 1,
+        'breakdown': [
+            _group('BTC', 1900, events=1, unpriced_events=0),
+            _group('ETH', 0, events=1, unpriced_events=1),
+        ],
         'stale': False,
         'method': 'fifo',
     }
@@ -329,6 +354,46 @@ def test_unpriced_spend_returns_null_pnl_and_does_not_fail_summary(
     assert spend_entry['taxfree_pnl'] is None
     assert spend_entry['basis_removed'] == '100'
     assert spend_entry['basis_remaining'] == '0'
+
+
+def test_realized_pnl_groups_year_boundary_week_together(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    DBAccountingRules(database).add_accounting_rule(
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        counterparty=None,
+        rule=BaseEventSettings(
+            taxable=True,
+            count_entire_amount_spend=False,
+            count_cost_basis_pnl=True,
+        ),
+        links={},
+    )
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=[
+            _event(timestamp=Timestamp(ts - offset), event_type=event_type)
+            for ts in (DEC_31_2024, JAN_01_2025)
+            for offset, event_type in ((100, HistoryEventType.RECEIVE), (0, HistoryEventType.SPEND))  # noqa: E501
+        ])
+
+    prices = {DEC_31_2024: 1000, JAN_01_2025: 2000}
+
+    def query_historical_price(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        return Price(FVal(prices.get(timestamp, 100)))
+
+    with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
+        historian.return_value.query_historical_price = query_historical_price
+        assert process_cost_basis(database, database.msg_aggregator) is True
+
+    assert _query(rotkehlchen_api_server, group_by='week') == {
+        'total_realized_pnl': '2800',
+        'num_unpriced_events': 0,
+        'breakdown': [_group('2025-W01', 2800, events=2)],
+        'stale': False,
+        'method': 'fifo',
+    }
 
 
 @pytest.mark.usefixtures('materialized_pnl')
