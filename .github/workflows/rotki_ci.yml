@@ -228,8 +228,11 @@ jobs:
       - name: ESLint
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         working-directory: ./frontend
-        # Pinned: the runner has the job to itself, so the memory-based worker count would only slow it down.
-        run: pnpm run lint --concurrency=4
+        # Each worker holds about 4 GiB of typescript-eslint programs. Four workers fill the 16 GB
+        # runner and starve it until it drops off, so pin two. A stuck lint fails fast instead of
+        # holding the job until GitHub gives up on the runner.
+        timeout-minutes: 10
+        run: pnpm run lint --concurrency=2
 
       - name: Stylelint
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
