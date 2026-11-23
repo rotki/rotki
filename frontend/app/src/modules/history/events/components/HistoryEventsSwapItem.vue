@@ -315,6 +315,12 @@ function unlink(): void {
     <CostBasisOverlayCell
       v-if="spendEvent"
       :event="spendEvent"
+      :fallback-event="receiveEvent"
+      :sibling-events="spendEvents.slice(1)"
+    />
+    <CostBasisOverlayCell
+      v-else-if="receiveEvent"
+      :event="receiveEvent"
     />
 
     <HistoryEventsListItemAction

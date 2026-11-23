@@ -49,14 +49,15 @@ function figure(wrapper: VueWrapper, key: string): string | undefined {
 }
 
 describe('costBasisSpendDetails.vue', () => {
-  it('should show the cost basis per unit, cost value and taxable gain of a disposal', () => {
+  it('should show the proceeds, cost value, cost basis per unit and taxable gain of a disposal', () => {
     const wrapper = mountDetails();
+    expect(figure(wrapper, 'proceeds')).toBe('900');
     expect(figure(wrapper, 'basis')).toBe('1000');
     expect(figure(wrapper, 'cost-value')).toBe('500');
     expect(figure(wrapper, 'gain')).toBe('400');
-    expect(figure(wrapper, 'proceeds')).toBeUndefined();
     expect(figure(wrapper, 'remaining')).toBeUndefined();
-    expect(wrapper.get('[data-testid=cost-basis-gain] .fiat').attributes('data-pnl')).toBe('true');
+    expect(wrapper.get('[data-testid=cost-basis-gain] .fiat').attributes('data-pnl')).toBeDefined();
+    expect(wrapper.get('[data-testid=cost-basis-cost-value] .fiat').attributes('data-pnl')).toBeUndefined();
     wrapper.findAll('.fiat').forEach((fiat) => {
       expect(fiat.attributes('data-decimals')).toBe('2');
       expect(fiat.attributes('data-no-mark')).toBe('true');
@@ -79,6 +80,7 @@ describe('costBasisSpendDetails.vue', () => {
   it('should show no gain for a move between own accounts or an unpriced spend', () => {
     const transfer = mountDetails({ proceeds: null, realizedPnl: bigNumberify('0'), taxfreePnl: null });
     expect(figure(transfer, 'gain')).toBeUndefined();
+    expect(figure(transfer, 'proceeds')).toBeUndefined();
     expect(figure(transfer, 'basis')).toBe('1000');
     expect(figure(transfer, 'cost-value')).toBe('500');
 

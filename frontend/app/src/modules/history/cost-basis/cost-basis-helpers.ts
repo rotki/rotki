@@ -1,5 +1,5 @@
-import type { BigNumber } from '@rotki/common';
 import type { FormatOptions } from '@/modules/assets/amount-display/types';
+import { type BigNumber, Zero } from '@rotki/common';
 import { CostBasisDirection, type CostBasisEntry, type CostBasisReceive, type CostBasisSpend } from '@/modules/history/cost-basis/types';
 
 /** Fiat values in the cost basis overlay are shown to two decimal places without a `<` or `>` mark. */
@@ -23,6 +23,8 @@ export interface CostBasisSummary {
   basis: BigNumber;
   /** The taxable gain or loss. Set for a priced disposal with proceeds. */
   pnl?: BigNumber;
+  /** The gain or loss on lots held past the tax free period. Set only when it is not zero. */
+  taxfreePnl?: BigNumber;
 }
 
 function isSpend(entry: CostBasisEntry): entry is CostBasisSpend {
@@ -49,16 +51,44 @@ export function summarizeCostBasis(entries: CostBasisEntry[], amount: BigNumber)
   const spend = entries.find(isSpend);
   const receive = entries.find(isReceive);
   if (spend) {
-    return receive
-      ? { basis: spend.basisRemoved, kind: CostBasisSummaryKind.TRANSFER }
-      : {
-          basis: spend.basisRemoved,
-          kind: CostBasisSummaryKind.DISPOSAL,
-          ...(spend.proceeds !== null && spend.realizedPnl !== null ? { pnl: spend.realizedPnl } : {}),
-        };
+    if (receive)
+      return { basis: spend.basisRemoved, kind: CostBasisSummaryKind.TRANSFER };
+    if (spend.proceeds === null || spend.realizedPnl === null)
+      return { basis: spend.basisRemoved, kind: CostBasisSummaryKind.DISPOSAL };
+    return {
+      basis: spend.basisRemoved,
+      kind: CostBasisSummaryKind.DISPOSAL,
+      pnl: spend.realizedPnl,
+      ...(spend.taxfreePnl !== null && !spend.taxfreePnl.isZero() ? { taxfreePnl: spend.taxfreePnl } : {}),
+    };
   }
   if (receive)
     return { basis: receive.basisPerUnit.multipliedBy(amount), kind: CostBasisSummaryKind.ACQUISITION };
 
   return undefined;
+}
+
+/**
+ * Adds up the summaries of several events shown on one row, as the spends of a multi-asset swap.
+ *
+ * @remarks
+ * The gain is only added up when every event has one: a total that leaves out an unpriced spend
+ * would look complete while it is not.
+ *
+ * @param summaries - the summaries of the events that have entries
+ * @returns undefined when there are none
+ */
+export function mergeCostBasisSummaries(summaries: CostBasisSummary[]): CostBasisSummary | undefined {
+  if (summaries.length <= 1)
+    return summaries[0];
+
+  const [first] = summaries;
+  const pnls = summaries.map(({ pnl }) => pnl).filter(pnl => pnl !== undefined);
+  const taxfreePnl = summaries.reduce((sum, summary) => summary.taxfreePnl ? sum.plus(summary.taxfreePnl) : sum, Zero);
+  return {
+    basis: summaries.reduce((sum, summary) => sum.plus(summary.basis), Zero),
+    kind: summaries.every(summary => summary.kind === first.kind) ? first.kind : CostBasisSummaryKind.DISPOSAL,
+    ...(pnls.length === summaries.length ? { pnl: pnls.reduce((sum, pnl) => sum.plus(pnl), Zero) } : {}),
+    ...(taxfreePnl.isZero() ? {} : { taxfreePnl }),
+  };
 }

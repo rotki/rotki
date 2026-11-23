@@ -18,6 +18,9 @@ export type CostBasisStatus = typeof CostBasisStatus[keyof typeof CostBasisStatu
 /** The backend rejects a request for more events than this. */
 const BATCH_SIZE = 500;
 
+/** How long after a failed batch its events are fetched again. */
+const RETRY_DELAY_MS = 15_000;
+
 interface EventCostBasis {
   status: CostBasisStatus;
   entries: CostBasisEntry[];
@@ -45,7 +48,8 @@ export interface UseCostBasisOverlayReturn {
  * @remarks
  * An event the response has no entries for affects no lots, which is a result and not a failure,
  * so it is kept as empty unless the response marks it as waiting for processing. A failed batch is
- * shown as an error and fetched again on the next change to the active events.
+ * shown as an error and fetched again after a delay, or sooner on the next change to the active
+ * events.
  */
 export function useCostBasisOverlay({ enabled, eventIdentifiers }: CostBasisOverlayParams): UseCostBasisOverlayReturn {
   const { fetchEventsCostBasis } = useCostBasisApi();
@@ -53,6 +57,9 @@ export function useCostBasisOverlay({ enabled, eventIdentifiers }: CostBasisOver
   const registered = shallowRef<Map<number, number>>(new Map());
   let generation = 0;
   let disposed = false;
+
+  // `fetchMissing` fetches the events of a failed batch again, as `needsFetch` lets errors through.
+  const retry = useTimeoutFn(() => startPromise(fetchMissing()), RETRY_DELAY_MS, { immediate: false });
 
   const activeIdentifiers = computed<number[]>(() => toValue(enabled)
     ? [...new Set([...toValue(eventIdentifiers), ...get(registered).keys()])]
@@ -92,6 +99,7 @@ export function useCostBasisOverlay({ enabled, eventIdentifiers }: CostBasisOver
         if (currentGeneration !== generation)
           return;
         store(batch, () => ({ entries: [], status: CostBasisStatus.ERROR }));
+        retry.start();
       }
     }
   }
@@ -100,6 +108,9 @@ export function useCostBasisOverlay({ enabled, eventIdentifiers }: CostBasisOver
     if (disposed)
       return;
     const missing = get(activeIdentifiers).filter(needsFetch);
+    // Replacing the cache invalidates every rendered cell, which scrolling would do on each tick.
+    if (missing.length === 0)
+      return;
     store(missing, () => ({ entries: [], status: CostBasisStatus.LOADING }));
     await fetchBatches(missing);
   }
