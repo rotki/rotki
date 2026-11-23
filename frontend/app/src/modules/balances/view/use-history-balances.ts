@@ -11,7 +11,7 @@ import { bankLocationBalances } from '@/modules/banks/bank-balances';
 interface UseHistoryBalancesReturn {
   /** History-derived chain and exchange balances, plus queried bank balances. */
   getBalances: (groupCollections?: boolean) => AssetBalanceWithPriceAndChains[];
-  /** History-derived debt-token liabilities plus queried protocol liabilities without history buckets. */
+  /** History-derived debt-token liabilities plus queried non-token protocol liabilities. */
   getLiabilities: () => AssetBalanceWithPriceAndChains[];
   /** Manual balances on their own, so a gap they explain can be attributed to them. */
   getManualBalances: (groupCollections?: boolean) => AssetBalanceWithPriceAndChains[];
@@ -26,24 +26,24 @@ interface UseHistoryBalancesReturn {
  *
  * @remarks
  * History derives chain and exchange balances (including ERC-20 debt tokens) from events. Bank
- * balances and non-token protocol liabilities have no events behind them, so they are carried
- * through from the queried side unchanged without duplicating debt tokens that have history
- * buckets. Manual balances are left out entirely: a user who tracks a wallet manually and also
- * records its events would otherwise count it twice.
+ * balances and non-token protocol liabilities (e.g. Maker vaults, Liquity debt) have no events
+ * behind them, so they are carried through from the queried side unchanged. Debt tokens are never
+ * filled in from live balances, even when history has no positive bucket for them, so missing or
+ * zeroed debt buckets surface as gaps. Manual balances are left out entirely: a user who tracks a
+ * wallet manually and also records its events would otherwise count it twice.
  */
 export function useHistoryBalances(): UseHistoryBalancesReturn {
   const context = useAggregationContext();
-  const { liabilityAssets, liabilitySource, source } = useHistoricalBalanceSource(context);
+  const { isTrackedLiability, liabilitySource, source } = useHistoricalBalanceSource(context);
   const { bankBalances, manualBalances, manualLiabilities, visibleBalances } = storeToRefs(useBalancesStore());
 
   const bankAssets = computed<AssetBalanceEntries>(() => fromExchanges(bankLocationBalances(get(bankBalances))));
   const blockchainLiabilities = computed<AssetBalanceEntries>(() => fromBlockchain(get(visibleBalances), { key: 'liabilities' }));
   const fallbackLiabilities = computed<AssetBalanceEntries>(() => {
-    const tracked = get(liabilityAssets);
     const live = get(blockchainLiabilities);
     const entries: AssetBalanceEntries = {};
     for (const [asset, protocols] of Object.entries(live)) {
-      if (!tracked.has(context.resolveIdentifier(asset)))
+      if (!isTrackedLiability(asset))
         entries[asset] = protocols;
     }
     return entries;

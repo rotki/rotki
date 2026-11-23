@@ -68,6 +68,7 @@ export const AssetInfo = z.object({
   evmChain: z.string().optional(),
   imageUrl: z.string().nullish(),
   isCustomAsset: z.boolean().nullish(),
+  isLiability: z.boolean().optional(),
   isSpam: z.boolean().optional(),
   mainAsset: z.string().optional(),
   name: z.string().nullish(),

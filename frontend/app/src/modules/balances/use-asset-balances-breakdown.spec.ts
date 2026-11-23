@@ -18,6 +18,12 @@ import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN, TRADE_LOCATION_EXTERNA
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 
+const assetInfoMock = vi.hoisted(() => new Map<string, { isLiability?: boolean }>());
+
+vi.mock('@/modules/assets/use-asset-info-cache', () => ({
+  useAssetInfoCache: (): object => ({ resolve: (id: string) => assetInfoMock.get(id) ?? null }),
+}));
+
 vi.mock('@/modules/core/common/use-supported-chains', async () => {
   const { computed } = await import('vue');
   const { Blockchain } = await import('@rotki/common');
@@ -209,7 +215,11 @@ describe('useAssetBalancesBreakdown', () => {
       return rows;
     }
 
+    const DEBT_TOKEN = 'eip155:1/erc20:0x6df1C1E379bC5a00a7b4C6e67A203333772f45A8';
+
     beforeEach(() => {
+      assetInfoMock.clear();
+      assetInfoMock.set(DEBT_TOKEN, { isLiability: true });
       useHistoricalSnapshotStore().setSnapshot({
         entries: [{ amount: bigNumberify(5), asset: 'GNO', location: 'ethereum', locationLabel: '0xaddress1', protocol: null }],
         processingRequired: false,
@@ -240,8 +250,6 @@ describe('useAssetBalancesBreakdown', () => {
       expect(breakdownInHistoryView('GNO', true).map(row => row.location)).not.toContain(TRADE_LOCATION_EXTERNAL);
     });
 
-    const DEBT_TOKEN = 'eip155:1/erc20:0x6df1C1E379bC5a00a7b4C6e67A203333772f45A8';
-
     function seedDebtToken(liveByAddress: Record<string, number>, historyAmount: number): void {
       useBalancesStore().updateBalances('eth', {
         perAccount: {
@@ -271,6 +279,17 @@ describe('useAssetBalancesBreakdown', () => {
     it('should not fall back to live liabilities when a tracked debt token is filtered out by value threshold', () => {
       seedDebtToken({ '0xaddress1': 500 }, 1);
       useSettingsRepo().updateFrontend({ balanceValueThreshold: { [BalanceSource.BLOCKCHAIN]: '10' } });
+
+      expect(breakdownInHistoryView(DEBT_TOKEN, true)).toStrictEqual([]);
+    });
+
+    it('should not fall back to live liabilities when a live debt token has no history bucket', () => {
+      seedDebtToken({ '0xaddress1': 500 }, 0);
+      useHistoricalSnapshotStore().setSnapshot({
+        entries: [{ amount: bigNumberify(5), asset: 'GNO', location: 'ethereum', locationLabel: '0xaddress1', protocol: null }],
+        processingRequired: false,
+        stale: false,
+      });
 
       expect(breakdownInHistoryView(DEBT_TOKEN, true)).toStrictEqual([]);
     });

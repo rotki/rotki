@@ -47,10 +47,26 @@ pub struct AssetMappings {
     pub protocol: Option<String>,
     #[serde(skip_serializing_if = "<&bool as std::ops::Not>::not")]
     pub is_spam: bool,
+    #[serde(skip_serializing_if = "<&bool as std::ops::Not>::not")]
+    pub is_liability: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub coingecko: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cryptocompare: Option<String>,
+}
+
+/// Mirrors `EvmToken.is_liability()` in `rotkehlchen/assets/asset.py`.
+fn is_liability_token(asset_type: &str, protocol: Option<&str>, symbol: &str) -> bool {
+    if asset_type != "evm token" || !matches!(protocol, Some("aave-v3" | "spark")) {
+        return false;
+    }
+    let Some(rest) = symbol
+        .strip_prefix("stableDebt")
+        .or_else(|| symbol.strip_prefix("variableDebt"))
+    else {
+        return false;
+    };
+    !rest.is_empty() && rest.chars().all(|c| c.is_alphanumeric() || c == '_')
 }
 
 #[derive(Serialize)]
@@ -119,16 +135,19 @@ impl GlobalDB {
                     .and_then(|id| ChainID::deserialize_from_db(id).ok())
                     .map(|chain| chain.to_name());
                 let protocol: Option<String> = row.get("protocol").unwrap_or_default();
+                let symbol: String = row.get("symbol").unwrap_or_default();
+                let is_liability = is_liability_token(&asset_type, protocol.as_deref(), &symbol);
 
                 AssetMappings {
                     name: row.get("name").unwrap_or_default(),
-                    symbol: row.get("symbol").unwrap_or_default(),
+                    symbol,
                     collection_id: collection_id.map(|id| id.to_string()),
                     asset_type,
                     evm_chain,
                     custom_asset_type: custom_type,
                     protocol: protocol.clone(),
                     is_spam: protocol.as_deref() == Some("spam"),
+                    is_liability,
                     coingecko: row.get("coingecko").unwrap_or_default(),
                     cryptocompare: row.get("cryptocompare").unwrap_or_default(),
                 }
@@ -321,5 +340,87 @@ mod tests {
         assert_eq!(asset.symbol, "FIXTURE");
         assert_eq!(asset.asset_type, "hyperliquid token");
         assert!(asset.evm_chain.is_none());
+        assert!(!asset.is_liability);
+    }
+
+    #[tokio::test]
+    async fn test_get_assets_mappings_is_liability() {
+        let (globaldb, _tmp_dir) = create_globaldb!().await.unwrap();
+        let aave_debt = "eip155:1/erc20:0x000000000000000000000000000000000000dEb1";
+        let spark_debt = "eip155:1/erc20:0x000000000000000000000000000000000000dEb2";
+        let aave_collateral = "eip155:1/erc20:0x000000000000000000000000000000000000dEb3";
+        let other_protocol_debt = "eip155:1/erc20:0x000000000000000000000000000000000000dEb4";
+        let empty_suffix_debt = "eip155:1/erc20:0x000000000000000000000000000000000000dEb5";
+
+        let fixtures = [
+            (
+                aave_debt,
+                "0x000000000000000000000000000000000000dEb1",
+                "variableDebtEthUSDC",
+                "aave-v3",
+            ),
+            (
+                spark_debt,
+                "0x000000000000000000000000000000000000dEb2",
+                "stableDebtSpDAI",
+                "spark",
+            ),
+            (
+                aave_collateral,
+                "0x000000000000000000000000000000000000dEb3",
+                "aEthUSDC",
+                "aave-v3",
+            ),
+            (
+                other_protocol_debt,
+                "0x000000000000000000000000000000000000dEb4",
+                "variableDebtEthUSDC",
+                "other",
+            ),
+            (
+                empty_suffix_debt,
+                "0x000000000000000000000000000000000000dEb5",
+                "variableDebt",
+                "aave-v3",
+            ),
+        ];
+
+        {
+            let conn = globaldb.conn.lock().await;
+            for (identifier, address, symbol, protocol) in fixtures {
+                conn.execute(
+                    "INSERT INTO assets(identifier, name, type) VALUES (?, ?, ?)",
+                    rusqlite::params![identifier, symbol, AssetType::EvmToken.serialize_for_db()],
+                )
+                .unwrap();
+                conn.execute(
+                    "INSERT INTO common_asset_details(identifier, symbol) VALUES (?, ?)",
+                    rusqlite::params![identifier, symbol],
+                )
+                .unwrap();
+                conn.execute(
+                    "INSERT INTO evm_tokens(identifier, chain, address, decimals, protocol) VALUES (?, ?, ?, ?, ?)",
+                    rusqlite::params![identifier, 1, address, 18, protocol],
+                )
+                .unwrap();
+            }
+        }
+
+        let ids: Vec<String> = fixtures.iter().map(|(id, ..)| (*id).to_string()).collect();
+        let (assets, _) = globaldb.get_assets_mappings(&ids).await.unwrap();
+
+        assert!(assets[aave_debt].is_liability);
+        assert!(assets[spark_debt].is_liability);
+        assert!(!assets[aave_collateral].is_liability);
+        assert!(!assets[other_protocol_debt].is_liability);
+        assert!(!assets[empty_suffix_debt].is_liability);
+
+        let serialized_debt = serde_json::to_value(&assets[aave_debt]).unwrap();
+        assert_eq!(
+            serialized_debt.get("is_liability"),
+            Some(&serde_json::json!(true))
+        );
+        let serialized_collateral = serde_json::to_value(&assets[aave_collateral]).unwrap();
+        assert_eq!(serialized_collateral.get("is_liability"), None);
     }
 }

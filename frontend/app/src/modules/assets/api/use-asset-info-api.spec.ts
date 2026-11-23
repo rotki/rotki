@@ -19,6 +19,7 @@ describe('composables/api/assets/info', () => {
 
   describe('assetMapping', () => {
     it('should fetch asset mapping for identifiers', async () => {
+      const debtToken = 'eip155:1/erc20:0x72E95b8931767C79bA4EeE721354d6E99a61D004';
       let capturedBody: DefaultBodyType = null;
 
       server.use(
@@ -41,6 +42,13 @@ describe('composables/api/assets/info', () => {
                   is_custom_asset: false,
                   collection_id: null,
                 },
+                [debtToken]: {
+                  name: 'Aave Ethereum Variable Debt USDC',
+                  symbol: 'variableDebtEthUSDC',
+                  asset_type: 'evm token',
+                  protocol: 'aave-v3',
+                  is_liability: true,
+                },
               },
               asset_collections: {},
             },
@@ -50,12 +58,14 @@ describe('composables/api/assets/info', () => {
       );
 
       const { assetMapping } = await getApi();
-      const result = await assetMapping(['ETH', 'BTC']);
+      const result = await assetMapping(['ETH', 'BTC', debtToken]);
 
-      expect(capturedBody).toEqual({ identifiers: ['ETH', 'BTC'] });
+      expect(capturedBody).toEqual({ identifiers: ['ETH', 'BTC', debtToken] });
       expect(result.assets.ETH).toBeDefined();
       expect(result.assets.ETH.name).toBe('Ethereum');
+      expect(result.assets.ETH.isLiability).toBeUndefined();
       expect(result.assets.BTC.symbol).toBe('BTC');
+      expect(result.assets[debtToken].isLiability).toBe(true);
     });
 
     it('should handle empty identifiers', async () => {

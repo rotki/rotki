@@ -31,13 +31,14 @@ interface UseAssetBalancesBreakdownReturn {
  * @remarks
  * Queried unless the page provided the history view. In the history view, chain rows come from the
  * history buckets and bank rows from the queried bank balances; manual balances and manual
- * liabilities are left out, matching the history totals. Debt-token liabilities with history
- * buckets come from those buckets; other protocol liabilities stay queried from on-chain balances.
+ * liabilities are left out, matching the history totals. Debt-token liabilities always come from
+ * history buckets without falling back to live balances; non-token protocol liabilities stay
+ * queried from on-chain balances.
  */
 export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
   const { bankBalances, exchangeBalances, manualBalances, manualLiabilities, visibleBalances: balances } = storeToRefs(useBalancesStore());
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
-  const { liabilityAssets, visibleEntries: historicalEntries, visibleLiabilityEntries } = useHistoricalBalanceSource(useAggregationContext());
+  const { isTrackedLiability, visibleEntries: historicalEntries, visibleLiabilityEntries } = useHistoricalBalanceSource(useAggregationContext());
   const isHistory = useIsHistoryView();
   const { getEvmChainName, matchChain } = useSupportedChains();
   const { getAssetPrice } = usePriceUtils();
@@ -77,7 +78,7 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
 
   function historyBreakdown(asset: string, liabilities: boolean, filters: BreakdownFilters): AssetBreakdown[] {
     if (liabilities) {
-      if (get(liabilityAssets).has(resolveIdentifier(asset)))
+      if (isTrackedLiability(asset))
         return historicalAssetBreakdown(asset, filteredEntries(get(visibleLiabilityEntries), filters), historicalPorts);
       const blockchainOnly = { accounts: get(accounts), balances: get(balances), exchanges: {}, manual: [] };
       return assetBreakdown(asset, blockchainOnly, true, filters, ports);

@@ -3,6 +3,7 @@ import type { AggregationContext, AssetBalanceEntries } from '@/modules/balances
 import type { HistoricalBalanceEntry } from '@/modules/history/balances/types';
 import { type BigNumber, bigNumberify } from '@rotki/common';
 import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
+import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { fromHistoricalEntries, type HistoricalSourceContext, visibleHistoricalEntries } from '@/modules/balances/aggregation/core/historical-source';
 import { useHistoricalSnapshotStore } from '@/modules/balances/use-historical-snapshot-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
@@ -13,8 +14,11 @@ interface UseHistoricalBalanceSourceReturn {
   visibleEntries: ComputedRef<HistoricalBalanceEntry[]>;
   /** The liability buckets (e.g. ERC-20 debt tokens) visible after threshold filtering. */
   visibleLiabilityEntries: ComputedRef<HistoricalBalanceEntry[]>;
-  /** Resolved identifiers of every liability bucket in the snapshot, before threshold filtering. */
-  liabilityAssets: ComputedRef<ReadonlySet<string>>;
+  /**
+   * Whether history derives this liability from events (e.g. Aave v3/Spark debt tokens), so live
+   * balances must not fill in when history has no positive bucket for it.
+   */
+  isTrackedLiability: (asset: string) => boolean;
   /** The visible asset buckets, priced at current prices, as one aggregation source. */
   source: ComputedRef<AssetBalanceEntries>;
   /** The visible liability buckets, priced at current prices, as one aggregation source. */
@@ -28,6 +32,7 @@ export function useHistoricalBalanceSource(
   aggregation: Pick<AggregationContext, 'priceOf' | 'resolveIdentifier'>,
 ): UseHistoricalBalanceSourceReturn {
   const { entries } = storeToRefs(useHistoricalSnapshotStore());
+  const { resolve: resolveAssetInfo } = useAssetInfoCache();
   const { matchChain } = useSupportedChains();
   const thresholdSetting = useValueThreshold(BalanceSource.BLOCKCHAIN);
 
@@ -45,7 +50,7 @@ export function useHistoricalBalanceSource(
   const allVisibleEntries = computed<HistoricalBalanceEntry[]>(() => visibleHistoricalEntries(get(entries), context, get(threshold)));
   const visibleEntries = computed<HistoricalBalanceEntry[]>(() => get(allVisibleEntries).filter(entry => !entry.isLiability));
   const visibleLiabilityEntries = computed<HistoricalBalanceEntry[]>(() => get(allVisibleEntries).filter(entry => entry.isLiability === true));
-  const liabilityAssets = computed<ReadonlySet<string>>(() => new Set(
+  const snapshotLiabilityAssets = computed<ReadonlySet<string>>(() => new Set(
     get(entries)
       .filter(entry => entry.isLiability === true)
       .map(entry => context.resolveIdentifier(entry.asset)),
@@ -54,5 +59,10 @@ export function useHistoricalBalanceSource(
   const liabilitySource = computed<AssetBalanceEntries>(() => fromHistoricalEntries(get(visibleLiabilityEntries), context));
   const unfilteredSource = computed<AssetBalanceEntries>(() => fromHistoricalEntries(get(entries), context));
 
-  return { liabilityAssets, liabilitySource, source, unfilteredSource, visibleEntries, visibleLiabilityEntries };
+  function isTrackedLiability(asset: string): boolean {
+    const resolved = context.resolveIdentifier(asset);
+    return get(snapshotLiabilityAssets).has(resolved) || resolveAssetInfo(resolved)?.isLiability === true;
+  }
+
+  return { isTrackedLiability, liabilitySource, source, unfilteredSource, visibleEntries, visibleLiabilityEntries };
 }

@@ -15,8 +15,15 @@ const ACCOUNT = '0x006a3aD7251db5D12992B62cce26252ac58492Dd';
 
 const h = await vi.hoisted(async () => {
   const { ref: vueRef } = await import('vue');
-  return { threshold: vueRef<string | undefined>(undefined) };
+  return {
+    assetInfo: new Map<string, { isLiability?: boolean }>(),
+    threshold: vueRef<string | undefined>(undefined),
+  };
 });
+
+vi.mock('@/modules/assets/use-asset-info-cache', () => ({
+  useAssetInfoCache: (): object => ({ resolve: (id: string) => h.assetInfo.get(id) ?? null }),
+}));
 
 vi.mock('@/modules/assets/prices/use-price-utils', () => ({
   usePriceUtils: (): object => ({ getAssetPrice: (asset: string) => (asset === 'ETH' ? bigNumberify('2000') : bigNumberify('1')) }),
@@ -86,6 +93,9 @@ describe('useBalanceViewData debt token liability routing', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     h.threshold.value = undefined;
+    h.assetInfo.clear();
+    h.assetInfo.set(DEBT_TOKEN, { isLiability: true });
+    h.assetInfo.set(HISTORY_ONLY_DEBT, { isLiability: true });
   });
 
   it('should route history debt tokens out of assets and into liabilities alongside live protocol liabilities', () => {
@@ -146,5 +156,23 @@ describe('useBalanceViewData debt token liability routing', () => {
     expect(debtComparison.history.isZero()).toBe(true);
     expect(debtComparison.queried.toFixed(2)).toBe('22067.19');
     expect(debtComparison.delta.toFixed(2)).toBe('-22067.19');
+  });
+
+  it('should report the full live amount as a gap when a live debt token has no history bucket', () => {
+    seedPortfolio();
+    setSnapshot([{ amount: '16', asset: 'ETH', isLiability: false }]);
+
+    const data = viewData(true);
+    const debtComparison = get(data.liabilityComparisons).get(DEBT_TOKEN);
+    const daiComparison = get(data.liabilityComparisons).get('DAI');
+
+    expect(get(data.liabilities).find(row => row.asset === DEBT_TOKEN)?.amount.isZero()).toBe(true);
+    expect(debtComparison?.history.isZero()).toBe(true);
+    expect(debtComparison?.queried.toFixed(2)).toBe('22067.19');
+    expect(debtComparison?.delta.toFixed(2)).toBe('-22067.19');
+    expect(debtComparison?.valueDelta.toFixed(2)).toBe('-22067.19');
+    expect(daiComparison?.history.toFixed(2)).toBe('1000.00');
+    expect(daiComparison?.delta.isZero()).toBe(true);
+    expect(get(data.netWorth).toFixed(2)).toBe('31000.00');
   });
 });
