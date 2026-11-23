@@ -68,13 +68,29 @@ if TYPE_CHECKING:
 
 pytestmark = pytest.mark.accounting_update
 
-# The price of ETH at each second the tests place an event at.
-ETH_PRICES: Final = {1: 1000, 2: 3000, 3: 2000, 4: 4000, 5: 5000, 6: 1200, 7: 1500, 8: 1700}
+# Base timestamp well above 86400 so Windows datetime.fromtimestamp(ts).astimezone()
+# does not fail with EINVAL (python/cpython#107078).
+BASE_TS: Final = 1_700_000_000
+# The price of ETH at each second offset from BASE_TS the tests place an event at.
+ETH_PRICES: Final = {
+    BASE_TS + second: price
+    for second, price in {
+        1: 1000, 2: 3000, 3: 2000, 4: 4000, 5: 5000, 6: 1200, 7: 1500, 8: 1700,
+    }.items()
+}
 ROW_COLUMNS: Final = (
     'event_identifier, location_label, asset, direction, lot_created_id, basis_per_unit, '
     'basis_source, lots_consumed_json, realized_pnl, basis_removed, post_spend_basis_remaining, '
     'method'
 )
+
+
+def _ts(at: int) -> Timestamp:
+    return Timestamp(BASE_TS + at)
+
+
+def _ts_ms(at: int) -> TimestampMS:
+    return TimestampMS((BASE_TS + at) * 1000)
 
 
 @pytest.fixture(name='queried_prices')
@@ -109,7 +125,7 @@ def _event(
     return EvmEvent(
         tx_ref=make_evm_tx_hash() if tx_ref is None else tx_ref,
         sequence_index=sequence_index,
-        timestamp=TimestampMS(at * 1000),
+        timestamp=_ts_ms(at),
         location=LOCATION_ETHEREUM,
         event_type=event_type,
         event_subtype=event_subtype,
@@ -323,7 +339,7 @@ def test_swap_writes_both_directions(
             ), HistoryEvent(
                 group_identifier='fiat_buy',
                 sequence_index=0,
-                timestamp=TimestampMS(7000),
+                timestamp=_ts_ms(7),
                 location=LOCATION_KRAKEN,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.SPEND,
@@ -333,7 +349,7 @@ def test_swap_writes_both_directions(
             ), HistoryEvent(
                 group_identifier='fiat_buy',
                 sequence_index=1,
-                timestamp=TimestampMS(7000),
+                timestamp=_ts_ms(7),
                 location=LOCATION_KRAKEN,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.RECEIVE,
@@ -412,7 +428,7 @@ def test_receive_without_price_has_zero_cost(database: DBHandler, method: CostBa
 
 
 @pytest.mark.parametrize('method', list(CostBasisMethod))
-@pytest.mark.parametrize('from_ts', [0, 3000, 5000])
+@pytest.mark.parametrize('from_ts', [0, _ts_ms(3), _ts_ms(5)])
 @pytest.mark.usefixtures('queried_prices')
 def test_reprocessing_is_idempotent(
         database: DBHandler,
@@ -480,10 +496,10 @@ def test_resume_from_stale_marker(
         assert database.get_static_caches(cursor=cursor, names=(
             DBCacheStatic.STALE_BALANCES_FROM_TS,
             DBCacheStatic.STALE_COST_BASIS_FROM_TS,
-        )) == ('1000', '5000')
+        )) == (str(_ts_ms(1)), str(_ts_ms(5)))
 
     assert process_cost_basis(database, database.msg_aggregator) is True
-    assert queried_prices == [('ETH', 5)]  # the basis of the earlier lots comes from their rows
+    assert queried_prices == [('ETH', _ts(5))]  # the basis of the earlier lots comes from their rows  # noqa: E501
     assert _rows(database, f'id, {ROW_COLUMNS}')[:-1] == rows_before
     assert _spend_row(database, spent)[:2] == (
         [(identifiers[idx], FVal(amount)) for idx, amount in consumed],
@@ -499,7 +515,7 @@ def test_resume_from_stale_marker(
 @pytest.mark.usefixtures('queried_prices')
 def test_rate_limited_prices_keep_the_pass_stale(database: DBHandler) -> None:
     def rate_limited_at_two(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
-        if timestamp == 2:
+        if timestamp == _ts(2):
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
                 to_asset=to_asset,
@@ -525,7 +541,7 @@ def test_rate_limited_prices_keep_the_pass_stale(database: DBHandler) -> None:
         assert database.get_static_cache(
             cursor=cursor,
             name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
-        ) == '2000'
+        ) == str(_ts_ms(2))
     assert process_cost_basis(database, database.msg_aggregator) is True  # prices are back
     assert len(_rows(database)) == 2
 
@@ -553,7 +569,7 @@ def test_unfinished_pass_keeps_progress_until_events_change(database: DBHandler)
             treat_eth2_as_eth: bool,
             swap_fee_events: Sequence[HistoryBaseEntry] = (),
     ) -> None:
-        if event.timestamp == 3000:
+        if event.timestamp == _ts_ms(3):
             raise AssertionError('the pass dies at the third event')
         apply(
             self,
@@ -570,7 +586,7 @@ def test_unfinished_pass_keeps_progress_until_events_change(database: DBHandler)
     ):
         process_cost_basis(database, database.msg_aggregator)
 
-    assert unprocessed_from_ts() == 3000
+    assert unprocessed_from_ts() == _ts_ms(3)
     assert _rows(database, 'event_identifier') == [(identifier,) for identifier in identifiers[:2]]
 
     with database.user_write() as write_cursor:  # a change may make what the pass wrote outdated
@@ -779,9 +795,9 @@ def test_spend_separates_the_gain_on_lots_held_past_the_taxfree_period(
     )[-1]
     # at 5 the lots of 1 and 2 were held for more than 2 seconds, the one of 3 was not
     assert [(lot['lot_id'], lot['acquired_at'], lot['taxable']) for lot in json.loads(lots)] == [
-        (acquired[0], 1, False),
-        (acquired[1], 2, False),
-        (acquired[2], 3, True),
+        (acquired[0], _ts(1), False),
+        (acquired[1], _ts(2), False),
+        (acquired[2], _ts(3), True),
     ]
     assert proceeds == '12500'
     assert realized_pnl == '1500'  # half a unit worth 2500 that was bought for 1000
@@ -843,7 +859,7 @@ def test_crashed_pass_resumes_from_committed_progress(
             treat_eth2_as_eth: bool,
             swap_fee_events: Sequence[HistoryBaseEntry] = (),
     ) -> None:
-        if event.timestamp == 5000:
+        if event.timestamp == _ts_ms(5):
             raise RuntimeError('deterministic crash after committed batches')
         apply(
             self,
@@ -878,7 +894,7 @@ def test_crashed_pass_resumes_from_committed_progress(
 
     queried_prices.clear()
     assert process_cost_basis(database, database.msg_aggregator) is True
-    assert queried_prices == [('ETH', 4), ('ETH', 5), ('ETH', 6)]
+    assert queried_prices == [('ETH', _ts(4)), ('ETH', _ts(5)), ('ETH', _ts(6))]
     resumed_rows_with_ids = _rows(database, f'id, {ROW_COLUMNS}')
     assert resumed_rows_with_ids[:len(committed_rows)] == committed_rows
     resumed_rows = _rows(database)
@@ -950,14 +966,16 @@ def test_pass_resumes_from_the_last_checkpoint_before_the_stale_events(
     with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', 1):
         identifiers = _process(database=database, method=method, events=_mixed_history())
         # none between the two sides of the swap at 2, and the last one after the last event
-        assert _checkpoint_timestamps(database) == [2000, 3000, 4000, 5000, 6000, 6001]
+        assert _checkpoint_timestamps(database) == [
+            _ts_ms(2), _ts_ms(3), _ts_ms(4), _ts_ms(5), _ts_ms(6), _ts_ms(6) + 1,
+        ]
 
         with database.user_write() as write_cursor:
             DBHistoryEvents(database).add_history_event(
                 write_cursor=write_cursor,
                 event=_event(at=7, amount='0.25', event_type=HistoryEventType.SPEND),
             )
-        assert _process_counting_applied(database) == [7000]
+        assert _process_counting_applied(database) == [_ts_ms(7)]
 
         with database.user_write() as write_cursor:
             write_cursor.execute(
@@ -967,12 +985,16 @@ def test_pass_resumes_from_the_last_checkpoint_before_the_stale_events(
             write_cursor.executemany(
                 'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
                 [
-                    (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, '4000'),
+                    (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, str(_ts_ms(4))),
                     (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value, '1'),
                 ],
             )
-        assert _process_counting_applied(database) == [4000, 5000, 6000, 7000]
-        assert _checkpoint_timestamps(database) == [2000, 3000, 4000, 5000, 6000, 7000, 7001]
+        assert _process_counting_applied(database) == [
+            _ts_ms(4), _ts_ms(5), _ts_ms(6), _ts_ms(7),
+        ]
+        assert _checkpoint_timestamps(database) == [
+            _ts_ms(2), _ts_ms(3), _ts_ms(4), _ts_ms(5), _ts_ms(6), _ts_ms(7), _ts_ms(7) + 1,
+        ]
         resumed_rows = _rows(database)
 
         with database.user_write() as write_cursor:  # compare against a pass from scratch
@@ -982,7 +1004,10 @@ def test_pass_resumes_from_the_last_checkpoint_before_the_stale_events(
                 'DELETE FROM key_value_cache WHERE name = ?',
                 (DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS.value,),
             )
-        assert _process_counting_applied(database) == [1000, 2000, 2000, 3000, 4000, 5000, 6000, 7000]  # noqa: E501
+        assert _process_counting_applied(database) == [
+            _ts_ms(1), _ts_ms(2), _ts_ms(2), _ts_ms(3),
+            _ts_ms(4), _ts_ms(5), _ts_ms(6), _ts_ms(7),
+        ]
         assert _rows(database) == resumed_rows
 
 
@@ -1004,9 +1029,9 @@ def test_rule_change_marks_the_cost_basis_stale_from_the_first_event_it_affects(
     ])
     assert stale_from_ts() is None
     _add_rule(database, HistoryEventType.SPEND, HistoryEventSubType.FEE, event_ids=[int(second_fee)])  # noqa: E501
-    assert stale_from_ts() == '5000'
+    assert stale_from_ts() == str(_ts_ms(5))
     _add_rule(database, HistoryEventType.SPEND, HistoryEventSubType.FEE)
-    assert stale_from_ts() == '4000'
+    assert stale_from_ts() == str(_ts_ms(4))
 
     assert process_cost_basis(database, database.msg_aggregator) is True
     _add_rule(database, HistoryEventType.DEPOSIT)  # no event of the type, so nothing is stale
@@ -1031,7 +1056,7 @@ def test_spend_with_invalid_amount_includes_event_details_in_error(
         lot_id='1',
         amount=FVal('1'),
         basis_per_unit=FVal('1000'),
-        timestamp=Timestamp(1),
+        timestamp=_ts(1),
     )
     spend_event = _event(at=2, amount='-0.5', event_type=HistoryEventType.SPEND)
     with pytest.raises(
@@ -1042,7 +1067,7 @@ def test_spend_with_invalid_amount_includes_event_details_in_error(
             bucket=bucket,
             asset=A_ETH,
             amount=spend_event.amount,
-            timestamp=Timestamp(2),
+            timestamp=_ts(2),
             event=spend_event,
         )
 
@@ -1097,7 +1122,7 @@ def test_negative_amount_event_records_data_issue_and_blocks_only_its_bucket(
         write_cursor.executemany(
             'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
             [
-                (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, '2000'),
+                (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, str(_ts_ms(2))),
                 (DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS.value, '1'),
             ],
         )
@@ -1215,7 +1240,7 @@ def test_setting_and_rule_changes_during_startup_keep_stale_marker(
     assert not worker.is_alive()
 
     with database.conn.read_ctx() as cursor:
-        assert get_unprocessed_from_ts(cursor=cursor, database=database) == 5000
+        assert get_unprocessed_from_ts(cursor=cursor, database=database) == _ts_ms(5)
 
     assert process_cost_basis(database, database.msg_aggregator) is True
     # LIFO consumed 1 ETH @ 2000 and 0.5 ETH @ 3000 at t=4, leaving 0.5 ETH @ 3000 for t=5 @ 5000.
@@ -1236,7 +1261,7 @@ def test_edit_history_event_invalidates_cost_basis_on_all_consumed_fields(
     btc_event = HistoryEvent(
         group_identifier='btc_tx',
         sequence_index=0,
-        timestamp=TimestampMS(4000),
+        timestamp=_ts_ms(4),
         location=LOCATION_BITCOIN,
         location_label='bc1q000000000000000000000000000000000000000',
         asset=A_BTC,
@@ -1281,35 +1306,35 @@ def test_edit_history_event_invalidates_cost_basis_on_all_consumed_fields(
 
     # Counterparty-only edit invalidates.
     evm_event.counterparty = 'uniswap-v3'
-    edit_and_assert_stale(evm_event, '3000')
+    edit_and_assert_stale(evm_event, str(_ts_ms(3)))
 
     # Address-only edit invalidates.
     evm_event.address = TEST_ADDR1
-    edit_and_assert_stale(evm_event, '3000')
+    edit_and_assert_stale(evm_event, str(_ts_ms(3)))
 
     # Location-only edit invalidates.
     evm_event.location = LOCATION_OPTIMISM
-    edit_and_assert_stale(evm_event, '3000')
+    edit_and_assert_stale(evm_event, str(_ts_ms(3)))
 
     # Group identifier-only edit invalidates.
     evm_event.group_identifier = 'edited_group'
-    edit_and_assert_stale(evm_event, '3000')
+    edit_and_assert_stale(evm_event, str(_ts_ms(3)))
 
     # Sequence index-only edit invalidates.
     evm_event.sequence_index = 2
-    edit_and_assert_stale(evm_event, '3000')
+    edit_and_assert_stale(evm_event, str(_ts_ms(3)))
 
     # Moving timestamp forward still marks stale from the minimum of old and new timestamps.
-    evm_event.timestamp = TimestampMS(6000)
-    edit_and_assert_stale(evm_event, '3000')
+    evm_event.timestamp = _ts_ms(6)
+    edit_and_assert_stale(evm_event, str(_ts_ms(3)))
 
     # Moving timestamp backward marks stale from the new earlier timestamp.
-    evm_event.timestamp = TimestampMS(2000)
-    edit_and_assert_stale(evm_event, '2000')
+    evm_event.timestamp = _ts_ms(2)
+    edit_and_assert_stale(evm_event, str(_ts_ms(2)))
 
     # Bitcoin notes edit can change counterparty address extraction and invalidates.
     btc_event.notes = 'Transfer 1 BTC to 1BoatSLRHtKNngkdXEeobR76b53LETtpyT'
-    edit_and_assert_stale(btc_event, '4000')
+    edit_and_assert_stale(btc_event, str(_ts_ms(4)))
 
 
 @pytest.mark.usefixtures('queried_prices')
@@ -1498,10 +1523,16 @@ def test_eth2_pre_shapella_staking_reward_follows_withdrawal_setting(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
         ),
-        _event(
-            at=int(t_spend),
-            amount='1',
+        EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=0,
+            timestamp=TimestampMS(t_spend * 1000),
+            location=LOCATION_ETHEREUM,
             event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal('1'),
+            location_label=TEST_ADDR1,
         ),
     ]
 
@@ -1632,7 +1663,7 @@ def test_repeated_append_only_passes_keep_bounded_checkpoints(database: DBHandle
             method=CostBasisMethod.FIFO,
             events=[_event(at=1, amount='1', event_type=HistoryEventType.RECEIVE)],
         )
-        assert _checkpoint_timestamps(database) == [1001]
+        assert _checkpoint_timestamps(database) == [_ts_ms(1) + 1]
 
         # With the default 10_000 interval, repeated single-event appends keep 1 checkpoint.
         for second in range(2, 11):
@@ -1641,8 +1672,8 @@ def test_repeated_append_only_passes_keep_bounded_checkpoints(database: DBHandle
                     write_cursor=write_cursor,
                     event=_event(at=second, amount='1', event_type=HistoryEventType.RECEIVE),
                 )
-            assert _process_counting_applied(database) == [second * 1000]
-            assert _checkpoint_timestamps(database) == [second * 1000 + 1]
+            assert _process_counting_applied(database) == [_ts_ms(second)]
+            assert _checkpoint_timestamps(database) == [_ts_ms(second) + 1]
 
         # With a small interval of 3, checkpoints stay bounded to floor(N / 3) + 1.
         with database.user_write() as write_cursor:
@@ -1665,10 +1696,12 @@ def test_repeated_append_only_passes_keep_bounded_checkpoints(database: DBHandle
                         write_cursor=write_cursor,
                         event=_event(at=second, amount='1', event_type=HistoryEventType.RECEIVE),
                     )
-                assert _process_counting_applied(database) == [second * 1000]
+                assert _process_counting_applied(database) == [_ts_ms(second)]
                 assert len(_checkpoint_timestamps(database)) <= second // 3 + 1
 
-            assert _checkpoint_timestamps(database) == [3001, 6001, 9001, 10001]
+            assert _checkpoint_timestamps(database) == [
+                _ts_ms(3) + 1, _ts_ms(6) + 1, _ts_ms(9) + 1, _ts_ms(10) + 1,
+            ]
             incremental_rows = _rows(database)
 
             with database.user_write() as write_cursor:
@@ -1795,7 +1828,7 @@ def test_ignored_actions_excluded_and_invalidated_on_toggle(
         assert database.get_static_cache(
             cursor=cursor,
             name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
-        ) == '1000'
+        ) == str(_ts_ms(1))
         assert database.get_static_cache(
             cursor=cursor,
             name=DBCacheStatic.STALE_BALANCES_FROM_TS,
@@ -1814,7 +1847,7 @@ def test_ignored_actions_excluded_and_invalidated_on_toggle(
         assert database.get_static_cache(
             cursor=cursor,
             name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
-        ) == '4000'
+        ) == str(_ts_ms(4))
     assert process_cost_basis(database, database.msg_aggregator) is True
     assert _rows(database, 'event_identifier, realized_pnl') == [(int(lot2), None)]
 
@@ -1828,7 +1861,7 @@ def test_ignored_actions_excluded_and_invalidated_on_toggle(
         assert database.get_static_cache(
             cursor=cursor,
             name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
-        ) == '1000'
+        ) == str(_ts_ms(1))
     assert process_cost_basis(database, database.msg_aggregator) is True
     assert _rows(database, 'event_identifier, realized_pnl') == [
         (int(lot1), None),
@@ -1885,7 +1918,7 @@ def test_ignored_assets_invalidate_cost_basis_and_swap_pairing(
         assert database.get_static_cache(
             cursor=cursor,
             name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
-        ) == '2000'
+        ) == str(_ts_ms(2))
     assert process_cost_basis(database, database.msg_aggregator) is True
     assert _rows(database, 'event_identifier, realized_pnl') == [
         (int(acquired), None),
@@ -1899,7 +1932,7 @@ def test_ignored_assets_invalidate_cost_basis_and_swap_pairing(
         assert database.get_static_cache(
             cursor=cursor,
             name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
-        ) == '2000'
+        ) == str(_ts_ms(2))
     assert process_cost_basis(database, database.msg_aggregator) is True
     assert _rows(database, 'event_identifier, realized_pnl') == [
         (int(acquired), None),
@@ -1914,7 +1947,7 @@ def test_ignored_assets_invalidate_cost_basis_and_swap_pairing(
         assert database.get_static_cache(
             cursor=cursor,
             name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
-        ) == '2000'
+        ) == str(_ts_ms(2))
     assert process_cost_basis(database, database.msg_aggregator) is True
     assert _rows(database, 'event_identifier, realized_pnl') == [
         (int(acquired), None),
@@ -2006,7 +2039,7 @@ def test_transient_oracle_failure_keeps_pass_stale_until_recovery(
     remote_error=True) stop the pass and keep the range stale instead of storing zero_cost,
     and a subsequent pass after recovery materializes the real price."""
     def fail_at_two(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
-        if timestamp == 2:
+        if timestamp == _ts(2):
             if transient_error == 'remote_error':
                 raise RemoteError('oracle timeout', cause=FailureCause.NETWORK)
             raise NoPriceForGivenTimestamp(
@@ -2030,19 +2063,19 @@ def test_transient_oracle_failure_keeps_pass_stale_until_recovery(
         assert process_cost_basis(database, database.msg_aggregator) is False
 
     assert _rows(database, 'timestamp, basis_per_unit, basis_source') == [
-        (1000, '1000', 'price_oracle'),
+        (_ts_ms(1), '1000', 'price_oracle'),
     ]
     with database.conn.read_ctx() as cursor:
         assert database.get_static_cache(
             cursor=cursor,
             name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
-        ) == '2000'
+        ) == str(_ts_ms(2))
 
     # After oracle recovery, the next pass materializes the real price instead of zero_cost.
     assert process_cost_basis(database, database.msg_aggregator) is True
     assert _rows(database, 'timestamp, basis_per_unit, basis_source') == [
-        (1000, '1000', 'price_oracle'),
-        (2000, '3000', 'price_oracle'),
+        (_ts_ms(1), '1000', 'price_oracle'),
+        (_ts_ms(2), '3000', 'price_oracle'),
     ]
     with database.conn.read_ctx() as cursor:
         assert database.get_static_cache(
@@ -2089,7 +2122,7 @@ def test_price_historian_sets_remote_error_only_for_transient_oracle_failures(
             PriceHistorian.query_historical_price(
                 from_asset=A_ETH,
                 to_asset=A_USD,
-                timestamp=Timestamp(1000),
+                timestamp=_ts(1000),
             )
         assert direct_exc.value.rate_limited is False
         assert direct_exc.value.remote_error is transient
@@ -2098,7 +2131,7 @@ def test_price_historian_sets_remote_error_only_for_transient_oracle_failures(
             PriceHistorian.query_historical_price(
                 from_asset=A_USD,
                 to_asset=A_ETH,
-                timestamp=Timestamp(1000),
+                timestamp=_ts(1000),
             )
         assert inverse_exc.value.rate_limited is False
         assert inverse_exc.value.remote_error is transient
@@ -2114,7 +2147,7 @@ def test_oracle_rejection_stores_zero_cost_while_outage_stops_pass(
     lets the pass finish with a zero cost lot, as no retry would get a price. An outage (503)
     stops the pass and keeps the range stale to be retried."""
     def query_oracle(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
-        if timestamp == 2:
+        if timestamp == _ts(2):
             raise remote_error_for_status(status_code=status, message=f'upstream {status}')
         return Price(FVal(1000))
 
@@ -2146,22 +2179,22 @@ def test_oracle_rejection_stores_zero_cost_while_outage_stops_pass(
     ):
         assert process_cost_basis(database, database.msg_aggregator) is not transient
 
-    expected_rows = [(1000, '1000', 'price_oracle')]
+    expected_rows = [(_ts_ms(1), '1000', 'price_oracle')]
     if not transient:
-        expected_rows.append((2000, '0', 'zero_cost'))
+        expected_rows.append((_ts_ms(2), '0', 'zero_cost'))
     assert _rows(database, 'timestamp, basis_per_unit, basis_source') == expected_rows
     with database.conn.read_ctx() as cursor:
         assert database.get_static_cache(
             cursor=cursor,
             name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
-        ) == ('2000' if transient else None)
+        ) == (str(_ts_ms(2)) if transient else None)
 
 
 def test_price_query_rejection_raised_directly_stores_zero_cost(database: DBHandler) -> None:
     """A RemoteError that the price query raises directly, e.g. from a node pricing an LP
     token, only stops the pass if a retry may get past it."""
     def reject_at_two(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
-        if timestamp == 2:
+        if timestamp == _ts(2):
             raise RemoteError('rejected', cause=FailureCause.REMOTE_REJECTED, error_code=404)
         return Price(FVal(1000))
 
@@ -2177,8 +2210,8 @@ def test_price_query_rejection_raised_directly_stores_zero_cost(database: DBHand
         assert process_cost_basis(database, database.msg_aggregator) is True
 
     assert _rows(database, 'timestamp, basis_per_unit, basis_source') == [
-        (1000, '1000', 'price_oracle'),
-        (2000, '0', 'zero_cost'),
+        (_ts_ms(1), '1000', 'price_oracle'),
+        (_ts_ms(2), '0', 'zero_cost'),
     ]
 
 
@@ -2212,7 +2245,7 @@ def test_manual_price_change_of_another_profile_marks_cost_basis_stale(
         from_asset=A_ETH,
         to_asset=A_USD,
         source=HistoricalPriceOracle.MANUAL,
-        timestamp=Timestamp(1),
+        timestamp=_ts(1),
         price=Price(FVal(1500)),
     )
     # Another profile adds the price: only the global DB changes
@@ -2220,7 +2253,7 @@ def test_manual_price_change_of_another_profile_marks_cost_basis_stale(
     assert _stale_cost_basis_from_ts(database) is None
 
     DBHistoryEvents(database).apply_manual_price_changes()  # this profile logs in
-    assert _stale_cost_basis_from_ts(database) == '1000'
+    assert _stale_cost_basis_from_ts(database) == str(_ts_ms(1))
 
     _clear_stale_cost_basis_markers(database)
     DBHistoryEvents(database).apply_manual_price_changes()  # and logs in again
@@ -2228,17 +2261,17 @@ def test_manual_price_change_of_another_profile_marks_cost_basis_stale(
 
     assert GlobalDBHandler.edit_manual_price(price._replace(price=Price(FVal(1600)))) is True
     DBHistoryEvents(database).apply_manual_price_changes()
-    assert _stale_cost_basis_from_ts(database) == '1000'
+    assert _stale_cost_basis_from_ts(database) == str(_ts_ms(1))
 
     _clear_stale_cost_basis_markers(database)
     assert GlobalDBHandler.delete_historical_price(
         from_asset=A_ETH,
         to_asset=A_USD,
-        timestamp=Timestamp(1),
+        timestamp=_ts(1),
         source_type=HistoricalPriceOracle.MANUAL,
     ) is True
     DBHistoryEvents(database).apply_manual_price_changes()
-    assert _stale_cost_basis_from_ts(database) == '1000'
+    assert _stale_cost_basis_from_ts(database) == str(_ts_ms(1))
 
 
 def test_manual_prices_turned_historical_mark_cost_basis_stale(database: DBHandler) -> None:
@@ -2252,7 +2285,7 @@ def test_manual_prices_turned_historical_mark_cost_basis_stale(database: DBHandl
 
     DBHistoryEvents(database).apply_manual_price_changes()
     _clear_stale_cost_basis_markers(database)
-    with patch('rotkehlchen.globaldb.handler.ts_now', return_value=Timestamp(1)):
+    with patch('rotkehlchen.globaldb.handler.ts_now', return_value=_ts(1)):
         GlobalDBHandler.add_manual_latest_price(
             from_asset=A_ETH,
             to_asset=A_USD,
@@ -2261,24 +2294,24 @@ def test_manual_prices_turned_historical_mark_cost_basis_stale(database: DBHandl
     DBHistoryEvents(database).apply_manual_price_changes()
     assert _stale_cost_basis_from_ts(database) is None  # a current price is not historical
 
-    with patch('rotkehlchen.globaldb.handler.ts_now', return_value=Timestamp(5000)):
+    with patch('rotkehlchen.globaldb.handler.ts_now', return_value=_ts(5000)):
         GlobalDBHandler.add_manual_latest_price(  # keeps the price at 1 as a historical one
             from_asset=A_ETH,
             to_asset=A_USD,
             price=Price(FVal(1600)),
         )
     DBHistoryEvents(database).apply_manual_price_changes()
-    assert _stale_cost_basis_from_ts(database) == '1000'
+    assert _stale_cost_basis_from_ts(database) == str(_ts_ms(1))
 
     _clear_stale_cost_basis_markers(database)
     snapshot: dict[str, Any] = {'assets': {A_ETH: {}}, 'liabilities': {}}
-    with patch('rotkehlchen.rotkehlchen.ts_now', return_value=Timestamp(2)):
+    with patch('rotkehlchen.rotkehlchen.ts_now', return_value=_ts(2)):
         Rotkehlchen._save_manual_prices_as_historical(snapshot)
     DBHistoryEvents(database).apply_manual_price_changes()
-    assert _stale_cost_basis_from_ts(database) == '1000'
+    assert _stale_cost_basis_from_ts(database) == str(_ts_ms(1))
 
     _clear_stale_cost_basis_markers(database)
-    with patch('rotkehlchen.rotkehlchen.ts_now', return_value=Timestamp(2)):
+    with patch('rotkehlchen.rotkehlchen.ts_now', return_value=_ts(2)):
         Rotkehlchen._save_manual_prices_as_historical(snapshot)  # the price is already stored
     DBHistoryEvents(database).apply_manual_price_changes()
     assert _stale_cost_basis_from_ts(database) is None
@@ -2294,7 +2327,7 @@ def test_old_manual_price_changes_are_pruned(database: DBHandler) -> None:
                 from_asset=A_ETH,
                 to_asset=A_USD,
                 source=HistoricalPriceOracle.MANUAL,
-                timestamp=Timestamp(timestamp),
+                timestamp=_ts(timestamp),
                 price=Price(FVal(1500)),
             )) is True
 
@@ -2317,7 +2350,7 @@ def test_old_manual_price_changes_are_pruned(database: DBHandler) -> None:
         ).fetchone()[0] == 1  # the first change was removed
 
     DBHistoryEvents(database).apply_manual_price_changes()  # applied the removed change
-    assert _stale_cost_basis_from_ts(database) == '10000000'  # only from the new price
+    assert _stale_cost_basis_from_ts(database) == str(_ts_ms(10_000))  # only from the new price
 
     _clear_stale_cost_basis_markers(database)
     with database.user_write() as write_cursor:  # a profile that never saw the first change
@@ -2327,7 +2360,7 @@ def test_old_manual_price_changes_are_pruned(database: DBHandler) -> None:
             value=str(first_id - 1),
         )
     DBHistoryEvents(database).apply_manual_price_changes()
-    assert _stale_cost_basis_from_ts(database) == '1000'  # from its first event
+    assert _stale_cost_basis_from_ts(database) == str(_ts_ms(1))  # from its first event
 
     _clear_stale_cost_basis_markers(database)
     DBHistoryEvents(database).apply_manual_price_changes()
@@ -2350,7 +2383,7 @@ def test_unpriced_taxable_spend_leaves_pnl_null_while_consuming_lots(
     taxfree_pnl are stored as NULL rather than booking a phantom loss, while lots are still
     consumed so subsequent spends stay accurate."""
     def missing_price_at_two(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
-        if timestamp == 2:
+        if timestamp == _ts(2):
             if missing_exc == 'no_price':
                 raise NoPriceForGivenTimestamp(
                     from_asset=from_asset,
@@ -2420,7 +2453,7 @@ def test_unpriced_swap_leaves_pnl_null_while_consuming_lots(
     def no_price_at_two(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
         if from_asset == A_DAI:
             return Price(FVal(1))
-        if from_asset == A_ETH and timestamp != 2:
+        if from_asset == A_ETH and timestamp != _ts(2):
             return Price(FVal(ETH_PRICES[timestamp]))
         raise NoPriceForGivenTimestamp(from_asset=from_asset, to_asset=to_asset, time=timestamp)
 
