@@ -193,6 +193,21 @@ describe('bucketTraceDrawer', () => {
     expect(links[1].props('to')).toStrictEqual({ name: '/history/events/', query: { asset: ASSET, groupIdentifiers: '0xtx1' } });
   });
 
+  it('should link trace rows by row.eventAsset when a folded event asset differs from the bucket asset', async () => {
+    fetchBucketTrace.mockResolvedValueOnce(traceResponse({
+      rows: [makeRow(101, { eventAsset: 'MATIC', groupIdentifier: '0xswap1' })],
+    }));
+
+    const wrapper = mountDrawer({ ...TARGET, bucket: { ...TARGET.bucket, asset: 'POL' } });
+    await flushPromises();
+
+    const rowLink = wrapper.get('[data-testid="bucket-trace-row-link"]').getComponent(RouterLinkStub);
+    expect(rowLink.props('to')).toStrictEqual({
+      name: '/history/events/',
+      query: { asset: 'MATIC', groupIdentifiers: '0xswap1' },
+    });
+  });
+
   it('should recover from an initial load failure on retry', async () => {
     fetchBucketTrace.mockRejectedValueOnce(new Error('network down')).mockResolvedValueOnce(traceResponse());
     const wrapper = mountDrawer();

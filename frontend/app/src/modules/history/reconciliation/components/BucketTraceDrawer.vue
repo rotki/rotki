@@ -313,7 +313,7 @@ function eventTypeLabel(row: BucketTraceRow): string {
             />
             <RouterLink
               v-if="row.groupIdentifier"
-              :to="traceRowEventRoute(row.groupIdentifier, target.bucket.asset)"
+              :to="traceRowEventRoute(row.groupIdentifier, row.eventAsset)"
               :aria-label="t('data_issues.reconciliation.action.view_event')"
               data-testid="bucket-trace-row-link"
               @click="close()"

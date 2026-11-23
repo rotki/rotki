@@ -246,7 +246,7 @@ const {
             </div>
 
             <div
-              v-else-if="view === 'attention' && visible.length === 0"
+              v-else-if="!hasActiveFilters && view === 'attention' && visible.length === 0"
               class="flex flex-wrap items-center gap-3 text-sm"
               data-testid="reconciliation-nothing-attention"
             >

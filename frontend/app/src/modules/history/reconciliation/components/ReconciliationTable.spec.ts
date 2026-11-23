@@ -167,4 +167,41 @@ describe('reconciliationTable', () => {
 
     expect(wrapper.emitted('expand')).toHaveLength(20);
   });
+
+  it('should re-emit expand when an already-open account returns after its cached details were cleared', async () => {
+    const account = makeAccount(1);
+    const detail: AccountDetailState = {
+      buckets: [makeBucket('ETH')],
+      loaded: true,
+      loading: false,
+      pagination: { limit: 50, offset: 0, total: 1 },
+      statusKey: 'all',
+    };
+    const wrapper = mount(ReconciliationTable, {
+      global: {
+        plugins: [createPinia(), createRuiPlugin({})],
+        stubs: {
+          AssetDetails: true,
+          CounterpartyDisplay: true,
+          HashLink: true,
+          ReconciliationAmount: true,
+          RouterLink: RouterLinkStub,
+          TimeAgoDisplay: true,
+        },
+      },
+      props: {
+        accounts: [account],
+        autoExpand: true,
+        details: { [accountKeyOf(account)]: detail },
+        view: 'all',
+      },
+    });
+    expect(wrapper.emitted('expand')).toHaveLength(1);
+
+    await wrapper.setProps({ accounts: [], autoExpand: true, details: {} });
+    await wrapper.setProps({ accounts: [account], autoExpand: false, details: {} });
+
+    expect(wrapper.emitted('expand')).toHaveLength(2);
+    expect(wrapper.emitted('expand')?.[1]).toStrictEqual([account]);
+  });
 });

@@ -360,4 +360,27 @@ describe('reconciliationView', () => {
     expect(fetchAccount).toHaveBeenCalledTimes(1);
     expect(fetchAccount).toHaveBeenLastCalledWith(expect.objectContaining({ asset: undefined, status: ['mismatch', 'blocked'] }));
   });
+
+  it('should not show the nothing-needs-attention notice while an asset filter is loading or failed in attention view', async () => {
+    const pending = deferred<ReconciliationResponse>();
+    const globalReport = report(false);
+    fetchSummary.mockImplementation(async (asset?: string) => (asset ? pending.promise : globalReport));
+
+    await useRouter().replace({ query: { asset: 'USDC', view: 'attention' } });
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="reconciliation-nothing-attention"]').exists()).toBe(false);
+
+    fetchSummary.mockImplementation(async (asset?: string) => {
+      if (asset)
+        throw new FetchError('[GET] "http://127.0.0.1/api": <no response>');
+      return globalReport;
+    });
+    await useRouter().replace({ query: { asset: 'DAI', view: 'attention' } });
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="reconciliation-filter-error"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="reconciliation-nothing-attention"]').exists()).toBe(false);
+  });
 });

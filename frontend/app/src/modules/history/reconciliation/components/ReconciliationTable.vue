@@ -158,11 +158,17 @@ function rowsForAccount(account: ReconciliationAccount): Row[] {
   return result;
 }
 
-function autoExpandMatchingAccounts(): void {
-  if (!autoExpand)
-    return;
-
+function syncExpandedAccounts(): void {
   const current = new Set(get(expandedKeys));
+  if (!autoExpand) {
+    for (const account of accounts) {
+      const key = accountKeyOf(account);
+      if (current.has(key) && !details[key])
+        emit('expand', account);
+    }
+    return;
+  }
+
   const next = [...current];
   for (const account of accounts.slice(0, AUTO_EXPAND_LIMIT)) {
     const key = accountKeyOf(account);
@@ -210,7 +216,7 @@ function amountsOf(row: BucketRow): ReturnType<typeof amountsFor> {
 
 watch(
   [() => autoExpand, () => accounts.map(accountKeyOf).join('\n')],
-  () => autoExpandMatchingAccounts(),
+  () => syncExpandedAccounts(),
   { immediate: true },
 );
 </script>
