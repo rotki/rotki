@@ -74,7 +74,6 @@ const lots = computed<{ lot: CostBasisLot; route?: RouteLocationRaw }[]>(() => e
     route: {
       name: '/history/events/',
       query: {
-        highlightedAccountingEvent: String(lot.acquisition.identifier),
         overlay: OverlayMode.COST_BASIS,
         targetGroupIdentifier: lot.acquisition.groupIdentifier,
       },

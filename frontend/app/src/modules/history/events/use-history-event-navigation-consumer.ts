@@ -4,7 +4,7 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
-import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
+import { OverlayMode, parseOverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 import {
   HIGHLIGHT_LOADING_START_TIMEOUT,
   HighlightTargetTypes,
@@ -76,11 +76,12 @@ export function useHistoryEventNavigationConsumer(
         identifier: Number(highlightedNegativeBalanceEvent),
       });
     }
+    const overlayMode = parseOverlayMode(overlay);
     requestNavigation({
       assetFilter: typeof asset === 'string' ? asset : undefined,
       ...(highlightedAccountingEvent ? { highlightedAccountingEvent: Number(highlightedAccountingEvent) } : {}),
       ...(highlightedNegativeBalanceEvent ? { highlightedNegativeBalanceEvent: Number(highlightedNegativeBalanceEvent) } : {}),
-      ...(overlay === OverlayMode.BALANCE ? { overlay: OverlayMode.BALANCE } : {}),
+      ...(overlayMode === OverlayMode.NONE ? {} : { overlay: overlayMode }),
       targetGroupIdentifier: targetGroupIdentifier.toString(),
     });
   });
