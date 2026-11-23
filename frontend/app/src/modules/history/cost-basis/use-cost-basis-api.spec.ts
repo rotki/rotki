@@ -33,15 +33,25 @@ describe('useCostBasisApi', () => {
             realized_pnl: '400',
             taxfree_pnl: null,
           }],
+          58: [{
+            ...bucket,
+            basis_removed: '100',
+            basis_remaining: '0',
+            direction: 'spend',
+            lots: [],
+            proceeds: null,
+            realized_pnl: null,
+            taxfree_pnl: null,
+          }],
         },
         method: 'fifo',
         stale: [57],
       } });
     }));
 
-    const result = await useCostBasisApi().fetchEventsCostBasis([12, 57]);
+    const result = await useCostBasisApi().fetchEventsCostBasis([12, 57, 58]);
 
-    expect(capturedBody).toEqual({ event_identifiers: [12, 57] });
+    expect(capturedBody).toEqual({ event_identifiers: [12, 57, 58] });
     expect(result.stale).toEqual([57]);
     expect(result.method).toBe('fifo');
 
@@ -55,9 +65,15 @@ describe('useCostBasisApi', () => {
     assert(spend.direction === CostBasisDirection.SPEND);
     expect(spend.proceeds).toBeNull();
     expect(spend.taxfreePnl).toBeNull();
-    expect(spend.realizedPnl.toString()).toBe('400');
+    expect(spend.realizedPnl?.toString()).toBe('400');
     expect(spend.lots[0].acquisition).toEqual({ groupIdentifier: '0xgroup', identifier: 12, location: 'ethereum', locationLabel: '0xA', timestamp: 1675209600000 });
     expect(spend.lots[0].taxable).toBe(false);
     expect(spend.lots[1].acquisition).toBeNull();
+
+    const [unpricedSpend] = result.entries['58'];
+    assert(unpricedSpend.direction === CostBasisDirection.SPEND);
+    expect(unpricedSpend.proceeds).toBeNull();
+    expect(unpricedSpend.realizedPnl).toBeNull();
+    expect(unpricedSpend.taxfreePnl).toBeNull();
   });
 });

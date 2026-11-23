@@ -21,7 +21,7 @@ export interface CostBasisSummary {
   kind: CostBasisSummaryKind;
   /** The cost of what was acquired, or the basis of what was disposed of or moved. */
   basis: BigNumber;
-  /** The taxable gain or loss. Set only for a disposal. */
+  /** The taxable gain or loss. Set for a priced disposal. */
   pnl?: BigNumber;
 }
 
@@ -51,7 +51,11 @@ export function summarizeCostBasis(entries: CostBasisEntry[], amount: BigNumber)
   if (spend) {
     return receive
       ? { basis: spend.basisRemoved, kind: CostBasisSummaryKind.TRANSFER }
-      : { basis: spend.basisRemoved, kind: CostBasisSummaryKind.DISPOSAL, pnl: spend.realizedPnl };
+      : {
+          basis: spend.basisRemoved,
+          kind: CostBasisSummaryKind.DISPOSAL,
+          ...(spend.realizedPnl !== null ? { pnl: spend.realizedPnl } : {}),
+        };
   }
   if (receive)
     return { basis: receive.basisPerUnit.multipliedBy(amount), kind: CostBasisSummaryKind.ACQUISITION };
