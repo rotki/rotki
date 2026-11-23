@@ -12,7 +12,6 @@ interface FigureRow {
   key: string;
   label: string;
   value: BigNumber;
-  pnl: boolean;
 }
 
 const { entry, amount } = defineProps<{
@@ -43,21 +42,18 @@ const basisPerUnit = computed<BigNumber>(() => {
 });
 
 /**
- * The figures of the spend, top to bottom.
+ * The gains of the spend, under the figures they come from.
  *
  * @remarks
- * A move between two own accounts or an unpriced spend has no proceeds or realized gain, so only
- * the cost basis per unit and the cost value are shown. A tax free gain of zero is omitted.
+ * A move between two own accounts or an unpriced spend has no proceeds or realized gain, so it
+ * has none. A tax free gain of zero is omitted.
  */
-const figures = computed<FigureRow[]>(() => {
-  const rows: FigureRow[] = [
-    { key: 'basis', label: t('cost_basis_overlay.cost_basis'), pnl: false, value: get(basisPerUnit) },
-    { key: 'cost-value', label: t('cost_basis_overlay.cost_value'), pnl: false, value: entry.basisRemoved },
-  ];
+const gains = computed<FigureRow[]>(() => {
+  const rows: FigureRow[] = [];
   if (entry.proceeds !== null && entry.realizedPnl !== null)
-    rows.push({ key: 'gain', label: t('cost_basis_overlay.gain'), pnl: true, value: entry.realizedPnl });
+    rows.push({ key: 'gain', label: t('cost_basis_overlay.gain'), value: entry.realizedPnl });
   if (entry.taxfreePnl !== null && !entry.taxfreePnl.isZero())
-    rows.push({ key: 'taxfree-gain', label: t('cost_basis_overlay.taxfree_gain'), pnl: true, value: entry.taxfreePnl });
+    rows.push({ key: 'taxfree-gain', label: t('cost_basis_overlay.taxfree_gain'), value: entry.taxfreePnl });
   return rows;
 });
 
@@ -84,93 +80,169 @@ const lots = computed<{ lot: CostBasisLot; route?: RouteLocationRaw }[]>(() => e
 
 <template>
   <div
-    class="flex flex-col gap-3 min-w-80"
+    class="flex flex-col gap-3"
     data-testid="cost-basis-spend"
   >
     <CostBasisBucketLabel
       :location="entry.location"
       :location-label="entry.locationLabel"
+      :method="entry.method"
       :protocol="entry.protocol"
     />
-    <div class="flex flex-col gap-1 text-sm">
-      <div
-        v-for="figure in figures"
-        :key="figure.key"
-        class="flex items-center justify-between gap-6"
-        :data-testid="`cost-basis-${figure.key}`"
-      >
-        <span class="text-rui-text-secondary">{{ figure.label }}</span>
-        <FiatDisplay
-          :value="figure.value"
-          :format="COST_BASIS_FIAT_FORMAT"
-          :pnl="figure.pnl"
-          class="font-medium tabular-nums"
-        />
-      </div>
-    </div>
-    <template v-if="!isAverage">
-      <RuiDivider />
-      <div
-        class="flex flex-col gap-1 text-xs"
-        data-testid="cost-basis-lots"
-      >
-        <span class="text-sm font-medium">{{ t('cost_basis_overlay.lots') }}</span>
-        <span
-          v-if="entry.lots.length === 0"
-          class="text-rui-text-secondary max-w-80"
-          data-testid="cost-basis-no-lots"
+
+    <dl class="grid grid-cols-[1fr_auto] items-baseline gap-y-1 text-sm tabular-nums [&>dd]:pl-4">
+      <template v-if="entry.proceeds !== null">
+        <dt class="text-rui-text-secondary">
+          {{ t('cost_basis_overlay.proceeds') }}
+        </dt>
+        <dd
+          class="text-right"
+          data-testid="cost-basis-proceeds"
         >
-          {{ t('cost_basis_overlay.no_lots') }}
-        </span>
+          <FiatDisplay
+            :value="entry.proceeds"
+            :format="COST_BASIS_FIAT_FORMAT"
+          />
+        </dd>
+      </template>
+      <dt class="text-rui-text-secondary">
+        {{ t('cost_basis_overlay.cost_value') }}
+      </dt>
+      <dd
+        class="text-right"
+        data-testid="cost-basis-cost-value"
+      >
+        <FiatDisplay
+          :value="entry.basisRemoved"
+          :format="COST_BASIS_FIAT_FORMAT"
+        />
+      </dd>
+      <dt class="pl-3 text-xs text-rui-text-secondary">
+        {{ t('cost_basis_overlay.per_unit') }}
+      </dt>
+      <dd
+        class="text-right text-xs text-rui-text-secondary"
+        data-testid="cost-basis-basis"
+      >
+        <FiatDisplay
+          :value="basisPerUnit"
+          :format="COST_BASIS_FIAT_FORMAT"
+        />
+      </dd>
+      <template
+        v-for="(gain, index) in gains"
+        :key="gain.key"
+      >
+        <dt
+          class="text-rui-text-secondary"
+          :class="{ 'mt-1.5 pt-1.5 border-t border-default': index === 0 }"
+        >
+          {{ gain.label }}
+        </dt>
+        <dd
+          class="text-right"
+          :class="{
+            'mt-1.5 pt-1.5 border-t border-default': index === 0,
+            'font-semibold': gain.key === 'gain',
+          }"
+          :data-testid="`cost-basis-${gain.key}`"
+        >
+          <FiatDisplay
+            :value="gain.value"
+            :format="COST_BASIS_FIAT_FORMAT"
+            pnl
+          />
+        </dd>
+      </template>
+    </dl>
+
+    <div
+      v-if="!isAverage"
+      class="flex flex-col gap-1.5"
+      data-testid="cost-basis-lots"
+    >
+      <div class="flex items-center justify-between text-xs font-medium uppercase tracking-wide text-rui-text-secondary">
+        <span>{{ t('cost_basis_overlay.lots') }}</span>
+        <span v-if="entry.lots.length > 0">{{ entry.lots.length }}</span>
+      </div>
+      <p
+        v-if="entry.lots.length === 0"
+        class="text-xs text-rui-text-secondary"
+        data-testid="cost-basis-no-lots"
+      >
+        {{ t('cost_basis_overlay.no_lots') }}
+      </p>
+      <div
+        v-else
+        class="grid grid-cols-[1fr_auto_auto] items-center gap-x-3 text-xs tabular-nums"
+      >
         <div
           v-for="({ lot, route }, index) in lots"
           :key="index"
-          class="flex items-center justify-between gap-6 py-0.5"
+          class="col-span-3 grid grid-cols-subgrid items-center py-1.5"
+          :class="{ 'border-t border-default': index > 0 }"
           data-testid="cost-basis-lot"
         >
           <div class="flex items-center gap-1.5 min-w-0">
-            <DateDisplay
-              :timestamp="lot.acquiredAt"
-              class="text-rui-text-secondary"
-            />
             <RouterLink
               v-if="route"
               :to="route"
-              :aria-label="t('cost_basis_overlay.view_acquisition')"
-              class="flex text-rui-primary"
+              :title="t('cost_basis_overlay.view_acquisition')"
+              class="flex items-center gap-1 text-rui-primary hover:underline"
               data-testid="cost-basis-lot-link"
             >
+              <DateDisplay
+                :timestamp="lot.acquiredAt"
+                no-time
+              />
               <RuiIcon
-                name="lu-external-link"
+                name="lu-arrow-up-right"
                 size="12"
               />
             </RouterLink>
-            <RuiChip
+            <DateDisplay
+              v-else
+              :timestamp="lot.acquiredAt"
+              no-time
+              class="text-rui-text-secondary"
+            />
+            <RuiIcon
               v-if="!lot.taxable"
-              size="sm"
-              color="success"
-              variant="outlined"
+              name="lu-leaf"
+              size="12"
+              class="text-rui-success shrink-0"
+              :aria-label="t('cost_basis_overlay.taxfree')"
               data-testid="cost-basis-lot-taxfree"
-            >
-              {{ t('cost_basis_overlay.taxfree') }}
-            </RuiChip>
+            />
           </div>
-          <div class="flex items-center gap-1.5 shrink-0 tabular-nums">
+          <div class="text-right">
             <AssetAmountDisplay
               :amount="lot.amount"
               :asset="entry.asset"
               no-collection-parent
               no-tooltip
             />
+          </div>
+          <div class="flex items-center justify-end gap-1 text-rui-text-secondary">
             <span class="text-rui-text-disabled">{{ t('cost_basis_overlay.at') }}</span>
             <FiatDisplay
               :value="lot.basisPerUnit"
               :format="COST_BASIS_FIAT_FORMAT"
-              class="text-rui-text-secondary"
             />
           </div>
         </div>
       </div>
-    </template>
+      <p
+        v-if="lots.some(({ lot }) => !lot.taxable)"
+        class="flex items-center gap-1 text-xs text-rui-text-secondary"
+      >
+        <RuiIcon
+          name="lu-leaf"
+          size="12"
+          class="text-rui-success"
+        />
+        {{ t('cost_basis_overlay.taxfree_legend') }}
+      </p>
+    </div>
   </div>
 </template>

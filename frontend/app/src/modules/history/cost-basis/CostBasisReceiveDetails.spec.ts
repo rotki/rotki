@@ -7,6 +7,7 @@ import { CostBasisDirection, type CostBasisReceive } from '@/modules/history/cos
 const stubs = {
   CostBasisBucketLabel: { template: '<div class="bucket" />' },
   FiatDisplay: { props: ['value', 'format'], template: '<span class="fiat" :data-decimals="format?.decimals" :data-no-mark="format?.noRoundingMark">{{ value.toString() }}</span>' },
+  RuiIcon: true,
 };
 
 function mountDetails(basisSource: string, amount = bigNumberify('2')): VueWrapper {

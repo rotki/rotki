@@ -35,42 +35,54 @@ const source = computed<string>(() => {
 
 <template>
   <div
-    class="flex flex-col gap-3 min-w-80"
+    class="flex flex-col gap-3"
     data-testid="cost-basis-receive"
   >
     <CostBasisBucketLabel
       :location="entry.location"
       :location-label="entry.locationLabel"
+      :method="entry.method"
       :protocol="entry.protocol"
     />
-    <div class="flex flex-col gap-1 text-sm">
-      <div class="flex items-center justify-between gap-6">
-        <span class="text-rui-text-secondary">{{ t('cost_basis_overlay.cost_basis') }}</span>
+
+    <dl class="grid grid-cols-[1fr_auto] items-baseline gap-x-4 gap-y-1 text-sm tabular-nums">
+      <template v-if="costValue">
+        <dt class="text-rui-text-secondary">
+          {{ t('cost_basis_overlay.cost_value') }}
+        </dt>
+        <dd class="text-right font-semibold">
+          <FiatDisplay
+            :value="costValue"
+            :format="COST_BASIS_FIAT_FORMAT"
+            data-testid="cost-basis-cost-value"
+          />
+        </dd>
+      </template>
+      <dt
+        class="text-rui-text-secondary"
+        :class="{ 'pl-3 text-xs': costValue }"
+      >
+        {{ t('cost_basis_overlay.per_unit') }}
+      </dt>
+      <dd
+        class="text-right"
+        :class="{ 'text-xs text-rui-text-secondary': costValue }"
+      >
         <FiatDisplay
           :value="entry.basisPerUnit"
           :format="COST_BASIS_FIAT_FORMAT"
-          class="font-medium tabular-nums"
           data-testid="cost-basis-per-unit"
         />
-      </div>
-      <div
-        v-if="costValue"
-        class="flex items-center justify-between gap-6"
-      >
-        <span class="text-rui-text-secondary">{{ t('cost_basis_overlay.cost_value') }}</span>
-        <FiatDisplay
-          :value="costValue"
-          :format="COST_BASIS_FIAT_FORMAT"
-          class="font-medium tabular-nums"
-          data-testid="cost-basis-cost-value"
-        />
-      </div>
-      <span
-        class="text-xs text-rui-text-secondary max-w-80"
-        data-testid="cost-basis-source"
-      >
-        {{ source }}
-      </span>
-    </div>
+      </dd>
+    </dl>
+
+    <p class="flex gap-1.5 text-xs text-rui-text-secondary">
+      <RuiIcon
+        name="lu-info"
+        size="12"
+        class="shrink-0 mt-0.5"
+      />
+      <span data-testid="cost-basis-source">{{ source }}</span>
+    </p>
   </div>
 </template>

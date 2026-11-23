@@ -1,22 +1,76 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
-import { COST_BASIS_FIAT_FORMAT, type CostBasisSummary, CostBasisSummaryKind, summarizeCostBasis } from '@/modules/history/cost-basis/cost-basis-helpers';
+import {
+  COST_BASIS_FIAT_FORMAT,
+  type CostBasisSummary,
+  CostBasisSummaryKind,
+  mergeCostBasisSummaries,
+  summarizeCostBasis,
+} from '@/modules/history/cost-basis/cost-basis-helpers';
 import CostBasisReceiveDetails from '@/modules/history/cost-basis/CostBasisReceiveDetails.vue';
 import CostBasisSpendDetails from '@/modules/history/cost-basis/CostBasisSpendDetails.vue';
 import { CostBasisDirection, type CostBasisEntry } from '@/modules/history/cost-basis/types';
 import { CostBasisStatus } from '@/modules/history/cost-basis/use-cost-basis-overlay';
 import { injectCostBasisOverlay } from '@/modules/history/cost-basis/use-cost-basis-overlay-context';
 
-const { event } = defineProps<{ event: HistoryEventEntry }>();
+const { event, fallbackEvent, siblingEvents = [] } = defineProps<{
+  event: HistoryEventEntry;
+  /**
+   * Shown instead of `event` when `event` changes no cost basis, as for the fiat side of a
+   * purchase, whose received asset is what carries the cost.
+   */
+  fallbackEvent?: HistoryEventEntry;
+  /** Further events added up with `event` on the row, as the other spends of a multi-asset swap. */
+  siblingEvents?: HistoryEventEntry[];
+}>();
+
+interface ShownEntry {
+  entry: CostBasisEntry;
+  /** The amount of the event the entry belongs to. */
+  amount: HistoryEventEntry['amount'];
+}
+
+/** The status of a row of several events: the least settled one wins. */
+const STATUS_PRECEDENCE: CostBasisStatus[] = [
+  CostBasisStatus.ERROR,
+  CostBasisStatus.LOADING,
+  CostBasisStatus.PROCESSING,
+  CostBasisStatus.READY,
+];
 
 const { t } = useI18n({ useScope: 'global' });
 const context = injectCostBasisOverlay();
 
 const enabled = computed<boolean>(() => !!context && get(context.enabled));
-const status = computed<CostBasisStatus | undefined>(() => context?.overlay.statusFor(event.identifier));
-const entries = computed<CostBasisEntry[]>(() => context?.overlay.entriesFor(event.identifier) ?? []);
-const summary = computed<CostBasisSummary | undefined>(() => summarizeCostBasis(get(entries), event.amount));
+
+const primaryEvents = computed<HistoryEventEntry[]>(() => [event, ...siblingEvents]);
+
+/** The identifiers this cell needs, joined so a new array with the same events changes nothing. */
+const registeredKey = computed<string>(() => [...get(primaryEvents), ...(fallbackEvent ? [fallbackEvent] : [])]
+  .map(({ identifier }) => identifier)
+  .join(','));
+
+const shownEvents = computed<HistoryEventEntry[]>(() => {
+  const events = get(primaryEvents);
+  if (fallbackEvent && context && events.every(({ identifier }) => context.overlay.statusFor(identifier) === CostBasisStatus.EMPTY))
+    return [fallbackEvent];
+  return events;
+});
+
+const status = computed<CostBasisStatus | undefined>(() => {
+  if (!context)
+    return undefined;
+  const statuses = new Set(get(shownEvents).map(({ identifier }) => context.overlay.statusFor(identifier)));
+  return STATUS_PRECEDENCE.find(candidate => statuses.has(candidate)) ?? CostBasisStatus.EMPTY;
+});
+
+const entries = computed<ShownEntry[]>(() => get(shownEvents).flatMap(({ amount, identifier }) =>
+  (context?.overlay.entriesFor(identifier) ?? []).map(entry => ({ amount, entry }))));
+
+const summary = computed<CostBasisSummary | undefined>(() => mergeCostBasisSummaries(get(shownEvents)
+  .map(({ amount, identifier }) => summarizeCostBasis(context?.overlay.entriesFor(identifier) ?? [], amount))
+  .filter((summary): summary is CostBasisSummary => summary !== undefined)));
 
 /** What the figure under a row's main one is, since a cost, a basis and a moved basis differ. */
 const basisLabel = computed<string>(() => {
@@ -30,8 +84,10 @@ const basisLabel = computed<string>(() => {
   }
 });
 
-watch([enabled, () => event.identifier], ([isEnabled, identifier]) => {
-  if (context && isEnabled)
+watch([enabled, registeredKey], ([isEnabled, key]) => {
+  if (!context || !isEnabled)
+    return;
+  for (const identifier of new Set(key.split(',').map(Number)))
     onWatcherCleanup(context.overlay.registerEvent(identifier));
 }, { immediate: true });
 </script>
@@ -108,14 +164,50 @@ watch([enabled, () => event.identifier], ([isEnabled, identifier]) => {
       class="flex items-center justify-end gap-1.5"
     >
       <div class="flex flex-col items-end leading-tight">
-        <FiatDisplay
+        <span
           v-if="summary.pnl"
-          :value="summary.pnl"
-          :format="COST_BASIS_FIAT_FORMAT"
-          pnl
-          class="font-medium"
-          data-testid="cost-basis-pnl"
-        />
+          class="flex items-center gap-1"
+        >
+          <RuiTooltip
+            v-if="summary.taxfreePnl"
+            :open-delay="200"
+            :options="{ placement: 'left' }"
+          >
+            <template #activator>
+              <button
+                type="button"
+                class="flex rounded-sm text-rui-success focus-visible:outline focus-visible:outline-rui-primary"
+                :aria-label="t('cost_basis_overlay.taxfree_gain')"
+                data-testid="cost-basis-taxfree"
+              >
+                <RuiIcon
+                  name="lu-leaf"
+                  size="12"
+                />
+              </button>
+            </template>
+            <i18n-t
+              keypath="cost_basis_overlay.taxfree_hint"
+              tag="span"
+              scope="global"
+            >
+              <template #amount>
+                <FiatDisplay
+                  :value="summary.taxfreePnl"
+                  :format="COST_BASIS_FIAT_FORMAT"
+                  class="inline"
+                />
+              </template>
+            </i18n-t>
+          </RuiTooltip>
+          <FiatDisplay
+            :value="summary.pnl"
+            :format="COST_BASIS_FIAT_FORMAT"
+            pnl
+            class="font-medium"
+            data-testid="cost-basis-pnl"
+          />
+        </span>
         <span
           class="flex items-center gap-1"
           :class="summary.pnl ? 'text-xs text-rui-text-secondary' : 'font-medium'"
@@ -152,21 +244,24 @@ watch([enabled, () => event.identifier], ([isEnabled, identifier]) => {
             />
           </RuiButton>
         </template>
-        <div class="p-4 flex flex-col gap-4">
+        <div class="w-80 py-1">
           <template
-            v-for="(entry, index) in entries"
+            v-for="({ entry, amount }, index) in entries"
             :key="index"
           >
-            <RuiDivider v-if="index > 0" />
             <CostBasisSpendDetails
               v-if="entry.direction === CostBasisDirection.SPEND"
               :entry="entry"
-              :amount="event.amount"
+              :amount="amount"
+              class="px-4 py-3"
+              :class="{ 'border-t border-default': index > 0 }"
             />
             <CostBasisReceiveDetails
               v-else
               :entry="entry"
-              :amount="event.amount"
+              :amount="amount"
+              class="px-4 py-3"
+              :class="{ 'border-t border-default': index > 0 }"
             />
           </template>
         </div>

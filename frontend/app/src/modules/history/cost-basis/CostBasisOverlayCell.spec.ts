@@ -47,6 +47,8 @@ function mountCell(opts: {
   entries?: CostBasisEntry[];
   status?: CostBasisStatus;
   overlay?: Partial<UseCostBasisOverlayReturn>;
+  fallbackEvent?: HistoryEventEntry;
+  siblingEvents?: HistoryEventEntry[];
 } = {}): VueWrapper {
   const entries = opts.entries ?? [];
   const overlay: UseCostBasisOverlayReturn = {
@@ -61,7 +63,7 @@ function mountCell(opts: {
   const host = defineComponent({
     setup() {
       provideCostBasisOverlay({ enabled: ref<boolean>(opts.enabled ?? true), overlay });
-      return (): VNode => h(CostBasisOverlayCell, { event });
+      return (): VNode => h(CostBasisOverlayCell, { event, fallbackEvent: opts.fallbackEvent, siblingEvents: opts.siblingEvents });
     },
   });
   return mount(host, { global: { stubs } });
@@ -134,6 +136,51 @@ describe('costBasisOverlayCell.vue', () => {
     expect(wrapper.get('[data-testid=cost-basis-basis]').text()).toContain('100');
     expect(wrapper.get('[data-testid=cost-basis-basis]').text()).toContain('cost_basis_overlay.labels.acquisition');
     expect(wrapper.findAll('.receive-details')).toHaveLength(1);
+  });
+
+  it('should mark a gain that leaves out a tax free part, and only then', () => {
+    expect(mountCell({ entries: [spend] }).find('[data-testid=cost-basis-taxfree]').exists()).toBe(false);
+    const wrapper = mountCell({ entries: [{ ...spend, taxfreePnl: bigNumberify('70') }] });
+    expect(wrapper.find('[data-testid=cost-basis-taxfree]').exists()).toBe(true);
+  });
+
+  it('should show the fallback event when the event changes no cost basis, and register both', () => {
+    const registerEvent = vi.fn<(identifier: number) => () => void>(() => (): void => {});
+    const fallbackEvent = createMock<HistoryEventEntry>({ amount: bigNumberify('3'), identifier: 456 });
+    const entriesFor = (identifier: number): CostBasisEntry[] => (identifier === 456 ? [receive] : []);
+    const statusFor = (identifier: number): CostBasisStatus => (identifier === 456 ? 'ready' : 'empty');
+    const wrapper = mountCell({ fallbackEvent, overlay: { entriesFor, registerEvent, statusFor } });
+
+    expect(registerEvent).toHaveBeenCalledWith(123);
+    expect(registerEvent).toHaveBeenCalledWith(456);
+    expect(wrapper.find('[data-testid=cost-basis-empty]').exists()).toBe(false);
+    expect(wrapper.get('[data-testid=cost-basis-basis]').text()).toContain('150');
+  });
+
+  it('should add up the spends of a multi-asset swap and show every one in the details', () => {
+    const sibling = createMock<HistoryEventEntry>({ amount: bigNumberify('1'), identifier: 789 });
+    const siblingSpend: CostBasisEntry = { ...spend, basisRemoved: bigNumberify('200'), realizedPnl: bigNumberify('-50') };
+    const entriesFor = (identifier: number): CostBasisEntry[] => (identifier === 789 ? [siblingSpend] : [spend]);
+    const registerEvent = vi.fn<(identifier: number) => () => void>(() => (): void => {});
+    const wrapper = mountCell({ overlay: { entriesFor, registerEvent, statusFor: () => 'ready' }, siblingEvents: [sibling] });
+
+    expect(registerEvent).toHaveBeenCalledWith(789);
+    expect(wrapper.get('[data-testid=cost-basis-pnl]').text()).toBe('350');
+    expect(wrapper.get('[data-testid=cost-basis-basis]').text()).toContain('700');
+    expect(wrapper.findAll('.spend-details')).toHaveLength(2);
+  });
+
+  it('should show a row of several events as loading while any of them is', () => {
+    const sibling = createMock<HistoryEventEntry>({ amount: bigNumberify('1'), identifier: 789 });
+    const statusFor = (identifier: number): CostBasisStatus => (identifier === 789 ? 'loading' : 'ready');
+    const wrapper = mountCell({ entries: [spend], overlay: { statusFor }, siblingEvents: [sibling] });
+    expect(wrapper.find('.skeleton').exists()).toBe(true);
+  });
+
+  it('should keep the event when it has a cost basis of its own, despite a fallback', () => {
+    const fallbackEvent = createMock<HistoryEventEntry>({ amount: bigNumberify('3'), identifier: 456 });
+    const wrapper = mountCell({ entries: [spend], fallbackEvent });
+    expect(wrapper.get('[data-testid=cost-basis-pnl]').text()).toBe('400');
   });
 
   it('should show a move between own accounts as moved basis with no gain, and both sides in the details', () => {

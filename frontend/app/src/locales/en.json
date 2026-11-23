@@ -2543,7 +2543,6 @@
   },
   "cost_basis_overlay": {
     "at": "at",
-    "cost_basis": "Cost basis",
     "cost_value": "Cost value",
     "error": "Could not load the cost basis of this event.",
     "gain": "Taxable gain or loss",
@@ -2555,6 +2554,8 @@
     "lots": "Lots used",
     "no_data": "This event does not change the cost basis of any asset.",
     "no_lots": "No acquisition is known for what was spent, so it has no cost basis.",
+    "per_unit": "Per unit",
+    "proceeds": "Proceeds",
     "processing": "Pending",
     "show_details": "Show cost basis details",
     "source": {
@@ -2567,6 +2568,8 @@
     "stale": "The cost basis of this event is waiting to be calculated.",
     "taxfree": "Tax free",
     "taxfree_gain": "Tax free gain or loss",
+    "taxfree_hint": "{amount} of the gain or loss is tax free and not included here.",
+    "taxfree_legend": "Held past the tax free period",
     "view_acquisition": "Go to the event that acquired this lot"
   },
   "cost_basis_table": {

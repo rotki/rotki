@@ -90,6 +90,28 @@ describe('useCostBasisOverlay', () => {
     expect(overlay.statusFor(1)).toBe('ready');
   });
 
+  it('should fetch a failed batch again after a delay without any change', async () => {
+    fetchCostBasis.mockRejectedValueOnce(new Error('boom'));
+    const { overlay } = create([1]);
+    await vi.advanceTimersByTimeAsync(60);
+    expect(overlay.statusFor(1)).toBe('error');
+    expect(fetchCostBasis).toHaveBeenCalledOnce();
+
+    await vi.advanceTimersByTimeAsync(15_000);
+    expect(fetchCostBasis).toHaveBeenCalledTimes(2);
+    expect(overlay.statusFor(1)).toBe('ready');
+  });
+
+  it('should not retry after the overlay is gone', async () => {
+    fetchCostBasis.mockRejectedValueOnce(new Error('boom'));
+    create([1]);
+    await vi.advanceTimersByTimeAsync(60);
+    scopes.splice(0).forEach(scope => scope.stop());
+
+    await vi.advanceTimersByTimeAsync(15_000);
+    expect(fetchCostBasis).toHaveBeenCalledOnce();
+  });
+
   it('should respect the endpoint limit of 500 events per request', async () => {
     create(Array.from({ length: 501 }, (_, index) => index + 1));
     await vi.advanceTimersByTimeAsync(60);
