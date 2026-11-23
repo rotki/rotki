@@ -613,16 +613,17 @@ class TransactionDecoder[
                     identifiers=[action_id],
                 )
         else:  # Filter out events at positions previously customized to prevent duplicates
+            event_keys = [DBCacheDynamic.CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX.get_db_key(
+                group_identifier=event.group_identifier,
+                sequence_index=event.sequence_index,
+            ) for event in events]
             cached_keys = {row[0] for row in write_cursor.execute(
-                'SELECT name FROM key_value_cache WHERE name LIKE ?',
-                (f'customized_event_original_{events[0].group_identifier}_%',),
+                f'SELECT name FROM key_value_cache WHERE name IN ({",".join("?" * len(event_keys))})',  # noqa: E501
+                event_keys,
             )}
             if len(filtered_events := [
-                event for event in events
-                if DBCacheDynamic.CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX.get_db_key(
-                    group_identifier=event.group_identifier,
-                    sequence_index=event.sequence_index,
-                ) not in cached_keys
+                event for event, key in zip(events, event_keys, strict=True)
+                if key not in cached_keys
             ]) != 0:
                 self.dbevents.add_history_events(
                     write_cursor=write_cursor,
