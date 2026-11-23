@@ -684,6 +684,34 @@ describe('use-history-event-navigation-consumer', () => {
       });
     });
 
+    it('should keep the cost basis overlay on when the route query carries it', async () => {
+      setupMockRoute('/history/events/', {
+        overlay: 'cost_basis',
+        targetGroupIdentifier: 'group-route',
+      });
+      mockGetHistoryEventGroupPosition.mockResolvedValue(10);
+
+      const { useHistoryEventNavigationConsumer } = await importFresh();
+      const pagination = createPagination(10);
+
+      scope.run(() => {
+        useHistoryEventNavigationConsumer(pagination);
+      });
+
+      await flushPromises();
+
+      expect(mockRouterPush).toHaveBeenCalledWith({
+        force: true,
+        name: '/history/events/',
+        query: {
+          highlightedGroupIdentifier: 'group-route',
+          limit: '10',
+          overlay: 'cost_basis',
+          page: '2',
+        },
+      });
+    });
+
     it('should push the asset-filter route before loading and preserve the filter after loading', async () => {
       setupMockRoute('/history/events/', {
         asset: 'ETH',

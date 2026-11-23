@@ -50,6 +50,13 @@ describe('summarizeCostBasis', () => {
     expect(summary?.pnl).toBeUndefined();
   });
 
+  it('should omit the gain when a spend has no proceeds', () => {
+    const summary = summarizeCostBasis([{ ...spend, proceeds: null, realizedPnl: bigNumberify('0'), taxfreePnl: null }], bigNumberify('1'));
+    expect(summary?.kind).toBe(CostBasisSummaryKind.DISPOSAL);
+    expect(summary?.basis.toString()).toBe('100');
+    expect(summary?.pnl).toBeUndefined();
+  });
+
   it('should report a spend with a receive next to it as a transfer with no gain', () => {
     const summary = summarizeCostBasis([spend, receive], bigNumberify('1'));
     expect(summary?.kind).toBe(CostBasisSummaryKind.TRANSFER);

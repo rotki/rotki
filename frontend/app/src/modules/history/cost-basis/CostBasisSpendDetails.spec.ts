@@ -9,7 +9,7 @@ const stubs = {
   CostBasisBucketLabel: { template: '<div class="bucket" />' },
   DateDisplay: { props: ['timestamp'], template: '<span class="date">{{ timestamp }}</span>' },
   FiatDisplay: { props: ['value', 'pnl', 'format'], template: '<span class="fiat" :data-pnl="pnl" :data-decimals="format?.decimals" :data-no-mark="format?.noRoundingMark">{{ value.toString() }}</span>' },
-  RouterLink: { props: ['to'], template: '<a :data-group="to.query.targetGroupIdentifier" :data-event="to.query.highlightedAccountingEvent" :data-overlay="to.query.overlay"><slot /></a>' },
+  RouterLink: { props: ['to'], template: '<a :data-group="to.query.targetGroupIdentifier" :data-accounting-event="to.query.highlightedAccountingEvent" :data-overlay="to.query.overlay"><slot /></a>' },
   RuiChip: { template: '<span><slot /></span>' },
   RuiDivider: true,
   RuiIcon: true,
@@ -97,11 +97,12 @@ describe('costBasisSpendDetails.vue', () => {
     expect(lots.map(row => row.get('.fiat').text())).toEqual(['1000', '30']);
   });
 
-  it('should link a lot to the event that acquired it with this overlay on, and not link one whose event is gone', () => {
+  it('should link a lot to the event group that acquired it with this overlay on, without setting a divergence highlight, and not link one whose event is gone', () => {
     const wrapper = mountDetails({ lots: [lot, { ...lot, acquisition: null, lotId: '99' }] });
     const links = wrapper.findAll('[data-testid=cost-basis-lot-link]');
     expect(links).toHaveLength(1);
-    expect(links[0].attributes()).toMatchObject({ 'data-event': '12', 'data-group': '0xgroup', 'data-overlay': 'cost_basis' });
+    expect(links[0].attributes()).toMatchObject({ 'data-group': '0xgroup', 'data-overlay': 'cost_basis' });
+    expect(links[0].attributes('data-accounting-event')).toBeUndefined();
   });
 
   it('should mark only the lots held past the tax free period', () => {
