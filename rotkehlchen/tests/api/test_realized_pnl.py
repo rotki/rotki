@@ -157,6 +157,9 @@ def test_realized_pnl_is_broken_down_by_group(
     ({'location_labels': [TEST_ADDR1], 'to_timestamp': JAN_12_2023}, '900'),
     ({'event_types': ['receive']}, '0'),  # only spends realize anything
     ({'asset': 'ETH', 'location_labels': [TEST_ADDR2]}, '0'),
+    ({'state_markers': ['customized']}, '0'),
+    ({'state_markers': ['matched']}, '0'),
+    ({'addresses': ['bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4']}, '0'),
 ])
 @pytest.mark.usefixtures('materialized_pnl')
 def test_realized_pnl_only_counts_the_events_matching_the_filter(
@@ -168,6 +171,26 @@ def test_realized_pnl_only_counts_the_events_matching_the_filter(
     assert result['total_realized_pnl'] == total
     assert result['num_unpriced_events'] == 0
     assert (result['breakdown'] == []) is (total == '0')
+
+
+@pytest.mark.usefixtures('materialized_pnl')
+def test_realized_pnl_filters_by_identifiers(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with database.conn.read_ctx() as cursor:
+        _, optimism_spend_id = (row[0] for row in cursor.execute(
+            'SELECT identifier FROM history_events WHERE location=? ORDER BY timestamp',
+            (LOCATION_OPTIMISM,),
+        ))
+
+    assert _query(rotkehlchen_api_server, identifiers=[optimism_spend_id]) == {
+        'total_realized_pnl': '2900',
+        'num_unpriced_events': 0,
+        'breakdown': [_group(None, 2900, events=1)],
+        'stale': False,
+        'method': 'fifo',
+    }
 
 
 def test_realized_pnl_is_stale_until_the_cost_basis_is_processed(

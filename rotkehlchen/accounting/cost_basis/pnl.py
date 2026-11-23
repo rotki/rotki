@@ -75,7 +75,8 @@ def query_realized_pnl(
             'cost_basis.realized_pnl, cost_basis.basis_removed, cost_basis.event_identifier '
             'FROM event_cost_basis AS cost_basis '
             'WHERE cost_basis.direction = ? AND cost_basis.event_identifier IN '
-            f'(SELECT history_events.identifier {ALL_EVENTS_DATA_JOIN} {filters})',
+            '(SELECT history_events.identifier AS history_events_identifier '
+            f'{ALL_EVENTS_DATA_JOIN} {filters})',
             (CostBasisDirection.SPEND.value, *bindings),
         ):
             pnl, basis, events, unpriced_events = groups.get(group_key, (ZERO, ZERO, set(), set()))
