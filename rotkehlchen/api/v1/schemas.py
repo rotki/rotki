@@ -2093,6 +2093,13 @@ class UserPremiumSyncSchema(AsyncQueryArgumentSchema):
     )
 
 
+class DeleteRemoteBackupSchema(AsyncQueryArgumentSchema):
+    # The hash of the remote backup the user confirmed deleting, from the GET response. It
+    # may be empty: the server stores an empty hash for an upload that sent none.
+    data_hash = fields.String(required=True)
+    disable_sync = fields.Boolean(load_default=True)
+
+
 class NewUserSchema(BaseUserSchema, AsyncQueryArgumentSchema):
     premium_api_key = fields.String(load_default='')
     premium_api_secret = fields.String(load_default='')

@@ -225,6 +225,7 @@ def test_upload_data_to_server(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('db_settings', [{'premium_should_sync': True}])
 def test_upload_data_to_server_too_big_for_tier(rotkehlchen_instance):
     """Test that a DB bigger than the tier limit is not encrypted nor uploaded and the user
     gets a message explaining why"""
@@ -266,6 +267,7 @@ def test_upload_data_to_server_too_big_for_tier(rotkehlchen_instance):
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('db_settings', [{'premium_should_sync': True}])
 def test_upload_does_not_make_local_db_look_newer(rotkehlchen_instance: Rotkehlchen) -> None:
     """The bookkeeping of a successful upload must not bump last_write_ts. Otherwise the DB
     would look newer than the backup it just uploaded and be uploaded again for nothing.
@@ -319,8 +321,8 @@ def test_upload_does_not_make_local_db_look_newer(rotkehlchen_instance: Rotkehlc
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('db_settings', [
-    {'ask_user_upon_size_discrepancy': True},
-    {'ask_user_upon_size_discrepancy': False},
+    {'ask_user_upon_size_discrepancy': True, 'premium_should_sync': True},
+    {'ask_user_upon_size_discrepancy': False, 'premium_should_sync': True},
 ])
 def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_settings: dict[str, bool]):
     """Test that if the server has bigger DB size no upload happens"""

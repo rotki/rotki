@@ -572,6 +572,93 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 500: Internal rotki error
    :statuscode 502: The external premium service could not be reached or returned unexpected response, or the sync failed for another reason, for example because the plan does not include backups.
 
+.. http:get:: /api/(version)/premium/sync
+
+   By doing a ``GET`` at this endpoint you can query the database backup stored on the rotki server for the logged-in premium user.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/premium/sync HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "backup": {
+                  "upload_ts": 1760882460,
+                  "last_modify_ts": 1760882400,
+                  "data_size": 4242424,
+                  "data_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+              }
+          },
+          "message": ""
+      }
+
+   :resjson object backup: The backup on the server, or ``null`` if there is none.
+   :resjson int upload_ts: When the backup was uploaded.
+   :resjson int last_modify_ts: The last write timestamp of the database the backup was made from.
+   :resjson int data_size: The size of the backup in bytes.
+   :resjson string data_hash: The hash of the backup. Send it when deleting the backup.
+   :statuscode 200: The backup was queried successfully.
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: The rotki server could not be reached, returned an unexpected response, or rejected the premium credentials, with error cause ``auth``.
+
+.. http:delete:: /api/(version)/premium/sync
+
+   By doing a ``DELETE`` at this endpoint you can delete the database backup stored on the rotki server. The local database is not touched. The backup is only deleted if it still has the given hash, so a backup uploaded after the user reviewed it is kept. A backup the server no longer has counts as deleted.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/premium/sync HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "data_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+          "disable_sync": true
+      }
+
+   :reqjson string data_hash: The hash of the backup to delete, as returned by ``GET``. It may be empty, if the backup was stored without one.
+   :reqjson bool disable_sync: Optional, ``true`` by default. Turn off the automatic backup upload of this device once the backup is deleted, so it does not upload a new one right after. A failed deletion leaves it as it was.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"premium_should_sync": false},
+          "message": ""
+      }
+
+   :resjson bool premium_should_sync: Whether the automatic backup upload is on after the deletion.
+   :statuscode 200: The backup was deleted.
+   :statuscode 400: Provided call is in some way malformed.
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: The backup was not deleted. The error cause says why: ``conflict`` if the backup changed since its hash was queried, ``rate_limited`` if a backup is being uploaded, by this device or another, ``auth`` if the server rejected the premium credentials, ``network`` if it could not be reached. Any other cause means the server refused the deletion for another reason, for example because the clock of this device is wrong.
+
 Querying premium devices
 ========================
 
