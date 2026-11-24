@@ -19,6 +19,7 @@ from rotkehlchen.accounting.constants import (
 )
 from rotkehlchen.accounting.entry_type_mappings import ENTRY_TYPE_MAPPINGS
 from rotkehlchen.api.rest_helpers.downloads import (
+    current_download_session,
     make_download_response,
     register_pending_download,
 )
@@ -364,6 +365,7 @@ class AssetsService:
         return {'result': custom_asset_types, 'message': '', 'status_code': HTTPStatus.OK}
 
     def export_user_assets(self, path: Path | None) -> dict[str, Any]:
+        download_session = current_download_session()
         try:
             zip_path = export_assets_from_file(
                 dirpath=path,
@@ -377,7 +379,7 @@ class AssetsService:
             }
 
         if path is None:
-            register_pending_download(zip_path)
+            register_pending_download(zip_path, session=download_session)
 
         return {
             'result': {'file_path': str(zip_path)},
