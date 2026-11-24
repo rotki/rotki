@@ -83,6 +83,10 @@ class RemoteMetadata(NamedTuple):
     last_modify_ts: Timestamp
     # This is the size in bytes of the remote DB data
     data_size: int
+    # The hash the uploading client sent with the remote DB data. Deleting the remote backup
+    # names it, so that a backup uploaded after the user confirmed the deletion is kept.
+    # Empty if there is no remote backup.
+    data_hash: str
 
 
 class UserLimits(TypedDict):
@@ -177,6 +181,32 @@ BACKUP_COMPRESSION: Final = 'rkpbak1'
 BACKUP_FORMAT_HEADERS: Final = {'Backup-Format': '1'}
 # The error_code the server sends when it refuses a backup for exceeding the tier's size
 BACKUP_SIZE_LIMIT_ERROR_CODE: Final = 'backup_size_limit_exceeded'
+# The error_code values nest sends when it refuses to delete the remote backup, with the
+# message shown to the user and the cause the frontend reads to decide what to offer.
+DELETE_BACKUP_ERRORS: Final = {
+    'backup_not_found': (
+        'There is no backup on the rotki server to delete.',
+        FailureCause.NOT_FOUND,
+    ),
+    'backup_changed': (
+        (
+            'The backup on the rotki server changed since it was reviewed, so it was kept. '
+            'Review the current backup and try again.'
+        ),
+        FailureCause.CONFLICT,
+    ),
+    'backup_busy': (
+        'The backup on the rotki server is being updated. Try again in a moment.',
+        FailureCause.RATE_LIMITED,
+    ),
+    'stale_request': (
+        (
+            'The rotki server refused the request as expired. Check that the clock of this '
+            'device is correct.'
+        ),
+        FailureCause.REMOTE_REJECTED,
+    ),
+}
 
 
 def check_response_status_code(
@@ -241,15 +271,20 @@ def _extract_error_msg(response: requests.Response) -> str:
     return response.text
 
 
+def _extract_error_code(response: requests.Response) -> str | None:
+    """The error_code nest sends in its json body to say why it refused a request"""
+    try:
+        error_code = jsonloads_dict(response.text).get('error_code')
+    except JSONDecodeError:
+        return None
+
+    return error_code if isinstance(error_code, str) else None
+
+
 def _is_backup_size_limit_rejection(response: requests.Response) -> bool:
     """Whether the server refused an upload because the backup exceeds the tier's size. Nest
     answers that with the same 400 as other bad requests, so only the error_code tells."""
-    try:
-        body = jsonloads_dict(response.text)
-    except JSONDecodeError:
-        return False
-
-    return body.get('error_code') == BACKUP_SIZE_LIMIT_ERROR_CODE
+    return _extract_error_code(response) == BACKUP_SIZE_LIMIT_ERROR_CODE
 
 
 def _get_rotki_base_url() -> str:
@@ -1030,6 +1065,47 @@ class Premium:
 
         return response.content
 
+    def delete_backup(self, data_hash: str) -> None:
+        """Deletes the user's backup from the rotki server, but only if the stored backup
+        still has the given hash.
+
+        May raise:
+        - RemoteError if the server can't be reached or refuses the deletion. The cause says
+        why: NOT_FOUND if there is no backup, CONFLICT if the backup changed since its hash
+        was read and RATE_LIMITED if an upload to it is in progress.
+        - PremiumAuthenticationError if the given key is rejected by the server
+        """
+        try:
+            response = self.session.delete(
+                url=f'{self.rotki_nest}{(method := "backup")}',
+                json=self.sign(method=method, data_hash=data_hash),
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+            )
+        except requests.exceptions.RequestException as e:
+            msg = f'Could not connect to rotki server due to {e!s}'
+            log.error(msg)
+            raise RemoteError(msg, cause=FailureCause.NETWORK) from e
+
+        if response.status_code == HTTPStatus.OK:
+            return
+
+        log.error(
+            'rotki server refused to delete the backup with status %s and body %s',
+            response.status_code,
+            response.text,
+        )
+        if response.status_code == HTTPStatus.UNAUTHORIZED:
+            raise PremiumAuthenticationError(_extract_error_msg(response))
+
+        if (error_code := _extract_error_code(response)) in DELETE_BACKUP_ERRORS:
+            msg, cause = DELETE_BACKUP_ERRORS[error_code]
+            raise RemoteError(msg, cause=cause)
+
+        raise RemoteError(
+            f'Could not delete the backup due to: {_extract_error_msg(response)}',
+            cause=cause_for_status(response.status_code),
+        )
+
     def query_last_data_metadata(self) -> RemoteMetadata:
         """Queries last metadata from the server and returns the response
         as a RemoteMetadata object.
@@ -1058,6 +1134,7 @@ class Premium:
                 upload_ts=Timestamp(result['upload_ts']),
                 last_modify_ts=Timestamp(result['last_modify_ts']),
                 data_size=result['data_size'],
+                data_hash=str(result.get('data_hash') or '').strip(),
             )
         except KeyError as e:
             msg = f'Problem connecting to rotki server. last_data_metadata response missing {e!s} key'  # noqa: E501

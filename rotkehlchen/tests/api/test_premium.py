@@ -1,3 +1,6 @@
+import base64
+import hashlib
+import hmac
 import json
 import sqlite3
 import tempfile
@@ -7,6 +10,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 from unittest.mock import patch
+from urllib.parse import urlencode
 
 import machineid
 import pytest
@@ -331,6 +335,7 @@ def test_password_change_makes_backup_upload_due(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('db_settings', [{'premium_should_sync': True}])
 def test_password_change_during_backup_upload_stays_due(
         rotkehlchen_api_server: APIServer,
         username: str,
@@ -928,3 +933,204 @@ def test_free_capabilities_expose_every_unlock() -> None:
             'enabled': False,
             'minimum_tier': minimum_tier,
         }, f'free capability {name} missing or not matching its unlock tier'
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_query_remote_backup(rotkehlchen_api_server: APIServer) -> None:
+    """GET /premium/sync returns the backup on the server, with the hash a deletion names"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+    with create_patched_requests_get_for_premium(
+        session=rotki.premium.session,
+        metadata_last_modify_ts=Timestamp(1760882400),
+        metadata_data_hash='  abc  ',  # nest stores the hash padded
+        metadata_data_size=4242,
+    ):
+        response = requests.get(api_url_for(rotkehlchen_api_server, 'userpremiumsyncresource'))
+        assert assert_proper_sync_response_with_result(response) == {'backup': {
+            'upload_ts': 1337,
+            'last_modify_ts': 1760882400,
+            'data_size': 4242,
+            'data_hash': 'abc',
+        }}
+
+    with patch.object(
+        rotki.premium.session,
+        'get',
+        return_value=MockResponse(
+            HTTPStatus.OK,
+            '{"upload_ts": 0, "last_modify_ts": 0, "data_hash": "", "data_size": 0}',
+        ),
+    ):
+        response = requests.get(api_url_for(rotkehlchen_api_server, 'userpremiumsyncresource'))
+        assert assert_proper_sync_response_with_result(response) == {'backup': None}
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [False])
+def test_remote_backup_endpoints_need_premium(rotkehlchen_api_server: APIServer) -> None:
+    url = api_url_for(rotkehlchen_api_server, 'userpremiumsyncresource')
+    for response in (requests.get(url), requests.delete(url, json={'data_hash': ''})):
+        assert_error_response(
+            response=response,
+            status_code=HTTPStatus.FORBIDDEN,
+            contained_in_msg='does not have a premium subscription',
+        )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('db_settings', [{'premium_should_sync': True}])
+@pytest.mark.parametrize('disable_sync', [True, False])
+def test_delete_remote_backup(rotkehlchen_api_server: APIServer, disable_sync: bool) -> None:
+    """Deleting sends a request signed over the hash and a nonce, as nest checks it, and
+    turns the automatic upload off only when asked to"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+    rotki.premium_sync_manager.last_remote_data_upload_ts = 1337
+    with patch.object(
+        rotki.premium.session,
+        'delete',
+        return_value=MockResponse(HTTPStatus.OK, '{"success": true}'),
+    ) as mock_delete:
+        response = requests.delete(
+            api_url_for(rotkehlchen_api_server, 'userpremiumsyncresource'),
+            json={'async_query': True, 'data_hash': 'abc', 'disable_sync': disable_sync},
+        )
+        result = wait_for_async_task(rotkehlchen_api_server, assert_ok_async_response(response))
+        assert result['result'] == {'premium_should_sync': not disable_sync}
+
+    mock_delete.assert_called_once()
+    call = mock_delete.call_args.kwargs
+    assert call['url'] == f'{rotki.premium.rotki_nest}backup'
+    assert list(call['json']) == ['data_hash', 'nonce']
+    assert call['json']['data_hash'] == 'abc'
+    assert abs(call['json']['nonce'] - 1000 * ts_now()) < 60_000
+    expected_message = b'/api/1/backup' + hashlib.sha256(
+        urlencode(call['json']).encode(),
+    ).hexdigest().encode()
+    expected_signature = base64.b64encode(hmac.new(
+        rotki.premium.credentials.api_secret,
+        expected_message,
+        hashlib.sha512,
+    ).digest())
+    assert rotki.premium.session.headers['API-SIGN'] == expected_signature
+
+    assert rotki.premium_sync_manager.last_remote_data_upload_ts == 0
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert rotki.data.db.get_setting(cursor, 'premium_should_sync') is not disable_sync
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('db_settings', [{'premium_should_sync': True}])
+@pytest.mark.parametrize(('server_status', 'server_body', 'status_code', 'message'), [
+    (HTTPStatus.CONFLICT, '{"success": false, "error_code": "backup_changed"}', HTTPStatus.BAD_GATEWAY, 'changed since it was reviewed'),  # noqa: E501
+    (HTTPStatus.CONFLICT, '{"success": false, "error_code": "backup_busy"}', HTTPStatus.BAD_GATEWAY, 'being updated'),  # noqa: E501
+    (HTTPStatus.BAD_REQUEST, '{"success": false, "error_code": "stale_request"}', HTTPStatus.BAD_GATEWAY, 'clock of this device'),  # noqa: E501
+    (HTTPStatus.INTERNAL_SERVER_ERROR, '{"success": false, "msg": "Couldn\'t delete backup"}', HTTPStatus.BAD_GATEWAY, "Couldn't delete backup"),  # noqa: E501
+    (HTTPStatus.UNAUTHORIZED, '{"error": "API KEY signature mismatch"}', HTTPStatus.BAD_GATEWAY, 'signature mismatch'),  # noqa: E501
+])
+def test_delete_remote_backup_refused(
+        rotkehlchen_api_server: APIServer,
+        server_status: HTTPStatus,
+        server_body: str,
+        status_code: HTTPStatus,
+        message: str,
+) -> None:
+    """A refused deletion says why and leaves the automatic upload as it was. Turning it
+    off and on again must not make the local DB look newer than the backup the server kept,
+    or the next upload would overwrite a backup another device made."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+    last_write_ts = Timestamp(1700000000)  # older than now, so a bump to now would show
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        rotki.data.db.set_setting(write_cursor, name='last_write_ts', value=last_write_ts)
+    with patch.object(
+        rotki.premium.session,
+        'delete',
+        return_value=MockResponse(server_status, server_body),
+    ):
+        response = requests.delete(
+            api_url_for(rotkehlchen_api_server, 'userpremiumsyncresource'),
+            json={'async_query': True, 'data_hash': 'abc'},
+        )
+        assert_error_async_response(
+            response_data=wait_for_async_task(
+                rotkehlchen_api_server,
+                assert_ok_async_response(response),
+            ),
+            contained_in_msg=message,
+            status_code=status_code,
+        )
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert rotki.data.db.get_setting(cursor, 'premium_should_sync') is True
+        assert rotki.data.db.get_setting(cursor, 'last_write_ts') == last_write_ts
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('db_settings', [{'premium_should_sync': True}])
+def test_delete_remote_backup_while_uploading(rotkehlchen_api_server: APIServer) -> None:
+    """A deletion is refused while this device uploads, instead of waiting for an upload
+    that changes the backup's hash, and it leaves the automatic upload as it was"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+    with (
+        rotki.premium_sync_manager.upload_lock,
+        patch.object(rotki.premium.session, 'delete') as mock_delete,
+    ):
+        response = requests.delete(
+            api_url_for(rotkehlchen_api_server, 'userpremiumsyncresource'),
+            json={'async_query': True, 'data_hash': 'abc'},
+        )
+        assert_error_async_response(
+            response_data=wait_for_async_task(
+                rotkehlchen_api_server,
+                assert_ok_async_response(response),
+            ),
+            contained_in_msg='This device is uploading a backup',
+            status_code=HTTPStatus.BAD_GATEWAY,
+        )
+
+    mock_delete.assert_not_called()
+    assert rotki.premium_sync_manager.upload_lock.acquire(blocking=False)
+    rotki.premium_sync_manager.upload_lock.release()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert rotki.data.db.get_setting(cursor, 'premium_should_sync') is True
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('db_settings', [{'premium_should_sync': True}])
+def test_delete_remote_backup_already_gone(rotkehlchen_api_server: APIServer) -> None:
+    """A backup the server no longer has counts as deleted, as when a retried DELETE finds
+    the backup its first attempt removed, so the automatic upload stays off"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+    with patch.object(
+        rotki.premium.session,
+        'delete',
+        return_value=MockResponse(
+            HTTPStatus.NOT_FOUND,
+            '{"success": false, "error_code": "backup_not_found"}',
+        ),
+    ):
+        response = requests.delete(
+            api_url_for(rotkehlchen_api_server, 'userpremiumsyncresource'),
+            json={'async_query': True, 'data_hash': 'abc'},
+        )
+        result = wait_for_async_task(rotkehlchen_api_server, assert_ok_async_response(response))
+        assert result['result'] == {'premium_should_sync': False}
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert rotki.data.db.get_setting(cursor, 'premium_should_sync') is False
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('db_settings', [{'premium_should_sync': False}])
+def test_automatic_upload_checks_setting_under_lock(rotkehlchen_api_server: APIServer) -> None:
+    """An automatic upload scheduled before automatic backup was turned off, for example by
+    a deletion, reads the setting again once it holds the upload lock and does nothing"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+    with patch.object(rotki.premium_sync_manager, '_query_last_data_metadata') as query:
+        assert rotki.premium_sync_manager.maybe_upload_data_to_server() == (False, None)
+
+    query.assert_not_called()

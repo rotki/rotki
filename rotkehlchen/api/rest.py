@@ -369,6 +369,13 @@ def _wrap_remote_query[T](
     return OkResult(serialize(result))
 
 
+def _remote_backup_failure(error: RemoteError | PremiumAuthenticationError) -> FailResult:
+    """A request about the remote backup the rotki server failed or refused. Always a bad
+    gateway with the cause saying why: a rejected premium key is not a 401, which the
+    frontend takes for its own session ending."""
+    return FailResult(str(error), HTTPStatus.BAD_GATEWAY, cause_of(error, FailureCause.AUTH))
+
+
 def _premium_failure_cause(error: Exception) -> FailureCause:
     """The cause of a failed premium verification. PremiumAuthenticationErrors wrap what
     stopped the verification, so only one with no such original rejected the credentials."""
@@ -3042,6 +3049,28 @@ class RestAPI:
                 # timestamp is the only way the user can tell which backup they restored
                 return OkResult({'last_modify_ts': restored_backup_ts}, message=msg)
             return OkResult(True, message=msg)
+
+    @async_api_call()
+    def query_remote_backup(self) -> ApiResult:
+        """The backup stored on the rotki server, as None if there is none"""
+        try:
+            metadata = self.rotkehlchen.premium_sync_manager.query_remote_backup()
+        except (RemoteError, PremiumAuthenticationError) as e:
+            return _remote_backup_failure(e)
+
+        return OkResult({'backup': None if metadata is None else metadata._asdict()})
+
+    @async_api_call()
+    def delete_remote_backup(self, data_hash: str, disable_sync: bool) -> ApiResult:
+        try:
+            should_sync = self.rotkehlchen.premium_sync_manager.delete_remote_backup(
+                data_hash=data_hash,
+                disable_sync=disable_sync,
+            )
+        except (RemoteError, PremiumAuthenticationError) as e:
+            return _remote_backup_failure(e)
+
+        return OkResult({'premium_should_sync': should_sync})
 
     @async_api_call()
     def create_oracle_cache(

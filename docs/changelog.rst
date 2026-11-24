@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2291` Premium users can now delete the database backup stored on the rotki server from the cloud backup menu. The confirmation shows which backup will be deleted and offers to turn off the automatic backup on this device, so it does not upload a new one right away.
 * :bug:`-` NFT prices and images now need your own OpenSea API key. Without one, rotki asks for it once and lets you choose not to be asked again, instead of retrying for half a minute and failing.
 * :bug:`4031` For a main currency other than USD, the net worth graph now converts each balance snapshot at the exchange rate of its own day instead of today's rate, so it no longer moves with the exchange rate. Rates that are not known yet are fetched in the background, first one day a month across the whole history, then one a week, then every day, so a long history gets a close rate everywhere within minutes. Until they arrive, the graph shades the points shown at an estimated rate, the tooltip flags them and names the rate each one uses, the change is marked as approximate, and a day with no rate available can be filled in by hand.
 * :bug:`-` Two obsolete accounting rule conflicts for adjustment events no longer appear after upgrading an older profile. They came from a duplicated remote update and asked for a choice even though the rules had not changed.

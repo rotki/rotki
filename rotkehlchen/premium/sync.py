@@ -18,6 +18,7 @@ from rotkehlchen.errors.api import (
     PremiumPermissionError,
     RotkehlchenPermissionError,
 )
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     BackupTooLargeError,
     DataIntegrityError,
@@ -40,7 +41,6 @@ from rotkehlchen.premium.premium import (
 from rotkehlchen.types import Timestamp
 from rotkehlchen.user_messages import BadData
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.data_handler import DataHandler
@@ -73,10 +73,9 @@ class SyncCheckResult(NamedTuple):
     remote_metadata: RemoteMetadata | None = None
 
 
-class PremiumSyncManager(LockableQueryMixIn):
+class PremiumSyncManager:
 
     def __init__(self, migration_manager: DataMigrationManager, data: DataHandler) -> None:
-        super().__init__()
         # Initialize this with the value saved in the DB
         with data.db.conn.read_ctx() as cursor:
             # These 2 vars contain the timestamp of our side. When did this DB try to upload
@@ -101,6 +100,9 @@ class PremiumSyncManager(LockableQueryMixIn):
         # must not cancel the restore task, or tear its session down, while the user DB is
         # being replaced and the replacement is being brought up to date.
         self.database_restore_lock = threading.Lock()
+        # Held while uploading the DB and while deleting the remote backup, so that one
+        # export is encrypted at a time and a deletion never runs beside an upload.
+        self.upload_lock = threading.Lock()
 
     def _query_last_data_metadata(self) -> RemoteMetadata:
         """Query remote metadata and keep up to date the last remote data upload ts"""
@@ -283,12 +285,30 @@ class PremiumSyncManager(LockableQueryMixIn):
         failure like any other. For the automatic upload task, where an exception would be
         reported a second time on top of the upload result message."""
         try:
-            return self.upload_data_to_server(force_upload=force_upload)
+            return self.upload_data_to_server(force_upload=force_upload, automatic=True)
         except BackupTooLargeError as e:
             return False, str(e)
 
-    @protect_with_lock()
     def upload_data_to_server(
+            self,
+            force_upload: bool = False,
+            automatic: bool = False,
+    ) -> tuple[bool, str | None]:
+        """Uploads the DB under the upload lock, see _upload_data_to_server.
+
+        An automatic upload reads the setting again once it holds the lock. It was scheduled
+        before, so a deletion that turned automatic backup off meanwhile must stop it.
+        """
+        with self.upload_lock:
+            if automatic and not force_upload:
+                with self.data.db.conn.read_ctx() as cursor:
+                    if not self.data.db.get_setting(cursor, 'premium_should_sync'):
+                        log.debug('upload to server skipped -- automatic backup is off')
+                        return False, None
+
+            return self._upload_data_to_server(force_upload=force_upload)
+
+    def _upload_data_to_server(
             self,
             force_upload: bool = False,
     ) -> tuple[bool, str | None]:
@@ -491,6 +511,76 @@ class PremiumSyncManager(LockableQueryMixIn):
             data={'uploaded': False, 'actionable': False, 'message': str(error)},
         )
         self.last_upload_attempt_ts = ts_now()
+
+    def query_remote_backup(self) -> RemoteMetadata | None:
+        """Returns the metadata of the backup stored on the rotki server, or None if there
+        is none.
+
+        May raise:
+        - RemoteError
+        - PremiumAuthenticationError
+        """
+        metadata = self._query_last_data_metadata()
+        if metadata.upload_ts == 0 and metadata.last_modify_ts == 0:
+            return None  # the server reports zeros when it stores no backup
+
+        return metadata
+
+    def delete_remote_backup(self, data_hash: str, disable_sync: bool) -> bool:
+        """Deletes the backup stored on the rotki server, if it still has the given hash.
+
+        If disable_sync is True the automatic upload is turned off once the backup is gone.
+        Both happen under the upload lock, and an automatic upload checks the setting under
+        that lock, so none can put a backup back right after. Returns the value of
+        premium_should_sync afterwards.
+
+        A backup the server no longer has counts as deleted: the user just reviewed it, so it
+        was deleted meanwhile, for example by this same request before a retry.
+
+        It is refused while this device uploads a backup, instead of waiting for the upload:
+        the upload changes the backup's hash, so the server would keep it anyway.
+
+        May raise:
+        - RemoteError, with the cause saying why the server refused, see Premium.delete_backup.
+        RATE_LIMITED also when this device is uploading.
+        - PremiumAuthenticationError
+        """
+        assert self.premium is not None, 'caller should make sure premium exists'
+        if not self.upload_lock.acquire(blocking=False):
+            raise RemoteError(
+                'This device is uploading a backup. Try again once it finishes.',
+                cause=FailureCause.RATE_LIMITED,
+            )
+
+        try:
+            try:
+                self.premium.delete_backup(data_hash=data_hash)
+            except RemoteError as e:
+                if e.cause != FailureCause.NOT_FOUND:
+                    raise
+                log.info('The premium backup to delete is already gone from the rotki server')
+
+            with self.data.db.conn.read_ctx() as cursor:
+                should_sync = self.data.db.get_setting(cursor, name='premium_should_sync')
+            if disable_sync and should_sync:
+                self._set_premium_should_sync(False)
+                should_sync = False
+        finally:
+            self.upload_lock.release()
+
+        log.info('Deleted the premium backup from the rotki server')
+        self.last_remote_data_upload_ts = 0
+        return should_sync
+
+    def _set_premium_should_sync(self, value: bool) -> None:
+        # Not user_write(), whose last_write_ts bump would make the local DB look newer than
+        # a backup another device uploaded, so the next upload would overwrite it
+        with self.data.db.conn.write_ctx() as write_cursor:
+            self.data.db.set_setting(
+                write_cursor=write_cursor,
+                name='premium_should_sync',
+                value=value,
+            )
 
     def sync_data(
             self,

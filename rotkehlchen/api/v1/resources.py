@@ -94,6 +94,7 @@ from rotkehlchen.api.v1.schemas import (
     DataIssueManualResolveSchema,
     DataIssuesFilterSchema,
     DeletePremiumDeviceSchema,
+    DeleteRemoteBackupSchema,
     DetectTokensSchema,
     EditAccountingRuleSchema,
     EditHistoryEventSchema,
@@ -1834,13 +1835,29 @@ class UserPremiumKeyResource(BaseMethodView):
 
 
 class UserPremiumSyncResource(BaseMethodView):
+    get_schema = AsyncQueryArgumentSchema()
     put_schema = UserPremiumSyncSchema()
+    delete_schema = DeleteRemoteBackupSchema()
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.query_remote_backup(async_query=async_query)
 
     @use_kwargs(put_schema, location='json_and_view_args')
     def put(self, async_query: bool, action: Literal['upload', 'download']) -> Response:
         return self.rest_api.sync_data(
             async_query=async_query,
             action=action,
+        )
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, async_query: bool, data_hash: str, disable_sync: bool) -> Response:
+        return self.rest_api.delete_remote_backup(
+            async_query=async_query,
+            data_hash=data_hash,
+            disable_sync=disable_sync,
         )
 
 
