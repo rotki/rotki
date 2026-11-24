@@ -12,6 +12,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from http import HTTPStatus
+from pathlib import Path
 from threading import Event
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
@@ -20,6 +21,10 @@ import pytest
 import requests
 from websocket import WebSocket, WebSocketConnectionClosedException, create_connection
 
+from rotkehlchen.api.rest_helpers.downloads import (
+    current_download_session,
+    register_pending_download,
+)
 from rotkehlchen.api.session_store import (
     SESSION_DB_NAME,
     SessionStore,
@@ -644,6 +649,38 @@ def test_session_takeover_keeps_old_session_async_tasks_stopped(
     finally:
         blocked_login.release.set()
         blocked_query.release.set()
+        _disable_session(rotkehlchen_api_server)
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+def test_session_takeover_ends_the_download_session(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+        tmp_path: Path,
+) -> None:
+    """A takeover drops the previous session's undownloaded exports, and an export of
+    that session which finishes after the sid rotated is deleted, not registered."""
+    _enable_session(rotkehlchen_api_server)
+    auth_url = api_url_for(rotkehlchen_api_server, 'userauthenticateresource', name=username)
+    try:
+        first = requests.Session()
+        first.post(auth_url, json={'password': '123'})
+        response = first.put(api_url_for(rotkehlchen_api_server, 'userassetsresource'), json={})
+        assert (
+            pending_export := Path(assert_proper_sync_response_with_result(response)['file_path'])
+        ).exists()
+        old_session = current_download_session()  # an export of `first` still running
+
+        second = requests.Session()  # takeover: rotate the sid
+        second.post(auth_url, json={'password': '123'})
+        assert not pending_export.exists()
+
+        (late_dir := tmp_path / 'late').mkdir()
+        (late_export := late_dir / 'assets.zip').write_bytes(b'zip')
+        register_pending_download(late_export, session=old_session)  # the export finishes
+        assert not late_export.exists()
+        assert not late_dir.exists()
+    finally:
         _disable_session(rotkehlchen_api_server)
 
 
