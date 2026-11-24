@@ -7,6 +7,14 @@ This changelog documents API changes, schema modifications, and other developer-
 Unreleased
 ==========
 
+Etherscan API URL Override
+--------------------------
+
+* **New Environment Variable**: ``ROTKI_ETHERSCAN_API_URL``
+
+  - Replaces ``https://api.etherscan.io/v2/api`` as the url of all Etherscan queries. Set it before starting the backend, since it is read when the Etherscan client is created. A value that is not an http(s) url is ignored with a warning.
+  - The endpoint must implement the Etherscan v2 API, including the ``chainid`` parameter. The configured Etherscan API key, or rotki's default key, is still sent as ``apikey``. Results are stored as coming from Etherscan.
+
 Custom Location API
 -------------------
 

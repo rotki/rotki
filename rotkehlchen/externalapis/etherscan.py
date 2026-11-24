@@ -1,5 +1,7 @@
 import logging
+import os
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
+from urllib.parse import urlsplit
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
@@ -50,12 +52,36 @@ log = RotkehlchenLogsAdapter(logger)
 # Etherscan account endpoints are expected to allow at most 1000 entries per page.
 ETHERSCAN_PAGINATION_LIMIT: Final = 1000
 ETHERSCAN_BASE_URL: Final = 'https://api.etherscan.io/v2/api'
+# Points rotki at any Etherscan v2 compatible API instead of ETHERSCAN_BASE_URL.
+ETHERSCAN_API_URL_ENV: Final = 'ROTKI_ETHERSCAN_API_URL'
 ROTKI_PACKAGED_KEY: Final = ApiKey('W9CEV6QB9NIPUEHD6KNEYM4PDX6KBPRVVR')
 # Etherscan v2 free tier is 3 req/s on a single API key shared across all
 # chains. Keep the default at the documented free-tier rate; higher tiers can
 # still proceed, and 429 responses will shrink dynamically if needed.
 FREE_ETHERSCAN_RATE_LIMIT_RPS: Final = 3.0
 FREE_ETHERSCAN_RATE_LIMIT_BURST: Final = 3
+
+
+def _get_etherscan_base_url() -> str:
+    """Return the http(s) url from ROTKI_ETHERSCAN_API_URL, or ETHERSCAN_BASE_URL if it is
+    unset or invalid."""
+    if (url := os.environ.get(ETHERSCAN_API_URL_ENV, '').strip()) == '':
+        return ETHERSCAN_BASE_URL
+
+    if not url.startswith(('http://', 'https://')):
+        log.warning(
+            f'Ignoring {ETHERSCAN_API_URL_ENV} since it is set but is not an http(s) url. '
+            f'Using {ETHERSCAN_BASE_URL}',
+        )
+        return ETHERSCAN_BASE_URL
+
+    parts = urlsplit(url)
+    host = parts.netloc.rpartition('@')[2]
+    log.debug(
+        f'Using {parts.scheme}://{host} for Etherscan queries '
+        f'as set by {ETHERSCAN_API_URL_ENV}',
+    )
+    return url
 
 
 class EtherscanTier(NamedTuple):
@@ -104,6 +130,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             ),
             indexer_stats=indexer_stats,
         )
+        self.base_url = _get_etherscan_base_url()
         self.api_key_tier: EtherscanTier | None = None
         self.detect_api_key_tier()
 
@@ -200,10 +227,9 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         super().on_api_key_changed()
         self.detect_api_key_tier()
 
-    @staticmethod
-    def _get_url(chain_id: ChainID) -> str:
+    def _get_url(self, chain_id: ChainID) -> str:  # type: ignore[override]
         """Etherscan sends the chain in the params instead of having different urls."""
-        return ETHERSCAN_BASE_URL
+        return self.base_url
 
     def _get_api_key_for_chain(self, chain_id: ChainID) -> ApiKey | None:
         """Etherscan uses the same api key for all chains."""
