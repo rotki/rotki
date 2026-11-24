@@ -188,7 +188,7 @@ def test_history_export_download_csv(
 def test_history_export_download_path_traversal(
         rotkehlchen_api_server_with_exchanges: APIServer,
 ) -> None:
-    """The csv download endpoint only serves files from the export (temp) directory.
+    """The csv download endpoint only serves files that an export registered.
 
     A path pointing elsewhere must be rejected as invalid input, and the file it
     points to must be left untouched (not served and not deleted by the cleanup).

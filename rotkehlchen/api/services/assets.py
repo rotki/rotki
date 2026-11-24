@@ -18,7 +18,10 @@ from rotkehlchen.accounting.constants import (
     EVENT_CATEGORY_MAPPINGS,
 )
 from rotkehlchen.accounting.entry_type_mappings import ENTRY_TYPE_MAPPINGS
-from rotkehlchen.api.rest_helpers.downloads import make_download_response
+from rotkehlchen.api.rest_helpers.downloads import (
+    make_download_response,
+    register_pending_download,
+)
 from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
@@ -372,6 +375,9 @@ class AssetsService:
                 'message': f'Failed to create asset export file. {e!s}',
                 'status_code': HTTPStatus.INSUFFICIENT_STORAGE,
             }
+
+        if path is None:
+            register_pending_download(zip_path)
 
         return {
             'result': {'file_path': str(zip_path)},

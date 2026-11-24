@@ -18,6 +18,7 @@ from rotkehlchen.accounting.export.report import export_pnl_report_csv_from_db
 from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.api.rest_helpers.downloads import (
     make_download_response,
+    register_pending_download,
     register_post_download_cleanup,
 )
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
@@ -632,6 +633,7 @@ class HistoryService:
                     csv_delimiter=settings.csv_export_delimiter,
                     headers=headers.keys(),
                 )
+                register_pending_download(file_path)
                 return {
                     'result': {'file_path': str(file_path)},
                     'message': '',

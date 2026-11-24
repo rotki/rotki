@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` In the desktop app, a website open in your browser can no longer make rotki delete files from the system temp directory, or write a balance snapshot or PnL report export into a folder of its choosing.
 * :bug:`-` Curve CryptoSwap v1 (Tricrypto) pool deposits, withdrawals (including via zap contracts), and swaps, as well as 3-asset and Stableswap-NG imbalanced withdrawals, are now properly decoded.
 * :bug:`-` Historical prices of asset collection members, such as MATIC, now use the member's own price when the collection's main asset has no price at that time, instead of treating the member as unpriced.
 * :bug:`13691` Re-importing a rotki generic events CSV no longer duplicates events, and identical rows in one generic CSV are no longer merged.

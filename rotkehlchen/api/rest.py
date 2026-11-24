@@ -26,7 +26,10 @@ from rotkehlchen.accounting.export.csv import (
 )
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
-from rotkehlchen.api.rest_helpers.downloads import register_post_download_cleanup
+from rotkehlchen.api.rest_helpers.downloads import (
+    discard_pending_downloads,
+    register_post_download_cleanup,
+)
 from rotkehlchen.api.rest_helpers.wrap import calculate_wrap_score
 from rotkehlchen.api.services.accounting import AccountingService
 from rotkehlchen.api.services.accounts import AccountsService
@@ -1502,6 +1505,7 @@ class RestAPI:
                 # and wait for in-flight sync requests to finish before the DB goes away
                 self._drain_session_requests()
                 self.rotkehlchen.logout()
+                discard_pending_downloads()  # exports of this user that were never fetched
                 with self.task_lock:  # teardown done: let new api tasks (e.g. the next login) run
                     self.api_tasks_stop_reason = None
             finally:
