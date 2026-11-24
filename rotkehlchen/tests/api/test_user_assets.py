@@ -971,7 +971,7 @@ def test_replace_asset_edge_cases(
 
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 def test_download_user_assets_path_traversal(rotkehlchen_api_server: APIServer) -> None:
-    """The download endpoint only serves files from the export (temp) directory.
+    """The download endpoint only serves files that an export registered.
 
     A path pointing elsewhere must be rejected as invalid input, and the file it
     points to must be left untouched (not served and not deleted by the cleanup).
@@ -994,6 +994,65 @@ def test_download_user_assets_path_traversal(rotkehlchen_api_server: APIServer) 
         assert sentinel.exists()
     finally:
         sentinel.unlink(missing_ok=True)
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+def test_download_user_assets_only_serves_registered_exports(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """The download endpoint serves a file only if an export created it, and only once.
+
+    A file elsewhere under the temp directory must not be served or deleted, since a
+    cross-site page can send this GET and name any path.
+    """
+    other_dir = Path(tempfile.mkdtemp())
+    other_file = other_dir / 'state.json'
+    other_file.write_text('not a rotki export', encoding='utf-8')
+    download_url = api_url_for(rotkehlchen_api_server, 'userassetsexportdownloadresource')
+    try:
+        response = requests.get(download_url, json={'file_path': str(other_file)})
+        assert_error_response(
+            response=response,
+            contained_in_msg='Invalid file path',
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+        assert other_file.exists()
+    finally:
+        other_file.unlink(missing_ok=True)
+        other_dir.rmdir()
+
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'userassetsresource'), json={})
+    file_path = assert_proper_sync_response_with_result(response)['file_path']
+    response = requests.get(download_url, json={'file_path': file_path})
+    assert response.status_code == HTTPStatus.OK
+    assert response.content[:2] == b'PK'  # a zip archive
+
+    response = requests.get(download_url, json={'file_path': file_path})  # already served
+    assert_error_response(
+        response=response,
+        contained_in_msg='Invalid file path',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+def test_logout_discards_undownloaded_user_assets_export(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+) -> None:
+    """An export that was never downloaded is deleted at logout instead of lingering."""
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'userassetsresource'), json={})
+    assert (
+        export_path := Path(assert_proper_sync_response_with_result(response)['file_path'])
+    ).exists()
+
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
+        json={'action': 'logout'},
+    )
+    assert_proper_response(response)
+    assert not export_path.exists()
+    assert not export_path.parent.exists()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
