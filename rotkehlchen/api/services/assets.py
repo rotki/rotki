@@ -367,19 +367,24 @@ class AssetsService:
     def export_user_assets(self, path: Path | None) -> dict[str, Any]:
         download_session = current_download_session()
         try:
-            zip_path = export_assets_from_file(
-                dirpath=path,
-                db_handler=self.rotkehlchen.data.db,
-            )
+            if path is None:  # a temp file for a later download. Keep it apart from the
+                # user's directory branch, so only the server's own path is registered.
+                zip_path = export_assets_from_file(
+                    dirpath=None,
+                    db_handler=self.rotkehlchen.data.db,
+                )
+                register_pending_download(zip_path, session=download_session)
+            else:
+                zip_path = export_assets_from_file(
+                    dirpath=path,
+                    db_handler=self.rotkehlchen.data.db,
+                )
         except PermissionError as e:
             return {
                 'result': None,
                 'message': f'Failed to create asset export file. {e!s}',
                 'status_code': HTTPStatus.INSUFFICIENT_STORAGE,
             }
-
-        if path is None:
-            register_pending_download(zip_path, session=download_session)
 
         return {
             'result': {'file_path': str(zip_path)},
