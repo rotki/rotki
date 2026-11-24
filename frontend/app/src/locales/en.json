@@ -3612,6 +3612,25 @@
     "last_24_hours": "Last 24 hours",
     "last_90_days": "Last 90 days"
   },
+  "delete_remote_backup": {
+    "action": "Delete backup",
+    "changed": "The server backup changed while you were looking, so it was kept. This is the current one.",
+    "changed_unloaded": "The server backup changed, so it was kept. Retry to see the current one.",
+    "delete_failed": "The backup was not deleted",
+    "deleted": {
+      "others": "Other devices with automatic backup on will upload a new one.",
+      "sync_off": "Automatic backup is now off on this device. Other devices with it on will upload a new backup.",
+      "sync_on": "This device will upload a new backup within the hour.",
+      "title": "Server backup deleted"
+    },
+    "disable_sync": "Also turn off automatic backup",
+    "empty": "There is no backup on the server",
+    "entry": "Delete server backup",
+    "load_failed": "Could not check the server backup",
+    "message": "This can't be undone. The database on this device is not affected.",
+    "title": "Delete the server backup?",
+    "uploaded": "uploaded"
+  },
   "docker_warning": {
     "accept": "Continue without authentication",
     "accept_hint": "This lasts until rotki restarts. To accept it permanently, set this in the container's environment:",
