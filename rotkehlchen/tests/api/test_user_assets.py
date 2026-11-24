@@ -11,6 +11,11 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.api.rest_helpers.downloads import (
+    current_download_session,
+    discard_pending_downloads,
+    register_pending_download,
+)
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, SolanaToken
 from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -1053,6 +1058,41 @@ def test_logout_discards_undownloaded_user_assets_export(
     assert_proper_response(response)
     assert not export_path.exists()
     assert not export_path.parent.exists()
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+def test_shutdown_discards_undownloaded_user_assets_export(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Closing rotki without logging out first also deletes an undownloaded export."""
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'userassetsresource'), json={})
+    assert (
+        export_path := Path(assert_proper_sync_response_with_result(response)['file_path'])
+    ).exists()
+
+    rotkehlchen_api_server.rest_api.rotkehlchen.shutdown()  # what RestAPI.stop() runs
+    assert not export_path.exists()
+    assert not export_path.parent.exists()
+
+
+def test_export_finishing_after_its_session_ended_is_discarded(tmp_path: Path) -> None:
+    """An api task abandoned at logout may finish its export later. The file must be
+    deleted, not registered for download in whatever session comes next."""
+    (export_dir := tmp_path / 'export').mkdir()
+    (late_export := export_dir / 'assets.zip').write_bytes(b'zip')
+    session = current_download_session()
+    discard_pending_downloads()  # the session ends while the export is still running
+
+    register_pending_download(late_export, session=session)
+    assert not late_export.exists()
+    assert not export_dir.exists()
+
+    (export_dir := tmp_path / 'fresh').mkdir()  # an export of the new session still works
+    (fresh_export := export_dir / 'assets.zip').write_bytes(b'zip')
+    register_pending_download(fresh_export, session=current_download_session())
+    assert fresh_export.exists()
+    discard_pending_downloads()
+    assert not fresh_export.exists()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

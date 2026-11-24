@@ -21,15 +21,34 @@ log = RotkehlchenLogsAdapter(logger)
 # only a lookup key: the file that is served and deleted is the server's own Path.
 _pending_downloads: Final[dict[str, Path]] = {}
 _pending_downloads_lock = threading.Lock()
+# Bumped each time a user session ends. An export captures it before it starts working,
+# so an api task abandoned at logout or shutdown that finishes later cannot register its
+# file into a session that was already cleaned up (or into the next user's session).
+_download_session = 0
 
 
-def register_pending_download(path: Path) -> None:
+def current_download_session() -> int:
+    """Return the token an export passes to `register_pending_download`.
+
+    Call it when the export starts, not when it finishes.
+    """
+    with _pending_downloads_lock:
+        return _download_session
+
+
+def register_pending_download(path: Path, session: int) -> None:
     """Allow a single download (and deletion) of a freshly exported temp file.
 
     The client must send back `str(path)`, which is what the export returns.
+    If the session the export started in has ended, the file is deleted instead.
     """
     with _pending_downloads_lock:
-        _pending_downloads[str(path)] = path
+        if session == _download_session:
+            _pending_downloads[str(path)] = path
+            return
+
+    log.debug('Discarding an export that finished after its session ended')
+    _remove_temp_export(path)
 
 
 def _claim_pending_download(file_path: str) -> Path | None:
@@ -47,8 +66,11 @@ def _remove_temp_export(temp_file: Path) -> None:
 
 
 def discard_pending_downloads() -> None:
-    """Delete the exports that were never downloaded, so they don't outlive the session."""
+    """End the download session: delete the exports that were never downloaded,
+    so they don't outlive the session, and refuse later registrations from it."""
+    global _download_session  # noqa: PLW0603  # module level registry state
     with _pending_downloads_lock:
+        _download_session += 1
         pending = list(_pending_downloads.values())
         _pending_downloads.clear()
     for temp_file in pending:
