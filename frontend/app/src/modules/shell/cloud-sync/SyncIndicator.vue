@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
+import DeleteRemoteBackupEntry from '@/modules/shell/cloud-sync/DeleteRemoteBackupEntry.vue';
 import SyncButtons from '@/modules/shell/cloud-sync/SyncButtons.vue';
 import SyncConfirmation from '@/modules/shell/cloud-sync/SyncConfirmation.vue';
 import SyncSettings from '@/modules/shell/cloud-sync/SyncSettings.vue';
@@ -34,6 +35,20 @@ const {
   uploadStatus,
   waitingForBalances,
 } = useSyncIndicator();
+
+/** Rarely opened, so it loads only when the user opens it. */
+const DeleteRemoteBackupPanel = defineAsyncComponent(async () => import('@/modules/shell/cloud-sync/DeleteRemoteBackupPanel.vue'));
+
+/** Whether the menu shows the remote backup deletion in place of the sync buttons. */
+const showDeleteRemoteBackup = ref<boolean>(false);
+/** A deletion in flight keeps the menu open, so its outcome is not lost. */
+const deletingRemoteBackup = ref<boolean>(false);
+
+/** Like the sync confirmation, closing the menu abandons the deletion. */
+watch(modelVisible, (visible) => {
+  if (!visible)
+    set(showDeleteRemoteBackup, false);
+});
 </script>
 
 <template>
@@ -41,7 +56,7 @@ const {
     <RuiMenu
       id="balances-saved-dropdown"
       v-model="modelVisible"
-      :persistent="modelSyncSettingMenuOpen"
+      :persistent="modelSyncSettingMenuOpen || deletingRemoteBackup"
     >
       <template #activator="{ attrs }">
         <MenuTooltipButton
@@ -166,12 +181,28 @@ const {
           @cancel="cancelSync()"
           @confirm="performSync()"
         />
-        <SyncButtons
-          v-else
-          :pending="pending"
-          :disabled="!cloudBackupAllowed"
-          @action="showConfirmation($event)"
+        <DeleteRemoteBackupPanel
+          v-else-if="showDeleteRemoteBackup"
+          v-model:busy="deletingRemoteBackup"
+          @close="showDeleteRemoteBackup = false"
         />
+        <template v-else>
+          <SyncButtons
+            :pending="pending"
+            :disabled="!cloudBackupAllowed"
+            @action="showConfirmation($event)"
+          />
+          <div
+            v-if="cloudBackupAllowed"
+            class="-mx-4 -mb-4 border-t border-default px-2 py-1"
+          >
+            <DeleteRemoteBackupEntry
+              :no-backup="!lastDataUpload"
+              :disabled="pending || isSyncing"
+              @open="showDeleteRemoteBackup = true"
+            />
+          </div>
+        </template>
       </div>
     </RuiMenu>
   </template>

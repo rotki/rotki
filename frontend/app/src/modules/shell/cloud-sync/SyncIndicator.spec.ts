@@ -17,6 +17,7 @@ let displaySyncConfirmation: Ref<boolean>;
 let confirmChecked: Ref<boolean>;
 let isSyncing: Ref<boolean>;
 let premium: Ref<boolean>;
+let lastDataUpload: Ref<number>;
 
 const { cancelSync, forceSync, showSyncConfirmation } = vi.hoisted(() => ({
   cancelSync: vi.fn(),
@@ -57,7 +58,7 @@ vi.mock('@/modules/premium/use-premium-store', () => ({
 
 vi.mock('@/modules/session/use-session-metadata-store', () => ({
   useSessionMetadataStore: (): Record<string, unknown> => ({
-    lastDataUpload: ref<number>(),
+    lastDataUpload,
   }),
 }));
 
@@ -71,6 +72,15 @@ vi.mock('@/modules/task-center/use-task-center', () => ({
 
 vi.mock('@/modules/auth/use-logout', () => ({
   useLogout: (): Record<string, unknown> => ({ logout: vi.fn() }),
+}));
+
+vi.mock('@/modules/shell/cloud-sync/DeleteRemoteBackupPanel.vue', () => ({
+  __esModule: true,
+  default: {
+    emits: ['close', 'update:busy'],
+    name: 'DeleteRemoteBackupPanel',
+    template: '<div data-testid="delete-remote-backup"><button data-testid="panel-close" @click="$emit(\'close\')" /></div>',
+  },
 }));
 
 vi.mock('@/modules/shell/layout/use-links', () => ({
@@ -104,6 +114,7 @@ describe('modules/shell/cloud-sync/SyncIndicator.vue', () => {
     confirmChecked = ref<boolean>(false);
     isSyncing = ref<boolean>(false);
     premium = ref<boolean>(true);
+    lastDataUpload = ref<number>(1760882460);
   });
 
   it('should show the sync buttons until a sync asks for confirmation', async () => {
@@ -117,6 +128,44 @@ describe('modules/shell/cloud-sync/SyncIndicator.vue', () => {
 
     expect(wrapper.findComponent(SyncButtons).exists()).toBe(false);
     expect(wrapper.findComponent(SyncConfirmation).exists()).toBe(true);
+  });
+
+  it('should show the remote backup deletion in place of the sync buttons', async () => {
+    const wrapper = createWrapper();
+
+    expect(wrapper.find('[data-testid=delete-remote-backup]').exists()).toBe(false);
+
+    await wrapper.find('[data-testid=sync-delete-remote-backup]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=delete-remote-backup]').exists()).toBe(true);
+    expect(wrapper.findComponent(SyncButtons).exists()).toBe(false);
+
+    await wrapper.find('[data-testid=panel-close]').trigger('click');
+
+    expect(wrapper.find('[data-testid=delete-remote-backup]').exists()).toBe(false);
+    expect(wrapper.findComponent(SyncButtons).exists()).toBe(true);
+  });
+
+  it('should not offer the remote backup deletion without cloud backup', () => {
+    set(cloudBackupAllowed, false);
+    const wrapper = createWrapper();
+
+    expect(wrapper.find('[data-testid=sync-delete-remote-backup]').exists()).toBe(false);
+  });
+
+  it('should not offer the remote backup deletion when the server has no backup', () => {
+    set(lastDataUpload, 0);
+    const wrapper = createWrapper();
+
+    expect(wrapper.find('[data-testid=sync-delete-remote-backup]').attributes('disabled')).toBeDefined();
+  });
+
+  it('should hold the remote backup deletion while a sync runs', () => {
+    set(isSyncing, true);
+    const wrapper = createWrapper();
+
+    expect(wrapper.find('[data-testid=sync-delete-remote-backup]').attributes('disabled')).toBeDefined();
   });
 
   it('should sync nothing while the confirmation only sits there', async () => {
