@@ -21,6 +21,8 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.errors.misc import ChainNotSupportedForAnyKey, RemoteError, RequestTooLargeError
 from rotkehlchen.externalapis.etherscan import (
+    ETHERSCAN_API_URL_ENV,
+    ETHERSCAN_BASE_URL,
     ETHERSCAN_PAGINATION_LIMIT,
     ETHERSCAN_TIER_BY_DAILY_LIMIT,
     Etherscan,
@@ -132,6 +134,57 @@ def test_unsupported_chainid(temp_etherscan: Etherscan) -> None:
         response_msg='Missing or unsupported chainid parameter (required for v2 api)',
     ):
         temp_etherscan.get_blocknumber_by_time(chain_id=ChainID.SCROLL, ts=Timestamp(1700000000))
+
+
+def _etherscan_with_env_url(
+        temp_etherscan: Etherscan,
+        monkeypatch: pytest.MonkeyPatch,
+        url: str,
+) -> Etherscan:
+    monkeypatch.setenv(ETHERSCAN_API_URL_ENV, url)
+    with patch.object(Etherscan, 'detect_api_key_tier', return_value=None):
+        return Etherscan(database=temp_etherscan.db, msg_aggregator=temp_etherscan.msg_aggregator)
+
+
+def test_custom_api_url_env_override(
+        temp_etherscan: Etherscan,
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """ROTKI_ETHERSCAN_API_URL sends the same Etherscan v2 query, chainid included, to
+    the configured url instead of api.etherscan.io."""
+    etherscan = _etherscan_with_env_url(
+        temp_etherscan=temp_etherscan,
+        monkeypatch=monkeypatch,
+        url=(custom_url := 'http://localhost:8080/v2/api'),
+    )
+    with patch.object(
+        etherscan.session,
+        'get',
+        return_value=MockResponse(HTTPStatus.OK, '{"status":"1","message":"OK","result":"18573000"}'),  # noqa: E501
+    ) as get_mock:
+        assert etherscan.get_blocknumber_by_time(
+            chain_id=ChainID.BASE,
+            ts=Timestamp(1700000000),
+        ) == 18573000
+
+    assert get_mock.call_args.kwargs['url'] == custom_url
+    assert get_mock.call_args.kwargs['params']['chainid'] == str(ChainID.BASE.serialize())
+    assert get_mock.call_args.kwargs['params']['action'] == 'getblocknobytime'
+
+
+@pytest.mark.parametrize('url', ['', 'ftp://indexer.example.com/api', 'localhost:8080/api'])
+def test_invalid_custom_api_url_is_ignored(
+        temp_etherscan: Etherscan,
+        monkeypatch: pytest.MonkeyPatch,
+        url: str,
+) -> None:
+    """An empty or non http(s) ROTKI_ETHERSCAN_API_URL keeps querying api.etherscan.io."""
+    etherscan = _etherscan_with_env_url(
+        temp_etherscan=temp_etherscan,
+        monkeypatch=monkeypatch,
+        url=url,
+    )
+    assert etherscan._get_url(chain_id=ChainID.ETHEREUM) == ETHERSCAN_BASE_URL
 
 
 @pytest.mark.parametrize('error', ['status', 'connection'])
