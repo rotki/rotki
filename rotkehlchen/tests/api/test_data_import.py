@@ -186,11 +186,13 @@ def test_data_import_allows_same_origin(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize(('origin', 'host', 'expected_status'), [
-    ('http://nas.lan:8084', 'nas.lan', HTTPStatus.OK),  # nginx `Host $host` drops the port
-    ('https://rotki.example.com:8443', 'rotki.example.com', HTTPStatus.OK),
     ('http://nas.lan:8084', 'nas.lan:8084', HTTPStatus.OK),  # nginx `Host $http_host`
+    ('https://rotki.example.com:8443', 'rotki.example.com:8443', HTTPStatus.OK),
+    ('http://nas.lan', 'nas.lan', HTTPStatus.OK),  # default port, no port on either side
+    ('http://nas.lan:8084', 'nas.lan', HTTPStatus.FORBIDDEN),  # nginx `Host $host` drops it
+    ('http://nas.lan:3000', 'nas.lan', HTTPStatus.FORBIDDEN),  # another app on the host
     ('http://nas.lan:9000', 'nas.lan:8084', HTTPStatus.FORBIDDEN),
-    ('http://evil.example:8084', 'nas.lan', HTTPStatus.FORBIDDEN),
+    ('http://evil.example:8084', 'nas.lan:8084', HTTPStatus.FORBIDDEN),
 ])
 def test_data_import_behind_reverse_proxy(
         rotkehlchen_api_server: APIServer,
@@ -198,7 +200,11 @@ def test_data_import_behind_reverse_proxy(
         host: str,
         expected_status: HTTPStatus,
 ) -> None:
-    """A proxy forwarding the hostname without the port still lets its own origin write."""
+    """Behind a proxy only the origin the browser used may write.
+
+    The proxy has to forward the `Host` with its port (nginx `$http_host`). A `Host`
+    without a port is the default port, so any other port on that hostname is refused.
+    """
     filepath = Path(__file__).resolve().parent.parent / 'data' / 'cointracking_trades_list.csv'
     with filepath.open('rb') as infile:
         response = requests.post(
