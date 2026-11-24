@@ -1,7 +1,9 @@
 import logging
+from contextlib import contextmanager
 from functools import partial, wraps
+from threading import Lock
 from time import monotonic
-from typing import TYPE_CHECKING, Any, NamedTuple, cast
+from typing import TYPE_CHECKING, Any, Final, NamedTuple, cast
 from urllib.parse import urlparse
 
 import requests
@@ -37,7 +39,7 @@ from .types import (
 from .utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Sequence
+    from collections.abc import Callable, Iterable, Iterator, Sequence
 
     from rotkehlchen.tasks.supervisor import TaskSupervisor
     from rotkehlchen.user_messages import MessagesAggregator
@@ -47,6 +49,32 @@ log = RotkehlchenLogsAdapter(logger)
 
 # Number of blocks after which to consider not synced
 SUBSTRATE_BLOCKS_THRESHOLD = 10
+
+# scalecodec mutates shared decoder class state while loading per-interface registries, so
+# metadata-dependent calls must not overlap until this is fixed upstream:
+# https://github.com/JAMdotTech/py-scale-codec/issues/138
+SUBSTRATE_CODEC_LOCK: Final = Lock()
+# The lock holder does network IO (remote type registry preset download without a
+# timeout, metadata and storage requests), so waiters give up instead of blocking forever.
+SUBSTRATE_CODEC_LOCK_TIMEOUT: Final = 2 * SUBSTRATE_NODE_CONNECTION_TIMEOUT
+
+
+@contextmanager
+def substrate_codec_access(chain: SupportedBlockchain, endpoint: str) -> Iterator[None]:
+    """Hold the substrate codec lock for the duration of the block.
+
+    May raise:
+    - RemoteError: the lock could not be acquired within SUBSTRATE_CODEC_LOCK_TIMEOUT.
+    """
+    if not SUBSTRATE_CODEC_LOCK.acquire(timeout=SUBSTRATE_CODEC_LOCK_TIMEOUT):
+        raise RemoteError(
+            f'{chain} timed out after {SUBSTRATE_CODEC_LOCK_TIMEOUT} seconds waiting for '
+            f'another substrate request to finish before using node at endpoint {endpoint}',
+        )
+    try:
+        yield
+    finally:
+        SUBSTRATE_CODEC_LOCK.release()
 
 
 class SubstrateChainProperties(NamedTuple):
@@ -266,11 +294,12 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
         )
         try:
             # timeouts are enforced at the transport level, set in _get_node_interface
-            result = node_interface.query(
-                module='System',
-                storage_function='Account',
-                params=[account],
-            )
+            with substrate_codec_access(chain=self.chain, endpoint=node_interface.url):
+                result = node_interface.query(
+                    module='System',
+                    storage_function='Account',
+                    params=[account],
+                )
         except (
                 requests.exceptions.RequestException,
                 SubstrateRequestException,
@@ -401,13 +430,14 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
         - ValueError and TypeError: invalid constructor arguments.
         """
         try:
-            node_interface = SubstrateInterface(
-                url=endpoint,
-                type_registry_preset=self.chain.name.lower(),
-                use_remote_preset=True,
-                # applies to ws(s) endpoints: connect and recv timeout of the websocket
-                ws_options={'timeout': SUBSTRATE_NODE_CONNECTION_TIMEOUT},
-            )
+            with substrate_codec_access(chain=self.chain, endpoint=endpoint):
+                node_interface = SubstrateInterface(
+                    url=endpoint,
+                    type_registry_preset=self.chain.name.lower(),
+                    use_remote_preset=True,
+                    # applies to ws(s) endpoints: connect and recv timeout of the websocket
+                    ws_options={'timeout': SUBSTRATE_NODE_CONNECTION_TIMEOUT},
+                )
             if isinstance(node_interface.transport, HttpTransport):
                 # http(s) endpoints use a requests session with no timeout support in
                 # the library, so give its request method a default timeout instead
