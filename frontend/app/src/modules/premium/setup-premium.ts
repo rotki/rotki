@@ -17,6 +17,7 @@ import VChart from 'vue-echarts';
 import * as VueRouter from 'vue-router';
 import * as zod from 'zod';
 import { app } from '@/main';
+import * as ScopedTimers from '@/modules/core/common/async/scoped-timers';
 
 // Register only the needed echarts components for premium
 EChartsCore.use([
@@ -44,7 +45,8 @@ EChartsCore.use([
 export async function setupPremium(): Promise<void> {
   if (!window.Vue) {
     window.Vue = Vue;
-    window.VueUse = VueUse;
+    // the premium components get the debounce/throttle helpers that stop with their scope too
+    window.VueUse = { ...VueUse, ...ScopedTimers };
     window.VueEcharts = VChart;
     window.zod = zod;
     window.bn = BigNumber;
