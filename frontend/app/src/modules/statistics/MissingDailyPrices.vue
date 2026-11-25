@@ -5,9 +5,12 @@ import type { EditableMissingPrice, MissingPrice } from '@/modules/reports/repor
 import { useEditableMissingPrices } from '@/modules/assets/prices/use-editable-missing-prices';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
+import { SECONDS_PER_DAY } from '@/modules/core/common/constraints';
 import { useSetting } from '@/modules/settings/use-setting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
+import { dayStart } from '@/modules/statistics/pricing/backfill-plan';
+import { usePriceSeriesStore } from '@/modules/statistics/pricing/use-price-series-store';
 
 const { asset } = defineProps<{
   asset: string;
@@ -24,23 +27,67 @@ const tab = ref<number>(0);
 
 const { useAssetField } = useAssetInfoRetrieval();
 const { failedDailyPrices, resolvedFailedDailyPrices } = useHistoricPriceCache();
+const priceSeries = usePriceSeriesStore();
 const currencySymbol = useSetting('currencySymbol');
 
 const name = useAssetField(() => asset, 'name');
 
 const failedPrices = computed<FailedHistoricalAssetPriceResponse>(() => get(failedDailyPrices)[asset]);
 
-const missingPrices = computed<MissingPrice[]>(() => get(failedPrices).noPricesTimestamps.map(time => ({
-  fromAsset: asset,
-  time,
-  toAsset: get(currencySymbol),
-})));
+/**
+ * The first of the times filed for each UTC day, oldest first. The daily price fetcher and the
+ * backfill file the same day at different times and in no particular order, and the dialog shows
+ * each day once, in date order.
+ */
+function oncePerDay(times: readonly number[]): number[] {
+  const byDay = new Map<number, number>();
+  for (const time of times) {
+    if (!byDay.has(dayStart(time)))
+      byDay.set(dayStart(time), time);
+  }
+  return [...byDay.values()].sort((a, b) => a - b);
+}
 
+const rateLimitedDays = computed<number[]>(() => oncePerDay(get(failedPrices).rateLimitedPricesTimestamps));
+const unreachableDays = computed<number[]>(() => oncePerDay(get(failedPrices).failedPricesTimestamps));
+
+/**
+ * The days a price can be entered for by hand: the ones with no price, and the ones the price
+ * sources could not be reached for, since a source that stays unreachable would never fill them.
+ */
+const missingPrices = computed<MissingPrice[]>(() => {
+  const { failedPricesTimestamps, noPricesTimestamps } = get(failedPrices);
+  return oncePerDay([...noPricesTimestamps, ...failedPricesTimestamps]).map(time => ({
+    fromAsset: asset,
+    time,
+    toAsset: get(currencySymbol),
+  }));
+});
+
+/** A price entered for a day settles every time filed for that day. */
 function markResolved(item: EditableMissingPrice): void {
+  const { failedPricesTimestamps, noPricesTimestamps } = get(failedPrices);
+  const day = dayStart(item.time);
+  const times = [item.time, ...noPricesTimestamps, ...failedPricesTimestamps].filter(time => dayStart(time) === day);
   const resolved = get(resolvedFailedDailyPrices);
   set(resolvedFailedDailyPrices, {
     ...resolved,
-    [item.fromAsset]: [...(resolved[item.fromAsset] ?? []), item.time],
+    [item.fromAsset]: [...new Set([...(resolved[item.fromAsset] ?? []), ...times])],
+  });
+}
+
+/**
+ * A deleted price unsettles its day again: the graphs drop the price they took from it and read
+ * the cache again, since another price may still be cached for that day. The cache answers with a
+ * price up to a day away, so the points of the days on either side may hold it too.
+ */
+function markUnresolved(item: EditableMissingPrice): void {
+  const day = dayStart(item.time);
+  const resolved = get(resolvedFailedDailyPrices);
+  priceSeries.removeDays(item.fromAsset, new Set([day - SECONDS_PER_DAY, day, day + SECONDS_PER_DAY]));
+  set(resolvedFailedDailyPrices, {
+    ...resolved,
+    [item.fromAsset]: (resolved[item.fromAsset] ?? []).filter(time => dayStart(time) !== day),
   });
 }
 
@@ -53,6 +100,7 @@ const {
 } = useEditableMissingPrices({
   items: missingPrices,
   keyOf: item => item.time.toString(),
+  onPriceDeleted: markUnresolved,
   onPriceUpdated: markResolved,
 });
 
@@ -86,11 +134,14 @@ onMounted(async () => {
       color="primary"
       class="px-4 mt-2"
     >
-      <RuiTab v-if="failedPrices.noPricesTimestamps.length > 0">
+      <RuiTab v-if="missingPrices.length > 0">
         {{ t('premium_components.statistics.failed_daily_prices.missing_prices.title') }}
       </RuiTab>
-      <RuiTab v-if="failedPrices.rateLimitedPricesTimestamps.length > 0">
+      <RuiTab v-if="rateLimitedDays.length > 0">
         {{ t('premium_components.statistics.failed_daily_prices.rate_limited.title') }}
+      </RuiTab>
+      <RuiTab v-if="unreachableDays.length > 0">
+        {{ t('premium_components.statistics.failed_daily_prices.unreachable.title') }}
       </RuiTab>
     </RuiTabs>
     <div class="max-h-[calc(100vh-18rem)]! overflow-auto px-4 pt-3 pb-4">
@@ -99,13 +150,13 @@ onMounted(async () => {
         class="overflow-y-auto"
       >
         <RuiTabItem
-          v-if="failedPrices.noPricesTimestamps.length > 0"
+          v-if="missingPrices.length > 0"
         >
           <div class="text-rui-text-secondary whitespace-pre">
             {{
               t(
                 'premium_components.statistics.failed_daily_prices.missing_prices.description', {
-                  length: failedPrices.noPricesTimestamps.length,
+                  length: missingPrices.length,
                 })
             }}
           </div>
@@ -137,19 +188,39 @@ onMounted(async () => {
           </RuiDataTable>
         </RuiTabItem>
         <RuiTabItem
-          v-if="failedPrices.rateLimitedPricesTimestamps.length > 0"
+          v-if="rateLimitedDays.length > 0"
         >
           <div class="text-rui-text-secondary">
             {{
               t('premium_components.statistics.failed_daily_prices.rate_limited.description', {
-                length: failedPrices.rateLimitedPricesTimestamps.length,
+                length: rateLimitedDays.length,
               })
             }}
           </div>
           <ul class="list-disc mt-4">
             <li
-              v-for="timestamp in failedPrices.rateLimitedPricesTimestamps"
+              v-for="timestamp in rateLimitedDays"
               :key="timestamp"
+            >
+              <DateDisplay :timestamp="timestamp" />
+            </li>
+          </ul>
+        </RuiTabItem>
+        <RuiTabItem
+          v-if="unreachableDays.length > 0"
+        >
+          <div class="text-rui-text-secondary">
+            {{
+              t('premium_components.statistics.failed_daily_prices.unreachable.description', {
+                length: unreachableDays.length,
+              })
+            }}
+          </div>
+          <ul class="list-disc mt-4">
+            <li
+              v-for="timestamp in unreachableDays"
+              :key="timestamp"
+              data-testid="missing-daily-prices-unreachable"
             >
               <DateDisplay :timestamp="timestamp" />
             </li>

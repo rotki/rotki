@@ -10,7 +10,10 @@ import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 export interface SnapshotRateStatus {
   /** Snapshots still at a stand-in rate whose own rate is being fetched or waits its turn. */
   readonly pending: number;
-  /** Snapshots still at a stand-in rate because the oracles have no rate for their day. */
+  /**
+   * Snapshots still at a stand-in rate because the oracles have no rate for their day, or could not
+   * be reached for it for so long that the backfill stopped asking.
+   */
   readonly unavailable: number;
   /** The last rate request hit a rate limit, so fetching waits longer before trying again. */
   readonly rateLimited: boolean;
@@ -25,18 +28,28 @@ interface UseSnapshotRateStatusReturn {
  *
  * @remarks
  * A snapshot converted at a stand-in rate is unavailable when the backend has reported no rate for
- * its day (and none was added by hand since), and pending otherwise. In USD nothing is converted,
+ * its day or the backfill gave up on it as unreachable (and no rate was added by hand since), and
+ * pending otherwise. In USD nothing is converted,
  * so nothing is reported.
  */
 export function useSnapshotRateStatus(): UseSnapshotRateStatusReturn {
   const { netValue, snapshotRates } = storeToRefs(useStatisticsStore());
   const { failedDailyPrices, resolvedFailedDailyPrices } = useHistoricPriceCache();
-  const { rateLimited } = usePriceBackfill();
+  const { givenUpDays, rateLimited } = usePriceBackfill();
   const currencySymbol = useSetting('currencySymbol');
 
-  /** Days the backend has no USD rate for, leaving out those a rate was added for by hand. */
+  /**
+   * Days nothing will fetch a USD rate for: the backend has none, or the backfill gave up on them
+   * and they are still filed as not fetched (a later fetch may have priced them). Leaves out those
+   * a rate was added for by hand.
+   */
   const noRateDays = computed<ReadonlySet<number>>(() => {
-    const days = new Set((get(failedDailyPrices)[CURRENCY_USD]?.noPricesTimestamps ?? []).map(dayStart));
+    const filed = get(failedDailyPrices)[CURRENCY_USD];
+    const notFetched = new Set((filed?.failedPricesTimestamps ?? []).map(dayStart));
+    const days = new Set([
+      ...(filed?.noPricesTimestamps ?? []).map(dayStart),
+      ...Array.from(givenUpDays(CURRENCY_USD), dayStart).filter(day => notFetched.has(day)),
+    ]);
     for (const day of get(resolvedFailedDailyPrices)[CURRENCY_USD] ?? [])
       days.delete(dayStart(day));
     return days;

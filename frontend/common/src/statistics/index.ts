@@ -77,7 +77,16 @@ export const HistoricalAssetPricePayload = z.object({
 
 export type HistoricalAssetPricePayload = z.infer<typeof HistoricalAssetPricePayload>;
 
+/**
+ * The days a historical price query did not price, by why.
+ *
+ * @remarks
+ * Only `noPricesTimestamps` means the oracles have no price. Rate-limited days and the days an
+ * oracle could not be reached (`failedPricesTimestamps`) are worth asking again later. The latter
+ * defaults to empty for a backend that predates it.
+ */
 export const FailedHistoricalAssetPriceResponse = z.object({
+  failedPricesTimestamps: z.array(z.number()).default([]),
   noPricesTimestamps: z.array(z.number()),
   rateLimitedPricesTimestamps: z.array(z.number()),
 });

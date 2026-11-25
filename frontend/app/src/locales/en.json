@@ -5773,7 +5773,7 @@
     "add_rates": "Add rates",
     "pending": "Fetching the historical exchange rate of {count} point | Fetching the historical exchange rates of {count} points",
     "rate_limited": "The price oracles are rate limiting requests, so exchange rates will be fetched again in a few minutes",
-    "unavailable": "No historical exchange rate for {count} point, so it uses an estimated rate | No historical exchange rate for {count} points, so they use an estimated rate"
+    "unavailable": "No historical exchange rate could be found or fetched for {count} point, so it uses an estimated rate | No historical exchange rate could be found or fetched for {count} points, so they use an estimated rate"
   },
   "net_worth_chart": {
     "current_balance": "Current balance",
@@ -6200,15 +6200,19 @@
       "failed_daily_prices": {
         "dialog_title": "Some prices were not retrieved for the asset: {name}",
         "missing_prices": {
-          "description": "We cannot find prices for {length} dates. You can add manual historical prices.",
+          "description": "No price could be found for {length} dates, or their price sources could not be reached. You can add manual historical prices.",
           "title": "Missing prices"
         },
         "rate_limited": {
-          "description": "Prices query for {length} dates were rate-limited. You can try to fetch the prices again by clicking the \"Fetch Prices\" button outside.",
+          "description": "The price queries for {length} dates were rate-limited. You can try to fetch the prices again later.",
           "title": "Prices rate-limited"
         },
         "see_detail": "See detail",
-        "title": "Some prices cannot be found or were rate-limited."
+        "title": "Some prices could not be retrieved.",
+        "unreachable": {
+          "description": "The price sources could not be reached for {length} dates, for example because of a network error. You can try to fetch the prices again later, or enter them by hand under \"Missing prices\".",
+          "title": "Prices not fetched"
+        }
       },
       "fallback_to_snapshot": "Use snapshot data instead",
       "fetch_prices": "Fetch prices",

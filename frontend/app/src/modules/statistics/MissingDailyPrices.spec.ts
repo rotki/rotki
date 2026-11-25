@@ -1,13 +1,15 @@
-import type { FailedHistoricalAssetPriceResponse } from '@rotki/common';
+import { bigNumberify, type FailedHistoricalAssetPriceResponse } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';
 import MissingDailyPrices from '@/modules/statistics/MissingDailyPrices.vue';
+import { usePriceSeriesStore } from '@/modules/statistics/pricing/use-price-series-store';
 import { createRuiPlugin } from '@/plugins/rui';
 
-const { addHistoricalPrice, fetchHistoricalPrices } = vi.hoisted(() => ({
+const { addHistoricalPrice, deleteHistoricalPrice, fetchHistoricalPrices } = vi.hoisted(() => ({
   addHistoricalPrice: vi.fn(async () => Promise.resolve(true)),
+  deleteHistoricalPrice: vi.fn(async () => Promise.resolve(true)),
   fetchHistoricalPrices: vi.fn(),
 }));
 
@@ -17,7 +19,7 @@ let resolvedFailedDailyPrices: Ref<Record<string, number[]>>;
 vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
   useAssetPricesApi: (): Record<string, unknown> => ({
     addHistoricalPrice,
-    deleteHistoricalPrice: vi.fn(),
+    deleteHistoricalPrice,
     editHistoricalPrice: vi.fn(),
     fetchHistoricalPrices,
   }),
@@ -47,6 +49,7 @@ vi.mock('@/modules/settings/use-setting', () => ({
 
 function failures(overrides: Partial<FailedHistoricalAssetPriceResponse> = {}): FailedHistoricalAssetPriceResponse {
   return {
+    failedPricesTimestamps: [],
     noPricesTimestamps: [],
     rateLimitedPricesTimestamps: [],
     ...overrides,
@@ -87,6 +90,62 @@ describe('modules/statistics/MissingDailyPrices.vue', () => {
     expect(wrapper.findAll('[data-testid=missing-daily-price-input]')).toHaveLength(2);
   });
 
+  it('should let a day no price source could be reached for be priced by hand too, once', async () => {
+    const wrapper = await createWrapper(failures({
+      failedPricesTimestamps: [1_700_172_800, 1_700_000_000],
+      noPricesTimestamps: [1_700_000_000],
+    }));
+
+    expect(wrapper.findAll('[data-testid=missing-daily-price-input]')).toHaveLength(2);
+  });
+
+  it('should show a day the fetcher and the backfill filed at two times once, and settle both times with one price', async () => {
+    const wrapper = await createWrapper(failures({
+      failedPricesTimestamps: [1_699_920_000],
+      noPricesTimestamps: [1_700_000_000],
+    }));
+    const inputs = wrapper.findAll('[data-testid=missing-daily-price-input] input');
+    expect(inputs).toHaveLength(1);
+
+    await inputs[0].setValue('0.5');
+    await inputs[0].trigger('blur');
+    await flushPromises();
+
+    expect(get(resolvedFailedDailyPrices).ETH).toEqual(expect.arrayContaining([1_700_000_000, 1_699_920_000]));
+  });
+
+  it('should unsettle a day and drop its price from the graphs once its saved price is deleted, on the days next to it too', async () => {
+    fetchHistoricalPrices.mockResolvedValue([{ fromAsset: 'ETH', price: bigNumberify('0.5'), timestamp: 1_700_000_000, toAsset: 'USD' }]);
+    set(resolvedFailedDailyPrices, { ETH: [1_700_000_000] });
+    const series = usePriceSeriesStore();
+    // the cache answers within a day, so the 23:00 snapshot of the day before may hold the deleted rate
+    series.addPrices('ETH', [
+      { price: bigNumberify('0.5'), time: 1_699_916_400 },
+      { price: bigNumberify('0.5'), time: 1_700_000_000 },
+      { price: bigNumberify('0.6'), time: 1_700_172_800 },
+    ]);
+    const wrapper = await createWrapper(failures({ noPricesTimestamps: [1_700_000_000] }));
+    const input = wrapper.find('[data-testid=missing-daily-price-input] input');
+
+    await input.setValue('');
+    await input.trigger('blur');
+    await flushPromises();
+
+    expect(deleteHistoricalPrice).toHaveBeenCalledOnce();
+    expect(get(resolvedFailedDailyPrices).ETH).toEqual([]);
+    expect(series.prices.ETH?.map(({ time }) => time)).toEqual([1_700_172_800]);
+  });
+
+  it('should list the days oldest first, whichever list and order they were filed in', async () => {
+    const wrapper = await createWrapper(failures({
+      failedPricesTimestamps: [1_700_172_800, 1_699_920_000],
+      noPricesTimestamps: [1_700_259_200, 1_700_086_400],
+    }));
+
+    const shown = wrapper.findAllComponents({ name: 'DateDisplay' }).map(date => date.props('timestamp'));
+    expect(shown).toEqual([1_699_920_000, 1_700_086_400, 1_700_172_800, 1_700_259_200]);
+  });
+
   it('should hand out a new list of resolved days on every saved price, so watchers see each one', async () => {
     const wrapper = await createWrapper(failures({ noPricesTimestamps: [1_700_000_000, 1_700_086_400] }));
     const inputs = wrapper.findAll('[data-testid=missing-daily-price-input] input');
@@ -115,6 +174,17 @@ describe('modules/statistics/MissingDailyPrices.vue', () => {
       rateLimitedPricesTimestamps: [1_700_086_400],
     }));
     expect(withLimit.text()).toContain('failed_daily_prices.rate_limited.title');
+  });
+
+  it('should list the days no price source could be reached for in a tab of their own', async () => {
+    const withoutFailure = await createWrapper(failures({ noPricesTimestamps: [1_700_000_000] }));
+    expect(withoutFailure.text()).not.toContain('failed_daily_prices.unreachable.title');
+
+    const withFailure = await createWrapper(failures({
+      failedPricesTimestamps: [1_700_172_800],
+      noPricesTimestamps: [1_700_000_000],
+    }));
+    expect(withFailure.text()).toContain('failed_daily_prices.unreachable.title');
   });
 
   it('should offer a missing-prices tab only when days had no price', async () => {

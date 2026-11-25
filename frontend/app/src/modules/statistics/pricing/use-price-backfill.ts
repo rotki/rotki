@@ -1,4 +1,5 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
+import type { RequestResult } from '@/modules/statistics/pricing/backfill-outcome';
 import { startPromise } from '@shared/utils';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { delay } from '@/modules/core/common/async/async-utilities';
@@ -31,6 +32,21 @@ interface UsePriceBackfillReturn {
   readonly register: (id: string, demand: MaybeRefOrGetter<BackfillDemand | undefined>) => void;
   /** An oracle rate limited the last request, so the next one waits longer. */
   readonly rateLimited: Readonly<Ref<boolean>>;
+  /** The days of an asset the backfill stopped asking for because they stayed unreachable. Reactive. */
+  readonly givenUpDays: (asset: string) => ReadonlySet<number>;
+}
+
+/** Days whose request was rate limited, unreachable or cancelled are asked for again later. */
+function isAskedAgain(result: RequestResult): boolean {
+  return result === 'rate-limited' || result === 'unreachable' || result === 'cancelled';
+}
+
+/**
+ * Outcomes that back the queue off before the next request. Unreachable days wait on their own,
+ * so the other days go ahead at the normal pace.
+ */
+function isFailure(result: RequestResult): boolean {
+  return result === 'rate-limited' || result === 'failed';
 }
 
 /**
@@ -44,26 +60,30 @@ interface UsePriceBackfillReturn {
  *
  * Prices it gets go to the price series store, so every series of the asset sharpens. Days the
  * backend has no price for join `failedDailyPrices`. A day asked once is not asked again this
- * session unless an oracle rate limited it, so a request that settles nothing cannot stall the
- * queue on the same days.
+ * session unless an oracle rate limited it or could not be reached, so a request that settles
+ * nothing cannot stall the queue on the same days. An unreachable day waits for its own retry time
+ * while the queue moves on to other days, and once it stays unreachable for longer than an oracle
+ * penalty the backfill no longer asks for it.
  */
 export const usePriceBackfill = createSharedComposable((): UsePriceBackfillReturn => {
   const currencySymbol = useSetting('currencySymbol');
   const { prices } = storeToRefs(usePriceSeriesStore());
   const { failedDailyPrices } = useHistoricPriceCache();
-  const { cancelAll, runRequest } = useBackfillRequests();
+  const { cancelAll, forgetAttempts, givenUpDays, isUnreachable, nextRetryAt, runRequest, waitingDays } = useBackfillRequests();
   const { useIsActivePrefix } = useTaskCenter();
   const focused = useWindowFocus();
 
   const demands = shallowRef<ReadonlyMap<string, MaybeRefOrGetter<BackfillDemand | undefined>>>(new Map());
   const rateLimited = shallowRef<boolean>(false);
-  /** Per asset, the days asked this session that a retry would not help. */
+  /** Per asset, the days asked this session that asking again would not help. */
   const tried = new Map<string, Set<number>>();
   let running = false;
   /** The user cancelled a backfill activity; it stays stopped until the currency or session changes. */
   let paused = false;
   let generation = 0;
   let backoff = 0;
+  /** Wakes the queue when the next unreachable day may be asked for again. */
+  let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
   const syncing = useIsActivePrefix(ActivityKind.HISTORY_SYNC);
   const fetchingDaily = useIsActivePrefix(ActivityKind.PRICES, ActivityPart.DAILY);
@@ -87,7 +107,12 @@ export const usePriceBackfill = createSharedComposable((): UsePriceBackfillRetur
     return Array.from(timesByAsset, ([asset, times]) => ({
       asset,
       known: get(prices)[asset] ?? [],
-      skipped: new Set([...(failed[asset]?.noPricesTimestamps ?? []).map(dayStart), ...(tried.get(asset) ?? [])]),
+      skipped: new Set([
+        ...(failed[asset]?.noPricesTimestamps ?? []).map(dayStart),
+        ...Array.from(givenUpDays(asset), dayStart),
+        ...Array.from(waitingDays(asset), dayStart),
+        ...(tried.get(asset) ?? []),
+      ]),
       times: [...times],
     }));
   }
@@ -114,6 +139,26 @@ export const usePriceBackfill = createSharedComposable((): UsePriceBackfillRetur
     return run === generation;
   }
 
+  function clearRetry(): void {
+    clearTimeout(retryTimer);
+    retryTimer = undefined;
+  }
+
+  /**
+   * Once the queue has nothing open but unreachable days wait, wakes it when the first may be
+   * asked for again. The loop has ended by then, so new demand starts a loop at once meanwhile.
+   */
+  function scheduleRetry(): void {
+    clearRetry();
+    const retryAt = nextRetryAt();
+    if (retryAt === undefined)
+      return;
+    retryTimer = setTimeout(() => {
+      retryTimer = undefined;
+      wake();
+    }, Math.max(0, retryAt - Date.now()));
+  }
+
   async function loop(run: number): Promise<void> {
     while (isCurrent(run)) {
       const request = get(canRun) ? nextRequest() : undefined;
@@ -124,13 +169,15 @@ export const usePriceBackfill = createSharedComposable((): UsePriceBackfillRetur
       const result = await runRequest(request);
       if (!isCurrent(run))
         return;
-      if (result === 'rate-limited' || result === 'cancelled')
+      if (isAskedAgain(result))
         forgetTried(request.asset, days);
+      else if (result === 'failed') // the unreachable ones wait for their retry instead
+        forgetTried(request.asset, days.filter(day => isUnreachable(request.asset, day)));
       if (result === 'cancelled') {
         paused = true;
         break;
       }
-      const pacing = nextPacing(result === 'rate-limited' || result === 'failed', backoff);
+      const pacing = nextPacing(isFailure(result), backoff);
       backoff = pacing.backoff;
       set(rateLimited, result === 'rate-limited');
       await delay(pacing.delay);
@@ -138,6 +185,7 @@ export const usePriceBackfill = createSharedComposable((): UsePriceBackfillRetur
     if (isCurrent(run)) {
       running = false;
       set(rateLimited, false);
+      scheduleRetry();
     }
   }
 
@@ -149,15 +197,18 @@ export const usePriceBackfill = createSharedComposable((): UsePriceBackfillRetur
   }
 
   /**
-   * Starts over for a new main currency or session: the tried days, the backoff and a user's cancel
-   * belong to the old one, and a request still in flight would answer in the old currency.
+   * Starts over for a new main currency or session: the tried days, the unreachable attempts, the
+   * backoff and a user's cancel belong to the old one, and a request still in flight would answer
+   * in the old currency.
    */
   function reset(): void {
     generation += 1;
     running = false;
     paused = false;
     set(rateLimited, false);
+    clearRetry();
     cancelAll();
+    forgetAttempts();
     tried.clear();
     backoff = 0;
   }
@@ -179,6 +230,7 @@ export const usePriceBackfill = createSharedComposable((): UsePriceBackfillRetur
   watch([canRun, demandValues], wake);
 
   return {
+    givenUpDays,
     rateLimited: readonly(rateLimited),
     register,
   };

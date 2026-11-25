@@ -9,6 +9,8 @@ import { useHistoricalPriceFetcher } from './use-historical-price-fetcher';
 
 const {
   failedDailyPrices,
+  addPrices,
+  currencySymbol,
   getAssetField,
   notifyError,
   queryHistoricalAssetPrices,
@@ -17,6 +19,8 @@ const {
 } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   return {
+    addPrices: vi.fn(),
+    currencySymbol: ref<string>('USD'),
     failedDailyPrices: ref<Record<string, FailedHistoricalAssetPriceResponse>>({}),
     getAssetField: vi.fn(() => 'Ethereum'),
     notifyError: vi.fn(),
@@ -39,6 +43,14 @@ vi.mock('@/modules/task-center/use-native-task', () => ({
 
 vi.mock('@/modules/statistics/api/use-statistics-api', () => ({
   useStatisticsApi: (): Record<string, unknown> => ({ queryHistoricalAssetPrices }),
+}));
+
+vi.mock('@/modules/statistics/pricing/use-price-series-store', () => ({
+  usePriceSeriesStore: (): Record<string, unknown> => ({ addPrices }),
+}));
+
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: (): typeof currencySymbol => currencySymbol,
 }));
 
 vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
@@ -71,7 +83,9 @@ function payload(overrides: Partial<HistoricalAssetPricePayload> = {}): Historic
   };
 }
 
+/** A response as the backend sends it; one that leaves out `failedPricesTimestamps` is an older backend. */
 function backendReturns(response: {
+  failedPricesTimestamps?: number[];
   noPricesTimestamps?: number[];
   prices?: Record<string, string>;
   rateLimitedPricesTimestamps?: number[];
@@ -90,6 +104,7 @@ describe('modules/assets/prices/useHistoricalPriceFetcher', () => {
     vi.clearAllMocks();
     set(failedDailyPrices, {});
     set(resolvedFailedDailyPrices, {});
+    set(currencySymbol, 'USD');
     submitted = undefined;
     backendReturns({});
   });
@@ -151,7 +166,7 @@ describe('modules/assets/prices/useHistoricalPriceFetcher', () => {
 
     it('should skip the timestamps already known to have no price', async () => {
       set(failedDailyPrices, {
-        [ASSET]: { noPricesTimestamps: [111, 222], rateLimitedPricesTimestamps: [] },
+        [ASSET]: { failedPricesTimestamps: [], noPricesTimestamps: [111, 222], rateLimitedPricesTimestamps: [] },
       });
       const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
 
@@ -162,7 +177,7 @@ describe('modules/assets/prices/useHistoricalPriceFetcher', () => {
 
     it('should stop skipping a timestamp the user has since resolved by hand', async () => {
       set(failedDailyPrices, {
-        [ASSET]: { noPricesTimestamps: [111, 222], rateLimitedPricesTimestamps: [] },
+        [ASSET]: { failedPricesTimestamps: [], noPricesTimestamps: [111, 222], rateLimitedPricesTimestamps: [] },
       });
       set(resolvedFailedDailyPrices, { [ASSET]: [111] });
       const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
@@ -174,7 +189,7 @@ describe('modules/assets/prices/useHistoricalPriceFetcher', () => {
 
     it('should not skip another asset\'s failures', async () => {
       set(failedDailyPrices, {
-        BTC: { noPricesTimestamps: [111], rateLimitedPricesTimestamps: [] },
+        BTC: { failedPricesTimestamps: [], noPricesTimestamps: [111], rateLimitedPricesTimestamps: [] },
       });
       const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
 
@@ -192,6 +207,7 @@ describe('modules/assets/prices/useHistoricalPriceFetcher', () => {
       await fetchHistoricalAssetPrice(payload());
 
       expect(get(failedDailyPrices)[ASSET]).toEqual({
+        failedPricesTimestamps: [],
         noPricesTimestamps: [333],
         rateLimitedPricesTimestamps: [],
       });
@@ -204,14 +220,100 @@ describe('modules/assets/prices/useHistoricalPriceFetcher', () => {
       await fetchHistoricalAssetPrice(payload());
 
       expect(get(failedDailyPrices)[ASSET]).toEqual({
+        failedPricesTimestamps: [],
         noPricesTimestamps: [],
         rateLimitedPricesTimestamps: [444],
       });
     });
 
+    it('should record a day no oracle could be reached for apart from a missing price, so the next fetch asks again', async () => {
+      backendReturns({ failedPricesTimestamps: [555] });
+      const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
+
+      await fetchHistoricalAssetPrice(payload());
+
+      expect(get(failedDailyPrices)[ASSET]).toEqual({
+        failedPricesTimestamps: [555],
+        noPricesTimestamps: [],
+        rateLimitedPricesTimestamps: [],
+      });
+
+      await fetchHistoricalAssetPrice(payload());
+
+      expect(queryHistoricalAssetPrices).toHaveBeenLastCalledWith(expect.objectContaining({ excludeTimestamps: [] }));
+    });
+
+    it('should clear the asset once a later fetch prices the day it could not fetch', async () => {
+      set(failedDailyPrices, {
+        [ASSET]: { failedPricesTimestamps: [1650000000], noPricesTimestamps: [], rateLimitedPricesTimestamps: [] },
+      });
+      backendReturns({ prices: { 1650000000: '10' } });
+      const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
+
+      await fetchHistoricalAssetPrice(payload());
+
+      expect(get(failedDailyPrices)).not.toHaveProperty(ASSET);
+    });
+
+    it('should keep the days it excluded without a price when the backend reports others', async () => {
+      set(failedDailyPrices, {
+        [ASSET]: { failedPricesTimestamps: [], noPricesTimestamps: [1650000000], rateLimitedPricesTimestamps: [] },
+      });
+      backendReturns({ noPricesTimestamps: [1660000000] });
+      const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
+
+      await fetchHistoricalAssetPrice(payload());
+
+      expect(get(failedDailyPrices)[ASSET]?.noPricesTimestamps).toEqual([1650000000, 1660000000]);
+    });
+
+    it('should file nothing from a cache-only read, and only take the days it found a price for off the lists', async () => {
+      set(failedDailyPrices, {
+        [ASSET]: { failedPricesTimestamps: [1650000000, 1655000000], noPricesTimestamps: [], rateLimitedPricesTimestamps: [] },
+      });
+      backendReturns({ noPricesTimestamps: [1650000000, 1660000000], prices: { 1655000000: '10' } });
+      const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
+
+      await fetchHistoricalAssetPrice(payload({ onlyCachePeriod: 86400 }));
+
+      expect(get(failedDailyPrices)[ASSET]).toEqual({
+        failedPricesTimestamps: [1650000000],
+        noPricesTimestamps: [],
+        rateLimitedPricesTimestamps: [],
+      });
+    });
+
+    it('should keep a failure at a time inside the range the fetch did not ask about', async () => {
+      set(failedDailyPrices, {
+        [ASSET]: { failedPricesTimestamps: [1600003600], noPricesTimestamps: [], rateLimitedPricesTimestamps: [] },
+      });
+      backendReturns({ prices: { 1600000000: '10', 1600086400: '11' } });
+      const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
+
+      await fetchHistoricalAssetPrice(payload());
+
+      expect(get(failedDailyPrices)[ASSET]?.failedPricesTimestamps).toEqual([1600003600]);
+    });
+
+    it('should keep the days its answer says nothing about, such as those the backfill gave up on', async () => {
+      set(failedDailyPrices, {
+        [ASSET]: { failedPricesTimestamps: [555, 1650000000], noPricesTimestamps: [], rateLimitedPricesTimestamps: [] },
+      });
+      backendReturns({ failedPricesTimestamps: [1660000000], prices: { 1650000000: '10' } });
+      const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
+
+      await fetchHistoricalAssetPrice(payload());
+
+      expect(get(failedDailyPrices)[ASSET]).toEqual({
+        failedPricesTimestamps: [555, 1660000000],
+        noPricesTimestamps: [],
+        rateLimitedPricesTimestamps: [],
+      });
+    });
+
     it('should keep skipping the excluded timestamps the backend was never asked about', async () => {
       set(failedDailyPrices, {
-        [ASSET]: { noPricesTimestamps: [111], rateLimitedPricesTimestamps: [] },
+        [ASSET]: { failedPricesTimestamps: [], noPricesTimestamps: [111], rateLimitedPricesTimestamps: [] },
       });
       backendReturns({});
       const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
@@ -219,6 +321,7 @@ describe('modules/assets/prices/useHistoricalPriceFetcher', () => {
       await fetchHistoricalAssetPrice(payload());
 
       expect(get(failedDailyPrices)[ASSET]).toEqual({
+        failedPricesTimestamps: [],
         noPricesTimestamps: [111],
         rateLimitedPricesTimestamps: [],
       });
@@ -226,8 +329,8 @@ describe('modules/assets/prices/useHistoricalPriceFetcher', () => {
 
     it('should clear the asset once nothing failed and nothing was skipped', async () => {
       set(failedDailyPrices, {
-        BTC: { noPricesTimestamps: [999], rateLimitedPricesTimestamps: [] },
-        [ASSET]: { noPricesTimestamps: [], rateLimitedPricesTimestamps: [] },
+        BTC: { failedPricesTimestamps: [], noPricesTimestamps: [999], rateLimitedPricesTimestamps: [] },
+        [ASSET]: { failedPricesTimestamps: [], noPricesTimestamps: [], rateLimitedPricesTimestamps: [] },
       });
       set(resolvedFailedDailyPrices, { [ASSET]: [111] });
       const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
@@ -237,6 +340,32 @@ describe('modules/assets/prices/useHistoricalPriceFetcher', () => {
       expect(get(failedDailyPrices)).not.toHaveProperty(ASSET);
       expect(get(resolvedFailedDailyPrices)).not.toHaveProperty(ASSET);
       expect(get(failedDailyPrices).BTC).toBeDefined();
+    });
+  });
+
+  describe('the prices it hands to the graphs', () => {
+    it('should add the prices it found to the price series, so a day the backfill gave up on shows its rate', async () => {
+      backendReturns({ prices: { 86400: '2.5' } });
+      const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
+
+      await fetchHistoricalAssetPrice(payload());
+
+      expect(addPrices).toHaveBeenCalledOnce();
+      const [asset, points] = addPrices.mock.calls[0];
+      expect(asset).toBe(ASSET);
+      expect(points.map(({ price, time }: { price: { toString: () => string }; time: number }) => [time, price.toString()])).toEqual([[86400, '2.5']]);
+    });
+
+    it('should leave out the prices of an answer that arrives after a currency switch', async () => {
+      queryHistoricalAssetPrices.mockImplementation(async () => {
+        set(currencySymbol, 'EUR');
+        return { noPricesTimestamps: [], prices: { 86400: '2.5' }, rateLimitedPricesTimestamps: [] };
+      });
+      const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
+
+      await fetchHistoricalAssetPrice(payload());
+
+      expect(addPrices).not.toHaveBeenCalled();
     });
   });
 
@@ -256,7 +385,7 @@ describe('modules/assets/prices/useHistoricalPriceFetcher', () => {
 
       const result = await fetchHistoricalAssetPrice(payload());
 
-      expect(result).toEqual({ noPricesTimestamps: [], prices: {}, rateLimitedPricesTimestamps: [] });
+      expect(result).toEqual({ failedPricesTimestamps: [], noPricesTimestamps: [], prices: {}, rateLimitedPricesTimestamps: [] });
     });
   });
 
@@ -277,12 +406,12 @@ describe('modules/assets/prices/useHistoricalPriceFetcher', () => {
       const result = await fetchHistoricalAssetPrice(payload());
 
       expect(notifyError).not.toHaveBeenCalled();
-      expect(result).toEqual({ noPricesTimestamps: [], prices: {}, rateLimitedPricesTimestamps: [] });
+      expect(result).toEqual({ failedPricesTimestamps: [], noPricesTimestamps: [], prices: {}, rateLimitedPricesTimestamps: [] });
     });
 
     it('should leave the recorded failures untouched when the task fails', async () => {
       set(failedDailyPrices, {
-        [ASSET]: { noPricesTimestamps: [111], rateLimitedPricesTimestamps: [] },
+        [ASSET]: { failedPricesTimestamps: [], noPricesTimestamps: [111], rateLimitedPricesTimestamps: [] },
       });
       runTask.mockResolvedValue(err(TaskFailed({ message: 'boom' })));
       const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
@@ -290,6 +419,7 @@ describe('modules/assets/prices/useHistoricalPriceFetcher', () => {
       await fetchHistoricalAssetPrice(payload());
 
       expect(get(failedDailyPrices)[ASSET]).toEqual({
+        failedPricesTimestamps: [],
         noPricesTimestamps: [111],
         rateLimitedPricesTimestamps: [],
       });
