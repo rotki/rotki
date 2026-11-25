@@ -54,7 +54,7 @@ export function useRemoteBackupDeletion(): UseRemoteBackupDeletionReturn {
   const failure = shallowRef<unknown>();
 
   const { premiumSync } = storeToRefs(usePremiumStore());
-  const { lastDataUpload } = storeToRefs(useSessionMetadataStore());
+  const { lastDataUpload, lastRemoteBackupCheck } = storeToRefs(useSessionMetadataStore());
   const { deleteRemoteBackup, fetchRemoteBackup } = useSyncApi();
 
   async function load(): Promise<void> {
@@ -85,6 +85,8 @@ export function useRemoteBackupDeletion(): UseRemoteBackupDeletionReturn {
       });
       set(premiumSync, premiumShouldSync);
       set(lastDataUpload, 0);
+      // the server just said it holds nothing, so the menu need not ask again for an hour
+      set(lastRemoteBackupCheck, Date.now());
       set(backup, undefined);
       set(phase, RemoteBackupDeletionPhase.DELETED);
     }

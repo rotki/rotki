@@ -55,8 +55,9 @@ describe('modules/shell/cloud-sync/use-remote-backup-deletion', () => {
   });
 
   it('should delete the reviewed backup and turn automatic backup off', async () => {
+    vi.useFakeTimers({ now: 1_800_000_000_000, toFake: ['Date'] });
     const { premiumSync } = storeToRefs(usePremiumStore());
-    const { lastDataUpload } = storeToRefs(useSessionMetadataStore());
+    const { lastDataUpload, lastRemoteBackupCheck } = storeToRefs(useSessionMetadataStore());
     set(premiumSync, true);
     set(lastDataUpload, 1760882460);
 
@@ -68,6 +69,8 @@ describe('modules/shell/cloud-sync/use-remote-backup-deletion', () => {
     expect(get(phase)).toBe(RemoteBackupDeletionPhase.DELETED);
     expect(get(premiumSync)).toBe(false);
     expect(get(lastDataUpload)).toBe(0);
+    expect(get(lastRemoteBackupCheck)).toBe(1_800_000_000_000);
+    vi.useRealTimers();
   });
 
   it('should leave the choice about automatic backup to the backend', async () => {
