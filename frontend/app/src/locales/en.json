@@ -88,6 +88,7 @@
       "account": "Account",
       "chain": "Chain"
     },
+    "no_chain_balances": "This account holds nothing on any of its chains.",
     "open_details": "Open details of {account}",
     "per_chain": "Per chain",
     "refresh_menu": {

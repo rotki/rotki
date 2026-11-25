@@ -17,6 +17,7 @@ import { useDrawerPresence } from '@/modules/accounts/details/use-drawer-presenc
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
+import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { provideTableScroller } from '@/modules/core/table/use-table-row-window';
 
 const selectedAssets = defineModel<string[] | undefined>('selectedAssets', { required: true });
@@ -58,6 +59,7 @@ const { isChainSettled } = useBlockchainAccountsStore();
 
 const { accountId, close, discard, open, setView, view } = useAccountDetailsRoute();
 const { getAccountsByCategory } = useBlockchainAccountData();
+const { getBlockchainBalances } = useAggregatedBalances();
 const { chainIds } = useAccountCategoryHelper(() => category);
 const groups = getAccountsByCategory(() => category);
 
@@ -95,6 +97,17 @@ const chains = computed<string[]>(() => {
 
   const excluded = get(chainExclusionFilter)[id] ?? [];
   return current.chains.filter(chain => !excluded.includes(chain));
+});
+
+/** The chains in scope where the account holds assets or owes liabilities; the rest get no section. */
+const chainsWithBalances = computed<string[]>(() => {
+  const id = get(groupId);
+  if (!id)
+    return [];
+
+  return get(chains).filter(chain =>
+    getBlockchainBalances([chain], id).length > 0 || getBlockchainBalances([chain], id, 'liabilities').length > 0,
+  );
 });
 
 /**
@@ -260,13 +273,20 @@ defineExpose({
             class="flex flex-col gap-6"
           >
             <AccountDetailsChainSection
-              v-for="chain in chains"
+              v-for="chain in chainsWithBalances"
               :key="`${groupId}:${chain}`"
               v-model:selected="selectedAssets"
               :chain="chain"
               :group-id="groupId"
               :selection-mode="selectionMode"
             />
+            <p
+              v-if="chainsWithBalances.length === 0"
+              class="text-body-2 text-rui-text-secondary"
+              data-testid="account-details-no-chain-balances"
+            >
+              {{ t('account_balances.no_chain_balances') }}
+            </p>
           </div>
           <AccountGroupDetailsTable
             v-else

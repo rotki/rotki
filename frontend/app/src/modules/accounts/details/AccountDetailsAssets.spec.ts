@@ -33,7 +33,7 @@ function asset(id: string, value: number): AssetBalanceWithPrice {
   return createMock<AssetBalanceWithPrice>({ asset: id, value: bigNumberify(value) });
 }
 
-function createWrapper(props: { searchable?: boolean; limit?: number } = {}): VueWrapper {
+function createWrapper(props: { searchable?: boolean; limit?: number; hideEmpty?: boolean } = {}): VueWrapper {
   return mount(AccountDetailsAssets, {
     global: { stubs },
     props: { chains: ['eth'], groupId: '0x1', selected: undefined, ...props },
@@ -102,5 +102,21 @@ describe('modules/accounts/details/AccountDetailsAssets', () => {
 
     expect(listed(wrapper)).toEqual(['A', 'B', 'C', 'D']);
     expect(wrapper.find('[data-testid=account-details-assets-show-all]').exists()).toBe(false);
+  });
+
+  it('should leave out the assets table when asked to hide it while there are no assets', () => {
+    set(assets, []);
+
+    expect(createWrapper({ hideEmpty: true }).findComponent({ name: 'AssetBalances' }).exists()).toBe(false);
+  });
+
+  it('should keep the assets table when asked to hide it empty but there are assets', () => {
+    expect(createWrapper({ hideEmpty: true }).findComponent({ name: 'AssetBalances' }).exists()).toBe(true);
+  });
+
+  it('should keep the empty assets table unless asked to hide it', () => {
+    set(assets, []);
+
+    expect(createWrapper().findComponent({ name: 'AssetBalances' }).exists()).toBe(true);
   });
 });

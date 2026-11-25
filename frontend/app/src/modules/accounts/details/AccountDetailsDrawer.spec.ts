@@ -7,10 +7,12 @@ import { AccountKind, type BlockchainAccountGroupWithBalance } from '@/modules/a
 import AccountDetailsDrawer from '@/modules/accounts/details/AccountDetailsDrawer.vue';
 import { DRAWER_SLIDE_MS } from '@/modules/accounts/details/use-drawer-presence';
 
-const { accountId, assetsMounted, close, discard, groups, open, setView, settled, view } = await vi.hoisted(async () => {
+const { accountId, assetsMounted, close, discard, emptyChains, groups, liabilityChains, open, setView, settled, view } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   return {
     accountId: ref<string | undefined>(),
+    emptyChains: ref<string[]>([]),
+    liabilityChains: ref<string[]>([]),
     assetsMounted: vi.fn<() => void>(),
     close: vi.fn<() => Promise<void>>(async () => {}),
     discard: vi.fn<() => Promise<void>>(async () => {}),
@@ -37,6 +39,16 @@ vi.mock('@/modules/accounts/use-blockchain-accounts-store', () => ({
 
 vi.mock('@/modules/balances/blockchain/use-blockchain-account-data', () => ({
   useBlockchainAccountData: (): object => ({ getAccountsByCategory: (): unknown => groups }),
+}));
+
+vi.mock('@/modules/balances/use-aggregated-balances', () => ({
+  useAggregatedBalances: (): object => ({
+    getBlockchainBalances: ([chain]: string[], _groupId: string, key = 'assets'): unknown[] => {
+      if (key === 'liabilities')
+        return get(liabilityChains).includes(chain) ? [{ asset: 'DAI' }] : [];
+      return get(emptyChains).includes(chain) ? [] : [{ asset: 'ETH' }];
+    },
+  }),
 }));
 
 const stubs = {
@@ -104,6 +116,8 @@ describe('modules/accounts/details/AccountDetailsDrawer', () => {
     set(accountId, undefined);
     set(view, undefined);
     set(settled, true);
+    set(emptyChains, []);
+    set(liabilityChains, []);
   });
 
   afterEach(() => {
@@ -206,6 +220,36 @@ describe('modules/accounts/details/AccountDetailsDrawer', () => {
     expect(wrapper.findAll('[data-testid=chain-section-stub]').map(section => section.attributes('data-chain'))).toStrictEqual(['eth', 'base']);
     expect(wrapper.find('[data-testid=table-stub]').exists()).toBe(false);
     expect(wrapper.find('[data-testid=tabs]').attributes('data-index')).toBe('1');
+  });
+
+  it('should leave out the chains where the account holds nothing in the chains tab', async () => {
+    set(accountId, '0xmulti');
+    set(view, 'chains');
+    set(emptyChains, ['optimism']);
+    const wrapper = await createSlidIn();
+
+    expect(wrapper.findAll('[data-testid=chain-section-stub]').map(section => section.attributes('data-chain'))).toStrictEqual(['eth', 'base']);
+    expect(wrapper.find('[data-testid=account-details-no-chain-balances]').exists()).toBe(false);
+  });
+
+  it('should keep a chain that holds no assets but owes liabilities in the chains tab', async () => {
+    set(accountId, '0xmulti');
+    set(view, 'chains');
+    set(emptyChains, ['eth', 'optimism', 'base']);
+    set(liabilityChains, ['optimism']);
+    const wrapper = await createSlidIn();
+
+    expect(wrapper.findAll('[data-testid=chain-section-stub]').map(section => section.attributes('data-chain'))).toStrictEqual(['optimism']);
+  });
+
+  it('should say the account holds nothing when none of its chains has anything to list', async () => {
+    set(accountId, '0xmulti');
+    set(view, 'chains');
+    set(emptyChains, ['eth', 'optimism', 'base']);
+    const wrapper = await createSlidIn();
+
+    expect(wrapper.findAll('[data-testid=chain-section-stub]')).toHaveLength(0);
+    expect(wrapper.find('[data-testid=account-details-no-chain-balances]').text()).toBe('account_balances.no_chain_balances');
   });
 
   it('should start the assets of another account afresh when it switches in place', async () => {
