@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('include_cryptocompare_key', [False])
 @pytest.mark.parametrize('include_beaconchain_key', [False])
 @pytest.mark.parametrize('include_blockscout_key', [False])
+@pytest.mark.parametrize('include_opensea_key', [False])
 def test_add_get_external_service(rotkehlchen_api_server: APIServer) -> None:
     """Tests that adding and retrieving external service credentials works"""
     # With no data an empty response should be returned
@@ -158,6 +159,7 @@ def test_helius_key_syncs_solana_rpc_node(rotkehlchen_api_server: APIServer) -> 
 @pytest.mark.parametrize('include_etherscan_key', [False])
 @pytest.mark.parametrize('include_beaconchain_key', [False])
 @pytest.mark.parametrize('include_blockscout_key', [False])
+@pytest.mark.parametrize('include_opensea_key', [False])
 def test_delete_external_service(rotkehlchen_api_server: APIServer) -> None:
     """Tests that delete external service credentials works"""
     # Add some data and see that the response shows they are added
