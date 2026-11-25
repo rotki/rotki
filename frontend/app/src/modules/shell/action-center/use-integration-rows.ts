@@ -43,6 +43,7 @@ const MISSING_KEY_DESCRIPTIONS: Readonly<Record<string, MessageKey>> = {
   [SuppressibleMissingKeyService.BLOCKSCOUT]: msg.$t('action_center.rows.integrations.missing_api_key.description_blockscout'),
   [SuppressibleMissingKeyService.ETHERSCAN]: msg.$t('action_center.rows.integrations.missing_api_key.description_etherscan'),
   [SuppressibleMissingKeyService.HELIUS]: msg.$t('action_center.rows.integrations.missing_api_key.description_helius'),
+  [SuppressibleMissingKeyService.OPENSEA]: msg.$t('action_center.rows.integrations.missing_api_key.description_opensea'),
   [SuppressibleMissingKeyService.THEGRAPH]: msg.$t('action_center.rows.integrations.missing_api_key.description_thegraph'),
 };
 
@@ -51,6 +52,7 @@ const DEFAULT_MISSING_KEY_DESCRIPTION = msg.$t('action_center.rows.integrations.
 /** What a refused key costs, per service that reports one. */
 const REJECTED_KEY_DESCRIPTIONS: Readonly<Record<string, MessageKey>> = {
   [SuppressibleMissingKeyService.BLOCKSCOUT]: msg.$t('action_center.rows.integrations.missing_api_key.description_blockscout_rejected'),
+  [SuppressibleMissingKeyService.OPENSEA]: msg.$t('action_center.rows.integrations.missing_api_key.description_opensea_rejected'),
   sochain: msg.$t('action_center.rows.integrations.missing_api_key.description_sochain_rejected'),
 };
 

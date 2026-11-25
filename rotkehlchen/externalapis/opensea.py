@@ -1,6 +1,7 @@
 import dataclasses
 import logging
 import re
+from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
@@ -16,9 +17,9 @@ from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError, cause_for_status
+from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError, cause_for_status
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
+from rotkehlchen.externalapis.interface import ExternalServiceWithRecommendedApiKey
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -130,22 +131,28 @@ class NFT(NamedTuple):
         }
 
 
-class Opensea(ExternalServiceWithApiKey):
-    """https://docs.opensea.io/reference/api-overview"""
+class Opensea(ExternalServiceWithRecommendedApiKey):
+    """https://docs.opensea.io/reference/api-overview
+
+    OpenSea answers no query without an API key, so none is made without one.
+    """
     def __init__(
             self,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
             ethereum_inquirer: EthereumInquirer,
     ) -> None:
-        super().__init__(database=database, service_name=ExternalService.OPENSEA)
+        ExternalServiceWithRecommendedApiKey.__init__(
+            self,
+            database=database,
+            service_name=ExternalService.OPENSEA,
+        )
         self.msg_aggregator = msg_aggregator
         self.session = create_session()
         self.session.headers.update({
             'Content-Type': 'application/json',
         })
         self.collections: dict[str, Collection] = {}
-        self.backup_key: str | None = None
         self.ethereum_inquirer = ethereum_inquirer
         self.eth_asset = ethereum_inquirer.native_token
 
@@ -155,10 +162,18 @@ class Opensea(ExternalServiceWithApiKey):
             options: dict[str, Any] | None = None,
             timeout: tuple[int, int] | None = None,
     ) -> dict[str, Any]:
-        """May raise RemoteError"""
-        api_key = self._get_api_key()
-        if api_key is not None:
-            self.session.headers.update({'X-API-KEY': api_key})
+        """Query OpenSea, retrying with backoff only when rate limited or the server failed.
+
+        May raise:
+        - APIKeyNotAvailable if no OpenSea API key is set. The user is warned once.
+        - RemoteError if the query fails, including when OpenSea rejects the key.
+        """
+        if (api_key := self._get_api_key()) is None:
+            raise APIKeyNotAvailable(
+                'An OpenSea API key is needed to query NFTs. Add one in the API keys settings.',
+            )
+
+        self.session.headers.update({'X-API-KEY': api_key})
 
         if endpoint == 'collectionstats':
             query_str = f'https://api.opensea.io/api/v2/collections/{options["name"]}/stats'  # type: ignore
@@ -188,11 +203,19 @@ class Opensea(ExternalServiceWithApiKey):
                     cause=FailureCause.NETWORK,
                 ) from e
 
-            if response.status_code != 200:
-                if api_key is None and self.backup_key is None:
-                    self.backup_key = '04ea654d84cd4b2b8da25ec41ca1a9a4'
-                    self.session.headers.update({'X-API-KEY': self.backup_key})
+            if response.status_code == HTTPStatus.UNAUTHORIZED:
+                self.maybe_warn_missing_key(reason='key_not_usable')
+                raise RemoteError(
+                    f'Opensea API request {response.url} rejected the API key with HTTP status '
+                    f'code {response.status_code}. It may have expired, so check it in the API '
+                    f'keys settings.',
+                    cause=FailureCause.AUTH,
+                )
 
+            if (
+                response.status_code == HTTPStatus.TOO_MANY_REQUESTS or
+                response.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
+            ):
                 log.debug(
                     f'Got {response.status_code} response from opensea. Will backoff for {backoff} seconds',  # noqa: E501
                 )
@@ -202,7 +225,7 @@ class Opensea(ExternalServiceWithApiKey):
                     raise RemoteError(
                         f'Reached opensea backoff limit after we incrementally backed off '
                         f'for {response.url}',
-                        cause=FailureCause.RATE_LIMITED,
+                        cause=cause_for_status(response.status_code),
                     )
                 continue
 

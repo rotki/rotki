@@ -90,6 +90,20 @@ def maybe_include_cryptocompare_key(db: DBHandler, include_cryptocompare_key: bo
             )])
 
 
+def maybe_include_opensea_key(db: DBHandler, include_opensea_key: bool) -> None:
+    """Add an OpenSea key, since rotki makes no OpenSea query without one. Recording cassettes
+    needs a real key in OPENSEA_API_KEY; replaying works with the placeholder."""
+    if not include_opensea_key:
+        return
+    with db.user_write() as write_cursor:
+        db.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(
+                service=ExternalService.OPENSEA,
+                api_key=ApiKey(os.environ.get('OPENSEA_API_KEY', 'test-opensea-key')),
+            )])
+
+
 def add_blockchain_accounts_to_db(db: DBHandler, blockchain_accounts: BlockchainAccounts) -> None:
     try:
         with db.user_write() as cursor:

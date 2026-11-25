@@ -84,7 +84,8 @@ class ExternalServicesService:
         self._refresh_solana_helius_rpc_node()
 
     def _reset_rate_limiter_for(self, service: ExternalService) -> None:
-        """Tell the matching client that its api key changed so it re-probes its tier.
+        """Tell the matching client that its api key changed, so it drops what it kept for the
+        old key: a probed rate-limit tier, a cached key, or warnings already given about it.
 
         Without this, a paid key swapped in for a free one (or vice versa) would
         keep using the previous tier's discovered rate-limit until rotki restarts.
@@ -108,6 +109,11 @@ class ExternalServicesService:
             self.rotkehlchen.birdeye.on_api_key_changed()
         elif service == ExternalService.SOCHAIN:
             self.rotkehlchen.chains_aggregator.dogecoin.sochain.on_api_key_changed()
+        elif (
+                service == ExternalService.OPENSEA and
+                (nft_module := self.rotkehlchen.chains_aggregator.get_module('nfts')) is not None
+        ):
+            nft_module.opensea.reset_api_key_state()
 
     def add_services(
             self,

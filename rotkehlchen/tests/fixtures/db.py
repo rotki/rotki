@@ -18,6 +18,7 @@ from rotkehlchen.tests.utils.database import (
     maybe_include_blockscout_key,
     maybe_include_cryptocompare_key,
     maybe_include_etherscan_key,
+    maybe_include_opensea_key,
     mock_db_schema_sanity_check,
     mock_dbhandler_sync_globaldb_assets,
     perform_new_db_unlock_actions,
@@ -69,6 +70,11 @@ def fixture_include_blockscout_key() -> bool:
     return True
 
 
+@pytest.fixture(name='include_opensea_key')
+def fixture_include_opensea_key() -> bool:
+    return True
+
+
 @pytest.fixture(name='include_beaconchain_key')
 def fixture_include_beaconchain_key() -> bool:
     return True
@@ -99,6 +105,7 @@ def _init_database(
         include_etherscan_key: bool,
         include_beaconchain_key: bool,
         include_cryptocompare_key: bool,
+        include_opensea_key: bool,
         include_blockscout_key: bool,
         tags: list[dict[str, Any]],
         manually_tracked_balances: list[ManuallyTrackedBalance],
@@ -140,6 +147,7 @@ def _init_database(
     maybe_include_blockscout_key(db, include_blockscout_key)
     maybe_include_beaconchain_key(db, include_beaconchain_key)
     maybe_include_cryptocompare_key(db, include_cryptocompare_key)
+    maybe_include_opensea_key(db, include_opensea_key)
     add_tags_to_test_db(db, tags)
     add_manually_tracked_balances_to_test_db(db, manually_tracked_balances)
 
@@ -160,6 +168,7 @@ def database(
         include_blockscout_key,
         include_beaconchain_key,
         include_cryptocompare_key,
+        include_opensea_key,
         tags,
         manually_tracked_balances,
         data_migration_version,
@@ -184,6 +193,7 @@ def database(
         include_blockscout_key=include_blockscout_key,
         include_beaconchain_key=include_beaconchain_key,
         include_cryptocompare_key=include_cryptocompare_key,
+        include_opensea_key=include_opensea_key,
         tags=tags,
         manually_tracked_balances=manually_tracked_balances,
         data_migration_version=data_migration_version,
