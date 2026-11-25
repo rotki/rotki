@@ -104,6 +104,21 @@ export default rotki({
     'unicorn/prefer-iterator-helpers': 'off',
   },
 }, {
+  /* VueUse's debounce/throttle helpers keep firing after the scope that made them is gone. The
+     auto-imported names resolve to the scoped versions; an explicit import would bypass them.
+     Later blocks that ban @vueuse outright replace this one for their files, which is fine. */
+  files: ['app/src/**/*.ts', 'app/src/**/*.vue'],
+  ignores: ['app/src/modules/core/common/async/scoped-timers.ts'],
+  rules: {
+    'no-restricted-imports': ['error', {
+      paths: ['@vueuse/core', '@vueuse/shared'].map(name => ({
+        importNames: ['refDebounced', 'refThrottled', 'useDebounceFn', 'useThrottleFn', 'watchDebounced', 'watchThrottled'],
+        message: 'Use the auto-imported scoped version from `modules/core/common/async/scoped-timers`, which stops when its scope is disposed.',
+        name,
+      })),
+    }],
+  },
+}, {
   // Wrappers type forwarded attributes behind a `@vue-ignore` block, which must stay a plain comment.
   files: ['app/src/**/*.vue'],
   rules: {
