@@ -27,9 +27,9 @@ for dir in "${node_modules[@]}"; do
   fi
 done
 
-# The volumes are created root-owned on first use.
+# The volumes and intermediate mount-point directories are created root-owned on first use.
 sudo chown "$(id -u):$(id -g)" "$HOME/.cargo" "$HOME/.rustup" "$HOME/.cache" "$HOME/.local" \
-  "$HOME/.local/share/rotki" "${UV_PROJECT_ENVIRONMENT:?is set in devcontainer.json}" "${node_modules[@]}"
+  "$HOME/.local/share" "$HOME/.local/share/rotki" "${UV_PROJECT_ENVIRONMENT:?is set in devcontainer.json}" "${node_modules[@]}"
 
 step 'System packages'
 # perl and make build the OpenSSL that rusqlite vendors. node-gyp needs a
