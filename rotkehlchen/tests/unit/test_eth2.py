@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconNode
@@ -28,7 +29,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.utils import ETH2_GENESIS_TIMESTAMP
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.timing import HOUR_IN_SECONDS
+from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -989,6 +990,84 @@ def test_query_chunked_endpoint_with_cursor_pagination(eth2):
     assert query_mock.call_count == 3
     assert second_call_data['cursor'] == 'next-page'
     assert third_call_data['cursor'] == ''
+
+
+def _staking_progress_frames(add_message_mock) -> list[dict]:
+    return [
+        {key: value for key, value in call.kwargs['data'].items() if key != 'subtype'}
+        for call in add_message_mock.call_args_list
+        if call.kwargs['message_type'] == WSMessageType.PROGRESS_UPDATES and
+        call.kwargs['data']['subtype'] == str(ProgressUpdateSubType.STAKING_EVENTS_QUERY)
+    ]
+
+
+def test_block_productions_report_progress_per_validator(eth2):
+    """Test that the beaconcha.in block productions query reports a validator as processed once
+    all its proposals are, and one with no proposals right away."""
+    beaconchain = eth2.beacon_inquirer.beaconchain
+    with (
+        patch.object(beaconchain, 'has_api_key', return_value=True),
+        patch.object(beaconchain, '_query_with_paging', return_value=BeaconChainQueryResponse(
+            data=[  # missed slots, so no block data is queried
+                {'validator': {'index': 1}, 'block': None},
+                {'validator': {'index': 3}, 'block': None},
+                {'validator': {'index': 1}, 'block': None},
+            ],
+            next_cursor='',
+        )),
+        patch.object(eth2.msg_aggregator, 'add_message') as add_message,
+    ):
+        eth2.get_and_store_produced_blocks(indices=[1, 2, 3])
+
+    assert _staking_progress_frames(add_message) == [
+        {'query_type': 'block_productions', 'processed': processed, 'total': 3, 'waiting_seconds': None}  # noqa: E501
+        for processed in (0, 1, 2, 3)
+    ]
+
+
+def test_block_productions_from_indexers_report_progress_per_validator(eth2, database):
+    """Test that the indexer fallback reports validators per withdrawal address, and the
+    validators it has nothing to query for right away."""
+    dbeth2, now, shared_address = DBEth2(database), ts_now(), make_evm_address()
+    with database.user_write() as write_cursor:
+        dbeth2.add_or_update_validators(write_cursor, [ValidatorDetails(
+            validator_index=index,
+            public_key=Eth2PubKey(f'0x{index:096x}'),
+            validator_type=ValidatorType.DISTRIBUTING,
+            withdrawal_address=address,
+            activation_timestamp=activation_ts,
+        ) for index, address, activation_ts in (
+            (1, make_evm_address(), Timestamp(now - DAY_IN_SECONDS)),
+            (2, shared_address, Timestamp(now - DAY_IN_SECONDS)),
+            (3, shared_address, Timestamp(now - DAY_IN_SECONDS)),
+            (4, make_evm_address(), None),  # not activated, so nothing to query
+        )])
+
+    with (
+        patch.object(eth2.beacon_inquirer.beaconchain, 'has_api_key', return_value=False),
+        patch.object(eth2, '_fetch_validated_blocks_from_external_sources', return_value=[]),
+        patch.object(eth2.msg_aggregator, 'add_message') as add_message,
+    ):
+        eth2.get_and_store_produced_blocks(indices=[1, 2, 3, 4])
+
+    assert [frame['processed'] for frame in _staking_progress_frames(add_message)] == [0, 1, 2, 4]
+
+
+def test_withdrawals_report_progress_per_address(eth2):
+    with (
+        patch.object(eth2, 'query_single_address_withdrawals'),
+        patch.object(eth2, 'detect_exited_validators'),
+        patch.object(eth2.msg_aggregator, 'add_message') as add_message,
+    ):
+        eth2.query_services_for_validator_withdrawals(
+            addresses=[make_evm_address(), make_evm_address()],
+            to_ts=ts_now(),
+        )
+
+    assert _staking_progress_frames(add_message) == [
+        {'query_type': 'eth_withdrawals', 'processed': processed, 'total': 2, 'waiting_seconds': None}  # noqa: E501
+        for processed in (0, 1, 2)
+    ]
 
 
 def test_get_active_validator_indices(database):

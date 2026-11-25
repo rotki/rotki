@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.api.websockets.typedefs import UserMessageRecord
 from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconInquirer
+from rotkehlchen.chain.ethereum.modules.eth2.progress import StakingEventsProgress
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS, YEAR_IN_SECONDS
@@ -35,6 +36,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
+    HistoryEventQueryType,
     Timestamp,
     TimestampMS,
 )
@@ -57,7 +59,7 @@ from .structures import (
 from .utils import create_profit_filter_queries, timestamp_to_slot
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
 
     from rotkehlchen.accounting.structures.balance import Balance
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -507,8 +509,14 @@ class Eth2(EthereumModule):
         and saves them in the DB. Uses multiple sources. Also detects which of
         these withdrawals may have been exits.
         """
-        with self.withdrawals_query_lock:
-            for address in addresses:
+        progress = StakingEventsProgress(
+            msg_aggregator=self.msg_aggregator,
+            query_type=HistoryEventQueryType.ETH_WITHDRAWALS,
+            total=len(addresses),
+        )
+        with self.withdrawals_query_lock, progress.reporting_rate_limit_waits():
+            progress.start()
+            for address in progress.tracking(addresses):
                 self.query_single_address_withdrawals(address, to_ts)
 
             self.detect_exited_validators()
@@ -793,6 +801,7 @@ class Eth2(EthereumModule):
             self,
             indices: list[int],
             update_cache: bool,
+            progress: StakingEventsProgress | None = None,
     ) -> None:
         """Get produced blocks via etherscan/blockscout when beaconcha.in is unavailable.
 
@@ -843,7 +852,12 @@ class Eth2(EthereumModule):
 
         dbevents = DBHistoryEvents(self.database)
         queried_indices: set[int] = set()
-        for address, validator_ranges in validators_by_address.items():
+        address_ranges: Iterable[tuple[ChecksumEvmAddress, list[tuple[int, Timestamp, Timestamp]]]] = validators_by_address.items()  # noqa: E501
+        if progress is not None:  # validators with nothing to query are done already
+            progress.advance(len(indices) - sum(len(ranges) for ranges in validators_by_address.values()))  # noqa: E501
+            address_ranges = progress.tracking(address_ranges, weight=lambda item: len(item[1]))
+
+        for address, validator_ranges in address_ranges:
             from_ts = min(entry[1] for entry in validator_ranges)
             to_ts = max(entry[2] for entry in validator_ranges)
             log.debug(f'Querying produced blocks for validator withdrawal address {address} from {from_ts} to {to_ts}')  # noqa: E501
@@ -911,22 +925,36 @@ class Eth2(EthereumModule):
             indices: list[int],
             update_cache: bool = True,
     ) -> None:
-        """Query and store produced blocks via beaconcha.in or indexer fallback."""
-        with self.beacon_inquirer.beaconchain.produced_blocks_lock:
+        """Query and store produced blocks via beaconcha.in or indexer fallback.
+
+        Reports the progress per validator, and any beaconcha.in rate limit wait.
+        """
+        progress = StakingEventsProgress(
+            msg_aggregator=self.msg_aggregator,
+            query_type=HistoryEventQueryType.BLOCK_PRODUCTIONS,
+            total=len(indices),
+        )
+        with self.beacon_inquirer.beaconchain.produced_blocks_lock, progress.reporting_rate_limit_waits():  # noqa: E501
+            progress.start()
             if self.beacon_inquirer.beaconchain.has_api_key():
                 try:
                     self.beacon_inquirer.beaconchain._get_and_store_produced_blocks(
                         indices=indices,
                         update_cache=update_cache,
+                        progress=progress,
                     )
                 except (APIKeyNotAvailable, RemoteError) as e:
                     log.warning(f'Failed to query produced blocks via beaconcha.in due to {e!s}. Falling back to indexers.')  # noqa: E501
                 else:
                     return
 
+                progress.processed = 0  # the indexers go through every validator again
+                progress.start()
+
             self._get_and_store_produced_blocks_from_indexers(
                 indices=indices,
                 update_cache=update_cache,
+                progress=progress,
             )
 
     def combine_block_with_tx_events(self) -> None:

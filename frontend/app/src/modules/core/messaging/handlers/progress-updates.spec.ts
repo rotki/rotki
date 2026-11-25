@@ -9,7 +9,9 @@ import { SocketMessageProgressUpdateSubType } from '@/modules/core/messaging/typ
 import { HistoricalBalanceProcessingPhase } from '@/modules/core/messaging/types/status-types';
 import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 import { useDataIssueRemediationStore } from '@/modules/history/data-issues/use-data-issue-remediation-store';
+import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { decodeActivity, decodeActivityId } from '@/modules/history/events/tx/decode.activity';
+import { onlineEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { protocolCacheActivity } from '@/modules/history/protocol-cache.activity';
 import { ActivityKind, ActivityPart, makeActivityId } from '@/modules/task-center/core/types';
 import { readActivityDetail, useActivityDetail } from '@/modules/task-center/use-activity-detail';
@@ -208,6 +210,44 @@ describe('createProgressUpdateHandler', () => {
       makeActivityId(ActivityKind.LIQUITY, ActivityPart.STAKE),
       { current: 1, total: 2 },
     );
+  });
+
+  it('should report a staking events query onto its running online events activity, with the rate limit it waits out', async () => {
+    const subject = { queryType: OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS };
+    runningIds = [onlineEventsActivity.id(subject)];
+    const handler = createProgressUpdateHandler(mockT);
+    const frame = (waitingSeconds: number | null): ProgressUpdateResultData => ({
+      processed: 3,
+      queryType: 'block_productions',
+      subtype: SocketMessageProgressUpdateSubType.STAKING_EVENTS_QUERY,
+      total: 15,
+      waitingSeconds,
+    });
+
+    await handler.handle(frame(2));
+
+    expect(mockReportProgress).toHaveBeenCalledWith(onlineEventsActivity.id(subject), { current: 3, total: 15 });
+    expect(get(readActivityDetail(onlineEventsActivity, subject))).toEqual({ waitingSeconds: 2 });
+
+    await handler.handle(frame(null));
+
+    expect(get(readActivityDetail(onlineEventsActivity, subject))).toEqual({ waitingSeconds: undefined });
+  });
+
+  it('should report nothing for a staking events query with no running activity, such as the periodic one', async () => {
+    const subject = { queryType: OnlineHistoryEventsQueryType.ETH_WITHDRAWALS };
+    const handler = createProgressUpdateHandler(mockT);
+
+    await handler.handle({
+      processed: 1,
+      queryType: 'eth_withdrawals',
+      subtype: SocketMessageProgressUpdateSubType.STAKING_EVENTS_QUERY,
+      total: 2,
+      waitingSeconds: 1,
+    });
+
+    expect(mockReportProgress).not.toHaveBeenCalled();
+    expect(get(readActivityDetail(onlineEventsActivity, subject))).toBeUndefined();
   });
 
   it('should route stats price query updates', async () => {

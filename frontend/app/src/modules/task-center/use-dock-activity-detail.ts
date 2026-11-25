@@ -5,8 +5,9 @@ import { accountAddActivity, type AccountAdditionDetail, type AccountSubject } f
 import { HistoricalBalanceProcessingPhase, TransactionsQueryStatus } from '@/modules/core/messaging/types/status-types';
 import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 import { showsHistoricalBalancesProcessing } from '@/modules/history/balances/use-historical-balances-progress';
+import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { decodeActivity } from '@/modules/history/events/tx/decode.activity';
-import { accountSyncActivity, bankEventsActivity, eventsConnectionOf, exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
+import { accountSyncActivity, bankEventsActivity, eventsConnectionOf, exchangeEventsActivity, onlineEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { protocolCacheActivity, type ProtocolCacheDetail } from '@/modules/history/protocol-cache.activity';
 import { activitySubject } from '@/modules/task-center/activity-subject';
 import { isTerminalStatus, needsAttention } from '@/modules/task-center/core/status';
@@ -182,6 +183,17 @@ export function useDockActivityDetail(activity: MaybeRefOrGetter<Activity>): Com
     return address === undefined || current.status !== ActivityStatus.SKIPPED ? undefined : { address, type: 'untracked' };
   }
 
+  /** The rate limit an online events query is waiting out, while it is. */
+  function onlineEvents(current: Activity): DockDetail | undefined {
+    const subject = Object.values(OnlineHistoryEventsQueryType)
+      .map(queryType => ({ queryType }))
+      .find(candidate => onlineEventsActivity.id(candidate) === current.id);
+    const seconds = subject ? peekActivityDetail(onlineEventsActivity, subject)?.waitingSeconds : undefined;
+    return seconds === undefined
+      ? undefined
+      : { period: undefined, step: t('task_dock.detail.rate_limited', { seconds }), type: 'query' };
+  }
+
   /** The pass a historical balance processing run is on, on the rows that show the run. */
   function historicalBalancesProcessing(current: Activity): DockDetail | undefined {
     const phase = get(processingPhase);
@@ -197,6 +209,7 @@ export function useDockActivityDetail(activity: MaybeRefOrGetter<Activity>): Com
     [ActivityKind.BANK_EVENTS]: events,
     [ActivityKind.EXCHANGE_EVENTS]: events,
     [ActivityKind.HISTORICAL_BALANCES]: historicalBalancesProcessing,
+    [ActivityKind.ONLINE_EVENTS]: onlineEvents,
     [ActivityKind.TX_SYNC]: accountSync,
   };
 

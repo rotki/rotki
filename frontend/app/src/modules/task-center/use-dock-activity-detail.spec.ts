@@ -4,8 +4,9 @@ import { accountAddActivity, EVM_PSEUDO_CHAIN } from '@/modules/accounts/account
 import { HistoricalBalanceProcessingPhase, TransactionsQueryStatus } from '@/modules/core/messaging/types/status-types';
 import { currentBalanceDetectionActivity, historicalBalancesActivity } from '@/modules/history/balances/historical-balances.activity';
 import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
+import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { decodeActivity } from '@/modules/history/events/tx/decode.activity';
-import { accountSyncActivity, chainSyncActivity, exchangeEventsActivity } from '@/modules/history/events/tx/sync.activity';
+import { accountSyncActivity, chainSyncActivity, exchangeEventsActivity, onlineEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { protocolCacheActivity } from '@/modules/history/protocol-cache.activity';
 import { BackgroundTaskKind } from './background/background-task-types';
 import { backgroundTaskActivity } from './background/background-task.activity';
@@ -70,6 +71,18 @@ describe('useDockActivityDetail', () => {
     const detail = useDockActivityDetail(activity(chainSyncActivity.id({ chain: 'eth' }), ActivityKind.TX_SYNC));
 
     expect(get(detail)).toBeUndefined();
+  });
+
+  it('should say an online events query is waiting out a rate limit, and nothing once it is not', () => {
+    const subject = { queryType: OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS };
+    const row = activity(onlineEventsActivity.id(subject), ActivityKind.ONLINE_EVENTS);
+    publishActivityDetail(onlineEventsActivity, subject, { waitingSeconds: 2 });
+
+    expect(get(useDockActivityDetail(row))).toEqual({ period: undefined, step: 'task_dock.detail.rate_limited::2', type: 'query' });
+
+    publishActivityDetail(onlineEventsActivity, subject, {});
+
+    expect(get(useDockActivityDetail(row))).toBeUndefined();
   });
 
   it('should name the query an exchange is running', () => {

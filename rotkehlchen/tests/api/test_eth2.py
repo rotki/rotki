@@ -2,7 +2,7 @@ import random
 from contextlib import ExitStack
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Final, Literal
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 import pytest
 import requests
@@ -962,7 +962,7 @@ def test_query_online_block_productions_missing_api_key(
         )
 
     assert_simple_ok_response(response)
-    indexer_fallback.assert_called_once_with(indices=[1], update_cache=True)
+    indexer_fallback.assert_called_once_with(indices=[1], update_cache=True, progress=ANY)
     combine_block_with_tx_events.assert_called_once_with()
 
 
@@ -996,8 +996,8 @@ def test_query_online_block_productions_beaconchain_error_falls_back_to_indexers
         )
 
     assert_simple_ok_response(response)
-    beaconchain_query.assert_called_once_with(indices=[1], update_cache=True)
-    indexer_fallback.assert_called_once_with(indices=[1], update_cache=True)
+    beaconchain_query.assert_called_once_with(indices=[1], update_cache=True, progress=ANY)
+    indexer_fallback.assert_called_once_with(indices=[1], update_cache=True, progress=ANY)
     combine_block_with_tx_events.assert_called_once_with()
 
 

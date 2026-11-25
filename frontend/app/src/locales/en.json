@@ -7471,7 +7471,8 @@
       "querying_event_type": "Querying {type}",
       "querying_internal": "Querying internal transactions",
       "querying_tokens": "Querying token transfers",
-      "querying_transactions": "Querying transactions"
+      "querying_transactions": "Querying transactions",
+      "rate_limited": "Rate limited by beaconcha.in, waiting {seconds}s"
     },
     "done": "{title} finished",
     "done_count": "{count} job finished | {count} jobs finished",

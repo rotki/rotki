@@ -6,13 +6,20 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.chain.ethereum.modules.eth2.progress import StakingEventsProgress
 from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.tests.utils.messages import consume_warnings
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials, Timestamp
+from rotkehlchen.types import (
+    ApiKey,
+    ExternalService,
+    ExternalServiceApiCredentials,
+    HistoryEventQueryType,
+    Timestamp,
+)
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -112,6 +119,54 @@ def test_rate_limit(beaconchain: BeaconChain, freezer):
 
     assert beaconchain.ratelimited_until == Timestamp(ts_now() + 1000)
     assert requests_made == 2
+
+
+def test_rate_limit_waits_reported_only_inside_a_staking_query(
+        beaconchain: BeaconChain,
+        database,
+        messages_aggregator,
+) -> None:
+    """Test that a beaconcha.in rate limit wait is reported as a wait of the staking events
+    query running in the thread, and not reported for any other beaconcha.in query."""
+    with database.user_write() as write_cursor:
+        database.add_external_service_credentials(write_cursor, [ExternalServiceApiCredentials(
+            service=ExternalService.BEACONCHAIN,
+            api_key=ApiKey('some-key'),
+        )])
+
+    def rate_limited_once() -> list[MockResponse]:
+        return [
+            MockResponse(HTTPStatus.TOO_MANY_REQUESTS, '', headers={'ratelimit-reset': '2'}),
+            MockResponse(HTTPStatus.OK, '{"data": []}'),
+        ]
+
+    progress = StakingEventsProgress(
+        msg_aggregator=messages_aggregator,
+        query_type=HistoryEventQueryType.BLOCK_PRODUCTIONS,
+        total=4,
+    )
+    with (
+        patch('rotkehlchen.externalapis.beaconchain.service.cancellable_sleep') as sleep,
+        patch.object(messages_aggregator, 'add_message') as add_message,
+        patch.object(beaconchain.session, 'request', side_effect=rate_limited_once()),
+    ):
+        beaconchain._query_with_paging(endpoint='validators/proposal-slots')  # outside a query
+        assert add_message.call_count == 0
+
+        with (
+            patch.object(beaconchain.session, 'request', side_effect=rate_limited_once()),
+            progress.reporting_rate_limit_waits(),
+        ):
+            beaconchain._query_with_paging(endpoint='validators/proposal-slots')
+
+    assert sleep.call_count == 2
+    assert [call.kwargs['data'] for call in add_message.call_args_list] == [{
+        'subtype': 'staking_events_query',
+        'query_type': 'block_productions',
+        'processed': 0,
+        'total': 4,
+        'waiting_seconds': 2,
+    }]
 
 
 def test_free_trial_expired_deletes_api_key(

@@ -627,6 +627,32 @@ Liquity staking has several products whose price needs to be remotely queried. T
 - ``subtype``: Set to "liquity_staking_query" to identify liquity staking queries.
 
 
+Staking events query status
+============================
+
+The ETH withdrawals and block productions queries report their progress, and any beaconcha.in rate limit they are waiting out, with:
+
+::
+
+    {
+        "type": "progress_updates",
+        "data": {
+            "total": 15,
+            "processed": 4,
+            "query_type": "block_productions",
+            "waiting_seconds": 2,
+            "subtype": "staking_events_query"
+        }
+    }
+
+
+- ``total``: Number of validators for block productions, or of withdrawal addresses for withdrawals.
+- ``processed``: How many of them have been processed.
+- ``query_type``: Either "block_productions" or "eth_withdrawals", as given to the online events query.
+- ``waiting_seconds``: Seconds the query waits for beaconcha.in's rate limit before its next request. ``null`` when it is not waiting.
+- ``subtype``: Set to "staking_events_query" to identify staking events queries.
+
+
 Async prices queries
 ======================
 

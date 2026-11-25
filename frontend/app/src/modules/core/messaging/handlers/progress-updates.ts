@@ -12,6 +12,7 @@ import { protocolCacheActivity, withProtocolCacheFrame } from '@/modules/history
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { liquityActivity } from '@/modules/staking/liquity/liquity.activity';
 import { krakenStakingActivity } from '@/modules/staking/staking.activity';
+import { useStakingQueryProgress } from '@/modules/staking/use-staking-query-progress';
 import { type ActivityId, ActivityPart } from '@/modules/task-center/core/types';
 import { peekActivityDetail, publishActivityDetail } from '@/modules/task-center/use-activity-detail';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
@@ -25,6 +26,7 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
   const { matchChain } = useSupportedChains();
   const { notifyRemediationCompleted } = useDataIssueRemediationStore();
   const { reportHistoricalBalancesProgress } = useHistoricalBalancesProgress();
+  const { isStakingQueryProgress, reportStakingQueryProgress } = useStakingQueryProgress();
 
   /**
    * Report a chain's decode progress onto the chain-wide decode activity.
@@ -138,6 +140,11 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
   }
 
   return createConditionalHandler<ProgressUpdateResultData>(async (data) => {
+    if (isStakingQueryProgress(data)) {
+      reportStakingQueryProgress(data);
+      return null;
+    }
+
     const subtype = data.subtype;
 
     if (subtype === SocketMessageProgressUpdateSubType.CSV_IMPORT_RESULT) {
@@ -162,12 +169,6 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
           { current: data.processed, total: data.total },
           dailyPricesActivity.kind,
           ...dailyPricesActivity.partsWithin([]),
-        );
-        break;
-      case SocketMessageProgressUpdateSubType.LIQUITY_STAKING_QUERY:
-        reportProgress(
-          liquityActivity.id({ part: ActivityPart.STAKE }),
-          { current: data.processed, total: data.total },
         );
         break;
       case SocketMessageProgressUpdateSubType.STATS_PRICE_QUERY:

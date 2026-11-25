@@ -153,6 +153,18 @@ const LiquityStakingQueryDataWithSubtype = CommonQueryStatusData.extend({
   subtype: z.literal(SocketMessageProgressUpdateSubType.LIQUITY_STAKING_QUERY),
 });
 
+/**
+ * A staking events query (withdrawals, block productions) going through its validators or
+ * addresses. `waitingSeconds` is set while it waits out a beaconcha.in rate limit.
+ */
+const StakingEventsQueryDataWithSubtype = CommonQueryStatusData.extend({
+  queryType: z.string(),
+  subtype: z.literal(SocketMessageProgressUpdateSubType.STAKING_EVENTS_QUERY),
+  waitingSeconds: z.number().nullable(),
+});
+
+export type StakingEventsQueryData = z.infer<typeof StakingEventsQueryDataWithSubtype>;
+
 const StatsPriceQueryDataWithSubtype = StatsPriceQueryData.extend({
   subtype: z.literal(SocketMessageProgressUpdateSubType.STATS_PRICE_QUERY),
 });
@@ -244,6 +256,7 @@ export const ProgressUpdateResultData = z.discriminatedUnion('subtype', [
   HistoricalBalanceProcessingDataWithSubtype,
   CsvImportResultWithSubtype,
   LiquityStakingQueryDataWithSubtype,
+  StakingEventsQueryDataWithSubtype,
   StatsPriceQueryDataWithSubtype,
   MultiplePricesQueryStatusWithSubtype,
   DataIssueRemediationDataWithSubtype,

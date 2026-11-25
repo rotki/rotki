@@ -12,6 +12,10 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     BEACONCHAIN_MAX_EPOCH,
     DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
 )
+from rotkehlchen.chain.ethereum.modules.eth2.progress import (
+    BEACONCHAIN_RATE_LIMIT_LISTENER,
+    StakingEventsProgress,
+)
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID
 from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
 from rotkehlchen.concurrency import cancellable_sleep
@@ -52,7 +56,7 @@ from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
 
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
@@ -197,6 +201,8 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                     f'for {sleep_seconds}. We have {times} tries left. Rate limit info: '
                     f'{rate_limit_info}',
                 )
+                if (rate_limit_listener := BEACONCHAIN_RATE_LIMIT_LISTENER.get()) is not None:
+                    rate_limit_listener(sleep_seconds)
                 cancellable_sleep(sleep_seconds)
                 continue
             # else
@@ -541,10 +547,34 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         with self.produced_blocks_lock:
             self._get_and_store_produced_blocks(indices=indices, update_cache=update_cache)
 
+    @staticmethod
+    def _entries_with_validator_progress(
+            data: list[dict[str, Any]],
+            indices: list[int],
+            progress: StakingEventsProgress | None,
+    ) -> Iterator[dict[str, Any]]:
+        """Yield the proposal entries in the order given. With a progress, a validator counts
+        as processed once its last entry is, and one with no entries right away.
+
+        May raise:
+        - KeyError if an entry has no validator index
+        """
+        if progress is None:
+            yield from data
+            return
+
+        last_entry_of = {entry['validator']['index']: idx for idx, entry in enumerate(data)}
+        progress.advance(len(set(indices) - last_entry_of.keys()))
+        for idx, entry in enumerate(data):
+            yield entry
+            if last_entry_of[entry['validator']['index']] == idx:
+                progress.advance()
+
     def _get_and_store_produced_blocks(
             self,
             indices: list[int],
             update_cache: bool = True,
+            progress: StakingEventsProgress | None = None,
     ) -> None:
         """Get blocks produced by a set of validator indices/pubkeys and store the
         data in the DB.
@@ -569,6 +599,8 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         for each validator. Set to False when refetching historical data so that the
         normal periodic query schedule is not affected.
 
+        `progress`, if given, is advanced as each validator's proposals are processed.
+
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
@@ -582,7 +614,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         with self.db.conn.read_ctx() as cursor:
             ethereum_tracked_accounts = self.db.get_blockchain_accounts(cursor).get(SupportedBlockchain.ETHEREUM)  # noqa: E501
         try:
-            for entry in data:
+            for entry in self._entries_with_validator_progress(data, indices, progress):
                 if entry.get('block') is None:
                     continue
 

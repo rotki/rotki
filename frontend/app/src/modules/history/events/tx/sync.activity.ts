@@ -124,12 +124,18 @@ export const bankEventsActivity = defineActivity<ExchangeEventsSubject, readonly
   lane: subject => familyLane(BANK_EVENTS_LANE_PREFIX, subject.location),
 });
 
+/** What a running online-event query streams beyond its progress. */
+export interface OnlineEventsDetail {
+  /** The seconds it is waiting out a rate limit for; absent while it is not waiting. */
+  readonly waitingSeconds?: number;
+}
+
 /**
  * One online-event query (withdrawals, block productions).
  *
  * No lane: these are few and independent, and run unthrottled today.
  */
-export const onlineEventsActivity = defineActivity<{ queryType: OnlineHistoryEventsQueryType }, readonly [string]>({
+export const onlineEventsActivity = defineActivity<{ queryType: OnlineHistoryEventsQueryType }, readonly [string], OnlineEventsDetail>({
   key: subject => [subject.queryType],
   kind: ActivityKind.ONLINE_EVENTS,
 });
