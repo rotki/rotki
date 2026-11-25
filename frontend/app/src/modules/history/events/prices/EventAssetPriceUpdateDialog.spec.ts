@@ -20,7 +20,7 @@ const { loadError, retryLoad, saveError } = await vi.hoisted(async () => {
 vi.mock('@/modules/history/events/prices/use-event-price-update-dialog', async () => {
   const { computed, ref, shallowRef } = await import('vue');
   return {
-    useEventPriceUpdateDialog: (): Record<string, unknown> => ({
+    useEventPriceUpdateDialog: (_modelValue: unknown, options?: { onSaved?: () => void }): Record<string, unknown> => ({
       close: vi.fn(),
       existingEntry: shallowRef(),
       loadError,
@@ -31,7 +31,7 @@ vi.mock('@/modules/history/events/prices/use-event-price-update-dialog', async (
       priceErrors: computed<string[]>(() => []),
       priceValid: computed<boolean>(() => true),
       retryLoad,
-      save: vi.fn(),
+      save: vi.fn(() => options?.onSaved?.()),
       saveError,
       saving: shallowRef<boolean>(false),
       showModeChoice: computed<boolean>(() => false),
@@ -100,5 +100,13 @@ describe('eventAssetPriceUpdateDialog', () => {
 
     expect(wrapper.find('[data-testid=failure-strip]').exists()).toBe(false);
     expect(wrapper.find('[data-testid=event-price-load-error]').exists()).toBe(false);
+  });
+
+  it('should emit saved when the dialog saves a price', async () => {
+    const wrapper = mountDialog();
+
+    await saveButton(wrapper).trigger('click');
+
+    expect(wrapper.emitted('saved')).toHaveLength(1);
   });
 });

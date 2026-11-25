@@ -13,12 +13,13 @@ interface UseDataIssuesReturn {
   fetchIssue: (id: number) => Promise<{ issue?: DataIssue; error?: string }>;
   /** The actions report nothing themselves: the surface that ran one names its failure. */
   dismiss: (id: number) => ResultAsync<DataIssue, DataIssueError>;
-  resolveManually: (id: number, note?: string) => ResultAsync<DataIssue, DataIssueError>;
+  reopen: (id: number) => ResultAsync<DataIssue, DataIssueError>;
+  resolveManually: (id: number, note?: string, disposition?: string) => ResultAsync<DataIssue, DataIssueError>;
   retry: (id: number) => ResultAsync<DataIssue, DataIssueError>;
 }
 
 export function useDataIssues(): UseDataIssuesReturn {
-  const { dismissIssue, getIssue, listIssues, resolveIssueManually, retryAutoRemediation } = useDataIssuesApi();
+  const { dismissIssue, getIssue, listIssues, reopenIssue, resolveIssueManually, retryAutoRemediation } = useDataIssuesApi();
 
   const fetchData = async (
     payload: MaybeRef<DataIssuesRequestPayload>,
@@ -42,6 +43,7 @@ export function useDataIssues(): UseDataIssuesReturn {
     dismiss: dismissIssue,
     fetchData,
     fetchIssue,
+    reopen: reopenIssue,
     resolveManually: resolveIssueManually,
     retry: retryAutoRemediation,
   };

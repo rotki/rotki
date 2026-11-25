@@ -20,8 +20,20 @@ describe('useDataIssuesFormat', () => {
     [IssueKind.CURRENT_BALANCE_MISMATCH, 'data_issues.kind.current_balance_mismatch'],
     [IssueKind.REBASING_TOKEN, 'data_issues.kind.rebasing_token'],
     [IssueKind.UNMATCHED_BRIDGE, 'data_issues.kind.unmatched_bridge'],
+    [IssueKind.MISSING_PRICE, 'data_issues.kind.missing_price'],
+    [IssueKind.MISSING_COST_BASIS, 'data_issues.kind.missing_cost_basis'],
+    [IssueKind.INCOMPLETE_SWAP, 'data_issues.kind.incomplete_swap'],
+    [IssueKind.UNMATCHED_EXCHANGE_TRANSFER, 'data_issues.kind.unmatched_exchange_transfer'],
   ])('should return the translated label for kind %s', (kind, expectedKey) => {
     const { kindLabel } = useDataIssuesFormat();
     expect(kindLabel(kind)).toBe(expectedKey);
+  });
+
+  it('should return translated disposition labels and undefined for unknown dispositions', () => {
+    const { dispositionLabel } = useDataIssuesFormat();
+
+    expect(dispositionLabel('confirm_zero_basis')).toBe('data_issues.disposition.confirm_zero_basis');
+    expect(dispositionLabel('dismiss_as_standalone')).toBe('data_issues.disposition.dismiss_as_standalone');
+    expect(dispositionLabel('custom')).toBeUndefined();
   });
 });

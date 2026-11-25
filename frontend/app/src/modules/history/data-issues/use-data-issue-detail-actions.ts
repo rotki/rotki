@@ -20,6 +20,7 @@ interface UseDataIssueDetailActionsReturn {
   resolveFailure: Readonly<Ref<DataIssueError | undefined>>;
   openDetail: (issue: DataIssue) => void;
   onDismiss: (id: number) => Promise<void>;
+  onReopen: (id: number) => Promise<void>;
   onRetry: (id: number) => Promise<void>;
   onResolveRequest: () => void;
   onResolveConfirm: (note: string | undefined) => Promise<void>;
@@ -41,7 +42,7 @@ export function useDataIssueDetailActions(
   issues: MaybeRefOrGetter<DataIssue[]> = () => [],
 ): UseDataIssueDetailActionsReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { dismiss, resolveManually, retry } = useDataIssues();
+  const { dismiss, reopen, resolveManually, retry } = useDataIssues();
 
   const modelSelectedIssue = ref<DataIssue>();
   const modelDrawerOpen = shallowRef<boolean>(false);
@@ -102,6 +103,13 @@ export function useDataIssueDetailActions(
     });
   }
 
+  async function onReopen(id: number): Promise<void> {
+    await runAction(id, t('data_issues.action.reopen.error'), reopen(id), async (updated) => {
+      set(modelSelectedIssue, updated);
+      await reload();
+    });
+  }
+
   async function onRetry(id: number): Promise<void> {
     await runAction(id, t('data_issues.action.retry.error'), retry(id), async (updated) => {
       set(modelSelectedIssue, updated);
@@ -152,6 +160,7 @@ export function useDataIssueDetailActions(
     modelResolveOpen,
     modelSelectedIssue,
     onDismiss,
+    onReopen,
     onResolveConfirm,
     onResolveRequest,
     onRetry,

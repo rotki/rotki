@@ -47,6 +47,8 @@ export interface IssueDescription {
   readonly amounts: Record<string, BigNumber>;
   /** Asset identifier for the `{asset}` placeholder, resolved to a symbol on render. */
   readonly asset?: string;
+  /** Secondary asset identifier (e.g. quote currency for missing prices), resolved to a symbol on render. */
+  readonly toAsset?: string;
   /** Optional history-event identifier to deep-link to the offending event. */
   readonly eventIdentifier?: number;
 }

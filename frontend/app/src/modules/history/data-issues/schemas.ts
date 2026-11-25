@@ -75,6 +75,16 @@ export const AutoRemediationAttempt = z.looseObject({
 export type AutoRemediationAttempt = z.infer<typeof AutoRemediationAttempt>;
 
 /**
+ * Machine-readable remediation suggestion computed by the backend for an open issue.
+ */
+const SuggestedAction = z.object({
+  action: z.string(),
+  endpoint: z.string().default(''),
+  params: z.record(z.string(), z.unknown()).default({}),
+  requiresInput: z.array(z.string()).default([]),
+});
+
+/**
  * A persisted data quality issue, as served by `GET /data_issues`. The free-form
  * `payload` differs per kind and is narrowed in transforms (see transforms.ts);
  * here it is kept as a permissive record so backend payload additions don't break
@@ -84,6 +94,7 @@ export const DataIssue = z.object({
   asset: z.string().nullable(),
   autoRemediationAttempts: z.array(AutoRemediationAttempt).default([]),
   createdAt: z.number(),
+  eventIdentifier: z.number().nullable().default(null),
   groupIdentifier: z.string().nullable().default(null),
   id: z.number(),
   kind: z.enum(IssueKind),
@@ -94,6 +105,7 @@ export const DataIssue = z.object({
   resolvedAt: z.number().nullable(),
   severity: z.enum(IssueSeverity),
   state: z.enum(IssueState),
+  suggestedActions: z.array(SuggestedAction).default([]),
   tsEnd: z.number(),
   tsStart: z.number(),
 });
@@ -130,6 +142,7 @@ export interface DataIssuesRequestPayload extends PaginationRequestPayload<DataI
   readonly asset?: string;
   readonly fromTimestamp?: number;
   readonly toTimestamp?: number;
+  readonly manualOnly?: boolean;
 }
 
 export const InvalidEventAmountPayload = z.object({
@@ -180,3 +193,62 @@ export const UnmatchedBridgePayload = z.object({
 });
 
 export type UnmatchedBridgePayload = z.infer<typeof UnmatchedBridgePayload>;
+
+export const MissingPricePayload = z.object({
+  amount: NumericString,
+  direction: z.enum(['receive', 'spend', 'fee', 'swap']),
+  eventIdentifier: z.number(),
+  groupIdentifier: z.string(),
+  toAsset: z.string(),
+});
+
+export type MissingPricePayload = z.infer<typeof MissingPricePayload>;
+
+export const MissingCostBasisPayload = z.object({
+  coveredAmount: NumericString,
+  eventIdentifier: z.number(),
+  fallbackBasis: z.string(),
+  groupIdentifier: z.string(),
+  requestedAmount: NumericString,
+  uncoveredAmount: NumericString,
+});
+
+export type MissingCostBasisPayload = z.infer<typeof MissingCostBasisPayload>;
+
+const IncompleteSwapLeg = z.object({
+  amount: NumericString,
+  asset: z.string(),
+  eventIdentifier: z.number(),
+  subtype: z.string(),
+});
+
+export const IncompleteSwapPayload = z.object({
+  eventIdentifier: z.number(),
+  eventIdentifiers: z.array(z.number()),
+  excludedAssets: z.array(z.string()).default([]),
+  groupIdentifier: z.string(),
+  missingOrExcludedReason: z.enum(['ignored_asset', 'ignored_action', 'missing_counterpart_leg']),
+  presentLegs: z.array(IncompleteSwapLeg).default([]),
+});
+
+export type IncompleteSwapPayload = z.infer<typeof IncompleteSwapPayload>;
+
+export const UnmatchedExchangeTransferPayload = z.object({
+  address: z.string().nullable().optional(),
+  amount: NumericString,
+  eventIdentifier: z.number(),
+  groupIdentifier: z.string(),
+  subtype: z.enum(['spend', 'receive']),
+  txRef: z.string().nullable().optional(),
+});
+
+export type UnmatchedExchangeTransferPayload = z.infer<typeof UnmatchedExchangeTransferPayload>;
+
+/** Manual confirmation metadata persisted in `issue.payload.resolution`. */
+export const IssueResolution = z.object({
+  disposition: z.string().optional(),
+  manual: z.boolean().optional(),
+  note: z.string().optional(),
+});
+
+export type IssueResolution = z.infer<typeof IssueResolution>;

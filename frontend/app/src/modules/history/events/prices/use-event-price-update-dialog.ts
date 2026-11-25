@@ -69,6 +69,7 @@ interface UseEventPriceUpdateDialogReturn {
  */
 export function useEventPriceUpdateDialog(
   modelValue: Ref<EventPriceUpdatePayload | undefined>,
+  options?: { onSaved?: () => void },
 ): UseEventPriceUpdateDialogReturn {
   const modelPrice = shallowRef<string>('');
   const modelMode = shallowRef<EventPriceUpdateMode>('manual');
@@ -164,6 +165,7 @@ export function useEventPriceUpdateDialog(
         t('event_asset_price_update.success.title'),
         t('event_asset_price_update.success.description'),
       );
+      options?.onSaved?.();
       close();
     }
     catch (error: unknown) {

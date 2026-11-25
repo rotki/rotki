@@ -7,6 +7,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   canDismiss,
+  canReopen,
   canResolveManually,
   canRetry,
   IssueState,
@@ -21,6 +22,7 @@ const { issue, eventRoute } = defineProps<{
 const emit = defineEmits<{
   goto: [route: RouteLocationRaw];
   dismiss: [issue: DataIssue];
+  reopen: [issue: DataIssue];
   retry: [issue: DataIssue];
   resolve: [issue: DataIssue];
 }>();
@@ -132,6 +134,28 @@ function onGoto(): void {
         </RuiButton>
       </template>
       {{ t('data_issues.action.resolve.label') }}
+    </RuiTooltip>
+    <RuiTooltip
+      v-if="canReopen(issue.state)"
+      :open-delay="300"
+    >
+      <template #activator>
+        <RuiButton
+          variant="text"
+          icon
+          size="sm"
+          color="primary"
+          :aria-label="t('data_issues.action.reopen.label')"
+          data-testid="data-issues-panel-reopen"
+          @click.stop="emit('reopen', issue)"
+        >
+          <RuiIcon
+            name="lu-rotate-ccw"
+            size="16"
+          />
+        </RuiButton>
+      </template>
+      {{ t('data_issues.action.reopen.label') }}
     </RuiTooltip>
   </div>
 </template>

@@ -9,7 +9,13 @@ function counts(overrides: Partial<StateCounts> = {}): StateCounts {
   return { ...emptyCounts(), ...overrides };
 }
 
-function createWrapper(props: { counts: StateCounts; activeStates: string[]; failed?: boolean }): VueWrapper<InstanceType<typeof DataIssueSummaryBar>> {
+function createWrapper(props: {
+  counts: StateCounts;
+  activeStates: string[];
+  confirmedActive?: boolean;
+  confirmedCount?: number;
+  failed?: boolean;
+}): VueWrapper<InstanceType<typeof DataIssueSummaryBar>> {
   return mount(DataIssueSummaryBar, {
     global: {
       plugins: [createRuiPlugin({})],
@@ -19,13 +25,14 @@ function createWrapper(props: { counts: StateCounts; activeStates: string[]; fai
 }
 
 describe('dataIssueSummaryBar', () => {
-  it('should render one card per non-terminal summary state', () => {
-    const wrapper = createWrapper({ activeStates: [], counts: counts() });
+  it('should render one card per non-terminal summary state plus the confirmed card', () => {
+    const wrapper = createWrapper({ activeStates: [], confirmedCount: 3, counts: counts() });
 
     expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.OPEN}"]`).exists()).toBe(true);
     expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.AUTO_REMEDIATING}"]`).exists()).toBe(true);
     expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.UNRESOLVED}"]`).exists()).toBe(true);
-    // terminal states never get a card.
+    expect(wrapper.find('[data-testid=data-issue-summary-card][data-key="confirmed"]').text()).toContain('3');
+    // generic resolved/dismissed states never get a card.
     expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.RESOLVED}"]`).exists()).toBe(false);
   });
 
@@ -62,6 +69,17 @@ describe('dataIssueSummaryBar', () => {
 
     await wrapper.setProps({ counts: counts({ [IssueState.OPEN]: 1 }) });
     expect(wrapper.text()).not.toContain('data_issues.summary.all_clear');
+  });
+
+  it('should emit select-confirmed and mark only the confirmed card active when confirmedActive is true', async () => {
+    const wrapper = createWrapper({ activeStates: [IssueState.OPEN], confirmedActive: true, confirmedCount: 2, counts: counts() });
+
+    expect(wrapper.find('[data-testid=data-issue-summary-card][data-key="confirmed"]').attributes('aria-pressed')).toBe('true');
+    expect(wrapper.find(`[data-testid=data-issue-summary-card][data-key="${IssueState.OPEN}"]`).attributes('aria-pressed')).toBe('false');
+
+    await wrapper.find('[data-testid=data-issue-summary-card][data-key="confirmed"]').trigger('click');
+
+    expect(wrapper.emitted('select-confirmed')).toHaveLength(1);
   });
 
   it('should not claim all clear when the counts could not be refreshed', () => {

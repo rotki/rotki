@@ -26,6 +26,7 @@ export function emptyCounts(): StateCounts {
 export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', () => {
   const counts = ref<StateCounts>(emptyCounts());
   const baselineTotal = ref<number>(0);
+  const confirmedCount = ref<number>(0);
   /** The last summary refresh failed, so the counts are the previous ones and a 0 is not all clear. */
   const summaryFailed = ref<boolean>(false);
 
@@ -34,9 +35,10 @@ export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', 
   const actionableCount = computed<number>(() =>
     get(counts)[IssueState.OPEN] + get(counts)[IssueState.UNRESOLVED]);
 
-  function setSummary(newCounts: StateCounts, baseline: number): void {
+  function setSummary(newCounts: StateCounts, baseline: number, confirmed = 0): void {
     set(counts, newCounts);
     set(baselineTotal, baseline);
+    set(confirmedCount, confirmed);
     set(summaryFailed, false);
   }
 
@@ -54,6 +56,7 @@ export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', 
   return {
     actionableCount,
     baselineTotal,
+    confirmedCount,
     counts,
     dismissInlinePanels,
     markSummaryFailed,

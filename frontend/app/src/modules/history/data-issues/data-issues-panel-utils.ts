@@ -40,17 +40,27 @@ export function asSingle(value: FilterValue): string | undefined {
 }
 
 /**
+ * Whether a filter value enables the Confirmed (`manualOnly`) view, handling both boolean `true`
+ * from pill toggles and string `'true'` deserialized from URL query parameters.
+ */
+export function isManualOnlyFilter(value: unknown): boolean {
+  return value === true || value === 'true';
+}
+
+/**
  * Builds the list request for a page of the panel. With no state filter engaged the
  * panel falls back to the non-terminal states, so a resolved or dismissed issue never
  * appears in the preview.
  */
 export function buildPanelPayload(filters: Filters, offset: number): DataIssuesRequestPayload {
+  const manualOnly = isManualOnlyFilter(filters.manualOnly) ? true : undefined;
   return {
     asset: asSingle(filters.asset),
     kind: asMulti(filters.kind),
     limit: PANEL_PAGE_SIZE,
     locationLabel: asSingle(filters.locationLabel),
+    ...(manualOnly ? { manualOnly } : {}),
     offset,
-    state: asMulti(filters.state) ?? [...NON_TERMINAL_STATES],
+    state: asMulti(filters.state) ?? (manualOnly ? undefined : [...NON_TERMINAL_STATES]),
   };
 }

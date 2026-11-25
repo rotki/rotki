@@ -2,6 +2,7 @@ import { useI18n } from 'vue-i18n';
 import { IssueKind, IssueState } from '@/modules/history/data-issues/constants';
 
 interface UseDataIssuesFormatReturn {
+  dispositionLabel: (disposition: string) => string | undefined;
   stateLabel: (state: IssueState) => string;
   kindLabel: (kind: IssueKind) => string;
 }
@@ -12,6 +13,17 @@ interface UseDataIssuesFormatReturn {
  */
 export function useDataIssuesFormat(): UseDataIssuesFormatReturn {
   const { t } = useI18n({ useScope: 'global' });
+
+  const dispositionLabel = (disposition: string): string | undefined => {
+    switch (disposition) {
+      case 'confirm_zero_basis':
+        return t('data_issues.disposition.confirm_zero_basis');
+      case 'dismiss_as_standalone':
+        return t('data_issues.disposition.dismiss_as_standalone');
+      default:
+        return undefined;
+    }
+  };
 
   const stateLabel = (state: IssueState): string => {
     switch (state) {
@@ -40,10 +52,19 @@ export function useDataIssuesFormat(): UseDataIssuesFormatReturn {
         return t('data_issues.kind.rebasing_token');
       case IssueKind.UNMATCHED_BRIDGE:
         return t('data_issues.kind.unmatched_bridge');
+      case IssueKind.MISSING_PRICE:
+        return t('data_issues.kind.missing_price');
+      case IssueKind.MISSING_COST_BASIS:
+        return t('data_issues.kind.missing_cost_basis');
+      case IssueKind.INCOMPLETE_SWAP:
+        return t('data_issues.kind.incomplete_swap');
+      case IssueKind.UNMATCHED_EXCHANGE_TRANSFER:
+        return t('data_issues.kind.unmatched_exchange_transfer');
     }
   };
 
   return {
+    dispositionLabel,
     kindLabel,
     stateLabel,
   };

@@ -2,13 +2,15 @@
 import type { RouteLocationRaw } from 'vue-router';
 import { RuiButton, RuiCard, RuiDialog, RuiFileUpload, RuiIcon } from '@rotki/ui-library';
 import { storeToRefs } from 'pinia';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
+import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import { NoteLocation } from '@/modules/core/common/notes';
 import ReportGenerationStop from '@/modules/reports/ReportGenerationStop.vue';
 import ReportGenerator from '@/modules/reports/ReportGenerator.vue';
+import ReportReadinessBanner from '@/modules/reports/ReportReadinessBanner.vue';
 import ReportsTable from '@/modules/reports/ReportsTable.vue';
 import { useReportsStore } from '@/modules/reports/use-reports-store';
 import ErrorScreen from '@/modules/shell/components/error/ErrorScreen.vue';
@@ -43,6 +45,8 @@ const processingState = computed(() => reportsStore.processingState);
 const progress = computed(() => reportsStore.progress);
 
 const accountingSettingsRoute: RouteLocationRaw = { name: '/settings/accounting/' };
+const accountingUpdateEnabled = isAccountingUpdateEnabled();
+const selectedRange = ref<{ start: number | undefined; end: number | undefined }>({ end: undefined, start: undefined });
 </script>
 
 <template>
@@ -67,6 +71,13 @@ const accountingSettingsRoute: RouteLocationRaw = { name: '/settings/accounting/
       @generate="generate($event)"
       @export-data="exportData($event)"
       @import-data="modelImportDataDialog = true"
+      @update:range="selectedRange = $event"
+    />
+    <ReportReadinessBanner
+      v-if="accountingUpdateEnabled && !isRunning && !reportError.message"
+      class="mt-4"
+      :start-ts="selectedRange.start"
+      :end-ts="selectedRange.end"
     />
     <ErrorScreen
       v-if="!isRunning && reportError.message"

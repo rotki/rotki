@@ -117,7 +117,8 @@ describe('pages/reports/index', () => {
         stubs: {
           ErrorScreen: { props: ['message', 'error', 'title', 'subtitle'], template: '<div data-testid="error-stub"><slot name="bottom" /></div>' },
           ProgressScreen: { props: ['progress'], template: '<div data-testid="progress-stub"><slot name="message" /><slot /></div>' },
-          ReportGenerator: { emits: ['generate', 'export-data', 'import-data'], template: '<div data-testid="generator-stub" />' },
+          ReportGenerator: { emits: ['generate', 'export-data', 'import-data', 'update:range'], template: '<div data-testid="generator-stub" />' },
+          ReportReadinessBanner: { props: ['startTs', 'endTs'], template: '<div data-testid="readiness-stub" />' },
           ReportsTable: { template: '<div data-testid="table-stub" />' },
           // RuiDialog teleports its contents; a pass-through keeps them in the tree.
           RuiDialog: { props: ['modelValue', 'maxWidth'], template: '<div><slot /></div>' },

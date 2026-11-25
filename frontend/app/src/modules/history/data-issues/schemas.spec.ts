@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
-import { DataIssue, DataIssuesCollectionResponse, InvalidEventAmountPayload } from '@/modules/history/data-issues/schemas';
+import {
+  DataIssue,
+  DataIssuesCollectionResponse,
+  IncompleteSwapPayload,
+  InvalidEventAmountPayload,
+  MissingCostBasisPayload,
+  MissingPricePayload,
+  UnmatchedExchangeTransferPayload,
+} from '@/modules/history/data-issues/schemas';
 
 /**
  * A comparison as the backend stores it, before parsing.
@@ -111,5 +119,81 @@ describe('invalid event amount schema', () => {
     const payload = InvalidEventAmountPayload.parse(parsed.entries[0]?.payload);
     expect(payload.eventIdentifier).toBe(42);
     expect(payload.amount.toString()).toBe('-0.05');
+  });
+});
+
+describe('pnl data issue schemas', () => {
+  it('should parse top-level eventIdentifier and suggestedActions on DataIssue', () => {
+    const issue = DataIssue.parse({
+      asset: 'ETH',
+      autoRemediationAttempts: [],
+      createdAt: 100,
+      eventIdentifier: 99,
+      groupIdentifier: 'grp-99',
+      id: 12,
+      kind: IssueKind.MISSING_PRICE,
+      location: 'ethereum',
+      locationLabel: null,
+      payload: {
+        amount: '1.5',
+        direction: 'spend',
+        eventIdentifier: 99,
+        groupIdentifier: 'grp-99',
+        toAsset: 'USD',
+      },
+      protocol: null,
+      resolvedAt: null,
+      severity: IssueSeverity.WARNING,
+      state: IssueState.OPEN,
+      suggestedActions: [{
+        action: 'set_manual_price',
+        endpoint: 'PUT /api/1/assets/prices/manual',
+        params: { fromAsset: 'ETH', toAsset: 'USD' },
+        requiresInput: ['price'],
+      }],
+      tsEnd: 1710000000000,
+      tsStart: 1710000000000,
+    });
+
+    expect(issue.eventIdentifier).toBe(99);
+    expect(issue.suggestedActions).toHaveLength(1);
+    expect(issue.suggestedActions[0]?.action).toBe('set_manual_price');
+
+    const payload = MissingPricePayload.parse(issue.payload);
+    expect(payload.amount.toString()).toBe('1.5');
+    expect(payload.toAsset).toBe('USD');
+  });
+
+  it('should parse missing_cost_basis, incomplete_swap, and unmatched_exchange_transfer payloads', () => {
+    const costBasis = MissingCostBasisPayload.parse({
+      coveredAmount: '1',
+      eventIdentifier: 10,
+      fallbackBasis: '0',
+      groupIdentifier: 'g-10',
+      requestedAmount: '3',
+      uncoveredAmount: '2',
+    });
+    expect(costBasis.uncoveredAmount.toString()).toBe('2');
+
+    const swap = IncompleteSwapPayload.parse({
+      eventIdentifier: 11,
+      eventIdentifiers: [11],
+      excludedAssets: ['SPAM'],
+      groupIdentifier: 'g-11',
+      missingOrExcludedReason: 'ignored_asset',
+      presentLegs: [{ amount: '0.5', asset: 'ETH', eventIdentifier: 11, subtype: 'receive' }],
+    });
+    expect(swap.excludedAssets).toStrictEqual(['SPAM']);
+    expect(swap.presentLegs[0]?.amount.toString()).toBe('0.5');
+
+    const transfer = UnmatchedExchangeTransferPayload.parse({
+      amount: '4.2',
+      eventIdentifier: 12,
+      groupIdentifier: 'g-12',
+      subtype: 'spend',
+      txRef: '0xabc',
+    });
+    expect(transfer.amount.toString()).toBe('4.2');
+    expect(transfer.subtype).toBe('spend');
   });
 });

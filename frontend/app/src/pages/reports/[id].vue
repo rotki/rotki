@@ -3,6 +3,7 @@ import { RuiAlert, RuiButton, RuiIcon, RuiSkeletonLoader } from '@rotki/ui-libra
 import { useI18n } from 'vue-i18n';
 import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
+import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import { NoteLocation } from '@/modules/core/common/notes';
 import AccountingSettingsDisplay from '@/modules/reports/AccountingSettingsDisplay.vue';
 import ExportReportCsv from '@/modules/reports/ExportReportCsv.vue';
@@ -10,6 +11,7 @@ import ProfitLossEvents from '@/modules/reports/ProfitLossEvents.vue';
 import ProfitLossOverview from '@/modules/reports/ProfitLossOverview.vue';
 import ReportActionable from '@/modules/reports/ReportActionable.vue';
 import ReportHeader from '@/modules/reports/ReportHeader.vue';
+import ReportReadinessBanner from '@/modules/reports/ReportReadinessBanner.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { useReportDetail } from '@/pages/reports/use-report-detail';
 
@@ -27,6 +29,7 @@ defineOptions({
 });
 
 const { t } = useI18n({ useScope: 'global' });
+const accountingUpdateEnabled = isAccountingUpdateEnabled();
 
 const {
   eventsSkippedCount,
@@ -98,6 +101,11 @@ const {
       v-else
       class="flex flex-col gap-6"
     >
+      <ReportReadinessBanner
+        v-if="accountingUpdateEnabled"
+        :start-ts="selectedReport.startTs"
+        :end-ts="selectedReport.endTs"
+      />
       <RuiAlert
         v-if="showCompletenessWarning"
         type="warning"

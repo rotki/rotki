@@ -12,9 +12,8 @@ import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import DataIssueDecodingReview from '@/modules/history/data-issues/components/DataIssueDecodingReview.vue';
 import DataIssueDetailContent from '@/modules/history/data-issues/components/DataIssueDetailContent.vue';
 import DataIssuePanelCard from '@/modules/history/data-issues/components/DataIssuePanelCard.vue';
+import DataIssueRemediationModals from '@/modules/history/data-issues/components/DataIssueRemediationModals.vue';
 import ResolveManuallyDialog from '@/modules/history/data-issues/components/ResolveManuallyDialog.vue';
-import { panelFilterFields } from '@/modules/history/data-issues/data-issues-panel-utils';
-import { useDataIssueFields } from '@/modules/history/data-issues/use-data-issue-fields';
 import { ITEM_HEIGHT, useDataIssuesPanel } from '@/modules/history/data-issues/use-data-issues-panel';
 import { usePanelFilterEngagement } from '@/modules/history/data-issues/use-panel-filter-engagement';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
@@ -32,7 +31,6 @@ const { t } = useI18n({ useScope: 'global' });
 const review = ref<RemediationTimelineItem>();
 const panelFilters = ref<Filters>({});
 
-const panelFields = panelFilterFields(useDataIssueFields());
 const pillLabels = usePillBarLabels();
 const hasPanelFilters = computed<boolean>(() => Object.keys(get(panelFilters)).length > 0);
 
@@ -40,9 +38,11 @@ const filterWrapper = useTemplateRef<HTMLElement>('filterWrapper');
 const filterEngaged = usePanelFilterEngagement(filterWrapper);
 
 const {
-  actionFailure,
   clearSelection,
+  combinedActionFailure,
   containerProps,
+  detailBusy,
+  detailFailure,
   error,
   goToEvent,
   hasActiveSelection,
@@ -52,24 +52,32 @@ const {
   loadingMore,
   modelActionBusy,
   modelDrawerOpen,
+  modelEventForm,
+  modelMatchingOpen,
+  modelPriceUpdate,
   modelResolveOpen,
   modelSelectedIssue,
+  modelSubModalOpen,
   onDismiss,
+  onModalSaved,
+  onReopen,
   onResolveConfirm,
   onResolveFromCard,
   onResolveRequest,
   onRetry,
   openDetail,
+  panelFields,
   refreshList,
   reloadAll,
+  remediationModalOpen,
   resolveFailure,
-  selectedIssueFailure,
+  runRemediation,
   visibleRows,
   wrapperProps,
 } = useDataIssuesPanel(panelFilters);
 
-watch([modelDrawerOpen, modelResolveOpen, filterEngaged, review], ([drawer, resolve, filter, comparison]) => {
-  set(subDialogOpen, drawer || resolve || filter || !!comparison);
+watch([modelDrawerOpen, modelResolveOpen, filterEngaged, review, remediationModalOpen], ([drawer, resolve, filter, comparison, modal]) => {
+  set(subDialogOpen, drawer || resolve || filter || !!comparison || modal);
 });
 
 watchDebounced(panelFilters, () => {
@@ -135,10 +143,10 @@ onMounted(() => {
     </RuiAlert>
 
     <FailureStrip
-      v-if="actionFailure && !modelDrawerOpen"
+      v-if="combinedActionFailure && !modelDrawerOpen"
       class="mx-3 mt-2 shrink-0"
-      :title="actionFailure.title"
-      :failure="actionFailure.failure"
+      :title="combinedActionFailure.title"
+      :failure="combinedActionFailure.failure"
       data-testid="data-issues-panel-action-failure"
     />
 
@@ -231,6 +239,7 @@ onMounted(() => {
             @open="openDetail(row.issue)"
             @goto="goToEvent($event)"
             @dismiss="onDismiss($event.id)"
+            @reopen="onReopen($event.id)"
             @retry="onRetry($event.id)"
             @resolve="onResolveFromCard($event)"
           />
@@ -275,10 +284,12 @@ onMounted(() => {
     >
       <DataIssueDetailContent
         :issue="modelSelectedIssue"
-        :busy="modelActionBusy"
-        :failure="selectedIssueFailure"
+        :busy="detailBusy"
+        :failure="detailFailure"
         @close="modelDrawerOpen = false"
         @dismiss="onDismiss($event)"
+        @remediate="runRemediation($event)"
+        @reopen="onReopen($event)"
         @retry="onRetry($event)"
         @resolve="onResolveRequest()"
         @review="review = $event; modelDrawerOpen = false"
@@ -296,6 +307,14 @@ onMounted(() => {
       :loading="modelActionBusy"
       :failure="resolveFailure"
       @confirm="onResolveConfirm($event)"
+    />
+
+    <DataIssueRemediationModals
+      v-model:price-update="modelPriceUpdate"
+      v-model:event-form="modelEventForm"
+      v-model:matching-open="modelMatchingOpen"
+      v-model:sub-modal-open="modelSubModalOpen"
+      @saved="onModalSaved()"
     />
   </div>
 </template>

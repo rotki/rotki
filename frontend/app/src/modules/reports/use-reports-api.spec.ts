@@ -367,6 +367,83 @@ describe('composables/api/reports/index', () => {
     });
   });
 
+  describe('fetchReportReadiness', () => {
+    it('should POST /history/events/pnl with snake_case timestamps and parse reportReadiness', async () => {
+      let capturedBody: DefaultBodyType = null;
+      server.use(
+        http.post(`${backendUrl}/api/1/history/events/pnl`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({
+            message: '',
+            result: {
+              num_unpriced_events: 1,
+              num_unruled_events: 4,
+              report_readiness: {
+                evaluated_through_ts: 1700100000000,
+                num_unpriced_events: 1,
+                num_unruled_events: 4,
+                open_issues_by_kind: { missing_price: 1 },
+                open_issues_count: 1,
+                ready: false,
+                stale: false,
+              },
+              stale: false,
+            },
+          });
+        }),
+      );
+
+      const { fetchReportReadiness } = useReportsApi();
+      const readiness = await fetchReportReadiness({ fromTimestamp: 1700000000, toTimestamp: 1700100000 });
+
+      expect(capturedBody).toEqual({
+        from_timestamp: 1700000000,
+        to_timestamp: 1700100000,
+      });
+      expect(readiness).toStrictEqual({
+        evaluatedThroughTs: 1700100000000,
+        numUnpricedEvents: 1,
+        numUnruledEvents: 4,
+        openIssuesByKind: { missing_price: 1 },
+        openIssuesCount: 1,
+        ready: false,
+        stale: false,
+      });
+    });
+
+    it('should omit zero or undefined timestamp bounds from the request body', async () => {
+      let capturedBody: DefaultBodyType = null;
+      server.use(
+        http.post(`${backendUrl}/api/1/history/events/pnl`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({
+            message: '',
+            result: {
+              num_unpriced_events: 0,
+              num_unruled_events: 0,
+              report_readiness: {
+                evaluated_through_ts: null,
+                num_unpriced_events: 0,
+                num_unruled_events: 0,
+                open_issues_by_kind: {},
+                open_issues_count: 0,
+                ready: true,
+                stale: false,
+              },
+              stale: false,
+            },
+          });
+        }),
+      );
+
+      const { fetchReportReadiness } = useReportsApi();
+      const readiness = await fetchReportReadiness({ fromTimestamp: 0, toTimestamp: undefined });
+
+      expect(capturedBody).toEqual({});
+      expect(readiness.ready).toBe(true);
+    });
+  });
+
   describe('fetchReports', () => {
     it('should fetch and parses reports list', async () => {
       server.use(

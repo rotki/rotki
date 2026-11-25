@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { RemediationTimelineItem } from '@/modules/history/data-issues/types';
+import type { RemediationRequest } from '@/modules/history/data-issues/use-data-issue-remediation-actions';
 import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import { RuiNavigationDrawer } from '@rotki/ui-library';
 import { ref } from 'vue';
@@ -16,15 +17,19 @@ import DataIssueDetailContent from '@/modules/history/data-issues/components/Dat
  */
 const open = defineModel<boolean>({ required: true });
 
-const { issue, busy = false, failure } = defineProps<{
+const { busy = false, failure, issue, modalOpen = false } = defineProps<{
   issue?: DataIssue;
   busy?: boolean;
+  /** Keeps the drawer stateless while a child remediation dialog is open above it. */
+  modalOpen?: boolean;
   /** The last failed dismiss or retry on this issue, named in its detail. */
   failure?: NamedFailure;
 }>();
 
 const emit = defineEmits<{
   dismiss: [id: number];
+  remediate: [request: RemediationRequest];
+  reopen: [id: number];
   retry: [id: number];
   resolve: [id: number];
 }>();
@@ -37,7 +42,7 @@ const review = ref<RemediationTimelineItem>();
     below-app-bar
     width="570px"
     temporary
-    :stateless="!!review"
+    :stateless="!!review || modalOpen"
     position="right"
     class="flex flex-col"
     :class-names="{ content: 'flex flex-col' }"
@@ -49,6 +54,8 @@ const review = ref<RemediationTimelineItem>();
       :failure="failure"
       @close="open = false"
       @dismiss="emit('dismiss', $event)"
+      @remediate="emit('remediate', $event)"
+      @reopen="emit('reopen', $event)"
       @retry="emit('retry', $event)"
       @resolve="emit('resolve', $event)"
       @review="review = $event"

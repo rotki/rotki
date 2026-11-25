@@ -63,6 +63,7 @@ describe('pages/reports/[id]', () => {
           ProfitLossOverview: { props: ['report', 'symbol', 'loading'], template: '<div data-testid="overview-stub" />' },
           ReportActionable: { emits: ['regenerate'], props: ['report', 'initialOpen'], template: '<div data-testid="actionable-stub" />' },
           ReportHeader: { props: ['period'], template: '<div data-testid="header-stub" />' },
+          ReportReadinessBanner: { props: ['startTs', 'endTs'], template: '<div data-testid="readiness-stub" />' },
         },
       },
     });

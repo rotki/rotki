@@ -102,8 +102,24 @@ vi.mock('@/modules/history/data-issues/use-data-issues', () => ({
     dismiss: spies.dismiss,
     fetchData: vi.fn(),
     fetchIssue: vi.fn(),
+    reopen: vi.fn(),
     resolveManually: vi.fn(),
     retry: vi.fn(),
+  }),
+}));
+
+vi.mock('@/modules/history/data-issues/use-data-issue-remediation-actions', () => ({
+  useDataIssueRemediationActions: (): Record<string, unknown> => ({
+    actionFailure: ref(undefined),
+    busy: ref(false),
+    clearFailure: vi.fn(),
+    hasModalOpen: ref(false),
+    modelEventForm: ref(undefined),
+    modelMatchingOpen: ref(false),
+    modelPriceUpdate: ref(undefined),
+    modelSubModalOpen: ref(false),
+    onModalSaved: vi.fn(),
+    runRemediation: vi.fn(),
   }),
 }));
 
@@ -121,6 +137,7 @@ vi.mock('@/modules/history/data-issues/use-data-issues-summary', () => ({
     return {
       actionableCount: ref(0),
       baselineTotal: ref(state.baselineTotal),
+      confirmedCount: ref(0),
       counts: ref({}),
       dismissInlinePanels: table.dismissInlinePanels,
       refreshSummary: vi.fn().mockResolvedValue(undefined),
@@ -134,6 +151,7 @@ function createIssue(id: number, issueState: IssueState): DataIssue {
     asset: 'ETH',
     autoRemediationAttempts: [],
     createdAt: 1710000100,
+    eventIdentifier: null,
     groupIdentifier: null,
     id,
     kind: IssueKind.NEGATIVE_BALANCE,
@@ -144,6 +162,7 @@ function createIssue(id: number, issueState: IssueState): DataIssue {
     resolvedAt: null,
     severity: IssueSeverity.WARNING,
     state: issueState,
+    suggestedActions: [],
     tsEnd: 1710000000,
     tsStart: 1710000000,
   };
@@ -155,11 +174,12 @@ async function createWrapper(mainPage = true): Promise<VueWrapper<InstanceType<t
       plugins: [createPinia()],
       stubs: {
         DataIssueDetailDrawer: true,
+        DataIssueRemediationModals: true,
+        DataIssuesFilterBar: true,
+        DataIssuesHeaderButtons: true,
         DataIssuesTable: true,
-        DataIssuesTabs: true,
         DataIssueSummaryBar: true,
         NoDataScreen: true,
-        PillFilterBar: true,
         ResolveManuallyDialog: true,
         TablePageLayout: { template: '<div><slot /></div>' },
       },

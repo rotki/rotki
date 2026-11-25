@@ -1,20 +1,19 @@
 <script setup lang="ts">
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
-import { RuiAlert, RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
+import { RuiAlert } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
-import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import DataIssueDetailDrawer from '@/modules/history/data-issues/components/DataIssueDetailDrawer.vue';
+import DataIssueRemediationModals from '@/modules/history/data-issues/components/DataIssueRemediationModals.vue';
+import DataIssuesFilterBar from '@/modules/history/data-issues/components/DataIssuesFilterBar.vue';
+import DataIssuesHeaderButtons from '@/modules/history/data-issues/components/DataIssuesHeaderButtons.vue';
 import DataIssuesTable from '@/modules/history/data-issues/components/DataIssuesTable.vue';
 import DataIssueSummaryBar from '@/modules/history/data-issues/components/DataIssueSummaryBar.vue';
 import ResolveManuallyDialog from '@/modules/history/data-issues/components/ResolveManuallyDialog.vue';
-import DataIssuesTabs from '@/modules/history/data-issues/DataIssuesTabs.vue';
 import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-data-issue-detail-actions';
-import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
-import { useDataIssuesDetection } from '@/modules/history/data-issues/use-data-issues-detection';
+import { useDataIssuesDeepLink } from '@/modules/history/data-issues/use-data-issues-deep-link';
 import { useDataIssuesPageList } from '@/modules/history/data-issues/use-data-issues-page-list';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
@@ -30,29 +29,40 @@ const { mainPage = false } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
-const currentRoute = router.currentRoute;
-
-const { fetchIssue } = useDataIssues();
 
 const {
   activeStates,
   clearFilters,
   collection: state,
+  confirmedActive,
+  confirmedCount,
   counts,
+  detect,
+  detectFailure,
+  detecting,
   dismissInlinePanels,
+  fetchIssue,
   fields,
   hasActiveFilters,
   isAllClear,
   isEmpty,
-  modelFilters: filters,
-  modelPagination: pagination,
+  modelEventForm,
+  modelFilters,
+  modelMatchingOpen,
+  modelPagination,
+  modelPriceUpdate,
+  modelSubModalOpen,
+  onModalSaved,
   reloadAll,
+  remediationBusy,
+  remediationFailure,
+  remediationModalOpen,
+  runRemediation,
+  selectConfirmed,
   selectState,
   showLoading,
   summaryFailed,
 } = useDataIssuesPageList(() => mainPage);
-
-const pillLabels = usePillBarLabels();
 
 const {
   actionFailure,
@@ -61,6 +71,7 @@ const {
   modelResolveOpen,
   modelSelectedIssue,
   onDismiss,
+  onReopen,
   onResolveConfirm,
   onResolveRequest,
   onRetry,
@@ -69,70 +80,16 @@ const {
   selectedIssueFailure,
 } = useDataIssueDetailActions(reloadAll, () => get(state).data);
 
-const { detect, detectFailure, detecting } = useDataIssuesDetection(reloadAll);
-
-/** A dead `?issue=` link is reported inline instead of as a toast about the whole inbox. */
-const deepLinkError = ref<string>();
-const deepLinkIssueId = ref<number>();
-
-async function clearIssueQuery(): Promise<void> {
-  if (get(currentRoute).query.issue === undefined)
-    return;
-
-  const { issue: _issue, ...query } = get(currentRoute).query;
-  set(deepLinkError, undefined);
-  set(deepLinkIssueId, undefined);
-  await router.replace({ query });
-}
-
-async function openIssueFromQuery(): Promise<void> {
-  if (!mainPage)
-    return;
-
-  const raw = get(currentRoute).query.issue;
-  if (raw === undefined) {
-    set(deepLinkError, undefined);
-    set(deepLinkIssueId, undefined);
-    return;
-  }
-
-  const id = typeof raw === 'string' ? Number(raw) : Number.NaN;
-  if (!Number.isInteger(id) || id <= 0) {
-    set(deepLinkError, t('data_issues.deep_link.invalid', { id: String(raw) }));
-    return;
-  }
-
-  if (id === get(deepLinkIssueId))
-    return;
-
-  set(deepLinkIssueId, id);
-  set(deepLinkError, undefined);
-
-  const result = await fetchIssue(id);
-  if (id !== get(deepLinkIssueId))
-    return;
-
-  if (result.issue) {
-    openDetail(result.issue);
-    return;
-  }
-
-  set(deepLinkError, t('data_issues.deep_link.missing', {
-    error: result.error ?? '',
-    id,
-  }));
-}
-
-/**
- * The drawer fetches the issue itself, so a filter that excludes it does not matter. Removing the
- * query when the drawer closes keeps a later reload from reopening a link the user has dismissed.
- */
-watch(() => get(currentRoute).query.issue, openIssueFromQuery, { immediate: true });
-
-watch(modelDrawerOpen, async (open) => {
-  if (!open)
-    await clearIssueQuery();
+const { clearIssueQuery, deepLinkError } = useDataIssuesDeepLink({
+  drawerOpen: modelDrawerOpen,
+  enabled: () => mainPage,
+  fetchIssue,
+  openDetail,
 });
+
+const combinedActionFailure = computed(() => get(remediationFailure) ?? get(actionFailure));
+const drawerFailure = computed(() => get(remediationFailure) ?? get(selectedIssueFailure));
+const drawerBusy = computed<boolean>(() => get(modelActionBusy) || get(remediationBusy));
 
 const emptyDescription = computed<string>(() =>
   get(hasActiveFilters)
@@ -178,42 +135,12 @@ onMounted(async () => {
     v-bind="$attrs"
   >
     <template #buttons>
-      <DataIssuesTabs />
-      <RuiTooltip :open-delay="400">
-        <template #activator>
-          <RuiButton
-            variant="outlined"
-            color="primary"
-            :loading="detecting"
-            data-testid="data-issues-detect"
-            @click="detect()"
-          >
-            <template #prepend>
-              <RuiIcon name="lu-scale" />
-            </template>
-            {{ t('data_issues.detect.action') }}
-          </RuiButton>
-        </template>
-        {{ t('data_issues.detect.tooltip') }}
-      </RuiTooltip>
-
-      <RuiTooltip :open-delay="400">
-        <template #activator>
-          <RuiButton
-            variant="outlined"
-            color="primary"
-            :loading="showLoading"
-            data-testid="data-issues-refresh"
-            @click="reloadAll()"
-          >
-            <template #prepend>
-              <RuiIcon name="lu-refresh-ccw" />
-            </template>
-            {{ t('common.refresh') }}
-          </RuiButton>
-        </template>
-        {{ t('data_issues.refresh_tooltip') }}
-      </RuiTooltip>
+      <DataIssuesHeaderButtons
+        :detecting="detecting"
+        :loading="showLoading"
+        @detect="detect()"
+        @refresh="reloadAll()"
+      />
     </template>
 
     <FailureStrip
@@ -254,20 +181,23 @@ onMounted(async () => {
     >
       <DataIssueSummaryBar
         :counts="counts"
+        :confirmed-count="confirmedCount"
+        :confirmed-active="confirmedActive"
         :failed="summaryFailed"
         :active-states="activeStates"
         @select="selectState($event)"
+        @select-confirmed="selectConfirmed()"
       />
 
       <FailureStrip
-        v-if="actionFailure && !modelDrawerOpen"
-        :title="actionFailure.title"
-        :failure="actionFailure.failure"
+        v-if="combinedActionFailure && !modelDrawerOpen"
+        :title="combinedActionFailure.title"
+        :failure="combinedActionFailure.failure"
         data-testid="data-issues-action-failure"
       />
 
       <DataIssuesTable
-        v-model:pagination="pagination"
+        v-model:pagination="modelPagination"
         :rows="state.data"
         :loading="showLoading"
         :empty-description="emptyDescription"
@@ -275,16 +205,15 @@ onMounted(async () => {
         @open="openDetail($event)"
         @goto="router.push($event)"
         @dismiss="onDismiss($event.id)"
+        @reopen="onReopen($event.id)"
         @retry="onRetry($event.id)"
         @resolve="onResolveFromRow($event)"
         @clear-filters="clearFilters()"
       >
         <template #toolbar>
-          <PillFilterBar
-            v-model:matches="filters"
-            class="flex-1 min-w-64"
+          <DataIssuesFilterBar
+            v-model="modelFilters"
             :fields="fields"
-            :labels="pillLabels"
           />
         </template>
       </DataIssuesTable>
@@ -293,9 +222,12 @@ onMounted(async () => {
     <DataIssueDetailDrawer
       v-model="modelDrawerOpen"
       :issue="modelSelectedIssue"
-      :busy="modelActionBusy"
-      :failure="selectedIssueFailure"
+      :busy="drawerBusy"
+      :modal-open="remediationModalOpen"
+      :failure="drawerFailure"
       @dismiss="onDismiss($event)"
+      @remediate="runRemediation($event)"
+      @reopen="onReopen($event)"
       @retry="onRetry($event)"
       @resolve="onResolveRequest()"
     />
@@ -305,6 +237,14 @@ onMounted(async () => {
       :loading="modelActionBusy"
       :failure="resolveFailure"
       @confirm="onResolveConfirm($event)"
+    />
+
+    <DataIssueRemediationModals
+      v-model:price-update="modelPriceUpdate"
+      v-model:event-form="modelEventForm"
+      v-model:matching-open="modelMatchingOpen"
+      v-model:sub-modal-open="modelSubModalOpen"
+      @saved="onModalSaved()"
     />
   </TablePageLayout>
 </template>

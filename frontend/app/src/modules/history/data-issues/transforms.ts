@@ -9,6 +9,12 @@ import { pipe } from 'plainfp/pipe';
 import { type MessageKey, msg } from '@/message-key';
 import { IssueKind } from '@/modules/history/data-issues/constants';
 import {
+  describeIncompleteSwap,
+  describeMissingCostBasis,
+  describeMissingPrice,
+  describeUnmatchedExchangeTransfer,
+} from '@/modules/history/data-issues/pnl-transforms';
+import {
   type AutoRemediationAttempt,
   CurrentBalanceMismatchPayload,
   type DataIssue,
@@ -167,10 +173,14 @@ function describeInvalidEventAmount(issue: DataIssue): IssueDescription | undefi
 
 const KIND_DESCRIBERS: Partial<Record<IssueKind, (issue: DataIssue) => IssueDescription | undefined>> = {
   [IssueKind.CURRENT_BALANCE_MISMATCH]: describeBalanceMismatch,
+  [IssueKind.INCOMPLETE_SWAP]: describeIncompleteSwap,
   [IssueKind.INVALID_EVENT_AMOUNT]: describeInvalidEventAmount,
+  [IssueKind.MISSING_COST_BASIS]: describeMissingCostBasis,
+  [IssueKind.MISSING_PRICE]: describeMissingPrice,
   [IssueKind.NEGATIVE_BALANCE]: describeNegativeBalance,
   [IssueKind.REBASING_TOKEN]: describeRebasingToken,
   [IssueKind.UNMATCHED_BRIDGE]: describeUnmatchedBridge,
+  [IssueKind.UNMATCHED_EXCHANGE_TRANSFER]: describeUnmatchedExchangeTransfer,
 };
 
 export function describeIssue(issue: DataIssue): IssueDescription {
@@ -213,6 +223,15 @@ export function negativeBalanceValues(issue: DataIssue): NegativeBalanceValues |
  * arrival (the `asset` matcher key is read straight from the route). Shared by the
  * detail drawer and the inbox panel so both navigate consistently.
  */
+const HIGHLIGHTED_EVENT_KINDS: ReadonlySet<IssueKind> = new Set([
+  IssueKind.NEGATIVE_BALANCE,
+  IssueKind.INVALID_EVENT_AMOUNT,
+  IssueKind.REBASING_TOKEN,
+  IssueKind.MISSING_PRICE,
+  IssueKind.MISSING_COST_BASIS,
+  IssueKind.INCOMPLETE_SWAP,
+]);
+
 export function relatedEventRoute(
   kind: IssueKind,
   eventIdentifier: number | undefined,
@@ -223,17 +242,13 @@ export function relatedEventRoute(
     return undefined;
 
   const name = '/history/events/';
-  const query: Record<string, string> = {};
-
-  if (kind === IssueKind.UNMATCHED_BRIDGE) {
+  if (kind === IssueKind.UNMATCHED_BRIDGE)
     return { name, query: { openMatchBridgesDialog: 'true' } };
-  }
+  if (kind === IssueKind.UNMATCHED_EXCHANGE_TRANSFER)
+    return { name, query: { openMatchAssetMovementsDialog: 'true' } };
 
-  if (
-    kind === IssueKind.NEGATIVE_BALANCE
-    || kind === IssueKind.INVALID_EVENT_AMOUNT
-    || kind === IssueKind.REBASING_TOKEN
-  ) {
+  const query: Record<string, string> = {};
+  if (HIGHLIGHTED_EVENT_KINDS.has(kind)) {
     query.highlightedNegativeBalanceEvent = eventIdentifier.toString();
     if (groupIdentifier)
       query.targetGroupIdentifier = groupIdentifier;

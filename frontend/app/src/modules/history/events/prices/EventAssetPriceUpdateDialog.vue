@@ -13,6 +13,10 @@ import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 const modelValue = defineModel<EventPriceUpdatePayload | undefined>({ required: true });
 
+const emit = defineEmits<{
+  saved: [];
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 const currencySymbol = useSetting('currencySymbol');
 
@@ -31,7 +35,9 @@ const {
   saveError,
   saving,
   showModeChoice,
-} = useEventPriceUpdateDialog(modelValue);
+} = useEventPriceUpdateDialog(modelValue, {
+  onSaved: () => emit('saved'),
+});
 </script>
 
 <template>

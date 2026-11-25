@@ -28,6 +28,7 @@ const emit = defineEmits<{
   open: [];
   goto: [route: RouteLocationRaw];
   dismiss: [issue: DataIssue];
+  reopen: [issue: DataIssue];
   retry: [issue: DataIssue];
   resolve: [issue: DataIssue];
 }>();
@@ -152,6 +153,7 @@ useMutationObserver(descriptionRef, checkTruncation, { characterData: true, chil
             :event-route="eventRoute"
             @goto="emit('goto', $event)"
             @dismiss="emit('dismiss', $event)"
+            @reopen="emit('reopen', $event)"
             @retry="emit('retry', $event)"
             @resolve="emit('resolve', $event)"
           />
