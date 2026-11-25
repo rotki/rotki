@@ -26,7 +26,6 @@ interface UseAggregatedBalancesReturn {
   getLiabilities: (hideIgnored?: boolean) => AssetBalanceWithPriceAndChains[];
   getAssetPriceInfo: (identifier: string, groupMultiChain?: boolean) => AssetPriceInfo;
   assets: ComputedRef<string[]>;
-  getBlockchainBalances: (chains?: string[], groupId?: string, key?: keyof EthBalance) => AssetBalanceWithPriceAndChains[];
   useBlockchainBalances: (chains: MaybeRefOrGetter<string[]>, groupId?: MaybeRefOrGetter<string>, key?: keyof EthBalance) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   getExchangeBalances: (exchange?: string) => AssetBalanceWithPriceAndChains[];
   getExchangeAccountBalances: (exchange: string, identifier: string) => AssetBalanceWithPriceAndChains[];
@@ -105,27 +104,19 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const useLiabilities = (hideIgnored = true): ComputedRef<AssetBalanceWithPriceAndChains[]> =>
     computed<AssetBalanceWithPriceAndChains[]>(() => getLiabilities(hideIgnored));
 
-  /** On-chain balances of the given chains, or every chain, narrowed to one account group when given. */
-  function getBlockchainBalances(
-    chains: string[] = [],
-    groupId?: string,
-    key: keyof EthBalance = 'assets',
-  ): AssetBalanceWithPriceAndChains[] {
-    const source = fromBlockchain(get(blockchainBalances), {
-      addresses: groupId ? groupAddresses(get(accounts), groupId) : undefined,
-      chains,
-      key,
-    });
-    return summarizeBalances([source], context);
-  }
-
   const useBlockchainBalances = (
     chains: MaybeRefOrGetter<string[]> = [],
     groupId?: MaybeRefOrGetter<string>,
     key: keyof EthBalance = 'assets',
-  ): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() =>
-    getBlockchainBalances(toValue(chains), groupId ? toValue(groupId) : undefined, key),
-  );
+  ): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() => {
+    const group = groupId ? toValue(groupId) : undefined;
+    const source = fromBlockchain(get(blockchainBalances), {
+      addresses: group ? groupAddresses(get(accounts), group) : undefined,
+      chains: toValue(chains),
+      key,
+    });
+    return summarizeBalances([source], context);
+  });
 
   /** One exchange's balances, or every exchange's together. */
   function getExchangeBalances(exchange?: string): AssetBalanceWithPriceAndChains[] {
@@ -204,7 +195,6 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     balancesByLocation,
     getAssetPriceInfo,
     getBalances,
-    getBlockchainBalances,
     getExchangeAccountBalances,
     getExchangeBalances,
     getLiabilities,

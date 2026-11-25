@@ -1,6 +1,18 @@
 import type { AggregationContext, AssetBalanceEntries } from '@/modules/balances/aggregation/core/aggregation-types';
 import { addBalanceEntry } from '@/modules/balances/aggregation/core/balance-entry';
 
+type ListingContext = Pick<AggregationContext, 'isAssetIgnored' | 'resolveIdentifier'>;
+
+/**
+ * Whether an asset shows in the balance tables: under its resolved identifier, it is not ignored.
+ *
+ * @remarks
+ * The rule {@link mergeSources} applies, which inlines it to resolve each identifier only once.
+ */
+export function isListedAsset(asset: string, context: ListingContext): boolean {
+  return !context.isAssetIgnored(context.resolveIdentifier(asset));
+}
+
 /**
  * Merges normalised sources into one set keyed by resolved identifier.
  *
@@ -10,7 +22,7 @@ import { addBalanceEntry } from '@/modules/balances/aggregation/core/balance-ent
  */
 export function mergeSources(
   sources: readonly AssetBalanceEntries[],
-  context: Pick<AggregationContext, 'isAssetIgnored' | 'resolveIdentifier'>,
+  context: ListingContext,
   hideIgnored: boolean,
 ): AssetBalanceEntries {
   const merged: AssetBalanceEntries = {};

@@ -20,8 +20,8 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
 
 const stubs = {
   AccountDetailsAssets: {
-    props: { chains: Array, groupId: String, limit: Number, hideEmpty: Boolean },
-    template: '<div data-testid="assets-stub" :data-chains="chains.join(\',\')" :data-group="groupId" :data-limit="limit" :data-hide-empty="hideEmpty"><slot name="header" :value="15" /></div>',
+    props: ['chains', 'groupId', 'limit'],
+    template: '<div data-testid="assets-stub" :data-chains="chains.join(\',\')" :data-group="groupId" :data-limit="limit"><slot name="header" :value="15" /></div>',
   },
   ChainIcon: true,
   FiatDisplay: { props: ['value'], template: '<span data-testid="value">{{ value.toString() }}</span>' },
@@ -62,9 +62,5 @@ describe('modules/accounts/details/AccountDetailsChainSection', () => {
 
   it('should cap the chain at its ten most valuable assets, so a big chain does not bury the next', () => {
     expect(createWrapper().find('[data-testid=assets-stub]').attributes('data-limit')).toBe('10');
-  });
-
-  it('should leave out the assets table of a chain with nothing on it', () => {
-    expect(createWrapper().find('[data-testid=assets-stub]').attributes('data-hide-empty')).toBe('true');
   });
 });

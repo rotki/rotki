@@ -9,7 +9,7 @@ import TableSearchField from '@/modules/core/table/TableSearchField.vue';
 
 const selected = defineModel<string[] | undefined>('selected', { required: true });
 
-const { chains, groupId, hideEmpty = false, limit, searchable = false, selectionMode = false } = defineProps<{
+const { chains, groupId, limit, searchable = false, selectionMode = false } = defineProps<{
   groupId: string;
   chains: string[];
   selectionMode?: boolean;
@@ -17,8 +17,6 @@ const { chains, groupId, hideEmpty = false, limit, searchable = false, selection
   searchable?: boolean;
   /** Shows only this many assets, the most valuable, until the rest are asked for. */
   limit?: number;
-  /** Leaves out the assets table, and its empty state, when there are no assets in scope. */
-  hideEmpty?: boolean;
 }>();
 
 defineSlots<{
@@ -66,7 +64,7 @@ const value = computed<BigNumber>(() => sum(get(assets)));
         />
       </div>
       <AssetBalances
-        v-if="!hideEmpty || assets.length > 0"
+        v-if="assets.length > 0 || liabilities.length === 0"
         v-model:search="search"
         v-model:selected="selected"
         :balances="shownAssets"

@@ -4,10 +4,9 @@ import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-acc
 import { accountAddActivity, accountRemoveActivity } from '@/modules/accounts/accounts.activity';
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
-import { chainBalancesActivity } from '@/modules/balances/balances.activity';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
+import { useBalanceStatus, useChainLoadStates } from '@/modules/balances/use-balance-status';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
-import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 interface UseAccountLoadingStates<T extends BlockchainAccountBalance> {
   accountOperation: ComputedRef<boolean>;
@@ -20,11 +19,11 @@ export function useAccountLoadingStates<T extends BlockchainAccountBalance>(
   category: MaybeRefOrGetter<string>,
 ): UseAccountLoadingStates<T> {
   const { useIsActivePrefix } = useTaskCenter();
-  const { statusOf, statusOfPrefix, version } = useTaskOrchestrator();
-  const refreshState = useBalanceRefreshState();
-  const { hydratingChains, refreshingChains } = storeToRefs(refreshState);
+  const { refreshingChains } = storeToRefs(useBalanceRefreshState());
   const { isSectionLoading } = useBlockchainAccountLoading(category);
   const { chainIds } = useAccountCategoryHelper(category);
+  const { loading: loadingChains } = useChainLoadStates(chainIds);
+  const { isInitialLoading: anyInitialLoading } = useBalanceStatus();
 
   const accountOperation = logicOr(
     useIsActivePrefix(accountAddActivity.kind, ...accountAddActivity.partsWithin([])),
@@ -40,19 +39,8 @@ export function useAccountLoadingStates<T extends BlockchainAccountBalance>(
    * chain being read from the DB as idle. A category whose chain list has not resolved falls back
    * to every chain.
    */
-  const isInitialLoading = computed<boolean>(() => {
-    get(version); // touch the change counter so this re-reads the non-reactive ledger
-    const hydrating = get(hydratingChains);
-    const chains = get(chainIds);
-    if (chains.length === 0) {
-      const { active, everCompleted } = statusOf(chainBalancesActivity.kind);
-      return (active || hydrating.size > 0) && !everCompleted;
-    }
-    return chains.some((chain) => {
-      const { active, everCompleted } = statusOfPrefix(chainBalancesActivity.kind, ...chainBalancesActivity.partsWithin([chain]));
-      return (active || hydrating.has(chain)) && !everCompleted;
-    });
-  });
+  const isInitialLoading = computed<boolean>(() =>
+    get(chainIds).length > 0 ? get(loadingChains).length > 0 : get(anyInitialLoading));
 
   function isRowLoading(row: AccountDataRow<T>): boolean {
     const refreshing = get(refreshingChains);
