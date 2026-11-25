@@ -83,6 +83,14 @@ vi.mock('@/modules/shell/cloud-sync/DeleteRemoteBackupPanel.vue', () => ({
   },
 }));
 
+const { checkIfUnknown } = vi.hoisted(() => ({
+  checkIfUnknown: vi.fn(async () => Promise.resolve()),
+}));
+
+vi.mock('@/modules/shell/cloud-sync/use-remote-backup-check', () => ({
+  useRemoteBackupCheck: (): Record<string, unknown> => ({ checking: ref<boolean>(false), checkIfUnknown }),
+}));
+
 vi.mock('@/modules/shell/layout/use-links', () => ({
   useLinks: (): Record<string, unknown> => ({ href: ref('https://rotki.com'), onLinkClick: vi.fn() }),
 }));
@@ -178,11 +186,20 @@ describe('modules/shell/cloud-sync/SyncIndicator.vue', () => {
     expect(menu().attributes('data-persist-activator')).toBe('false');
   });
 
-  it('should offer the remote backup deletion even when the last upload reads never, which can be stale', () => {
+  it('should not offer the remote backup deletion while no backup is known', () => {
     set(lastDataUpload, 0);
     const wrapper = createWrapper();
 
-    expect(wrapper.find('[data-testid=sync-delete-remote-backup]').attributes('disabled')).toBeUndefined();
+    expect(wrapper.find('[data-testid=sync-delete-remote-backup]').attributes('disabled')).toBeDefined();
+  });
+
+  it('should ask whether the server has a backup when the menu opens, not before', async () => {
+    const wrapper = createWrapper();
+    expect(checkIfUnknown).not.toHaveBeenCalled();
+
+    await wrapper.find('[data-testid=menu-open]').trigger('click');
+
+    expect(checkIfUnknown).toHaveBeenCalledOnce();
   });
 
   it('should hold the remote backup deletion while a sync runs', () => {

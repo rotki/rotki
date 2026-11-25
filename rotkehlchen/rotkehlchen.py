@@ -864,6 +864,7 @@ class Rotkehlchen:
         self.chains_aggregator.activate_premium_status(self.premium)
 
         self.data.db.set_rotkehlchen_premium(credentials)
+        self.premium_sync_manager.refresh_remote_backup_info()
 
     def deactivate_premium_status(self) -> None:
         """Deactivate premium in the current session"""
@@ -878,6 +879,7 @@ class Rotkehlchen:
         self.premium_sync_manager.premium = self.premium
         self.accountant.activate_premium_status(self.premium)
         self.chains_aggregator.activate_premium_status(self.premium)
+        self.premium_sync_manager.refresh_remote_backup_info()
 
     def delete_premium_credentials(self) -> tuple[bool, str]:
         """Deletes the premium credentials for rotki"""

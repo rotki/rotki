@@ -20,8 +20,14 @@ from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.data_handler import RemoteBackup
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.errors.misc import RemoteBackupDowngrade
-from rotkehlchen.premium.premium import get_free_capabilities
+from rotkehlchen.errors.cause import FailureCause
+from rotkehlchen.errors.misc import RemoteBackupDowngrade, RemoteError
+from rotkehlchen.premium.premium import (
+    Premium,
+    PremiumCredentials,
+    RemoteMetadata,
+    get_free_capabilities,
+)
 from rotkehlchen.premium.sync import (
     PASSWORD_CHANGE_SIZE_TOLERANCE_BYTES,
     PremiumSyncManager,
@@ -36,7 +42,11 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.tests.utils.premium import create_patched_requests_get_for_premium
+from rotkehlchen.tests.utils.premium import (
+    VALID_PREMIUM_KEY,
+    VALID_PREMIUM_SECRET,
+    create_patched_requests_get_for_premium,
+)
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 
@@ -1167,3 +1177,43 @@ def test_delete_remote_backup_forgets_upload_ts_under_lock(
     assert upload_ts_under_lock == [(0, True)]
     assert sync_manager.last_remote_data_upload_ts == 0
     assert sync_manager.upload_lock.locked() is False
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [False])
+@pytest.mark.parametrize('metadata_fails', [False, True])
+def test_premium_added_mid_session_reads_remote_backup(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+        metadata_fails: bool,
+) -> None:
+    """Premium added mid-session asks the server which backup it stores, so the menu's last
+    upload time is right without a new login. A failed query does not stop the activation."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    credentials = PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET)
+    premium = Premium(
+        credentials=credentials,
+        username=username,
+        msg_aggregator=rotki.msg_aggregator,
+        db=rotki.data.db,
+    )
+    metadata = RemoteMetadata(
+        upload_ts=Timestamp(1760882460),
+        last_modify_ts=Timestamp(1760882400),
+        data_size=4242,
+        data_hash='abc',
+    )
+    failure = RemoteError('unreachable', cause=FailureCause.NETWORK) if metadata_fails else None
+    with (
+        patch('rotkehlchen.rotkehlchen.premium_create_and_verify', return_value=premium),
+        patch.object(
+            premium,
+            'query_last_data_metadata',
+            side_effect=failure,
+            return_value=metadata,
+        ),
+    ):
+        rotki.set_premium_credentials(credentials)
+
+    assert rotki.premium is premium
+    expected = 0 if metadata_fails else 1760882460
+    assert rotki.premium_sync_manager.last_remote_data_upload_ts == expected

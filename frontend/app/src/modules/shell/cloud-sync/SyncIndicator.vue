@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import DeleteRemoteBackupEntry from '@/modules/shell/cloud-sync/DeleteRemoteBackupEntry.vue';
 import SyncButtons from '@/modules/shell/cloud-sync/SyncButtons.vue';
 import SyncConfirmation from '@/modules/shell/cloud-sync/SyncConfirmation.vue';
 import SyncSettings from '@/modules/shell/cloud-sync/SyncSettings.vue';
+import { useRemoteBackupCheck } from '@/modules/shell/cloud-sync/use-remote-backup-check';
 import { useSyncIndicator } from '@/modules/shell/cloud-sync/use-sync-indicator';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
@@ -44,9 +46,13 @@ const showDeleteRemoteBackup = ref<boolean>(false);
 /** A deletion in flight keeps the menu open, so its outcome is not lost. */
 const deletingRemoteBackup = ref<boolean>(false);
 
-/** Like the sync confirmation, closing the menu abandons the deletion. */
+const { checking: checkingRemoteBackup, checkIfUnknown: checkRemoteBackupIfUnknown } = useRemoteBackupCheck();
+
+/** Opening the menu asks the server when no backup is known; closing it abandons the deletion. */
 watch(modelVisible, (visible) => {
-  if (!visible)
+  if (visible)
+    startPromise(checkRemoteBackupIfUnknown());
+  else
     set(showDeleteRemoteBackup, false);
 });
 
@@ -204,6 +210,8 @@ watch(showDeleteRemoteBackup, (shown) => {
             class="-mx-4 -mb-4 border-t border-default px-2 py-1"
           >
             <DeleteRemoteBackupEntry
+              :no-backup="!lastDataUpload"
+              :checking="checkingRemoteBackup"
               :disabled="pending || isSyncing"
               @open="showDeleteRemoteBackup = true"
             />

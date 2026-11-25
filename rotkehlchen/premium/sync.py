@@ -111,6 +111,20 @@ class PremiumSyncManager:
         self.last_remote_data_upload_ts = metadata.upload_ts
         return metadata
 
+    def refresh_remote_backup_info(self) -> None:
+        """Asks the server which backup it stores, for premium that became active mid-session.
+
+        The last remote upload time is otherwise only read at login and on uploads, so it would
+        read as no backup until the next login. A failure leaves it as it was.
+        """
+        if self.premium is None:
+            return
+
+        try:
+            self._query_last_data_metadata()
+        except (RemoteError, PremiumAuthenticationError) as e:
+            log.warning('Could not query the remote backup metadata after premium activation', error=str(e))  # noqa: E501
+
     def _can_sync_data_from_server(self, new_account: bool) -> SyncCheckResult:
         """
         Checks if the remote data can be pulled from the server.

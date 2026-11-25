@@ -4,6 +4,8 @@ import type { Tag, Tags } from '@/modules/tags/tags';
 export const useSessionMetadataStore = defineStore('session/metadata', () => {
   const lastBalanceSave = ref<number>(0);
   const lastDataUpload = ref<number>(0);
+  /** When this session last asked the server for its backup because none was known, in ms. */
+  const lastRemoteBackupCheck = ref<number>(0);
   const connectedNodes = shallowRef<Record<string, string[]>>({});
   const coolingDownNodes = shallowRef<Record<string, string[]>>({});
   const failedToConnect = shallowRef<Record<string, string[]>>({});
@@ -20,6 +22,7 @@ export const useSessionMetadataStore = defineStore('session/metadata', () => {
     failedToConnect,
     lastBalanceSave,
     lastDataUpload,
+    lastRemoteBackupCheck,
     queriedAddresses,
     tags,
   };
