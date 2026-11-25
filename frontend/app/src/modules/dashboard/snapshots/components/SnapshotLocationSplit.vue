@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { BigNumber, Zero } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';

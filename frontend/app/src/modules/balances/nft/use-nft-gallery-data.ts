@@ -1,7 +1,8 @@
-import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import type { GalleryNft, Nft, Nfts } from '@/modules/assets/nfts';
 import type { NftPrice } from '@/modules/assets/prices/price-types';
+import { get, set } from '@vueuse/shared';
 import { keyBy } from 'es-toolkit';
+import { computed, type ComputedRef, type DeepReadonly, readonly, type Ref, ref, shallowReadonly, shallowRef } from 'vue';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useNfts } from '@/modules/assets/use-asset-nft';
 

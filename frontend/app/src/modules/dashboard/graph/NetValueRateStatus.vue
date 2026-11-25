@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import MissingDailyPrices from '@/modules/statistics/MissingDailyPrices.vue';

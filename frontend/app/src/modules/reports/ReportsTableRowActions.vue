@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ReportsTableMoreAction from '@/modules/reports/ReportsTableMoreAction.vue';
 
 const { reportId } = defineProps<{

@@ -4,6 +4,7 @@ import { ClickButtonStub, graphSeries, interaction, OTHER, SOURCE, TARGET } from
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, type Ref, ref } from 'vue';
 import { type Router, useRouter } from 'vue-router';
 import LocationLabelSelector from '@/modules/history/LocationLabelSelector.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';

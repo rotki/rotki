@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
+import { computed } from 'vue';
 import { useMarqueeAnimation } from '@/modules/shell/layout/use-marquee-animation';
 
 const { icon, texts } = defineProps<{

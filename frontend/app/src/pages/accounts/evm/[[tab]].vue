@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from 'vue-router';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import { Blockchain } from '@rotki/common';
-import { useTemplateRef } from 'vue';
+import { isDefined, watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, onMounted, ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { type RouteLocationRaw, useRoute, useRouter } from 'vue-router';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import AccountBalances from '@/modules/accounts/AccountBalances.vue';
 import AccountsStalenessIndicator from '@/modules/accounts/AccountsStalenessIndicator.vue';

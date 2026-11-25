@@ -1,5 +1,6 @@
-import type { ComputedRef } from 'vue';
 import type { OperatorLabels } from '@/modules/core/table/pill/core/operators';
+import { computed, type ComputedRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 /**
  * The operator labels the pill and its editors show, translated.

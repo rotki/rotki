@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { useAssetManagerMore } from '@/modules/assets/admin/use-asset-manager-more';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 

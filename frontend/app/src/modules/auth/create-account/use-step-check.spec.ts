@@ -1,3 +1,4 @@
+import { get, set } from '@vueuse/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { shallowRef } from 'vue';
 import { useStepCheck } from '@/modules/auth/create-account/use-step-check';

@@ -1,7 +1,9 @@
 import type { SupportedChains } from '@/modules/core/api/types/chains';
 import { Blockchain } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, defineComponent, ref } from 'vue';
 import { createRuiPlugin } from '@/plugins/rui';
 import '@test/i18n';
 

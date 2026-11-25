@@ -1,5 +1,6 @@
 import type { ChainRefreshState } from '@/modules/accounts/use-category-chain-refresh';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AccountsRefreshButton from '@/modules/accounts/AccountsRefreshButton.vue';
 

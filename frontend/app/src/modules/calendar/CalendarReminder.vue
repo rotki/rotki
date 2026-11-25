@@ -4,6 +4,9 @@ import type { CalendarReminderEntry as StoredEntry } from '@/modules/calendar/re
 import type { CalendarEvent } from '@/modules/calendar/types';
 import { NotificationKind, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { computed, onBeforeMount, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type MessageKey, msg } from '@/message-key';
 import CalendarReminderEntry from '@/modules/calendar/CalendarReminderEntry.vue';
 import { type ReminderRow, reminderRowsSchema, splitSeconds, toSeconds, UNIT_LABELS } from '@/modules/calendar/reminder-forms';

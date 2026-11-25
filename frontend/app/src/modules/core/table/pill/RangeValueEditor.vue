@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { ActiveFilter, FieldDef, FilterOp } from '@/modules/core/table/pill/core/types';
+import { get, set } from '@vueuse/shared';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { watchDebounced } from '@/modules/core/common/async/scoped-timers';
 import { FilterOps } from '@/modules/core/table/filtering';
 import PillOperatorToggle from '@/modules/core/table/pill/PillOperatorToggle.vue';
 

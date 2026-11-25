@@ -2,6 +2,11 @@
 import type { ZodType } from 'zod';
 import type { LoginCredentials, SyncApproval } from '@/modules/auth/login';
 import { externalLinks } from '@shared/external-links';
+import { useArraySome, watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, nextTick, onBeforeMount, onMounted, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { focusInput } from '@/modules/auth/login/focus-input';
 import IncompleteUpgradeAlert from '@/modules/auth/login/IncompleteUpgradeAlert.vue';
 import { classifyLoginErrors, type LoginFormState, loginSchema } from '@/modules/auth/login/login-form';

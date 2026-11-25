@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { useI18n } from 'vue-i18n';
 import { useAddressBookForm } from '@/modules/accounts/address-book/use-address-book-form';
 
 const { text, blockchain, name } = defineProps<{

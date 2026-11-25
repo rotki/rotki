@@ -1,5 +1,6 @@
 import type { GoogleCalendarAuthResult, GoogleCalendarStatus, GoogleCalendarSyncResult } from '@/modules/settings/types/google-calendar';
 import { Severity } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useGoogleCalendarIntegration } from '@/modules/calendar/use-google-calendar-integration';
 

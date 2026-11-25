@@ -1,5 +1,6 @@
 import type { Module } from '@/modules/core/common/modules';
 import type { GeneralSettings } from '@/modules/settings/types/user-settings';
+import { get } from '@vueuse/shared';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { defaultGeneralSettings } from '@/modules/settings/factories';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';

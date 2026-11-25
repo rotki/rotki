@@ -1,3 +1,4 @@
+import { useI18n } from 'vue-i18n';
 import { useScramble } from '@/modules/settings/use-scramble';
 import { type Activity, type ActivityText, resolveText } from '@/modules/task-center/core/types';
 

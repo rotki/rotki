@@ -1,6 +1,9 @@
 import { captureConsoleError } from '@test/utils/capture-console-error';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useDataLoader } from '@/modules/auth/use-session-load';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 

@@ -1,5 +1,7 @@
 import { type AssetBalance, type AssetInfo, bigNumberify } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, ref } from 'vue';
 import { useAssetBalanceSearch } from '@/modules/assets/use-asset-balance-search';
 
 const DAI = 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F';

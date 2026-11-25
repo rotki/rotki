@@ -1,7 +1,9 @@
-import type { Pinia } from 'pinia';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { shallowMount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
+import { type Pinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 import { UnlockPhase, type UnlockState } from '@/modules/auth/unlock-flow/use-unlock-flow';
 import UpgradeProgressDisplay from '@/modules/auth/upgrade/UpgradeProgressDisplay.vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';

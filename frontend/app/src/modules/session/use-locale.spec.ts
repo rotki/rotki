@@ -1,5 +1,7 @@
-import type { EffectScope } from 'vue';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, nextTick } from 'vue';
 import { endSession } from '@/modules/core/session/session-lifecycle';
 import { SupportedLanguage } from '@/modules/settings/types/frontend-settings';
 

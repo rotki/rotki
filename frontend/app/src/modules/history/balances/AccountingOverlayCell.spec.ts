@@ -4,7 +4,7 @@ import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ComputedRef, defineComponent, h, type VNode } from 'vue';
+import { computed, type ComputedRef, defineComponent, h, ref, type VNode } from 'vue';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
 import { type AccountingOverlayContext, provideAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
 

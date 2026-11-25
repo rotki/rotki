@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Dayjs } from 'dayjs';
 import type { CalendarEvent } from '@/modules/calendar/types';
+import { useI18n } from 'vue-i18n';
 import CalendarEventList from '@/modules/calendar/CalendarEventList.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 

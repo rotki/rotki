@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { RemediationTimelineItem } from '@/modules/history/data-issues/types';
+import { get, set } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import DataIssueTransactionDiff from '@/modules/history/data-issues/components/DataIssueTransactionDiff.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';

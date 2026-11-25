@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { decodeActivity } from '@/modules/history/events/tx/decode.activity';
 import { buildTree } from './core/tree';

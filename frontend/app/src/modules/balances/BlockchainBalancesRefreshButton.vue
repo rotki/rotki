@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { logicOr } from '@vueuse/math';
+import { useI18n } from 'vue-i18n';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import BlockchainBalanceRefreshBehaviourMenu from '@/modules/balances/BlockchainBalanceRefreshBehaviourMenu.vue';

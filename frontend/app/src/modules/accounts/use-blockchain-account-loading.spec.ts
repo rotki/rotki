@@ -1,6 +1,7 @@
-import type { ComputedRef } from 'vue';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, type ComputedRef, ref } from 'vue';
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { type Activity, ActivityKind, ActivitySourceType, ActivityStatus, makeActivityId, type WorkStatus } from '@/modules/task-center/core/types';

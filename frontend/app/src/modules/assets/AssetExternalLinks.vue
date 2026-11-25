@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
+import { useI18n } from 'vue-i18n';
 import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';

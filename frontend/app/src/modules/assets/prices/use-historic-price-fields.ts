@@ -1,4 +1,5 @@
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { useI18n } from 'vue-i18n';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { assetSuggestions } from '@/modules/core/common/display/assets';
 import { toAssetField } from '@/modules/core/table/filters/shared/asset-field';

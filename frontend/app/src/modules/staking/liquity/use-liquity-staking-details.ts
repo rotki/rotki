@@ -4,8 +4,10 @@ import type {
   LiquityStakingDetailEntry,
   LiquityStatisticDetails,
 } from '@rotki/common';
-import type { ComputedRef, Ref } from 'vue';
 import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type Ref, ref } from 'vue';
 import {
   aggregateEntries,
   aggregateStatistics,

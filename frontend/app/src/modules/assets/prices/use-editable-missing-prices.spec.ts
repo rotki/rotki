@@ -1,6 +1,7 @@
 import type { HistoricalPrice } from '@/modules/assets/prices/price-types';
 import type { EditableMissingPrice, MissingPrice } from '@/modules/reports/report-types';
 import { bigNumberify } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type Ref, ref } from 'vue';

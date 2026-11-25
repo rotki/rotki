@@ -1,5 +1,6 @@
 import { bigNumberify, type FailedHistoricalAssetPriceResponse } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';

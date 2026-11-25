@@ -1,6 +1,9 @@
-import type { Ref } from 'vue';
 import type { AllBalancePayload } from '@/modules/accounts/blockchain-accounts';
 import { startPromise } from '@shared/utils';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { onScopeDispose, readonly, type Ref, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useLogout } from '@/modules/auth/use-logout';
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';

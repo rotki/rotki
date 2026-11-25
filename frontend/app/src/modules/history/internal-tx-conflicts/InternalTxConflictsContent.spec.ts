@@ -1,7 +1,9 @@
 import type { ResolutionCallbacks } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflict-resolution';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import InternalTxConflictsContent from '@/modules/history/internal-tx-conflicts/InternalTxConflictsContent.vue';
 import {
   type InternalTxConflict,

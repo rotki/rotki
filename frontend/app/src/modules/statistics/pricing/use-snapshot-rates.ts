@@ -1,4 +1,8 @@
 import type { ResolvedPrice } from '@rotki/common';
+import { watchImmediate } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
 import { useUsdRates } from '@/modules/statistics/pricing/use-usd-rates';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 

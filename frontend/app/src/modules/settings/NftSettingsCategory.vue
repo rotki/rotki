@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
 import { externalLinks } from '@shared/external-links';
+import { useI18n } from 'vue-i18n';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import NftImageRenderingSetting from '@/modules/settings/general/nft/NftImageRenderingSetting.vue';
 import NftsInNetValueSetting from '@/modules/settings/general/nft/NftsInNetValueSetting.vue';

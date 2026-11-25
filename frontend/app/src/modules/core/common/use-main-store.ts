@@ -2,6 +2,9 @@ import type { LogLevel } from '@shared/log-level';
 import type { Version } from '@/modules/core/common/action';
 import type { DefaultBackendArguments } from '@/modules/shell/app/backend';
 import { checkIfDevelopment } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, ref } from 'vue';
 import { getDefaultLogLevel } from '@/modules/core/common/logging/logging';
 
 export const useMainStore = defineStore('main', () => {

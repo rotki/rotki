@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { RecentTransaction } from '@/modules/wallet/types';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import TradeHistoryItem from '@/modules/wallet/send/TradeHistoryItem.vue';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 

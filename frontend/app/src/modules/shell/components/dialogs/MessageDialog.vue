@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Message } from '@rotki/common';
 import type { RuiIcons } from '@rotki/ui-library';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const { message } = defineProps<{
   message: Message;

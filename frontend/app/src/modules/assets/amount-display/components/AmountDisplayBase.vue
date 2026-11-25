@@ -9,6 +9,8 @@
  */
 import type { BigNumber } from '@rotki/common';
 import type { FormatOptions } from '@/modules/assets/amount-display/types';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import { useAmountDisplaySettings, useAmountFormatter } from '@/modules/assets/amount-display';
 import CopyTooltip from '@/modules/shell/components/CopyTooltip.vue';
 import AmountCurrencySymbol from './AmountCurrencySymbol.vue';

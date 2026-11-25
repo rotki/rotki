@@ -1,10 +1,11 @@
 import type { TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, EffectScope, Ref } from 'vue';
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import type { HistoryEventNavigationRequest } from '@/modules/history/events/use-history-event-navigation';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, type ComputedRef, type EffectScope, effectScope, nextTick, type Ref, ref } from 'vue';
 
 const mockRouterPush = vi.fn().mockResolvedValue(undefined);
 const mockRouterReplace = vi.fn().mockResolvedValue(undefined);

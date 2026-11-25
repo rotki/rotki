@@ -2,8 +2,10 @@ import type { ManualBalanceWithPrice } from '@/modules/balances/types/manual-bal
 import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import { bigNumberify } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { defineComponent, nextTick } from 'vue';
 import ManualBalanceTable from '@/modules/accounts/manual-balances/ManualBalanceTable.vue';
 import { BalanceType } from '@/modules/balances/types/balances';
 

@@ -1,4 +1,4 @@
-import type { MaybeRefOrGetter } from 'vue';
+import { type MaybeRefOrGetter, toValue } from 'vue';
 
 interface UseDrawerDismissOptions {
   /** Whether the drawer is showing; a closed drawer leaves the key alone. */

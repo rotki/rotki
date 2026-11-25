@@ -2,7 +2,7 @@ import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { createDecodingComparison } from '@test/fixtures/decoding-comparison';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, type VNode } from 'vue';
+import { defineComponent, h, nextTick, type VNode } from 'vue';
 import DataIssueDetailDrawer from '@/modules/history/data-issues/components/DataIssueDetailDrawer.vue';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 import { createRuiPlugin } from '@/plugins/rui';

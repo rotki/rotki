@@ -2,9 +2,10 @@ import type { Airdrops } from '@/modules/airdrops/airdrops';
 import type { AirdropWithIndex } from '@/pages/airdrops/airdrop-rows';
 import { bigNumberify } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type MaybeRefOrGetter, nextTick, type Ref } from 'vue';
+import { type MaybeRefOrGetter, nextTick, type Ref, toValue } from 'vue';
 import { useAirdropsPage } from './use-airdrops-page';
 
 const ADDRESS_A = '0xaaa';

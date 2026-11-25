@@ -1,6 +1,10 @@
 import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/modules/reports/report-types';
 import type { ActivityId } from '@/modules/task-center/core/types';
+import { set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { getOr, isErr, isOk, type Result } from 'plainfp/result';
+import { onScopeDispose } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { convertFromTimestamp } from '@/modules/core/common/data/date';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';

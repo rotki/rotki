@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { defineAsyncComponent, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import DeleteRemoteBackupEntry from '@/modules/shell/cloud-sync/DeleteRemoteBackupEntry.vue';

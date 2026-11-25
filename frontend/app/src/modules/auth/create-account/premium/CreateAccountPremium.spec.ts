@@ -1,4 +1,5 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
 import CreateAccountPremium from '@/modules/auth/create-account/premium/CreateAccountPremium.vue';

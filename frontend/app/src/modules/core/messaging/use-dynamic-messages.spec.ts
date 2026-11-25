@@ -1,8 +1,9 @@
-import type { Pinia } from 'pinia';
 import type { DashboardMessage, WelcomeMessage } from '@/modules/core/messaging/dynamic-messages';
 import { server } from '@test/setup-files/server';
+import { get, set } from '@vueuse/shared';
 import dayjs from 'dayjs';
 import { http, HttpResponse } from 'msw';
+import { createPinia, type Pinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { camelCaseTransformer } from '@/modules/core/api/transformers';
 import { serializer, useDynamicMessages } from '@/modules/core/messaging/use-dynamic-messages';

@@ -1,4 +1,3 @@
-import type { MaybeRef } from 'vue';
 import type { Balances } from '@/modules/accounts/blockchain-accounts';
 import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import type { BlockchainAssetBalances, BlockchainBalances } from '@/modules/balances/types/blockchain-balances';
@@ -6,7 +5,10 @@ import type { ExchangeData } from '@/modules/balances/types/exchanges';
 import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
 import type { BankConnectionBalances } from '@/modules/banks/types';
 import { type BigNumber, bigNumberify, Zero } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { camelCase } from 'es-toolkit';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, type MaybeRef, ref, shallowRef } from 'vue';
 import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
 import { updateAssetValuePrices, updateBankBalancesPrices, updateBlockchainAssetBalances, updateExchangeBalancesPrices } from '@/modules/assets/prices/price-utils';
 import { balancesAboveThreshold } from '@/modules/balances/aggregation/core/value-threshold';

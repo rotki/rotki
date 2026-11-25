@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type BankAuthChallenge, challengeNeedsResponse } from '@/modules/banks/types';
 
 const response = defineModel<string>('response', { required: true });

@@ -1,7 +1,8 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, nextTick } from 'vue';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { PinnedNames } from '@/modules/session/types';
 import PinnedSidebar from '@/modules/shell/components/navigation/PinnedSidebar.vue';

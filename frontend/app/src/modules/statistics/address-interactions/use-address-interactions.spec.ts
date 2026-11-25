@@ -1,5 +1,6 @@
 import type { RotkiApi } from '@/modules/core/api/rotki-api';
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { useAddressInteractions } from './use-address-interactions';
 

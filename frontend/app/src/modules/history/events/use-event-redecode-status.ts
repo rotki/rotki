@@ -1,6 +1,7 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { DecodableEventType } from '@/modules/history/management/forms/form-guards';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import {
   isEthBlockEvent,

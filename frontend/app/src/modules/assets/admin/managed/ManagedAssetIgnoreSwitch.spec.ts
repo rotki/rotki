@@ -3,6 +3,7 @@ import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref, type Ref } from 'vue';
 import ManagedAssetIgnoreSwitch from './ManagedAssetIgnoreSwitch.vue';
 
 vi.mock('@/modules/assets/use-assets-store', () => ({

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useVirtualList } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, useId } from 'vue';
 import { useListHighlight } from '@/modules/core/common/use-list-highlight';
 import PillComboboxSearch from '@/modules/core/table/pill/PillComboboxSearch.vue';
 

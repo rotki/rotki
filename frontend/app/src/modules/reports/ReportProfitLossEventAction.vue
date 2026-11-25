@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
 import type { ProfitLossEvent } from '@/modules/reports/report-types';
+import { set } from '@vueuse/shared';
+import { computed, ref, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { z, type ZodType } from 'zod';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';

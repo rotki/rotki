@@ -3,8 +3,10 @@ import type { AccountPayload, XpubAccountPayload } from '@/modules/accounts/bloc
 import type { Tag } from '@/modules/tags/tags';
 import { Blockchain } from '@rotki/common';
 import { createMockCSV } from '@test/mocks/file';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { effectScope } from 'vue';
 import { useAccountManage } from '@/modules/accounts/blockchain/use-account-manage';
 import { createAccount, createValidatorAccount } from '@/modules/accounts/create-account';
 import { useAccountImport } from '@/modules/accounts/import-export/use-account-import';

@@ -2,6 +2,7 @@ import type { RpcProviderCandidate } from '@/modules/settings/general/rpc/provid
 import type { BlockchainRpcNode } from '@/modules/settings/types/rpc';
 import { Blockchain } from '@rotki/common';
 import { flushPromises } from '@vue/test-utils';
+import { get } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   RPC_SETUP_STATUS,

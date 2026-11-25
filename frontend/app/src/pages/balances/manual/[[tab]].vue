@@ -2,6 +2,12 @@
 import type { ManualBalance, RawManualBalance } from '@/modules/balances/types/manual-balances';
 import { Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { nextTick, onBeforeMount, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import ManualBalancesDialog from '@/modules/accounts/manual-balances/ManualBalancesDialog.vue';
 import ManualBalancesRefreshButton from '@/modules/accounts/manual-balances/ManualBalancesRefreshButton.vue';

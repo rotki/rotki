@@ -4,8 +4,11 @@ import type { useHistoryEventsApi } from '@/modules/history/api/events/use-histo
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, ref } from 'vue';
 import { useHistoryEventsActionFailure } from './use-history-events-action-failure';
 import { useHistoryEventsDeletion } from './use-history-events-deletion';
 import { useHistoryEventsSelectionMode } from './use-selection-mode';

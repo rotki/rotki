@@ -1,7 +1,10 @@
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useHistoryEventsActionFailure } from './use-history-events-action-failure';
 import { useHistoryEventsSelectionActions } from './use-history-events-selection-actions';
 import { useHistoryEventsSelectionMode } from './use-selection-mode';

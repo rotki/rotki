@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import ManagedAssetIgnoreSwitch from '@/modules/assets/admin/managed/ManagedAssetIgnoreSwitch.vue';
 import AssetExternalLinks from '@/modules/assets/AssetExternalLinks.vue';

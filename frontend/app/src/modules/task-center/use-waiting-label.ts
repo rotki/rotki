@@ -1,4 +1,7 @@
-import type { ComputedRef } from 'vue';
+import { createSharedComposable } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useScramble } from '@/modules/settings/use-scramble';

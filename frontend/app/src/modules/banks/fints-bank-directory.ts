@@ -1,3 +1,4 @@
+import { isDefined } from '@vueuse/core';
 import { z } from 'zod';
 import catalog from '@/modules/banks/fints-bank-directory.json';
 

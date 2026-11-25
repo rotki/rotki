@@ -3,6 +3,7 @@ import type { HistoryEventBridgeUnlinkPayload } from '@/modules/history/events/t
 import type { VirtualRow } from '@/modules/history/events/use-virtual-rows';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
 import { injectHistoryEventsRowContext } from '@/modules/history/events/use-history-events-row-context';
 import { type UnlinkKind, useUnlinkQuestion } from '@/modules/history/events/use-unlink-question';
 import HistoryEventsDetailItem from './HistoryEventsDetailItem.vue';

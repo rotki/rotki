@@ -10,6 +10,7 @@ import {
   OLDER_REPORT_ID,
 } from '@test/utils/reports-test-data';
 import { withSetup } from '@test/utils/with-setup';
+import { get } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, type ComputedRef, type Ref } from 'vue';

@@ -1,6 +1,7 @@
-import type { Ref } from 'vue';
 import { EvmTokenKind, type SupportedAsset, type UnderlyingToken } from '@rotki/common';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Ref, ref } from 'vue';
 import { EVM_TOKEN } from '@/modules/assets/types';
 
 const addAsset = vi.fn<(asset: Record<string, unknown>) => Promise<{ identifier: string }>>();

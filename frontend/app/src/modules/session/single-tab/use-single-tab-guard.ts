@@ -1,3 +1,6 @@
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { watch } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useSingleTab } from '@/modules/session/single-tab/use-single-tab';
 import { useMonitorService } from '@/modules/shell/app/use-monitor-service';

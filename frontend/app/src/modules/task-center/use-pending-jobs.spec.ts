@@ -1,4 +1,6 @@
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, type ComputedRef, ref } from 'vue';
 import { type ActivityModel, assembleActivityModel } from './core/model';
 import {
   type Activity,

@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { assert } from '@rotki/common';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type AccountManageState, useAccountManage } from '@/modules/accounts/blockchain/use-account-manage';
 import { useAccountImportDialog } from '@/modules/accounts/import-export/use-account-import-dialog';
 import { hasAccountChanged, isAddingValidator } from '@/modules/accounts/management/account-dialog-state';

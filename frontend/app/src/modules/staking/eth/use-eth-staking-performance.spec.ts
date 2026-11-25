@@ -1,5 +1,6 @@
-import type { Ref } from 'vue';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Ref, ref } from 'vue';
 import { useEthStakingPerformance } from '@/modules/staking/eth/use-eth-staking-performance';
 
 interface MockPerformance { entriesTotal: number }

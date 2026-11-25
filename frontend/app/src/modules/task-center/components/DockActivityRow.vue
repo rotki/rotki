@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';

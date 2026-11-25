@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+
 const { count, expanded = false, selecting = false } = defineProps<{
   count: number;
   expanded?: boolean;

@@ -1,5 +1,7 @@
 import type { ChainActivity, InteractionConnection, InteractionNode } from './address-interaction-graph';
 import { Blockchain } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';

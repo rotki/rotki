@@ -1,7 +1,9 @@
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import type { GeneralSettings } from '@/modules/settings/types/user-settings';
 import { createMock } from '@test/utils/create-mock';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { Currency } from '@/modules/assets/amount-display/currencies';
 import { defaultGeneralSettings } from '@/modules/settings/factories';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';

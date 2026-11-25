@@ -1,6 +1,8 @@
-import type { ComputedRef } from 'vue';
 import type { HistoricalBalanceEntry } from '@/modules/history/balances/types';
 import { type BigNumber, NoPrice, Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef } from 'vue';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';

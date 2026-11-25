@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AccountAssetBalances from '@/modules/accounts/balances/AccountAssetBalances.vue';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 

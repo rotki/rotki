@@ -1,4 +1,5 @@
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';

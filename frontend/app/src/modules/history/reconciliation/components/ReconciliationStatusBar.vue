@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { MessageKey } from '@/message-key';
 import type { StatusCounts } from '@/modules/history/reconciliation/schemas';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { STATUS_LABEL } from '@/modules/history/reconciliation/messages';
 import { notCheckedCount, totalBuckets } from '@/modules/history/reconciliation/use-reconciliation-rows';
 

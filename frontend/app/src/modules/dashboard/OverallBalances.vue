@@ -2,7 +2,11 @@
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import type { SourceKind } from '@/modules/dashboard/holdings/core/holdings-types';
 import { assert, type BigNumber, TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSetting, TimeUnit } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import dayjs from 'dayjs';
+import { storeToRefs } from 'pinia';
+import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { useBalanceView } from '@/modules/balances/view/use-balance-view';
 import { computeNetValueDelta, type NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';

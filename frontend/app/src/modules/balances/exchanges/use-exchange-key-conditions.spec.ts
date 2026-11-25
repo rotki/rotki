@@ -1,3 +1,5 @@
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useExchangeKeyConditions } from '@/modules/balances/exchanges/use-exchange-key-conditions';
 import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';

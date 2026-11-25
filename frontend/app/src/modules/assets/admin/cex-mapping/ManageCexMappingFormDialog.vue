@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { CexMapping } from '@/modules/assets/types';
-import { useTemplateRef } from 'vue';
+import { get } from '@vueuse/shared';
+import { ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ManageCexMappingForm from '@/modules/assets/admin/cex-mapping/ManageCexMappingForm.vue';
 import { useMappingFormDialog } from '@/modules/assets/admin/use-mapping-form-dialog';
 import { useAssetCexMappingApi } from '@/modules/assets/api/use-asset-cex-mapping-api';

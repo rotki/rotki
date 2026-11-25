@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import { type BigNumber, Blockchain } from '@rotki/common';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import { assetLocationParams } from '@/modules/assets/asset-location-fields';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';

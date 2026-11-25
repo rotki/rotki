@@ -1,8 +1,9 @@
 import type { ConflictResolutionStrategy } from '@/modules/core/common/common-types';
 import type { useAccountingRuleConflictResolution } from '@/modules/settings/accounting/rule/use-accounting-rule-conflict-resolution';
 import { type DOMWrapper, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, type Ref, ref } from 'vue';
 import AccountingRuleConflictsDialog from '@/modules/settings/accounting/rule/AccountingRuleConflictsDialog.vue';
 import { type AccountingRule, type AccountingRuleConflict, AccountingTreatment } from '@/modules/settings/types/accounting';
 import { createRuiPlugin } from '@/plugins/rui';

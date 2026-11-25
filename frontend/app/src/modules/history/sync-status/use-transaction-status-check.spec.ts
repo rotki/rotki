@@ -1,5 +1,6 @@
-import type { Ref } from 'vue';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Ref, ref } from 'vue';
 import { useTransactionStatusCheck } from './use-transaction-status-check';
 
 interface Summary {

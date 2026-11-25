@@ -1,6 +1,7 @@
 import type { StubInstance } from '@test/utils/component-vm';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@test/i18n';
 

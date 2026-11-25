@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useDuplicatesQuestion } from '@/modules/history/events/use-duplicates-question';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 

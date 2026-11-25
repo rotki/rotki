@@ -1,4 +1,6 @@
-import type { Ref } from 'vue';
+import { watchImmediate } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { type Ref, watch } from 'vue';
 import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { usePremium } from '@/modules/premium/use-premium';

@@ -3,6 +3,7 @@ import type { CustomizedEventDuplicates, CustomizedEventDuplicatesFixResult } fr
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
 import { ok } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';

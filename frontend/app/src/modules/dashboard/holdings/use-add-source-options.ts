@@ -1,7 +1,8 @@
 import type { RuiIcons } from '@rotki/ui-library';
-import type { ComputedRef } from 'vue';
 import type { RouteLocationAsRelative, RouteLocationRaw } from 'vue-router';
 import type { RouteName } from '@/types/router';
+import { computed, type ComputedRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 export interface AddSourceOption {
   /** Rendered into `data-testid`, so the values are kebab-case like every other test id. */

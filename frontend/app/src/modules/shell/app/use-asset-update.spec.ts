@@ -2,6 +2,7 @@ import type { ApplyUpdateResult, AssetUpdateCheckResult, AssetUpdateConflictResu
 import { startPromise } from '@shared/utils';
 import { createMock } from '@test/utils/create-mock';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';

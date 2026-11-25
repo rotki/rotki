@@ -1,7 +1,8 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import { mount } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, type Ref } from 'vue';
+import { defineComponent, nextTick, ref, type Ref } from 'vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 
 interface Row { id: string }

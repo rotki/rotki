@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
 import type { RouteLocationRaw } from 'vue-router';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { addAccountLink } from '@/modules/accounts/add-account-link';
 import { ChainType } from '@/modules/core/api/types/chains';
 import { useLocationStore } from '@/modules/core/common/use-location-store';

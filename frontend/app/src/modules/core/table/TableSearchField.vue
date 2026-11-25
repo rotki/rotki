@@ -1,5 +1,7 @@
 <script setup lang="ts">
 /** A table toolbar's search: on the right, as the dashboard's tables keep theirs, at the filter bar's height. */
+import { useI18n } from 'vue-i18n';
+
 const search = defineModel<string>({ required: true });
 
 const { t } = useI18n({ useScope: 'global' });

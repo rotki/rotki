@@ -1,4 +1,5 @@
 import type { ActivityKind } from './core/types';
+import { tryOnScopeDispose } from '@vueuse/core';
 import { useTaskOrchestrator } from './use-task-orchestrator';
 
 /** An activity, named the way `statusOf` addresses it: a descriptor's `kind` and `partsOf(subject)`. */

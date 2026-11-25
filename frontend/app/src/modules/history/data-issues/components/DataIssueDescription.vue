@@ -2,6 +2,8 @@
 import type { BigNumber } from '@rotki/common';
 import type { FormatOptions } from '@/modules/assets/amount-display/types';
 import type { IssueDescription } from '@/modules/history/data-issues/types';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 

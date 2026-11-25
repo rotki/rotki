@@ -1,4 +1,7 @@
 import type { AccountPayload, Accounts, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import { get, set } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { ref } from 'vue';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { onSessionCleared } from '@/modules/core/session/session-lifecycle';
 import { removeTags, renameTags } from '@/modules/tags/tag-utils';

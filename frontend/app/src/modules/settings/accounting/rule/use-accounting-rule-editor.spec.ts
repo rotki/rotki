@@ -1,5 +1,6 @@
 import type { LocationQuery } from 'vue-router';
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
+import { get } from '@vueuse/shared';
 import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequestCancelled, type RequestError, RequestFailed } from '@/modules/core/api/request-result';

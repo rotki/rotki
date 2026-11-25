@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RuiAutoComplete } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+import { computed } from 'vue';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import {
   type PurgeableModule,

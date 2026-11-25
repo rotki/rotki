@@ -3,6 +3,7 @@ import type { RepullingTransactionPayload } from '@/modules/history/events/event
 import type { RepullingTransactionResult } from '@/modules/history/events/tx/use-history-transactions';
 import { createTestExchange } from '@test/utils/create-data';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, ref } from 'vue';
 import { type RepullingFormHandle, useRepullingTransactionSubmission } from './use-repulling-transaction-submission';

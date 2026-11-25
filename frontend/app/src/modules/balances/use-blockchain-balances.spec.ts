@@ -4,6 +4,8 @@ import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { runSpecWith, type SubmittedSpec } from '@test/utils/mocks/native-task';
+import { until } from '@vueuse/core';
+import { setActivePinia } from 'pinia';
 import { hasTag } from 'plainfp/tagged';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount } from '@/modules/accounts/create-account';

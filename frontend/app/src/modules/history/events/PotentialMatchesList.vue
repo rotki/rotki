@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import { get, set } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { watchDebounced } from '@/modules/core/common/async/scoped-timers';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { canWidenSearch, type SearchCriteria, widenedSearch } from '@/modules/history/events/matching/search-widening';
 import { type MatchingFailure, MatchingFailureKind, type PotentialMatchEntryLabels, type PotentialMatchRow, type UnmatchedEventGroup } from '@/modules/history/events/matching/types';

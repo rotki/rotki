@@ -1,7 +1,10 @@
 <script lang="ts" setup>
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { AddTransactionHashPayload, LocationAndTxRef } from '@/modules/history/events/event-payloads';
-import { useTemplateRef } from 'vue';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { ref, shallowRef, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import TransactionForm from '@/modules/history/events/tx/TransactionForm.vue';
 import { useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';

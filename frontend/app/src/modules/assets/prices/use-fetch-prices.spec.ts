@@ -1,6 +1,8 @@
 import type { NativeActivitySpec, TaskOutcome } from '@/modules/task-center/use-native-task';
 import { bigNumberify } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useFetchPrices } from '@/modules/assets/prices/use-fetch-prices';

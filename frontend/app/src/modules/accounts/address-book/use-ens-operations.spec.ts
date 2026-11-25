@@ -1,4 +1,5 @@
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { setActivePinia } from 'pinia';
 import { err } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';

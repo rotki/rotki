@@ -1,4 +1,5 @@
-import type { Ref } from 'vue';
+import { set } from '@vueuse/shared';
+import { type Ref, ref, shallowRef } from 'vue';
 
 /**
  * What caused a piece of table state to change.

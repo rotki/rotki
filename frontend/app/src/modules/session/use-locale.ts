@@ -1,4 +1,8 @@
-import type { MaybeRef } from 'vue';
+import { createSharedComposable, useLocalStorage } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type MaybeRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { loadLocaleMessages } from '@/i18n';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { isOfEnum } from '@/modules/core/common/helpers/is-of-enum';

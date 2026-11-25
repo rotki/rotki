@@ -136,7 +136,6 @@ catalog:
   theme-colors: 0.1.0
   tsx: 4.23.15
   typescript: 6.0.3
-  unplugin-auto-import: 21.1.0
   unplugin-vue-components: 32.1.0
   utf-8-validate: 6.0.6
   vanilla-jsoneditor: 3.13.0

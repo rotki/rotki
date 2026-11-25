@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get, set } from '@vueuse/shared';
+import { computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { abbreviationList } from '@/modules/assets/amount-display/amount-formatter';
 import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { type NotificationData, Severity } from '@rotki/common';
+import { useElementSize } from '@vueuse/core';
+import { useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useNotificationCard } from '@/modules/core/notifications/use-notification-card';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 

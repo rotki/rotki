@@ -2,6 +2,10 @@
 import type { ConflictResolution } from '@/modules/assets/types';
 import type { LoginCredentials } from '@/modules/auth/login';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { definePage } from 'vue-router/experimental';
 import AccountManagementAside from '@/modules/auth/AccountManagementAside.vue';
 import AccountManagementFooterText from '@/modules/auth/AccountManagementFooterText.vue';
 import AdaptiveFooterButton from '@/modules/auth/AdaptiveFooterButton.vue';

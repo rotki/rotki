@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { useCountFormatter } from '@/modules/assets/amount-display/use-count-formatter';
 import { UnmatchedVariant } from '@/modules/history/events/unmatched-row';

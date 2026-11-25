@@ -1,4 +1,6 @@
-import type { Ref } from 'vue';
+import { createGlobalState } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { readonly, type Ref, ref } from 'vue';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
 const CHANNEL_NAME = 'rotki.session.single-tab';

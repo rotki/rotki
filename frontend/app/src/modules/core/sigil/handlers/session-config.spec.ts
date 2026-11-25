@@ -1,4 +1,6 @@
 import { Theme } from '@rotki/common';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SupportedLanguage } from '@/modules/settings/types/frontend-settings';
 

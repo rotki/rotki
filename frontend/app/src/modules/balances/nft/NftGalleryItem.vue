@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import type { StyleValue } from 'vue';
 import type { GalleryNft } from '@/modules/assets/nfts';
+import { get } from '@vueuse/shared';
+import { computed, type StyleValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import { useNftDomainWhitelist } from '@/modules/balances/nft/use-nft-domain-whitelist';
 import { useNftImage } from '@/modules/balances/nft/use-nft-image';

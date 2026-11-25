@@ -1,7 +1,9 @@
-import type { EffectScope } from 'vue';
 import { externalLinks } from '@shared/external-links';
 import { flushPromises } from '@vue/test-utils';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope } from 'vue';
 import { type ActionItem, ActionUrgency } from '@/modules/core/action-center/types';
 import { usePremiumRows } from '@/modules/shell/action-center/use-premium-rows';
 import { PremiumInactiveCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';

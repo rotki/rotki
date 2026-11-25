@@ -1,5 +1,6 @@
-import type { ComputedRef, Ref } from 'vue';
-import { createSharedComposable } from '@vueuse/core';
+import { createSharedComposable, watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type Ref, ref } from 'vue';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { useNoteLocation } from '@/modules/notes/use-note-location';
 import { useUserNotesApi } from '@/modules/notes/use-user-notes-api';

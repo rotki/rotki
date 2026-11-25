@@ -1,6 +1,9 @@
 import type { Accounts, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import {
   getTimeRangeInDays,
   SECONDS_PER_DAY,

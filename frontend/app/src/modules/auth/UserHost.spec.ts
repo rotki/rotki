@@ -1,5 +1,6 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import DockerWarning from './DockerWarning.vue';

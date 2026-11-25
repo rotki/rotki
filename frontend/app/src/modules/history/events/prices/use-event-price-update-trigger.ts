@@ -1,4 +1,4 @@
-import type { InjectionKey } from 'vue';
+import { inject, type InjectionKey, provide } from 'vue';
 
 export { default as EventAssetPriceUpdateDialog } from './EventAssetPriceUpdateDialog.vue';
 

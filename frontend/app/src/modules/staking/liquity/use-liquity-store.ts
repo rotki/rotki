@@ -4,6 +4,8 @@ import type {
   LiquityStakingDetails,
   LiquityStatistics,
 } from '@rotki/common';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { ref } from 'vue';
 
 const defaultBalances = (): LiquityBalancesWithCollateralInfo => ({ balances: {}, totalCollateralRatio: null });
 

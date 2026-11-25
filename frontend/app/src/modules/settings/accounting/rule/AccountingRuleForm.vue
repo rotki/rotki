@@ -2,6 +2,8 @@
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { toSentenceCase } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useMappedModelForm } from '@/modules/core/form/use-model-form';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';

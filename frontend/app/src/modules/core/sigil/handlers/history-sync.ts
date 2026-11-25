@@ -1,4 +1,5 @@
 import type { HistorySyncPayload } from '@/modules/core/sigil/types';
+import { get } from '@vueuse/shared';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { usePremiumHelper } from '@/modules/premium/use-premium-helper';

@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { MissingAcquisition } from '@/modules/reports/report-types';
+import { createReusableTemplate } from '@vueuse/core';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';

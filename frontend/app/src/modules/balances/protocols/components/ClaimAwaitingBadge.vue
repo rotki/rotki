@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { type ProtocolBalance, toSentenceCase } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { claimPageUrl } from '@/modules/balances/protocols/claim-pages';
 import ClaimAmount from '@/modules/balances/protocols/components/ClaimAmount.vue';
 import ClaimRequestRow from '@/modules/balances/protocols/components/ClaimRequestRow.vue';

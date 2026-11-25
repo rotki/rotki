@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { ActiveFilter, FieldDef, FilterOp } from '@/modules/core/table/pill/core/types';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import PillOperatorToggle from '@/modules/core/table/pill/PillOperatorToggle.vue';
 import PillValueIcon from '@/modules/core/table/pill/PillValueIcon.vue';
 import ValueSelectList, { type SelectOption } from '@/modules/core/table/pill/ValueSelectList.vue';

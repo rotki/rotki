@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AddressInteraction } from './address-interaction-types';
+import { useI18n } from 'vue-i18n';
 import AddressInteractionCanvas from './AddressInteractionCanvas.vue';
 import AddressInteractionHints from './AddressInteractionHints.vue';
 import AddressInteractionLayout from './AddressInteractionLayout.vue';

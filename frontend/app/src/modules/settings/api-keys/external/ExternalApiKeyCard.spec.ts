@@ -3,8 +3,10 @@ import type { useExternalApiKeys } from '@/modules/settings/api-keys/external/us
 import { externalLinks } from '@shared/external-links';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, nextTick, readonly, ref, toValue } from 'vue';
 import { useRouter } from 'vue-router';
 import { EXTERNAL_API_KEY_SERVICES, type ExternalApiKeyService } from '@/modules/settings/api-keys/external/external-api-key-services';
 

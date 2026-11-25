@@ -1,4 +1,6 @@
-import type { Ref } from 'vue';
+import { createSharedComposable } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, type Ref } from 'vue';
 import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 

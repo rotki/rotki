@@ -1,9 +1,10 @@
 import type { EventActionRow } from '@/modules/history/events/action-picker/use-event-action-picker';
 import { mount } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { kebabCase } from 'es-toolkit';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, type VNode } from 'vue';
+import { computed, defineComponent, h, ref, type VNode } from 'vue';
 import HistoryEventActionPicker from '@/modules/history/events/action-picker/HistoryEventActionPicker.vue';
 
 function buildRow(): EventActionRow {

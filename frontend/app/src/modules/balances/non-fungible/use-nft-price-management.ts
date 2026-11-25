@@ -1,7 +1,9 @@
-import type { DeepReadonly, Ref } from 'vue';
 import type { ManualPriceFormPayload } from '@/modules/assets/prices/price-types';
 import type { NonFungibleBalance } from '@/modules/balances/types/nfbalances';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { set } from '@vueuse/shared';
+import { type DeepReadonly, readonly, type Ref, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';

@@ -1,5 +1,6 @@
 import type { Balance, BigNumber, LiquityPoolDetailEntry, LiquityStatisticDetails } from '@rotki/common';
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, shallowRef, toValue } from 'vue';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { LUSD_ID } from '@/modules/staking/liquity/liquity-assets';
 import {

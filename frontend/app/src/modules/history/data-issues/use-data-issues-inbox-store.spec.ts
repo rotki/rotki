@@ -1,5 +1,5 @@
 import { get } from '@vueuse/core';
-import { createPinia, setActivePinia } from 'pinia';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { IssueState } from '@/modules/history/data-issues/constants';

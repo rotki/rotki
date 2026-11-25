@@ -1,6 +1,7 @@
 import type { DeleteBlockchainAccountParams, DeleteXpubParams } from '@/modules/accounts/blockchain-accounts';
 import type { BlockchainBalances } from '@/modules/balances/types/blockchain-balances';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { accountActivityLabel, accountAgnosticRemoveActivity, accountRemoveActivity, type AccountSubject } from '@/modules/accounts/accounts.activity';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { logger } from '@/modules/core/common/logging/logging';

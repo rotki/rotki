@@ -4,6 +4,7 @@ import type { FetchAccountsParams, RefreshAccountsParams } from '@/modules/accou
 import type { Module } from '@/modules/core/common/modules';
 import { type Account, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
 import { pipe } from 'plainfp';
 import { err, isErr, mapError, map as mapResult, ok, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';

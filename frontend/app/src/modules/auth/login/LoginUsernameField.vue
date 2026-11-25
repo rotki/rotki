@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { focusInput } from '@/modules/auth/login/focus-input';
 import LoginNoProfilesMessage from '@/modules/auth/login/LoginNoProfilesMessage.vue';
 import { sortUsernamesByKeyword } from '@/modules/auth/login/sort-usernames';

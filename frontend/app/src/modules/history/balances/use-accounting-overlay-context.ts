@@ -1,6 +1,6 @@
-import type { InjectionKey, Ref } from 'vue';
 import type { UseAccountingOverlayReturn } from '@/modules/history/balances/use-accounting-overlay';
 import type { UseAccountingOverlaySeriesReturn } from '@/modules/history/balances/use-accounting-overlay-series';
+import { inject, type InjectionKey, provide, type Ref } from 'vue';
 
 /**
  * Context shared from the history events view down to the (deeply nested, virtualized)

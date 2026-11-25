@@ -1,4 +1,5 @@
 import type { Snapshot } from '@/modules/dashboard/snapshots';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { toSnapshotPayload } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { useSnapshotApi } from '@/modules/settings/api/use-snapshot-api';
 

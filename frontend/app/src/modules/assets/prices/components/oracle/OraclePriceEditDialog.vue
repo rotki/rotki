@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { OraclePriceEntry } from '@/modules/assets/prices/price-types';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';

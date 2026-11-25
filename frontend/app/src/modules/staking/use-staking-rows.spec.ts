@@ -1,5 +1,6 @@
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { withSetup } from '@test/utils/with-setup';
+import { get } from '@vueuse/shared';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';

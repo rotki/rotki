@@ -1,8 +1,9 @@
 import type { SupportedAsset } from '@rotki/common';
-import type { Ref } from 'vue';
 import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Ref, ref } from 'vue';
 import { useManagedAssetOperations } from './use-managed-asset-operations';
 
 const { spies } = vi.hoisted(() => ({

@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, type VNode } from 'vue';
+import { defineComponent, h, ref, type VNode } from 'vue';
 import { useScrambleSetting } from './use-scramble-settings';
 
 type ScrambleApi = ReturnType<typeof useScrambleSetting>;

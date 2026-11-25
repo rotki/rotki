@@ -1,4 +1,5 @@
-import type { Ref } from 'vue';
+import { createSharedComposable } from '@vueuse/core';
+import { type Ref, ref } from 'vue';
 
 interface UseRestartingStatusReturn {
   /** Whether a backend restart is under way. */

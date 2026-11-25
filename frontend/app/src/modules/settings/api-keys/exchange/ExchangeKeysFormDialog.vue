@@ -2,6 +2,10 @@
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { assert } from '@rotki/common';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useBinancePairsConditions } from '@/modules/balances/exchanges/use-binance-pairs-conditions';
 import { useExchangeKeyConditions } from '@/modules/balances/exchanges/use-exchange-key-conditions';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';

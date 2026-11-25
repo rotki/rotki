@@ -3,8 +3,9 @@ import type { UseHistoryEventActionMenuOptions } from '@/modules/history/events/
 import { HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, nextTick, ref } from 'vue';
 import HistoryEventsAction from '@/modules/history/events/HistoryEventsAction.vue';
 
 const evmEvent = createMock<HistoryEventEntry>({

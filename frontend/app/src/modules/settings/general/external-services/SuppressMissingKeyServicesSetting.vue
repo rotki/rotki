@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { toCapitalCase } from '@rotki/common';
+import { createReusableTemplate } from '@vueuse/core';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import SettingMultiSelect from '@/modules/settings/controls/SettingMultiSelect.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';

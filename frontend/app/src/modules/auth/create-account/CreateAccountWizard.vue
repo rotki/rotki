@@ -2,6 +2,9 @@
 import type { CreateAccountMode, CreateAccountStepId } from '@/modules/auth/create-account/types';
 import type { CreateAccountPayload } from '@/modules/auth/login';
 import { externalLinks } from '@shared/external-links';
+import { get } from '@vueuse/shared';
+import { computed, onBeforeMount, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import CreateAccountProgress from '@/modules/auth/create-account/CreateAccountProgress.vue';
 import CreateAccountCredentials
   from '@/modules/auth/create-account/credentials/CreateAccountCredentials.vue';

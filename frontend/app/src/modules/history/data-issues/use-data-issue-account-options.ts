@@ -1,4 +1,7 @@
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, onMounted } from 'vue';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { DisplayKinds, type ValueDisplay } from '@/modules/core/table/pill/core/types';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';

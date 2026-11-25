@@ -1,3 +1,4 @@
+import type { useI18n } from 'vue-i18n';
 import type { NotificationStrategy } from './types';
 import { assert, NotificationGroup } from '@rotki/common';
 import { displaysFor } from '@/modules/core/notifications/notification-display-policy';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { useI18n } from 'vue-i18n';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import PersistPrivacySettings from '@/modules/settings/frontend/PersistPrivacySettings.vue';
 import ScrambleDataSetting from '@/modules/settings/frontend/ScrambleDataSetting.vue';

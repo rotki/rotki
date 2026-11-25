@@ -1,4 +1,6 @@
-import type { Ref } from 'vue';
+import { useIntervalFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { nextTick, onMounted, readonly, type Ref, shallowRef } from 'vue';
 
 interface UseRandomStepperReturn {
   onNavigate: (newStep: number) => Promise<void>;

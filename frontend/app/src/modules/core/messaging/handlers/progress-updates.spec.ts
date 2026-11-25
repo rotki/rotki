@@ -2,6 +2,7 @@ import type { ProgressUpdateResultData } from '../types/status-types';
 import { Blockchain } from '@rotki/common';
 import { mockT } from '@test/i18n';
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createProgressUpdateHandler } from '@/modules/core/messaging/handlers/progress-updates';

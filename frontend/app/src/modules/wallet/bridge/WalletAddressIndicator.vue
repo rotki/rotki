@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { EIP1193Provider } from '@/types';
+import { get } from '@vueuse/shared';
+import { computed, onBeforeUnmount, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';

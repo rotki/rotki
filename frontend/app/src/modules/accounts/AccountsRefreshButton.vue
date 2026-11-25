@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 import { useCategoryChainRefresh } from '@/modules/accounts/use-category-chain-refresh';
 import RefreshSplitButton from '@/modules/shell/components/RefreshSplitButton.vue';

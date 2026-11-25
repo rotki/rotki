@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import NftSettingsMenu from '@/modules/balances/nft/NftSettingsMenu.vue';
 
 const { loading } = defineProps<{

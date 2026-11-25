@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 

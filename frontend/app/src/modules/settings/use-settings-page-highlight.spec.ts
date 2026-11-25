@@ -1,9 +1,10 @@
 import type { HighlightRequest } from '@/modules/settings/use-settings-highlight';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
-import { defineComponent, h, type VNode } from 'vue';
+import { defineComponent, h, ref, type VNode } from 'vue';
 import { SettingsCategoryIds, SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import { useSettingsPageHighlight } from '@/modules/settings/use-settings-page-highlight';
 

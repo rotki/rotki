@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { GalleryNft } from '@/modules/assets/nfts';
+import { useI18n } from 'vue-i18n';
 import NftGalleryItem from '@/modules/balances/nft/NftGalleryItem.vue';
 
 interface Props {

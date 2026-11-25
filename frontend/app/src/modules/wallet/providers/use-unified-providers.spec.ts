@@ -1,4 +1,6 @@
+import { get } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { type EnhancedProviderDetail, getAllWalletProviders } from '@/modules/wallet/providers/provider-detection';
 import { useUnifiedProviders } from '@/modules/wallet/providers/use-unified-providers';
 

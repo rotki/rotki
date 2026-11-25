@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Filters } from '@/modules/assets/detection/newly-detected-filter-keys';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { useI18n } from 'vue-i18n';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import TableSelectionAction from '@/modules/core/table/TableSelectionAction.vue';

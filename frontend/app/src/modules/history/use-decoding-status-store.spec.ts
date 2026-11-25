@@ -1,4 +1,6 @@
 import type { EvmUnDecodedTransactionsData } from '@/modules/core/messaging/types';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDecodingStatusStore } from './use-decoding-status-store';
 

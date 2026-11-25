@@ -3,7 +3,7 @@ import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, ref, type VNode } from 'vue';
+import { type ComputedRef, defineComponent, h, nextTick, ref, type VNode } from 'vue';
 import ExchangeKeysForm from '@/modules/settings/api-keys/exchange/ExchangeKeysForm.vue';
 import '@test/i18n';
 

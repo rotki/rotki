@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { ButtonProps } from '@rotki/ui-library';
 import type { DashboardTableType, FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';

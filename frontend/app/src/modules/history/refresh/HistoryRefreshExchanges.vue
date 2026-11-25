@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import { getTextToken } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { isEqual, sortBy } from 'es-toolkit';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { useSetting } from '@/modules/settings/use-setting';

@@ -1,5 +1,6 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { type BigNumber, Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { normalizeTimestamp, type Timestamp } from '@/modules/assets/amount-display/types';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 

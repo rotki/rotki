@@ -1,8 +1,10 @@
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef, Ref } from 'vue';
 import type { OraclePriceEntry } from '@/modules/assets/prices/price-types';
 import type { EventPriceUpdatePayload } from '@/modules/history/events/prices/use-event-price-update-trigger';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, readonly, type Ref, ref, shallowReadonly, shallowRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';

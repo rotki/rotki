@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+
 const { variant } = defineProps<{
   variant: 'row' | 'card';
 }>();

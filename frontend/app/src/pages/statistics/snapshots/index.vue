@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { set } from '@vueuse/shared';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import TableFrame from '@/modules/core/table/TableFrame.vue';

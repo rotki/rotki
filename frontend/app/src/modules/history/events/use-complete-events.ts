@@ -1,6 +1,7 @@
-import type { ComputedRef } from 'vue';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
+import { get } from '@vueuse/shared';
 import { flatten } from 'es-toolkit';
+import { computed, type ComputedRef } from 'vue';
 
 interface UseCompleteEventsReturn {
   /**

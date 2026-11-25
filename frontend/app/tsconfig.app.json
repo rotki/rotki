@@ -28,7 +28,6 @@
   "include": [
     "env.d.ts",
     "components.d.ts",
-    "auto-imports.d.ts",
     "src/**/*",
     "src/**/*.vue",
     "shared/**/*",

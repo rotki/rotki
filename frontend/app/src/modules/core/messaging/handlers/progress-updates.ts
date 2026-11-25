@@ -1,3 +1,4 @@
+import type { useI18n } from 'vue-i18n';
 import type { MessageHandler } from '../interfaces';
 import type { ProgressUpdateResultData } from '../types/status-types';
 import type { ProtocolCacheUpdatesData } from '@/modules/core/messaging/types';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { MenuNavGroup } from '@/modules/shell/layout/use-navigation-menu';
+import { useI18n } from 'vue-i18n';
 import NavigationMenuItem from '@/modules/shell/components/navigation/NavigationMenuItem.vue';
 import NavigationMenuLink from '@/modules/shell/components/navigation/NavigationMenuLink.vue';
 

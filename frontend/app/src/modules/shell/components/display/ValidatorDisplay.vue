@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useScramble } from '@/modules/settings/use-scramble';
 

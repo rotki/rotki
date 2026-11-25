@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
+import { set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';

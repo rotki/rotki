@@ -3,6 +3,8 @@ import type { BankConnectionIdentity } from '@/modules/banks/types';
 import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import type { StaleAfterEdge } from '@/modules/task-center/core/orchestrator/spec';
 import type { ActivityKind } from '@/modules/task-center/core/types';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';

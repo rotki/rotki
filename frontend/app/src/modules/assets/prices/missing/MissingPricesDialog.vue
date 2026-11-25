@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { ManualPriceFormPayload } from '@/modules/assets/prices/price-types';
 import { startPromise } from '@shared/utils';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import LatestPriceFormDialog from '@/modules/assets/prices/latest/LatestPriceFormDialog.vue';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';

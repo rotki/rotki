@@ -1,6 +1,8 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent, ref, watch } from 'vue';
 import SettingResetConfirmButton from './SettingResetConfirmButton.vue';
 
 vi.mock('@/services/websocket/websocket-service');

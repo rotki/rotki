@@ -1,6 +1,7 @@
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { LocationHolding, SourceKind } from '@/modules/dashboard/holdings/core/holdings-types';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, toValue } from 'vue';
 import { bigNumberSum } from '@/modules/core/common/data/calculation';
 import { narrowToKind } from '@/modules/dashboard/holdings/core/location-holdings';
 import { splitVisible, visibleTileCount } from '@/modules/dashboard/holdings/core/tile-cap';

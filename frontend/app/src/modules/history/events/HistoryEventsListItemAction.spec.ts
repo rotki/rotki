@@ -3,6 +3,7 @@ import { createMock } from '@test/utils/create-mock';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 import HistoryEventAction from '@/modules/history/events/HistoryEventAction.vue';
 import HistoryEventsListItemAction from '@/modules/history/events/HistoryEventsListItemAction.vue';
 import { HistoryEventAccountingRuleStatus, type HistoryEventEntry } from '@/modules/history/events/schemas';

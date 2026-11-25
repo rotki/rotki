@@ -1,6 +1,7 @@
 import { createMockCSV } from '@test/mocks/file';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import flushPromises from 'flush-promises';
+import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressBookImport } from '@/modules/accounts/address-book/use-address-book-import';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';

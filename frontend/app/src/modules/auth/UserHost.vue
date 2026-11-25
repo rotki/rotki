@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { logicAnd, logicNot } from '@vueuse/math';
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import ConnectionFailureMessage from '@/modules/auth/ConnectionFailureMessage.vue';
 import ConnectionLoading from '@/modules/auth/ConnectionLoading.vue';
 import DockerWarning from '@/modules/auth/DockerWarning.vue';

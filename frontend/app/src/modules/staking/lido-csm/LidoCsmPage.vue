@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { LidoCsmNodeOperator } from '@/modules/staking/staking-types';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { onMounted, ref, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';

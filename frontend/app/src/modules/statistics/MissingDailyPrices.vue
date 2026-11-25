@@ -2,6 +2,9 @@
 import type { FailedHistoricalAssetPriceResponse } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { EditableMissingPrice, MissingPrice } from '@/modules/reports/report-types';
+import { get, set } from '@vueuse/shared';
+import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useEditableMissingPrices } from '@/modules/assets/prices/use-editable-missing-prices';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';

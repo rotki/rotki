@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { toCapitalCase } from '@rotki/common';
+import { computed } from 'vue';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import { useSetting } from '@/modules/settings/use-setting';
 import IconMark from '@/modules/shell/components/IconMark.vue';

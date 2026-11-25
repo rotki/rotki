@@ -2,6 +2,8 @@
 import type { ZodType } from 'zod';
 import type { CounterpartyMapping } from '@/modules/assets/admin/counterparty-mapping/schema';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { counterpartyMappingSchema } from '@/modules/assets/admin/counterparty-mapping/counterparty-mapping-form';
 import { useModelForm } from '@/modules/core/form/use-model-form';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';

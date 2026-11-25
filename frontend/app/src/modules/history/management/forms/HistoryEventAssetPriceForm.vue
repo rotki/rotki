@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
 import { toSentenceCase } from '@rotki/common';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ToggleLocationLink from '@/modules/history/management/forms/common/ToggleLocationLink.vue';
 import { useEventPriceConversion } from '@/modules/history/management/forms/use-event-price-conversion';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';

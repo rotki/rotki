@@ -1,5 +1,7 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { useReportIssue } from '@/modules/core/common/use-report-issue';
 import { UserMessageKey } from '@/modules/core/messaging/types/base';
 import { type BackendProblem, BALANCE_SNAPSHOT, type ProblemItem } from '@/modules/core/notifications/problems/backend-problem-tree';

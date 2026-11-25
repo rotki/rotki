@@ -1,6 +1,10 @@
+import type { useI18n } from 'vue-i18n';
+import type { useRouter } from 'vue-router';
 import type { NewDetectedToken } from '@/modules/assets/detection/types';
 import type { MessageHandler } from '@/modules/core/messaging/interfaces';
 import { NotificationGroup, NotificationKind, Severity } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { useNewlyDetectedTokens } from '@/modules/assets/detection/use-newly-detected-tokens';
 import { createStateWithNotificationHandler } from '@/modules/core/messaging/utils';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';

@@ -1,6 +1,7 @@
 import type { MaybeRef } from 'vue';
 import type { BlockchainAccountGroupRequestPayload } from '@/modules/accounts/blockchain-accounts';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getXpubGroupId } from '@/modules/accounts/account-utils';

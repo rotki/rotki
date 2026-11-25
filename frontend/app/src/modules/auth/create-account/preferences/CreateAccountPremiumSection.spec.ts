@@ -1,4 +1,5 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get } from '@vueuse/shared';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, shallowRef, type VNode } from 'vue';
 import CreateAccountPremiumSection from '@/modules/auth/create-account/preferences/CreateAccountPremiumSection.vue';

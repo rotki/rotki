@@ -1,6 +1,9 @@
 import { hexToRgbPoints, type ThemeColors } from '@rotki/common';
 import { ThemeMode, useRotkiTheme } from '@rotki/ui-library';
+import { createSharedComposable, watchDeep } from '@vueuse/core';
+import { get } from '@vueuse/shared';
 import { getColors } from 'theme-colors';
+import { computed } from 'vue';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useThemeSettings } from '@/modules/shell/theme/use-theme-settings';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';

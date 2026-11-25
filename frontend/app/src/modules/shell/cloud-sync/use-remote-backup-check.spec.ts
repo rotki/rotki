@@ -1,3 +1,4 @@
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';

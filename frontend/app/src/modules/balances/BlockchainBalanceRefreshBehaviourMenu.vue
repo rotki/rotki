@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import SettingSelect from '@/modules/settings/controls/SettingSelect.vue';
 import { BlockchainRefreshButtonBehaviour } from '@/modules/settings/types/frontend-settings';
 

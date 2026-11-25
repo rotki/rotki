@@ -1,5 +1,6 @@
-import type { ComputedRef } from 'vue';
 import type { PillBarLabels } from '@/modules/core/table/pill/core/types';
+import { computed, type ComputedRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 /**
  * The bar's own copy, which says nothing about the table it filters: "Add filter", "Clear all",

@@ -1,4 +1,6 @@
-import type { ComponentPublicInstance, ComputedRef, ShallowRef } from 'vue';
+import { useElementSize } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { type ComponentPublicInstance, computed, type ComputedRef, type ShallowRef } from 'vue';
 
 /** Chrome that does not change height: page header, card padding, the table's own header row. */
 const BASE_TABLE_HEIGHT_OFFSET = 252;

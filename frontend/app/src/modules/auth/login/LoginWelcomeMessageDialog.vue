@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import WelcomeMessageDisplay from '@/modules/auth/login/WelcomeMessageDisplay.vue';
 import { useDynamicMessages } from '@/modules/core/messaging/use-dynamic-messages';
 

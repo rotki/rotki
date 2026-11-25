@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { ActivityId } from '@/modules/task-center/core/types';
 import { Blockchain } from '@rotki/common';
+import { set } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { addAccountLink } from '@/modules/accounts/add-account-link';
 import { useTaskDock } from '@/modules/task-center/use-task-dock';
 

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import BankAuthChallengeFields from '@/modules/banks/components/BankAuthChallengeFields.vue';
 import { type BankAuthenticationRequest, type BankSetupError, challengeNeedsResponse, isBankSetupComplete } from '@/modules/banks/types';
 import { useBankAuthenticationPolling } from '@/modules/banks/use-bank-authentication-polling';

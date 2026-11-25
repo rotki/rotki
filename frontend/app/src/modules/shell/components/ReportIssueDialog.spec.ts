@@ -1,5 +1,6 @@
 import { SUPPORT_EMAIL } from '@shared/external-links';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { nextTick, type Ref } from 'vue';
 import ReportIssueDialog from '@/modules/shell/components/ReportIssueDialog.vue';

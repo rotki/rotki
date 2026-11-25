@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type { HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { isErr } from 'plainfp/result';
-import { useTemplateRef } from 'vue';
+import { computed, ref, shallowRef, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import HistoricPriceForm from '@/modules/assets/prices/historic/HistoricPriceForm.vue';
 import { useHistoricPrices } from '@/modules/assets/prices/use-historic-price-manager';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';

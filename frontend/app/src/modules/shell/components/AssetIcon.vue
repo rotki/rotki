@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifier } from '@rotki/common';
+import { isDefined, reactify, watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useBlockie } from '@/modules/accounts/use-blockie';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useAssetIconCheck } from '@/modules/assets/use-asset-icon-check';

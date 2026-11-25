@@ -1,5 +1,7 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { type AssetBalance, getTextToken } from '@rotki/common';
+import { watchImmediate } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { useAssetSelectInfo } from '@/modules/assets/use-asset-select-info';
 import { type AssetSearchTokens, assetSearchTokens, assetTokensExactlyMatch, assetTokensMatch } from '@/modules/core/common/display/assets';
 

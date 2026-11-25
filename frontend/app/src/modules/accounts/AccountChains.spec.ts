@@ -1,5 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import AccountChains from '@/modules/accounts/AccountChains.vue';
 import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { type InternalTxConflict, InternalTxConflictActions } from './types';
 
 const { row, resolving, disabled, actionLabel, highlighted } = defineProps<{

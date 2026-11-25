@@ -2,6 +2,7 @@ import type { Nft } from '@/modules/assets/nfts';
 import type { NftPrice } from '@/modules/assets/prices/price-types';
 import { bigNumberify } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useNftGalleryData } from './use-nft-gallery-data';
 

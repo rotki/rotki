@@ -1,7 +1,8 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { BigNumber, PriceQuality, type ResolvedPrice } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
+import { get } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { usdRatesAt } from '@/modules/premium/premium-pricing-apis';
 
 interface RatesCall {

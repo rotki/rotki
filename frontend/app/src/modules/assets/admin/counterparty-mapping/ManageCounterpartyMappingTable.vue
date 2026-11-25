@@ -5,6 +5,7 @@ import type { CounterpartyMapping } from '@/modules/assets/admin/counterparty-ma
 import type { Collection } from '@/modules/core/common/collection';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { useI18n } from 'vue-i18n';
 import MappingAdminTable from '@/modules/assets/admin/MappingAdminTable.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 

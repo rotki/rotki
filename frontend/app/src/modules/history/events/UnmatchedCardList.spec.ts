@@ -1,7 +1,9 @@
 import type { UnmatchedFailure } from '@/modules/history/events/unmatched-actions';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { ApiRequestError } from '@/modules/core/api/types/errors';
 import UnmatchedCardList from '@/modules/history/events/UnmatchedCardList.vue';
 

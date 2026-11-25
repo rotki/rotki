@@ -1,4 +1,5 @@
 import type { Ref } from 'vue';
+import { storeToRefs } from 'pinia';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 
 export function usePremium(): Ref<boolean> {

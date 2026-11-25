@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { NotificationKind, Severity } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAddressBookImport } from '@/modules/accounts/address-book/use-address-book-import';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';

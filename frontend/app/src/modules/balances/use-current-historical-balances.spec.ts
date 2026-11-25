@@ -5,6 +5,7 @@ import { startPromise } from '@shared/utils';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises } from '@vue/test-utils';
 import { get } from '@vueuse/shared';
+import { setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type EffectScope, effectScope } from 'vue';
 import { useHistoricalSnapshotStore } from '@/modules/balances/use-historical-snapshot-store';

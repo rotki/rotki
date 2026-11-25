@@ -2,6 +2,7 @@ import { createCustomPinia } from '@test/utils/create-pinia';
 import { createLocationNode as node } from '@test/utils/location-tree';
 import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 import { useLocationTreeExpansion } from '@/modules/locations/use-location-tree-expansion';
 import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 

@@ -2,6 +2,8 @@ import type { RefreshMode } from '@/modules/balances/types/refresh-mode';
 import type { EvmChainInfo, SupportedChains } from '@/modules/core/api/types/chains';
 import { Blockchain } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { get } from '@vueuse/shared';
+import { setActivePinia } from 'pinia';
 import { ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount } from '@/modules/accounts/create-account';

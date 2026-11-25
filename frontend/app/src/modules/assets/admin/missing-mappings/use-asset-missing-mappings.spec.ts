@@ -1,5 +1,6 @@
 import type { Collection } from '@/modules/core/common/collection';
 import type { MissingMapping } from '@/modules/user-data/schemas';
+import { get } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type Ref, ref } from 'vue';

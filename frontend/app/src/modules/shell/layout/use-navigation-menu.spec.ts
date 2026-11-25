@@ -1,5 +1,7 @@
 import type { RouteNavMeta } from '@/types/router';
+import { get, set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { msg } from '@/message-key';
 import { type MenuItem, type MenuNavGroup, type MenuNavItem, useNavigationMenu } from '@/modules/shell/layout/use-navigation-menu';
 

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import { WALLET_MODES } from '@/modules/wallet/constants';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';

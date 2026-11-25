@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { syncRefs, useElementSize, useIntervalFn, useTimestamp } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import DockJobNode from '@/modules/task-center/components/DockJobNode.vue';
 import DockPanelHeader from '@/modules/task-center/components/DockPanelHeader.vue';
 import DockPill from '@/modules/task-center/components/DockPill.vue';

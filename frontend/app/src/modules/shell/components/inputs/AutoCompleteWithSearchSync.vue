@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { RuiAutoComplete } from '@rotki/ui-library';
-
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+import { set } from '@vueuse/shared';
+import { ref, watch } from 'vue';
 
 interface Props {
   items: string[];

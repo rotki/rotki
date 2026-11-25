@@ -1,7 +1,9 @@
-import type { ComputedRef, InjectionKey, MaybeRefOrGetter } from 'vue';
 import type { BlockchainAssetBalances, EthBalance } from '@/modules/balances/types/blockchain-balances';
 import type { TradableAsset, TradableAssetWithoutValue } from '@/modules/wallet/types';
 import { Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, inject, type InjectionKey, type MaybeRefOrGetter, toValue } from 'vue';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';

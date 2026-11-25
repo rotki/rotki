@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
 import { toRem } from '@/modules/core/common/data/data';
 import { getPublicPlaceholderImagePath } from '@/modules/core/common/file/file';
 

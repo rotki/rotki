@@ -1,6 +1,7 @@
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ReportGenerator from '@/modules/reports/ReportGenerator.vue';
 

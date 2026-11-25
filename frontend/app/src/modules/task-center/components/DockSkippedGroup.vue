@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { Activity } from '@/modules/task-center/core/types';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import { type ActivitySubject, activitySubject } from '@/modules/task-center/activity-subject';
 import DockTrackAction from '@/modules/task-center/components/DockTrackAction.vue';

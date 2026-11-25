@@ -1,6 +1,7 @@
 import { groupBy } from 'es-toolkit';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';

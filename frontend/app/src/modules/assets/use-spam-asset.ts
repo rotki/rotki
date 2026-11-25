@@ -1,4 +1,6 @@
 import type { ActionStatus } from '@/modules/core/common/action';
+import { get } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
 import { useAssetSpamApi } from '@/modules/assets/api/use-asset-spam-api';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';

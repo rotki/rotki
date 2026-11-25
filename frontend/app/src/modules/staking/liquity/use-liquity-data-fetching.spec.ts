@@ -1,7 +1,9 @@
 import { runSpecWith } from '@test/utils/mocks/native-task';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Ref, ref } from 'vue';
 import { Module } from '@/modules/core/common/modules';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { ActivityPart, type WorkStatus } from '@/modules/task-center/core/types';

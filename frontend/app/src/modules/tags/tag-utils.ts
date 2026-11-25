@@ -1,4 +1,5 @@
 import type { MaybeRef } from 'vue';
+import { get } from '@vueuse/shared';
 
 /**
  * Deduplicates an array of tags using case-insensitive comparison.

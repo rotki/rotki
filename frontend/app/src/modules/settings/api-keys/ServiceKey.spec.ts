@@ -1,6 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 import ServiceKey from '@/modules/settings/api-keys/ServiceKey.vue';
 
 describe('service-key', () => {

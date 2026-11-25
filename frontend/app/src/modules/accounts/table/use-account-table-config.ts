@@ -2,6 +2,7 @@ import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
 import type { AccountDataRow } from './types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
+import { useI18n } from 'vue-i18n';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 
 interface UseAccountTableConfigReturn<T extends BlockchainAccountBalance> {

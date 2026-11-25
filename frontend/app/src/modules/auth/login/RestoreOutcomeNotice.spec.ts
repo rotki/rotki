@@ -1,5 +1,8 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { defineComponent, nextTick } from 'vue';
 import RestoreOutcomeNotice from '@/modules/auth/login/RestoreOutcomeNotice.vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { RestoreOutcomeKind, useRestoreOutcomeNotice } from '@/modules/session/use-restore-outcome-notice';

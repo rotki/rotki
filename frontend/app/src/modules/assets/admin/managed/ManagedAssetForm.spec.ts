@@ -2,7 +2,9 @@ import type { StubInstance } from '@test/utils/component-vm';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { EvmTokenKind, type SupportedAsset } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed } from 'vue';
 import { CUSTOM_ASSET, EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_TOKEN } from '@/modules/assets/types';
 import '@test/i18n';
 

@@ -1,5 +1,6 @@
-import type { MaybeRefOrGetter } from 'vue';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import { type MaybeRefOrGetter, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 
 interface UseFeeNotesReturn {

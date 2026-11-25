@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
 import type { BaseMessage } from '@/modules/core/messaging/base-message';
 import type { PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
+import { get, set } from '@vueuse/shared';
+import { computed, type HTMLAttributes, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import PriceRefresh from '@/modules/assets/prices/PriceRefresh.vue';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';

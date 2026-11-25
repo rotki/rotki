@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { RPC_CONNECT_ERROR, summariseRpcConnectError } from '@/modules/settings/general/rpc/providers/rpc-connect-error';
 import { RPC_SETUP_STATUS, type RpcSetupRow } from '@/modules/settings/general/rpc/providers/use-rpc-provider-setup';

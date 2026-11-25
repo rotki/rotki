@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useNotificationUnread } from '@/modules/core/notifications/use-notification-unread';
 import { useSilentNotifications } from '@/modules/core/notifications/use-silent-notifications';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';

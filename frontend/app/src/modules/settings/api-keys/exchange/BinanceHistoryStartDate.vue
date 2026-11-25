@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { set } from '@vueuse/shared';
+import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
 

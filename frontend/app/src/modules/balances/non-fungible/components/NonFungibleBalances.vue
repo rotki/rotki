@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import NonFungibleBalancesFilter from '@/modules/accounts/balances/NonFungibleBalancesFilter.vue';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import LatestPriceFormDialog from '@/modules/assets/prices/latest/LatestPriceFormDialog.vue';

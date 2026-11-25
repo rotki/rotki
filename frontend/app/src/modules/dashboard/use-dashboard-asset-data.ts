@@ -1,9 +1,11 @@
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { DataTableSortData } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, shallowRef, toValue } from 'vue';
 import { useAssetBalanceSearch } from '@/modules/assets/use-asset-balance-search';
 import { useAssetSelectInfo } from '@/modules/assets/use-asset-select-info';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
+import { refDebounced } from '@/modules/core/common/async/scoped-timers';
 import { bigNumberSum, calculatePercentage } from '@/modules/core/common/data/calculation';
 import { sortAssetBalances } from '@/modules/core/common/display/balances';
 import { useDashboardStores } from '@/modules/dashboard/use-dashboard-stores';

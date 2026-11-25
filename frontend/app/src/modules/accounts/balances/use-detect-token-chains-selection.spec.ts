@@ -1,4 +1,6 @@
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, ref } from 'vue';
 
 const mockEvmChains = ref([
   { evmChainName: 'Ethereum', id: 'eth', image: '', name: 'Ethereum', type: 'evm' as const },

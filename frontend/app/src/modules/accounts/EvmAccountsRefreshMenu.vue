@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { set } from '@vueuse/shared';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import DetectEvmAccounts from '@/modules/accounts/balances/DetectEvmAccounts.vue';
 import DetectTokenChainsSelection from '@/modules/accounts/balances/DetectTokenChainsSelection.vue';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';

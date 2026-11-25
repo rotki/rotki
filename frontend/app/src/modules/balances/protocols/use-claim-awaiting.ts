@@ -1,6 +1,7 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { type BigNumber, type ClaimAccount, type ClaimRequest, type ProtocolBalance, Zero } from '@rotki/common';
 import { useIntervalFn, useNow } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { compareClaims } from '@/modules/balances/aggregation/core/balance-entry';
 
 const CLAIM_READINESS_TICK_MS = 30_000;

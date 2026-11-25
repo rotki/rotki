@@ -2,6 +2,8 @@
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';

@@ -1,5 +1,5 @@
-import type { ComputedRef } from 'vue';
 import { Blockchain } from '@rotki/common';
+import { computed, type ComputedRef } from 'vue';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';
 import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-center';

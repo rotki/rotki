@@ -2,8 +2,10 @@ import type { ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/modu
 import type { Collection } from '@/modules/core/common/collection';
 import { bigNumberify } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
 import { ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useManualBalancePagination } from './use-manual-balance-pagination';
 
 const manualBalances = ref<{ id: number }[]>([{ id: 1 }]);

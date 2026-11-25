@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { fintsBankLogo } from '@/modules/banks/fints-bank-directory';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';

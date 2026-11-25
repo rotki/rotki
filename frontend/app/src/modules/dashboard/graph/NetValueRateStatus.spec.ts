@@ -1,7 +1,9 @@
 import type { FailedHistoricalAssetPriceResponse } from '@rotki/common';
 import type { SnapshotRateStatus } from '@/modules/statistics/pricing/use-snapshot-rate-status';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import NetValueRateStatus from '@/modules/dashboard/graph/NetValueRateStatus.vue';
 
 const { failedDailyPrices, status } = await vi.hoisted(async () => {

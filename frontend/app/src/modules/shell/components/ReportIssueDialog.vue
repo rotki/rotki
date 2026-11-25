@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import { externalLinks, SUPPORT_EMAIL } from '@shared/external-links';
+import { useClipboard } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { useReportIssue } from '@/modules/core/common/use-report-issue';

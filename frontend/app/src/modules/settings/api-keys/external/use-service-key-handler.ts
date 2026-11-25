@@ -1,5 +1,6 @@
-import type { Ref } from 'vue';
 import type ServiceKey from '@/modules/settings/api-keys/ServiceKey.vue';
+import { get } from '@vueuse/shared';
+import { type Ref, ref } from 'vue';
 
 interface UseServiceKeyHandlerReturn<T extends InstanceType<typeof ServiceKey>> {
   serviceKeyRef: Ref<T | undefined>;

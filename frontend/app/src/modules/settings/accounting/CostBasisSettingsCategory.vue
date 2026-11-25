@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { useI18n } from 'vue-i18n';
 import CalculatePastCostBasisSetting from '@/modules/settings/accounting/CalculatePastCostBasisSetting.vue';
 import CostBasisFeesSetting from '@/modules/settings/accounting/CostBasisFeesSetting.vue';
 import CostBasisMethodSetting from '@/modules/settings/accounting/CostBasisMethodSetting.vue';

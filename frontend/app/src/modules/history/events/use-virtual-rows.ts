@@ -1,7 +1,8 @@
-import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventBridgeUnlinkPayload } from '@/modules/history/events/types';
 import { HistoryEventEntryType } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type DeepReadonly, type MaybeRefOrGetter, readonly, type Ref, shallowRef, toValue } from 'vue';
 import { getMatchedBridgeUnlink } from '@/modules/history/event-utils';
 
 export const ROW_HEIGHTS = {

@@ -1,6 +1,8 @@
 import type { SupportedCurrency } from '@/modules/assets/amount-display/currencies';
 import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import type { ExchangeRates } from '@/modules/settings/types/user-settings';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { ref, shallowRef } from 'vue';
 
 export const useBalancePricesStore = defineStore('balances/prices', () => {
   const prices = shallowRef<AssetPrices>({});

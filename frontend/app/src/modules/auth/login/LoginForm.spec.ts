@@ -1,14 +1,15 @@
-import type { StubInstance } from '@test/utils/component-vm';
 import type { LoginCredentials } from '@/modules/auth/login';
 import type { useCustomBackend } from '@/modules/auth/login/use-custom-backend';
 import type { useLoginRememberOptions } from '@/modules/auth/login/use-login-remember-options';
 import type { useLogout } from '@/modules/auth/use-logout';
 import type { useSavedProfiles } from '@/modules/auth/use-saved-profiles';
 import type { ActionStatus } from '@/modules/core/common/action';
+import { findStub, type StubInstance } from '@test/utils/component-vm';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import '@test/i18n';
 
 const backendDisplay = ref<boolean>(false);
@@ -417,7 +418,7 @@ describe('loginForm', () => {
 
     async function logOutOther(): Promise<void> {
       await flushPromises();
-      const alert = wrapper.findComponent<StubInstance>('[data-testid=login-already-logged-in]');
+      const alert = findStub(wrapper, '[data-testid=login-already-logged-in]');
       assert(alert.exists(), 'the logged-in alert is not rendered');
       expect(alert.props('actionText')).toBe('login.logout');
       alert.vm.$emit('action');

@@ -1,3 +1,5 @@
+import type { useI18n } from 'vue-i18n';
+import type { useRouter } from 'vue-router';
 import type { MessageHandlerRegistry } from '../interfaces';
 import { createExchangeUnknownAssetHandler } from '@/modules/assets/admin/missing-mappings/exchange-unknown-asset-handler';
 import { createNewTokenDetectedHandler } from '@/modules/assets/detection/new-token-detected-handler';

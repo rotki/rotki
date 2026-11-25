@@ -1,6 +1,7 @@
 import type { DataTableSortData } from '@rotki/ui-library';
-import type { Ref, WritableComputedRef } from 'vue';
 import type { Sorting } from '@/modules/core/table/pagination-filter-types';
+import { get } from '@vueuse/shared';
+import { computed, markRaw, type Ref, ref, type WritableComputedRef } from 'vue';
 import { applySortingDefaults, getSorting } from '@/modules/core/table/pagination-filter-utils';
 
 interface UseTableSortingReturn<TItem extends NonNullable<unknown>> {

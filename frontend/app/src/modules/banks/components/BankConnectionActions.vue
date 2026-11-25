@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { useI18n } from 'vue-i18n';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
 const { authenticationRequired = false, deleteConfirm, syncing = false } = defineProps<{

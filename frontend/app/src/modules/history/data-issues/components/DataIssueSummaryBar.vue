@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { StateCounts } from '@/modules/history/data-issues/use-data-issues-inbox-store';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { IssueState, STATE_META } from '@/modules/history/data-issues/constants';
 import { useDataIssuesFormat } from '@/modules/history/data-issues/use-data-issues-format';
 

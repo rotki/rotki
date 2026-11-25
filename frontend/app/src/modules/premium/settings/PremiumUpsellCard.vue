@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
+import { useI18n } from 'vue-i18n';
 import { type MessageKey, msg } from '@/message-key';
 import PremiumPanel from '@/modules/premium/settings/PremiumPanel.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';

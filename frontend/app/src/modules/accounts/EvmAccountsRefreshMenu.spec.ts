@@ -1,6 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import EvmAccountsRefreshMenu from '@/modules/accounts/EvmAccountsRefreshMenu.vue';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { InternalTxConflict } from './types';
+import { set } from '@vueuse/shared';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import InternalTxConflictsDialogHeaderActions from '@/modules/history/internal-tx-conflicts/InternalTxConflictsDialogHeaderActions.vue';
 import { PinnedNames } from '@/modules/session/types';
 import InternalTxConflictRepullSettings from '@/modules/settings/general/InternalTxConflictRepullSettings.vue';

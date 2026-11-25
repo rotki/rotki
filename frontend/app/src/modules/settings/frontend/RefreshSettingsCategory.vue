@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { useI18n } from 'vue-i18n';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import QueryPeriodSetting from '@/modules/settings/general/QueryPeriodSetting.vue';
 import RefreshSetting from '@/modules/settings/general/RefreshSetting.vue';

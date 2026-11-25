@@ -4,8 +4,11 @@ import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/event
 import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import { HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed } from 'vue';
 import { useHistoryEventsActionFailure } from './use-history-events-action-failure';
 import { useHistoryEventsOperations } from './use-history-events-operations';
 

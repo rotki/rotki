@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { CounterpartyMapping } from '@/modules/assets/admin/counterparty-mapping/schema';
-import { useTemplateRef } from 'vue';
+import { ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ManageCounterpartyMappingForm
   from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingForm.vue';
 import { useCounterpartyMappingApi } from '@/modules/assets/admin/counterparty-mapping/use-counterparty-mapping-api';

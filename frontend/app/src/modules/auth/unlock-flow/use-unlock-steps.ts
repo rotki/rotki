@@ -1,4 +1,6 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { err, none, ok, type OptionType as Option, type ResultType as Result } from 'plainfp';
 import { lastLogin } from '@/modules/auth/account-management';
 import { type CreateAccountPayload, IncompleteUpgradeError, SyncConflictError } from '@/modules/auth/login';

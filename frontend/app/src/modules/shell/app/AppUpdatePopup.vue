@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
+import { useTimeoutFn } from '@vueuse/core';
+import { set } from '@vueuse/shared';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useUpdateChecker } from '@/modules/session/use-update-checker';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';

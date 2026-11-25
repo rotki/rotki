@@ -1,5 +1,7 @@
 import type { BlockchainRpcNode } from '@/modules/settings/types/rpc';
 import { Blockchain } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type Ref, ref } from 'vue';
 import { NODE_STATUS } from '@/modules/settings/general/rpc/rpc-node-status';

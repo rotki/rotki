@@ -2,6 +2,7 @@ import type { ActivityId } from '@/modules/task-center/core/types';
 import { toSentenceCase } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { type Exchange, QueryExchangeEventsPayload } from '@/modules/balances/types/exchanges';
 import { logger } from '@/modules/core/common/logging/logging';

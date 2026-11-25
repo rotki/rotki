@@ -1,4 +1,6 @@
 import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBlockchainAccountsStore } from './use-blockchain-accounts-store';
 

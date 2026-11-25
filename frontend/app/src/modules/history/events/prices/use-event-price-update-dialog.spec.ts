@@ -2,6 +2,7 @@ import type { OraclePriceEntry } from '@/modules/assets/prices/price-types';
 import type { EventPriceUpdatePayload } from '@/modules/history/events/prices/use-event-price-update-trigger';
 import { bigNumberify } from '@rotki/common';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, ref, type Ref } from 'vue';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';

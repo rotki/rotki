@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ExchangeRefreshMenuItem from '@/modules/balances/exchanges/ExchangeRefreshMenuItem.vue';
 import { useLocations } from '@/modules/core/common/use-locations';
 import RefreshSplitButton from '@/modules/shell/components/RefreshSplitButton.vue';

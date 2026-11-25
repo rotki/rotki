@@ -1,7 +1,9 @@
-import type { ComputedRef, Ref } from 'vue';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/use-selection-mode';
 import { type Blockchain, HistoryEventEntryType } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type Ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';

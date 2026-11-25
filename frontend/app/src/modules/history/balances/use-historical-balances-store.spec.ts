@@ -1,5 +1,7 @@
 import type { NegativeBalanceDetectedData } from '@/modules/core/messaging/types/status-types';
 import { bigNumberify } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useHistoricalBalancesStore } from './use-historical-balances-store';
 

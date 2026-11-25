@@ -1,4 +1,6 @@
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { get } from '@vueuse/shared';
+import { setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ConfirmChoice, useConfirmStore } from '@/modules/core/common/use-confirm-store';
 

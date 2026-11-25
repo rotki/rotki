@@ -2,6 +2,7 @@
 import type { ContextColorsType, RuiButton, RuiIcons } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { createReusableTemplate } from '@vueuse/core';
 import { useTableSelectionCollapsed } from '@/modules/core/table/table-selection-collapse';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 import { useConfirmMenuAsk } from '@/modules/shell/components/use-confirm-menu';

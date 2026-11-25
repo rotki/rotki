@@ -1,4 +1,7 @@
-import type { ComputedRef } from 'vue';
+import { createSharedComposable, watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, ref } from 'vue';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';

@@ -2,6 +2,9 @@
 import type { LocationAndTxRef, PullEventPayload } from '@/modules/history/events/event-payloads';
 import type { HistoryEventEntry, StandaloneEditableEvents } from '@/modules/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type DuplicateHandlingStatus, getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import HistoryEventsAction from '@/modules/history/events/HistoryEventsAction.vue';

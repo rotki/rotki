@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { createReusableTemplate } from '@vueuse/core';
+import { set } from '@vueuse/shared';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 /**
  * A refresh button with a chevron that opens a menu of narrower refresh actions.

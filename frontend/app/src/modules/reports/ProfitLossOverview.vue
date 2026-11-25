@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { ProfitLossOverviewItem, Report } from '@/modules/reports/report-types';
 import { pluralizeLastWord, toCapitalCase } from '@rotki/common';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { calculateTotalProfitLoss } from '@/modules/reports/report-utils';
 

@@ -1,9 +1,9 @@
-import type { ComputedRef, InjectionKey, Ref } from 'vue';
 import type { DuplicateHandlingStatus, HighlightType } from '@/modules/history/events/action-types';
 import type { LocationAndTxRef, PullEventPayload } from '@/modules/history/events/event-payloads';
 import type { HistoryEventEntry, StandaloneEditableEvents } from '@/modules/history/events/schemas';
 import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
+import { type ComputedRef, inject, type InjectionKey, provide, type Ref } from 'vue';
 
 /** Presentation state shared by every row, regardless of its kind. */
 interface HistoryEventsRowDisplay {

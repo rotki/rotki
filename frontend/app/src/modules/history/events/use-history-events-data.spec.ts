@@ -1,11 +1,13 @@
-import type { Ref } from 'vue';
 import type { RotkiApi } from '@/modules/core/api/rotki-api';
 import type { Collection } from '@/modules/core/common/collection';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { assert, bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, effectScope, nextTick, type Ref, ref } from 'vue';
 import { RequestCancelled, type RequestError, RequestFailed } from '@/modules/core/api/request-result';
 import { HistoryEventAccountingRuleStatus, type HistoryEventEntry, type HistoryEventRow } from '@/modules/history/events/schemas';
 

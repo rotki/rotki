@@ -2,6 +2,7 @@ import { createCustomPinia } from '@test/utils/create-pinia';
 import { mockUseNotifications } from '@test/utils/mocks/notifications';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get } from '@vueuse/shared';
 import { setActivePinia } from 'pinia';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import AssetIconForm from '@/modules/assets/admin/AssetIconForm.vue';

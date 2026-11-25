@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import PremiumPanel from '@/modules/premium/settings/PremiumPanel.vue';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';

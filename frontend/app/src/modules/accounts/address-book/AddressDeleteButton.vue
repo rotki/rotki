@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { AddressBookEntry, AddressBookLocation } from '@/modules/accounts/address-book/eth-names';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AddressNamePriority } from '@/modules/accounts/address-book/types/address-name-priorities';
 import { useAddressBookDeletion } from '@/modules/accounts/address-book/use-address-book-deletion';
 import ConfirmInPlace from '@/modules/shell/components/ConfirmInPlace.vue';

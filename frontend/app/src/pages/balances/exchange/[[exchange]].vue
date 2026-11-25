@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { type AssetBalanceWithPrice, type BigNumber, Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
 import BinanceSavingDetail from '@/modules/balances/exchanges/BinanceSavingDetail.vue';

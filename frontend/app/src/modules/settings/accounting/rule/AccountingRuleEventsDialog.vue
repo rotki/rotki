@@ -3,6 +3,9 @@ import type { Filters } from '@/modules/history/events/history-event-filter-keys
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableSource } from '@/modules/history/events/types';
+import { get } from '@vueuse/shared';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';

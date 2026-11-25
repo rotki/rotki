@@ -1,9 +1,10 @@
-import type { ComputedRef } from 'vue';
 import type { TradableAsset } from '@/modules/wallet/types';
 import { bigNumberify } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, type ComputedRef } from 'vue';
 import TradeAssetDisplay from '@/modules/wallet/send/TradeAssetDisplay.vue';
 
 const useAssetField = vi.fn<(identifier: unknown, field: string) => ComputedRef<string>>();

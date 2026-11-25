@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type InternalTxConflict, InternalTxConflictActions } from './types';
 import { useInternalTxConflictSelection } from './use-internal-tx-conflict-selection';

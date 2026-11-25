@@ -1,5 +1,6 @@
 import type { LocationQuery } from 'vue-router';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ref, type Ref } from 'vue';
 import GroupedImport from '@/modules/user-data/GroupedImport.vue';

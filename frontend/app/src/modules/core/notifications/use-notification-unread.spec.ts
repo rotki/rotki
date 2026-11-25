@@ -1,5 +1,6 @@
 import { type NotificationData, NotificationGroup, NotificationKind, Severity } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { get, set } from '@vueuse/shared';
 import { setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';

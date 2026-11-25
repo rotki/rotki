@@ -1,9 +1,11 @@
 import type { AddressAccount, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { err, type Result } from 'plainfp/result';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { defineComponent, nextTick } from 'vue';
 import QueriedAddressDialog from '@/modules/accounts/QueriedAddressDialog.vue';
 import { Module } from '@/modules/core/common/modules';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';

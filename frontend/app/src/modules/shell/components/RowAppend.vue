@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useToNumber } from '@vueuse/core';
+
 /**
  * How the total row sits in its table: `default` pads its cells like a body row, `bordered` sets it
  * off with a top border and roomier cells (the dashboard tables), `fixed` matches a table whose body

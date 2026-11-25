@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ConnectTimeoutSetting from '@/modules/settings/general/external-services/ConnectTimeoutSetting.vue';
 import QueryRetryLimitSetting from '@/modules/settings/general/external-services/QueryRetryLimitSetting.vue';
 import ReadTimeoutSetting from '@/modules/settings/general/external-services/ReadTimeoutSetting.vue';

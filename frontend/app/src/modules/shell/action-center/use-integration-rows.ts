@@ -1,9 +1,12 @@
-import type { ComputedRef } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import { toHumanReadable } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { none, type Option, some } from 'plainfp/option';
 import { getOr } from 'plainfp/records';
+import { computed, type ComputedRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type MessageKey, msg } from '@/message-key';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useExchangeKeyConditions } from '@/modules/balances/exchanges/use-exchange-key-conditions';

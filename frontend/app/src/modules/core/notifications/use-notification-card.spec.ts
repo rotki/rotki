@@ -1,6 +1,7 @@
 import { type NotificationAction, type NotificationData, NotificationKind, Severity } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { effectScope } from 'vue';
+import { effectScope, ref } from 'vue';
 import { NOTIFICATION_MAX_HEIGHT, useNotificationCard } from './use-notification-card';
 
 const { copyToClipboard } = vi.hoisted(() => ({

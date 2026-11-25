@@ -1,4 +1,6 @@
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
 
 const mockPush = vi.fn();

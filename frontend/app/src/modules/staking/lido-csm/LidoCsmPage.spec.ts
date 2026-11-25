@@ -1,6 +1,7 @@
 import type { LidoCsmNodeOperator } from '@/modules/staking/staking-types';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import LidoCsmPage from '@/modules/staking/lido-csm/LidoCsmPage.vue';
 

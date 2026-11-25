@@ -1,4 +1,4 @@
-import type { MaybeRefOrGetter } from 'vue';
+import { type MaybeRefOrGetter, toValue } from 'vue';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 

@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { AccountChainState } from '@/modules/accounts/AccountChainsOverflow.vue';
+import { useTimeoutFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AccountSkipQueriesToggle from '@/modules/accounts/table/components/table/AccountSkipQueriesToggle.vue';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 

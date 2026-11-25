@@ -1,5 +1,4 @@
 import type { ResultAsync } from 'plainfp/result-async';
-import type { MaybeRef } from 'vue';
 import type * as Vue from 'vue';
 import type { RequestError } from '@/modules/core/api/request-result';
 import type { Collection } from '@/modules/core/common/collection';
@@ -10,9 +9,13 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import type { HistoryEvent, HistoryEventRow } from '@/modules/history/events/schemas';
 import { type Account, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { ok } from 'plainfp/result';
 import { afterEach, assertType, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { computed, type MaybeRef, nextTick, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { FilterBehaviours } from '@/modules/core/table/filtering';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';

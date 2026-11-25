@@ -1,6 +1,7 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import ManualBalancesRefreshButton from '@/modules/accounts/manual-balances/ManualBalancesRefreshButton.vue';
 import { ActivityKind } from '@/modules/task-center/core/types';
 

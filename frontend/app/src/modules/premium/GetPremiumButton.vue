@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useBreakpoint } from '@rotki/ui-library';
+import { useI18n } from 'vue-i18n';
 import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 

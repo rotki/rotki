@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useTimeAgo } from '@vueuse/core';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 const { milliseconds = false, timestamp } = defineProps<{

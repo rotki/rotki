@@ -3,6 +3,8 @@ import type { RuiMenu } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { nextTick, shallowRef, useTemplateRef, watch } from 'vue';
 import { focusFirstControl } from '@/modules/shell/components/focus-first-control';
 import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 import { provideConfirmMenuAsk } from '@/modules/shell/components/use-confirm-menu';

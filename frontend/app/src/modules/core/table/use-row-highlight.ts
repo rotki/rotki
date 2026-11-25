@@ -1,3 +1,7 @@
+import { isDefined, useTimeoutFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { ref } from 'vue';
+
 interface UseRowHighlightOptions {
   /** How long the highlight stays before it fades, in milliseconds. */
   duration?: number;

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import TagIcon from '@/modules/tags/TagIcon.vue';
 

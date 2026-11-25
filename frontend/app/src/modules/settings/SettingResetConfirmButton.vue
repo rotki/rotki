@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+
 const { tooltip, compact = false, disabled = false, labelled = false } = defineProps<{
   tooltip?: string;
   compact?: boolean;

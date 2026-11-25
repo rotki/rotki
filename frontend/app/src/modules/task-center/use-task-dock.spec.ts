@@ -1,5 +1,6 @@
+import { get, set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { effectScope } from 'vue';
+import { computed, type ComputedRef, effectScope, nextTick, type Ref, ref } from 'vue';
 import { msg } from '@/message-key';
 import { type ActivityModel, assembleActivityModel } from '@/modules/task-center/core/model';
 import {

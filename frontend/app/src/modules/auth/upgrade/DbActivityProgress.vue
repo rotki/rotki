@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { CurrentDbUpgradeProgress } from '@/modules/auth/login';
+import { createReusableTemplate } from '@vueuse/core';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const {
   dataMigration = false,

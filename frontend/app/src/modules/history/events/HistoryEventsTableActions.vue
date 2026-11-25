@@ -4,6 +4,8 @@ import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { IgnoreStatus } from '@/modules/history/events/use-history-events-selection-actions';
 import type { SelectionState } from '@/modules/history/events/use-selection-mode';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type MatchedKeywordWithBehaviour, SavedFilterLocations } from '@/modules/core/table/filtering';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import PillViewsMenu from '@/modules/core/table/pill/PillViewsMenu.vue';

@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
+import { logicOr } from '@vueuse/math';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, provide, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { WALLET_MODES } from '@/modules/wallet/constants';
 import { useUnifiedProviders } from '@/modules/wallet/providers/use-unified-providers';

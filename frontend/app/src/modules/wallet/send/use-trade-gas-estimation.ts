@@ -1,5 +1,8 @@
-import type { ComputedRef, Ref } from 'vue';
 import type { GasFeeEstimation } from '@/modules/wallet/types';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, onScopeDispose, readonly, type Ref, shallowRef } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getWalletErrorMessage } from '@/modules/wallet/constants';
 import { useWalletHelper } from '@/modules/wallet/use-wallet-helper';

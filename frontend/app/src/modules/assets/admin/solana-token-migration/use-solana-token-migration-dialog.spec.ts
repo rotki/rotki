@@ -1,4 +1,5 @@
 import type { SolanaTokenMigrationData } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-dialog';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, nextTick, type Ref, ref } from 'vue';

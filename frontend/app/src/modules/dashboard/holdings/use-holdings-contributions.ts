@@ -1,6 +1,8 @@
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef } from 'vue';
 import type { Balances } from '@/modules/accounts/blockchain-accounts';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef } from 'vue';
 import { isErc721OrSolanaNft } from '@/modules/assets/nft-utils';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';

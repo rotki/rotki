@@ -1,3 +1,4 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from 'vue';
 import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';

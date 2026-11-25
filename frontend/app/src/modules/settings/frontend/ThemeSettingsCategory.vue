@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ThemeManager } from '@/modules/premium/premium';
 import { usePremium } from '@/modules/premium/use-premium';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';

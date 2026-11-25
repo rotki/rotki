@@ -1,4 +1,6 @@
 import { neverSettles } from '@test/utils/never-settles';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';

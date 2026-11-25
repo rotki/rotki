@@ -1,5 +1,6 @@
 import type { DatabaseUploadProgress, DbUploadResult } from '../types/shared-types';
 import type { StateHandler } from '@/modules/core/messaging/interfaces';
+import { get, set } from '@vueuse/shared';
 import { createStateHandler } from '@/modules/core/messaging/utils';
 import { useSync } from '@/modules/session/use-session-sync';
 import { useSyncActivity } from '@/modules/session/use-sync-activity';

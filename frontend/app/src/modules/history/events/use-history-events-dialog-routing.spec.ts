@@ -1,7 +1,7 @@
-import type { EffectScope } from 'vue';
 import type { LocationQuery } from 'vue-router';
 import flushPromises from 'flush-promises';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, reactive, shallowRef } from 'vue';
 import { DIALOG_TYPES, type DialogShowOptions } from '@/modules/history/events/dialog-types';
 import { historyDialogRoute, isRoutableDialogType, useHistoryEventsDialogRouting } from '@/modules/history/events/use-history-events-dialog-routing';
 

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { UserNoteDraft } from '@/modules/core/common/notes';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useModelForm } from '@/modules/core/form/use-model-form';
 import { userNoteSchema } from '@/modules/notes/note-forms';
 

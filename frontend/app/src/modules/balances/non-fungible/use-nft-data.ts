@@ -1,8 +1,11 @@
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/modules/balances/types/nfbalances';
 import type { Collection } from '@/modules/core/common/collection';
 import { type BigNumber, Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type Ref, shallowRef, watch, type WritableComputedRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type IgnoredAssetsHandlingType, isIgnoredAssetsHandling } from '@/modules/assets/types';
 import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
 import { calculatePercentage } from '@/modules/core/common/data/calculation';

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { TimeFramePeriod, type TimeFrameSetting } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import TimeFrameSettings from '@/modules/settings/general/TimeFrameSettings.vue';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';

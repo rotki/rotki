@@ -1,6 +1,7 @@
 import type { NftResponse } from '@/modules/assets/nfts';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { runSpecWith } from '@test/utils/mocks/native-task';
+import { setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';

@@ -2,6 +2,8 @@ import type { AssetsWithId } from '@/modules/assets/types';
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import type { FieldDef, ValueIcon } from '@/modules/core/table/pill/core/types';
 import { HistoryEventEntryType, isValidTxHashOrSignature } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import { FilterValueTypes } from '@/modules/core/table/filtering';
 import { type AccountFieldOptions, toAccountField } from '@/modules/core/table/filters/shared/account-field';
 import { toAssetField } from '@/modules/core/table/filters/shared/asset-field';

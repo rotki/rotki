@@ -1,4 +1,6 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 
 const mockCheckAsset = vi.fn();
 

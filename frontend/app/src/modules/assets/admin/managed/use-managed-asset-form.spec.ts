@@ -1,5 +1,6 @@
 import type { SupportedAsset } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, ref, type Ref } from 'vue';
 import { EVM_TOKEN } from '@/modules/assets/types';

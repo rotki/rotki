@@ -1,6 +1,8 @@
 import type { Collection, CollectionResponse } from '@/modules/core/common/collection';
 import { bigNumberify, Zero } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import {
   defaultCollectionState,
   getCollectionData,

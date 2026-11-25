@@ -1,5 +1,6 @@
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import { startPromise } from '@shared/utils';
+import { useRouter } from 'vue-router';
 
 interface UseRuleEventsLinkReturn {
   viewEvents: (rule: AccountingRuleEntry) => void;

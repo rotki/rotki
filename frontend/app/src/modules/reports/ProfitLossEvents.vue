@@ -2,7 +2,10 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { Collection } from '@/modules/core/common/collection';
 import type { ProfitLossEvent, ProfitLossEvents, ProfitLossEventsPayload, Report } from '@/modules/reports/report-types';
+import { get, set } from '@vueuse/shared';
 import { some } from 'es-toolkit/compat';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { getCollectionData } from '@/modules/core/common/data/collection-utils';

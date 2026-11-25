@@ -1,5 +1,7 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { type BigNumber, One } from '@rotki/common';
+import { watchImmediate } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useSetting } from '@/modules/settings/use-setting';

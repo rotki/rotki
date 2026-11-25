@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import { useOperatorLabels } from '@/modules/core/table/pill/composables/use-operator-labels';
 import { pillOperator, pillValueCaption, pillValueSummary } from '@/modules/core/table/pill/core/format';
 import { resolveText } from '@/modules/core/table/pill/core/text';

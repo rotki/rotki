@@ -1,6 +1,8 @@
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import AutoDetectTokensCooldownSetting from '@/modules/settings/general/AutoDetectTokensCooldownSetting.vue';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 

@@ -1,5 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import DetectEvmAccounts from '@/modules/accounts/balances/DetectEvmAccounts.vue';
 import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';
 

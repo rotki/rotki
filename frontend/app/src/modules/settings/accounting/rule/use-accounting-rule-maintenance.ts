@@ -1,7 +1,8 @@
-import type { Ref } from 'vue';
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { type Ref, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import {
   accountingRulesExportActivity,

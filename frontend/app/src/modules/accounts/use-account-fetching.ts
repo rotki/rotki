@@ -1,4 +1,5 @@
 import { Blockchain } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { convertBtcAccounts } from '@/modules/accounts/core/bitcoin-accounts';
 import { createAccount } from '@/modules/accounts/create-account';

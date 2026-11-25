@@ -2,6 +2,7 @@ import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import SimpleRpcNodeManagerForm from '@/modules/settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue';
 
 type FormInstance = InstanceType<typeof SimpleRpcNodeManagerForm>;

@@ -1,8 +1,10 @@
-import type { MaybeRefOrGetter } from 'vue';
 import { BigNumber, PriceQuality, type ResolvedPrice } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type MaybeRefOrGetter, nextTick, toValue } from 'vue';
 import { SNAPSHOT_RATES_DEMAND, useSnapshotRates } from '@/modules/statistics/pricing/use-snapshot-rates';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 

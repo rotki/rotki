@@ -1,3 +1,4 @@
+import type { useI18n } from 'vue-i18n';
 import type { MessageHandlerRegistry } from '../interfaces';
 import { createNegativeBalanceDetectedHandler } from '@/modules/history/balances/negative-balance-detected-handler';
 import { createEventsStatusHandler } from '@/modules/history/events-status-handler';

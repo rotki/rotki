@@ -3,7 +3,10 @@ import type { XpubPayload } from '@/modules/accounts/blockchain-accounts';
 import type { XpubManage } from '@/modules/accounts/blockchain/use-account-manage';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert } from '@rotki/common';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { omit } from 'es-toolkit';
+import { computed, useTemplateRef } from 'vue';
 import BtcAddressInput from '@/modules/accounts/blockchain/BtcAddressInput.vue';
 import AccountDataInput from '@/modules/accounts/management/inputs/AccountDataInput.vue';
 

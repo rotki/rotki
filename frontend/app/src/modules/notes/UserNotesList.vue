@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useScroll } from '@vueuse/core';
+import { onMounted, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { NoteLocation } from '@/modules/core/common/notes';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';

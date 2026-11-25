@@ -15,6 +15,7 @@
  * scrollbar never doubles up with ours; `fill` swaps it for `h-full` when the
  * host already provides a fixed height (e.g. the pinned sidebar).
  */
+import { computed } from 'vue';
 const { fill = false, maxHeight } = defineProps<{
   /**
    * Grow to fill the remaining space of a bounded flex-column parent instead of

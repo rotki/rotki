@@ -3,8 +3,10 @@ import type { FrontendSettings } from '@/modules/settings/types/frontend-setting
 import type { UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { TimeFramePeriod, TimeFramePersist } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { PrivacyMode } from '@/modules/session/types';
 import { useSessionSettings } from '@/modules/session/use-session-settings';
 

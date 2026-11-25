@@ -20,7 +20,6 @@
   "include": [
     "env.d.ts",
     "components.d.ts",
-    "auto-imports.d.ts",
     "typed-router.d.ts",
     "src/**/*.d.ts",
     "src/**/*.spec.ts",

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { logicOr } from '@vueuse/math';
+import { useI18n } from 'vue-i18n';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import RefreshSplitButton from '@/modules/shell/components/RefreshSplitButton.vue';

@@ -2,6 +2,9 @@
 import type { RouteLocationRaw } from 'vue-router';
 import type { MessageKey } from '@/message-key';
 import type { ReconciliationBucket } from '@/modules/history/reconciliation/schemas';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import ReconciliationAmount from '@/modules/history/reconciliation/components/ReconciliationAmount.vue';
 import { blockedReasonLabel, reasonLabel, STATUS_LABEL } from '@/modules/history/reconciliation/messages';

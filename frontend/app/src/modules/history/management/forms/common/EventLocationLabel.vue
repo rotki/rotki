@@ -2,6 +2,9 @@
 import type { RuiAutoComplete } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import { isValidEthAddress } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';

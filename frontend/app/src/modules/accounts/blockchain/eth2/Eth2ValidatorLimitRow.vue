@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import UpgradeRow from '@/modules/history/UpgradeRow.vue';
 

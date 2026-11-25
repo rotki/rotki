@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { transformCase } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAccountLoading } from '@/modules/accounts/use-account-loading';
 import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-address-operations';
 import { type Module, SUPPORTED_MODULES } from '@/modules/core/common/modules';

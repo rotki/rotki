@@ -1,10 +1,13 @@
-import type { ComputedRef, ModelRef, Ref } from 'vue';
 import type { EvmHistoryEvent, EvmSwapEvent, SolanaEvent, SolanaSwapEvent, SwapEvent } from '@/modules/history/events/schemas';
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventSaveResult } from '@/modules/history/management/forms/history-event-save-result';
 import { HistoryEventEntryType, toSnakeCase } from '@rotki/common';
 import { generateUUID } from '@shared/utils';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { err } from 'plainfp/result';
+import { computed, type ComputedRef, type ModelRef, readonly, type Ref, ref, shallowRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { collectPriceIntents } from '@/modules/history/management/forms/price-intent';
 import { applyRelocation } from '@/modules/history/management/forms/relocation';

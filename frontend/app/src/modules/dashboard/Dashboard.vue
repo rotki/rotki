@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { SourceKind } from '@/modules/dashboard/holdings/core/holdings-types';
+import { useElementBounding, useElementSize, useSessionStorage } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import HistoryDeltaCell from '@/modules/balances/components/HistoryDeltaCell.vue';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { provideHistoryView } from '@/modules/balances/view/balance-view';

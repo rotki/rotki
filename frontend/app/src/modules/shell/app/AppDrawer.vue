@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { useDismissableOverlay } from '@rotki/ui-library';
+import { useBreakpoint, useDismissableOverlay } from '@rotki/ui-library';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import SponsorshipView from '@/modules/premium/SponsorshipView.vue';
 import GlobalSearch from '@/modules/shell/components/GlobalSearch.vue';

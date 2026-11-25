@@ -1,4 +1,7 @@
 import type { AddressBookPayload, AddressBookSimplePayload } from '@/modules/accounts/address-book/eth-names';
+import { createSharedComposable } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { ref } from 'vue';
 
 function defaultPayload(): AddressBookPayload {
   return {

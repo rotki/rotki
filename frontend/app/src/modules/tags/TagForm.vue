@@ -2,6 +2,8 @@
 import type { ZodType } from 'zod';
 import type { Tag } from '@/modules/tags/tags';
 import { invertColor, randomColor } from '@rotki/common';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useModelForm } from '@/modules/core/form/use-model-form';
 import { tagSchema, withPickerColors } from '@/modules/tags/tag-forms';
 import TagIcon from '@/modules/tags/TagIcon.vue';

@@ -1,4 +1,7 @@
 import type { GradientArea, NewGraphApi } from '@rotki/common';
+import { useRotkiTheme } from '@rotki/ui-library';
+import { get } from '@vueuse/shared';
+import { computed, provide } from 'vue';
 import { useDarkMode } from '@/modules/shell/theme/use-dark-mode';
 
 // vue-echarts THEME_KEY constant - defined inline to avoid pulling in echarts to main bundle

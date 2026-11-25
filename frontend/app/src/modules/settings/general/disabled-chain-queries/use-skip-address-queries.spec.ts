@@ -1,5 +1,7 @@
 import type { ActionStatus } from '@/modules/core/common/action';
+import { createPinia, setActivePinia } from 'pinia';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { skipAddress, unskipAddress, useSkipAddressQueries } from './use-skip-address-queries';
 

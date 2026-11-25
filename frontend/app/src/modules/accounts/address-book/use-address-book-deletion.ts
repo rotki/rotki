@@ -1,6 +1,8 @@
 import type { MaybeRef } from 'vue';
 import type { AddressBookEntry, AddressBookLocation } from '@/modules/accounts/address-book/eth-names';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { get } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';

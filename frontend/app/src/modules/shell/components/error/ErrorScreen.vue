@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
 
 const {

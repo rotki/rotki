@@ -1,4 +1,5 @@
 import type { SessionMonitor } from '@/modules/shell/app/use-session-monitor';
+import { createGlobalState } from '@vueuse/core';
 import { logger } from '@/modules/core/common/logging/logging';
 import { hasLiveSession, onSessionEnd } from '@/modules/core/session/session-lifecycle';
 

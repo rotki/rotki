@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import LatestPriceContent from '@/modules/assets/prices/latest/LatestPriceContent.vue';
 

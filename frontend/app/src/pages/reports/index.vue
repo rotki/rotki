@@ -2,6 +2,11 @@
 import type { RouteLocationRaw } from 'vue-router';
 import type { Activity } from '@/modules/task-center/core/types';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import ReportGenerator from '@/modules/reports/ReportGenerator.vue';

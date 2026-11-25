@@ -1,8 +1,9 @@
 import type { UserDbBackupWithId } from '@/modules/session/backup';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { defineComponent, nextTick } from 'vue';
 import BackupManager from '@/modules/settings/data-security/backups/BackupManager.vue';
 
 const { backups, massRemove, modelSelected } = await vi.hoisted(async () => {

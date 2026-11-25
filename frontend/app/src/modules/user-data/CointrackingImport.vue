@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
 import ImportSource from '@/modules/user-data/ImportSource.vue';
 

@@ -1,4 +1,3 @@
-import type { Pinia } from 'pinia';
 import type { AccountDataRow } from '../../types';
 import type {
   AddressAccount,
@@ -8,7 +7,9 @@ import type {
 } from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { getAccountGroupId, getAccountId, getGroupId } from '@/modules/accounts/account-utils';
 import { createAccount, createValidatorAccount } from '@/modules/accounts/create-account';
 import AccountActions from '@/modules/accounts/table/components/table/AccountActions.vue';

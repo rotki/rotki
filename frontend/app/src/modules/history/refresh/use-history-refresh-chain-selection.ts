@@ -1,7 +1,9 @@
-import type { ComputedRef, Ref } from 'vue';
 import type { ChainData } from '@/modules/history/refresh/types';
 import { getTextToken } from '@rotki/common';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { cloneDeep, isEqual } from 'es-toolkit';
+import { computed, type ComputedRef, type Ref, ref, watch } from 'vue';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';

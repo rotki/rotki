@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
-import type { HTMLAttributes } from 'vue';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type HTMLAttributes, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useTrackedAccountsRow } from '@/modules/accounts/use-tracked-accounts-row';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';

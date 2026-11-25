@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { usePremium } from '@/modules/premium/use-premium';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';

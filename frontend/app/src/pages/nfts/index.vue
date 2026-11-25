@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import NftGallery from '@/modules/balances/nft/NftGallery.vue';
 import { NoteLocation } from '@/modules/core/common/notes';

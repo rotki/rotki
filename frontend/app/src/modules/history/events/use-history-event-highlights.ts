@@ -1,5 +1,7 @@
-import type { ComputedRef } from 'vue';
 import type { HighlightType } from '@/modules/history/events/action-types';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef } from 'vue';
+import { useRoute } from 'vue-router';
 
 interface UseHistoryEventHighlightsReturn {
   highlightedIdentifiers: ComputedRef<string[] | undefined>;

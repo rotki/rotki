@@ -1,6 +1,7 @@
 import type { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { Blockchain } from '@rotki/common';
 import { type Mock, vi } from 'vitest';
+import { computed, ref } from 'vue';
 
 type SupportedChainsReturn = ReturnType<typeof useSupportedChains>;
 

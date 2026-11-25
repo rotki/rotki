@@ -1,5 +1,8 @@
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { get, set } from '@vueuse/shared';
+import { setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, ref } from 'vue';
 import { ActivityKind, type WorkStatus } from '@/modules/task-center/core/types';
 import { useBalancesLoading } from './use-balance-loading';
 import { useBalanceRefreshState } from './use-balance-refresh-state';

@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { watchSyncEffect } from 'vue';

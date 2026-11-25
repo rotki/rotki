@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { set } from '@vueuse/shared';
+import { nextTick, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import { createNewBlockchainAccount } from '@/modules/accounts/blockchain/new-account-state';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';

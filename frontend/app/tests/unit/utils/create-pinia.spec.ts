@@ -1,6 +1,8 @@
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { get, set } from '@vueuse/shared';
 import { createPinia, defineStore, setActivePinia } from 'pinia';
 import { describe, expect, it } from 'vitest';
+import { createApp, ref } from 'vue';
 
 const useCounterStore = defineStore('harness-counter', () => {
   const count = ref<number>(0);

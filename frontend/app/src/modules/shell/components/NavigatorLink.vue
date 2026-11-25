@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from 'vue-router';
+import { type RouteLocationRaw, useRouter } from 'vue-router';
 
 defineOptions({
   inheritAttrs: false,

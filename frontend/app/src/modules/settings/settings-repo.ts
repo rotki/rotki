@@ -1,8 +1,10 @@
-import type { Ref } from 'vue';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { SessionSettings } from '@/modules/session/types';
 import type { AccountingSettings, GeneralSettings } from '@/modules/settings/types/user-settings';
 import { TimeFramePeriod } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { markRaw, type Ref, ref } from 'vue';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useAnimationsEnabled } from '@/modules/session/use-animations-enabled';
 import { defaultAccountingSettings, defaultGeneralSettings } from '@/modules/settings/factories';

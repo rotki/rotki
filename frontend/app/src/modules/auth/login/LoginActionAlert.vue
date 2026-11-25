@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
+import { useI18n } from 'vue-i18n';
 
 defineProps<{
   icon: RuiIcons;

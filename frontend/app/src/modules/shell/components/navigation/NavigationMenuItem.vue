@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
-import type { Component } from 'vue';
-import type { RouteLocationRaw } from 'vue-router';
+import { createReusableTemplate, useElementSize, useTimeoutFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { type Component, computed, onMounted, ref, useTemplateRef } from 'vue';
+import { type RouteLocationRaw, useRouter } from 'vue-router';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 
 const { mini = false, icon, text, image = '', iconComponent, active = false, subMenu = false, parent = false, to } = defineProps<{

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { getTextToken, toHumanReadable } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
+import { computed } from 'vue';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 
 const modelValue = defineModel<OnlineHistoryEventsQueryType[]>({ required: true });

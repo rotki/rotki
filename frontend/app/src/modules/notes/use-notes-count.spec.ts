@@ -1,5 +1,7 @@
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { NoteLocation } from '@/modules/core/common/notes';
 
 const fetchUserNotes = vi.fn();

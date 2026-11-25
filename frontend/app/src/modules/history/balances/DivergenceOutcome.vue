@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { HistoricalBalanceDivergenceResponse } from '@/modules/history/balances/types';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 /**
  * A divergence search's result as a status, so it reads as an outcome rather than as more description.

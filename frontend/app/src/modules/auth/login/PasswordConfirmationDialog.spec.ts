@@ -1,7 +1,8 @@
 import type { StubInstance } from '@test/utils/component-vm';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, ref, type VNode } from 'vue';
+import { defineComponent, h, nextTick, ref, type VNode } from 'vue';
 import PasswordConfirmationDialog from '@/modules/auth/login/PasswordConfirmationDialog.vue';
 import '@test/i18n';
 

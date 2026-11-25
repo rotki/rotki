@@ -2,6 +2,7 @@ import type { useValueThreshold } from '@/modules/assets/amount-display/use-usd-
 import { type AssetBalanceWithPrice, bigNumberify } from '@rotki/common';
 import { createTestExchange } from '@test/utils/create-data';
 import { withSetup } from '@test/utils/with-setup';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { nextTick, ref, type Ref } from 'vue';

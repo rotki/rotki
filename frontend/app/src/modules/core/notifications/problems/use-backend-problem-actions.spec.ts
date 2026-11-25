@@ -1,5 +1,6 @@
 import { createMock } from '@test/utils/create-mock';
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Router, useRouter } from 'vue-router';
 import { useReportIssue } from '@/modules/core/common/use-report-issue';

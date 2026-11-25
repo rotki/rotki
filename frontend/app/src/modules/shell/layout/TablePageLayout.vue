@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
+import { computed, type HTMLAttributes } from 'vue';
 
 interface Props { hideHeader?: boolean; child?: boolean; title?: string[] }
 

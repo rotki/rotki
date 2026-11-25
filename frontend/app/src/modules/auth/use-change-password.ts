@@ -1,5 +1,8 @@
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { ChangePasswordPayload } from '@/modules/session/types';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useUsersApi } from '@/modules/auth/use-users-api';
 import { logger } from '@/modules/core/common/logging/logging';

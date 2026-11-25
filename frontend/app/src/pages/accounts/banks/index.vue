@@ -2,6 +2,12 @@
 import type { BankAuthenticationRequest, BankConnection, BankFormData } from '@/modules/banks/types';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { onBeforeMount, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { createNewBank, emptyCredentials } from '@/modules/banks/bank-connection-form';

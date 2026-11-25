@@ -1,4 +1,5 @@
 import type { UnlockCredentials } from './use-unlock-flow';
+import { get } from '@vueuse/shared';
 import { none, type OptionType as Option, some } from 'plainfp';
 import { lastLogin } from '@/modules/auth/account-management';
 import { useRememberSettings } from '@/modules/auth/use-remember-settings';

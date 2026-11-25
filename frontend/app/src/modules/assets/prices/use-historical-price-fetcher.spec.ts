@@ -1,6 +1,7 @@
 import type { FailedHistoricalAssetPriceResponse, HistoricalAssetPricePayload } from '@rotki/common';
 import type { ActivityContext, NativeActivitySpec } from '@/modules/task-center/use-native-task';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BackendCancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';

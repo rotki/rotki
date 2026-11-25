@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ContextColorsType } from '@rotki/ui-library';
+import { useI18n } from 'vue-i18n';
 
 interface Props {
   size?: 'sm' | 'lg';

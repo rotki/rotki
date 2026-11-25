@@ -1,6 +1,7 @@
-import type { EffectScope, Ref } from 'vue';
 import { bigNumberify } from '@rotki/common';
+import { set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, type Ref, ref } from 'vue';
 import { CostBasisDirection, type CostBasisEntry, type EventsCostBasisResponse } from '@/modules/history/cost-basis/types';
 import { useCostBasisOverlay } from '@/modules/history/cost-basis/use-cost-basis-overlay';
 

@@ -3,8 +3,9 @@ import type { LinkedMovementMatch } from '@/modules/history/events/event-payload
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { computed, defineComponent, nextTick, ref } from 'vue';
 import {
   useHistoryEventsViewActions,
   type UseHistoryEventsViewActionsReturn,

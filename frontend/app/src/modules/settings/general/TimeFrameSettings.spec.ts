@@ -1,5 +1,6 @@
 import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import TimeFrameSettings from '@/modules/settings/general/TimeFrameSettings.vue';
 import { createRuiPlugin } from '@/plugins/rui';

@@ -1,7 +1,9 @@
 import type { AssetBalanceWithPrice } from '@rotki/common';
-import type { DataTableColumn } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { AssetBalancesDisplay } from '@/modules/balances/types/balances';
+import { type DataTableColumn, useBreakpoint } from '@rotki/ui-library';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAssetBalanceColumns } from '@/modules/balances/use-asset-balance-columns';
 import { TableColumn } from '@/modules/core/table/table-column';
 

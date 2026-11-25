@@ -1,7 +1,8 @@
-import type { Component } from 'vue';
 import { RuiAutoComplete, RuiCheckbox, RuiTextField } from '@rotki/ui-library';
 import { mount } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Component, shallowRef } from 'vue';
 import { useFormErrorFocus } from '@/modules/core/common/use-form-error-focus';
 
 describe('useFormErrorFocus', () => {

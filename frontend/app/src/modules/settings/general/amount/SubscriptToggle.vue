@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { bigNumberify } from '@rotki/common';
 import { RuiIcon } from '@rotki/ui-library';
+import { useI18n } from 'vue-i18n';
 import { ValueDisplay } from '@/modules/assets/amount-display';
 import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';

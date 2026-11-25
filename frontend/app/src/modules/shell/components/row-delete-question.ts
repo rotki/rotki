@@ -1,4 +1,5 @@
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { useI18n } from 'vue-i18n';
 
 /**
  * What a delete button asks before it deletes.

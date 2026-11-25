@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import NotificationSidebar from '@/modules/core/notifications/NotificationSidebar.vue';
 import UserNotesSidebar from '@/modules/notes/UserNotesSidebar.vue';

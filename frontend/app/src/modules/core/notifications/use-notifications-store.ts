@@ -1,5 +1,8 @@
 import type { NotificationData } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { orderBy } from 'es-toolkit';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, shallowRef } from 'vue';
 import { useNotificationCooldown } from '@/modules/core/notifications/use-notification-cooldown';
 
 const NOTIFICATION_MAX_SIZE = 200;

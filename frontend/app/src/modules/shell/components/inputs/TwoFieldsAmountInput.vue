@@ -1,4 +1,7 @@
 <script lang="ts" setup>
+import { get, set } from '@vueuse/shared';
+import { computed, nextTick, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { arrayify } from '@/modules/core/common/data/array';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 

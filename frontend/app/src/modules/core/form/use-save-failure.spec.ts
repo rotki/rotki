@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { useSaveFailure } from '@/modules/core/form/use-save-failure';

@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useChangePassword } from '@/modules/auth/use-change-password';
 import { useForm } from '@/modules/core/form/use-form';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';

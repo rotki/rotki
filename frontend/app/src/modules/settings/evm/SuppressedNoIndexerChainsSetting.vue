@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { EvmChainInfo } from '@/modules/core/api/types/chains';
+import { createReusableTemplate } from '@vueuse/core';
+import { useI18n } from 'vue-i18n';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import SettingMultiSelect from '@/modules/settings/controls/SettingMultiSelect.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';

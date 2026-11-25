@@ -2,6 +2,7 @@ import type { ComponentPublicInstance } from 'vue';
 import type { CalendarEvent } from '@/modules/calendar/types';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@test/i18n';
 

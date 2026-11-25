@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { BankFormData, BankManifest } from '@/modules/banks/types';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import {
   type BankConnectionFormState,
   bankConnectionSchema,

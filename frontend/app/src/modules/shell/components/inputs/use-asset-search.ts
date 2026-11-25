@@ -1,10 +1,12 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { NftAsset } from '@/modules/assets/nfts';
 import { assert, type AssetInfoWithId, transformCase } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, onMounted, onUnmounted, type Ref, ref, shallowRef, toValue, watch } from 'vue';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { NftHandling } from '@/modules/assets/nft-handling';
 import { isNft, isNonFungible } from '@/modules/assets/nft-utils';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
+import { watchDebounced } from '@/modules/core/common/async/scoped-timers';
 import { uniqueObjects } from '@/modules/core/common/data/data';
 import { getAssetSearchTypeParams, getSanitizedChain, parseAssetSearchKeyword } from '@/modules/core/common/display/assets';
 import { isAbortError } from '@/modules/core/common/helpers/is-of-enum';

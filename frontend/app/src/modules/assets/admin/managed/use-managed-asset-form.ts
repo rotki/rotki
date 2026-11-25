@@ -1,5 +1,6 @@
 import type { Nullable, SupportedAsset } from '@rotki/common';
-import type { MaybeRefOrGetter, Ref } from 'vue';
+import { set } from '@vueuse/shared';
+import { type MaybeRefOrGetter, onBeforeMount, readonly, type Ref, ref, shallowReadonly, shallowRef, toValue, watch } from 'vue';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { EVM_TOKEN } from '@/modules/assets/types';
 

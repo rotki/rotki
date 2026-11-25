@@ -1,4 +1,5 @@
 import { bigNumberify } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { getBnFormat } from '@/modules/assets/amount-display/amount-formatter';
 import { useAmountDisplaySettings } from '@/modules/assets/amount-display/use-amount-display-settings';
 

@@ -1,5 +1,6 @@
-import type { Ref } from 'vue';
+import { get, set } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
+import { type Ref, ref } from 'vue';
 import { AuthStep, GnosisPayError } from './types';
 import { useGnosisPayAuthState, useGnosisPayAuthSteps } from './use-gnosis-pay-auth-state';
 

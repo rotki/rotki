@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import DetectTokensChainsSelectionItem from '@/modules/accounts/balances/DetectTokensChainsSelectionItem.vue';
 import { useDetectTokenChainsSelection } from '@/modules/accounts/balances/use-detect-token-chains-selection';
 

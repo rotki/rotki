@@ -2,6 +2,8 @@ import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-acc
 import { type AssetBalance, bigNumberify } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { describe, expect, it, vi } from 'vitest';
 import AccountTopTokens from '@/modules/accounts/AccountTopTokens.vue';
 

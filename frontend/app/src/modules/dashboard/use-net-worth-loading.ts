@@ -1,4 +1,5 @@
-import type { ComputedRef } from 'vue';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, shallowRef, watch } from 'vue';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 

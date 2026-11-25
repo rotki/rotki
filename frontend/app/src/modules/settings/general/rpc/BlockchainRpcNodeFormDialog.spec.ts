@@ -3,6 +3,7 @@ import { Blockchain } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import BlockchainRpcNodeFormDialog from '@/modules/settings/general/rpc/BlockchainRpcNodeFormDialog.vue';
 import { RPC_SETUP_STATUS, type RpcSetupRow } from '@/modules/settings/general/rpc/providers/use-rpc-provider-setup';

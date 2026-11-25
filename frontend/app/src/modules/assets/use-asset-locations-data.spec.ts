@@ -1,7 +1,10 @@
 import type { AssetBreakdown } from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify } from '@rotki/common';
 import { mockUseSupportedChains } from '@test/utils/mocks/supported-chains';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useAssetLocationsData } from './use-asset-locations-data';
 
 const { spies } = vi.hoisted(() => ({

@@ -2,6 +2,7 @@ import type { FailedHistoricalAssetPriceResponse, HistoricalAssetPricePayload } 
 import type { ComputedRef } from 'vue';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { withSetup } from '@test/utils/with-setup';
+import { get, set } from '@vueuse/shared';
 import { setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

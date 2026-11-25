@@ -1,9 +1,11 @@
 import type { RuiIcons } from '@rotki/ui-library';
-import type { Ref } from 'vue';
 import type { MessageKey } from '@/message-key';
 import type { RouteName } from '@/types/router';
 import { getTextToken, TimeFramePeriod } from '@rotki/common';
 import { groupBy } from 'es-toolkit';
+import { computed, type Ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { CurrencyLocation } from '@/modules/assets/amount-display/currency-location';
 import { type SettingsCategoryId, type SettingsHighlightId, SettingsHighlightIds, type SettingsSearchEntry } from '@/modules/settings/setting-highlight-ids';
 import { actionEntries } from '@/modules/settings/settings-actions';

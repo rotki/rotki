@@ -1,4 +1,5 @@
 import type { CustomAsset } from '@/modules/assets/types';
+import { get } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { effectScope, type Ref, ref } from 'vue';
 import { useCustomAssetTable } from './use-custom-asset-table';

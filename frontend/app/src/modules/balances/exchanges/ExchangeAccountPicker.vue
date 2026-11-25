@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import type { ExchangeAccountOption } from '@/modules/balances/exchanges/use-exchange-account-selection';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ExchangeAccountOptionRow from '@/modules/balances/exchanges/ExchangeAccountOptionRow.vue';
 
 const modelValue = defineModel<string | undefined>({ required: true });

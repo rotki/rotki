@@ -1,6 +1,8 @@
 import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
 import type { ActivityId } from '@/modules/task-center/core/types';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
 import { accountAddActivity } from '@/modules/accounts/accounts.activity';
 import { isEveryEvmChain } from '@/modules/accounts/use-account-addition-batch';
 import { type AccountAdditionParams, type AdditionSummary, useAccountAdditionService } from '@/modules/accounts/use-account-addition-service';

@@ -1,8 +1,8 @@
-import type { Pinia } from 'pinia';
 import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import AmountDiffDisplay from '@/modules/assets/amount-display/components/AmountDiffDisplay.vue';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';

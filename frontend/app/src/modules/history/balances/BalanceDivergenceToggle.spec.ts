@@ -2,7 +2,7 @@ import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { get } from '@vueuse/core';
-import { createPinia, setActivePinia } from 'pinia';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';

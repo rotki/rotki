@@ -1,7 +1,7 @@
-import type { Component } from 'vue';
 import { mountGeneric } from '@test/utils/mount-generic';
 import { flushPromises } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
+import { type Component, toRaw } from 'vue';
 import {
   BridgePotentialMatchesDialog,
   MatchAssetMovementsDialog,

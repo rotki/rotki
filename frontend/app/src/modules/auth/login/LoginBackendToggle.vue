@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ServerColor } from '@/modules/auth/login/use-custom-backend';
+import { useI18n } from 'vue-i18n';
 
 const { color, loading, open } = defineProps<{
   open: boolean;

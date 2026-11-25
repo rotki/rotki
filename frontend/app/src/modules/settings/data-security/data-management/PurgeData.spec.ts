@@ -1,8 +1,9 @@
 import type { usePurgeData } from '@/modules/settings/data-security/data-management/use-purge-data';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { Purgeable } from '@/modules/session/purge';
 import PurgeData from './PurgeData.vue';

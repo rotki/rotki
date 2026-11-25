@@ -1,4 +1,5 @@
-import type { ComputedRef } from 'vue';
+import { computed, type ComputedRef } from 'vue';
+import { useRoute } from 'vue-router';
 
 export function useNoteLocation(): ComputedRef<string> {
   const route = useRoute();

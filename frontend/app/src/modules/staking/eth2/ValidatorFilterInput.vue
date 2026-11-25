@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Eth2ValidatorEntry } from '@rotki/common';
 import type { FormDetails } from '@rotki/ui-library';
+import { useI18n } from 'vue-i18n';
 import ValidatorDisplay from '@/modules/shell/components/display/ValidatorDisplay.vue';
 
 const model = defineModel<Eth2ValidatorEntry[]>({ required: true });

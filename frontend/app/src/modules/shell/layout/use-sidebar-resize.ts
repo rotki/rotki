@@ -1,5 +1,8 @@
-import type { ComputedRef, Ref } from 'vue';
-import { defaultDocument } from '@vueuse/core';
+import { useBreakpoint } from '@rotki/ui-library';
+import { defaultDocument, useWindowSize } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type Ref } from 'vue';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { PINNED_DEFAULT_WIDTH, PINNED_MAX_VIEWPORT_RATIO, PINNED_MAX_WIDTH } from '@/modules/shell/layout/sidebar-resize-constants';
 

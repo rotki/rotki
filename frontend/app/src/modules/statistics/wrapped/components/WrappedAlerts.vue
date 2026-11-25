@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { useHistorySyncStatus } from '@/modules/history/sync-status/use-history-sync-status';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';

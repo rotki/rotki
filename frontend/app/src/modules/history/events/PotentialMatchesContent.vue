@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type MatchingFailure, MatchingFailureKind, type MatchingFlow, type PotentialMatchEntryLabels, type UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import { usePotentialMatches } from '@/modules/history/events/matching/use-potential-matches';
 import PotentialMatchesList from '@/modules/history/events/PotentialMatchesList.vue';

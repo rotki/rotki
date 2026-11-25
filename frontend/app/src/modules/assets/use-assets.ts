@@ -1,5 +1,6 @@
 import type { ActionStatus } from '@/modules/core/common/action';
 import { err, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
 import {

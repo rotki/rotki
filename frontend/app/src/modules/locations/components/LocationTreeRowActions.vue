@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import type { RuiIcons } from '@rotki/ui-library';
 import type { LocationNode } from '@/modules/locations/use-location-tree-api';
+import { type RuiIcons, useBreakpoint } from '@rotki/ui-library';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const { node } = defineProps<{
   node: LocationNode;

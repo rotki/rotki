@@ -1,6 +1,8 @@
 import type { TradableAsset } from '@/modules/wallet/types';
 import { bigNumberify } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { ALL_CHAINS, useTradeAssetOptions } from './use-trade-asset-options';
 
 const getAssetField = vi.fn<(identifier: string, field: string) => string>();

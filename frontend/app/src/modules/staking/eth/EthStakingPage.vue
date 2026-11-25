@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed, onBeforeMount } from 'vue';
 import AccountFormApiKeyAlert from '@/modules/accounts/management/AccountFormApiKeyAlert.vue';
 import { EthStaking } from '@/modules/premium/premium';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';

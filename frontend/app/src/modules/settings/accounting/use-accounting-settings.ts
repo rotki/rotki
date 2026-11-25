@@ -9,7 +9,9 @@ import type {
   AccountingRuleEntry,
   AccountingRuleRequestPayload,
 } from '@/modules/settings/types/accounting';
+import { get } from '@vueuse/shared';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { fromRequest, type RequestError } from '@/modules/core/api/request-result';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { downloadFileByTextContent } from '@/modules/core/common/file/download';

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AccountAssetBalances from '@/modules/accounts/balances/AccountAssetBalances.vue';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';

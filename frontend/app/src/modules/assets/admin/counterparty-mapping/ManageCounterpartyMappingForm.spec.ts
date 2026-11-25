@@ -3,6 +3,7 @@ import type { CounterpartyMapping } from '@/modules/assets/admin/counterparty-ma
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { settleMountedWork } from '@test/utils/model-form-harness';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import ManageCounterpartyMappingForm from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMappingForm.vue';
 import '@test/i18n';

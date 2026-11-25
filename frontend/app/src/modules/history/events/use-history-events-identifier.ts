@@ -1,6 +1,8 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
+import { useBreakpoint } from '@rotki/ui-library';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { type MessageKey, msg } from '@/message-key';
 import {
   isAssetMovementEventRef,

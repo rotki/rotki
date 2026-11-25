@@ -1,6 +1,7 @@
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import type { NativeActivitySpec, RunBackendTask } from '@/modules/task-center/use-native-task';
 import { createMock } from '@test/utils/create-mock';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IncompleteQueryError } from '@/modules/core/api/types/errors';

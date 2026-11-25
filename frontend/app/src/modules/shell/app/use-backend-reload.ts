@@ -1,4 +1,7 @@
 import { NotificationKind, Severity } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import { useLogout } from '@/modules/auth/use-logout';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';

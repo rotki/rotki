@@ -1,6 +1,8 @@
 import type { AllBalancePayload } from '@/modules/accounts/blockchain-accounts';
 import type { ActivityId } from '@/modules/task-center/core/types';
+import { createSharedComposable } from '@vueuse/core';
 import { err, map as mapResult, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';

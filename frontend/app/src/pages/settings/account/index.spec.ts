@@ -1,6 +1,9 @@
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import AccountSettings from '@/pages/settings/account/index.vue';
 

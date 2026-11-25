@@ -1,5 +1,9 @@
 import type { SigilEvent, SigilEventMap } from '@/modules/core/sigil/types';
 import { startPromise } from '@shared/utils';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { onScopeDispose, ref, watch } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useMainStore } from '@/modules/core/common/use-main-store';

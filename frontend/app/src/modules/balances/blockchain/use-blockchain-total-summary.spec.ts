@@ -1,6 +1,8 @@
 import type { Balances } from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useBlockchainTotalSummary } from './use-blockchain-total-summary';
 
 const balances = ref<Balances>({});

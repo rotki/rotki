@@ -1,7 +1,8 @@
 import type { Result } from 'plainfp/result';
-import type { Ref } from 'vue';
 import type { EntryMeta } from '@/modules/history/meta';
+import { get } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Ref, shallowRef } from 'vue';
 import { useIgnore } from '@/modules/history/use-ignore';
 
 interface TestItem extends EntryMeta {

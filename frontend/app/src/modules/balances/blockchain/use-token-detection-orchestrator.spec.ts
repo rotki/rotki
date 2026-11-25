@@ -1,6 +1,9 @@
 import { runSpecWith } from '@test/utils/mocks/native-task';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, ref } from 'vue';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { type Activity, ActivityKind, ActivityStatus, makeActivityId } from '@/modules/task-center/core/types';
 

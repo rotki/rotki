@@ -1,4 +1,5 @@
 import type { MatchingKind } from '@/modules/history/events/matching/matching-kind';
+import { computed } from 'vue';
 import { msg } from '@/message-key';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { UnmatchedVariant } from '@/modules/history/events/unmatched-row';

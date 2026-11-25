@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { useI18n } from 'vue-i18n';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
 import EventDetailsSection from '@/modules/history/management/forms/common/EventDetailsSection.vue';

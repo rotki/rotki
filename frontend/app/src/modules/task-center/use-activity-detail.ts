@@ -1,6 +1,8 @@
-import type { ComputedRef } from 'vue';
 import type { ActivityDescriptor } from '@/modules/task-center/core/activity-descriptor';
 import type { ActivityId } from '@/modules/task-center/core/types';
+import { createGlobalState } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, shallowRef } from 'vue';
 
 /**
  * The side channel carrying per-activity detail, beside the ledger rather than inside it.

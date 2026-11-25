@@ -1,11 +1,14 @@
 import type { RuiIcons } from '@rotki/ui-library';
-import type { Ref } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { TradeLocationData } from '@/modules/core/common/location';
 import { type BigNumber, getTextToken } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { isErr } from 'plainfp/result';
 import { fromPromise } from 'plainfp/result-async';
+import { readonly, type Ref, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';

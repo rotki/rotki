@@ -1,3 +1,5 @@
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { AccountKind } from '@/modules/accounts/blockchain-accounts';

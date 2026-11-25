@@ -3,8 +3,11 @@ import type { ProblemMessage } from '@/modules/core/notifications/problems/backe
 import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { runSpecWith } from '@test/utils/mocks/native-task';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useLatestPrices } from '@/modules/assets/prices/use-latest-price-manager';

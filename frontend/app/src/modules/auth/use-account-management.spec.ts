@@ -1,6 +1,8 @@
 import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import dayjs from 'dayjs';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountManagement } from '@/modules/auth/use-account-management';
 import { createAutoLogin } from '@/modules/auth/use-auto-login';

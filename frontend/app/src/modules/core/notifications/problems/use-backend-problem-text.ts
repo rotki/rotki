@@ -1,4 +1,5 @@
 import { toHumanReadable } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import { type MessageKey, msg } from '@/message-key';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useLocations } from '@/modules/core/common/use-locations';

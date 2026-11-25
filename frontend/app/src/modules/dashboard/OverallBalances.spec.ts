@@ -1,8 +1,10 @@
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { bigNumberify } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import OverallBalances from '@/modules/dashboard/OverallBalances.vue';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 

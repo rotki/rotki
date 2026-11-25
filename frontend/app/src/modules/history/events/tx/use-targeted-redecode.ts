@@ -7,6 +7,7 @@ import type {
 import type { ActivityId } from '@/modules/task-center/core/types';
 import { groupBy } from 'es-toolkit';
 import { err, flatMap as flatMapResult, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { logger } from '@/modules/core/common/logging/logging';

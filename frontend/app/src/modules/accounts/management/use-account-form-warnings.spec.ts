@@ -1,5 +1,6 @@
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import { Blockchain } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createNewBlockchainAccount } from '@/modules/accounts/blockchain/new-account-state';
 import { useAccountFormWarnings } from '@/modules/accounts/management/use-account-form-warnings';

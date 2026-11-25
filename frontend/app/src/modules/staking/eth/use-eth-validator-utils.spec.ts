@@ -1,7 +1,9 @@
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
 import { bigNumberify, Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
+import { ref } from 'vue';
 import { useEthValidatorUtils } from '@/modules/staking/eth/use-eth-validator-utils';
 
 function validator(overrides: Partial<EthereumValidator> = {}): EthereumValidator {

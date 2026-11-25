@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { DecodingComparisonEvent, TransactionDecodingComparison } from '@/modules/history/data-issues/schemas';
+import { get } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import DataIssueComparisonEvent from '@/modules/history/data-issues/components/DataIssueComparisonEvent.vue';
 import { type DecodingEventDiff, diffDecodingEvents } from '@/modules/history/data-issues/decoding-comparison';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';

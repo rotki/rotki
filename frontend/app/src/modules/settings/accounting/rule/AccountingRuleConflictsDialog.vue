@@ -2,6 +2,9 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { ConflictResolutionStrategy } from '@/modules/core/common/common-types';
 import type { AccountingRuleConflict } from '@/modules/settings/types/accounting';
+import { get, set } from '@vueuse/shared';
+import { computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getCollectionData } from '@/modules/core/common/data/collection-utils';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';

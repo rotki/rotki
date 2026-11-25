@@ -5,8 +5,10 @@ import { createTestExchange, createTestManualBalance } from '@test/utils/create-
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { testAccounts, testEthereumBalances, testExchangeBalances, testManualBalances } from '@test/utils/test-data';
 import { mount } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed, defineComponent, h, type VNode } from 'vue';
+import { computed, defineComponent, h, nextTick, type VNode } from 'vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { BalanceType } from '@/modules/balances/types/balances';

@@ -1,6 +1,7 @@
-import type { ComputedRef, CSSProperties, MaybeRefOrGetter, Ref } from 'vue';
 import { type NotificationAction, type NotificationData, NotificationKind, Severity } from '@rotki/common';
 import { isRuiIcon, type RuiIcons } from '@rotki/ui-library';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type CSSProperties, type MaybeRefOrGetter, readonly, type Ref, shallowRef, toValue } from 'vue';
 import { arrayify } from '@/modules/core/common/data/array';
 import { useSharedClipboard } from '@/modules/core/common/use-clipboard';
 

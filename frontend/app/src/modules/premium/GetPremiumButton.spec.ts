@@ -1,5 +1,6 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { type Pinia, setActivePinia } from 'pinia';
+import { set } from '@vueuse/shared';
+import { createPinia, type Pinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import GetPremiumButton from '@/modules/premium/GetPremiumButton.vue';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';

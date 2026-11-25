@@ -2,6 +2,7 @@ import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, ref, type Ref } from 'vue';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { PurgeableImageCache } from '@/modules/session/purge';
 import PurgeImagesCache from '@/modules/settings/data-security/data-management/PurgeImagesCache.vue';

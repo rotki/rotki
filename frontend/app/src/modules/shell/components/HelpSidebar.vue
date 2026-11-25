@@ -2,6 +2,9 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import { NotificationKind, Severity } from '@rotki/common';
 import { externalLinks, TWITTER_URL } from '@shared/external-links';
+import { createReusableTemplate } from '@vueuse/core';
+import { set } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
 import { downloadFileByTextContent } from '@/modules/core/common/file/download';
 import { IndexedDb } from '@/modules/core/common/helpers/indexed-db';
 import { useReportIssue } from '@/modules/core/common/use-report-issue';

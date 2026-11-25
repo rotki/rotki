@@ -1,6 +1,8 @@
 import type { SystemVersion } from '@shared/ipc';
 import type { WebVersion } from '@/types';
+import { get, set } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
+import { ref } from 'vue';
 import { isWebVersion, useVersionText, type VersionSummary } from '@/modules/shell/components/use-version-text';
 
 const web: WebVersion = { platform: 'linux', userAgent: 'Mozilla/5.0' };

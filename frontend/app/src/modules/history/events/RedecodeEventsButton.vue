@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+
 const { disabled = false, hasOptions = false } = defineProps<{
   disabled?: boolean;
   hasOptions?: boolean;

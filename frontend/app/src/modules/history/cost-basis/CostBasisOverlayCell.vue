@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import { get } from '@vueuse/shared';
+import { computed, onWatcherCleanup, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import {
   COST_BASIS_FIAT_FORMAT,

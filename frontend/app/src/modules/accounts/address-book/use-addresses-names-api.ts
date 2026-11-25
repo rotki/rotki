@@ -1,4 +1,5 @@
 import type { Collection, CollectionResponse } from '@/modules/core/common/collection';
+import { get } from '@vueuse/shared';
 import { omit } from 'es-toolkit';
 import {
   AddressBookCollectionResponse,

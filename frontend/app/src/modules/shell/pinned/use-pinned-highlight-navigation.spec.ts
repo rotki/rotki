@@ -1,6 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { computed, defineComponent, nextTick, ref } from 'vue';
 import { usePinnedHighlightNavigation } from '@/modules/shell/pinned/use-pinned-highlight-navigation';
 
 const mockRouterReplace = vi.fn().mockResolvedValue(undefined);

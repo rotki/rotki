@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { useI18n } from 'vue-i18n';
 import { useCopy } from '@/modules/core/common/use-clipboard';
 
 const { disabled, tooltip, value } = defineProps<{

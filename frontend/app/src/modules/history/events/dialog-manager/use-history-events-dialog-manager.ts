@@ -1,8 +1,10 @@
-import type { Ref } from 'vue';
 import type { DialogState } from './types';
 import type { AddTransactionHashPayload } from '@/modules/history/events/event-payloads';
 import type { AccountingRuleIdentifier } from '@/modules/settings/types/accounting';
 import { set } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { type Ref, ref, shallowReadonly } from 'vue';
+import { useRouter } from 'vue-router';
 import { DIALOG_TYPES, type DialogShowOptions, type DialogType } from '@/modules/history/events/dialog-types';
 import { PinnedNames } from '@/modules/session/types';
 import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';

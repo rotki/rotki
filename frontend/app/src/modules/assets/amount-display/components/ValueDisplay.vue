@@ -14,6 +14,7 @@
 import type { BigNumber } from '@rotki/common';
 import type { FormatOptions } from '@/modules/assets/amount-display/types';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+import { computed } from 'vue';
 import { useScrambledValue } from '@/modules/assets/amount-display';
 
 import AmountDisplayBase from './AmountDisplayBase.vue';

@@ -1,3 +1,4 @@
+import { get, set } from '@vueuse/shared';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, shallowRef } from 'vue';

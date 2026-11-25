@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useRotkiTheme } from '@rotki/ui-library';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';

@@ -1,6 +1,7 @@
 import type { PeriodicClientQueryResult } from '@/modules/session/types';
+import { get, set } from '@vueuse/shared';
 import { FetchError } from 'ofetch';
-import { createPinia, setActivePinia } from 'pinia';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import '@test/i18n';

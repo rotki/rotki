@@ -1,6 +1,9 @@
 <script lang="ts" setup>
 import type { AssetBalance } from '@rotki/common';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { topTokens, xpubNativeHolding } from '@/modules/accounts/core/account-assets';
 import IconTokenDisplay from '@/modules/accounts/IconTokenDisplay.vue';

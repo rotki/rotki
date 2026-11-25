@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import ManagedAssetFormDialog from '@/modules/assets/admin/managed/ManagedAssetFormDialog.vue';
 import ManagedAssetTable from '@/modules/assets/admin/managed/ManagedAssetTable.vue';
 import { useManagedAssetForm } from '@/modules/assets/admin/managed/use-managed-asset-form';

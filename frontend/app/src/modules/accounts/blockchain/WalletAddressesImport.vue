@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { createReusableTemplate } from '@vueuse/core';
+import { useI18n } from 'vue-i18n';
 import WalletImportSelection from '@/modules/accounts/blockchain/WalletImportSelection.vue';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';

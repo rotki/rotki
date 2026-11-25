@@ -1,7 +1,8 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import type { GalleryNft, Nfts } from '@/modules/assets/nfts';
 import { assert, BigNumber } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, ref, shallowRef, toValue } from 'vue';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 
 const NFT_SORT_KEYS = ['name', 'price', 'collection'] as const;

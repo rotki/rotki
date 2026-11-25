@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
+import { useI18n } from 'vue-i18n';
 import { type SkippedEventsLocation, useSkippedEventsActions } from '@/modules/history/events/use-skipped-events-actions';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';

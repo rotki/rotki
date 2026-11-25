@@ -1,3 +1,8 @@
+import { createSharedComposable } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
 export class Currency {
   constructor(
     readonly name: string,

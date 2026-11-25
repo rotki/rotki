@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { LocationRow } from '@/modules/locations/location-rows';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type HighlightSegment, splitHighlight } from '@/modules/core/common/highlight-match';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 

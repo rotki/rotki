@@ -1,4 +1,6 @@
 import type { AssetPrices } from '@/modules/assets/prices/price-types';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';

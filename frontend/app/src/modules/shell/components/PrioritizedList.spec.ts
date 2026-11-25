@@ -1,5 +1,6 @@
 import type { PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AddressNamePriority } from '@/modules/accounts/address-book/types/address-name-priorities';
 import { PrioritizedListData } from '@/modules/settings/types/prioritized-list-data';

@@ -4,6 +4,7 @@ import type { useHistoryEvents } from '@/modules/history/events/use-history-even
 import type { PriceIntent, usePriceIntents } from '@/modules/history/management/forms/price-intent';
 import { HistoryEventEntryType } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, nextTick, ref, type Ref, useModel } from 'vue';

@@ -1,5 +1,5 @@
-import type { InjectionKey } from 'vue';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { inject, type InjectionKey, provide } from 'vue';
 
 /** Shows `question` in the enclosing menu in place of its entries, and calls `onAccept` once accepted. */
 type AskInMenu = (question: ConfirmQuestion, onAccept: () => void) => void;

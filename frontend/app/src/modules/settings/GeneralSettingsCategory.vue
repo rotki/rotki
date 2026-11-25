@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { useI18n } from 'vue-i18n';
 import LogLevelSetting from '@/modules/settings/backend/LogLevelSetting.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import AskUserUponSizeDiscrepancySetting from '@/modules/settings/general/AskUserUponSizeDiscrepancySetting.vue';

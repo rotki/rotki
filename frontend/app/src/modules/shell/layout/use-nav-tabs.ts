@@ -1,7 +1,8 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { RouteRecordNameGeneric } from 'vue-router';
 import type { TabContent } from '@/modules/core/common/tabs';
 import type { RouteName, RouteNavMeta } from '@/types/router';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { type RouteRecordNameGeneric, useRouter } from 'vue-router';
 
 function tabContent(router: ReturnType<typeof useRouter>, t: ReturnType<typeof useI18n>['t'], name: RouteName, labelKey: string, icon: TabContent['icon']): TabContent {
   return {

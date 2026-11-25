@@ -1,5 +1,7 @@
+import { useLocalStorage } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { omit } from 'es-toolkit';
-import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, type WritableComputedRef } from 'vue';
+import { computed, type ComputedRef, type MaybeRefOrGetter, onMounted, type Ref, shallowRef, toValue, watch, type WritableComputedRef } from 'vue';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSetting } from '@/modules/settings/use-setting';

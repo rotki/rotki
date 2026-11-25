@@ -1,6 +1,8 @@
 import type { BitcoinAccounts, BlockchainAccount, BlockchainAccountGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
 import type { BlockchainTotals, BtcBalances } from '@/modules/balances/types/blockchain-balances';
 import { type Balance, bigNumberify, Blockchain, Zero } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { ok } from 'plainfp/result';
 import { assert, beforeEach, describe, expect, it } from 'vitest';
 import { getAccountAddress, getXpubGroupId } from '@/modules/accounts/account-utils';

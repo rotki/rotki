@@ -1,4 +1,5 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, shallowRef, toValue, watch } from 'vue';
 
 interface StepTransitionClasses {
   enterFromClass: string;

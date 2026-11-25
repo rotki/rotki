@@ -1,8 +1,8 @@
-import type { Pinia } from 'pinia';
 import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import AmountDisplayBase from '@/modules/assets/amount-display/components/AmountDisplayBase.vue';
 import CopyTooltip from '@/modules/shell/components/CopyTooltip.vue';

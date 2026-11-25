@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import NftGalleryActions from '@/modules/balances/nft/NftGalleryActions.vue';
 import NftGalleryEmptyState from '@/modules/balances/nft/NftGalleryEmptyState.vue';
 import NftGalleryFilters from '@/modules/balances/nft/NftGalleryFilters.vue';

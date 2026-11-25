@@ -1,8 +1,9 @@
 import type { DuplicateRow } from '@/modules/history/events/use-customized-event-duplicates';
 import { createMock } from '@test/utils/create-mock';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, nextTick, type VNode } from 'vue';
+import { computed, defineComponent, h, nextTick, ref, shallowRef, type VNode } from 'vue';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import CustomizedEventDuplicatesDialog from '@/modules/history/events/CustomizedEventDuplicatesDialog.vue';
 import DuplicateRowActions from '@/modules/history/events/DuplicateRowActions.vue';

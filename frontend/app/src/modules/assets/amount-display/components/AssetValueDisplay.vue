@@ -16,6 +16,9 @@
  */
 import type { Timestamp } from '@/modules/assets/amount-display/types';
 import { type BigNumber, Zero } from '@rotki/common';
+import { isDefined } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import { useAmountDisplaySettings, useAssetValue, useOracleInfo, useScrambledValue } from '@/modules/assets/amount-display';
 import AmountDisplayBase from './AmountDisplayBase.vue';
 import ManualPriceIndicator from './ManualPriceIndicator.vue';

@@ -1,5 +1,8 @@
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { Blockchain } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import {
   toAddressBookChainField,
   toAddressBookFields,

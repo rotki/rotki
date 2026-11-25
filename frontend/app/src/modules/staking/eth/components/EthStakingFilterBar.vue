@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { EthStakingCombinedFilter, EthStakingFilter } from '@rotki/common';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { useEthStakingFilterFields } from '@/modules/staking/eth/use-eth-staking-filter-fields';

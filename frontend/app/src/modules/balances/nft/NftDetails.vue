@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { StyleValue } from 'vue';
+import { createReusableTemplate } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, type StyleValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useNftDomainWhitelist } from '@/modules/balances/nft/use-nft-domain-whitelist';

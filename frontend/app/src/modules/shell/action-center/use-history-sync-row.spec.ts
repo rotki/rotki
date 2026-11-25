@@ -1,6 +1,7 @@
-import type { EffectScope } from 'vue';
 import type { ActionItem } from '@/modules/core/action-center/types';
+import { get, set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type ComputedRef, type EffectScope, effectScope, type Ref, ref } from 'vue';
 import { useHistorySyncRow } from '@/modules/shell/action-center/use-history-sync-row';
 
 const SYNCED_AT = Date.UTC(2026, 8, 15, 10, 30);

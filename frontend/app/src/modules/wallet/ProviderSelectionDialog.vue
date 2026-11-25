@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { EnhancedProviderDetail } from '@/modules/wallet/providers/provider-detection';
+import { set } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
 
 interface Props {
   providers: EnhancedProviderDetail[];

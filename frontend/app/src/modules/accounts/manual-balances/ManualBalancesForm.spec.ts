@@ -3,7 +3,10 @@ import type { VueWrapper } from '@vue/test-utils';
 import type { ManualBalance, RawManualBalance } from '@/modules/balances/types/manual-balances';
 import { bigNumberify } from '@rotki/common';
 import { type ModelFormHarness, mountModelForm } from '@test/utils/model-form-harness';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, nextTick, reactive, ref } from 'vue';
 import { BalanceType } from '@/modules/balances/types/balances';
 
 const manualLabels = ref<string[]>([]);

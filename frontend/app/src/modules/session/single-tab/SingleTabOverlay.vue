@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useSingleTab } from '@/modules/session/single-tab/use-single-tab';
 

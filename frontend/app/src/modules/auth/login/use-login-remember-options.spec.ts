@@ -1,6 +1,8 @@
 import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { useLoginRememberOptions } from './use-login-remember-options';
 
 const { clearPassword, interop, storePassword } = vi.hoisted(() => ({

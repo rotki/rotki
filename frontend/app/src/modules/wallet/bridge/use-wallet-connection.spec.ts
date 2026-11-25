@@ -1,4 +1,5 @@
 import type { EIP1193Provider, EIP1193ProviderEvents } from '@/types';
+import { get } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { useWalletConnection } from '@/modules/wallet/bridge/use-wallet-connection';
 

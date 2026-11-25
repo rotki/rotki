@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useResizeObserver } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { onMounted, ref, useTemplateRef } from 'vue';
+
 defineSlots<{
   default: () => any;
 }>();

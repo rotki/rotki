@@ -1,6 +1,8 @@
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
 import { assert } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRouter } from 'vue-router';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';

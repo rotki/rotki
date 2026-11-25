@@ -1,6 +1,8 @@
-import type { MaybeRef, Ref, ShallowRef } from 'vue';
 import { startPromise } from '@shared/utils';
-import { defaultDocument, promiseTimeout } from '@vueuse/core';
+import { defaultDocument, promiseTimeout, useEventListener } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { type MaybeRef, onMounted, readonly, type Ref, ref, type ShallowRef, toValue } from 'vue';
+import { useThrottleFn } from '@/modules/core/common/async/scoped-timers';
 
 const SCROLL_SETTLE_TIMEOUT = 1500;
 const SCROLL_TOP_MARGIN = 20;

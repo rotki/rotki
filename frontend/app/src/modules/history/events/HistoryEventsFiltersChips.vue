@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import HistoryEventsDuplicateFixAll from '@/modules/history/events/HistoryEventsDuplicateFixAll.vue';
 import { useHistoryEventsFiltersChips } from '@/modules/history/events/use-history-events-filters-chips';
 

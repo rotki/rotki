@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { IssueDescription, RemediationTimelineItem } from '@/modules/history/data-issues/types';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { type RouteLocationRaw, useRouter } from 'vue-router';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import DataIssueBalanceDivergence from '@/modules/history/data-issues/components/DataIssueBalanceDivergence.vue';
 import DataIssueBalanceMismatchSummary from '@/modules/history/data-issues/components/DataIssueBalanceMismatchSummary.vue';

@@ -1,6 +1,10 @@
 import type { TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
+import { until, watchImmediate } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { type ComputedRef, type MaybeRefOrGetter, nextTick, type Ref, toRef } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';

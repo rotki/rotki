@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { type RouteLocationRaw, useRouter } from 'vue-router';
 import { useAddSourceOptions } from '@/modules/dashboard/holdings/use-add-source-options';
 
 const { t } = useI18n({ useScope: 'global' });

@@ -1,6 +1,7 @@
 import { shallowMount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, ref } from 'vue';
 import { useConfirm } from '@/modules/core/common/use-confirm';
 import AppMessages from '@/modules/shell/app/AppMessages.vue';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';

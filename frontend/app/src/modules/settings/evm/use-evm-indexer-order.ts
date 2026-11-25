@@ -1,7 +1,10 @@
-import type { ComputedRef, Ref } from 'vue';
 import type { MessageKey } from '@/message-key';
 import type { PrioritizedListData } from '@/modules/settings/types/prioritized-list-data';
 import type { PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type Ref, ref, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import { buildTabs, type ChainItem, DEFAULT_INDEXER_ORDER, DEFAULT_INDEXER_TAB, getAvailableChainItems, getAvailableIndexersForChain, getChainIndexerWarnings, getMissingApiKeyIndexer, initialOrderForChain, isEvmIndexer, keyedPrimaryIndexer, orderForChain, type TabItem, toChainIdKeys, toEvmChainNameKeys } from '@/modules/settings/evm/evm-indexer-utils';

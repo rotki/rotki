@@ -7,7 +7,10 @@ import type {
   TimeUnit,
 } from '@rotki/common';
 import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
+import { useRotkiTheme } from '@rotki/ui-library';
+import { get } from '@vueuse/shared';
 import dayjs from 'dayjs';
+import { useI18n } from 'vue-i18n';
 import { convertToTimestamp } from '@/modules/core/common/data/date';
 import { DateFormat } from '@/modules/core/common/date-format';
 import { isOfEnum } from '@/modules/core/common/helpers/is-of-enum';

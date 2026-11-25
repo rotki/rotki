@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Blockchain, HistoryEventEntryType } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import HistoryEventsView from '@/modules/history/events/HistoryEventsView.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';

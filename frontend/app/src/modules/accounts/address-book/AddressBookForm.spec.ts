@@ -2,7 +2,9 @@ import type { StubInstance } from '@test/utils/component-vm';
 import type { VueWrapper } from '@vue/test-utils';
 import type { AddressBookPayload } from '@/modules/accounts/address-book/eth-names';
 import { type ModelFormHarness, mountModelForm } from '@test/utils/model-form-harness';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, nextTick } from 'vue';
 
 vi.mock('@/modules/accounts/address-book/use-address-name-resolution', () => ({
   useAddressNameResolution: vi.fn().mockReturnValue({

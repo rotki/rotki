@@ -1,5 +1,7 @@
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, type ComputedRef, ref } from 'vue';
 import { msg } from '@/message-key';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';

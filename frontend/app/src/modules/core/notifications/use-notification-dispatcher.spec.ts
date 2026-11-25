@@ -1,4 +1,6 @@
 import { NotificationGroup, NotificationKind, type NotificationPayload, Severity } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';

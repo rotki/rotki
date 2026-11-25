@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { AddressBookLocation } from '@/modules/accounts/address-book/eth-names';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import AddressBookManagement from '@/modules/accounts/address-book/AddressBookManagement.vue';
 import { NoteLocation } from '@/modules/core/common/notes';

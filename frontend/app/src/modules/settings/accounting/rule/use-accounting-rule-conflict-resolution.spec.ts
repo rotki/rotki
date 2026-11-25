@@ -1,6 +1,7 @@
 import type { Collection } from '@/modules/core/common/collection';
 import type { AccountingRuleConflict } from '@/modules/settings/types/accounting';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type Ref, ref } from 'vue';

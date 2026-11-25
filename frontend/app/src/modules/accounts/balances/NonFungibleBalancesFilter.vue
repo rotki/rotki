@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get, set } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import TableSelectionAction from '@/modules/core/table/TableSelectionAction.vue';
 import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';

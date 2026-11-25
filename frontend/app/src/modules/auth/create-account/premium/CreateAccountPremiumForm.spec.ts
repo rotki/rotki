@@ -1,7 +1,8 @@
-import type { StubInstance } from '@test/utils/component-vm';
 import type { PremiumSetup } from '@/modules/auth/login';
+import { findStub, type StubInstance } from '@test/utils/component-vm';
 import { type ModelFormHarness, mountModelForm } from '@test/utils/model-form-harness';
 import { assert, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import CreateAccountPremiumForm from '@/modules/auth/create-account/premium/CreateAccountPremiumForm.vue';
 import '@test/i18n';
 
@@ -24,7 +25,7 @@ function createHarness(setup: Partial<PremiumSetup> = {}, optional: boolean = fa
 }
 
 function messages(harness: ModelFormHarness<PremiumSetup>, testId: string): string[] {
-  const value: unknown = harness.wrapper.findComponent<StubInstance>(`[data-testid=${testId}]`).props('errorMessages');
+  const value: unknown = findStub(harness.wrapper, `[data-testid=${testId}]`).props('errorMessages');
   assert(Array.isArray(value));
   return value.map(String);
 }

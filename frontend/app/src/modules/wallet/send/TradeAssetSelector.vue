@@ -2,6 +2,11 @@
 import type { TradableAsset } from '@/modules/wallet/types';
 import { type BigNumber, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { useVirtualList, watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { ActivityKind } from '@/modules/task-center/core/types';

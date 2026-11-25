@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { AssetDisplay } from '@/modules/assets/types';
 import { type Balance, type BigNumber, Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';

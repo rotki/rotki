@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import type { CalendarEvent } from '@/modules/calendar/types';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { omit } from 'es-toolkit';
-import { useTemplateRef } from 'vue';
+import { computed, ref, shallowRef, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import CalendarForm from '@/modules/calendar/CalendarForm.vue';
 import { useCalendarApi } from '@/modules/calendar/use-calendar-api';
 import { useSaveFailure } from '@/modules/core/form/use-save-failure';

@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { useBreakpoint, useRotkiTheme } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useLogout } from '@/modules/auth/use-logout';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { usePremiumHelper } from '@/modules/premium/use-premium-helper';

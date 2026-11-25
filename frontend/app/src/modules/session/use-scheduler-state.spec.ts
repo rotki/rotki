@@ -1,6 +1,7 @@
-import type { EffectScope } from 'vue';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 
 const mockSetSchedulerState = vi.fn();

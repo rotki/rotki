@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import CustomAssetFormDialog from '@/modules/assets/admin/custom/CustomAssetFormDialog.vue';
 import CustomAssetTable from '@/modules/assets/admin/custom/CustomAssetTable.vue';
 import { useCustomAssetDialog } from '@/modules/assets/admin/custom/use-custom-asset-dialog';

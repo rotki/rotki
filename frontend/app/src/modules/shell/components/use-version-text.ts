@@ -1,6 +1,7 @@
 import type { SystemVersion } from '@shared/ipc';
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { WebVersion } from '@/types';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 /** The premium components the app loaded, absent for a non-premium user. */
 interface ComponentsVersion {

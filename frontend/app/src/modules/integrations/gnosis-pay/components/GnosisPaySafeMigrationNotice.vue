@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Account } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 

@@ -1,7 +1,9 @@
 import { Theme } from '@rotki/common';
 import { mount } from '@vue/test-utils';
+import { useLocalStorage } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, type Ref } from 'vue';
+import { defineComponent, nextTick, ref, type Ref } from 'vue';
 
 const mockSelectedTheme = ref<Theme>(Theme.AUTO);
 const mockLogged = ref<boolean>(false);

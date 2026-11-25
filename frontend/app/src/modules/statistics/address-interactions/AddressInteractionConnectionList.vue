@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useScramble } from '@/modules/settings/use-scramble';
 import EnsAvatar from '@/modules/shell/components/display/EnsAvatar.vue';

@@ -1,5 +1,6 @@
 import type { EthStakingPayload, EthStakingPerformance } from '@rotki/common';
 import type { ComputedRef, Ref } from 'vue';
+import { get } from '@vueuse/shared';
 import { useEth2Staking } from '@/modules/staking/eth2/use-eth2';
 
 interface UseEthStakingPerformanceReturn {

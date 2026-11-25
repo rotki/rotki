@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { LocationNode } from '@/modules/locations/use-location-tree-api';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, ref, shallowRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { noSubmit, useForm } from '@/modules/core/form/use-form';
 import LocationIconPicker from '@/modules/locations/components/LocationIconPicker.vue';

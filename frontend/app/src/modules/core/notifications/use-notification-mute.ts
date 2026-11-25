@@ -1,5 +1,6 @@
 import type { BackendProblem } from '@/modules/core/notifications/problems/backend-problem-tree';
 import { type NotificationData, type NotificationGroup, NotificationKind } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { once } from 'es-toolkit';
 import { useFrontendSettingsWriter } from '@/modules/settings/use-frontend-settings-writer';
 import { useSetting } from '@/modules/settings/use-setting';

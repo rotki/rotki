@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AssetManagerMoreTitle from '@/modules/assets/admin/AssetManagerMoreTitle.vue';
 import ManageCexMappingFormDialog from '@/modules/assets/admin/cex-mapping/ManageCexMappingFormDialog.vue';
 import MissingMappingDismissButton from '@/modules/assets/admin/missing-mappings/MissingMappingDismissButton.vue';

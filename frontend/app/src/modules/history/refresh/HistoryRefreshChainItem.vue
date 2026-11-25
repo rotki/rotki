@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ChainData } from '@/modules/history/refresh/types';
+import { get, set } from '@vueuse/shared';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 
 const modelValue = defineModel<string[]>({ required: true });

@@ -1,9 +1,10 @@
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import type { AccountDataRow } from './types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
+import { get, set } from '@vueuse/shared';
 import { isEmpty } from 'es-toolkit/compat';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, shallowRef, toValue, type WritableComputedRef } from 'vue';
 import { getAccountId, getGroupId } from '@/modules/accounts/account-utils';
 import { sum } from '@/modules/core/common/display/balances';
 

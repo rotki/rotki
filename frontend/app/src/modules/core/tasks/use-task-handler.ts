@@ -1,4 +1,5 @@
 import { checkIfDevelopment } from '@shared/utils';
+import { createSharedComposable } from '@vueuse/core';
 import { err, ok, type Result } from 'plainfp/result';
 import { FailureCause, parseFailureCause } from '@/modules/core/api/failure-cause';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';

@@ -1,4 +1,6 @@
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useHistoryQueryIndicatorSettings } from './use-history-query-indicator-settings';
 
 const evmQueryIndicatorMinOutOfSyncPeriod = ref<number>(0);

@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { AddressAccount, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { assert, Blockchain, transformCase } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { tap } from 'plainfp/result';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';

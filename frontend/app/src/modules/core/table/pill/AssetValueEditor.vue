@@ -2,6 +2,9 @@
 import type { AssetInfoWithId } from '@rotki/common';
 import type { ActiveFilter, FieldDef, FilterOp } from '@/modules/core/table/pill/core/types';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { uniqueObjects } from '@/modules/core/common/data/data';
 import { assetDisplayCaption, assetDisplayLabel } from '@/modules/core/common/display/assets';
 import PillOperatorToggle from '@/modules/core/table/pill/PillOperatorToggle.vue';

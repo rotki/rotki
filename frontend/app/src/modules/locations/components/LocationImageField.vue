@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { LocationIcon } from '@/modules/locations/location-icons';
+import { useObjectUrl } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { locationImageUrl } from '@/modules/locations/use-location-tree-api';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 

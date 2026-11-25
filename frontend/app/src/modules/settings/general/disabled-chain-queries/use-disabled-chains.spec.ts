@@ -1,3 +1,4 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useDisabledChains } from './use-disabled-chains';

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { BlockchainAccountGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
+import { get } from '@vueuse/shared';
+import { computed, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getAccountAddress, getGroupId, isAddressAccount } from '@/modules/accounts/account-utils';
 import AccountChains from '@/modules/accounts/AccountChains.vue';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';

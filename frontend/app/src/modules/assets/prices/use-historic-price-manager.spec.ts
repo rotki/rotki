@@ -2,9 +2,11 @@ import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/modules/asse
 import type { ProblemMessage } from '@/modules/core/notifications/problems/backend-problem-tree';
 import { bigNumberify } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, ref } from 'vue';
 import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { useHistoricPrices } from './use-historic-price-manager';

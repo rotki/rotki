@@ -1,5 +1,6 @@
 import type { ImportLocationResolution } from '@/modules/user-data/import-location-types';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useImportLocationMapping } from '@/modules/user-data/use-import-location-mapping';
 

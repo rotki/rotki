@@ -1,7 +1,9 @@
-import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { XpubPayload } from '@/modules/accounts/blockchain-accounts';
 import type { BtcChains } from '@/modules/core/common/chains';
 import { Blockchain } from '@rotki/common';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { type MaybeRefOrGetter, readonly, type Ref, shallowRef, toValue, watch } from 'vue';
 import { type DetectionResult, detectXpubType, getKeyType, getPrefix, XpubPrefix } from '@/modules/accounts/xpub';
 
 /** The two fields the user types into. The payload is assembled from them and the chosen prefix. */

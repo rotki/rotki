@@ -1,6 +1,8 @@
 import type { CalendarEvent } from '@/modules/calendar/types';
+import { get, set } from '@vueuse/shared';
 import dayjs from 'dayjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useCalendarOperations } from '@/modules/calendar/use-calendar-operations';
 
 function makeEvent(overrides: Partial<CalendarEvent> = {}): CalendarEvent {

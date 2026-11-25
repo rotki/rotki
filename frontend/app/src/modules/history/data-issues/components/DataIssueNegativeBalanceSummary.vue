@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import DataIssueValueTile from '@/modules/history/data-issues/components/DataIssueValueTile.vue';

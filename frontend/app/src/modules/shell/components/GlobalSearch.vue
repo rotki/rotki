@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { isDefined, useTimeoutFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, nextTick, onBeforeMount, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import { watchDebounced } from '@/modules/core/common/async/scoped-timers';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';

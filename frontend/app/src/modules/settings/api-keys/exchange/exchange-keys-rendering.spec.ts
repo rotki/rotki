@@ -1,3 +1,4 @@
+import type { ComputedRef } from 'vue';
 import type { ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { RuiAlert } from '@rotki/ui-library';
 import { createCustomPinia } from '@test/utils/create-pinia';

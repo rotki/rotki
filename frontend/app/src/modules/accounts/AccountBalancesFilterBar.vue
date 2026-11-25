@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { SavedViewState } from '@/modules/core/table/pill/composables/use-saved-views';
 import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
+import { get, set } from '@vueuse/shared';
+import { computed } from 'vue';
 import { useBlockchainAccountFields } from '@/modules/accounts/use-blockchain-account-fields';
 import { arrayify } from '@/modules/core/common/data/array';
 import { SavedFilterLocations } from '@/modules/core/table/filtering';

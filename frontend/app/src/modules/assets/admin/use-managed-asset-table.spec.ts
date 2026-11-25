@@ -5,6 +5,7 @@ import type { Collection } from '@/modules/core/common/collection';
 import { createMock } from '@test/utils/create-mock';
 import { withSetup } from '@test/utils/with-setup';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';
 import { EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';

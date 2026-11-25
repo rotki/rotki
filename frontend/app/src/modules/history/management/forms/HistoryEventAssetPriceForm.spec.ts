@@ -1,10 +1,10 @@
-import type { Pinia } from 'pinia';
 import type { PriceIntent } from '@/modules/history/management/forms/price-intent';
 import { bigNumberify } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
+import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';

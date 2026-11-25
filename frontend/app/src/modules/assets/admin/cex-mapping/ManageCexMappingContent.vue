@@ -2,6 +2,8 @@
 import type { CexMapping, CexMappingRequestPayload } from '@/modules/assets/types';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { omit } from 'es-toolkit';
+import { onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { CexMappingFilterKeys, type Filters } from '@/modules/assets/admin/cex-mapping/cex-mapping-filter-keys';
 import ManageCexMappingFormDialog from '@/modules/assets/admin/cex-mapping/ManageCexMappingFormDialog.vue';
 import ManageCexMappingTable from '@/modules/assets/admin/cex-mapping/ManageCexMappingTable.vue';

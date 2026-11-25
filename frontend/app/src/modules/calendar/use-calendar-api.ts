@@ -1,5 +1,6 @@
 import type { MaybeRef } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
+import { get } from '@vueuse/shared';
 import {
   type AddCalendarEventResponse,
   AddCalendarEventResponseSchema,

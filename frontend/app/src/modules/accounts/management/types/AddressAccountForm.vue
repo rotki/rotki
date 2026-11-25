@@ -3,6 +3,10 @@ import type { AccountManage } from '@/modules/accounts/blockchain/use-account-ma
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { Module } from '@/modules/core/common/modules';
 import { assert, Blockchain } from '@rotki/common';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AddressInput from '@/modules/accounts/blockchain/AddressInput.vue';
 import { useAddressCheck } from '@/modules/accounts/blockchain/use-address-check';
 import AccountDataInput from '@/modules/accounts/management/inputs/AccountDataInput.vue';

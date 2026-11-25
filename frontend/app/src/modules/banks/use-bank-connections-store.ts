@@ -1,5 +1,8 @@
 import type { BankConnection, BankManifest } from '@/modules/banks/types';
 import { toSentenceCase } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, ref, shallowRef } from 'vue';
 
 export const useBankConnectionsStore = defineStore('banks/connections', () => {
   const manifests = ref<BankManifest[]>([]);

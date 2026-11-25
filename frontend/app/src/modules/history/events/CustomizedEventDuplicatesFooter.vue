@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { DuplicatesTab } from '@/modules/history/events/use-customized-event-duplicates-dialog';
 import { useDuplicatesQuestion } from '@/modules/history/events/use-duplicates-question';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';

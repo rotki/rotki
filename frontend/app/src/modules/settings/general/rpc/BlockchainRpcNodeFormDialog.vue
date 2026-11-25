@@ -2,7 +2,10 @@
 import type { RpcProviderCandidate } from '@/modules/settings/general/rpc/providers/rpc-provider-plan';
 import type { BlockchainRpcNode, BlockchainRpcNodeManageState } from '@/modules/settings/types/rpc';
 import { assert, Blockchain } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { omit } from 'es-toolkit';
+import { computed, ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { isBlockchain } from '@/modules/core/common/chains';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 
 const { t } = useI18n({ useScope: 'global' });

@@ -1,6 +1,8 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, nextTick, ref, shallowRef } from 'vue';
 import BridgeOverlay from '@/modules/wallet/bridge/BridgeOverlay.vue';
 import ConnectionLogs from '@/modules/wallet/bridge/ConnectionLogs.vue';
 import { installMockWallets } from '@/modules/wallet/bridge/dev-mock-wallets';

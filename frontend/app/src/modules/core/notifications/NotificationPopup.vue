@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { nextTick, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { createNotification } from '@/modules/core/notifications/notification-utils';
 import Notification from '@/modules/core/notifications/Notification.vue';

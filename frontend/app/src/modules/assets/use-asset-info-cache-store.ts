@@ -1,4 +1,6 @@
 import type { AssetCollection, AssetInfo } from '@rotki/common';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { shallowRef } from 'vue';
 import { createItemCacheStorage } from '@/modules/core/common/item-cache-storage';
 
 /**

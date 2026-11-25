@@ -1,5 +1,7 @@
 import { type HistoricalAssetPricePayload, HistoricalAssetPriceResponse } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { getOr, map as mapResult, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { dailyPricesActivity } from '@/modules/assets/prices/prices.activity';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';

@@ -4,6 +4,7 @@ import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { type BigNumber, bigNumberify } from '@rotki/common';
 import { invalid } from '@test/utils/invalid';
 import { mount } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, ref, type Ref, type ShallowRef, shallowRef, type VNode } from 'vue';
 import { useNetValueEventHandlers } from '@/modules/dashboard/graph/use-net-value-event-handlers';

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { RuiRevealableTextField, RuiTextField } from '@rotki/ui-library';
+import { get, set } from '@vueuse/shared';
+import { computed, type Ref, type WritableComputedRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 /**
  * Kraken carries a second pair of credentials for its futures API. They are optional, but only

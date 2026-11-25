@@ -3,6 +3,8 @@ import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventNoteContext } from '@/modules/history/events/use-history-event-note';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
+import { get, set } from '@vueuse/shared';
+import { computed, shallowRef } from 'vue';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
 import CostBasisOverlayCell from '@/modules/history/cost-basis/CostBasisOverlayCell.vue';
 import { getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';

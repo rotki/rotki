@@ -1,7 +1,8 @@
 import type { CalendarEvent } from '@/modules/calendar/types';
+import { get, set } from '@vueuse/shared';
 import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
-import { nextTick } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { useCalendarDateManagement } from '@/modules/calendar/use-calendar-date-management';
 
 const DATE_FORMAT = 'YYYY-MM-DD';

@@ -1,8 +1,10 @@
-import type { ComputedRef } from 'vue';
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import type { WorkStatus } from '@/modules/task-center/core/types';
 import { bigNumberify, Blockchain } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, type ComputedRef, ref } from 'vue';
 import { useEthValidatorOperations } from '@/modules/staking/eth/use-eth-validator-operations';
 
 const mockDeleteConfirmed = vi.fn<(params: unknown) => Promise<void>>(async () => {});

@@ -1,4 +1,5 @@
 import { isEvmIdentifier } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useSnapshotAssetFilters } from '@/modules/dashboard/snapshots/composables/use-snapshot-asset-filters';
 

@@ -3,7 +3,9 @@ import type { AssetBalanceEntries } from '@/modules/balances/aggregation/core/ag
 import type { EthBalance } from '@/modules/balances/types/blockchain-balances';
 import type { ExchangeData } from '@/modules/balances/types/exchanges';
 import { type AssetBalanceWithPrice, type AssetBalanceWithPriceAndChains, type BigNumber, type ExclusionSource, Zero } from '@rotki/common';
-import { computed, type ComputedRef, type MaybeRefOrGetter } from 'vue';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { groupAddresses } from '@/modules/accounts/core/account-groups';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { heldAssets } from '@/modules/balances/aggregation/core/held-assets';

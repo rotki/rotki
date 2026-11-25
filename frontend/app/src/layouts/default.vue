@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia';
+import { onMounted } from 'vue';
 import { useDataLoader } from '@/modules/auth/use-session-load';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import AppCore from '@/modules/shell/app/AppCore.vue';

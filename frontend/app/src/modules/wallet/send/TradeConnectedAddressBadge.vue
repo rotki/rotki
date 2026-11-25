@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import { useWalletHelper } from '@/modules/wallet/use-wallet-helper';

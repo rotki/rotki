@@ -2,6 +2,9 @@
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import type { NamedFailure } from '@/modules/shell/components/named-failure';
+import { set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { canDismiss, canResolveManually, canRetry, IssueState } from '@/modules/history/data-issues/constants';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';

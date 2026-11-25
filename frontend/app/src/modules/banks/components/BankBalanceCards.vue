@@ -2,6 +2,8 @@
 import type { BigNumber } from '@rotki/common';
 import type { RouteLocationRaw } from 'vue-router';
 import type { BankBalanceData } from '@/modules/banks/use-bank-data';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { type BankConnectionState, bankConnectionState, bankConnectionStatus, type BankConnectionStatusDisplay } from '@/modules/banks/bank-connection-state';
 import BankConnectorIcon from '@/modules/banks/components/BankConnectorIcon.vue';

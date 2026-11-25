@@ -1,7 +1,9 @@
 import { bigNumberify } from '@rotki/common';
 import { mockUseNotifications } from '@test/utils/mocks/notifications';
 import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
+import { get } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';

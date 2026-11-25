@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { isRetryableFailure } from '@/modules/core/api/request-result';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 

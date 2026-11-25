@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { get, set } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 
 const visible = defineModel<boolean>('visible', { required: true });

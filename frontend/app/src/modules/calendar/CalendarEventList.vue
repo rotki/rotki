@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { CalendarEvent } from '@/modules/calendar/types';
+import { get, set } from '@vueuse/shared';
 import dayjs, { type Dayjs } from 'dayjs';
+import { computed } from 'vue';
 
 const selectedDate = defineModel<Dayjs>('selectedDate', { required: true });
 

@@ -1,8 +1,10 @@
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import { Blockchain } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, type VNode } from 'vue';
+import { defineComponent, nextTick, type VNode } from 'vue';
 import { createNewBlockchainAccount } from '@/modules/accounts/blockchain/new-account-state';
 import { useAccountImportDialog } from '@/modules/accounts/import-export/use-account-import-dialog';
 import AccountDialog from '@/modules/accounts/management/AccountDialog.vue';

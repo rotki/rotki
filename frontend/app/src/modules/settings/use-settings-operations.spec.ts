@@ -3,6 +3,7 @@ import { assert } from '@rotki/common';
 import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { Currency, CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { Module } from '@/modules/core/common/modules';
 import { defaultAccountingSettings, defaultGeneralSettings } from '@/modules/settings/factories';

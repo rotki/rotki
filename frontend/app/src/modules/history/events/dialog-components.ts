@@ -1,7 +1,7 @@
-import type { AsyncComponentLoader, Component, VNode } from 'vue';
 import type { assetMovementMatchingKind } from '@/modules/history/events/matching/asset-movement-matching-kind';
 import type { bridgeMatchingKind } from '@/modules/history/events/matching/bridge-matching-kind';
 import { RuiProgress } from '@rotki/ui-library/components';
+import { type AsyncComponentLoader, type Component, defineAsyncComponent, h, type VNode } from 'vue';
 
 /**
  * The dialogs the events page can open, each loaded only once it is asked for. Named exports rather

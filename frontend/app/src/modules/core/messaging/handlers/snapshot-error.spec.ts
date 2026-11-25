@@ -1,5 +1,7 @@
 import { mockT } from '@test/i18n';
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { get } from '@vueuse/shared';
+import { setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createSnapshotErrorHandler } from '@/modules/core/messaging/handlers/snapshot-error';
 import { BALANCE_SNAPSHOT } from '@/modules/core/notifications/problems/backend-problem-tree';

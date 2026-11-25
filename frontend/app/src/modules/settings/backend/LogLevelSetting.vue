@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { LogLevel } from '@shared/log-level';
+import { set } from '@vueuse/shared';
+import { onBeforeMount, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useDebounceFn } from '@/modules/core/common/async/scoped-timers';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
 import LogLevelInput from '@/modules/settings/backend/LogLevelInput.vue';
 import { useLogLevelUpdate } from '@/modules/settings/backend/use-log-level-update';

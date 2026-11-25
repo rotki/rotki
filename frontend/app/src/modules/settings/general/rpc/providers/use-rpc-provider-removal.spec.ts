@@ -1,6 +1,7 @@
 import type { RpcProviderUsage } from '@/modules/settings/general/rpc/providers/rpc-provider-usage';
 import type { BlockchainRpcNode } from '@/modules/settings/types/rpc';
 import { Blockchain } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRpcProviderRemoval } from '@/modules/settings/general/rpc/providers/use-rpc-provider-removal';
 

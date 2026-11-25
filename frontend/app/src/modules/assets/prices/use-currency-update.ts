@@ -1,6 +1,8 @@
 import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import { type BigNumber, bigNumberify, One } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';

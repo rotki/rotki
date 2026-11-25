@@ -2,6 +2,10 @@
 import type { XpubPayload } from '@/modules/accounts/blockchain-accounts';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { BtcChains } from '@/modules/core/common/chains';
+import { watchImmediate } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { z, type ZodType } from 'zod';
 import { useXpubInput, type XpubFormState } from '@/modules/accounts/blockchain/use-xpub-input';
 import { XpubPrefix } from '@/modules/accounts/xpub';

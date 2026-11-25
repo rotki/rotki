@@ -1,7 +1,9 @@
 import type { WrapStatisticsResult } from '@/modules/statistics/api/use-wrap-statistics-api';
 import { bigNumberify } from '@rotki/common';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useWrappedStatistics } from '@/modules/statistics/wrapped/use-wrapped-statistics';
 
 const mockFetchWrapStatistics = vi.fn();

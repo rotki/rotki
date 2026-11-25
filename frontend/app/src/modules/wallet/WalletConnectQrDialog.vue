@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
 import { useClipboard } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useWalletConnect } from '@/modules/wallet/use-wallet-connect';
 

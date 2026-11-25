@@ -1,6 +1,9 @@
 import { BigNumber, bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { ref } from 'vue';
 import { useAmountFormatter } from '@/modules/assets/amount-display/use-amount-formatter';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 

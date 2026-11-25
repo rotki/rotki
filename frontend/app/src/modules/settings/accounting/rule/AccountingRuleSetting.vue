@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import AccountingRuleActionDialog from '@/modules/settings/accounting/rule/AccountingRuleActionDialog.vue';
 import AccountingRuleConflictsBanner from '@/modules/settings/accounting/rule/AccountingRuleConflictsBanner.vue';

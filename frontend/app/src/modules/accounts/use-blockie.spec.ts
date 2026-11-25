@@ -1,7 +1,8 @@
-import type { EffectScope } from 'vue';
 import { createBlockie } from '@rotki/ui-library';
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope } from 'vue';
 import { useBlockie } from '@/modules/accounts/use-blockie';
 
 describe('useBlockie', () => {

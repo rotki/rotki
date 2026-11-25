@@ -2,6 +2,9 @@
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import type { StakingValidatorManage } from '@/modules/accounts/blockchain/use-account-manage';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { get, set } from '@vueuse/shared';
+import { computed, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import Eth2ValidatorLimitRow from '@/modules/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
 import EthStakingValidatorsToolbar from '@/modules/accounts/EthStakingValidatorsToolbar.vue';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';

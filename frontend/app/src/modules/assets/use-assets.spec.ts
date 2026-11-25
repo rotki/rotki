@@ -3,6 +3,7 @@ import type { AssetMergePayload, AssetUpdatePayload } from '@/modules/assets/typ
 import { createMock } from '@test/utils/create-mock';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { runSpecWith } from '@test/utils/mocks/native-task';
+import { setActivePinia } from 'pinia';
 import { err, ok, type Result } from 'plainfp/result';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';

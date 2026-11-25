@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
-import { useTemplateRef } from 'vue';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { onMounted, ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AccountBalances from '@/modules/accounts/AccountBalances.vue';
 import AccountBalancesExportImport from '@/modules/accounts/AccountBalancesExportImport.vue';
 import AccountsRefreshButton from '@/modules/accounts/AccountsRefreshButton.vue';

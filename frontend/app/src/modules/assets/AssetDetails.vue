@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { AssetInfoWithId } from '@rotki/common';
 import type { AssetActions, AssetDisplay, AssetIdentifierResolution } from '@/modules/assets/types';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 

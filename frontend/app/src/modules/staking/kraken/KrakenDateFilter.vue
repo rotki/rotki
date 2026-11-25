@@ -3,6 +3,9 @@ import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering
 import type { PillBarLabels } from '@/modules/core/table/pill/core/types';
 import type { KrakenStakingDateFilter } from '@/modules/staking/staking-types';
 import { assert } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { KrakenStakingFilterValueKeys, useKrakenStakingFields } from '@/modules/staking/kraken/use-kraken-staking-fields';

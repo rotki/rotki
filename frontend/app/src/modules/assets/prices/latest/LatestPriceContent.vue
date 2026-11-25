@@ -2,7 +2,10 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/modules/assets/prices/price-types';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { get, set } from '@vueuse/shared';
 import { omit } from 'es-toolkit';
+import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { isNft } from '@/modules/assets/nft-utils';

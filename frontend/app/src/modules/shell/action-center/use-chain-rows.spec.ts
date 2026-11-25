@@ -1,7 +1,9 @@
-import type { EffectScope } from 'vue';
 import type { ActionItem, ActionItemOption } from '@/modules/core/action-center/types';
 import { mockUseSupportedChains } from '@test/utils/mocks/supported-chains';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type ComputedRef, type EffectScope, effectScope, type Ref, ref } from 'vue';
 import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { INDEXER_SETTINGS } from '@/modules/shell/action-center/row-options';
 import { useChainRows } from '@/modules/shell/action-center/use-chain-rows';

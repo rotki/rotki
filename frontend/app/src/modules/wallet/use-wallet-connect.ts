@@ -1,5 +1,6 @@
 import type UniversalProvider from '@walletconnect/universal-provider';
-import type { Ref } from 'vue';
+import { set } from '@vueuse/shared';
+import { type Ref, ref } from 'vue';
 import { withTimeout } from '@/modules/core/common/async/async-utilities';
 import { logger } from '@/modules/core/common/logging/logging';
 import { EIP155, EIP155_EVENTS, EIP155_METHODS, WALLET_ERRORS } from './constants';

@@ -1,6 +1,7 @@
 import { bigNumberify } from '@rotki/common';
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { withSetup } from '@test/utils/with-setup';
+import { get } from '@vueuse/shared';
 import { ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSolanaStakeAccounts } from './use-solana-stake-accounts';

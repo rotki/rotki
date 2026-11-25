@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useAirdropsMetadata } from '@/modules/airdrops/use-airdrops-metadata';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import IconMark from '@/modules/shell/components/IconMark.vue';

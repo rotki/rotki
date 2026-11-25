@@ -2,6 +2,8 @@
 import { getTextToken, toHumanReadable } from '@rotki/common';
 import { get, set } from '@vueuse/core';
 import { isEqual } from 'es-toolkit';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { useMoneriumOAuth } from '@/modules/integrations/monerium/use-monerium-auth';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';

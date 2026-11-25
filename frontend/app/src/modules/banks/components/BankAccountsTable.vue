@@ -2,6 +2,8 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { AssetActions, AssetDisplay } from '@/modules/assets/types';
 import type { BankAccountBalance } from '@/modules/banks/types';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { bankAmountFormat } from '@/modules/banks/bank-balances';

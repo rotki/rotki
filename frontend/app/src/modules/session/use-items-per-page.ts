@@ -1,3 +1,6 @@
+import { createSharedComposable } from '@vueuse/core';
+import { ref } from 'vue';
+
 /**
  * Keeps track of a shared, global instance of the items per page setting.
  *

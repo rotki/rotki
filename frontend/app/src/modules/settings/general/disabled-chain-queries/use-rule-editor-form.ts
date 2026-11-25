@@ -1,7 +1,8 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { ChainInfo } from '@/modules/core/api/types/chains';
 import type { Rule, RuleDraft } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chain-queries-state';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, ref, shallowRef, toValue, watch } from 'vue';
 import { isAddressAccount } from '@/modules/accounts/account-utils';
 
 type RuleKind = 'chain' | 'address';

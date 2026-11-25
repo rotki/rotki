@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import SettingMultiSelect from '@/modules/settings/controls/SettingMultiSelect.vue';

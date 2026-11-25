@@ -2,6 +2,7 @@ import type { CustomAsset } from '@/modules/assets/types';
 import type { Collection } from '@/modules/core/common/collection';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, shallowMount } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';

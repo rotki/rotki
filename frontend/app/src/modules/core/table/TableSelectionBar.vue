@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { provideTableSelectionCollapsed, useSelectionBarCollapse } from '@/modules/core/table/table-selection-collapse';
 import ConfirmMenu from '@/modules/shell/components/ConfirmMenu.vue';
 

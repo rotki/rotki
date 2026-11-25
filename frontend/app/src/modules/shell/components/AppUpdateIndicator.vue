@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { useIntervalFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useUpdateChecker } from '@/modules/session/use-update-checker';
 import { useSetting } from '@/modules/settings/use-setting';

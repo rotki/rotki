@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import { GnosisPayError, type GnosisPayErrorContext } from '../types';
 

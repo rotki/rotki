@@ -1,6 +1,8 @@
 import type { Ref } from 'vue';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { NotificationKind, Severity } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
 import { assetResetActivity } from '@/modules/assets/assets.activity';
 import { useAssets } from '@/modules/assets/use-assets';
 import { DialogType } from '@/modules/core/common/dialogs';

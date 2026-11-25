@@ -1,4 +1,7 @@
 <script lang="ts" setup>
+import { get, set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AccountChainIcon from '@/modules/accounts/AccountChainIcon.vue';
 import AccountChainsHoverMenu from '@/modules/accounts/AccountChainsHoverMenu.vue';
 import AccountChainsOverflow, { type AccountChainState } from '@/modules/accounts/AccountChainsOverflow.vue';

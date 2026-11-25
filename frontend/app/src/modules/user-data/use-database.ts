@@ -1,7 +1,10 @@
-import type { Ref } from 'vue';
 import type { MissingMapping } from '@/modules/user-data/schemas';
 import { assert } from '@rotki/common';
+import { createSharedComposable, isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import Dexie, { type EntityTable } from 'dexie';
+import { storeToRefs } from 'pinia';
+import { onScopeDispose, type Ref, ref, watch } from 'vue';
 import { type NewDetectedTokenRecord, NewDetectedTokens } from '@/modules/assets/detection/types';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 import { logger } from '@/modules/core/common/logging/logging';

@@ -6,6 +6,7 @@ import {
   TimedAssetHistoricalBalances,
   TimedBalances,
 } from '@rotki/common';
+import { isDefined } from '@vueuse/core';
 import { api } from '@/modules/core/api/rotki-api';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 

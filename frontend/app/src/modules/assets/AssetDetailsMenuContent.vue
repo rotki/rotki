@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/modules/assets/nfts';
+import { get, set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { isSpammableAssetType } from '@/modules/assets/types';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useAssetPageNavigation } from '@/modules/assets/use-asset-page-navigation';

@@ -1,5 +1,7 @@
 import { Blockchain } from '@rotki/common';
+import { set } from '@vueuse/shared';
 import { describe, expect, it, vi } from 'vitest';
+import { nextTick, reactive, ref, type Ref } from 'vue';
 import { XpubKeyType, type XpubPayload } from '@/modules/accounts/blockchain-accounts';
 import { useXpubInput, type XpubFormState } from '@/modules/accounts/blockchain/use-xpub-input';
 

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { CreateAccountMode } from '@/modules/auth/create-account/types';
+import { storeToRefs } from 'pinia';
+import { onMounted, ref } from 'vue';
+import { definePage } from 'vue-router/experimental';
 import AccountManagementAside from '@/modules/auth/AccountManagementAside.vue';
 import AccountManagementFooterText from '@/modules/auth/AccountManagementFooterText.vue';
 import AdaptiveFooterButton from '@/modules/auth/AdaptiveFooterButton.vue';

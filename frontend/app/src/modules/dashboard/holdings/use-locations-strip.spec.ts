@@ -1,4 +1,5 @@
 import { bigNumberify } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
 import { ref } from 'vue';
 import { type SourceContribution, SourceKind } from '@/modules/dashboard/holdings/core/holdings-types';

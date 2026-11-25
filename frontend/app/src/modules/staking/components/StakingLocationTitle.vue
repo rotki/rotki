@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { StakingLocation } from '@/pages/staking/staking-pages';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import BreadcrumbSwitchButton from '@/modules/shell/components/BreadcrumbSwitchButton.vue';
 import { type StakingInfo, useStakingLocations } from '@/pages/staking/use-staking-locations';

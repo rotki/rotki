@@ -1,11 +1,12 @@
-import type { EffectScope, MaybeRefOrGetter, Ref } from 'vue';
 import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { CalendarEvent } from '@/modules/calendar/types';
 import type { Collection } from '@/modules/core/common/collection';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import dayjs from 'dayjs';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, type EffectScope, effectScope, type MaybeRefOrGetter, type Ref, ref, toValue } from 'vue';
 import { useCalendarData } from './use-calendar-data';
 
 interface ParamSource {

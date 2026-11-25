@@ -2,6 +2,7 @@ import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ChainAccountMultiSelect from '@/modules/accounts/ChainAccountMultiSelect.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';

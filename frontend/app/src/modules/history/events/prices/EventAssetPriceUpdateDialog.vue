@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EventPriceUpdatePayload } from '@/modules/history/events/prices/use-event-price-update-trigger';
 import { toSentenceCase } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useEventPriceUpdateDialog } from '@/modules/history/events/prices/use-event-price-update-dialog';
 import { useSetting } from '@/modules/settings/use-setting';

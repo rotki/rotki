@@ -1,4 +1,6 @@
 import { bigNumberify } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';

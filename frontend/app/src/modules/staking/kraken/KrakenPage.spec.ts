@@ -1,7 +1,8 @@
 import { createTestExchange } from '@test/utils/create-data';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
-import { type Pinia, setActivePinia } from 'pinia';
+import { set } from '@vueuse/shared';
+import { type Pinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';

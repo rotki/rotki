@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+
 const { iso, title = '' } = defineProps<{
   iso: string;
   title?: string;

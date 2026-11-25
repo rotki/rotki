@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import type { Filters } from '@/modules/history/data-issues/data-issue-filter-keys';
 import type { DataIssue, DataIssuesRequestPayload } from '@/modules/history/data-issues/schemas';
+import { useIntervalFn, useTimeoutFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';

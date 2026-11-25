@@ -1,4 +1,8 @@
 import type { DialogType } from '@/modules/core/common/dialogs';
+import { useTimeoutFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { ref } from 'vue';
 
 export interface ConfirmationMessage {
   title: string;

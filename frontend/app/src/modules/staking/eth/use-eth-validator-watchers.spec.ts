@@ -1,5 +1,7 @@
+import { set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, ref } from 'vue';
 
 const mockFetchEthStakingValidators = vi.fn();
 

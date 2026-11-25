@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
-import { useTemplateRef } from 'vue';
+import { get } from '@vueuse/shared';
+import { computed, onMounted, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 /**
  * A question asked in place, beside what it concerns, instead of in a dialog over the page.

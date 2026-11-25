@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const { safes } = defineProps<{

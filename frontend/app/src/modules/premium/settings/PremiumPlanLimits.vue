@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useCountFormatter } from '@/modules/assets/amount-display/use-count-formatter';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 

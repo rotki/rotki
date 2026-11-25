@@ -1,9 +1,12 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { One, PriceQuality, type ResolvedPrice } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue, watch } from 'vue';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
+import { watchDebounced } from '@/modules/core/common/async/scoped-timers';
 import { useSetting } from '@/modules/settings/use-setting';
 import { resolvePriceSeries } from '@/modules/statistics/pricing/price-series';
 import { type BackfillDemand, usePriceBackfill } from '@/modules/statistics/pricing/use-price-backfill';

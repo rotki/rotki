@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { UnusableBinary } from '@shared/starling/binary-types';
+import { useI18n } from 'vue-i18n';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useMissingBinaryCopy } from '@/modules/shell/app/use-missing-binary-copy';
 import ErrorScreen from '@/modules/shell/components/error/ErrorScreen.vue';

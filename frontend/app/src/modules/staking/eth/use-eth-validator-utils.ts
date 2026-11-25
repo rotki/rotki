@@ -1,8 +1,8 @@
 import type { ContextColorsType } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
 import { type BigNumber, Zero } from '@rotki/common';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { nonEmptyOr } from '@/modules/core/common/data/data';
 
 interface UseEthValidatorUtilsReturn {

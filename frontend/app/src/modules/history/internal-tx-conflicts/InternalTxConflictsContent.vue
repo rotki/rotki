@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { computed, onBeforeMount, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';

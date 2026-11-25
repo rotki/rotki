@@ -1,6 +1,7 @@
-import type { Ref } from 'vue';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, type Ref } from 'vue';
 import UserDropdown from '@/modules/shell/components/UserDropdown.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 

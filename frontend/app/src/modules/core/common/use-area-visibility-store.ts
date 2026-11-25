@@ -1,5 +1,10 @@
 import type { Nullable } from '@rotki/common';
 import type { Pinned, PinnedName } from '@/modules/session/types';
+import { useBreakpoint } from '@rotki/ui-library';
+import { logicAnd, logicNot } from '@vueuse/math';
+import { get, set } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, ref } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 import { PINNED_DEFAULT_WIDTH } from '@/modules/shell/layout/sidebar-resize-constants';
 

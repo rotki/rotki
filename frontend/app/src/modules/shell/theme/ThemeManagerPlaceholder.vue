@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { getPublicPlaceholderImagePath } from '@/modules/core/common/file/file';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import GetPremiumPlaceholder from '@/modules/shell/components/GetPremiumPlaceholder.vue';

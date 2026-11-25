@@ -1,3 +1,5 @@
+import { watch } from 'vue';
+
 /**
  * Keeps a swap form's fee rows in step with its has-fee toggle.
  *

@@ -1,6 +1,10 @@
 import type { ShallowRef } from 'vue';
 import type { AssetMap } from '@/modules/assets/types';
 import { type AssetCollection, type AssetInfo, NotificationGroup, NotificationKind, Severity, transformCase } from '@rotki/common';
+import { createSharedComposable } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { useAssetInfoCacheStore } from '@/modules/assets/use-asset-info-cache-store';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';

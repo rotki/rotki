@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import TagInput from '@/modules/shell/components/inputs/TagInput.vue';
 
 const labelModel = defineModel<string>('label', { required: true });

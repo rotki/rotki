@@ -1,5 +1,8 @@
 import type { BigNumber, CommonQueryStatusData, FailedHistoricalAssetPriceResponse } from '@rotki/common';
 import type { StatsPriceQueryData } from '@/modules/core/messaging/types';
+import { get, set } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, type ComputedRef, shallowRef } from 'vue';
 import { createItemCacheStorage } from '@/modules/core/common/item-cache-storage';
 
 /**

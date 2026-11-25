@@ -1,6 +1,6 @@
-import type { StubInstance } from '@test/utils/component-vm';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { ActionStatus } from '@/modules/core/common/action';
+import { findStub, type StubInstance } from '@test/utils/component-vm';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@test/i18n';
@@ -73,7 +73,7 @@ describe('mergeDialog', () => {
   }
 
   function submitDisabled(): unknown {
-    return wrapper.findComponent<StubInstance>('[data-testid=merge-submit]').props('disabled');
+    return findStub(wrapper, '[data-testid=merge-submit]').props('disabled');
   }
 
   async function edit(testId: string, value: string): Promise<void> {

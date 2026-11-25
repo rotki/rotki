@@ -4,6 +4,7 @@ import type {
   AccountingRuleWithLinkedProperty,
 } from '@/modules/settings/types/accounting';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { afterEach, assert, describe, expect, it, vi } from 'vitest';
 import { nextTick, ref } from 'vue';
 import '@test/i18n';

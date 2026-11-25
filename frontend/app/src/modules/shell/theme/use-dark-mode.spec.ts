@@ -1,6 +1,8 @@
 import type { ThemeColors } from '@rotki/common';
 import { ThemeMode } from '@rotki/ui-library';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, ref } from 'vue';
 import { useDarkMode } from '@/modules/shell/theme/use-dark-mode';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 

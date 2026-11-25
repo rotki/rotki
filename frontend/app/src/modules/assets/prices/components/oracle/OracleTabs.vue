@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+
 const modelValue = defineModel<'prices' | 'caches'>({ required: true });
 
 const { t } = useI18n({ useScope: 'global' });

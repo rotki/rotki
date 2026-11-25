@@ -1,4 +1,5 @@
 import type { BankConnection, BankConnectionIdentity } from '@/modules/banks/types';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';

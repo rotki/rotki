@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+
 const apiKey = defineModel<string>('apiKey', { required: true });
 const apiSecret = defineModel<string>('apiSecret', { required: true });
 

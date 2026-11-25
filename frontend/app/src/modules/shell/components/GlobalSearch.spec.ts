@@ -1,6 +1,8 @@
 import type { SearchItem } from '@/modules/shell/layout/use-global-search';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { computed, nextTick, type Ref } from 'vue';
 import GlobalSearch from '@/modules/shell/components/GlobalSearch.vue';
 import GlobalSearchFooter from '@/modules/shell/components/GlobalSearchFooter.vue';
 import { createRuiPlugin } from '@/plugins/rui';

@@ -3,6 +3,7 @@ import type { PullEventPayload } from '@/modules/history/events/event-payloads';
 import type { PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
 import { HistoryEventEntryType } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import RedecodeConfirmationDialog from '@/modules/history/events/components/RedecodeConfirmationDialog.vue';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';

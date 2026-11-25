@@ -1,6 +1,8 @@
 import type { BackendOptions } from '@shared/ipc';
 import type { LogLevel } from '@shared/log-level';
-import type { ComputedRef, DeepReadonly, Ref } from 'vue';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type DeepReadonly, onMounted, readonly, type Ref, ref, shallowRef } from 'vue';
 import { deleteBackendUrl, getBackendUrl } from '@/modules/auth/account-management';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { getDefaultLogLevel, logger, setLevel } from '@/modules/core/common/logging/logging';

@@ -1,4 +1,5 @@
 import type { AssetBalancesDisplay } from '@/modules/balances/types/balances';
+import { get, set } from '@vueuse/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { useAssetBalancesHeaders } from './use-asset-balances-headers';

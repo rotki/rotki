@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get, set } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 import { usePinnedTabs } from '@/modules/shell/pinned/use-pinned-tabs';
 

@@ -1,6 +1,7 @@
 import type { SupportedChains } from '@/modules/core/api/types/chains';
 import { Blockchain } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { setActivePinia } from 'pinia';
 import { ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount } from '@/modules/accounts/create-account';

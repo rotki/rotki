@@ -1,4 +1,3 @@
-import type { ComputedRef, Ref } from 'vue';
 import type { PullEventPayload } from '@/modules/history/events/event-payloads';
 import type {
   EthBlockEvent,
@@ -8,7 +7,10 @@ import type {
   SolanaEvent,
   SolanaSwapEvent,
 } from '@/modules/history/events/schemas';
+import { get } from '@vueuse/shared';
 import { tap } from 'plainfp/result';
+import { computed, type ComputedRef, type Ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useReportIssue } from '@/modules/core/common/use-report-issue';
 import {
   isEthBlockEvent,

@@ -1,6 +1,7 @@
 import type { SupportedAsset } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

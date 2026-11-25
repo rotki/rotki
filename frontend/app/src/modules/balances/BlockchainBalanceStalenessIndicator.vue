@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { useBlockchainBalanceStaleness } from '@/modules/balances/use-blockchain-balance-staleness';
 
 const { lastRefreshed, lastRefreshTimestamp } = useBlockchainBalanceStaleness();

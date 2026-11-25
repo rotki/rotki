@@ -4,6 +4,7 @@ import type { Filters } from '@/modules/assets/admin/custom/custom-asset-filter-
 import type { CustomAsset } from '@/modules/assets/types';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { useI18n } from 'vue-i18n';
 import { useCustomAssetTable } from '@/modules/assets/admin/custom/use-custom-asset-table';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';

@@ -1,6 +1,9 @@
 <script lang="ts" setup generic="TClear = undefined">
 import type { ClearedValue, RuiAutoComplete } from '@rotki/ui-library';
 import type { ForwardedProps, UnexportedAutoCompleteProps } from '@/modules/core/common/forwarded-props';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
 import { toClearedValue } from '@/modules/core/common/cleared-value';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';

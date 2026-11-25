@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 
 interface UseProxyProtocolReturn {

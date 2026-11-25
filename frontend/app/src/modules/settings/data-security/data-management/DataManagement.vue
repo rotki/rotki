@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { useI18n } from 'vue-i18n';
 import PurgeData from '@/modules/settings/data-security/data-management/PurgeData.vue';
 import PurgeImagesCache from '@/modules/settings/data-security/data-management/PurgeImagesCache.vue';
 import RefreshCache from '@/modules/settings/data-security/data-management/RefreshCache.vue';

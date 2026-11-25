@@ -1,4 +1,5 @@
 import type { LocationQuery } from 'vue-router';
+import { get, set } from '@vueuse/shared';
 import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type RequestError, RequestFailed } from '@/modules/core/api/request-result';

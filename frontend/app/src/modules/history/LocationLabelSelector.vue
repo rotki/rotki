@@ -2,6 +2,8 @@
 import type { RuiAutoComplete } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { LocationLabel } from '@/modules/core/common/location';
+import { createReusableTemplate } from '@vueuse/core';
+import { useI18n } from 'vue-i18n';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useLocationLabels } from '@/modules/history/use-location-labels';
 import { useScramble } from '@/modules/settings/use-scramble';

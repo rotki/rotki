@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import type { DivergenceBoundaryEvent } from '@/modules/history/balances/use-balance-divergence';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { sharedDecimals } from '@/modules/assets/amount-display/amount-comparison';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import AmountDiffDisplay from '@/modules/assets/amount-display/components/AmountDiffDisplay.vue';

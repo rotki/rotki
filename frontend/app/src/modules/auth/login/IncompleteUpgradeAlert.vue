@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import LoginActionAlert from '@/modules/auth/login/LoginActionAlert.vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 

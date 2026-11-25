@@ -1,6 +1,7 @@
 import { type DOMWrapper, flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import DetectTokenChainsSelection from '@/modules/accounts/balances/DetectTokenChainsSelection.vue';
 
 const selected = ref<string[]>([]);

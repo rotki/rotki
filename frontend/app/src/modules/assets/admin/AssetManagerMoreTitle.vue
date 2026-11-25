@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { get, set } from '@vueuse/shared';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { type AssetManagerMoreTool, useAssetManagerMore } from '@/modules/assets/admin/use-asset-manager-more';
 import BreadcrumbSwitchButton from '@/modules/shell/components/BreadcrumbSwitchButton.vue';
 

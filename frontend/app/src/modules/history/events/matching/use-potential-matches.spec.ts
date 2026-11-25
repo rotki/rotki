@@ -1,6 +1,7 @@
 import type { MatchingFlow, MatchSuggestions, UnmatchedEventGroup } from './types';
 import { createOnlineHistoryEvent } from '@test/utils/history-events';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, ref } from 'vue';
 import { HistoryEventAccountingRuleStatus, type HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';

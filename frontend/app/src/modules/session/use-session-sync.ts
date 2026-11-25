@@ -1,6 +1,10 @@
 import type { DatabaseUploadProgress, DbUploadResult } from '@/modules/core/messaging/types';
+import { createSharedComposable, until, useSessionStorage } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { err, isErr, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useUsersApi } from '@/modules/auth/use-users-api';
 import { api } from '@/modules/core/api/rotki-api';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';

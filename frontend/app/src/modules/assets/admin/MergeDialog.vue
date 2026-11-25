@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { AssetInfoWithId } from '@rotki/common';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { useTimeoutFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { z, type ZodType } from 'zod';
 import { useAssets } from '@/modules/assets/use-assets';
 import { requiredField } from '@/modules/core/form/fields';

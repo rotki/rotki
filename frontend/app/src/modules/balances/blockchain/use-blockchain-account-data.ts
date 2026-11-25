@@ -1,5 +1,4 @@
 import type { AssetBalance } from '@rotki/common';
-import type { ComputedRef, MaybeRef, MaybeRefOrGetter } from 'vue';
 import type {
   Accounts,
   Balances,
@@ -9,7 +8,10 @@ import type {
   BlockchainAccountWithBalance,
 } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { ok, type Result } from 'plainfp/result';
+import { computed, type ComputedRef, type MaybeRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { type AccountGroupId, getAccountAddress, getAccountLabel, isXpubAccount } from '@/modules/accounts/account-utils';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { accountAssetBalances, type AccountAssetPorts, accountsByGroup } from '@/modules/accounts/core/account-assets';

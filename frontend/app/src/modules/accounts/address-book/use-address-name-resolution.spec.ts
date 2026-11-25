@@ -1,9 +1,11 @@
-import type { EffectScope } from 'vue';
 import type { AddressBookEntry } from '@/modules/accounts/address-book/eth-names';
 import { Blockchain } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { get } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope } from 'vue';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAddressNamesStore } from '@/modules/accounts/address-book/use-address-names-store';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';

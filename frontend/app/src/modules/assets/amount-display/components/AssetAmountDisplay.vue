@@ -14,6 +14,8 @@
  */
 import type { BigNumber } from '@rotki/common';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import { useScrambledValue } from '@/modules/assets/amount-display';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 

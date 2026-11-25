@@ -1,4 +1,6 @@
 import { createTestExchange } from '@test/utils/create-data';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('useExchangesSummaryHandler', () => {

@@ -1,5 +1,8 @@
-import type { ComputedRef } from 'vue';
 import type { CreateAccountPayload, LoginCredentials } from '@/modules/auth/login';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { UnlockPhase } from '@/modules/auth/unlock-flow/use-unlock-flow';
 import { useUnlockFlowController } from '@/modules/auth/unlock-flow/use-unlock-flow-controller';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';

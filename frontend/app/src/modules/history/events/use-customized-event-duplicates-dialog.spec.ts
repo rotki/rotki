@@ -2,8 +2,10 @@ import type { Collection } from '@/modules/core/common/collection';
 import type { DuplicateRow, FetchDuplicateEventsPayload } from '@/modules/history/events/use-customized-event-duplicates';
 import { createMock } from '@test/utils/create-mock';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref, shallowRef } from 'vue';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import { DuplicatesTab, useCustomizedEventDuplicatesDialog } from '@/modules/history/events/use-customized-event-duplicates-dialog';
 

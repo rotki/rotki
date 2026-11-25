@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { EventEntryKind } from '@/modules/history/management/forms/event-entry-form';
 import { HistoryEventEntryType } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';

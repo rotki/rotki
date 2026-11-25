@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { PrioritizedListItemData } from '@/modules/settings/types/prioritized-list-data';
 import type { PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
+import { get, set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { type ChainItem, getAvailableIndexersForChain, type TabItem } from '@/modules/settings/evm/evm-indexer-utils';
 import IndexerAddMenu from '@/modules/settings/evm/IndexerAddMenu.vue';
 import { useEvmIndexerOrder } from '@/modules/settings/evm/use-evm-indexer-order';

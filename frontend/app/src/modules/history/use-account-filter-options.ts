@@ -1,5 +1,6 @@
-import type { ComputedRef } from 'vue';
 import type { SelectOption } from '@/modules/core/table/pill/ValueSelectList.vue';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef } from 'vue';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useLocationLabels } from '@/modules/history/use-location-labels';
 import { useScramble } from '@/modules/settings/use-scramble';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { InteractionNode } from './address-interaction-graph';
+import { computed } from 'vue';
 import { type AddressLabel, useInteractionLabels } from './use-interaction-labels';
 
 /**

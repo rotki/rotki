@@ -1,7 +1,9 @@
 import type { CalendarEvent } from '@/modules/calendar/types';
 import { type ModelFormHarness, mountModelForm } from '@test/utils/model-form-harness';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import '@test/i18n';
 
 vi.mock('@/modules/calendar/use-calendar-reminder-api', () => ({

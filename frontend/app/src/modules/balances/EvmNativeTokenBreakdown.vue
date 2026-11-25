@@ -2,6 +2,9 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { AssetBreakdown } from '@/modules/accounts/blockchain-accounts';
 import { type AssetBalance, type BigNumber, Blockchain } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import Eth2ValidatorLimitTooltip from '@/modules/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
 import IconTokenDisplay from '@/modules/accounts/IconTokenDisplay.vue';
 import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';

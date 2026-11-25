@@ -1,3 +1,4 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';

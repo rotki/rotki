@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onUnmounted } from 'vue';
 import { useReportsStore } from '@/modules/reports/use-reports-store';
 
 const reportStore = useReportsStore();

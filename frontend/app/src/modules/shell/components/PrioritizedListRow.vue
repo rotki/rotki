@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PrioritizedListItemData } from '@/modules/settings/types/prioritized-list-data';
 import type { PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
+import { useI18n } from 'vue-i18n';
 import PrioritizedListEntry from '@/modules/shell/components/PrioritizedListEntry.vue';
 
 interface RowItem {

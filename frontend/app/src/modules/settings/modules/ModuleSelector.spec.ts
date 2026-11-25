@@ -6,6 +6,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { Module } from '@/modules/core/common/modules';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
 import ModuleSelector from '@/modules/settings/modules/ModuleSelector.vue';

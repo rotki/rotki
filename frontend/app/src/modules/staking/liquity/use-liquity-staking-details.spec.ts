@@ -8,6 +8,7 @@ import {
 } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { withSetup } from '@test/utils/with-setup';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount } from '@/modules/accounts/create-account';
 import { useLiquityStakingDetails } from './use-liquity-staking-details';

@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { groupAddresses } from '@/modules/accounts/core/account-groups';
 import AccountDetailsChainSection from '@/modules/accounts/details/AccountDetailsChainSection.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';

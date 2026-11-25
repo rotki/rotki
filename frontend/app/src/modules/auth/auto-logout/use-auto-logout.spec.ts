@@ -1,5 +1,6 @@
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { effectScope } from 'vue';
+import { effectScope, nextTick } from 'vue';
 import { useAutoLogout } from '@/modules/auth/auto-logout/use-auto-logout';
 import { useAutoLogoutNotice } from '@/modules/auth/auto-logout/use-auto-logout-notice';
 

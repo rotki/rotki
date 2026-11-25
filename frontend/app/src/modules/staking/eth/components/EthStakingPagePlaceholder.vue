@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useBreakpoint } from '@rotki/ui-library';
+import { useI18n } from 'vue-i18n';
 import { getPublicPlaceholderImagePath as getFullPath } from '@/modules/core/common/file/file';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import AppImage from '@/modules/shell/components/AppImage.vue';

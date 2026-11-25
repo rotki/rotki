@@ -1,5 +1,8 @@
 <script lang="ts" setup>
 import type { CreateAccountStepId } from '@/modules/auth/create-account/types';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import CreateAccountStepActions from '@/modules/auth/create-account/CreateAccountStepActions.vue';
 import CreateAccountErrorAlert from '@/modules/auth/create-account/errors/CreateAccountErrorAlert.vue';
 

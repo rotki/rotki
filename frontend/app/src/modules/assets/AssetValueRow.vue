@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { AssetPriceInfo, ManualPriceFormPayload } from '@/modules/assets/prices/price-types';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { get, set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay, AssetValueDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import LatestPriceFormDialog from '@/modules/assets/prices/latest/LatestPriceFormDialog.vue';
 import { useLatestPrices } from '@/modules/assets/prices/use-latest-price-manager';

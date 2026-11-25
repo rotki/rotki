@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
+import { set } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import { useSnapshotExport } from '@/modules/dashboard/snapshots/composables/use-snapshot-export';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';

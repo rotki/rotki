@@ -1,5 +1,8 @@
 import type { LocationLabel } from '@/modules/core/common/location';
 import type { TransactionStatus } from '@/modules/history/api/events/use-history-events-api';
+import { get, set } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, ref, shallowRef } from 'vue';
 
 export const useHistoryStore = defineStore('history', () => {
   const associatedLocations = shallowRef<string[]>([]);

@@ -1,3 +1,4 @@
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountAssetSelection } from './use-account-asset-selection';
 import '@test/i18n';

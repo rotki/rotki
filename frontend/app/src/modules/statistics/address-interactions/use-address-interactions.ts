@@ -1,7 +1,8 @@
-import type { Ref } from 'vue';
 import type { AddressInteraction } from './address-interaction-types';
 import type { AddressBookSimplePayload } from '@/modules/accounts/address-book/eth-names';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { readonly, type Ref, ref, shallowRef } from 'vue';
 import { z } from 'zod';
 import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';

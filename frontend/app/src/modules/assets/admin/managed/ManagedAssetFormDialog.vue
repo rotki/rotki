@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SupportedAsset } from '@rotki/common';
-import { useTemplateRef } from 'vue';
+import { ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ManagedAssetForm from '@/modules/assets/admin/managed/ManagedAssetForm.vue';
 import { useManagedAssetFormDialog } from '@/modules/assets/admin/managed/use-managed-asset-form-dialog';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';

@@ -1,7 +1,8 @@
 import { Blockchain } from '@rotki/common';
 import { flushPromises, mount } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
-import { defineComponent, h, type Ref } from 'vue';
+import { defineComponent, h, ref, type Ref } from 'vue';
 import { RpcSettingKey, tabKey, useRpcSettingsTabs, type UseRpcSettingsTabsReturn } from '@/modules/settings/general/rpc/use-rpc-settings-tabs';
 
 interface MockChain {

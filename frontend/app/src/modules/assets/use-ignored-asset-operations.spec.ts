@@ -1,4 +1,6 @@
 import { mockUseNotifications } from '@test/utils/mocks/notifications';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 

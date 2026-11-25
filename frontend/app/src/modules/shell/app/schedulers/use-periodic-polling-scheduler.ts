@@ -1,4 +1,8 @@
 import { startPromise } from '@shared/utils';
+import { useDocumentVisibility } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { watch } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useMessageHandling } from '@/modules/core/messaging';
 import { usePeriodicDataFetcher } from '@/modules/session/use-periodic-data-fetcher';

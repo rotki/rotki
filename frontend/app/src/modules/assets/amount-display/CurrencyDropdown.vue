@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useTimeoutFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type Currency, useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useCurrencyUpdate } from '@/modules/assets/prices/use-currency-update';
 import { useSetting } from '@/modules/settings/use-setting';

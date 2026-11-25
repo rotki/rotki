@@ -1,5 +1,6 @@
-import type { Ref } from 'vue';
 import { type BigNumber, Zero } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { type Ref, ref } from 'vue';
 
 export interface TooltipData {
   visible: boolean;

@@ -2,7 +2,10 @@
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { ImportSourceType } from '@/modules/core/common/upload-types';
 import { RuiFileUpload } from '@rotki/ui-library';
+import { get, set } from '@vueuse/shared';
 import { err, isErr, ok, type Result } from 'plainfp/result';
+import { computed, ref, useId, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { z, type ZodType } from 'zod';
 import { msg } from '@/message-key';
 import { DateFormat } from '@/modules/core/common/date-format';

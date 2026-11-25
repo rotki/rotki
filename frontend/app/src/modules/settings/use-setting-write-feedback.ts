@@ -1,4 +1,4 @@
-import type { Ref } from 'vue';
+import { type Ref, watch } from 'vue';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 
 /** The parts of a {@link useSettingModel} return this needs; extra fields are ignored. */

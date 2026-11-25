@@ -1,6 +1,7 @@
 import { assert } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';

@@ -1,5 +1,6 @@
 import type { Snapshot } from '@/modules/dashboard/snapshots';
 import { createMock } from '@test/utils/create-mock';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSnapshotStore } from '@/modules/dashboard/snapshots/use-snapshot-store';
 

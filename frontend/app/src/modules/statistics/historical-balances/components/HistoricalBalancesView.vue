@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';

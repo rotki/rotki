@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { XpubAddressType, type XpubGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
 
 const { group } = defineProps<{

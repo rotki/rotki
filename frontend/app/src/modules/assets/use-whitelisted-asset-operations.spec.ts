@@ -1,4 +1,5 @@
 import { mockUseNotifications } from '@test/utils/mocks/notifications';
+import { createPinia, setActivePinia } from 'pinia';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
 

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 import type { LocationHolding } from '@/modules/dashboard/holdings/core/holdings-types';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { useIsHistoryView } from '@/modules/balances/view/balance-view';
 import { SOURCE_KIND_COLOR } from '@/modules/dashboard/holdings/source-kind-style';

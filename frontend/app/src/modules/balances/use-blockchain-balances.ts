@@ -1,6 +1,8 @@
 import type { BlockchainBalancePayload } from '@/modules/balances/types/blockchain-balances';
 import type { ActivityId } from '@/modules/task-center/core/types';
+import { get } from '@vueuse/shared';
 import { err, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';

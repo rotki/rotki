@@ -1,4 +1,6 @@
 import type { EvmChainEntries, SupportedChains } from '@/modules/core/api/types/chains';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { shallowRef } from 'vue';
 
 /**
  * State-only store for the supported chains data. Kept as a store (not composable

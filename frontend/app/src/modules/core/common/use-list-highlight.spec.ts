@@ -1,5 +1,7 @@
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type MaybeRefOrGetter, nextTick, ref } from 'vue';
 import { useListHighlight } from '@/modules/core/common/use-list-highlight';
 
 /**

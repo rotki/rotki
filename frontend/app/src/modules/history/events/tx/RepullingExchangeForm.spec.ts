@@ -6,6 +6,7 @@ import { createTestExchange } from '@test/utils/create-data';
 import { type ModelFormHarness, mountModelForm } from '@test/utils/model-form-harness';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed } from 'vue';
 import RepullingExchangeForm from '@/modules/history/events/tx/RepullingExchangeForm.vue';
 import '@test/i18n';
 

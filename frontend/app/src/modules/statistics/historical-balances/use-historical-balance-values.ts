@@ -1,6 +1,8 @@
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { HistoricalAssetGroup } from '@/modules/statistics/historical-balances/historical-balances-grouping';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, shallowRef, toValue, watch } from 'vue';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';

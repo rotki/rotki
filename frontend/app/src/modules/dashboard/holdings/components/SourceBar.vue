@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SourceTotal, SummaryKind } from '@/modules/dashboard/holdings/core/holdings-types';
+import { computed } from 'vue';
 import { barWeights } from '@/modules/dashboard/holdings/core/source-summary';
 import { SOURCE_KIND_COLOR } from '@/modules/dashboard/holdings/source-kind-style';
 

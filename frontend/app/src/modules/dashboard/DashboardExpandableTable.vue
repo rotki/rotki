@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
+import { type HTMLAttributes, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 

@@ -1,6 +1,9 @@
 import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { ref } from 'vue';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useFiatConversion } from '@/modules/assets/amount-display/use-fiat-conversion';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';

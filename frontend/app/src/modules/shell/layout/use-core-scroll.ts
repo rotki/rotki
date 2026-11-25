@@ -1,5 +1,6 @@
-import type { ComputedRef } from 'vue';
-import { defaultDocument } from '@vueuse/core';
+import { defaultDocument, useScroll } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef } from 'vue';
 
 interface UseCoreScrollReturn {
   scrollToTop: () => void;

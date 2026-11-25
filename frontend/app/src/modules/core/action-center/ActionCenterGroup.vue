@@ -1,4 +1,7 @@
 <script setup lang="ts" generic="TTarget extends { kind: string }">
+import { get, set } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ActionCenterRow from '@/modules/core/action-center/ActionCenterRow.vue';
 import { type GroupSummary, summarizeGroup } from '@/modules/core/action-center/group-summary';
 import { type ActionCenterSection, holdsBlocking, URGENCY_COLORS } from '@/modules/core/action-center/types';

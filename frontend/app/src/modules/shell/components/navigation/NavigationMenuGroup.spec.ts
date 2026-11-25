@@ -1,6 +1,7 @@
 import type { MenuNavGroup } from '@/modules/shell/layout/use-navigation-menu';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
+import { defineComponent } from 'vue';
 import NavigationMenuGroup from './NavigationMenuGroup.vue';
 
 const group: MenuNavGroup = {

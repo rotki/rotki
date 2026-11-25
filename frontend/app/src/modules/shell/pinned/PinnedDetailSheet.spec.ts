@@ -1,5 +1,6 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 import PinnedDetailSheet from '@/modules/shell/pinned/PinnedDetailSheet.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 

@@ -1,5 +1,6 @@
-import type { EffectScope } from 'vue';
+import { set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, nextTick, ref } from 'vue';
 import { useIntervalScheduler } from './use-interval-scheduler';
 
 describe('useIntervalScheduler', () => {

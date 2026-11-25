@@ -2,6 +2,7 @@ import type { CexMapping } from '@/modules/assets/types';
 import type { Collection } from '@/modules/core/common/collection';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';
 import ManageCexMappingContent from '@/modules/assets/admin/cex-mapping/ManageCexMappingContent.vue';

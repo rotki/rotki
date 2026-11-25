@@ -1,4 +1,6 @@
 import { mount, RouterLinkStub, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import LocationAssetsEmpty from '@/modules/balances/LocationAssetsEmpty.vue';
 import { ChainType } from '@/modules/core/api/types/chains';

@@ -1,6 +1,7 @@
-import type { ComputedRef, Ref } from 'vue';
 import type { CalendarEvent } from '@/modules/calendar/types';
+import { get, set } from '@vueuse/shared';
 import dayjs, { type Dayjs } from 'dayjs';
+import { type ComputedRef, type Ref, ref, shallowReadonly, watch } from 'vue';
 
 interface UseCalendarDateManagementReturn {
   modelSelectedDate: Ref<Dayjs>;

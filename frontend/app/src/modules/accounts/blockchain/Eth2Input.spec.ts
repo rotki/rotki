@@ -3,6 +3,7 @@ import type { Eth2Validator } from '@/modules/balances/types/balances';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { assert, describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 import Eth2Input from '@/modules/accounts/blockchain/Eth2Input.vue';
 
 const REQUIRED_MESSAGE = 'eth2_input.validation.required';

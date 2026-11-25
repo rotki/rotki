@@ -1,7 +1,8 @@
 import type { ValidatorAccount } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import { runSpecWith } from '@test/utils/mocks/native-task';
-import { createPinia, setActivePinia } from 'pinia';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { isValidatorAccount } from '@/modules/accounts/account-utils';

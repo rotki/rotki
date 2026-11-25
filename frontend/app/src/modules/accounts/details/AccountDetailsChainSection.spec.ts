@@ -1,4 +1,5 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AccountDetailsChainSection from '@/modules/accounts/details/AccountDetailsChainSection.vue';
 

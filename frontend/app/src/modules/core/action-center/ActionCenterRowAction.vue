@@ -1,5 +1,7 @@
 <script setup lang="ts" generic="TTarget extends { kind: string }">
 import type { ContextColorsType } from '@rotki/ui-library';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import { type ActionItem, ActionUrgency, leavesCenter } from '@/modules/core/action-center/types';
 
 const { color, item } = defineProps<{

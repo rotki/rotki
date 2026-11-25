@@ -1,6 +1,7 @@
 import type { BlockchainRpcNode } from '@/modules/settings/types/rpc';
 import { Blockchain } from '@rotki/common';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRpcNodeFanOut } from '@/modules/settings/general/rpc/providers/use-rpc-node-fan-out';
 

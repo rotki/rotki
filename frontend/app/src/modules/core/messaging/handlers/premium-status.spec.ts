@@ -1,4 +1,5 @@
 import { mockT } from '@test/i18n';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { PremiumInactiveCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';

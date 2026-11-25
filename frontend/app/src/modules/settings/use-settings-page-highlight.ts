@@ -1,4 +1,6 @@
 import { defaultDocument } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { nextTick, onMounted, onWatcherCleanup, watch } from 'vue';
 import { type HighlightRequest, useSettingsHighlight } from '@/modules/settings/use-settings-highlight';
 
 /**

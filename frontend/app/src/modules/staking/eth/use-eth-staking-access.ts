@@ -1,4 +1,5 @@
 import type { Ref } from 'vue';
+import { logicAnd } from '@vueuse/math';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { Module, useModuleEnabled } from '@/modules/session/use-module-enabled';
 

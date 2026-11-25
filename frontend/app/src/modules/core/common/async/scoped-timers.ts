@@ -7,8 +7,8 @@
  * store or request of whatever is current by then. These versions stop invoking once their scope is
  * disposed and cancel the pending timer where VueUse allows it.
  *
- * They replace the VueUse ones under the same names through the auto-import config in
- * `vite.config.ts`, so call sites need no change. Outside an effect scope they behave like VueUse's.
+ * They keep the VueUse names and signatures, so a call site switches by changing only its import, and
+ * lint rejects importing these names from VueUse. Outside an effect scope they behave like VueUse's.
  */
 import {
   createFilterWrapper,

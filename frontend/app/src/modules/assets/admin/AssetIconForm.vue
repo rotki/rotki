@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { get, set } from '@vueuse/shared';
 import { map as mapResult, ok, type Result } from 'plainfp/result';
 import { fromPromise } from 'plainfp/result-async';
+import { computed, ref, shallowRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAssetIconApi } from '@/modules/assets/api/use-asset-icon-api';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AssetBalanceSourceOptions from '@/modules/settings/AssetBalanceSourceOptions.vue';
 import InferZeroTimedBalancesSetting from '@/modules/settings/InferZeroTimedBalancesSetting.vue';
 import SsfGraphMultiplierSetting from '@/modules/settings/SsfGraphMultiplierSetting.vue';

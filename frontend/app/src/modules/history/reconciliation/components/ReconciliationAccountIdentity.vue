@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import HashLink from '@/modules/shell/components/HashLink.vue';

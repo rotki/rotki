@@ -1,6 +1,7 @@
-import type { ComputedRef } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import type { StakingLocation } from '@/pages/staking/staking-pages';
+import { computed, type ComputedRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 
 export interface StakingInfo {

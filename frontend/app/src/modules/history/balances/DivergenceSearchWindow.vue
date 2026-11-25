@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { HistoricalBalanceDivergenceEvent } from '@/modules/history/balances/types';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { divergenceGap, GapUnit } from '@/modules/history/balances/divergence-gap';
 
 /** The stretch between the last matching and first diverged events, where the faulty event sits. */

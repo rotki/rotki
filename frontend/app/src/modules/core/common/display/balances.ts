@@ -9,6 +9,7 @@ import {
   type Writeable,
   Zero,
 } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import { balanceSum, bigNumberSum } from '@/modules/core/common/data/calculation';
 import { getSortItems } from '@/modules/core/common/display/assets';

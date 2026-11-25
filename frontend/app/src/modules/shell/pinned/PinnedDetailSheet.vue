@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { ComponentPublicInstance } from 'vue';
 import { onKeyStroke } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { type ComponentPublicInstance, computed, nextTick, useTemplateRef, watch } from 'vue';
 
 defineOptions({
   inheritAttrs: false,

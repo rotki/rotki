@@ -2,6 +2,9 @@
 import type { RuiAutoComplete } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { TradeLocationData } from '@/modules/core/common/location';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, watch } from 'vue';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { type LocationOption, locationOptions } from '@/modules/locations/location-options';
 import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';

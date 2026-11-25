@@ -1,5 +1,4 @@
 import type { ResultAsync } from 'plainfp/result-async';
-import type { EffectScope, MaybeRef, Ref } from 'vue';
 import type { RotkiApi } from '@/modules/core/api/rotki-api';
 import type { Collection } from '@/modules/core/common/collection';
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
@@ -7,9 +6,12 @@ import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { LocationQuery } from '@/modules/core/table/route';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeAll, beforeEach, describe, expect, expectTypeOf, it, type Mock, vi } from 'vitest';
+import { computed, type EffectScope, effectScope, type MaybeRef, nextTick, type Ref, ref } from 'vue';
 import { RequestCancelled, type RequestError, RequestFailed } from '@/modules/core/api/request-result';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 import { TableId } from '@/modules/core/table/use-remember-table-sorting';

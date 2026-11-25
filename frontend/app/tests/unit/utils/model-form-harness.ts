@@ -1,5 +1,6 @@
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { vi } from 'vitest';
 import { type Component, type ComponentPublicInstance, defineComponent, h, ref, shallowRef } from 'vue';
 

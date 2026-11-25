@@ -1,5 +1,6 @@
 import { assert } from '@rotki/common';
 import { createBlockie } from '@rotki/ui-library';
+import { createSharedComposable } from '@vueuse/core';
 
 /**
  * Blockies kept at once.

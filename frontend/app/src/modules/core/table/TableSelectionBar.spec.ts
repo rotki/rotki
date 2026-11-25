@@ -1,7 +1,9 @@
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import TableSelectionAction from '@/modules/core/table/TableSelectionAction.vue';
 import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
 

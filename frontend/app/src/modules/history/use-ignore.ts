@@ -3,8 +3,10 @@ import type {
   IgnorePayload,
 } from '@/modules/history/ignored';
 import type { EntryMeta } from '@/modules/history/meta';
+import { get, set } from '@vueuse/shared';
 import { err, type Result } from 'plainfp/result';
 import { fromPromise, map } from 'plainfp/result-async';
+import { useI18n } from 'vue-i18n';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { useHistoryIgnoringApi } from '@/modules/history/api/use-history-ignoring-api';
 

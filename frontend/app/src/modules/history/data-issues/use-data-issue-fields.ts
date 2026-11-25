@@ -1,5 +1,8 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import type { FieldDef, ValueIcon } from '@/modules/core/table/pill/core/types';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { assetSuggestions } from '@/modules/core/common/display/assets';
 import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';

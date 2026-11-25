@@ -2,6 +2,7 @@ import type { Result } from 'plainfp/result';
 import type { ControlError } from './core/orchestrator/errors';
 import type { Activity, ActivityKind, GroupId } from './core/types';
 import type { TaskError } from '@/modules/core/tasks/task-result';
+import { get } from '@vueuse/shared';
 import { useTaskCenter } from './use-task-center';
 import { useTaskOrchestrator } from './use-task-orchestrator';
 

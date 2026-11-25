@@ -1,6 +1,7 @@
 import { bigNumberify } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
+import { computed, type ComputedRef, toValue } from 'vue';
 import DataIssueNegativeBalanceSummary from '@/modules/history/data-issues/components/DataIssueNegativeBalanceSummary.vue';
 
 vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({

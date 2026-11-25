@@ -1,6 +1,5 @@
 import type { TablePaginationData } from '@rotki/ui-library';
 import type { UseVirtualListReturn } from '@vueuse/core';
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { RequestFailure } from '@/modules/core/api/request-result';
 import type { Collection } from '@/modules/core/common/collection';
 import type { DuplicateHandlingStatus, HighlightType } from '@/modules/history/events/action-types';
@@ -9,6 +8,8 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import type { HistoryEventsRowContext } from '@/modules/history/events/use-history-events-row-context';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, toValue, watch } from 'vue';
 import { useHistoryEventsData } from '@/modules/history/events/use-history-events-data';
 import { useHistoryEventsForms } from '@/modules/history/events/use-history-events-forms';
 import { useHistoryEventsOperations } from '@/modules/history/events/use-history-events-operations';

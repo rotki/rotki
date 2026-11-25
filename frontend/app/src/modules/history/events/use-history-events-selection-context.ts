@@ -1,5 +1,5 @@
-import type { InjectionKey } from 'vue';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/use-selection-mode';
+import { inject, type InjectionKey, provide } from 'vue';
 
 const HistoryEventsSelectionKey: InjectionKey<UseHistoryEventsSelectionModeReturn> = Symbol('history-events-selection');
 

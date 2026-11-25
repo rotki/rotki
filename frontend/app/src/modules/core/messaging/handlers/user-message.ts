@@ -1,5 +1,7 @@
 import type { MessageHandler } from '../interfaces';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { parseDeviceLimitError } from '@/modules/auth/create-account/errors/parse-device-limit-error';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';

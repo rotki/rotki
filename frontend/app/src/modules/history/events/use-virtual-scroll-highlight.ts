@@ -1,10 +1,12 @@
 import type { TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { VirtualRow } from './use-virtual-rows';
 import type { HighlightType } from '@/modules/history/events/action-types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { startPromise } from '@shared/utils';
 import { useMediaQuery, useVirtualList, type UseVirtualListReturn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, nextTick, type Ref, shallowRef, toValue, watch } from 'vue';
+import { watchDebounced } from '@/modules/core/common/async/scoped-timers';
 
 const OVERSCAN_COUNT = 15;
 

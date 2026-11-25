@@ -1,6 +1,9 @@
 <script lang="ts" setup>
 import type { RuiAutoComplete } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
 
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import ExchangeDisplay from '@/modules/shell/components/display/ExchangeDisplay.vue';

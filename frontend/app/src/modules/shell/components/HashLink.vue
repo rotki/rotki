@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { RuiTooltip } from '@rotki/ui-library';
 import { Blockchain, consistOfNumbers } from '@rotki/common';
+import { isDefined } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, useTemplateRef } from 'vue';
 import AddressDeleteButton from '@/modules/accounts/address-book/AddressDeleteButton.vue';
 import AddressEditButton from '@/modules/accounts/address-book/AddressEditButton.vue';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';

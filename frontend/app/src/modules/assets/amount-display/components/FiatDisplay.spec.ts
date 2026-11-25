@@ -1,10 +1,12 @@
-import type { Pinia } from 'pinia';
 import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { type Pinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import FiatDisplay from '@/modules/assets/amount-display/components/FiatDisplay.vue';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { type ContextColorsType, type RuiIcons, useDismissableOverlay } from '@rotki/ui-library';
+import { get, set } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ActionUrgency } from '@/modules/core/action-center/types';
 
 const open = defineModel<boolean>({ default: false });

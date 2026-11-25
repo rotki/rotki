@@ -1,4 +1,5 @@
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
+import { get } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UNMATCHED_ACTIONS, type UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
 import { type UnmatchedBridgeRow, useUnmatchedBridgeRows } from '@/modules/history/events/use-unmatched-bridge-rows';

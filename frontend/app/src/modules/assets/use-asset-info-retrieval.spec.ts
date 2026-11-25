@@ -2,6 +2,8 @@ import type { ERC20Token } from '@/modules/accounts/blockchain-accounts';
 import { HYPERLIQUID_TOKEN_ADDRESS } from '@test/utils/asset-test-data';
 import { runSpecWith } from '@test/utils/mocks/native-task';
 import { neverSettles } from '@test/utils/never-settles';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';

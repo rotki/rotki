@@ -1,3 +1,7 @@
+import { set } from '@vueuse/shared';
+import { defineStore } from 'pinia';
+import { shallowRef } from 'vue';
+
 /**
  * The history sync reminder the user set aside this session.
  *

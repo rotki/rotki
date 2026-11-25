@@ -1,6 +1,7 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { Timestamp } from '@/modules/assets/amount-display/types';
 import { type BigNumber, Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { useHistoricRate } from '@/modules/assets/amount-display/use-historic-rate';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 

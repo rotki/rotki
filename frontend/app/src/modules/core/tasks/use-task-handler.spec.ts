@@ -1,8 +1,11 @@
 import type { RunTaskOptions } from '@/modules/core/tasks/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { get } from '@vueuse/shared';
+import { setActivePinia } from 'pinia';
 import { isErr, isOk } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 
 const mockCancelAsyncTask = vi.fn();
 const mockQueryTasks = vi.fn();

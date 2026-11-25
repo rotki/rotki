@@ -1,4 +1,7 @@
 import type { AddressBookEntry, EthNames } from '@/modules/accounts/address-book/eth-names';
+import { get, set } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { shallowRef } from 'vue';
 import { createItemCacheStorage } from '@/modules/core/common/item-cache-storage';
 
 /**

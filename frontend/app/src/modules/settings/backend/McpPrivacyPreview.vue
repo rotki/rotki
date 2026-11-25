@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type McpPrivacyMode, McpPrivacyMode as PrivacyMode } from '@/modules/settings/types/mcp';
 
 const { mode } = defineProps<{

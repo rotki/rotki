@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { type ProtocolBalance, toSentenceCase, toSnakeCase } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';

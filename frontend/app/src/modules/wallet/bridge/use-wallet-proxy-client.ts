@@ -10,7 +10,7 @@ import {
   type WalletBridgeResponse,
 } from '@shared/wallet-bridge-types';
 import { defaultWindow, get, isDefined, set } from '@vueuse/core';
-import { ref, type Ref } from 'vue';
+import { computed, onScopeDispose, readonly, ref, type Ref, shallowRef } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useBridgeMessageHandlers } from '@/modules/wallet/bridge/use-bridge-message-handlers';
 import { CLIENT_CONFIG } from './bridge-config';

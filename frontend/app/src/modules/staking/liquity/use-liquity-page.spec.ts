@@ -1,5 +1,6 @@
 import type { Ref } from 'vue';
 import { withSetup } from '@test/utils/with-setup';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LIQUITY_PRICED_ASSETS } from './liquity-assets';

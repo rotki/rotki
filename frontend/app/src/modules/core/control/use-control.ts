@@ -1,7 +1,9 @@
 import type { LogLevel } from '@shared/log-level';
-import type { Ref } from 'vue';
 import { StarlingServiceStatus } from '@shared/ipc';
 import { StarlingMethod, type StarlingService } from '@shared/starling/starling-protocol';
+import { get, set } from '@vueuse/shared';
+import { readonly, type Ref, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type MessageKey, msg } from '@/message-key';
 import {
   ControlCapabilities,

@@ -1,5 +1,7 @@
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useTokenDetectionStore } from './use-token-detection-store';
 

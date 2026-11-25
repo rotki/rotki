@@ -1,7 +1,9 @@
-import type { Pinia } from 'pinia';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { shallowMount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
+import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import LoginForm from '@/modules/auth/login/LoginForm.vue';
 import LoginUnlockStage from '@/modules/auth/unlock-flow/LoginUnlockStage.vue';
 import { UnlockPhase, type UnlockState } from '@/modules/auth/unlock-flow/use-unlock-flow';

@@ -1,5 +1,7 @@
-import type { Ref } from 'vue';
+import { set } from '@vueuse/shared';
 import { map as mapResult, type Result } from 'plainfp/result';
+import { readonly, type Ref, ref, shallowReadonly, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Airdrops } from '@/modules/airdrops/airdrops';
 import { airdropsActivity } from '@/modules/airdrops/airdrops.activity';
 import { useDefiApi } from '@/modules/airdrops/use-defi-api';

@@ -3,7 +3,7 @@ import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { assert, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { defineComponent, nextTick } from 'vue';
 import EnumValueEditor from '@/modules/core/table/pill/EnumValueEditor.vue';
 import FilterPill from '@/modules/core/table/pill/FilterPill.vue';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';

@@ -1,6 +1,8 @@
 import type { ProtocolMetadata } from '@/modules/balances/protocols/types';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 
 const connected = ref<boolean>(true);
 

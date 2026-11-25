@@ -1,4 +1,4 @@
-import type { Ref } from 'vue';
+import { type Ref, ref, shallowRef } from 'vue';
 
 interface UseCommonTablePropsReturn<V extends NonNullable<unknown>> {
   selected: Ref<V[]>;

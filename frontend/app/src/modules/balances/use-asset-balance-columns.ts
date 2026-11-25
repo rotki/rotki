@@ -1,5 +1,6 @@
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
+import { useI18n } from 'vue-i18n';
 
 type AssetBalanceColumn = DataTableColumn<AssetBalanceWithPrice>;
 

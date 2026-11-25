@@ -1,4 +1,5 @@
 import type { CreateAccountMode } from '@/modules/auth/create-account/types';
+import { get, set } from '@vueuse/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';
 import { useCreateAccountWizard } from '@/modules/auth/create-account/use-create-account-wizard';

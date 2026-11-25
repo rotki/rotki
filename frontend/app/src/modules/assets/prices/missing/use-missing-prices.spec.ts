@@ -1,10 +1,11 @@
-import type { EffectScope } from 'vue';
 import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises } from '@vue/test-utils';
+import { get } from '@vueuse/shared';
 import { setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope } from 'vue';
 import { useMissingPrices } from '@/modules/assets/prices/missing/use-missing-prices';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';

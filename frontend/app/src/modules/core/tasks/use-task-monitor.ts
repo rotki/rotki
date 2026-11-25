@@ -1,5 +1,9 @@
 import { type ActionResult, assert } from '@rotki/common';
+import { createSharedComposable, tryOnScopeDispose } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import dayjs from 'dayjs';
+import { shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { isTimeoutError } from '@/modules/core/api/with-retry';
 import { logger } from '@/modules/core/common/logging/logging';

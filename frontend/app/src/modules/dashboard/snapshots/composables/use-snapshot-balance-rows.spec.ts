@@ -1,4 +1,5 @@
 import { bigNumberify } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { ZeroValueFilter } from '@/modules/dashboard/snapshots';

@@ -1,9 +1,10 @@
-import type { EffectScope, Ref } from 'vue';
 import type { GetAssetBalancePayload } from '@/modules/wallet/types';
 import { type BigNumber, bigNumberify } from '@rotki/common';
 import { neverSettles } from '@test/utils/never-settles';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, nextTick, type Ref, ref } from 'vue';
 import { useTradeAssetBalance } from '@/modules/wallet/send/use-trade-asset-balance';
 
 const getAssetBalance = vi.fn<(payload: GetAssetBalancePayload) => Promise<BigNumber>>();

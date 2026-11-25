@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { set } from '@vueuse/shared';
+import { onUnmounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useHistorySyncStatus } from '@/modules/history/sync-status/use-history-sync-status';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import HistoryQueryIndicatorMinOutOfSyncPeriodSetting from './HistoryQueryIndicatorMinOutOfSyncPeriodSetting.vue';

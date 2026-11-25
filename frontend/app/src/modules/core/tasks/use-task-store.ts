@@ -1,6 +1,9 @@
 import type { Task, TaskMap } from '@/modules/core/tasks/types';
 import { assert } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { toArray } from 'es-toolkit/compat';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, shallowRef } from 'vue';
 import { removeKey } from '@/modules/core/common/data/data';
 
 export const useTaskStore = defineStore('tasks', () => {

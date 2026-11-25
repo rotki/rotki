@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { FintsBank } from '@/modules/banks/fints-bank-directory';
 import type { BankConnection, BankManifest } from '@/modules/banks/types';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 
 type BankSecretField = BankManifest['secrets'][number];

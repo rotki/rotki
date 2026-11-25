@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { UserNoteDraft } from '@/modules/core/common/notes';
-import { useTemplateRef } from 'vue';
+import { get, set } from '@vueuse/shared';
+import { ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useUserNotesApi } from '@/modules/notes/use-user-notes-api';
 import UserNotesForm from '@/modules/notes/UserNotesForm.vue';

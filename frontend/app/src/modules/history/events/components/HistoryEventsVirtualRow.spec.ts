@@ -4,6 +4,7 @@ import { createMock } from '@test/utils/create-mock';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, ref } from 'vue';
 import HistoryEventsDetailItem from '@/modules/history/events/components/HistoryEventsDetailItem.vue';
 import HistoryEventsGroupItem from '@/modules/history/events/components/HistoryEventsGroupItem.vue';
 import HistoryEventsLoadMoreRow from '@/modules/history/events/components/HistoryEventsLoadMoreRow.vue';

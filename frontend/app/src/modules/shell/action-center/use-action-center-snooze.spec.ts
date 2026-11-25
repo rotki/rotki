@@ -1,5 +1,6 @@
-import type { EffectScope } from 'vue';
+import { set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, nextTick } from 'vue';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 import { type ActionItem, type ActionItemOption, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';
 import { HISTORY_SYNC_ROW_ID } from '@/modules/shell/action-center/row-ids';

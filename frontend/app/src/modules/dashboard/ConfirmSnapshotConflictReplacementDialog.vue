@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { BalanceSnapshot } from '@/modules/dashboard/snapshots';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { isNonFungible } from '@/modules/assets/nft-utils';

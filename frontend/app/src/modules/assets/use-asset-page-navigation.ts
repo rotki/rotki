@@ -1,4 +1,5 @@
-import type { MaybeRefOrGetter } from 'vue';
+import { type MaybeRefOrGetter, toValue } from 'vue';
+import { useRouter } from 'vue-router';
 
 interface UseAssetPageNavigationReturn { navigateToDetails: () => Promise<void> }
 

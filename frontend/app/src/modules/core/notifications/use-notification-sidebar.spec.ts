@@ -1,6 +1,7 @@
 import { type NotificationData, NotificationGroup, NotificationKind, Severity } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp, effectScope, nextTick, type Ref, ref } from 'vue';

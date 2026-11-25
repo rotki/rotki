@@ -1,4 +1,5 @@
 import type { EditableMissingPrice } from '@/modules/reports/report-types';
+import { get } from '@vueuse/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { useReportFinishStep } from '@/modules/reports/use-report-finish-step';
 

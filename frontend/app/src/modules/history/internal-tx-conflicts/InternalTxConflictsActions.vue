@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get, set } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useInternalTxConflictResolution } from './use-internal-tx-conflict-resolution';
 import { useInternalTxConflictsPanel } from './use-internal-tx-conflicts-panel';
 

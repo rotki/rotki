@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { ActionDataEntry } from '@/modules/core/common/action';
 import type { BaseAccountingSettings, CostBasisMethod } from '@/modules/settings/types/user-settings';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useCostBasisMethod } from '@/modules/reports/use-reports';
 
 const { accountingSettings } = defineProps<{ accountingSettings: BaseAccountingSettings }>();

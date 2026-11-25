@@ -1,5 +1,6 @@
 import { type BigNumber, bigNumberify, One } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';

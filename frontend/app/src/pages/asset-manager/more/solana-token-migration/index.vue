@@ -2,6 +2,11 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { MergeSuggestion } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-dialog';
 import { SolanaTokenKind } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import AssetManagerMoreTitle from '@/modules/assets/admin/AssetManagerMoreTitle.vue';
 import MergeDialog from '@/modules/assets/admin/MergeDialog.vue';

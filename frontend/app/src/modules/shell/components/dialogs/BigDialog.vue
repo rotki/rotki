@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { RuiCardClassNames } from '@rotki/ui-library';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useFormErrorFocus } from '@/modules/core/common/use-form-error-focus';
 import BigDialogConfirmButton from '@/modules/shell/components/dialogs/BigDialogConfirmButton.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';

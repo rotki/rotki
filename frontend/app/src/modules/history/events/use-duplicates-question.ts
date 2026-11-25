@@ -1,4 +1,5 @@
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { useI18n } from 'vue-i18n';
 
 /**
  * What each duplicate group action asks beside its button before it runs on `count` groups.

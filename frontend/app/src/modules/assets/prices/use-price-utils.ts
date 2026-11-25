@@ -1,5 +1,7 @@
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 

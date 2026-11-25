@@ -1,6 +1,8 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { TimeFramePersist } from '@rotki/common';
+import { set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { usePremiumWatchers } from '@/modules/premium/use-premium-watchers';

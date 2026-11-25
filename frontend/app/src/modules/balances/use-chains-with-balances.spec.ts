@@ -1,5 +1,7 @@
 import type { AssetProtocolBalances } from '@/modules/balances/types/blockchain-balances';
 import { bigNumberify } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';

@@ -1,4 +1,5 @@
-import type { ComputedRef } from 'vue';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef } from 'vue';
 import { INDETERMINATE } from './core/status';
 import { someInSubtree, subtreeProgress, subtreeSteps, subtreeWork, workPercentage } from './core/tree';
 import { type Activity, type ActivityId, ActivityStatus, type ActivitySteps, WaitingReason } from './core/types';

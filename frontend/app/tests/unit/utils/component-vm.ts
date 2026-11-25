@@ -12,6 +12,18 @@ import type { ComponentPublicInstance } from 'vue';
 export type StubInstance = ComponentPublicInstance<Record<string, unknown>>;
 
 /**
+ * Finds a stub by selector, typed as a {@link StubInstance}.
+ *
+ * @remarks
+ * Use this rather than `findComponent<StubInstance>(selector)` with the result used directly. That
+ * call resolves to the `ComponentOptions` overload, which infers the props as `never`, so
+ * `props('disabled')` stops compiling. Declaring the return type is what selects the open record.
+ */
+export function findStub(wrapper: Pick<VueWrapper, 'findComponent'>, selector: string): VueWrapper<StubInstance> {
+  return wrapper.findComponent<StubInstance>(selector);
+}
+
+/**
  * Accesses a component's `<script setup>` internals, meaning its setup-scoped state and methods.
  *
  * @remarks

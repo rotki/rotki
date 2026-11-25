@@ -1,6 +1,7 @@
 import { mockT } from '@test/i18n';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
+import { computed, ref } from 'vue';
 import AccountChainsOverflow, { type AccountChainState } from '@/modules/accounts/AccountChainsOverflow.vue';
 
 const { toggleChain } = vi.hoisted(() => ({

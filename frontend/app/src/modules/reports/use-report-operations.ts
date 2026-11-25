@@ -4,8 +4,11 @@ import type { Collection, CollectionResponse } from '@/modules/core/common/colle
 import type { ProfitLossEvent, ProfitLossEventsPayload } from '@/modules/reports/report-types';
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { pipe } from 'plainfp';
 import { type ResultAsync, tap } from 'plainfp/result-async';
+import { useI18n } from 'vue-i18n';
 import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
 import { fromRequest, type RequestError } from '@/modules/core/api/request-result';
 import { isBlockchain } from '@/modules/core/common/chains';

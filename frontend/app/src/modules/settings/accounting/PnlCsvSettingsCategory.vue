@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { useI18n } from 'vue-i18n';
 import PnlCsvSummarySetting from '@/modules/settings/accounting/PnlCsvSummarySetting.vue';
 import PnlCsvWithFormulasSetting from '@/modules/settings/accounting/PnlCsvWithFormulasSetting.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';

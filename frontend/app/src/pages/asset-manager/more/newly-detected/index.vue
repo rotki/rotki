@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import AssetManagerMoreTitle from '@/modules/assets/admin/AssetManagerMoreTitle.vue';
 import NewlyDetectedAssetTable from '@/modules/assets/detection/NewlyDetectedAssetTable.vue';

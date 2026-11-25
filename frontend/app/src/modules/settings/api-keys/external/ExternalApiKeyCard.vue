@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { ExternalApiKeyService } from '@/modules/settings/api-keys/external/external-api-key-services';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import { useServiceKeyHandler } from '@/modules/settings/api-keys/external/use-service-key-handler';

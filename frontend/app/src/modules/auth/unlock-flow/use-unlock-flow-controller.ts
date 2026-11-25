@@ -1,7 +1,11 @@
-import type { ComputedRef, Ref } from 'vue';
 import type { CreateAccountPayload } from '@/modules/auth/login';
 import { startPromise, wait } from '@shared/utils';
+import { createSharedComposable } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import dayjs from 'dayjs';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type Ref, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { usePasswordConfirmation } from '@/modules/auth/use-password-confirmation';
 import { useRememberSettings } from '@/modules/auth/use-remember-settings';
 import { useRestartingStatus } from '@/modules/auth/use-restarting-status';

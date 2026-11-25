@@ -1,10 +1,12 @@
-import type { ComponentPublicInstance, ComputedRef } from 'vue';
 import type { TransactionParams } from '@/modules/wallet/types';
 import { bigNumberify } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type ComponentPublicInstance, type ComputedRef, nextTick, ref } from 'vue';
 import TradeSendCard from '@/modules/wallet/send/TradeSendCard.vue';
 
 const RECIPIENT = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65';

@@ -1,3 +1,4 @@
+import { useI18n } from 'vue-i18n';
 import { isUnreachable } from '@/modules/core/api/request-result';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 

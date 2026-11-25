@@ -1,7 +1,8 @@
 import type { BankConnection } from '@/modules/banks/types';
 import { bigNumberify } from '@rotki/common';
 import { createTestBalance, createTestExchange, createTestManualBalance, createTestPriceInfo } from '@test/utils/create-data';
-import { createPinia, setActivePinia } from 'pinia';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';

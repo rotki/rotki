@@ -1,5 +1,6 @@
 import { flushPromises } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type EffectScope, effectScope } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';

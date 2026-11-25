@@ -1,4 +1,3 @@
-import type { Component, ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { DialogType } from '@/modules/core/common/dialogs';
 import type {
   EditableMissingPrice,
@@ -6,6 +5,10 @@ import type {
   MissingPrice,
 } from '@/modules/reports/report-types';
 import { toSentenceCase } from '@rotki/common';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { type Component, computed, type ComputedRef, type MaybeRefOrGetter, type Ref, shallowRef, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { countRateLimited } from '@/modules/reports/report-utils';
 
 /** The two kinds of issue a report can leave for the user to act on. */

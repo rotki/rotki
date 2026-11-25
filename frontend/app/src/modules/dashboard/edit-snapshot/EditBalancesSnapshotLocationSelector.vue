@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { TradeLocationData } from '@/modules/core/common/location';
 import type { LocationBalancePreview } from '@/modules/dashboard/snapshots/utils/snapshot-location-balance';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 

@@ -1,6 +1,8 @@
 import type { EvmChainInfo } from '@/modules/core/api/types/chains';
 import { Blockchain } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, ref } from 'vue';
 import { useWalletChains } from '@/modules/wallet/use-wallet-chains';
 
 function evmChain(id: string, evmChainName: string): EvmChainInfo {

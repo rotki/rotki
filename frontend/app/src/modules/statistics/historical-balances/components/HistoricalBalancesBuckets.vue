@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { HistoricalBucketRow } from '@/modules/statistics/historical-balances/historical-balances-view';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';

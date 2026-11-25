@@ -1,5 +1,7 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { HistoricalBalanceRow, HistoricalBalancesSummary } from '@/modules/statistics/historical-balances/historical-balances-view';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { downloadFileByTextContent } from '@/modules/core/common/file/download';
 import { useSetting } from '@/modules/settings/use-setting';

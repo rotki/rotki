@@ -3,8 +3,10 @@ import type { TableEmptyState } from '@/modules/core/table/use-table-empty-state
 import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get } from '@vueuse/shared';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, nextTick, ref, type Ref } from 'vue';
 import LatestPriceContent from '@/modules/assets/prices/latest/LatestPriceContent.vue';
 import LatestPriceFormDialog from '@/modules/assets/prices/latest/LatestPriceFormDialog.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';

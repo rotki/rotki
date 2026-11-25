@@ -4,6 +4,11 @@ import type {
   BlockchainAccountWithBalance,
 } from '@/modules/accounts/blockchain-accounts';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type AccountGroupId, getAccountAddress } from '@/modules/accounts/account-utils';
 import AccountBalanceDetails from '@/modules/accounts/balances/AccountBalanceDetails.vue';
 import AccountBalancesTable from '@/modules/accounts/table/AccountBalancesTable.vue';

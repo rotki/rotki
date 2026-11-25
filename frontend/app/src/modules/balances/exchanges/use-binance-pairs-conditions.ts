@@ -1,5 +1,7 @@
-import type { ComputedRef } from 'vue';
 import type { ExchangeFormData } from '@/modules/balances/types/exchanges';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef } from 'vue';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { type BinanceAccount, isConnected, savesMissingPairs } from '@/modules/balances/exchanges/binance-pairs-condition';
 import { logger } from '@/modules/core/common/logging/logging';

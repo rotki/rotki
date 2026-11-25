@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get, set } from '@vueuse/shared';
+import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Defaults } from '@/modules/core/common/defaults';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';

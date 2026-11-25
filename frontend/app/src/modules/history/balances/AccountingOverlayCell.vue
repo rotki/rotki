@@ -2,6 +2,9 @@
 import type { BigNumber } from '@rotki/common';
 import type { HistoricalBalanceStop } from '@/modules/history/balances/types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import { get } from '@vueuse/shared';
+import { computed, onWatcherCleanup, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import AccountingOverlayBlocked from '@/modules/history/balances/AccountingOverlayBlocked.vue';
 import AccountingOverlayBuckets from '@/modules/history/balances/AccountingOverlayBuckets.vue';

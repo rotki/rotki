@@ -3,6 +3,7 @@ import type { GroupEventData, StandaloneEventData } from '@/modules/history/mana
 import type { HistoryEventSaveResult } from '@/modules/history/management/forms/history-event-save-result';
 import { createMock } from '@test/utils/create-mock';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, ref, type VNode } from 'vue';

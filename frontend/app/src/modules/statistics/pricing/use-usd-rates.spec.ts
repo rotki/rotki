@@ -1,9 +1,10 @@
-import type { MaybeRefOrGetter } from 'vue';
 import type { BackfillDemand } from '@/modules/statistics/pricing/use-price-backfill';
 import { BigNumber, PriceQuality } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type MaybeRefOrGetter, nextTick, ref, toValue } from 'vue';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { SECONDS_PER_DAY } from '@/modules/core/common/constraints';
 import { defaultGeneralSettings } from '@/modules/settings/factories';

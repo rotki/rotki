@@ -1,4 +1,6 @@
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useThemeMigration } from './use-theme-migration';
 
 const darkTheme = ref<Record<string, string>>({});

@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 
 /**
  * The quitting flag lives in a `createGlobalState` singleton with no reset, so

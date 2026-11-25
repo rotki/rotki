@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import BalanceViewPicker from '@/modules/balances/components/BalanceViewPicker.vue';
 import { useBalanceViewData } from '@/modules/balances/view/use-balance-view-data';

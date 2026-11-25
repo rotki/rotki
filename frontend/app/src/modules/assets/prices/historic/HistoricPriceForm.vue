@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { historicPriceSchema } from '@/modules/assets/prices/price-forms';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useModelForm } from '@/modules/core/form/use-model-form';

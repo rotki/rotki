@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { type BigNumber, Zero } from '@rotki/common';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import { useWrappedFormatters } from '../use-wrapped-formatters';
 import WrappedHighlight from './WrappedHighlight.vue';

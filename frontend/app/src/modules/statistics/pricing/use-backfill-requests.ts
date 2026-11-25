@@ -1,7 +1,10 @@
 import { type FailedHistoricalAssetPriceResponse, HistoricalAssetPriceResponse } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { pipe } from 'plainfp';
 import { fromZod } from 'plainfp/interop/zod';
 import { flatMap, isErr, mapError, tap, tapError } from 'plainfp/result';
+import { shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { priceBackfillActivity } from '@/modules/assets/prices/prices.activity';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';

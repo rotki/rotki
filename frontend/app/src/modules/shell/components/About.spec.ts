@@ -1,8 +1,9 @@
 import type { SystemVersion } from '@shared/ipc';
 import type { WebVersion } from '@/types';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
-import { nextTick, type Ref } from 'vue';
+import { nextTick, reactive, type Ref } from 'vue';
 import About from '@/modules/shell/components/About.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 

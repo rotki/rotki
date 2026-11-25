@@ -1,5 +1,6 @@
-import type { MaybeRefOrGetter } from 'vue';
 import { Blockchain } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed, type MaybeRefOrGetter, toValue } from 'vue';
 import { api } from '@/modules/core/api/rotki-api';
 import {
   type BlockchainRpcNode,

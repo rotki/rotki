@@ -1,7 +1,8 @@
 import { externalLinks } from '@shared/external-links';
 import { mount } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, type Ref } from 'vue';
+import { defineComponent, ref, type Ref } from 'vue';
 
 const mockAppVersion = ref<string>('1.0.0');
 

@@ -1,6 +1,7 @@
 import { Blockchain } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import RpcProviderRunResults from '@/modules/settings/general/rpc/providers/RpcProviderRunResults.vue';
 import { RPC_SETUP_STATUS, type RpcSetupRow, type RpcSetupSummary } from '@/modules/settings/general/rpc/providers/use-rpc-provider-setup';
 

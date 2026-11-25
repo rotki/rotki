@@ -1,5 +1,5 @@
-import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { TradeAssetOption } from '@/modules/wallet/send/use-trade-asset-options';
+import { type MaybeRefOrGetter, type Ref, toValue } from 'vue';
 import { useListHighlight } from '@/modules/core/common/use-list-highlight';
 
 interface UseTradeAssetNavigationOptions {

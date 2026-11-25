@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { SuggestionSelection } from './use-settings-suggestions';
+import { get, set } from '@vueuse/shared';
 import { groupBy } from 'es-toolkit';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { getSuggestionKey, type PendingSuggestion, type SuggestionAction } from './settings-suggestions';
 import SettingsSuggestionItem from './SettingsSuggestionItem.vue';
 

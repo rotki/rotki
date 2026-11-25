@@ -1,8 +1,9 @@
-import type { ComputedRef } from 'vue';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { get } from '@vueuse/shared';
 import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, type ComputedRef } from 'vue';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useAccountLoadingStates } from './use-account-loading-states';
 

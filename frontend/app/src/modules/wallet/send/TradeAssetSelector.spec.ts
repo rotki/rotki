@@ -1,10 +1,12 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { TradableAsset } from '@/modules/wallet/types';
 import { bigNumberify } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, ref } from 'vue';
 import TradeAssetSelector from '@/modules/wallet/send/TradeAssetSelector.vue';
 
 const NAMES: Record<string, { symbol: string; name: string }> = {

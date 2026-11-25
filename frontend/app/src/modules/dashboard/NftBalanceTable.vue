@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
+import { get } from '@vueuse/shared';
+import { computed, type HTMLAttributes, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
 import { useNftData } from '@/modules/balances/non-fungible/use-nft-data';

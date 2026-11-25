@@ -1,5 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get } from '@vueuse/shared';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent, nextTick } from 'vue';
 import { useRandomStepper } from '@/modules/core/common/use-random-stepper';
 
 describe('useRandomStepper', () => {

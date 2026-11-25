@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { Report } from '@/modules/reports/report-types';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, defineAsyncComponent, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ReportActionableCardActions from '@/modules/reports/ReportActionableCardActions.vue';
 import { useReportActionableStepper } from '@/modules/reports/use-report-actionable-items';
 import { useReportFinishStep } from '@/modules/reports/use-report-finish-step';

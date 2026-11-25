@@ -1,5 +1,6 @@
 import type { AddressInteraction } from './address-interaction-types';
 import { links } from '@test/utils/address-interactions';
+import { get, set } from '@vueuse/shared';
 import { assert, describe, expect, it, vi } from 'vitest';
 import { nextTick, ref } from 'vue';
 import { createAddressInteractionGraph } from './address-interaction-graph';

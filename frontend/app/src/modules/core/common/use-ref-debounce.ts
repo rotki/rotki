@@ -1,4 +1,6 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import { logicOr } from '@vueuse/math';
+import { type ComputedRef, type MaybeRefOrGetter, toRef } from 'vue';
+import { refDebounced } from '@/modules/core/common/async/scoped-timers';
 
 /**
  * Keeps a value true for a specified duration after it becomes false.

@@ -2,9 +2,16 @@
 import type { BigNumber } from '@rotki/common';
 import type { NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
+import { useRotkiTheme } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, nextTick, useTemplateRef } from 'vue';
 import VChart from 'vue-echarts';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import { useDebounceFn } from '@/modules/core/common/async/scoped-timers';
 import NetValueRateStatus from '@/modules/dashboard/graph/NetValueRateStatus.vue';
 import { useNetValueChartConfig } from '@/modules/dashboard/graph/use-net-value-chart-config';
 import { useNetValueEventHandlers } from '@/modules/dashboard/graph/use-net-value-event-handlers';

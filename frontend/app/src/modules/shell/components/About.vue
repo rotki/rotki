@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { SystemVersion } from '@shared/ipc';
 import type { WebVersion } from '@/types';
+import { asyncComputed, useClipboard } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { millisecondsToSeconds } from '@/modules/core/common/data/date';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { usePremium } from '@/modules/premium/use-premium';

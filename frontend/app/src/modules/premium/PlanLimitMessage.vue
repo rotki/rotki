@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { ContextColorsType } from '@rotki/ui-library';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import { msg } from '@/message-key';
 import { useCountFormatter } from '@/modules/assets/amount-display/use-count-formatter';
 import { usePlanUpgradeLink } from '@/modules/premium/use-plan-upgrade-link';

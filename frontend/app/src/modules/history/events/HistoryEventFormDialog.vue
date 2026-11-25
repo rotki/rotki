@@ -4,6 +4,10 @@ import type {
   StandaloneEventData,
 } from '@/modules/history/management/forms/form-types';
 import { HistoryEventEntryType } from '@rotki/common';
+import { isDefined, watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, shallowRef, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import HistoryEventEntryTypeSelect from '@/modules/history/events/HistoryEventEntryTypeSelect.vue';
 import HistoryEventForm from '@/modules/history/events/HistoryEventForm.vue';
 import { initialEntryType } from '@/modules/history/management/forms/entry-type-options';

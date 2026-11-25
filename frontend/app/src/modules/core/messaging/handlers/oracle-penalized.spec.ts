@@ -1,3 +1,4 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createOraclePenalizedHandler } from '@/modules/core/messaging/handlers/oracle-penalized';
 import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';

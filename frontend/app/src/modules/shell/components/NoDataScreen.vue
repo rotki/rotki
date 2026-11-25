@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import type { RuiIcons } from '@rotki/ui-library';
+import { type RuiIcons, useBreakpoint } from '@rotki/ui-library';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import FullSizeContent from '@/modules/shell/components/FullSizeContent.vue';
 import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
 

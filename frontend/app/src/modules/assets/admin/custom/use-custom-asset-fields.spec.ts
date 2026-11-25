@@ -1,4 +1,6 @@
+import { get, set } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
+import { ref } from 'vue';
 import { useCustomAssetFields } from '@/modules/assets/admin/custom/use-custom-asset-fields';
 import '@test/i18n';
 

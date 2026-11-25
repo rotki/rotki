@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import ConfirmMenu from '@/modules/shell/components/ConfirmMenu.vue';
 
 const { event, canEdit = false, deleteConfirm, unlinkConfirm } = defineProps<{

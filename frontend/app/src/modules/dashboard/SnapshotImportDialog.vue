@@ -1,4 +1,8 @@
 <script lang="ts" setup>
+import { logicAnd } from '@vueuse/math';
+import { set } from '@vueuse/shared';
+import { watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const model = defineModel<boolean>({ required: true });

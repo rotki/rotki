@@ -1,5 +1,5 @@
-import type { Ref } from 'vue';
 import { describe, expect, it, vi } from 'vitest';
+import { type Ref, ref } from 'vue';
 import { z } from 'zod';
 import { useForm } from '@/modules/core/form/use-form';
 

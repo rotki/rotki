@@ -3,6 +3,11 @@ import type { Filters } from '@/modules/history/data-issues/data-issue-filter-ke
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { RemediationTimelineItem } from '@/modules/history/data-issues/types';
 import { startPromise } from '@shared/utils';
+import { useScroll, useVirtualList } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { watchDebounced } from '@/modules/core/common/async/scoped-timers';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import DataIssueDecodingReview from '@/modules/history/data-issues/components/DataIssueDecodingReview.vue';
