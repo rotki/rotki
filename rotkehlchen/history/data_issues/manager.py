@@ -2,6 +2,7 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any, Final, cast
 
+from rotkehlchen.db.cache import mark_stale_from_ts
 from rotkehlchen.db.filtering import DataIssuesFilterQuery
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import InputError, NotFoundError
@@ -23,6 +24,7 @@ from rotkehlchen.history.data_issues.types import (
     EventIssuePayload,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -41,6 +43,7 @@ DATA_ISSUE_COLUMN_NAMES = (
     'location_label',
     'protocol',
     'asset',
+    'event_identifier',
     'ts_start',
     'ts_end',
     'severity',
@@ -101,6 +104,10 @@ def _row_to_data_issue(
         row: tuple[Any, ...],
         group_identifier: str | None = None,
 ) -> DataIssue:
+    payload = json.loads(row[12])
+    joined_group = row[15] if len(row) > 15 else group_identifier
+    resolved_group = joined_group if joined_group is not None else payload.get('group_identifier')
+    event_identifier = row[6] if row[6] is not None else payload.get('event_identifier')
     return DataIssue(
         id=row[0],
         kind=row[1],
@@ -108,15 +115,16 @@ def _row_to_data_issue(
         location_label=row[3],
         protocol=row[4],
         asset=row[5],
-        group_identifier=row[14] if len(row) > 14 else group_identifier,
-        ts_start=row[6],
-        ts_end=row[7],
-        severity=row[8],
-        state=row[9],
-        auto_remediation_attempts=json.loads(row[10]),
-        payload=json.loads(row[11]),
-        created_at=row[12],
-        resolved_at=row[13],
+        event_identifier=event_identifier,
+        group_identifier=resolved_group,
+        ts_start=row[7],
+        ts_end=row[8],
+        severity=row[9],
+        state=row[10],
+        auto_remediation_attempts=json.loads(row[11]),
+        payload=payload,
+        created_at=row[13],
+        resolved_at=row[14],
     )
 
 
@@ -407,19 +415,22 @@ class DataIssuesManager:
             self,
             kind: IssueKind,
             still_active_ids: set[int],
+            from_ts: int | None = None,
     ) -> None:
         """Resolve unseen event issues unless a historical balance stop still backs them.
 
         Cost basis and historical balances can see different events and report the same kind.
         An event missing from the cost basis pass does not clear a balance stop's issue.
+        When `from_ts` is given, only issues with `ts_start >= from_ts` are eligible to be
+        auto-resolved, so an incremental cost-basis pass never clears issues from earlier
+        unreprocessed history.
         """
         sources_clause, sources = _source_states_clause(IssueState.RESOLVED)
-        query = (
-            'UPDATE data_issues SET state = ?, resolved_at = ? WHERE kind = ? '
-            f'AND {sources_clause}'
+        select_query = (
+            f'SELECT id, event_identifier FROM data_issues WHERE kind = ? AND {sources_clause}'
         )
         if kind == IssueKind.INVALID_EVENT_AMOUNT:
-            query += (
+            select_query += (
                 ' AND NOT EXISTS (SELECT 1 FROM bucket_processing_stops s '
                 'WHERE s.location = data_issues.location '
                 'AND s.location_label = data_issues.location_label '
@@ -427,17 +438,24 @@ class DataIssuesManager:
                 'AND s.event_identifier = data_issues.event_identifier '
                 'AND s.issue_kind = data_issues.kind)'
             )
-        bindings: list[Any] = [
-            IssueState.RESOLVED,
-            _resolved_at_for(IssueState.RESOLVED),
-            kind,
-            *sources,
-        ]
-        if len(still_active_ids) > 0:
-            query += f' AND event_identifier NOT IN ({",".join("?" * len(still_active_ids))})'
-            bindings.extend(still_active_ids)
+        select_bindings: list[Any] = [kind, *sources]
+        if from_ts is not None:
+            select_query += ' AND ts_start >= ?'
+            select_bindings.append(from_ts)
+
+        resolved_at = _resolved_at_for(IssueState.RESOLVED)
         with self.db.user_write() as write_cursor:
-            write_cursor.execute(query, bindings)
+            ids_to_resolve = [
+                issue_id
+                for issue_id, event_id in write_cursor.execute(select_query, select_bindings)
+                if event_id not in still_active_ids
+            ]
+            for chunk, placeholders in get_query_chunks(data=ids_to_resolve):
+                write_cursor.execute(
+                    f'UPDATE data_issues SET state = ?, resolved_at = ? '
+                    f'WHERE id IN ({placeholders})',
+                    [IssueState.RESOLVED, resolved_at, *chunk],
+                )
 
     def resolve_unmatched_bridge_issues_except(self, still_unmatched_ids: set[int]) -> None:
         """Resolve unmatched bridge issues whose event is no longer unmatched."""
@@ -652,8 +670,15 @@ class DataIssuesManager:
             ).fetchone()
         return _row_to_data_issue(row, group_identifier=issue.group_identifier)
 
-    def resolve_manually(self, issue_id: int, note: str | None = None) -> DataIssue:
+    def resolve_manually(
+            self,
+            issue_id: int,
+            note: str | None = None,
+            disposition: str | None = None,
+    ) -> DataIssue:
         resolution: dict[str, Any] = {'manual': True}
+        if disposition is not None:
+            resolution['disposition'] = disposition
         if note is not None:
             resolution['note'] = note
 
@@ -680,11 +705,54 @@ class DataIssuesManager:
                     issue_id,
                 ),
             ).fetchone()
+            if (
+                issue.kind == IssueKind.INCOMPLETE_SWAP and
+                disposition == 'dismiss_as_standalone'
+            ):
+                mark_stale_from_ts(
+                    write_cursor=write_cursor,
+                    from_ts=TimestampMS(issue.ts_start),
+                    include_balances=False,
+                )
+        return _row_to_data_issue(row, group_identifier=issue.group_identifier)
+
+    def reopen(self, issue_id: int) -> DataIssue:
+        """Reopen a previously resolved or dismissed issue, clearing its resolution metadata.
+
+        Reopening an ``INCOMPLETE_SWAP`` issue marks cost basis stale at ``issue.ts_start``
+        so any previously confirmed standalone disposition is undone on the next pass.
+        """
+        with self.db.user_write() as write_cursor:
+            issue = self._get_issue_with_cursor(write_cursor, issue_id)
+            if issue.state not in {IssueState.RESOLVED, IssueState.DISMISSED}:
+                raise InputError(
+                    f'Cannot reopen a data issue in state {issue.state}. '
+                    'Only resolved or dismissed issues can be reopened',
+                )
+
+            payload = dict(issue.payload)
+            payload.pop('resolution', None)
+            row = write_cursor.execute(
+                'UPDATE data_issues SET state = ?, payload_json = ?, resolved_at = ? '
+                f'WHERE id = ? RETURNING {DATA_ISSUE_COLUMNS}',
+                (
+                    IssueState.OPEN,
+                    json.dumps(payload, separators=(',', ':')),
+                    _resolved_at_for(IssueState.OPEN),
+                    issue_id,
+                ),
+            ).fetchone()
+            if issue.kind == IssueKind.INCOMPLETE_SWAP:
+                mark_stale_from_ts(
+                    write_cursor=write_cursor,
+                    from_ts=TimestampMS(issue.ts_start),
+                    include_balances=False,
+                )
         return _row_to_data_issue(row, group_identifier=issue.group_identifier)
 
     def retry_auto_remediation(self, issue_id: int) -> tuple[DataIssue, bool]:
         issue = self.get_issue(issue_id)
-        if issue.kind != IssueKind.REBASING_TOKEN:
+        if issue.kind not in {IssueKind.REBASING_TOKEN, IssueKind.UNMATCHED_EXCHANGE_TRANSFER}:
             raise InputError(f'Auto-remediation is not supported for {issue.kind} data issues')
         if issue.state == IssueState.AUTO_REMEDIATING:
             return issue, False

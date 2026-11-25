@@ -29,6 +29,7 @@ from rotkehlchen.history.data_issues.remediation.base import (
     RemediationOutcome,
     RemediationWorkerStuckError,
 )
+from rotkehlchen.history.data_issues.types import DataIssueFilters
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.locations.constants import (
@@ -372,7 +373,7 @@ def test_negative_balance_customized_spend_is_compared_with_real_decoder(
     assert task_manager._maybe_run_data_issue_remediation() is None
     _wait_for_background_task(task_manager._maybe_process_historical_balances())
     issues_manager = DataIssuesManager(database)
-    issues = issues_manager.list_issues()
+    issues = issues_manager.list_issues(DataIssueFilters(kind=IssueKind.NEGATIVE_BALANCE))
     assert len(issues) == 1
     assert issues[0].kind == IssueKind.NEGATIVE_BALANCE
     assert issues[0].state == IssueState.OPEN

@@ -1409,3 +1409,92 @@ def test_single_match_affects_multiple_issues_in_same_bucket(database: DBHandler
         'reprocessing_pending',
         ATTRIBUTION_MATCHED_WITHDRAWAL,
     ]
+
+
+def test_unmatched_exchange_transfer_issue_auto_remediated_and_resolved(
+        database: DBHandler,
+) -> None:
+    """UNMATCHED_EXCHANGE_TRANSFER issues are matched directly by CexOnchainMatchingStrategy and
+    verified as RESOLVED once the ASSET_MOVEMENT_MATCH link is written."""
+    from rotkehlchen.tasks.data_issues import retry_unmatched_exchange_transfer_issue
+
+    _nb_issue, _onchain_event_id = _add_kraken_withdrawal_issue(database)
+    unmatched_movements, _ = get_unmatched_asset_movements(database)
+    movement = unmatched_movements[0]
+    assert movement.identifier is not None
+    manager = DataIssuesManager(database)
+    uet_id = manager.write_issue(
+        kind=IssueKind.UNMATCHED_EXCHANGE_TRANSFER,
+        location=LOCATION_KRAKEN,
+        location_label='Kraken',
+        protocol=None,
+        asset=A_ETH.identifier,
+        payload={
+            'event_identifier': movement.identifier,
+            'group_identifier': movement.group_identifier,
+            'subtype': 'spend',
+            'amount': '1',
+        },
+        ts_start=movement.timestamp,
+        ts_end=movement.timestamp,
+    )
+    issue, scheduled = manager.retry_auto_remediation(uet_id)
+    assert scheduled is True
+    assert issue.state == IssueState.AUTO_REMEDIATING
+
+    from rotkehlchen.types import Price
+
+    with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
+        historian.return_value.query_historical_price.return_value = Price(FVal(2000))
+        retry_unmatched_exchange_transfer_issue(
+            database=database,
+            chains_aggregator=MagicMock(),
+            issue_id=uet_id,
+        )
+    resolved = manager.get_issue(uet_id)
+    assert resolved.state == IssueState.RESOLVED
+    assert _attributions(resolved) == [
+        'reprocessing_pending',
+        ATTRIBUTION_MATCHED_WITHDRAWAL,
+    ]
+
+
+def test_retry_unmatched_exchange_transfer_recovers_from_cancellation(database: DBHandler) -> None:
+    """If remediation raises TaskCancelledError or an unexpected error, the issue transitions
+    from AUTO_REMEDIATING -> UNRESOLVED instead of sticking in AUTO_REMEDIATING."""
+    from rotkehlchen.tasks.data_issues import retry_unmatched_exchange_transfer_issue
+
+    manager = DataIssuesManager(database)
+    uet_id = manager.write_issue(
+        kind=IssueKind.UNMATCHED_EXCHANGE_TRANSFER,
+        location=LOCATION_KRAKEN,
+        location_label='Kraken',
+        protocol=None,
+        asset=A_ETH.identifier,
+        payload={
+            'event_identifier': 999,
+            'group_identifier': 'kraken-cancel',
+            'subtype': 'spend',
+            'amount': '1',
+        },
+        ts_start=ONCHAIN_TS,
+        ts_end=ONCHAIN_TS,
+    )
+    manager.retry_auto_remediation(uet_id)
+
+    with (
+        patch(
+            'rotkehlchen.tasks.data_issues.CexOnchainMatchingStrategy',
+            side_effect=TaskCancelledError('cancelled'),
+        ),
+        pytest.raises(TaskCancelledError),
+    ):
+        retry_unmatched_exchange_transfer_issue(
+            database=database,
+            chains_aggregator=MagicMock(),
+            issue_id=uet_id,
+        )
+
+    failed = manager.get_issue(uet_id)
+    assert failed.state == IssueState.UNRESOLVED
+    assert failed.auto_remediation_attempts[-1]['reason'] == 'processing_cancelled'

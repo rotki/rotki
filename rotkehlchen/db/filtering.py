@@ -2764,6 +2764,14 @@ class AccountingRulesFilterQuery(DBFilterQuery):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBDataIssueManualResolutionFilter(DBFilter):
+    """Matches data issues whose payload records a manual confirmation (`resolution.manual`)."""
+
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        return ["json_extract(payload_json, '$.resolution.manual') = 1"], []
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DataIssuesFilterQuery(DBFilterQuery):
     """Filter query for data issues inbox rows."""
 
@@ -2781,6 +2789,7 @@ class DataIssuesFilterQuery(DBFilterQuery):
             location_scope: LocationScope = LocationScope.EXACT,
             location_label: str | None = None,
             asset: Asset | None = None,
+            manual_only: bool = False,
     ) -> Self:
         filter_query = cls.create(
             and_op=and_op,
@@ -2789,7 +2798,12 @@ class DataIssuesFilterQuery(DBFilterQuery):
             order_by_rules=(('ts_start', False), ('id', False)),
         )
         filters: list[DBFilter] = []
-        if states is not None and len(states) != 0:
+        if manual_only is True:
+            filters.extend((
+                DBEqualsFilter(and_op=True, column='state', value='resolved'),
+                DBDataIssueManualResolutionFilter(and_op=True),
+            ))
+        elif states is not None and len(states) != 0:
             filters.append(DBMultiStringFilter(and_op=True, column='state', values=states))
         if kinds is not None and len(kinds) != 0:
             filters.append(DBMultiStringFilter(and_op=True, column='kind', values=kinds))

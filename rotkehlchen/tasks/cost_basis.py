@@ -26,9 +26,12 @@ from rotkehlchen.accounting.cost_basis.eth2 import (
 from rotkehlchen.accounting.cost_basis.lots import (
     BasisSource,
     BucketLots,
+    ConsumedLot,
     CostBasisDirection,
+    Lot,
 )
 from rotkehlchen.accounting.cost_basis.pnl import get_unprocessed_from_ts
+from rotkehlchen.accounting.cost_basis.rules import CostBasisRules as _Rules
 from rotkehlchen.api.websockets.typedefs import (
     HistoricalBalanceProcessingPhase,
     ProgressUpdateSubType,
@@ -41,23 +44,31 @@ from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAcc
 from rotkehlchen.concurrency import TaskCancelledError, checkpoint
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH2, A_KFEE
-from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.filtering import AccountingRulesFilterQuery, HistoryEventFilterQuery
+from rotkehlchen.db.constants import HistoryEventLinkType
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.cause import TRANSIENT_FAILURE_CAUSES
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.data_issues.constants import IssueKind
+from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.types import (
+    IncompleteSwapIssuePayload,
+    IncompleteSwapReason,
+    MissingCostBasisIssuePayload,
+    MissingPriceDirection,
+    MissingPriceIssuePayload,
+    SwapLegSummary,
+    UnmatchedExchangeTransferIssuePayload,
+)
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.eth2 import (
     EthBlockEvent,
     EthDepositEvent,
     EthWithdrawalEvent,
 )
-from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
     HistoryEventSubType,
@@ -66,6 +77,7 @@ from rotkehlchen.history.events.structures.types import (
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.locations.constants import LOCATION_KRAKEN
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.tasks.events import get_unmatched_asset_movements
 from rotkehlchen.tasks.historical_balances import (
     MIN_EVENTS_PROCESSED_TO_SLEEP,
     Bucket,
@@ -73,13 +85,13 @@ from rotkehlchen.tasks.historical_balances import (
     process_historical_balances,
 )
 from rotkehlchen.types import Price, Timestamp, TimestampMS
-from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.lockable import skip_if_running
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from rotkehlchen.accounting.cost_basis.lots import ConsumedLot, SpendResult
+    from rotkehlchen.accounting.cost_basis.lots import SpendResult
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
@@ -119,38 +131,6 @@ COST_BASIS_BATCH_SIZE: Final = 500
 COST_BASIS_CHECKPOINT_INTERVAL: Final = 10_000
 
 
-class _Rules:
-    """The accounting rules of the user, as the PnL report resolves them for an event."""
-
-    def __init__(self, database: DBHandler, cursor: DBCursor | None = None) -> None:
-        self._by_event: dict[int, BaseEventSettings] = {}
-        self._by_type: dict[
-            tuple[HistoryEventType, HistoryEventSubType, str | None],
-            BaseEventSettings,
-        ] = {}
-        for rule_info in DBAccountingRules(database).query_rules(
-            filter_query=AccountingRulesFilterQuery.make(),
-            cursor=cursor,
-        )[0]:
-            if not rule_info.is_event_specific:
-                self._by_type[rule_info.event_key] = rule_info.rule
-            elif rule_info.event_ids is not None:
-                self._by_event.update(dict.fromkeys(rule_info.event_ids, rule_info.rule))
-
-    def get(self, event: HistoryBaseEntry) -> BaseEventSettings | None:
-        """The rule of the event itself, else of its type and counterparty, else of its type."""
-        if event.identifier is not None and (rule := self._by_event.get(event.identifier)) is not None:  # noqa: E501
-            return rule
-
-        event_key = (event.event_type, event.event_subtype)
-        if isinstance(event, OnchainEvent) and (
-            rule := self._by_type.get((*event_key, event.counterparty))
-        ) is not None:
-            return rule
-
-        return self._by_type.get((*event_key, None))
-
-
 def _swap_leg_direction(
         event: HistoryBaseEntry,
         bucket_directions: Sequence[tuple[Bucket, EventDirection]],
@@ -159,6 +139,20 @@ def _swap_leg_direction(
         return event.maybe_get_direction()
 
     return bucket_directions[0][1] if len(bucket_directions) == 1 else None
+
+
+def _event_issue_bucket(event: HistoryBaseEntry, treat_eth2_as_eth: bool) -> Bucket:
+    """Resolve the primary bucket under which a data issue for `event` is filed."""
+    if not event.asset.is_fiat():
+        buckets = Bucket.from_event(event=event, treat_eth2_as_eth=treat_eth2_as_eth)
+        if len(buckets) > 0:
+            return buckets[0][0]
+    return Bucket(
+        location=event.location,
+        location_label=event.location_label,
+        protocol=_get_wallet_protocol(event),
+        asset=event.asset.identifier,
+    )
 
 
 class _CostBasisPass:
@@ -178,12 +172,16 @@ class _CostBasisPass:
             stored_basis: dict[int, FVal],
             tracked_eth_accounts: set[str] | None = None,
             validator_types: dict[int, ValidatorType] | None = None,
+            matched_spend_to_receive: dict[int, int] | None = None,
     ) -> None:
         self.settings = settings
         self.rules = rules
         self.from_ts = from_ts
         self.stored_basis = stored_basis
         self.tracked_eth_accounts = tracked_eth_accounts
+        self.matched_spend_to_receive: dict[int, int] = (
+            {} if matched_spend_to_receive is None else matched_spend_to_receive
+        )
         self.method = settings.cost_basis_method.serialize()
         self.profit_currency = settings.main_currency.resolve_to_asset_with_oracles()
         self.lots = BucketLots[Bucket](settings)
@@ -191,13 +189,115 @@ class _CostBasisPass:
         self.blocked_buckets: set[Bucket] = set()
         self.invalid_amount_event_ids: set[int] = set()
         self.invalid_amount_issues: list[tuple[Bucket, HistoryBaseEntry]] = []
+        self.missing_price_event_ids: set[int] = set()
+        self.missing_price_issues: list[tuple[Bucket, HistoryBaseEntry, MissingPriceIssuePayload]] = []  # noqa: E501
+        self.missing_cost_basis_event_ids: set[int] = set()
+        self.missing_cost_basis_issues: list[tuple[Bucket, HistoryBaseEntry, MissingCostBasisIssuePayload]] = []  # noqa: E501
+        self.incomplete_swap_event_ids: set[int] = set()
+        self.incomplete_swap_issues: list[tuple[Bucket, TimestampMS, TimestampMS, IncompleteSwapIssuePayload]] = []  # noqa: E501
         self._prices: dict[tuple[str, Timestamp], Price | None] = {}
         # What a swap gives to each of its sides, keyed by the identifier of the side's event.
         self._swap_basis: dict[int, tuple[FVal, BasisSource]] = {}
         self._swap_proceeds: dict[int, tuple[FVal | None, bool, bool]] = {}
         # The receiving side of a basis transfer, which is applied along with its other side.
         self._basis_transfer_receives: set[int] = set()
+        # Lots extracted from the spend leg of a matched exchange transfer, keyed by receive id.
+        self._pending_matched_transfers: dict[int, tuple[FVal, list[ConsumedLot]]] = {}
         self.eth2 = Eth2StakingCostBasis(host=self, validator_types=validator_types)
+
+    def record_missing_price(
+            self,
+            event: HistoryBaseEntry,
+            bucket: Bucket,
+            direction: MissingPriceDirection,
+            amount: FVal | None = None,
+    ) -> None:
+        """Record a `MISSING_PRICE` data issue candidate for an unpriced cost-basis event."""
+        assert event.identifier is not None
+        self.missing_price_event_ids.add(event.identifier)
+        self.missing_price_issues.append((
+            bucket,
+            event,
+            MissingPriceIssuePayload(
+                event_identifier=event.identifier,
+                group_identifier=event.group_identifier,
+                to_asset=self.profit_currency.identifier,
+                amount=str(event.amount if amount is None else amount),
+                direction=direction,
+            ),
+        ))
+
+    def record_missing_cost_basis(
+            self,
+            event: HistoryBaseEntry,
+            bucket: Bucket,
+            requested_amount: FVal,
+            covered_amount: FVal,
+    ) -> None:
+        """Record a `MISSING_COST_BASIS` issue candidate for uncovered spend/transfer units."""
+        uncovered = requested_amount - covered_amount
+        if uncovered <= ZERO:
+            return
+        assert event.identifier is not None
+        self.missing_cost_basis_event_ids.add(event.identifier)
+        self.missing_cost_basis_issues.append((
+            bucket,
+            event,
+            MissingCostBasisIssuePayload(
+                event_identifier=event.identifier,
+                group_identifier=event.group_identifier,
+                requested_amount=str(requested_amount),
+                covered_amount=str(covered_amount),
+                uncovered_amount=str(uncovered),
+                fallback_basis='0',
+            ),
+        ))
+
+    def record_incomplete_swap(
+            self,
+            group_events: Sequence[HistoryBaseEntry],
+            present_legs: Sequence[HistoryBaseEntry],
+            reason: IncompleteSwapReason,
+            excluded_assets: Sequence[str],
+            treat_eth2_as_eth: bool,
+    ) -> None:
+        """Record an `INCOMPLETE_SWAP` issue anchored on the canonical leg of the swap group."""
+        candidates = present_legs if len(present_legs) > 0 else group_events
+        anchor = min(
+            (ev for ev in candidates if ev.identifier is not None),
+            key=lambda ev: ev.identifier or 0,
+            default=None,
+        )
+        if anchor is None or anchor.identifier is None:
+            return
+        anchor_bucket = _event_issue_bucket(anchor, treat_eth2_as_eth=treat_eth2_as_eth)
+        sorted_legs = sorted(
+            (ev for ev in present_legs if ev.identifier is not None),
+            key=lambda ev: (ev.sequence_index, ev.identifier or 0),
+        )
+        ts_start = TimestampMS(min(ev.timestamp for ev in group_events))
+        ts_end = TimestampMS(max(ev.timestamp for ev in group_events))
+        payload = IncompleteSwapIssuePayload(
+            event_identifier=anchor.identifier,
+            group_identifier=anchor.group_identifier,
+            event_identifiers=sorted(
+                ev.identifier for ev in group_events if ev.identifier is not None
+            ),
+            present_legs=[
+                SwapLegSummary(
+                    event_identifier=ev.identifier,
+                    subtype=ev.event_subtype.serialize(),
+                    asset=ev.asset.identifier,
+                    amount=str(ev.amount),
+                )
+                for ev in sorted_legs
+                if ev.identifier is not None
+            ],
+            missing_or_excluded_reason=reason,
+            excluded_assets=sorted(set(excluded_assets)),
+        )
+        self.incomplete_swap_event_ids.add(anchor.identifier)
+        self.incomplete_swap_issues.append((anchor_bucket, ts_start, ts_end, payload))
 
     def get_price(self, asset: Asset, timestamp: Timestamp) -> Price | None:
         """The price of the asset in the profit currency, or None if no oracle knows it.
@@ -241,6 +341,7 @@ class _CostBasisPass:
             fee_events: Sequence[HistoryBaseEntry],
             timestamp: Timestamp,
             is_taxable: bool,
+            treat_eth2_as_eth: bool,
     ) -> None:
         """Value both sides and any fee legs of a swap at what was paid for it.
 
@@ -269,6 +370,17 @@ class _CostBasisPass:
         else:
             base_total, source = ZERO, BasisSource.ZERO_COST
         priced = source != BasisSource.ZERO_COST  # priced fees below may change `source`
+
+        if not priced and (
+            self.from_ts is None or
+            out_event.timestamp >= self.from_ts or
+            in_event.timestamp >= self.from_ts
+        ):
+            self.record_missing_price(
+                event=out_event,
+                bucket=_event_issue_bucket(out_event, treat_eth2_as_eth=treat_eth2_as_eth),
+                direction='swap',
+            )
 
         total_fees = ZERO
         if self.settings.include_fees_in_cost_basis:
@@ -301,6 +413,16 @@ class _CostBasisPass:
             else:
                 fee_rate = self.get_price(asset=fee_event.asset, timestamp=timestamp)
             fee_taxable = not self.settings.include_fees_in_cost_basis
+            if (
+                fee_taxable and
+                fee_rate is None and
+                (self.from_ts is None or fee_event.timestamp >= self.from_ts)
+            ):
+                self.record_missing_price(
+                    event=fee_event,
+                    bucket=_event_issue_bucket(fee_event, treat_eth2_as_eth=treat_eth2_as_eth),
+                    direction='fee',
+                )
             fee_proceeds.append((fee_event.identifier, (fee_rate, fee_taxable, fee_taxable)))
 
         self._swap_basis[in_event.identifier] = (in_rate, source)
@@ -359,6 +481,8 @@ class _CostBasisPass:
             move_amount: FVal,
             dest_amount: FVal,
             received: HistoryBaseEntry,
+            is_stale: bool = False,
+            issue_bucket: Bucket | None = None,
     ) -> tuple[list[ConsumedLot], list[str], FVal]:
         """Move lots between buckets, creating a zero-basis lot for any uncovered remainder."""
         moved = self.lots.transfer(
@@ -370,7 +494,15 @@ class _CostBasisPass:
             event=event,
         )
         lot_ids = list(dict.fromkeys(entry.lot.lot_id for entry in moved))
-        if (unknown_amount := move_amount - sum((entry.amount for entry in moved), start=ZERO)) > ZERO:  # noqa: E501
+        covered = sum((entry.amount for entry in moved), start=ZERO)
+        if (unknown_amount := move_amount - covered) > ZERO:
+            if is_stale:
+                self.record_missing_cost_basis(
+                    event=event,
+                    bucket=source if issue_bucket is None else issue_bucket,
+                    requested_amount=move_amount,
+                    covered_amount=covered,
+                )
             lot_ids.append(lot_id := str(received.identifier))
             scaled_unknown = (
                 unknown_amount if dest_amount == move_amount
@@ -417,6 +549,8 @@ class _CostBasisPass:
             move_amount=move_amount,
             dest_amount=dest_amount,
             received=received,
+            is_stale=is_stale,
+            issue_bucket=row_source,
         )
 
         if not (in_is_stale := self.from_ts is None or received.timestamp >= self.from_ts):
@@ -577,6 +711,8 @@ class _CostBasisPass:
             timestamp=timestamp,
         )
         if is_stale:
+            if swap_basis is None and basis_source == BasisSource.ZERO_COST:
+                self.record_missing_price(event=event, bucket=bucket, direction='receive')
             taxable = (
                 swap_basis is None and self._is_taxable_receive(event, rule)
                 if is_taxable is None else is_taxable
@@ -625,12 +761,30 @@ class _CostBasisPass:
         if not is_stale:
             return
 
+        if result.uncovered_amount > ZERO:
+            self.record_missing_cost_basis(
+                event=event,
+                bucket=bucket,
+                requested_amount=event.amount,
+                covered_amount=event.amount - result.uncovered_amount,
+            )
+
         rate, counts_cost_basis, count_entire_amount_spend = self._resolve_spend_treatment(
             event=event,
             timestamp=timestamp,
             rule=rule,
             swap_proceeds=swap_proceeds,
         )
+        if (
+            swap_proceeds is None and
+            rate is None and
+            (counts_cost_basis or count_entire_amount_spend)
+        ):
+            self.record_missing_price(
+                event=event,
+                bucket=bucket,
+                direction='fee' if event.event_subtype == HistoryEventSubType.FEE else 'spend',
+            )
         proceeds, realized_pnl, taxfree_pnl = self.compute_spend_pnl(
             amount=event.amount,
             rate=rate,
@@ -650,6 +804,79 @@ class _CostBasisPass:
             post_spend_basis_remaining=self.lots.basis_remaining(bucket),
             is_taxable=counts_cost_basis or count_entire_amount_spend,
         )
+
+    def _apply_matched_transfer_spend(
+            self,
+            event: HistoryBaseEntry,
+            source: Bucket,
+            receive_id: int,
+            is_stale: bool,
+    ) -> None:
+        """Extract lots on the spend leg of a matched exchange transfer into transit storage."""
+        moved = self.lots.extract(
+            source=source,
+            asset=event.asset,
+            amount=event.amount,
+            event=event,
+        )
+        covered = sum((entry.amount for entry in moved), start=ZERO)
+        basis = sum((entry.amount * entry.basis_per_unit for entry in moved), start=ZERO)
+        self._pending_matched_transfers[receive_id] = (event.amount, moved)
+        if not is_stale:
+            return
+
+        if event.amount - covered > ZERO:
+            self.record_missing_cost_basis(
+                event=event,
+                bucket=source,
+                requested_amount=event.amount,
+                covered_amount=covered,
+            )
+        self.add_row(
+            event=event,
+            bucket=source,
+            direction=CostBasisDirection.SPEND,
+            lots_consumed=[entry.serialize() for entry in moved],
+            realized_pnl=ZERO,
+            basis_removed=basis,
+            post_spend_basis_remaining=self.lots.basis_remaining(source),
+            is_taxable=False,
+        )
+
+    def _apply_matched_transfer_receive(
+            self,
+            event: HistoryBaseEntry,
+            destination: Bucket,
+            timestamp: Timestamp,
+            is_stale: bool,
+    ) -> None:
+        """Deposit lots buffered by the matched exchange transfer's spend leg into destination."""
+        assert event.identifier is not None
+        spend_amount, moved = self._pending_matched_transfers.pop(event.identifier)
+        ratio = event.amount / spend_amount if spend_amount > ZERO else ONE
+        self.lots.deposit_lots(destination=destination, moved=moved, ratio=ratio)
+        lot_ids = list(dict.fromkeys(entry.lot.lot_id for entry in moved))
+        covered = sum((entry.amount for entry in moved), start=ZERO)
+        if (unknown_amount := spend_amount - covered) > ZERO:
+            lot_ids.append(lot_id := str(event.identifier))
+            self.lots.obtain(
+                bucket=destination,
+                lot_id=lot_id,
+                amount=unknown_amount * ratio,
+                basis_per_unit=ZERO,
+                timestamp=timestamp,
+            )
+        basis = sum((entry.amount * entry.basis_per_unit for entry in moved), start=ZERO)
+        if is_stale:
+            self.add_row(
+                event=event,
+                bucket=destination,
+                direction=CostBasisDirection.RECEIVE,
+                lot_created_id=','.join(lot_ids),
+                basis_per_unit=basis / event.amount,
+                basis_source=BasisSource.TRANSFER_IN,
+                is_taxable=False,
+            )
 
     def _apply_fiat_event(
             self,
@@ -683,6 +910,12 @@ class _CostBasisPass:
             if not count_entire_amount_spend:
                 return
 
+            if swap_proceeds is None and rate is None:
+                self.record_missing_price(
+                    event=event,
+                    bucket=bucket,
+                    direction='fee' if event.event_subtype == HistoryEventSubType.FEE else 'spend',
+                )
             proceeds, realized_pnl, taxfree_pnl = self.compute_spend_pnl(
                 amount=event.amount,
                 rate=rate,
@@ -709,6 +942,8 @@ class _CostBasisPass:
                 timestamp=timestamp,
                 is_stale=True,
             )
+            if basis_source == BasisSource.ZERO_COST:
+                self.record_missing_price(event=event, bucket=bucket, direction='receive')
             realized_pnl, taxfree_pnl = self.compute_receive_pnl(
                 amount=event.amount,
                 basis=basis,
@@ -790,6 +1025,16 @@ class _CostBasisPass:
             'buckets': [[list(bucket), state] for bucket, state in buckets],
             'blocked_buckets': [list(bucket) for bucket in self.blocked_buckets],
             'invalid_amount_event_ids': list(self.invalid_amount_event_ids),
+            'pending_matched_transfers': {
+                str(receive_id): [
+                    str(spend_amount),
+                    [
+                        [entry.lot.serialize_state(), str(entry.amount), str(entry.basis_per_unit)]
+                        for entry in moved
+                    ],
+                ]
+                for receive_id, (spend_amount, moved) in self._pending_matched_transfers.items()
+            },
             'events_since_interval': events_since_interval,
             **self.eth2.serialize_state(),
         }, separators=(',', ':'))
@@ -809,6 +1054,23 @@ class _CostBasisPass:
         )
         self.blocked_buckets = set(starmap(Bucket, state['blocked_buckets']))
         self.invalid_amount_event_ids = set(state['invalid_amount_event_ids'])
+        self._pending_matched_transfers = {
+            int(receive_id): (
+                FVal(spend_amount),
+                [
+                    ConsumedLot(
+                        lot=Lot.from_state(lot_state),
+                        amount=FVal(amount),
+                        basis_per_unit=FVal(basis_per_unit),
+                        taxable=False,
+                    )
+                    for lot_state, amount, basis_per_unit in moved_entries
+                ],
+            )
+            for receive_id, (spend_amount, moved_entries) in state.get(
+                'pending_matched_transfers', {},
+            ).items()
+        }
         self.eth2.restore_state(state)
         return int(state.get('events_since_interval', 0))
 
@@ -914,6 +1176,7 @@ class _CostBasisPass:
                     fee_events=swap_fee_events,
                     timestamp=timestamp,
                     is_taxable=rule.taxable,
+                    treat_eth2_as_eth=treat_eth2_as_eth,
                 )
 
         if event.asset.is_fiat():
@@ -934,6 +1197,15 @@ class _CostBasisPass:
                 return
 
             if direction == EventDirection.IN:
+                if event.identifier in self._pending_matched_transfers:
+                    self._apply_matched_transfer_receive(
+                        event=event,
+                        destination=bucket,
+                        timestamp=timestamp,
+                        is_stale=is_stale,
+                    )
+                    return
+
                 if (
                     isinstance(event, EthBlockEvent | EthWithdrawalEvent) and
                     self.tracked_eth_accounts is not None and
@@ -961,6 +1233,13 @@ class _CostBasisPass:
                     )
                 else:
                     self.receive(event, bucket, timestamp, is_stale, rule)
+            elif (receive_id := self.matched_spend_to_receive.get(event.identifier)) is not None:
+                self._apply_matched_transfer_spend(
+                    event=event,
+                    source=bucket,
+                    receive_id=receive_id,
+                    is_stale=is_stale,
+                )
             else:
                 self._spend(event, bucket, timestamp, is_stale, rule)
             return
@@ -1071,24 +1350,25 @@ def _write_checkpoint(
 
 def _checkpoint_ts(
         cost_basis_pass: _CostBasisPass,
-        event: HistoryBaseEntry,
-        next_event: HistoryBaseEntry | None,
+        max_seen_ts: TimestampMS,
+        next_min_ts: TimestampMS | None,
         events_since_checkpoint: int,
 ) -> TimestampMS | None:
     """The timestamp to checkpoint the lots at after the event, or None if not here.
 
-    A checkpoint holds all events before its timestamp, so it can only be taken where the
-    timestamp moves on to the next event and no pair of events is halfway applied.
+    A checkpoint holds all events strictly before its timestamp, so it can only be taken at a
+    strict chronological cut where every remaining event (accounting for clock-skewed matched
+    pairs) has timestamp > `max_seen_ts` and no pair of events is halfway applied.
     """
     if (
         events_since_checkpoint < COST_BASIS_CHECKPOINT_INTERVAL or
-        next_event is None or
-        next_event.timestamp <= event.timestamp or
+        next_min_ts is None or
+        next_min_ts <= max_seen_ts or
         cost_basis_pass.has_pending_pair
     ):
         return None
 
-    return next_event.timestamp
+    return next_min_ts
 
 
 def _record_progress(
@@ -1111,15 +1391,21 @@ def _record_progress(
     )
 
 
-def _write_invalid_amount_issues(
+def _write_cost_basis_issues(
         database: DBHandler,
-        issues: list[tuple[Bucket, HistoryBaseEntry]],
+        cost_basis_pass: _CostBasisPass,
 ) -> None:
-    if len(issues) == 0:
+    """Flush all pending data issues collected by `cost_basis_pass` and clear its buffers."""
+    if (
+        len(cost_basis_pass.invalid_amount_issues) == 0 and
+        len(cost_basis_pass.missing_price_issues) == 0 and
+        len(cost_basis_pass.missing_cost_basis_issues) == 0 and
+        len(cost_basis_pass.incomplete_swap_issues) == 0
+    ):
         return
 
     issues_manager = DataIssuesManager(database)
-    for bucket, event in issues:
+    for bucket, event in cost_basis_pass.invalid_amount_issues:
         assert event.identifier is not None
         issues_manager.write_issue(
             kind=IssueKind.INVALID_EVENT_AMOUNT,
@@ -1141,6 +1427,334 @@ def _write_invalid_amount_issues(
             event.identifier,
             bucket,
         )
+    cost_basis_pass.invalid_amount_issues = []
+
+    for bucket, event, missing_price_payload in cost_basis_pass.missing_price_issues:
+        issues_manager.write_issue(
+            kind=IssueKind.MISSING_PRICE,
+            location=bucket.location,
+            location_label=bucket.location_label,
+            protocol=bucket.protocol,
+            asset=bucket.asset,
+            payload=missing_price_payload,
+            ts_start=event.timestamp,
+            ts_end=event.timestamp,
+        )
+    cost_basis_pass.missing_price_issues = []
+
+    for bucket, event, missing_basis_payload in cost_basis_pass.missing_cost_basis_issues:
+        issues_manager.write_issue(
+            kind=IssueKind.MISSING_COST_BASIS,
+            location=bucket.location,
+            location_label=bucket.location_label,
+            protocol=bucket.protocol,
+            asset=bucket.asset,
+            payload=missing_basis_payload,
+            ts_start=event.timestamp,
+            ts_end=event.timestamp,
+        )
+    cost_basis_pass.missing_cost_basis_issues = []
+
+    for bucket, ts_start, ts_end, incomplete_swap_payload in cost_basis_pass.incomplete_swap_issues:  # noqa: E501
+        issues_manager.write_issue(
+            kind=IssueKind.INCOMPLETE_SWAP,
+            location=bucket.location,
+            location_label=bucket.location_label,
+            protocol=bucket.protocol,
+            asset=bucket.asset,
+            payload=incomplete_swap_payload,
+            ts_start=ts_start,
+            ts_end=ts_end,
+        )
+    cost_basis_pass.incomplete_swap_issues = []
+
+
+def _load_standalone_swap_groups(cursor: DBCursor) -> set[str]:
+    """Return group identifiers whose `INCOMPLETE_SWAP` was manually confirmed as standalone."""
+    groups: set[str] = set()
+    for (payload_json,) in cursor.execute(
+        'SELECT payload_json FROM data_issues '
+        'WHERE kind = ? AND state = ? '
+        "AND json_extract(payload_json, '$.resolution.manual') = 1 "
+        "AND json_extract(payload_json, '$.resolution.disposition') = ?",
+        (IssueKind.INCOMPLETE_SWAP.value, IssueState.RESOLVED.value, 'dismiss_as_standalone'),
+    ):
+        if isinstance(group_id := json.loads(payload_json).get('group_identifier'), str):
+            groups.add(group_id)
+    return groups
+
+
+def _group_has_unpaired_swap_leg(
+        group_events: Sequence[HistoryBaseEntry],
+        rules: _Rules,
+        treat_eth2_as_eth: bool,
+) -> bool:
+    """Whether a swap group without ignored assets has an unpaired swap spend or receive leg."""
+    paired_indices: set[int] = set()
+    total = len(group_events)
+    idx = 0
+    while idx < total:
+        event = group_events[idx]
+        if event.amount <= ZERO:
+            idx += 1
+            continue
+        rule = rules.get(event)
+        if (
+            rule is not None and
+            rule.accounting_treatment == TxAccountingTreatment.SWAP and
+            idx + 1 < total and
+            group_events[idx + 1].amount > ZERO
+        ):
+            out_dirs = (
+                [] if event.asset.is_fiat()
+                else Bucket.from_event(event=event, treat_eth2_as_eth=treat_eth2_as_eth)
+            )
+            next_ev = group_events[idx + 1]
+            in_dirs = (
+                [] if next_ev.asset.is_fiat()
+                else Bucket.from_event(event=next_ev, treat_eth2_as_eth=treat_eth2_as_eth)
+            )
+            if (
+                _swap_leg_direction(event, out_dirs) == EventDirection.OUT and
+                _swap_leg_direction(next_ev, in_dirs) == EventDirection.IN
+            ):
+                paired_indices.add(idx)
+                paired_indices.add(idx + 1)
+                fee_idx = idx + 2
+                while (
+                    fee_idx < total and
+                    group_events[fee_idx].event_type == event.event_type and
+                    group_events[fee_idx].event_subtype == HistoryEventSubType.FEE
+                ):
+                    paired_indices.add(fee_idx)
+                    fee_idx += 1
+                idx = fee_idx
+                continue
+        idx += 1
+
+    for i, ev in enumerate(group_events):
+        if i in paired_indices or ev.amount <= ZERO:
+            continue
+        if ev.event_subtype == HistoryEventSubType.FEE:
+            continue
+        rule = rules.get(ev)
+        if (
+            (rule is not None and rule.accounting_treatment == TxAccountingTreatment.SWAP) or
+            ev.event_type in {HistoryEventType.TRADE, HistoryEventType.MULTI_TRADE}
+        ):
+            return True
+    return False
+
+
+def _prepare_events_and_matches(
+        events: list[HistoryBaseEntry],
+        rules: _Rules,
+        ignored_asset_ids: set[str],
+        standalone_swap_groups: set[str],
+        asset_movement_links: Sequence[tuple[int, int]],
+        treat_eth2_as_eth: bool,
+        cost_basis_pass: _CostBasisPass,
+) -> tuple[list[HistoryBaseEntry], dict[int, int]]:
+    """Apply ignored-asset swap parity, detect incomplete swaps, and resolve matched transfers."""
+    groups: dict[str, list[HistoryBaseEntry]] = {}
+    for ev in events:
+        groups.setdefault(ev.group_identifier, []).append(ev)
+
+    skip_event_ids: set[int] = set()
+    for group_id, group_events in groups.items():
+        ignored_legs = [ev for ev in group_events if ev.asset.identifier in ignored_asset_ids]
+        active_legs = [ev for ev in group_events if ev.asset.identifier not in ignored_asset_ids]
+        is_swap_group = any(
+            (
+                (rule := rules.get(ev)) is not None and
+                rule.accounting_treatment == TxAccountingTreatment.SWAP
+            ) or (
+                ev.event_type in {HistoryEventType.TRADE, HistoryEventType.MULTI_TRADE} and
+                (spend_rule := rules.get_for_fields(
+                    event_identifier=None,
+                    event_type=ev.event_type,
+                    event_subtype=HistoryEventSubType.SPEND,
+                    counterparty=None,
+                )) is not None and
+                spend_rule.accounting_treatment == TxAccountingTreatment.SWAP
+            )
+            for ev in group_events
+        )
+        is_basis_transfer_group = any(
+            (rule := rules.get(ev)) is not None and
+            rule.accounting_treatment == TxAccountingTreatment.BASIS_TRANSFER
+            for ev in group_events
+        )
+        group_is_stale = (
+            cost_basis_pass.from_ts is None or
+            any(ev.timestamp >= cost_basis_pass.from_ts for ev in group_events)
+        )
+
+        if is_swap_group and len(ignored_legs) > 0:
+            if group_is_stale:
+                cost_basis_pass.record_incomplete_swap(
+                    group_events=group_events,
+                    present_legs=active_legs,
+                    reason='ignored_asset',
+                    excluded_assets=[ev.asset.identifier for ev in ignored_legs],
+                    treat_eth2_as_eth=treat_eth2_as_eth,
+                )
+            to_skip = group_events if group_id not in standalone_swap_groups else ignored_legs
+            skip_event_ids.update(ev.identifier for ev in to_skip if ev.identifier is not None)
+            continue
+
+        if is_swap_group and _group_has_unpaired_swap_leg(
+            group_events=group_events,
+            rules=rules,
+            treat_eth2_as_eth=treat_eth2_as_eth,
+        ):
+            if group_is_stale:
+                cost_basis_pass.record_incomplete_swap(
+                    group_events=group_events,
+                    present_legs=[ev for ev in group_events if ev.amount > ZERO],
+                    reason='missing_counterpart_leg',
+                    excluded_assets=[],
+                    treat_eth2_as_eth=treat_eth2_as_eth,
+                )
+            continue
+
+        if is_basis_transfer_group and len(ignored_legs) > 0:
+            skip_event_ids.update(
+                ev.identifier for ev in group_events if ev.identifier is not None
+            )
+            continue
+
+        if len(ignored_legs) > 0:
+            skip_event_ids.update(
+                ev.identifier for ev in ignored_legs if ev.identifier is not None
+            )
+
+    filtered_events = [
+        ev for ev in events
+        if ev.identifier is None or ev.identifier not in skip_event_ids
+    ]
+
+    # Build 1:1 matched exchange transfer pairs (spend_id -> receive_id) and fix clock skew.
+    events_by_id: dict[int, HistoryBaseEntry] = {
+        ev.identifier: ev for ev in filtered_events if ev.identifier is not None
+    }
+    index_by_id: dict[int, int] = {
+        ev.identifier: idx for idx, ev in enumerate(filtered_events) if ev.identifier is not None
+    }
+    adjacency: dict[int, set[int]] = {}
+    unique_edges: set[tuple[int, int]] = set()
+    for left_id, right_id in asset_movement_links:
+        if left_id == right_id:
+            continue
+        adjacency.setdefault(left_id, set()).add(right_id)
+        adjacency.setdefault(right_id, set()).add(left_id)
+        unique_edges.add((min(left_id, right_id), max(left_id, right_id)))
+
+    matched_spend_to_receive: dict[int, int] = {}
+    skewed_spends_before_receive: dict[int, list[HistoryBaseEntry]] = {}
+    moved_spend_ids: set[int] = set()
+    for a_id, b_id in sorted(unique_edges):
+        if len(adjacency.get(a_id, ())) != 1 or len(adjacency.get(b_id, ())) != 1:
+            continue
+        if (ev_a := events_by_id.get(a_id)) is None or (ev_b := events_by_id.get(b_id)) is None:
+            continue
+        if (
+            ev_a.asset.is_fiat() or
+            ev_b.asset.is_fiat() or
+            ev_a.amount <= ZERO or
+            ev_b.amount <= ZERO
+        ):
+            continue
+        dirs_a = Bucket.from_event(event=ev_a, treat_eth2_as_eth=treat_eth2_as_eth)
+        dirs_b = Bucket.from_event(event=ev_b, treat_eth2_as_eth=treat_eth2_as_eth)
+        if len(dirs_a) != 1 or len(dirs_b) != 1:
+            continue
+        dir_a, dir_b = dirs_a[0][1], dirs_b[0][1]
+        if dir_a == EventDirection.OUT and dir_b == EventDirection.IN:
+            spend_ev, receive_ev = ev_a, ev_b
+        elif dir_b == EventDirection.OUT and dir_a == EventDirection.IN:
+            spend_ev, receive_ev = ev_b, ev_a
+        else:
+            continue
+        assert spend_ev.identifier is not None
+        assert receive_ev.identifier is not None
+        matched_spend_to_receive[spend_ev.identifier] = receive_ev.identifier
+        if index_by_id[spend_ev.identifier] > index_by_id[receive_ev.identifier]:
+            moved_spend_ids.add(spend_ev.identifier)
+            skewed_spends_before_receive.setdefault(receive_ev.identifier, []).append(spend_ev)
+
+    if len(moved_spend_ids) == 0:
+        return filtered_events, matched_spend_to_receive
+
+    reordered: list[HistoryBaseEntry] = []
+    for ev in filtered_events:
+        if ev.identifier is not None and ev.identifier in moved_spend_ids:
+            continue
+        if ev.identifier is not None and (
+            skewed := skewed_spends_before_receive.get(ev.identifier)
+        ):
+            reordered.extend(skewed)
+        reordered.append(ev)
+    return reordered, matched_spend_to_receive
+
+
+def _detect_unmatched_exchange_transfer_issues(
+        database: DBHandler,
+        ignored_asset_ids: set[str],
+        ignored_action_ids: set[str],
+        asset_movement_time_range: int,
+) -> None:
+    """Surface exchange deposit/withdrawal movements lacking an `ASSET_MOVEMENT_MATCH` link."""
+    unmatched_movements, _fee_events = get_unmatched_asset_movements(database=database)
+    issues_manager = DataIssuesManager(database=database)
+    now_ms = ts_sec_to_ms(ts_now())
+    grace_window_ms = asset_movement_time_range * 1000
+    unmatched_ids: set[int] = set()
+    for movement in unmatched_movements:
+        if (
+            movement.identifier is None or
+            movement.amount <= ZERO or
+            movement.asset.identifier in ignored_asset_ids or
+            movement.group_identifier in ignored_action_ids or
+            movement.event_subtype not in {HistoryEventSubType.SPEND, HistoryEventSubType.RECEIVE}
+        ):
+            continue
+        if now_ms < movement.timestamp + grace_window_ms:
+            continue  # grace window so we don't race the automatic matcher
+
+        unmatched_ids.add(movement.identifier)
+        payload = UnmatchedExchangeTransferIssuePayload(
+            event_identifier=movement.identifier,
+            group_identifier=movement.group_identifier,
+            subtype=(
+                'spend' if movement.event_subtype == HistoryEventSubType.SPEND else 'receive'
+            ),
+            amount=str(movement.amount),
+        )
+        if movement.extra_data is not None:
+            tx_ref = (
+                movement.extra_data.get('transaction_id') or
+                movement.extra_data.get('reference')
+            )
+            if isinstance(tx_ref, str) and tx_ref != '':
+                payload['tx_ref'] = tx_ref
+            if isinstance(address := movement.extra_data.get('address'), str) and address != '':
+                payload['address'] = address
+        issues_manager.write_issue(
+            kind=IssueKind.UNMATCHED_EXCHANGE_TRANSFER,
+            location=movement.location,
+            location_label=movement.location_label,
+            protocol=None,
+            asset=movement.asset.identifier,
+            payload=payload,
+            ts_start=movement.timestamp,
+            ts_end=movement.timestamp,
+        )
+
+    issues_manager.resolve_event_issues_except(
+        kind=IssueKind.UNMATCHED_EXCHANGE_TRANSFER,
+        still_active_ids=unmatched_ids,
+    )
 
 
 def _finalize_processing(
@@ -1217,7 +1831,7 @@ def _record_failure(
     If nothing changed the events since the pass started, both modification markers are reset
     together, so that the progress the pass recorded still matches the stale marker.
     """
-    _write_invalid_amount_issues(database, cost_basis_pass.invalid_amount_issues)
+    _write_cost_basis_issues(database, cost_basis_pass)
     with database.user_write() as write_cursor:
         database.set_static_cache(
             write_cursor=write_cursor,
@@ -1264,6 +1878,13 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
 
         settings = database.get_settings(cursor)
         rules = _Rules(database=database, cursor=cursor)
+        ignored_asset_ids = database.get_ignored_asset_ids(cursor)
+        ignored_action_ids = database.get_ignored_action_ids(cursor)
+        standalone_swap_groups = _load_standalone_swap_groups(cursor)
+        asset_movement_links = cursor.execute(
+            'SELECT left_event_id, right_event_id FROM history_event_links WHERE link_type = ?',
+            (HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),),
+        ).fetchall()
         tracked_eth_accounts: set[str] = set(database.get_blockchain_accounts(cursor).eth)
         validator_types: dict[int, ValidatorType] = {
             validator_index: ValidatorType.deserialize_from_db(validator_type)
@@ -1331,17 +1952,29 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                 ('sequence_index', True),
                 ('history_events_identifier', True),
             ],
-            exclude_ignored_assets=True,
+            exclude_ignored_assets=False,
             exclude_ignored_actions=True,
             exclude_untracked_withdrawals=True,
         )
         if start_ts != 0:
             event_filter.timestamp_filter.from_ts = Timestamp(start_ts)
             event_filter.timestamp_filter.scaling_factor = None
-        events = DBHistoryEvents(database).get_history_events_internal(
+        raw_events = DBHistoryEvents(database).get_history_events_internal(
             cursor=cursor,
             filter_query=event_filter,
         )
+
+    treat_eth2_as_eth = settings.treat_eth2_as_eth
+    events, matched_spend_to_receive = _prepare_events_and_matches(
+        events=raw_events,
+        rules=rules,
+        ignored_asset_ids=ignored_asset_ids,
+        standalone_swap_groups=standalone_swap_groups,
+        asset_movement_links=asset_movement_links,
+        treat_eth2_as_eth=treat_eth2_as_eth,
+        cost_basis_pass=cost_basis_pass,
+    )
+    cost_basis_pass.matched_spend_to_receive = matched_spend_to_receive
 
     log.debug(
         'Starting cost basis processing of %s events from_ts=%s start_ts=%s',
@@ -1349,13 +1982,22 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
         from_ts,
         start_ts,
     )
-    treat_eth2_as_eth = settings.treat_eth2_as_eth
     first_batch_written, total_events = False, len(events)
+    # Suffix minimum timestamps keep checkpoint/progress timestamps strictly chronological even
+    # when clock-skewed matched transfers move a later-timestamp spend before an earlier receive.
+    min_future_ts: list[TimestampMS] = [TimestampMS(0)] * total_events
+    if total_events != 0:
+        running_min = events[-1].timestamp
+        for i in range(total_events - 1, -1, -1):
+            running_min = min(running_min, events[i].timestamp)
+            min_future_ts[i] = running_min
+    max_seen_ts = TimestampMS(0)
     send_ws_every = msg_aggregator.how_many_events_per_ws(total_events)
     interrupted_at: TimestampMS | None = None
     record_failure = True  # unless the pass ends or is cancelled
     try:
         for idx, event in enumerate(events):
+            max_seen_ts = max(max_seen_ts, event.timestamp)
             if isinstance(event, EthWithdrawalEvent) and event.is_exit_or_blocknumber == 0:
                 lookahead = idx + 1
                 while lookahead < total_events and events[lookahead].timestamp == event.timestamp:
@@ -1385,7 +2027,7 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                 )
             except (NoPriceForGivenTimestamp, RemoteError) as e:
                 log.warning('Stopping cost basis processing at event %s: %s', event.identifier, e)
-                interrupted_at = event.timestamp
+                interrupted_at = min_future_ts[idx]
                 break
 
             events_since_interval += 1
@@ -1403,11 +2045,12 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                     },
                 )
 
+            next_min_ts = min_future_ts[idx + 1] if idx + 1 < total_events else None
             if (
                 (checkpoint_ts := _checkpoint_ts(
                     cost_basis_pass=cost_basis_pass,
-                    event=event,
-                    next_event=next_event,
+                    max_seen_ts=max_seen_ts,
+                    next_min_ts=next_min_ts,
                     events_since_checkpoint=events_since_interval,
                 )) is not None or
                 len(cost_basis_pass.rows) >= COST_BASIS_BATCH_SIZE
@@ -1435,12 +2078,11 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                     if next_idx < total_events:
                         _record_progress(
                             write_cursor=write_cursor,
-                            processed_ts=events[next_idx].timestamp,
+                            processed_ts=min_future_ts[next_idx],
                             modification_ts_at_start=modification_ts_at_start,
                         )
                 first_batch_written, cost_basis_pass.rows = True, []
-                _write_invalid_amount_issues(database, cost_basis_pass.invalid_amount_issues)
-                cost_basis_pass.invalid_amount_issues = []
+                _write_cost_basis_issues(database, cost_basis_pass)
                 checkpoint()  # cancellation checkpoint of the cost basis processing loop
                 time.sleep(0)
 
@@ -1450,18 +2092,40 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                 _write_checkpoint(
                     write_cursor=write_cursor,
                     cost_basis_pass=cost_basis_pass,
-                    timestamp=TimestampMS(events[-1].timestamp + 1),
+                    timestamp=TimestampMS(max_seen_ts + 1),
                     events_since_interval=(
                         0 if events_since_interval >= COST_BASIS_CHECKPOINT_INTERVAL
                         else events_since_interval
                     ),
                     replace_timestamp=restored_terminal_ts,
                 )
-        _write_invalid_amount_issues(database, cost_basis_pass.invalid_amount_issues)
+        _write_cost_basis_issues(database, cost_basis_pass)
         if interrupted_at is None:
-            DataIssuesManager(database).resolve_event_issues_except(
+            issues_manager = DataIssuesManager(database)
+            issues_manager.resolve_event_issues_except(
                 kind=IssueKind.INVALID_EVENT_AMOUNT,
                 still_active_ids=cost_basis_pass.invalid_amount_event_ids,
+            )
+            issues_manager.resolve_event_issues_except(
+                kind=IssueKind.MISSING_PRICE,
+                still_active_ids=cost_basis_pass.missing_price_event_ids,
+                from_ts=from_ts,
+            )
+            issues_manager.resolve_event_issues_except(
+                kind=IssueKind.MISSING_COST_BASIS,
+                still_active_ids=cost_basis_pass.missing_cost_basis_event_ids,
+                from_ts=from_ts,
+            )
+            issues_manager.resolve_event_issues_except(
+                kind=IssueKind.INCOMPLETE_SWAP,
+                still_active_ids=cost_basis_pass.incomplete_swap_event_ids,
+                from_ts=from_ts,
+            )
+            _detect_unmatched_exchange_transfer_issues(
+                database=database,
+                ignored_asset_ids=ignored_asset_ids,
+                ignored_action_ids=ignored_action_ids,
+                asset_movement_time_range=settings.asset_movement_time_range,
             )
 
         _finalize_processing(

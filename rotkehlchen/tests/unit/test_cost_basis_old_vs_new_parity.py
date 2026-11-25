@@ -1984,3 +1984,148 @@ def test_eth2_accumulating_same_timestamp_withdrawal_before_request_parity(
     assert new_result['num_unpriced_events'] == 0
     state = _get_latest_checkpoint_state(database)
     assert '42' not in state.get('validator_withdrawal_requests', {})
+
+
+def test_matched_asset_movement_internal_transfer_parity(database: DBHandler) -> None:
+    """Stage 3 Fix #1 parity: a matched wallet<->exchange transfer carries over original lot
+    cost basis and acquisition timestamp matching legacy Accountant."""
+    from rotkehlchen.tasks.events import update_asset_movement_matched_event
+
+    _add_rule(database, HistoryEventType.RECEIVE, taxable=False)
+    _add_rule(database, HistoryEventType.SPEND)
+    t_buy = Timestamp(1_700_000_000)
+    t_dep_chain = Timestamp(1_700_001_000)
+    t_dep_cex = Timestamp(1_700_001_100)
+    t_sell = Timestamp(1_700_002_000)
+    price_fn = _price_lookup({
+        (A_ETH, t_buy): Price(FVal(1000)),
+        (A_ETH, t_dep_chain): Price(FVal(2500)),
+        (A_ETH, t_dep_cex): Price(FVal(2500)),
+        (A_ETH, t_sell): Price(FVal(3000)),
+    })
+
+    buy = _evm_event(at=t_buy, amount='1', event_type=HistoryEventType.RECEIVE)
+    chain_out = _evm_event(at=t_dep_chain, amount='1', event_type=HistoryEventType.SPEND)
+    cex_in = AssetMovement(
+        unique_id='kraken-parity-dep',
+        timestamp=TimestampMS(t_dep_cex * 1000),
+        location=LOCATION_KRAKEN,
+        location_label='Kraken',
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal(1),
+    )
+    cex_sell = HistoryEvent(
+        group_identifier='kraken-parity-sell',
+        sequence_index=0,
+        timestamp=TimestampMS(t_sell * 1000),
+        location=LOCATION_KRAKEN,
+        location_label='Kraken',
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal(1),
+    )
+    events_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[buy, chain_out, cex_in, cex_sell],
+        )
+    with database.conn.read_ctx() as cursor:
+        saved = events_db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+    saved_chain_out = next(ev for ev in saved if ev.timestamp == chain_out.timestamp)
+    saved_cex_in = next(ev for ev in saved if isinstance(ev, AssetMovement))
+    update_asset_movement_matched_event(
+        events_db=events_db,
+        asset_movement=saved_cex_in,
+        fee_event=None,
+        matched_event=saved_chain_out,
+        is_deposit=True,
+    )
+
+    old_totals, new_result = _execute_both_pipelines(
+        database=database,
+        price_fn=price_fn,
+        start_ts=Timestamp(t_buy - 10),
+        end_ts=Timestamp(t_sell + 10),
+    )
+    assert old_totals == (FVal(2000), ZERO)
+    _assert_pnl_parity(old_totals, new_result)
+
+
+@pytest.mark.parametrize('ignored_leg', ['spend', 'receive', 'fee'])
+def test_ignored_asset_in_swap_parity(database: DBHandler, ignored_leg: str) -> None:
+    """Stage 3 Fix #2 parity: if any leg of a swap uses an ignored asset, the entire swap group
+    is skipped in both legacy Accountant and new cost basis processing."""
+    from rotkehlchen.constants.assets import A_BTC
+
+    _add_rule(database, HistoryEventType.RECEIVE, taxable=False)
+    _add_rule(database, HistoryEventType.SPEND)
+    _add_rule(
+        database,
+        HistoryEventType.TRADE,
+        HistoryEventSubType.SPEND,
+        accounting_treatment=TxAccountingTreatment.SWAP,
+    )
+    t_buy, t_swap, t_sell = Timestamp(1_700_000_000), Timestamp(1_700_001_000), Timestamp(1_700_002_000)  # noqa: E501
+    price_fn = _price_lookup({
+        (A_ETH, t_buy): Price(FVal(1000)),
+        (A_BTC, t_buy): Price(FVal(20_000)),
+        (A_DAI, t_buy): Price(FVal(1)),
+        (A_ETH, t_swap): Price(FVal(2000)),
+        (A_BTC, t_swap): Price(FVal(25_000)),
+        (A_DAI, t_swap): Price(FVal(1)),
+        (A_ETH, t_sell): Price(FVal(3000)),
+        (A_BTC, t_sell): Price(FVal(30_000)),
+        (A_DAI, t_sell): Price(FVal(1)),
+    })
+    ignored_asset = {'spend': A_ETH, 'receive': A_BTC, 'fee': A_DAI}[ignored_leg]
+    with database.user_write() as write_cursor:
+        database.add_to_ignored_assets(write_cursor, ignored_asset)
+
+    swap_tx = make_evm_tx_hash()
+    events: list[HistoryBaseEntry] = [
+        _evm_event(at=t_buy, amount='2', asset=A_ETH, event_type=HistoryEventType.RECEIVE),
+        _evm_event(at=t_buy, amount='1', asset=A_BTC, event_type=HistoryEventType.RECEIVE),
+        _evm_event(at=t_buy, amount='10', asset=A_DAI, event_type=HistoryEventType.RECEIVE),
+        _evm_event(
+            at=t_swap,
+            amount='1',
+            asset=A_ETH,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            tx_ref=swap_tx,
+            sequence_index=0,
+        ),
+        _evm_event(
+            at=t_swap,
+            amount='0.1',
+            asset=A_BTC,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            tx_ref=swap_tx,
+            sequence_index=1,
+        ),
+        _evm_event(
+            at=t_swap,
+            amount='5',
+            asset=A_DAI,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.FEE,
+            tx_ref=swap_tx,
+            sequence_index=2,
+        ),
+        _evm_event(at=t_sell, amount='1', asset=A_ETH, event_type=HistoryEventType.SPEND),
+    ]
+    old_totals, new_result = _run_both_pipelines(
+        database=database,
+        events=events,
+        price_fn=price_fn,
+        start_ts=Timestamp(t_buy - 10),
+        end_ts=Timestamp(t_sell + 10),
+    )
+    _assert_pnl_parity(old_totals, new_result)

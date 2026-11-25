@@ -580,3 +580,173 @@ def test_resolve_unmatched_bridge_issues_except_keeps_unmatched_and_dismissed(
     assert manager.get_issue(ids[1]).state == IssueState.OPEN
     assert manager.get_issue(ids[2]).state == IssueState.RESOLVED
     assert manager.get_issue(ids[3]).state == IssueState.DISMISSED
+
+
+def test_reopen_manual_filter_disposition_and_from_ts_scoping(database: DBHandler) -> None:
+    from rotkehlchen.db.cache import DBCacheStatic
+    from rotkehlchen.db.filtering import DataIssuesFilterQuery
+    from rotkehlchen.history.data_issues.actions import build_suggested_actions
+    from rotkehlchen.history.data_issues.diagnostics import (
+        explain_data_issue,
+        serialize_issue,
+    )
+
+    manager = DataIssuesManager(database)
+    mp_id = manager.write_issue(
+        kind=IssueKind.MISSING_PRICE,
+        location=LOCATION_ETHEREUM,
+        location_label='0x0000000000000000000000000000000000000001',
+        protocol=None,
+        asset='ETH',
+        payload={
+            'event_identifier': 10,
+            'group_identifier': 'grp-mp',
+            'to_asset': 'USD',
+            'amount': '1',
+            'direction': 'spend',
+        },
+        ts_start=100_000,
+        ts_end=100_000,
+    )
+    mcb_id = manager.write_issue(
+        kind=IssueKind.MISSING_COST_BASIS,
+        location=LOCATION_ETHEREUM,
+        location_label='0x0000000000000000000000000000000000000001',
+        protocol=None,
+        asset='ETH',
+        payload={
+            'event_identifier': 11,
+            'group_identifier': 'grp-mcb',
+            'requested_amount': '3',
+            'covered_amount': '1',
+            'uncovered_amount': '2',
+            'fallback_basis': '0',
+        },
+        ts_start=200_000,
+        ts_end=200_000,
+    )
+    swap_id = manager.write_issue(
+        kind=IssueKind.INCOMPLETE_SWAP,
+        location=LOCATION_ETHEREUM,
+        location_label='0x0000000000000000000000000000000000000001',
+        protocol=None,
+        asset='ETH',
+        payload={
+            'event_identifier': 12,
+            'group_identifier': 'grp-swap',
+            'event_identifiers': [12, 13],
+            'present_legs': [{
+                'event_identifier': 12,
+                'subtype': 'spend',
+                'asset': 'ETH',
+                'amount': '1',
+            }],
+            'missing_or_excluded_reason': 'ignored_asset',
+            'excluded_assets': ['DAI'],
+        },
+        ts_start=300_000,
+        ts_end=300_000,
+    )
+    uet_id = manager.write_issue(
+        kind=IssueKind.UNMATCHED_EXCHANGE_TRANSFER,
+        location='kraken',
+        location_label='Kraken',
+        protocol=None,
+        asset='ETH',
+        payload={
+            'event_identifier': 14,
+            'group_identifier': 'grp-uet',
+            'subtype': 'spend',
+            'amount': '1',
+        },
+        ts_start=400_000,
+        ts_end=400_000,
+    )
+
+    # Top-level event_identifier, group_identifier fallback, and dynamic suggested_actions.
+    mp_issue = manager.get_issue(mp_id)
+    assert mp_issue.event_identifier == 10
+    assert mp_issue.group_identifier == 'grp-mp'
+    assert [a['action'] for a in build_suggested_actions(mp_issue)] == [
+        'set_manual_price', 'ignore_asset', 'ignore_action',
+    ]
+    mcb_actions = build_suggested_actions(manager.get_issue(mcb_id))
+    assert [a['action'] for a in mcb_actions] == [
+        'add_acquisition', 'match_transfer', 'confirm_zero_basis',
+    ]
+    assert mcb_actions[0]['params']['timestamp'] == 200_000  # milliseconds for CreateHistoryEvent
+    assert 'entry_type' in mcb_actions[0]['requires_input']
+    assert mcb_actions[1]['params'] == {'external': False}
+    assert mcb_actions[2]['params'] == {'disposition': 'confirm_zero_basis'}
+    swap_actions = build_suggested_actions(manager.get_issue(swap_id))
+    assert [a['action'] for a in swap_actions] == [
+        'ignore_group', 'unignore_asset', 'edit_event', 'dismiss_as_standalone',
+    ]
+    assert swap_actions[2]['params'] == {'identifier': 12, 'group_identifier': 'grp-swap'}
+    assert swap_actions[3]['params'] == {'disposition': 'dismiss_as_standalone'}
+    uet_actions = build_suggested_actions(manager.get_issue(uet_id))
+    assert [a['action'] for a in uet_actions] == [
+        'auto_match_exchange_transfer', 'manual_match_event', 'resolve_as_external',
+    ]
+    assert uet_actions[0]['params'] == {}
+    assert uet_actions[1]['params'] == {'asset_movement': 14, 'external': False}
+    assert len(serialize_issue(mp_issue)['suggested_actions']) == 3
+    assert explain_data_issue(database, mcb_id)['facts']['uncovered_amount'] == '2'
+    assert explain_data_issue(database, swap_id)['facts']['excluded_assets'] == ['DAI']
+    assert explain_data_issue(database, uet_id)['facts']['subtype'] == 'spend'
+
+    # retry_auto_remediation accepts UNMATCHED_EXCHANGE_TRANSFER.
+    retrying, scheduled = manager.retry_auto_remediation(uet_id)
+    assert scheduled is True
+    assert retrying.state == IssueState.AUTO_REMEDIATING
+
+    # resolve_manually with disposition + manual_only filter.
+    confirmed = manager.resolve_manually(
+        mcb_id,
+        note='zero cost airdrop',
+        disposition='confirm_zero_basis',
+    )
+    assert confirmed.payload['resolution'] == {
+        'manual': True,
+        'disposition': 'confirm_zero_basis',
+        'note': 'zero cost airdrop',
+    }
+    assert build_suggested_actions(confirmed) == []
+
+    # Auto-resolved issue must NOT appear in manual_only=True.
+    manager.resolve_event_issues_except(
+        kind=IssueKind.MISSING_PRICE,
+        still_active_ids=set(),
+        from_ts=200_000,  # mp_id is at 100_000 -> untouched!
+    )
+    assert manager.get_issue(mp_id).state == IssueState.OPEN
+    manager.resolve_event_issues_except(
+        kind=IssueKind.MISSING_PRICE,
+        still_active_ids=set(),
+        from_ts=100_000,  # now resolved automatically
+    )
+    assert manager.get_issue(mp_id).state == IssueState.RESOLVED
+
+    manual_only_rows = manager.list_issues(DataIssuesFilterQuery.make(manual_only=True))
+    assert [row.id for row in manual_only_rows] == [mcb_id]
+
+    # Reopen from RESOLVED and DISMISSED, and confirm cost-basis staleness on INCOMPLETE_SWAP.
+    reopened_mcb = manager.reopen(mcb_id)
+    assert reopened_mcb.state == IssueState.OPEN
+    assert reopened_mcb.resolved_at is None
+    assert 'resolution' not in reopened_mcb.payload
+    with pytest.raises(InputError):
+        manager.reopen(mcb_id)
+
+    manager.dismiss(swap_id)
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE name = ?',
+            (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value,),
+        )
+    reopened_swap = manager.reopen(swap_id)
+    assert reopened_swap.state == IssueState.OPEN
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor, DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == '300000'

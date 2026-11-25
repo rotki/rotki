@@ -70,7 +70,11 @@ TRIAL_SNAPSHOT_KEYS: Final = (
     'movement_ids',
     'window_fingerprint',
 )
-REMEDIATED_ISSUE_KINDS: Final = (IssueKind.NEGATIVE_BALANCE, IssueKind.CURRENT_BALANCE_MISMATCH)
+REMEDIATED_ISSUE_KINDS: Final = (
+    IssueKind.NEGATIVE_BALANCE,
+    IssueKind.CURRENT_BALANCE_MISMATCH,
+    IssueKind.UNMATCHED_EXCHANGE_TRANSFER,
+)
 
 type AssetsInCollectionCache = dict[str, tuple[Asset, ...]]
 
@@ -384,19 +388,37 @@ def _pick_causal_movement(
 
 
 def _issue_cutoff_ts(issue: DataIssue) -> TimestampMS:
-    if issue.kind == IssueKind.NEGATIVE_BALANCE:
+    if issue.kind in {IssueKind.NEGATIVE_BALANCE, IssueKind.UNMATCHED_EXCHANGE_TRANSFER}:
         return TimestampMS(issue.ts_end)
     return ts_sec_to_ms(Timestamp(issue.payload['queried_at_ts']))
 
 
 def _issue_still_reproduces(cursor: DBCursor, issue: DataIssue, tolerance: FVal) -> bool:
-    """Whether the up to date balances still show what the issue reported.
+    """Whether the up to date balances or links still show what the issue reported.
 
     A negative balance is gone once its event got a balance in the bucket: the engine writes
     none for the event that takes a bucket below zero, nor for any event after it. A current
     balance mismatch is gone once the bucket's latest balance is within tolerance of the
-    observed one. Callers must first make sure no stale balances marker is pending.
+    observed one. An unmatched exchange transfer is gone once its event has an
+    ``ASSET_MOVEMENT_MATCH`` link (or is no longer an unmatched asset movement).
+    Callers must first make sure no stale balances marker is pending.
     """
+    if issue.kind == IssueKind.UNMATCHED_EXCHANGE_TRANSFER:
+        event_id = (
+            issue.event_identifier
+            if issue.event_identifier is not None
+            else issue.payload['event_identifier']
+        )
+        return cursor.execute(
+            'SELECT 1 FROM history_event_links '
+            'WHERE link_type = ? AND (left_event_id = ? OR right_event_id = ?) LIMIT 1',
+            (
+                HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),
+                event_id,
+                event_id,
+            ),
+        ).fetchone() is None
+
     bucket_filter = 'metric_key = ? AND location = ? AND location_label IS ? AND protocol IS ? AND asset = ?'  # noqa: E501
     bucket_bindings = (
         EventMetricKey.BALANCE.serialize(),
@@ -576,6 +598,16 @@ class CexOnchainMatchingStrategy(BaseRemediationStrategy):
         )
 
     def _get_candidate_movements(self, issue: DataIssue) -> list[AssetMovement]:
+        if issue.kind == IssueKind.UNMATCHED_EXCHANGE_TRANSFER:
+            target_id = (
+                issue.event_identifier
+                if issue.event_identifier is not None
+                else issue.payload.get('event_identifier')
+            )
+            return [
+                movement for movement, _ in self.unmatched_movements
+                if movement.identifier == target_id
+            ]
         return [
             movement for movement, assets_in_collection in self.unmatched_movements
             if _movement_may_explain_issue(
@@ -812,7 +844,11 @@ class CexOnchainMatchingStrategy(BaseRemediationStrategy):
     ) -> set[int]:
         """Record pending verification on every issue whose failing bucket/event was affected."""
         affected_buckets = self._get_affected_buckets_for_matches(cursor, matched_movements)
-        if len(affected_buckets) == 0:
+        matched_ids = {
+            movement.identifier for movement in matched_movements
+            if movement.identifier is not None
+        }
+        if len(affected_buckets) == 0 and len(matched_ids) == 0:
             return set()
 
         candidate_issues = DataIssuesManager(self.database).list_issues(DataIssuesFilterQuery.make(
@@ -826,18 +862,26 @@ class CexOnchainMatchingStrategy(BaseRemediationStrategy):
                 candidate_issue.id != trigger_issue.id
             ):
                 continue
-            issue_bucket = make_bucket_key(
-                location=candidate_issue.location,
-                location_label=candidate_issue.location_label,
-                protocol=candidate_issue.protocol,
-                asset=candidate_issue.asset,
-            )
-            cutoff = _issue_cutoff_ts(candidate_issue)
-            matching_movement_ids = {
-                movement_id
-                for bucket_key, event_ts, movement_id in affected_buckets
-                if bucket_key == issue_bucket and event_ts <= cutoff
-            }
+            if candidate_issue.kind == IssueKind.UNMATCHED_EXCHANGE_TRANSFER:
+                target_id = (
+                    candidate_issue.event_identifier
+                    if candidate_issue.event_identifier is not None
+                    else candidate_issue.payload.get('event_identifier')
+                )
+                matching_movement_ids = {target_id} if target_id in matched_ids else set()
+            else:
+                issue_bucket = make_bucket_key(
+                    location=candidate_issue.location,
+                    location_label=candidate_issue.location_label,
+                    protocol=candidate_issue.protocol,
+                    asset=candidate_issue.asset,
+                )
+                cutoff = _issue_cutoff_ts(candidate_issue)
+                matching_movement_ids = {
+                    movement_id
+                    for bucket_key, event_ts, movement_id in affected_buckets
+                    if bucket_key == issue_bucket and event_ts <= cutoff
+                }
             if len(matching_movement_ids) == 0:
                 continue
 
@@ -953,10 +997,13 @@ class CexOnchainMatchVerificationStrategy(BaseRemediationStrategy):
                     ),
                 )
 
-            if self.database.get_static_cache(
-                cursor=cursor,
-                name=DBCacheStatic.STALE_BALANCES_FROM_TS,
-            ) is not None:
+            if (
+                issue.kind != IssueKind.UNMATCHED_EXCHANGE_TRANSFER and
+                self.database.get_static_cache(
+                    cursor=cursor,
+                    name=DBCacheStatic.STALE_BALANCES_FROM_TS,
+                ) is not None
+            ):
                 return self._still_pending(issue, pending)
 
             still_reproduces = _issue_still_reproduces(

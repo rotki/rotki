@@ -491,3 +491,108 @@ def run_data_issue_remediation(
                     )
         finally:
             _send_remediation_phase(database, PHASE_COMPLETED)
+
+
+def _fail_unmatched_exchange_transfer_remediation(
+        issues_manager: DataIssuesManager,
+        issue_id: int,
+        reason: str,
+) -> None:
+    """Move an `UNMATCHED_EXCHANGE_TRANSFER` issue out of `AUTO_REMEDIATING` on abort/failure."""
+    from contextlib import suppress
+
+    from rotkehlchen.errors.misc import InputError, NotFoundError
+
+    with suppress(NotFoundError, InputError):
+        issues_manager.update_state(
+            issue_id=issue_id,
+            state=IssueState.UNRESOLVED,
+            attempt={
+                'attribution': 'strategy_failed',
+                'strategy': 'cex_onchain_matching',
+                'success': False,
+                'reason': reason,
+                'timestamp': ts_now(),
+            },
+            expected_state=IssueState.AUTO_REMEDIATING,
+        )
+
+
+def retry_unmatched_exchange_transfer_issue(
+        database: DBHandler,
+        chains_aggregator: ChainsAggregator,
+        issue_id: int,
+) -> None:
+    """Run CEX movement matching and verification for a single `UNMATCHED_EXCHANGE_TRANSFER` issue.
+
+    Called when the user or an agent explicitly retries auto-remediation for an unmatched
+    exchange transfer issue (already moved into `AUTO_REMEDIATING` by `retry_auto_remediation`).
+    """
+    issues_manager = DataIssuesManager(database)
+    issue = issues_manager.get_issue(issue_id)
+    if issue.kind != IssueKind.UNMATCHED_EXCHANGE_TRANSFER:
+        return
+
+    if not has_premium_capability(
+        premium=chains_aggregator.premium,
+        capability_name=ASSET_MOVEMENT_MATCHING_CAPABILITY,
+    ):
+        issues_manager.update_state(
+            issue_id=issue_id,
+            state=IssueState.UNRESOLVED,
+            attempt={
+                'attribution': 'missing_capability',
+                'strategy': 'cex_onchain_matching',
+                'success': False,
+                'reason': 'Automatic exchange transfer matching requires premium',
+                'timestamp': ts_now(),
+            },
+            expected_state=IssueState.AUTO_REMEDIATING,
+        )
+        return
+
+    try:
+        RemediationPipeline(
+            manager=issues_manager,
+            strategies=(CexOnchainMatchingStrategy(database),),
+        ).run(issue)
+        refreshed = issues_manager.get_issue(issue_id)
+        reprocess_balances_for_pending_matches(
+            database=database,
+            chains_aggregator=chains_aggregator,
+            issues=(refreshed,),
+        )
+        RemediationPipeline(
+            manager=issues_manager,
+            strategies=(CexOnchainMatchVerificationStrategy(database),),
+        ).run(issues_manager.get_issue(issue_id))
+        final_issue = issues_manager.get_issue(issue_id)
+        if final_issue.state == IssueState.AUTO_REMEDIATING:
+            _fail_unmatched_exchange_transfer_remediation(
+                issues_manager=issues_manager,
+                issue_id=issue_id,
+                reason='No eligible unmatched exchange transfer found to match',
+            )
+        with database.conn.read_ctx() as cursor:
+            cost_basis_stale = database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            ) is not None
+        if cost_basis_stale:
+            from rotkehlchen.tasks.cost_basis import process_cost_basis
+
+            process_cost_basis(database=database, msg_aggregator=database.msg_aggregator)
+    except TaskCancelledError:
+        _fail_unmatched_exchange_transfer_remediation(
+            issues_manager=issues_manager,
+            issue_id=issue_id,
+            reason='processing_cancelled',
+        )
+        raise
+    except Exception:  # remediation state must recover from any failure
+        _fail_unmatched_exchange_transfer_remediation(
+            issues_manager=issues_manager,
+            issue_id=issue_id,
+            reason='processing_failed',
+        )
+        raise

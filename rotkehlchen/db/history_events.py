@@ -868,7 +868,23 @@ class DBHistoryEvents:
         """Restore multiple history events to their original backed-up state in bulk.
         Events without a backup are silently skipped.
         """
+        min_restored_ts: int | None = None
         for chunk, placeholders in get_query_chunks(identifiers):
+            # Capture timestamps of events that actually have a backup before replacing them so
+            # balances and cost basis are marked stale from the earliest restored timestamp.
+            if (ts_row := write_cursor.execute(
+                'SELECT MIN(ts) FROM ('
+                f'SELECT timestamp AS ts FROM history_events_backup WHERE identifier IN ({placeholders}) '  # noqa: E501
+                'UNION ALL '
+                'SELECT he.timestamp AS ts FROM history_events AS he '
+                'JOIN history_events_backup AS b ON b.identifier = he.identifier '
+                f'WHERE he.identifier IN ({placeholders})'
+                ')',
+                (*chunk, *chunk),
+            ).fetchone()) is not None and ts_row[0] is not None:
+                min_restored_ts = (
+                    ts_row[0] if min_restored_ts is None else min(min_restored_ts, ts_row[0])
+                )
             # Replacing an event deletes its row first, which cascades all its mappings away.
             # Keep them so that state such as the CSV import marker survives the restore.
             # Callers drop the mappings the restore is meant to undo (e.g. MATCHED).
@@ -911,6 +927,11 @@ class DBHistoryEvents:
                     notes=notes,
                     decoded_addresses=None,  # re-derived from the restored notes
                 )
+        if min_restored_ts is not None:
+            mark_stale_from_ts(
+                write_cursor=write_cursor,
+                from_ts=TimestampMS(min_restored_ts),
+            )
 
     def restore_matched_events_before_purge(
             self,
@@ -1157,6 +1178,8 @@ class DBHistoryEvents:
         new_address = (
             str(address) if (address := getattr(event, 'address', None)) is not None else None
         )
+        old_matched_movement = (old_extra_data or {}).get('matched_asset_movement')
+        new_matched_movement = (event.extra_data or {}).get('matched_asset_movement')
         if (
             old_data[:7] == (
                 event.timestamp,
@@ -1174,11 +1197,26 @@ class DBHistoryEvents:
                 new_address,
             ) and
             old_btc_notes == new_btc_notes and
-            (old_extra_data or {}).get('liquidity_pool') == (event.extra_data or {}).get('liquidity_pool')  # noqa: E501
+            (old_extra_data or {}).get('liquidity_pool') == (event.extra_data or {}).get('liquidity_pool') and  # noqa: E501
+            old_matched_movement == new_matched_movement
         ):
             return
 
         min_ts = min(old_data[0], event.timestamp)
+        if old_matched_movement != new_matched_movement:
+            linked_groups = [
+                group_id
+                for matched in (old_matched_movement, new_matched_movement)
+                if isinstance(matched, dict) and isinstance(group_id := matched.get('group_identifier'), str)  # noqa: E501
+            ]
+            if len(linked_groups) > 0:
+                placeholders = ','.join('?' * len(linked_groups))
+                row = write_cursor.execute(
+                    f'SELECT MIN(timestamp) FROM history_events WHERE group_identifier IN ({placeholders})',  # noqa: E501
+                    linked_groups,
+                ).fetchone()
+                if row is not None and row[0] is not None:
+                    min_ts = min(min_ts, row[0])
         self._mark_events_modified(write_cursor=write_cursor, timestamp=min_ts)
 
     @staticmethod
