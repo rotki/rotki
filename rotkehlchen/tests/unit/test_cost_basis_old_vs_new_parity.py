@@ -984,6 +984,156 @@ def test_eth2_accumulating_validator_requested_partial_withdrawal_parity(
     assert new_result['num_unpriced_events'] == 0
 
 
+@pytest.mark.parametrize('taxable_after_withdrawal', [True, False])
+def test_eth2_accumulating_validator_skimming_withdrawal_parity(
+        database: DBHandler,
+        taxable_after_withdrawal: bool,
+) -> None:
+    """A 0x02 skimming withdrawal with no EIP-7002 request is taxable income in both pipelines,
+    while a matched requested partial withdrawal on the same validator stays principal."""
+    with database.user_write() as write_cursor:
+        database.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.ETHEREUM,
+                address=TEST_ADDR1,
+            )],
+        )
+        DBEth2(database).add_or_update_validators(
+            write_cursor=write_cursor,
+            validators=[ValidatorDetails(
+                validator_index=42,
+                public_key=Eth2PubKey('0x' + 'cc' * 48),
+                validator_type=ValidatorType.ACCUMULATING,
+                ownership_proportion=FVal(1),
+                withdrawal_address=TEST_ADDR1,
+                activation_timestamp=Timestamp(SHAPPELA_TIMESTAMP - 10_000),
+            )],
+        )
+
+    t_skim = Timestamp(SHAPPELA_TIMESTAMP + 100)
+    t_req = Timestamp(SHAPPELA_TIMESTAMP + 150)
+    t_partial = Timestamp(SHAPPELA_TIMESTAMP + 200)
+    prices = {
+        (A_ETH, t_skim): Price(FVal(2000)),
+        (A_ETH, t_partial): Price(FVal(2500)),
+    }
+
+    def price_fn(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        return prices[from_asset, timestamp]
+
+    events: list[HistoryBaseEntry] = [
+        # Skimming withdrawal (0.05 ETH @ 2000 = 100 taxable when enabled) with no request
+        EthWithdrawalEvent(
+            validator_index=42,
+            timestamp=ts_sec_to_ms(t_skim),
+            amount=FVal('0.05'),
+            withdrawal_address=TEST_ADDR1,
+            is_exit=False,
+        ),
+        # EIP-7002 partial withdrawal request for 5 ETH of principal
+        EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=0,
+            timestamp=ts_sec_to_ms(t_req),
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_ETH,
+            amount=FVal(5),
+            location_label=TEST_ADDR1,
+            counterparty=CPT_ETH2,
+            extra_data={'validator_index': 42},
+        ),
+        # Matched 5 ETH requested partial withdrawal: principal, 0 income
+        EthWithdrawalEvent(
+            validator_index=42,
+            timestamp=ts_sec_to_ms(t_partial),
+            amount=FVal(5),
+            withdrawal_address=TEST_ADDR1,
+            is_exit=False,
+        ),
+    ]
+
+    old_totals, new_result = _run_both_pipelines(
+        database=database,
+        events=events,
+        price_fn=price_fn,
+        start_ts=Timestamp(SHAPPELA_TIMESTAMP),
+        end_ts=Timestamp(SHAPPELA_TIMESTAMP + 1000),
+        eth_staking_taxable_after_withdrawal_enabled=taxable_after_withdrawal,
+    )
+    expected = FVal(100) if taxable_after_withdrawal else ZERO
+    assert old_totals == (expected, ZERO)
+    _assert_pnl_parity(old_totals, new_result)
+    assert new_result['num_unpriced_events'] == 0
+
+
+def test_eth2_bls_and_unknown_validator_withdrawal_parity(database: DBHandler) -> None:
+    """A validator still stored as BLS (0x00) books partial withdrawals as income just like
+    legacy, while a withdrawal for a validator missing from eth2_validators realizes nothing."""
+    with database.user_write() as write_cursor:
+        database.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.ETHEREUM,
+                address=TEST_ADDR1,
+            )],
+        )
+        DBEth2(database).add_or_update_validators(
+            write_cursor=write_cursor,
+            validators=[ValidatorDetails(
+                validator_index=42,
+                public_key=Eth2PubKey('0x' + 'dd' * 48),
+                validator_type=ValidatorType.BLS,
+                ownership_proportion=FVal(1),
+                withdrawal_address=TEST_ADDR1,
+                activation_timestamp=Timestamp(SHAPPELA_TIMESTAMP - 10_000),
+            )],
+        )
+
+    t_bls = Timestamp(SHAPPELA_TIMESTAMP + 100)
+    t_unknown = Timestamp(SHAPPELA_TIMESTAMP + 200)
+    prices = {
+        (A_ETH, t_bls): Price(FVal(2000)),
+        (A_ETH, t_unknown): Price(FVal(2500)),
+    }
+
+    def price_fn(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        return prices[from_asset, timestamp]
+
+    events: list[HistoryBaseEntry] = [
+        # Validator stored as BLS (0x00): 0.05 ETH @ 2000 = 100 taxable
+        EthWithdrawalEvent(
+            validator_index=42,
+            timestamp=ts_sec_to_ms(t_bls),
+            amount=FVal('0.05'),
+            withdrawal_address=TEST_ADDR1,
+            is_exit=False,
+        ),
+        # Validator not present in eth2_validators: 0 income in both pipelines
+        EthWithdrawalEvent(
+            validator_index=999,
+            timestamp=ts_sec_to_ms(t_unknown),
+            amount=FVal('0.1'),
+            withdrawal_address=TEST_ADDR1,
+            is_exit=False,
+        ),
+    ]
+
+    old_totals, new_result = _run_both_pipelines(
+        database=database,
+        events=events,
+        price_fn=price_fn,
+        start_ts=Timestamp(SHAPPELA_TIMESTAMP),
+        end_ts=Timestamp(SHAPPELA_TIMESTAMP + 1000),
+        eth_staking_taxable_after_withdrawal_enabled=True,
+    )
+    assert old_totals == (FVal(100), ZERO)
+    _assert_pnl_parity(old_totals, new_result)
+    assert new_result['num_unpriced_events'] == 0
+
+
 def test_multi_bucket_intentional_divergence_vs_global_pot(database: DBHandler) -> None:
     """Deliberate difference (#2438): new cost basis tracks lots per bucket, not globally."""
     _add_rule(database, HistoryEventType.RECEIVE, taxable=False)

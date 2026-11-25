@@ -31,7 +31,7 @@ from rotkehlchen.api.websockets.typedefs import (
     WSMessageType,
 )
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
-from rotkehlchen.chain.ethereum.modules.eth2.constants import MIN_EFFECTIVE_BALANCE
+from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, MIN_EFFECTIVE_BALANCE
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorType
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.concurrency import TaskCancelledError, checkpoint
@@ -39,7 +39,12 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH2, A_KFEE
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.filtering import AccountingRulesFilterQuery, HistoryEventFilterQuery
+from rotkehlchen.db.filtering import (
+    AccountingRulesFilterQuery,
+    EthWithdrawalFilterQuery,
+    EvmEventFilterQuery,
+    HistoryEventFilterQuery,
+)
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.cause import TRANSIENT_FAILURE_CAUSES
 from rotkehlchen.errors.misc import RemoteError
@@ -169,6 +174,7 @@ class _CostBasisPass:
             stored_basis: dict[int, FVal],
             tracked_eth_accounts: set[str] | None = None,
             validator_types: dict[int, ValidatorType] | None = None,
+            accumulating_requested_withdrawal_ids: set[int] | None = None,
     ) -> None:
         self.settings = settings
         self.rules = rules
@@ -176,6 +182,10 @@ class _CostBasisPass:
         self.stored_basis = stored_basis
         self.tracked_eth_accounts = tracked_eth_accounts
         self.validator_types = validator_types
+        self.accumulating_requested_withdrawal_ids = (
+            set() if accumulating_requested_withdrawal_ids is None
+            else accumulating_requested_withdrawal_ids
+        )
         self.method = settings.cost_basis_method.serialize()
         self.profit_currency = settings.main_currency.resolve_to_asset_with_oracles()
         self.lots = BucketLots[Bucket](settings)
@@ -434,14 +444,22 @@ class _CostBasisPass:
             )
 
         if isinstance(event, EthWithdrawalEvent):
-            if (
-                event.is_exit_or_blocknumber == 0 and
-                event.amount < MIN_EFFECTIVE_BALANCE and
-                (
-                    self.validator_types is None or
-                    self.validator_types.get(event.validator_index) == ValidatorType.DISTRIBUTING
-                )
-            ):
+            if event.is_exit_or_blocknumber != 0:
+                return False
+
+            validator_type: ValidatorType | None = (
+                ValidatorType.DISTRIBUTING if self.validator_types is None
+                else self.validator_types.get(event.validator_index)
+            )
+            if validator_type is None:
+                return False
+
+            if validator_type == ValidatorType.ACCUMULATING:
+                if event.identifier in self.accumulating_requested_withdrawal_ids:
+                    return False
+                return self.settings.eth_staking_taxable_after_withdrawal_enabled
+
+            if event.amount < MIN_EFFECTIVE_BALANCE:
                 return self.settings.eth_staking_taxable_after_withdrawal_enabled
             return False
 
@@ -1128,6 +1146,66 @@ def _record_failure(
             )
 
 
+def _get_accumulating_requested_withdrawal_ids(
+        cursor: DBCursor,
+        database: DBHandler,
+        validator_types: dict[int, ValidatorType],
+) -> set[int]:
+    """Return identifiers of 0x02 partial withdrawals matched by an EIP-7002 request.
+
+    Mirrors `DBEth2.process_accumulating_validators_balances_and_pnl()` so matched partial
+    withdrawals are treated as principal (non-taxable) while unmatched skimming withdrawals
+    remain taxable income.
+    """
+    accumulating_indices = {
+        v_idx for v_idx, v_type in validator_types.items()
+        if v_type == ValidatorType.ACCUMULATING
+    }
+    if len(accumulating_indices) == 0:
+        return set()
+
+    events_db = DBHistoryEvents(database)
+    requests_by_validator: dict[int, list[tuple[TimestampMS, FVal]]] = {}
+    for request_event in events_db.get_history_events_internal(
+        cursor=cursor,
+        filter_query=EvmEventFilterQuery.make(
+            event_types=[HistoryEventType.INFORMATIONAL],
+            event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
+            counterparties=[CPT_ETH2],
+            order_by_rules=[('timestamp', False)],
+        ),
+    ):
+        if (
+            request_event.extra_data is not None and
+            (v_index := request_event.extra_data.get('validator_index')) in accumulating_indices
+        ):
+            requests_by_validator.setdefault(v_index, []).append(
+                (request_event.timestamp, request_event.amount),
+            )
+
+    if len(requests_by_validator) == 0:
+        return set()
+
+    matched_ids: set[int] = set()
+    for withdrawal in events_db.get_history_events_internal(
+        cursor=cursor,
+        filter_query=EthWithdrawalFilterQuery.make(
+            validator_indices=list(requests_by_validator),
+            order_by_rules=[('timestamp', True)],
+        ),
+    ):
+        if withdrawal.is_exit_or_blocknumber != 0 or withdrawal.identifier is None:
+            continue
+        requests = requests_by_validator.get(withdrawal.validator_index, [])
+        for idx, (req_ts, req_amount) in enumerate(requests):
+            if req_ts <= withdrawal.timestamp and req_amount == withdrawal.amount:
+                matched_ids.add(withdrawal.identifier)
+                requests.pop(idx)
+                break
+
+    return matched_ids
+
+
 @skip_if_running
 def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) -> bool:
     """Materialize the cost basis of the history events that are stale.
@@ -1164,6 +1242,11 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                 'WHERE validator_index IS NOT NULL',
             )
         }
+        accumulating_requested_withdrawal_ids = _get_accumulating_requested_withdrawal_ids(
+            cursor=cursor,
+            database=database,
+            validator_types=validator_types,
+        )
         from_ts: TimestampMS | None = None
         if (
             unprocessed_from_ts > 0 and
@@ -1182,6 +1265,7 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             stored_basis={},
             tracked_eth_accounts=tracked_eth_accounts,
             validator_types=validator_types,
+            accumulating_requested_withdrawal_ids=accumulating_requested_withdrawal_ids,
         )
         start_ts = TimestampMS(0)
         restored_terminal_ts: TimestampMS | None = None
