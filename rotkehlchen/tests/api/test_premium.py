@@ -1134,3 +1134,36 @@ def test_automatic_upload_checks_setting_under_lock(rotkehlchen_api_server: APIS
         assert rotki.premium_sync_manager.maybe_upload_data_to_server() == (False, None)
 
     query.assert_not_called()
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('db_settings', [{'premium_should_sync': True}])
+def test_delete_remote_backup_forgets_upload_ts_under_lock(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Once the server deleted the backup, the remembered upload time is cleared before
+    anything else can fail, while the upload lock is still held"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+    sync_manager = rotki.premium_sync_manager
+    sync_manager.last_remote_data_upload_ts = 1337
+    upload_ts_under_lock = []
+
+    def failing_setting_write(value: bool) -> None:
+        upload_ts_under_lock.append((sync_manager.last_remote_data_upload_ts, sync_manager.upload_lock.locked()))  # noqa: E501
+        raise sqlite3.OperationalError('disk I/O error')
+
+    with (
+        patch.object(
+            rotki.premium.session,
+            'delete',
+            return_value=MockResponse(HTTPStatus.OK, '{"success": true}'),
+        ),
+        patch.object(sync_manager, '_set_premium_should_sync', side_effect=failing_setting_write),
+        pytest.raises(sqlite3.OperationalError),
+    ):
+        sync_manager.delete_remote_backup(data_hash='abc', disable_sync=True)
+
+    assert upload_ts_under_lock == [(0, True)]
+    assert sync_manager.last_remote_data_upload_ts == 0
+    assert sync_manager.upload_lock.locked() is False

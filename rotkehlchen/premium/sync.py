@@ -560,6 +560,8 @@ class PremiumSyncManager:
                     raise
                 log.info('The premium backup to delete is already gone from the rotki server')
 
+            # Under the lock, like an upload's own update, and before anything else can fail
+            self.last_remote_data_upload_ts = 0
             with self.data.db.conn.read_ctx() as cursor:
                 should_sync = self.data.db.get_setting(cursor, name='premium_should_sync')
             if disable_sync and should_sync:
@@ -569,7 +571,6 @@ class PremiumSyncManager:
             self.upload_lock.release()
 
         log.info('Deleted the premium backup from the rotki server')
-        self.last_remote_data_upload_ts = 0
         return should_sync
 
     def _set_premium_should_sync(self, value: bool) -> None:
