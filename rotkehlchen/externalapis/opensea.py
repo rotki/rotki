@@ -1,6 +1,7 @@
 import dataclasses
 import logging
 import re
+from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
@@ -15,7 +16,7 @@ from rotkehlchen.constants.assets import A_ETH, A_USD
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -130,7 +131,10 @@ class NFT(NamedTuple):
 
 
 class Opensea(ExternalServiceWithApiKey):
-    """https://docs.opensea.io/reference/api-overview"""
+    """https://docs.opensea.io/reference/api-overview
+
+    OpenSea answers no query without an API key, so none is made without one.
+    """
     def __init__(
             self,
             database: DBHandler,
@@ -144,7 +148,6 @@ class Opensea(ExternalServiceWithApiKey):
             'Content-Type': 'application/json',
         })
         self.collections: dict[str, Collection] = {}
-        self.backup_key: str | None = None
         self.ethereum_inquirer = ethereum_inquirer
         self.eth_asset = ethereum_inquirer.native_token
 
@@ -154,10 +157,18 @@ class Opensea(ExternalServiceWithApiKey):
             options: dict[str, Any] | None = None,
             timeout: tuple[int, int] | None = None,
     ) -> dict[str, Any]:
-        """May raise RemoteError"""
-        api_key = self._get_api_key()
-        if api_key is not None:
-            self.session.headers.update({'X-API-KEY': api_key})
+        """Query OpenSea, retrying with backoff only when rate limited or the server failed.
+
+        May raise:
+        - APIKeyNotAvailable if no OpenSea API key is set.
+        - RemoteError if the query fails, including when OpenSea rejects the key.
+        """
+        if (api_key := self._get_api_key()) is None:
+            raise APIKeyNotAvailable(
+                'An OpenSea API key is needed to query NFTs. Add one in the API keys settings.',
+            )
+
+        self.session.headers.update({'X-API-KEY': api_key})
 
         if endpoint == 'collectionstats':
             query_str = f'https://api.opensea.io/api/v2/collections/{options["name"]}/stats'  # type: ignore
@@ -186,11 +197,17 @@ class Opensea(ExternalServiceWithApiKey):
                     f'Opensea API request {query_str} failed due to {e!s}',
                 ) from e
 
-            if response.status_code != 200:
-                if api_key is None and self.backup_key is None:
-                    self.backup_key = '04ea654d84cd4b2b8da25ec41ca1a9a4'
-                    self.session.headers.update({'X-API-KEY': self.backup_key})
+            if response.status_code == HTTPStatus.UNAUTHORIZED:
+                raise RemoteError(
+                    f'Opensea API request {response.url} rejected the API key with HTTP status '
+                    f'code {response.status_code}. It may have expired, so check it in the API '
+                    f'keys settings.',
+                )
 
+            if (
+                response.status_code == HTTPStatus.TOO_MANY_REQUESTS or
+                response.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
+            ):
                 log.debug(
                     f'Got {response.status_code} response from opensea. Will backoff for {backoff} seconds',  # noqa: E501
                 )

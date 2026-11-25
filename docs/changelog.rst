@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` NFT balances no longer spend half a minute retrying and then fail when no OpenSea API key is set. OpenSea now needs your own key, which can be added in the API keys settings.
 * :bug:`-` The ETH staking page no longer takes minutes to load while querying block productions.
 * :bug:`-` In the desktop app, a website open in your browser can no longer make rotki delete files from the system temp directory, or write a balance snapshot or PnL report export into a folder of its choosing.
 * :bug:`-` Curve CryptoSwap v1 (Tricrypto) pool deposits, withdrawals (including via zap contracts), and swaps, as well as 3-asset and Stableswap-NG imbalanced withdrawals, are now properly decoded.
