@@ -209,6 +209,12 @@ class DBEth2:
                 'UPDATE eth2_validators SET exited_timestamp=? WHERE validator_index=?',
                 (exit_ts, index),
             )
+            if is_accounting_update_enabled():
+                mark_stale_from_ts(
+                    write_cursor=write_cursor,
+                    from_ts=TimestampMS(latest_result[1]),
+                    include_balances=False,
+                )
 
     def add_or_update_validators_except_ownership(
             self,
