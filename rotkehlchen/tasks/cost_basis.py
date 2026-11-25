@@ -127,11 +127,11 @@ COST_BASIS_CHECKPOINT_INTERVAL: Final = 10_000
 ASSET_MOVEMENT_TRANSIT_LOCATION: Final = 'asset_movement_match'
 
 
-def _asset_movement_transit_bucket(match_id: int) -> Bucket:
+def _asset_movement_transit_bucket(match_key: str) -> Bucket:
     """Internal in-flight lot bucket for a matched exchange transfer group."""
     return Bucket(
         location=ASSET_MOVEMENT_TRANSIT_LOCATION,
-        location_label=f'match:{match_id}',
+        location_label=f'match:{match_key}',
         protocol=None,
         asset='transit',
     )
@@ -139,7 +139,7 @@ def _asset_movement_transit_bucket(match_id: int) -> Bucket:
 
 class _AssetMovementMatch(NamedTuple):
     """A validated connected component of ASSET_MOVEMENT_MATCH linked events."""
-    match_id: int
+    match_key: str
     out_ids: tuple[int, ...]
     in_ids: tuple[int, ...]
     in_move_amounts: tuple[tuple[int, FVal], ...]
@@ -151,7 +151,7 @@ class _AssetMovementMatch(NamedTuple):
 
     @property
     def transit_bucket(self) -> Bucket:
-        return _asset_movement_transit_bucket(self.match_id)
+        return _asset_movement_transit_bucket(self.match_key)
 
     def move_amount_for_in(self, in_event_id: int) -> FVal:
         for ev_id, amount in self.in_move_amounts:
@@ -198,9 +198,7 @@ def _load_asset_movement_matches(
         return {}
 
     ignored_actions = {
-        row[0] for row in cursor.execute(
-            "SELECT value FROM multisettings WHERE name='ignored_action'",
-        )
+        row[0] for row in cursor.execute('SELECT identifier FROM ignored_actions')
     }
     matches: dict[int, _AssetMovementMatch] = {}
     visited: set[int] = set()
@@ -285,8 +283,12 @@ def _load_asset_movement_matches(
                 in_move_amounts.append((ev_id, next_cum_out - prev_cum_out))
                 prev_cum_out = next_cum_out
 
+        # Encode full OUT and IN membership so adding or removing any leg changes the transit
+        # bucket key and forces checkpoints spanning the match to step back.
+        out_key = ','.join(str(ev_id) for ev_id in out_ids)
+        in_key = ','.join(str(ev_id) for ev_id in in_ids)
         match = _AssetMovementMatch(
-            match_id=min(component),
+            match_key=f'{out_key}->{in_key}',
             out_ids=tuple(out_ids),
             in_ids=in_ids,
             in_move_amounts=tuple(in_move_amounts),
@@ -1157,6 +1159,12 @@ class _CostBasisPass:
                         treat_eth2_as_eth=treat_eth2_as_eth,
                     )
             self._skipped_match_out_ids.add(out_id)
+
+        if transit in self.blocked_buckets:
+            if is_last_in:
+                self.lots.drop_bucket(transit)
+                self.blocked_buckets.discard(transit)
+            return
 
         move_amount = match.move_amount_for_in(event.identifier)
         _moved, lot_ids, basis = self.move_lots(
