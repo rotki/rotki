@@ -66,7 +66,6 @@ from rotkehlchen.concurrency.cancellation import (
 )
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
-    A_1INCH,
     A_AAVE,
     A_AVAX,
     A_BNB,
@@ -81,6 +80,7 @@ from rotkehlchen.constants.assets import (
     A_KFEE,
     A_LINK,
     A_OP,
+    A_UNI,
     A_USD,
     A_USDC,
     A_USDT,
@@ -1059,21 +1059,25 @@ def test_special_price_cached_for_non_usd_target(inquirer: Inquirer) -> None:
     assert second[token] == first[token]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_asset_with_no_api_oracles(inquirer_defi):
     """
     Test that uniswap oracles correctly query USD price of assets
+
+    The responses are recorded, since live pool reserves change: 1INCH's V2 pool dropped below the
+    oracle's minimum and failed this test. The asset needs a V2 pool with enough reserves.
     """
-    price = inquirer_defi.find_usd_price(A_1INCH, ignore_cache=True)
+    price = inquirer_defi.find_usd_price(A_UNI, ignore_cache=True)
     inquirer_defi.set_oracles_order(
         oracles=[CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.CRYPTOCOMPARE],
     )
-    price_uni_v2 = inquirer_defi.find_usd_price(A_1INCH, ignore_cache=True)
+    price_uni_v2 = inquirer_defi.find_usd_price(A_UNI, ignore_cache=True)
     inquirer_defi.set_oracles_order(
         oracles=[CurrentPriceOracle.UNISWAPV3, CurrentPriceOracle.CRYPTOCOMPARE],
     )
-    price_uni_v3 = inquirer_defi.find_usd_price(A_1INCH, ignore_cache=True)
+    price_uni_v3 = inquirer_defi.find_usd_price(A_UNI, ignore_cache=True)
 
     assert price != ZERO_PRICE
     assert price != price_uni_v2
