@@ -13,6 +13,7 @@ const SERVICE_ICONS: Record<SuppressibleMissingKeyService, string> = {
   [SuppressibleMissingKeyService.BLOCKSCOUT]: getPublicServiceImagePath('blockscout.svg'),
   [SuppressibleMissingKeyService.ETHERSCAN]: getPublicServiceImagePath('etherscan.svg'),
   [SuppressibleMissingKeyService.HELIUS]: getPublicServiceImagePath('helius.svg'),
+  [SuppressibleMissingKeyService.OPENSEA]: getPublicServiceImagePath('opensea.svg'),
   [SuppressibleMissingKeyService.THEGRAPH]: getPublicServiceImagePath('thegraph.svg'),
 };
 

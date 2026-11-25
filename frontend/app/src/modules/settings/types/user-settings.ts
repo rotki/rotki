@@ -26,6 +26,7 @@ export const SuppressibleMissingKeyService = {
   BLOCKSCOUT: 'blockscout',
   ETHERSCAN: 'etherscan',
   HELIUS: 'helius',
+  OPENSEA: 'opensea',
   THEGRAPH: 'thegraph',
 } as const;
 
@@ -34,6 +35,7 @@ export const SuppressibleMissingKeyServiceEnum = z.enum([
   SuppressibleMissingKeyService.BLOCKSCOUT,
   SuppressibleMissingKeyService.ETHERSCAN,
   SuppressibleMissingKeyService.HELIUS,
+  SuppressibleMissingKeyService.OPENSEA,
   SuppressibleMissingKeyService.THEGRAPH,
 ]);
 

@@ -50,6 +50,7 @@ from rotkehlchen.tests.utils.database import (
     maybe_include_blockscout_key,
     maybe_include_cryptocompare_key,
     maybe_include_etherscan_key,
+    maybe_include_opensea_key,
     mock_db_schema_sanity_check,
     perform_new_db_unlock_actions,
     run_no_db_upgrades,
@@ -353,6 +354,7 @@ def initialize_mock_rotkehlchen_instance(
         include_etherscan_key,
         include_beaconchain_key,
         include_cryptocompare_key,
+        include_opensea_key,
         include_blockscout_key,
         should_mock_price_queries,
         mocked_price_queries,
@@ -420,6 +422,7 @@ def initialize_mock_rotkehlchen_instance(
         maybe_include_etherscan_key(rotki.data.db, include_etherscan_key)
         maybe_include_beaconchain_key(rotki.data.db, include_beaconchain_key)
         maybe_include_cryptocompare_key(rotki.data.db, include_cryptocompare_key)
+        maybe_include_opensea_key(rotki.data.db, include_opensea_key)
         maybe_include_blockscout_key(rotki.data.db, include_blockscout_key)
         if add_accounts_to_db is True:
             add_blockchain_accounts_to_db(rotki.data.db, blockchain_accounts)
@@ -626,6 +629,7 @@ def fixture_rotkehlchen_api_server(
         include_etherscan_key,
         include_beaconchain_key,
         include_cryptocompare_key,
+        include_opensea_key,
         include_blockscout_key,
         should_mock_price_queries,
         mocked_price_queries,
@@ -690,6 +694,7 @@ def fixture_rotkehlchen_api_server(
         include_etherscan_key=include_etherscan_key,
         include_beaconchain_key=include_beaconchain_key,
         include_cryptocompare_key=include_cryptocompare_key,
+        include_opensea_key=include_opensea_key,
         include_blockscout_key=include_blockscout_key,
         should_mock_price_queries=should_mock_price_queries,
         mocked_price_queries=mocked_price_queries,
@@ -793,6 +798,7 @@ def rotkehlchen_instance(
         include_etherscan_key,
         include_beaconchain_key,
         include_cryptocompare_key,
+        include_opensea_key,
         include_blockscout_key,
         should_mock_price_queries,
         mocked_price_queries,
@@ -846,6 +852,7 @@ def rotkehlchen_instance(
         include_etherscan_key=include_etherscan_key,
         include_beaconchain_key=include_beaconchain_key,
         include_cryptocompare_key=include_cryptocompare_key,
+        include_opensea_key=include_opensea_key,
         include_blockscout_key=include_blockscout_key,
         should_mock_price_queries=should_mock_price_queries,
         mocked_price_queries=mocked_price_queries,

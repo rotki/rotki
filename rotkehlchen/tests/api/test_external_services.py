@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('include_cryptocompare_key', [False])
 @pytest.mark.parametrize('include_beaconchain_key', [False])
 @pytest.mark.parametrize('include_blockscout_key', [False])
+@pytest.mark.parametrize('include_opensea_key', [False])
 def test_add_get_external_service(rotkehlchen_api_server: APIServer) -> None:
     """Tests that adding and retrieving external service credentials works"""
     # With no data an empty response should be returned
@@ -99,6 +100,22 @@ def test_etherscan_re_enabled(rotkehlchen_api_server: APIServer) -> None:
         assert EvmIndexer.ETHERSCAN in chain_manager.node_inquirer.available_indexers
 
 
+@pytest.mark.parametrize('ethereum_modules', [['nfts']])
+def test_opensea_key_change_takes_effect_at_once(rotkehlchen_api_server: APIServer) -> None:
+    """A new OpenSea key is used at once and a rejection of it is reported again, instead of
+    the old key being used for two more minutes with its rejection warning already given."""
+    assert (nft_module := rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.get_module('nfts')) is not None  # noqa: E501
+    assert (opensea := nft_module.opensea)._get_api_key() == 'test-opensea-key'
+    opensea.maybe_warn_missing_key(reason='key_not_usable')
+
+    assert_proper_sync_response_with_result(requests.put(
+        api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
+        json={'services': [{'name': 'opensea', 'api_key': 'new-opensea-key'}]},
+    ))
+    assert opensea._get_api_key() == 'new-opensea-key'
+    assert opensea.warned_reasons == set()
+
+
 def test_helius_key_syncs_solana_rpc_node(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     node_inquirer = rotki.chains_aggregator.solana.node_inquirer
@@ -160,6 +177,7 @@ def test_helius_key_syncs_solana_rpc_node(rotkehlchen_api_server: APIServer) -> 
 @pytest.mark.parametrize('include_etherscan_key', [False])
 @pytest.mark.parametrize('include_beaconchain_key', [False])
 @pytest.mark.parametrize('include_blockscout_key', [False])
+@pytest.mark.parametrize('include_opensea_key', [False])
 def test_delete_external_service(rotkehlchen_api_server: APIServer) -> None:
     """Tests that delete external service credentials works"""
     # Add some data and see that the response shows they are added

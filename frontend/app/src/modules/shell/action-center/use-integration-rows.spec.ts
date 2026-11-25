@@ -136,6 +136,29 @@ describe('modules/shell/action-center/use-integration-rows', () => {
       expect(row.description).toBe('action_center.rows.integrations.missing_api_key.description_blockscout_rejected::Base, Blockscout');
     });
 
+    it('should tell a user without an OpenSea key what goes stale, and offer a key link or silence', () => {
+      raiseMissingKey('opensea');
+      const row = onlyRow();
+
+      expect(row.description).toBe('action_center.rows.integrations.missing_api_key.description_opensea::Opensea');
+      expect(row.urgency).toBe(ActionUrgency.DECISION);
+      expect(row.options.map(({ id }) => id)).toEqual(['get-key', 'do-not-show-again']);
+      expect(option(row, 'get-key').target).toEqual({ kind: 'external', url: externalLinks.openSeaApiKeyReference });
+    });
+
+    it('should say a refused OpenSea key may have expired, and still let the user silence it', () => {
+      set(savedKeys, { opensea: 'expired-key' });
+      useRaisedConditionsStore().raise({ keyRejected: true, kind: RaisedConditionKind.MISSING_API_KEY, service: 'opensea' });
+      const row = onlyRow();
+
+      expect(row.description).toBe('action_center.rows.integrations.missing_api_key.description_opensea_rejected::Opensea');
+      expect(row.options.map(({ id }) => id)).toEqual(['get-key', 'do-not-show-again']);
+
+      set(suppressedServices, ['opensea']);
+
+      expect(get(rows())).toEqual([]);
+    });
+
     it('should take a row down once its service is suppressed, even one raised before', () => {
       raiseMissingKey('helius');
       const result = rows();

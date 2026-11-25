@@ -86,6 +86,16 @@ function getBeaconchainRegisterUrl(): ExternalUrl {
   };
 }
 
+function getOpenseaRegisterUrl(): ExternalUrl {
+  return {
+    external: externalLinks.openSeaApiKeyReference,
+    route: {
+      name: '/api-keys/external/',
+      query: { service: 'opensea' },
+    },
+  };
+}
+
 function getSochainRegisterUrl(): ExternalUrl {
   return {
     external: externalLinks.sochainApiKey,
@@ -113,6 +123,8 @@ export function getServiceRegisterUrl(service: string): ExternalUrl | undefined 
       return getHeliusRegisterUrl();
     case 'beaconchain':
       return getBeaconchainRegisterUrl();
+    case 'opensea':
+      return getOpenseaRegisterUrl();
     case 'sochain':
       return getSochainRegisterUrl();
     default:

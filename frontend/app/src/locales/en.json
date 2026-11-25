@@ -548,6 +548,8 @@
           "description_blockscout_rejected": "The saved {service} key was refused for {location}: it may be invalid, expired, out of quota, or on a plan that does not cover it. Update the key, or put another indexer first.",
           "description_etherscan": "{service} runs without a key of your own, which may slow down queries. Add a key, or put another indexer first.",
           "description_helius": "Solana transaction queries are slow without a {service} key.",
+          "description_opensea": "NFT prices, images and collection details come from {service} and are not updated without a key. NFTs found in your transactions still show, without a price. Add a key, or choose not to be asked again.",
+          "description_opensea_rejected": "The saved {service} key was refused, maybe because it expired, so NFT prices, images and collection details are not updated. Update the key, or choose not to be asked again.",
           "description_sochain_rejected": "The saved {service} key was refused, so {location} balances are queried from Dogechain. It may be invalid or expired. Update the key, or delete it to use {service} without one.",
           "description_thegraph": "{location} data cannot be queried without a {service} key authorized for it.",
           "do_not_show_again": "Do not show again",
