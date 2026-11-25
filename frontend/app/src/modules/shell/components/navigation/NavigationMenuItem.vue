@@ -31,15 +31,16 @@ const subMenuExpanded = ref<boolean>(false);
 
 const submenuWrapperStyle = computed(() => get(subMenuExpanded) ? { height: `${get(innerHeight)}px` } : {});
 
+const { start: scrollIntoViewSoon } = useTimeoutFn(() => {
+  get(outer)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}, 150, { immediate: false });
+
 function toggleExpand(): void {
   const newState = !get(subMenuExpanded);
   set(subMenuExpanded, newState);
 
-  if (newState) {
-    setTimeout(() => {
-      get(outer)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 150);
-  }
+  if (newState)
+    scrollIntoViewSoon();
 }
 
 function onBodyClick(): void {

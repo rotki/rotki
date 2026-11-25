@@ -55,13 +55,14 @@ watch(search, (value) => {
   set(loading, !!value);
 });
 
+const { start: focusInputSoon } = useTimeoutFn(() => {
+  get(input)?.focus?.();
+}, 100, { immediate: false });
+
 watch(open, (isOpen) => {
   nextTick(() => {
-    if (isOpen) {
-      setTimeout(() => {
-        get(input)?.focus?.();
-      }, 100);
-    }
+    if (isOpen)
+      focusInputSoon();
     set(selected, undefined);
     set(search, '');
   });

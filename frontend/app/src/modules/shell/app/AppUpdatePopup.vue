@@ -15,14 +15,16 @@ const { downloadUpdate, installUpdate, isPackaged } = useInterop();
 
 const { t } = useI18n({ useScope: 'global' });
 
+const { start: resetAfterDismiss } = useTimeoutFn(() => {
+  set(error, '');
+  set(downloading, false);
+  set(downloadReady, false);
+  set(percentage, 0);
+}, 400, { immediate: false });
+
 function dismiss() {
   set(showUpdatePopup, false);
-  setTimeout(() => {
-    set(error, '');
-    set(downloading, false);
-    set(downloadReady, false);
-    set(percentage, 0);
-  }, 400);
+  resetAfterDismiss();
 }
 
 async function update() {

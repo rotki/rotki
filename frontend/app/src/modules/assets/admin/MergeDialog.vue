@@ -82,9 +82,11 @@ async function merge(): Promise<void> {
   }
 }
 
+const { start: resetAfterClose } = useTimeoutFn(() => reset(), 100, { immediate: false });
+
 function input(value: boolean): void {
   set(display, value);
-  setTimeout(reset, 100);
+  resetAfterClose();
 }
 
 watch([display, () => propSourceIdentifier, () => propTargetIdentifier], ([isDisplayed, propSource, propTarget]) => {
