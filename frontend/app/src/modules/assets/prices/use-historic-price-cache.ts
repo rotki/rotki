@@ -128,6 +128,15 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
     }, WAVE_GRACE_MS);
   }
 
+  /** Closes the umbrella now, so a session starting within its grace period opens its own. */
+  function closeWave(): void {
+    if (!wave)
+      return;
+    clearTimeout(wave.closing);
+    wave.close();
+    wave = undefined;
+  }
+
   async function fetchHistoricPrices(keys: string[]): ReturnType<Parameters<typeof createItemCache<BigNumber>>[0]> {
     const assetsTimestamp = keys.map((key) => {
       const [from, timestamp] = key.split('#');
@@ -252,7 +261,10 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
   watch(currencySymbol, discardPricesInOldCurrency);
 
   /** The cache lives outside the store state, so the store reset at logout does not reach it. */
-  onSessionCleared('historic-price-cache', reset);
+  onSessionCleared('historic-price-cache', () => {
+    closeWave();
+    reset();
+  });
 
   return {
     cache,

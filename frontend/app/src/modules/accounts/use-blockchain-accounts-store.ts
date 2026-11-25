@@ -1,5 +1,6 @@
 import type { AccountPayload, Accounts, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { onSessionCleared } from '@/modules/core/session/session-lifecycle';
 import { removeTags, renameTags } from '@/modules/tags/tag-utils';
 
 export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () => {
@@ -8,6 +9,8 @@ export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () 
   const revisions = ref<Record<string, number>>({});
   /** Chains whose accounts read failed, so they never got a key in {@link accounts}. */
   const failedChains = ref<Set<string>>(new Set());
+  /** The timers that expire {@link recentlyAddedAddresses}, cleared with the session they belong to. */
+  const addedAddressTimers = new Set<ReturnType<typeof setTimeout>>();
 
   const revisionOf = (chain: string): number => get(revisions)[chain] ?? 0;
 
@@ -100,12 +103,21 @@ export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () 
     addresses.forEach(a => current.add(a));
     set(recentlyAddedAddresses, current);
 
-    setTimeout(() => {
+    const timer = setTimeout(() => {
+      addedAddressTimers.delete(timer);
       const updated = new Set(get(recentlyAddedAddresses));
       addresses.forEach(a => updated.delete(a));
       set(recentlyAddedAddresses, updated);
     }, ttl);
+    addedAddressTimers.add(timer);
   };
+
+  // A timer left from the last session would expire addresses the next one added again
+  onSessionCleared('recently-added-addresses', () => {
+    addedAddressTimers.forEach(clearTimeout);
+    addedAddressTimers.clear();
+    set(recentlyAddedAddresses, new Set());
+  });
 
   return {
     accounts,

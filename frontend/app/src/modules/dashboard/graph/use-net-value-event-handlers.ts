@@ -192,11 +192,9 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
    * click that merely ended a drag read it as false and act as an ordinary click. The delay only
    * has to outlast that dispatch.
    */
-  function clearDragAfterClickIsDispatched(): void {
-    setTimeout(() => {
-      set(isDragging, false);
-    }, DRAG_FLAG_CLEAR_DELAY_MS);
-  }
+  const { start: clearDragAfterClickIsDispatched } = useTimeoutFn(() => {
+    set(isDragging, false);
+  }, DRAG_FLAG_CLEAR_DELAY_MS, { immediate: false });
 
   /**
    * Handles clicks on the container, separating a single click from a double one.
@@ -285,6 +283,8 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     };
   }
 
+  const { start: activateZoomToolSoon } = useTimeoutFn((activate: () => void) => activate(), 300, { immediate: false });
+
   function setupZoomToolHandler(): void {
     const instance = get(chartInstance)?.chart;
     if (!instance) {
@@ -300,7 +300,7 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
 
       instance.off('finished', activateZoomTool);
     };
-    setTimeout(activateZoomTool, 300);
+    activateZoomToolSoon(activateZoomTool);
     instance.on('finished', activateZoomTool);
   }
 
