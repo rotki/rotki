@@ -874,12 +874,18 @@ class Rotkehlchen:
         self.chains_aggregator.deactivate_premium_status()
 
     def activate_premium_status(self, premium: Premium) -> None:
-        """Activate premium in the current session if was deactivated"""
+        """Activate premium in the current session if was deactivated.
+
+        The hourly premium check calls this after every successful check, so the remote backup
+        is only read when premium was actually off, not on every check.
+        """
+        was_inactive = self.premium_sync_manager.premium is None
         self.premium = premium
         self.premium_sync_manager.premium = self.premium
         self.accountant.activate_premium_status(self.premium)
         self.chains_aggregator.activate_premium_status(self.premium)
-        self.premium_sync_manager.refresh_remote_backup_info()
+        if was_inactive:
+            self.premium_sync_manager.refresh_remote_backup_info()
 
     def delete_premium_credentials(self) -> tuple[bool, str]:
         """Deletes the premium credentials for rotki"""

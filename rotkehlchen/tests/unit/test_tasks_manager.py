@@ -783,9 +783,15 @@ def test_check_premium_status(rotkehlchen_api_server, username):
         task_manager.last_premium_status_check = ts_now() - PREMIUM_STATUS_CHECK
         task_manager._maybe_check_premium_status()
 
-    with patch(
-        'rotkehlchen.db.dbhandler.DBHandler.get_rotkehlchen_premium',
-        MagicMock(return_value=premium_credentials),
+    with (
+        patch(
+            'rotkehlchen.db.dbhandler.DBHandler.get_rotkehlchen_premium',
+            MagicMock(return_value=premium_credentials),
+        ),
+        patch(  # premium coming back reads the remote backup, which must not reach the network
+            'rotkehlchen.premium.premium.Premium.query_last_data_metadata',
+            MagicMock(return_value=mock_remote_metadata),
+        ) as query_metadata,
     ):
         assert premium.is_active() is True
         assert rotki.premium is not None
@@ -803,6 +809,7 @@ def test_check_premium_status(rotkehlchen_api_server, username):
                 'Premium object is None and Periodic check'
                 "didn't reactivate the premium status"
             )
+            query_metadata.assert_called_once()  # by the reactivation, not every check
 
         with patch(
             'rotkehlchen.premium.premium.Premium.authenticate_device',

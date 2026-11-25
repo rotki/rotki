@@ -63,17 +63,22 @@ describe('modules/shell/cloud-sync/use-remote-backup-check', () => {
     expect(fetchRemoteBackup).toHaveBeenCalledTimes(2);
   });
 
-  it('should not ask again within the hour after a failed check', async () => {
-    fetchRemoteBackup.mockRejectedValue(new Error('unreachable'));
+  it('should ask again on the next opening after a failed check, which learned nothing', async () => {
+    fetchRemoteBackup.mockRejectedValueOnce(new Error('unreachable'));
     const { lastDataUpload } = storeToRefs(useSessionMetadataStore());
-    const { checking, checkIfUnknown } = useRemoteBackupCheck();
+    const { checkFailed, checking, checkIfUnknown } = useRemoteBackupCheck();
 
     await checkIfUnknown();
-    await checkIfUnknown();
 
-    expect(fetchRemoteBackup).toHaveBeenCalledOnce();
-    expect(get(lastDataUpload)).toBe(0);
+    expect(get(checkFailed)).toBe(true);
     expect(get(checking)).toBe(false);
+    expect(get(lastDataUpload)).toBe(0);
+
+    await checkIfUnknown();
+
+    expect(fetchRemoteBackup).toHaveBeenCalledTimes(2);
+    expect(get(checkFailed)).toBe(false);
+    expect(get(lastDataUpload)).toBe(1760882460);
   });
 
   it('should report checking while the server is asked', async () => {
