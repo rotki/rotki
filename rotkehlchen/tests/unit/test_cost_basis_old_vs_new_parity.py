@@ -16,6 +16,7 @@ from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAcc
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_EUR, A_KFEE, A_USD, A_WETH
 from rotkehlchen.db.accounting_rules import DBAccountingRules
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -1171,3 +1172,316 @@ def test_multi_bucket_intentional_divergence_vs_global_pot(database: DBHandler) 
     assert old_totals == (FVal(3000), ZERO)
     assert FVal(new_result['total_realized_pnl']) == FVal(1000)
     assert FVal(new_result['total_taxfree_pnl']) == ZERO
+
+
+def test_eth_account_tracking_flip_invalidates_cost_basis_and_updates_pnl(
+        database: DBHandler,
+) -> None:
+    """Adding or removing an ETH account after a pass marks cost basis stale from its earliest
+    EthBlockEvent/EthWithdrawalEvent and updates realized PnL to match legacy."""
+    with database.user_write() as write_cursor:
+        database.set_settings(
+            write_cursor,
+            ModifiableDBSettings(
+                main_currency=A_USD.resolve_to_asset_with_oracles(),
+                cost_basis_method=CostBasisMethod.FIFO,
+                eth_staking_taxable_after_withdrawal_enabled=True,
+            ),
+        )
+        DBEth2(database).add_or_update_validators(
+            write_cursor=write_cursor,
+            validators=[ValidatorDetails(
+                validator_index=42,
+                public_key=Eth2PubKey('0x' + 'ee' * 48),
+                validator_type=ValidatorType.DISTRIBUTING,
+                ownership_proportion=FVal(1),
+                withdrawal_address=TEST_ADDR1,
+                activation_timestamp=Timestamp(SHAPPELA_TIMESTAMP - 10_000),
+            )],
+        )
+
+    t_block = Timestamp(SHAPPELA_TIMESTAMP + 100)
+    t_wd = Timestamp(SHAPPELA_TIMESTAMP + 200)
+    start_ts = Timestamp(SHAPPELA_TIMESTAMP)
+    end_ts = Timestamp(SHAPPELA_TIMESTAMP + 1000)
+    prices = {
+        (A_ETH, t_block): Price(FVal(2000)),
+        (A_ETH, t_wd): Price(FVal(2500)),
+    }
+
+    def price_fn(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        return prices[from_asset, timestamp]
+
+    events: list[HistoryBaseEntry] = [
+        # Block reward (0.1 ETH @ 2000 = 200) to cold address TEST_ADDR1 (untracked initially)
+        EthBlockEvent(
+            validator_index=42,
+            timestamp=ts_sec_to_ms(t_block),
+            amount=FVal('0.1'),
+            fee_recipient=TEST_ADDR1,
+            fee_recipient_tracked=False,
+            block_number=17_000_001,
+            is_mev_reward=False,
+        ),
+        # Partial withdrawal (0.05 ETH @ 2500 = 125) to cold address TEST_ADDR1 (no EVM txs)
+        EthWithdrawalEvent(
+            validator_index=42,
+            timestamp=ts_sec_to_ms(t_wd),
+            amount=FVal('0.05'),
+            withdrawal_address=TEST_ADDR1,
+            is_exit=False,
+        ),
+    ]
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=events)
+
+    pnl_filter = HistoryEventFilterQuery.make(
+        from_ts=start_ts,
+        to_ts=end_ts,
+        exclude_ignored_assets=True,
+        exclude_ignored_actions=True,
+        exclude_untracked_withdrawals=True,
+    )
+
+    def _run_pass_and_query() -> tuple[tuple[FVal, FVal], dict[str, Any]]:
+        with (
+            patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as new_historian,
+            patch('rotkehlchen.accounting.pot.PriceHistorian') as old_historian,
+        ):
+            new_historian.return_value.query_historical_price = price_fn
+            old_historian.return_value.query_historical_price = price_fn
+            assert process_cost_basis(database, database.msg_aggregator) is True
+            new_result = query_realized_pnl(
+                database=database,
+                filter_query=pnl_filter,
+                group_by=RealizedPnlGroupBy.ASSET,
+            )
+            with database.conn.read_ctx() as cursor:
+                db_events = DBHistoryEvents(database).get_history_events_internal(
+                    cursor=cursor,
+                    filter_query=HistoryEventFilterQuery.make(
+                        from_ts=Timestamp(0),
+                        to_ts=end_ts,
+                        exclude_untracked_withdrawals=True,
+                    ),
+                    aggregate_by_group_ids=False,
+                )
+            db_events.sort(key=lambda x: (x.timestamp, x.group_identifier, x.sequence_index))
+            premium = MagicMock()
+            premium.is_active.return_value = True
+            accountant = Accountant(
+                db=database,
+                msg_aggregator=database.msg_aggregator,
+                chains_aggregator=_make_chains_aggregator_stub(),
+                premium=premium,
+            )
+            accountant.process_history(start_ts=start_ts, end_ts=end_ts, events=db_events)
+            old_pnls = accountant.pots[0].pnls
+            return (old_pnls.taxable, old_pnls.free), new_result
+
+    # Pass 1: TEST_ADDR1 untracked -> 0 income, not stale
+    old_totals, new_result = _run_pass_and_query()
+    assert old_totals == (ZERO, ZERO)
+    _assert_pnl_parity(old_totals, new_result)
+    assert new_result['stale'] is False
+
+    # Add TEST_ADDR1 as tracked ETH account -> stale from earliest block/withdrawal event (t_block)
+    with database.user_write() as write_cursor:
+        database.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.ETHEREUM,
+                address=TEST_ADDR1,
+            )],
+        )
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor, DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == str(ts_sec_to_ms(t_block))
+    assert query_realized_pnl(
+        database=database, filter_query=pnl_filter, group_by=RealizedPnlGroupBy.ASSET,
+    )['stale'] is True
+
+    # Pass 2: TEST_ADDR1 tracked -> 200 + 125 = 325 income, not stale
+    old_totals, new_result = _run_pass_and_query()
+    assert old_totals == (FVal(325), ZERO)
+    _assert_pnl_parity(old_totals, new_result)
+    assert new_result['stale'] is False
+
+    # Remove TEST_ADDR1 -> stale from earliest block/withdrawal event (t_block)
+    with database.user_write() as write_cursor:
+        database.remove_single_blockchain_accounts(
+            write_cursor=write_cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            accounts=[TEST_ADDR1],
+        )
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor, DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == str(ts_sec_to_ms(t_block))
+    assert query_realized_pnl(
+        database=database, filter_query=pnl_filter, group_by=RealizedPnlGroupBy.ASSET,
+    )['stale'] is True
+
+    # Pass 3: TEST_ADDR1 untracked again -> 0 income, not stale
+    old_totals, new_result = _run_pass_and_query()
+    assert old_totals == (ZERO, ZERO)
+    _assert_pnl_parity(old_totals, new_result)
+    assert new_result['stale'] is False
+
+
+def test_eth2_validator_changes_invalidate_cost_basis_and_update_pnl(
+        database: DBHandler,
+) -> None:
+    """Adding a validator, changing validator_type between 0x01 and 0x02, and deleting a validator
+    after a pass each mark cost basis stale from its earliest withdrawal and update realized PnL."""  # noqa: E501
+    pubkey = Eth2PubKey('0x' + 'ff' * 48)
+    with database.user_write() as write_cursor:
+        database.set_settings(
+            write_cursor,
+            ModifiableDBSettings(
+                main_currency=A_USD.resolve_to_asset_with_oracles(),
+                cost_basis_method=CostBasisMethod.FIFO,
+                eth_staking_taxable_after_withdrawal_enabled=True,
+            ),
+        )
+        database.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.ETHEREUM,
+                address=TEST_ADDR1,
+            )],
+        )
+
+    t_req = Timestamp(SHAPPELA_TIMESTAMP + 150)
+    t_wd = Timestamp(SHAPPELA_TIMESTAMP + 200)
+    start_ts = Timestamp(SHAPPELA_TIMESTAMP)
+    end_ts = Timestamp(SHAPPELA_TIMESTAMP + 1000)
+    prices = {(A_ETH, t_wd): Price(FVal(2000))}
+
+    def price_fn(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        return prices[from_asset, timestamp]
+
+    events: list[HistoryBaseEntry] = [
+        # EIP-7002 partial withdrawal request for 5 ETH of principal
+        EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=0,
+            timestamp=ts_sec_to_ms(t_req),
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_ETH,
+            amount=FVal(5),
+            location_label=TEST_ADDR1,
+            counterparty=CPT_ETH2,
+            extra_data={'validator_index': 42},
+        ),
+        # 5 ETH partial withdrawal (taxable as 0x01 distributing, principal as 0x02 accumulating)
+        EthWithdrawalEvent(
+            validator_index=42,
+            timestamp=ts_sec_to_ms(t_wd),
+            amount=FVal(5),
+            withdrawal_address=TEST_ADDR1,
+            is_exit=False,
+        ),
+    ]
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=events)
+
+    pnl_filter = HistoryEventFilterQuery.make(
+        from_ts=start_ts,
+        to_ts=end_ts,
+        exclude_ignored_assets=True,
+        exclude_ignored_actions=True,
+        exclude_untracked_withdrawals=True,
+    )
+
+    def _run_pass_and_query() -> dict[str, Any]:
+        with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as new_historian:
+            new_historian.return_value.query_historical_price = price_fn
+            assert process_cost_basis(database, database.msg_aggregator) is True
+        return query_realized_pnl(
+            database=database,
+            filter_query=pnl_filter,
+            group_by=RealizedPnlGroupBy.ASSET,
+        )
+
+    # Pass 1: validator not in eth2_validators -> 0 income
+    result = _run_pass_and_query()
+    assert result['stale'] is False
+    assert FVal(result['total_realized_pnl']) == ZERO
+
+    # Add validator as 0x01 DISTRIBUTING -> stale from earliest withdrawal (t_wd)
+    dbeth2 = DBEth2(database)
+    with database.user_write() as write_cursor:
+        dbeth2.add_or_update_validators(
+            write_cursor=write_cursor,
+            validators=[ValidatorDetails(
+                validator_index=42,
+                public_key=pubkey,
+                validator_type=ValidatorType.DISTRIBUTING,
+                ownership_proportion=FVal(1),
+                withdrawal_address=TEST_ADDR1,
+                activation_timestamp=Timestamp(SHAPPELA_TIMESTAMP - 10_000),
+            )],
+        )
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor, DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == str(ts_sec_to_ms(t_wd))
+
+    # Pass 2: 5 ETH @ 2000 = 10_000 distributing income
+    result = _run_pass_and_query()
+    assert result['stale'] is False
+    assert FVal(result['total_realized_pnl']) == FVal(10_000)
+
+    # Change validator_type 0x01 -> 0x02 ACCUMULATING -> stale from t_wd
+    with database.user_write() as write_cursor:
+        dbeth2.add_or_update_validators_except_ownership(
+            write_cursor=write_cursor,
+            validators=[ValidatorDetails(
+                validator_index=42,
+                public_key=pubkey,
+                validator_type=ValidatorType.ACCUMULATING,
+                ownership_proportion=FVal(1),
+                withdrawal_address=TEST_ADDR1,
+                activation_timestamp=Timestamp(SHAPPELA_TIMESTAMP - 10_000),
+            )],
+        )
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor, DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == str(ts_sec_to_ms(t_wd))
+
+    # Pass 3: matched EIP-7002 partial withdrawal reclassified as principal -> 0 income
+    result = _run_pass_and_query()
+    assert result['stale'] is False
+    assert FVal(result['total_realized_pnl']) == ZERO
+
+    # Change validator_type back 0x02 -> 0x01 -> 10_000 income again
+    with database.user_write() as write_cursor:
+        dbeth2.add_or_update_validators(
+            write_cursor=write_cursor,
+            validators=[ValidatorDetails(
+                validator_index=42,
+                public_key=pubkey,
+                validator_type=ValidatorType.DISTRIBUTING,
+                ownership_proportion=FVal(1),
+                withdrawal_address=TEST_ADDR1,
+                activation_timestamp=Timestamp(SHAPPELA_TIMESTAMP - 10_000),
+            )],
+        )
+    result = _run_pass_and_query()
+    assert result['stale'] is False
+    assert FVal(result['total_realized_pnl']) == FVal(10_000)
+
+    # Delete validator -> stale from t_wd and PnL drops back to 0
+    dbeth2.delete_validators([42])
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor, DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == str(ts_sec_to_ms(t_wd))
+    result = _run_pass_and_query()
+    assert result['stale'] is False
+    assert FVal(result['total_realized_pnl']) == ZERO
