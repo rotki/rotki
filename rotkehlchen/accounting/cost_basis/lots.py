@@ -279,3 +279,20 @@ class BucketLots[K: Hashable]:
             (lot.remaining_amount for lot in manager.get_acquisitions()),
             start=ZERO,
         )
+
+    def has_bucket(self, bucket: K) -> bool:
+        """Whether the bucket currently exists in the lot table."""
+        return bucket in self._buckets
+
+    def buckets(self) -> tuple[K, ...]:
+        """All buckets currently present in the lot table."""
+        return tuple(self._buckets)
+
+    def drop_bucket(self, bucket: K) -> None:
+        """Unconditionally remove a bucket from the lot table."""
+        self._buckets.pop(bucket, None)
+
+    def drop_empty(self, bucket: K) -> None:
+        """Remove a bucket once all its lots have been consumed, keeping checkpoints compact."""
+        if bucket in self._buckets and self.amount_remaining(bucket) == ZERO:
+            self._buckets.pop(bucket, None)

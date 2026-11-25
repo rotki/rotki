@@ -16,8 +16,10 @@ of the PnL report are not applied.
 import json
 import logging
 import time
+from collections import defaultdict, deque
 from itertools import starmap
-from typing import TYPE_CHECKING, Final
+from operator import itemgetter
+from typing import TYPE_CHECKING, Final, NamedTuple
 
 from rotkehlchen.accounting.cost_basis.eth2 import (
     Eth2StakingCostBasis,
@@ -34,6 +36,7 @@ from rotkehlchen.api.websockets.typedefs import (
     ProgressUpdateSubType,
     WSMessageType,
 )
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.chain.ethereum.modules.eth2.constants import UNKNOWN_VALIDATOR_INDEX
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorType
@@ -43,15 +46,19 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH2, A_KFEE
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.constants import HistoryEventLinkType
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.cause import TRANSIENT_FAILURE_CAUSES
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.base import get_event_direction
 from rotkehlchen.history.events.structures.eth2 import (
     EthBlockEvent,
     EthDepositEvent,
@@ -65,6 +72,7 @@ from rotkehlchen.history.events.structures.types import (
 )
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.locations.constants import LOCATION_KRAKEN
+from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.historical_balances import (
     MIN_EVENTS_PROCESSED_TO_SLEEP,
@@ -80,7 +88,6 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from rotkehlchen.accounting.cost_basis.lots import ConsumedLot, SpendResult
-    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
@@ -117,6 +124,182 @@ COST_BASIS_BATCH_SIZE: Final = 500
 # Events walked between two checkpoints of the lots. Each one stores all lots still held, so
 # this trades the space they take for how many events a pass replays before what is stale.
 COST_BASIS_CHECKPOINT_INTERVAL: Final = 10_000
+ASSET_MOVEMENT_TRANSIT_LOCATION: Final = 'asset_movement_match'
+
+
+def _asset_movement_transit_bucket(match_id: int) -> Bucket:
+    """Internal in-flight lot bucket for a matched exchange transfer group."""
+    return Bucket(
+        location=ASSET_MOVEMENT_TRANSIT_LOCATION,
+        location_label=f'match:{match_id}',
+        protocol=None,
+        asset='transit',
+    )
+
+
+class _AssetMovementMatch(NamedTuple):
+    """A validated connected component of ASSET_MOVEMENT_MATCH linked events."""
+    match_id: int
+    out_ids: tuple[int, ...]
+    in_ids: tuple[int, ...]
+    in_move_amounts: tuple[tuple[int, FVal], ...]
+    last_in_id: int
+    total_out_amount: FVal
+    total_in_amount: FVal
+    min_ts: TimestampMS
+    max_ts: TimestampMS
+
+    @property
+    def transit_bucket(self) -> Bucket:
+        return _asset_movement_transit_bucket(self.match_id)
+
+    def move_amount_for_in(self, in_event_id: int) -> FVal:
+        for ev_id, amount in self.in_move_amounts:
+            if ev_id == in_event_id:
+                return amount
+        return self.total_out_amount
+
+
+def _load_asset_movement_matches(
+        cursor: DBCursor,
+        ignored_asset_ids: set[str],
+) -> dict[int, _AssetMovementMatch]:
+    """Load validated ASSET_MOVEMENT_MATCH links grouped by connected component.
+
+    Symmetric exchange-to-exchange links collapse into one component, and 1-to-many / many-to-1
+    matches share a single transit bucket. Components with ignored assets, ignored actions,
+    fiat assets, non-positive amounts, or missing opposite directions are skipped.
+    """
+    adj: defaultdict[int, set[int]] = defaultdict(set)
+    endpoints: dict[int, tuple[int, str, str, str, str, str, str, int]] = {}
+    for row in cursor.execute(
+        'SELECT hel.left_event_id, hel.right_event_id, '
+        'le.timestamp, le.location, le.asset, le.amount, le.type, le.subtype, '
+        'le.group_identifier, le.sequence_index, '
+        're.timestamp, re.location, re.asset, re.amount, re.type, re.subtype, '
+        're.group_identifier, re.sequence_index '
+        'FROM history_event_links hel '
+        'JOIN history_events le ON le.identifier = hel.left_event_id '
+        'JOIN history_events re ON re.identifier = hel.right_event_id '
+        'WHERE hel.link_type = ?',
+        (HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),),
+    ):
+        left_id, right_id = int(row[0]), int(row[1])
+        adj[left_id].add(right_id)
+        adj[right_id].add(left_id)
+        endpoints[left_id] = (
+            row[2], row[3], row[4], row[5], row[6], row[7], row[8], int(row[9]),
+        )
+        endpoints[right_id] = (
+            row[10], row[11], row[12], row[13], row[14], row[15], row[16], int(row[17]),
+        )
+
+    if len(endpoints) == 0:
+        return {}
+
+    ignored_actions = {
+        row[0] for row in cursor.execute(
+            "SELECT value FROM multisettings WHERE name='ignored_action'",
+        )
+    }
+    matches: dict[int, _AssetMovementMatch] = {}
+    visited: set[int] = set()
+    for start_id in adj:
+        if start_id in visited:
+            continue
+        component: list[int] = []
+        queue: deque[int] = deque([start_id])
+        visited.add(start_id)
+        while len(queue) > 0:
+            curr = queue.popleft()
+            component.append(curr)
+            for neighbor in adj[curr]:
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+
+        out_ids: list[int] = []
+        in_entries: list[tuple[tuple[int, str, int, int], int, FVal]] = []
+        total_out_amount, total_in_amount = ZERO, ZERO
+        min_ts: TimestampMS | None = None
+        max_ts: TimestampMS | None = None
+        valid = True
+        for ev_id in sorted(component):
+            (
+                ev_ts, ev_loc, ev_asset_id, ev_amount_str,
+                ev_type, ev_subtype, ev_group, ev_seq,
+            ) = endpoints[ev_id]
+            if ev_asset_id in ignored_asset_ids or ev_group in ignored_actions:
+                valid = False
+                break
+            try:
+                ev_amount = FVal(ev_amount_str)
+                if ev_amount <= ZERO or Asset(ev_asset_id).is_fiat():
+                    valid = False
+                    break
+                direction = get_event_direction(
+                    event_type=HistoryEventType.deserialize(ev_type),
+                    event_subtype=HistoryEventSubType.deserialize(ev_subtype),
+                    location=LocationIdentifier(ev_loc),
+                    for_balance_tracking=True,
+                )
+            except (DeserializationError, UnknownAsset, ValueError):
+                valid = False
+                break
+
+            if direction == EventDirection.OUT:
+                out_ids.append(ev_id)
+                total_out_amount += ev_amount
+            elif direction == EventDirection.IN:
+                in_entries.append(((int(ev_ts), ev_group, ev_seq, ev_id), ev_id, ev_amount))
+                total_in_amount += ev_amount
+            else:
+                valid = False
+                break
+
+            ts_val = TimestampMS(int(ev_ts))
+            min_ts = ts_val if min_ts is None or ts_val < min_ts else min_ts
+            max_ts = ts_val if max_ts is None or ts_val > max_ts else max_ts
+
+        if not valid or len(out_ids) == 0 or len(in_entries) == 0 or min_ts is None or max_ts is None:  # noqa: E501
+            continue
+
+        # Order IN legs identically to the event query so cumulative telescoping shares sum
+        # to `total_out_amount` without rounding dust on 1-to-many unequal-total matches.
+        in_entries.sort(key=itemgetter(0))
+        in_ids = tuple(ev_id for _key, ev_id, _amt in in_entries)
+        in_move_amounts: list[tuple[int, FVal]] = []
+        if len(in_entries) == 1:
+            in_move_amounts.append((in_entries[0][1], total_out_amount))
+        elif total_out_amount == total_in_amount:
+            in_move_amounts.extend((ev_id, ev_amount) for _key, ev_id, ev_amount in in_entries)
+        else:
+            cum_in, prev_cum_out = ZERO, ZERO
+            last_idx = len(in_entries) - 1
+            for idx, (_key, ev_id, ev_amount) in enumerate(in_entries):
+                cum_in += ev_amount
+                next_cum_out = (
+                    total_out_amount if idx == last_idx
+                    else total_out_amount * cum_in / total_in_amount
+                )
+                in_move_amounts.append((ev_id, next_cum_out - prev_cum_out))
+                prev_cum_out = next_cum_out
+
+        match = _AssetMovementMatch(
+            match_id=min(component),
+            out_ids=tuple(out_ids),
+            in_ids=in_ids,
+            in_move_amounts=tuple(in_move_amounts),
+            last_in_id=in_ids[-1],
+            total_out_amount=total_out_amount,
+            total_in_amount=total_in_amount,
+            min_ts=min_ts,
+            max_ts=max_ts,
+        )
+        for ev_id in component:
+            matches[ev_id] = match
+
+    return matches
 
 
 class _Rules:
@@ -178,12 +361,26 @@ class _CostBasisPass:
             stored_basis: dict[int, FVal],
             tracked_eth_accounts: set[str] | None = None,
             validator_types: dict[int, ValidatorType] | None = None,
+            ignored_asset_ids: set[str] | None = None,
+            asset_movement_matches: dict[int, _AssetMovementMatch] | None = None,
+            match_event_positions: dict[int, int] | None = None,
+            match_events: dict[int, HistoryBaseEntry] | None = None,
     ) -> None:
         self.settings = settings
         self.rules = rules
         self.from_ts = from_ts
         self.stored_basis = stored_basis
         self.tracked_eth_accounts = tracked_eth_accounts
+        self.ignored_asset_ids: set[str] = set() if ignored_asset_ids is None else ignored_asset_ids  # noqa: E501
+        self.asset_movement_matches: dict[int, _AssetMovementMatch] = (
+            {} if asset_movement_matches is None else asset_movement_matches
+        )
+        self.match_event_positions: dict[int, int] = (
+            {} if match_event_positions is None else match_event_positions
+        )
+        self.match_events: dict[int, HistoryBaseEntry] = (
+            {} if match_events is None else match_events
+        )
         self.method = settings.cost_basis_method.serialize()
         self.profit_currency = settings.main_currency.resolve_to_asset_with_oracles()
         self.lots = BucketLots[Bucket](settings)
@@ -197,6 +394,10 @@ class _CostBasisPass:
         self._swap_proceeds: dict[int, tuple[FVal | None, bool, bool]] = {}
         # The receiving side of a basis transfer, which is applied along with its other side.
         self._basis_transfer_receives: set[int] = set()
+        # Surviving legs of a swap or basis-transfer group skipped due to an ignored asset.
+        self._skipped_event_ids: set[int] = set()
+        # Outgoing legs of reverse-ordered matched asset movements already applied with their IN.
+        self._skipped_match_out_ids: set[int] = set()
         self.eth2 = Eth2StakingCostBasis(host=self, validator_types=validator_types)
 
     def get_price(self, asset: Asset, timestamp: Timestamp) -> Price | None:
@@ -419,7 +620,8 @@ class _CostBasisPass:
             received=received,
         )
 
-        if not (in_is_stale := self.from_ts is None or received.timestamp >= self.from_ts):
+        in_is_stale = self.from_ts is None or received.timestamp >= self.from_ts
+        if not is_stale and not in_is_stale:
             return
 
         if is_stale:
@@ -766,15 +968,218 @@ class _CostBasisPass:
 
     @property
     def has_pending_pair(self) -> bool:
-        """Whether the last applied event left state for the event after it.
+        """Whether the last applied event left state for an event after it.
 
-        That state is what pairs the two sides of a swap or of a basis transfer.
+        That state is what pairs the two sides of a swap, a basis transfer, an ignored
+        swap/basis-transfer group, or a reverse-ordered asset movement match.
         """
         return (
             len(self._swap_basis) != 0 or
             len(self._swap_proceeds) != 0 or
-            len(self._basis_transfer_receives) != 0
+            len(self._basis_transfer_receives) != 0 or
+            len(self._skipped_event_ids) != 0 or
+            len(self._skipped_match_out_ids) != 0
         )
+
+    def _should_skip_ignored_group(
+            self,
+            event: HistoryBaseEntry,
+            next_event: HistoryBaseEntry,
+            rule: BaseEventSettings,
+            bucket_directions: Sequence[tuple[Bucket, EventDirection]],
+            swap_fee_events: Sequence[HistoryBaseEntry],
+            treat_eth2_as_eth: bool,
+    ) -> bool:
+        """Skip the whole swap or basis-transfer group when any leg uses an ignored asset."""
+        if len(self.ignored_asset_ids) == 0:
+            return False
+
+        assert next_event.identifier is not None
+        if rule.accounting_treatment == TxAccountingTreatment.BASIS_TRANSFER:
+            if (
+                len(bucket_directions) != 1 or
+                bucket_directions[0][1] != EventDirection.OUT or
+                next_event.asset.is_fiat()
+            ):
+                return False
+
+            in_buckets = Bucket.from_event(event=next_event, treat_eth2_as_eth=treat_eth2_as_eth)
+            if len(in_buckets) != 1 or in_buckets[0][1] != EventDirection.IN:
+                return False
+
+            if (
+                event.asset.identifier in self.ignored_asset_ids or
+                next_event.asset.identifier in self.ignored_asset_ids
+            ):
+                self._skipped_event_ids.add(next_event.identifier)
+                return True
+            return False
+
+        if (
+            _swap_leg_direction(event, bucket_directions) != EventDirection.OUT or
+            _swap_leg_direction(
+                next_event,
+                [] if next_event.asset.is_fiat() else Bucket.from_event(
+                    event=next_event,
+                    treat_eth2_as_eth=treat_eth2_as_eth,
+                ),
+            ) != EventDirection.IN
+        ):
+            return False
+
+        if (
+            event.asset.identifier in self.ignored_asset_ids or
+            next_event.asset.identifier in self.ignored_asset_ids or
+            any(fee.asset.identifier in self.ignored_asset_ids for fee in swap_fee_events)
+        ):
+            self._skipped_event_ids.add(next_event.identifier)
+            for fee in swap_fee_events:
+                assert fee.identifier is not None
+                self._skipped_event_ids.add(fee.identifier)
+            return True
+
+        return False
+
+    def _has_blocked_match_endpoint(
+            self,
+            event_ids: Sequence[int],
+            expected_direction: EventDirection,
+            treat_eth2_as_eth: bool,
+    ) -> bool:
+        """Whether any matched leg present in this pass targets a blocked bucket."""
+        for ev_id in event_ids:
+            if (ev := self.match_events.get(ev_id)) is None:
+                continue
+            ev_buckets = Bucket.from_event(event=ev, treat_eth2_as_eth=treat_eth2_as_eth)
+            if (
+                len(ev_buckets) == 1 and
+                ev_buckets[0][1] == expected_direction and
+                ev_buckets[0][0] in self.blocked_buckets
+            ):
+                return True
+        return False
+
+    def _apply_matched_out(
+            self,
+            event: HistoryBaseEntry,
+            source: Bucket,
+            match: _AssetMovementMatch,
+            is_stale: bool,
+            treat_eth2_as_eth: bool,
+    ) -> None:
+        """Move lots out of `source` into the match's transit bucket without realizing PnL."""
+        transit = match.transit_bucket
+        if (
+            source in self.blocked_buckets or
+            transit in self.blocked_buckets or
+            self._has_blocked_match_endpoint(
+                event_ids=match.in_ids,
+                expected_direction=EventDirection.IN,
+                treat_eth2_as_eth=treat_eth2_as_eth,
+            )
+        ):
+            self.blocked_buckets.add(transit)
+            return
+
+        moved = self.lots.transfer(
+            source=source,
+            destination=transit,
+            asset=event.asset,
+            amount=event.amount,
+            event=event,
+        )
+        if not is_stale:
+            return
+
+        basis = sum((entry.amount * entry.basis_per_unit for entry in moved), start=ZERO)
+        self.add_row(
+            event=event,
+            bucket=source,
+            direction=CostBasisDirection.SPEND,
+            lots_consumed=[entry.serialize() for entry in moved],
+            realized_pnl=ZERO,
+            basis_removed=basis,
+            post_spend_basis_remaining=self.lots.basis_remaining(source),
+        )
+
+    def _apply_matched_in(
+            self,
+            event: HistoryBaseEntry,
+            destination: Bucket,
+            match: _AssetMovementMatch,
+            is_stale: bool,
+            treat_eth2_as_eth: bool,
+    ) -> None:
+        """Pull lots from the match's transit bucket into `destination`, keeping basis and age."""
+        assert event.identifier is not None
+        transit = match.transit_bucket
+        is_last_in = event.identifier == match.last_in_id
+        in_pos = self.match_event_positions.get(event.identifier)
+        future_out_ids = [
+            out_id for out_id in match.out_ids
+            if (
+                in_pos is not None and
+                out_id not in self._skipped_match_out_ids and
+                (out_pos := self.match_event_positions.get(out_id)) is not None and
+                out_pos > in_pos
+            )
+        ]
+        if (
+            destination in self.blocked_buckets or
+            transit in self.blocked_buckets or
+            self._has_blocked_match_endpoint(
+                event_ids=future_out_ids,
+                expected_direction=EventDirection.OUT,
+                treat_eth2_as_eth=treat_eth2_as_eth,
+            )
+        ):
+            self._skipped_match_out_ids.update(future_out_ids)
+            if is_last_in:
+                self.lots.drop_bucket(transit)
+                self.blocked_buckets.discard(transit)
+            else:
+                self.blocked_buckets.add(transit)
+            return
+
+        for out_id in future_out_ids:
+            if (out_event := self.match_events.get(out_id)) is not None:
+                out_buckets = Bucket.from_event(
+                    event=out_event,
+                    treat_eth2_as_eth=treat_eth2_as_eth,
+                )
+                if len(out_buckets) == 1 and out_buckets[0][1] == EventDirection.OUT:
+                    out_is_stale = self.from_ts is None or out_event.timestamp >= self.from_ts
+                    self._apply_matched_out(
+                        event=out_event,
+                        source=out_buckets[0][0],
+                        match=match,
+                        is_stale=out_is_stale,
+                        treat_eth2_as_eth=treat_eth2_as_eth,
+                    )
+            self._skipped_match_out_ids.add(out_id)
+
+        move_amount = match.move_amount_for_in(event.identifier)
+        _moved, lot_ids, basis = self.move_lots(
+            event=event,
+            source=transit,
+            destination=destination,
+            move_amount=move_amount,
+            dest_amount=event.amount,
+            received=event,
+        )
+        if is_last_in:
+            self.lots.drop_bucket(transit)
+        else:
+            self.lots.drop_empty(transit)
+        if is_stale:
+            self.add_row(
+                event=event,
+                bucket=destination,
+                direction=CostBasisDirection.RECEIVE,
+                lot_created_id=','.join(lot_ids),
+                basis_per_unit=basis / event.amount,
+                basis_source=BasisSource.TRANSFER_IN,
+            )
 
     def serialize_checkpoint(self, events_since_interval: int = 0) -> str:
         """The state of the pass that a later pass can resume from, see `restore_checkpoint`.
@@ -845,7 +1250,18 @@ class _CostBasisPass:
         if event.identifier is None:
             return
 
-        if self.eth2.handle_informational_event(event):
+        if event.identifier in self._skipped_event_ids:
+            self._skipped_event_ids.remove(event.identifier)
+            return
+
+        if event.identifier in self._skipped_match_out_ids:
+            self._skipped_match_out_ids.remove(event.identifier)
+            return
+
+        if (
+            event.asset.identifier not in self.ignored_asset_ids and
+            self.eth2.handle_informational_event(event)
+        ):
             return
 
         if event.amount == ZERO:
@@ -861,6 +1277,29 @@ class _CostBasisPass:
             [] if event.asset.is_fiat()
             else Bucket.from_event(event=event, treat_eth2_as_eth=treat_eth2_as_eth)
         )
+        rule = self.rules.get(event)
+        if (
+            event.amount > ZERO and
+            rule is not None and
+            rule.accounting_treatment is not None and
+            next_event is not None and
+            next_event.identifier is not None and
+            next_event.group_identifier == event.group_identifier and
+            next_event.amount > ZERO and
+            self._should_skip_ignored_group(
+                event=event,
+                next_event=next_event,
+                rule=rule,
+                bucket_directions=bucket_directions,
+                swap_fee_events=swap_fee_events,
+                treat_eth2_as_eth=treat_eth2_as_eth,
+            )
+        ):
+            return
+
+        if event.asset.identifier in self.ignored_asset_ids:
+            return
+
         if event.amount < ZERO:
             for bucket, _direction in bucket_directions:
                 if bucket not in self.blocked_buckets:
@@ -875,7 +1314,6 @@ class _CostBasisPass:
                 self.blocked_buckets.add(validator_eth2_bucket(event.validator_index))
             return
 
-        rule = self.rules.get(event)
         if (
             rule is not None and
             rule.accounting_treatment is not None and
@@ -930,6 +1368,25 @@ class _CostBasisPass:
 
         if len(bucket_directions) == 1:
             bucket, direction = bucket_directions[0]
+            if (match := self.asset_movement_matches.get(event.identifier)) is not None:
+                if direction == EventDirection.OUT:
+                    self._apply_matched_out(
+                        event=event,
+                        source=bucket,
+                        match=match,
+                        is_stale=is_stale,
+                        treat_eth2_as_eth=treat_eth2_as_eth,
+                    )
+                else:
+                    self._apply_matched_in(
+                        event=event,
+                        destination=bucket,
+                        match=match,
+                        is_stale=is_stale,
+                        treat_eth2_as_eth=treat_eth2_as_eth,
+                    )
+                return
+
             if bucket in self.blocked_buckets:
                 return
 
@@ -1265,6 +1722,11 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
         settings = database.get_settings(cursor)
         rules = _Rules(database=database, cursor=cursor)
         tracked_eth_accounts: set[str] = set(database.get_blockchain_accounts(cursor).eth)
+        ignored_asset_ids = database.get_ignored_asset_ids(cursor=cursor)
+        asset_movement_matches = _load_asset_movement_matches(
+            cursor=cursor,
+            ignored_asset_ids=ignored_asset_ids,
+        )
         validator_types: dict[int, ValidatorType] = {
             validator_index: ValidatorType.deserialize_from_db(validator_type)
             for validator_index, validator_type in cursor.execute(
@@ -1290,24 +1752,94 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             stored_basis={},
             tracked_eth_accounts=tracked_eth_accounts,
             validator_types=validator_types,
+            ignored_asset_ids=ignored_asset_ids,
+            asset_movement_matches=asset_movement_matches,
         )
         start_ts = TimestampMS(0)
         restored_terminal_ts: TimestampMS | None = None
         events_since_interval = 0
         if from_ts is not None:
-            if (checkpoint_row := cursor.execute(
+            unique_matches = tuple(dict.fromkeys(asset_movement_matches.values()))
+            checkpoint_limit = from_ts
+            stepped_back_for_orphan = False
+            while (checkpoint_row := cursor.execute(
                 'SELECT timestamp, state FROM cost_basis_checkpoints WHERE timestamp <= ? '
                 'ORDER BY timestamp DESC LIMIT 1',
-                (from_ts,),
-            ).fetchone()) is not None and (
-                restored_events_since_interval := cost_basis_pass.restore_checkpoint(
+                (checkpoint_limit,),
+            ).fetchone()) is not None:
+                if (restored_events_since_interval := cost_basis_pass.restore_checkpoint(
                     checkpoint_row[1],
+                )) is None:
+                    break
+
+                candidate_start_ts = TimestampMS(checkpoint_row[0])
+                expected_transit_buckets = {
+                    match.transit_bucket for match in unique_matches
+                    if match.min_ts < candidate_start_ts <= match.max_ts
+                }
+                has_orphaned_transit = any(
+                    bucket.location == ASSET_MOVEMENT_TRANSIT_LOCATION and
+                    bucket not in expected_transit_buckets
+                    for bucket in (
+                        *cost_basis_pass.lots.buckets(),
+                        *cost_basis_pass.blocked_buckets,
+                    )
                 )
-            ) is not None:
-                start_ts = TimestampMS(checkpoint_row[0])
+                split_min_ts = min(
+                    (
+                        match.min_ts for match in unique_matches
+                        if (
+                            match.min_ts < candidate_start_ts <= match.max_ts and
+                            not cost_basis_pass.lots.has_bucket(match.transit_bucket) and
+                            match.transit_bucket not in cost_basis_pass.blocked_buckets
+                        )
+                    ),
+                    default=None,
+                )
+                if split_min_ts is not None or has_orphaned_transit:
+                    # A match link was created or removed across this checkpoint after it was
+                    # taken; step back to an earlier clean checkpoint so both legs replay cleanly.
+                    if split_min_ts is not None:
+                        from_ts = min(from_ts, split_min_ts)
+                    if has_orphaned_transit:
+                        stepped_back_for_orphan = True
+                    cost_basis_pass = _CostBasisPass(
+                        settings=settings,
+                        rules=rules,
+                        from_ts=from_ts,
+                        stored_basis={},
+                        tracked_eth_accounts=tracked_eth_accounts,
+                        validator_types=validator_types,
+                        ignored_asset_ids=ignored_asset_ids,
+                        asset_movement_matches=asset_movement_matches,
+                    )
+                    next_limit = TimestampMS(candidate_start_ts - 1)
+                    checkpoint_limit = (
+                        min(split_min_ts, next_limit) if split_min_ts is not None else next_limit
+                    )
+                    continue
+
+                start_ts = candidate_start_ts
                 if restored_events_since_interval > 0:
                     restored_terminal_ts = start_ts
                     events_since_interval = restored_events_since_interval
+                break
+
+            if stepped_back_for_orphan:
+                from_ts = min(from_ts, start_ts)
+                cost_basis_pass.from_ts = from_ts
+
+            # Pull `from_ts` back if any match spans `from_ts` and we are already replaying from
+            # `start_ts <= match.min_ts` (e.g. retroactive match without a checkpoint in between).
+            while (spanning_min_ts := min(
+                (
+                    match.min_ts for match in unique_matches
+                    if start_ts <= match.min_ts < from_ts <= match.max_ts
+                ),
+                default=None,
+            )) is not None:
+                from_ts = spanning_min_ts
+                cost_basis_pass.from_ts = from_ts
 
             cost_basis_pass.stored_basis = {
                 event_identifier: FVal(basis_per_unit)
@@ -1331,7 +1863,7 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                 ('sequence_index', True),
                 ('history_events_identifier', True),
             ],
-            exclude_ignored_assets=True,
+            exclude_ignored_assets=False,
             exclude_ignored_actions=True,
             exclude_untracked_withdrawals=True,
         )
@@ -1342,6 +1874,12 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             cursor=cursor,
             filter_query=event_filter,
         )
+
+    if len(asset_movement_matches) != 0:
+        for idx, event in enumerate(events):
+            if event.identifier is not None and event.identifier in asset_movement_matches:
+                cost_basis_pass.match_event_positions[event.identifier] = idx
+                cost_basis_pass.match_events[event.identifier] = event
 
     log.debug(
         'Starting cost basis processing of %s events from_ts=%s start_ts=%s',
