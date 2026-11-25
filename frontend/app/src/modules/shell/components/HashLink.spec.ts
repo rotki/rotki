@@ -1,11 +1,11 @@
-import type { Pinia } from 'pinia';
 import type { EvmChainInfo } from '@/modules/core/api/types/chains';
 import { Blockchain } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed } from 'vue';
+import { computed, nextTick, ref, type Ref } from 'vue';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 

@@ -2,6 +2,7 @@ import type { MaybeRef } from 'vue';
 import type { AddressBookSimplePayload } from '@/modules/accounts/address-book/eth-names';
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
 import { ok } from 'plainfp/result';
 import { allWithConcurrency, type ResultAsync } from 'plainfp/result-async';
 import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';

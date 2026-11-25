@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { defineActivity } from '@/modules/task-center/core/activity-descriptor';
 import { ActivityKind } from '@/modules/task-center/core/types';

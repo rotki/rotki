@@ -1,4 +1,6 @@
 import type { BankAuthChallenge, BankConnection } from '@/modules/banks/types';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { ActionUrgency } from '@/modules/core/action-center/types';

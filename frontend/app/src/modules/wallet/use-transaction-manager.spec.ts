@@ -1,6 +1,7 @@
 import type { TransactionParams } from '@/modules/wallet/types';
 import type { Hash, ViemWalletClient } from '@/modules/wallet/viem-client';
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTransactionManager } from '@/modules/wallet/use-transaction-manager';
 

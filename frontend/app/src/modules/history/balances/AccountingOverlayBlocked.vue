@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 import type { HistoricalBalanceStop } from '@/modules/history/balances/types';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 import { IssueKind } from '@/modules/history/data-issues/constants';

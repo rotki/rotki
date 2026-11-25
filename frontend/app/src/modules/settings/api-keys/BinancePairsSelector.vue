@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { backoff } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { computed, onMounted, ref, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { trimOnPaste } from '@/modules/core/common/helpers/event';

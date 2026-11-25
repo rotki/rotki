@@ -1,5 +1,6 @@
 import { runSpecWith } from '@test/utils/mocks/native-task';
-import { createPinia, setActivePinia } from 'pinia';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { err, none, ok, some } from 'plainfp';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type CreateAccountPayload, IncompleteUpgradeError, SyncConflictError } from '@/modules/auth/login';

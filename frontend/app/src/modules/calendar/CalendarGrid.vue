@@ -1,6 +1,9 @@
 <script lang="ts" setup>
 import type { CalendarEvent } from '@/modules/calendar/types';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import dayjs, { type Dayjs } from 'dayjs';
+import { computed } from 'vue';
 import CalendarMonthDayItem from '@/modules/calendar/CalendarMonthDayItem.vue';
 import CalendarWeekdays from '@/modules/calendar/CalendarWeekdays.vue';
 

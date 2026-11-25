@@ -2,6 +2,8 @@ import type { ResultAsync } from 'plainfp/result-async';
 import type { MaybeRef } from 'vue';
 import type { OraclePriceEntry, OraclePricesQuery } from '@/modules/assets/prices/price-types';
 import type { Collection } from '@/modules/core/common/collection';
+import { get } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';

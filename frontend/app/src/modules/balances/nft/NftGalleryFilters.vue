@@ -2,6 +2,7 @@
 import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import type { NftSortKey } from '@/modules/balances/nft/use-nft-gallery-filters';
 import { Blockchain } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import NftCollectionSelector from '@/modules/balances/nft/NftCollectionSelector.vue';
 import NftSorter from '@/modules/balances/nft/NftSorter.vue';

@@ -3,6 +3,7 @@ import type { Filters } from '@/modules/assets/admin/managed/asset-filter-keys';
 import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import type { PillParams } from '@/modules/core/table/param-refs';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { useI18n } from 'vue-i18n';
 import { useManagedAssetActions } from '@/modules/assets/admin/managed/use-managed-asset-actions';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';

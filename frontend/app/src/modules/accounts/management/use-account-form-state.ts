@@ -1,10 +1,11 @@
-import type { Ref } from 'vue';
 import type {
   AccountManageState,
   StakingValidatorManage,
   XpubManage,
 } from '@/modules/accounts/blockchain/use-account-manage';
 import { assert, Blockchain } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { computed, nextTick, type Ref, ref, watch } from 'vue';
 import { XpubKeyType } from '@/modules/accounts/blockchain-accounts';
 import { createNewAccountForChain } from '@/modules/accounts/blockchain/new-account-state';
 import { isBtcChain } from '@/modules/core/common/chains';

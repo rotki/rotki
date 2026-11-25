@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { useNoteLocation } from '@/modules/notes/use-note-location';
 

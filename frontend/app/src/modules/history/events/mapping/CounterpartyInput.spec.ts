@@ -2,6 +2,7 @@ import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent, nextTick } from 'vue';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
 import '@test/i18n';
 

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { LiquityPoolDetailEntry, LiquityStatisticDetails } from '@rotki/common';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
 import { LUSD_ID } from '@/modules/staking/liquity/liquity-assets';

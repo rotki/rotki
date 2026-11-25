@@ -1,4 +1,6 @@
 import type { FieldDef, ValueSwatch } from '@/modules/core/table/pill/core/types';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import { toParamFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 
 type Translate = (key: string) => string;

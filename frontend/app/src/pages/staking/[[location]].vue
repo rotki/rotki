@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { StakingLocation } from '@/pages/staking/staking-pages';
 import type { StakingInfo } from '@/pages/staking/use-staking-locations';
+import { get } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import AppImage from '@/modules/shell/components/AppImage.vue';

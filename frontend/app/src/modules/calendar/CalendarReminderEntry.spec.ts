@@ -1,5 +1,7 @@
 import { type DOMWrapper, mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 import CalendarReminderEntry from '@/modules/calendar/CalendarReminderEntry.vue';
 import { ReminderUnit } from '@/modules/calendar/reminder-forms';
 import '@test/i18n';

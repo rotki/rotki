@@ -1,6 +1,7 @@
 import type { RecentTransaction } from '@/modules/wallet/types';
 import { Blockchain } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useWalletHelper } from '@/modules/wallet/use-wallet-helper';
 
 function makeRecentTx(overrides: Partial<RecentTransaction> = {}): RecentTransaction {

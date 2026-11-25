@@ -1,9 +1,10 @@
 import type { TablePaginationData } from '@rotki/ui-library';
-import type { Ref } from 'vue';
 import type { VirtualRow } from './use-virtual-rows';
 import type { HighlightType } from '@/modules/history/events/action-types';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, nextTick, type Ref, ref } from 'vue';
 import { HistoryEventAccountingRuleStatus, type HistoryEventEntry } from '@/modules/history/events/schemas';
 import { useVirtualScrollHighlight } from './use-virtual-scroll-highlight';
 

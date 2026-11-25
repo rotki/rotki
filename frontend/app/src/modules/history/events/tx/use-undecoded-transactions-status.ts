@@ -1,6 +1,7 @@
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import type { ActivityId } from '@/modules/task-center/core/types';
 import { map as mapResult, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { snakeCaseTransformer } from '@/modules/core/api/transformers';
 import { logger } from '@/modules/core/common/logging/logging';
 import { EvmUndecodedTransactionResponse } from '@/modules/core/messaging/types';

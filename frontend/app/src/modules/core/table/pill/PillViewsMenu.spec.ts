@@ -5,7 +5,7 @@ import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { defineComponent, nextTick } from 'vue';
 import { type SavedFilterLocation, SavedFilterLocations } from '@/modules/core/table/filtering';
 import PillViewsMenu from '@/modules/core/table/pill/PillViewsMenu.vue';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';

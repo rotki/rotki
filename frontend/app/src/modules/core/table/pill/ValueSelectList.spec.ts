@@ -1,3 +1,4 @@
+import type { MaybeRefOrGetter } from 'vue';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import ValueSelectList, { type SelectOption } from '@/modules/core/table/pill/ValueSelectList.vue';

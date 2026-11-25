@@ -1,5 +1,7 @@
 import { mount, RouterLinkStub, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { describe, expect, it, vi } from 'vitest';
+import { type Ref, ref } from 'vue';
 import DockSyncHint from '@/modules/task-center/components/DockSyncHint.vue';
 
 const loading = ref<boolean>(false);

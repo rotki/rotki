@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ClaimRequest } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import { useScramble } from '@/modules/settings/use-scramble';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';

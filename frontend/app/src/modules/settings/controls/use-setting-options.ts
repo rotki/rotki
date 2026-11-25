@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 
 export interface SettingOption<TOption> {
   /** The value stored in the setting. */

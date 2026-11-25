@@ -1,7 +1,8 @@
-import type { EffectScope } from 'vue';
 import type { ActionItem } from '@/modules/core/action-center/types';
 import type { GnosisPayUntrackedSafe } from '@/modules/integrations/gnosis-pay/types';
+import { get, set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, type Ref, ref } from 'vue';
 import { useGnosisPaySafeRows } from '@/modules/shell/action-center/use-gnosis-pay-safe-rows';
 
 const SAFE = '0xabcdef1234567890abcdef1234567890abcdef12';

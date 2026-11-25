@@ -2,6 +2,7 @@ import type { AccountPayload, XpubAccountPayload } from '@/modules/accounts/bloc
 import type { EvmAccountsResult } from '@/modules/core/api/types/accounts';
 import type { ActivityId } from '@/modules/task-center/core/types';
 import { err, flatMap as flatMapResult, map as mapResult, ok, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { type MessageKey, msg } from '@/message-key';
 import { accountActivityLabel, accountAddActivity, accountImportTagActivity, type AccountSubject, type AccountTarget, accountTargetLabel, accountTargetOf, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';

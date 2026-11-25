@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { EIP1193Provider, EIP6963ProviderDetail } from '@/types';
+import { set } from '@vueuse/shared';
+import { onBeforeMount, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { getAddressesFromWallet, getAllBrowserWalletProviders } from '@/modules/wallet/providers/provider-detection';

@@ -1,5 +1,6 @@
-import type { Ref } from 'vue';
+import { set } from '@vueuse/shared';
 import { isErr, type Result } from 'plainfp/result';
+import { type Ref, shallowReadonly, shallowRef } from 'vue';
 
 /**
  * A failure named for the strip that shows it.

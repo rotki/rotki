@@ -1,3 +1,4 @@
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, type ComputedRef, type Ref, shallowRef } from 'vue';
 import { useAssetPageActions } from './use-asset-page-actions';

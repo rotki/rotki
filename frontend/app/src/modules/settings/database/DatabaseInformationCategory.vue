@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { useI18n } from 'vue-i18n';
 import DatabaseInformation from '@/modules/settings/database/DatabaseInformation.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
 defineProps<

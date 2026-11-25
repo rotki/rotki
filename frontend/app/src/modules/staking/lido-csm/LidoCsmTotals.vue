@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { LidoCsmNodeOperator } from '@/modules/staking/staking-types';
 import { type BigNumber, Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import StakingTotals, { type StakingTotal } from '@/modules/staking/components/StakingTotals.vue';
 import { STETH_IDENTIFIER } from '@/modules/staking/lido-csm/constants';
 

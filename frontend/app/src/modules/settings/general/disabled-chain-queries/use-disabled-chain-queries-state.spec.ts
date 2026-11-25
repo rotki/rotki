@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { afterEach, describe, expect, it } from 'vitest';
 import { effectScope, ref, type Ref } from 'vue';

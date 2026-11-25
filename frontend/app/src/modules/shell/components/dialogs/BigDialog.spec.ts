@@ -1,5 +1,6 @@
 import { resetOverlayStack, useOverlayStack } from '@rotki/ui-library';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get } from '@vueuse/shared';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';

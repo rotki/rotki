@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { transformCase, Zero } from '@rotki/common';
+import { useTimeoutFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { err, ok, type Result } from 'plainfp/result';
+import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import QueriedAddressDialog from '@/modules/accounts/QueriedAddressDialog.vue';
 import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-address-operations';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';

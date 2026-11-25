@@ -1,6 +1,7 @@
 import type { Nullable } from '@rotki/common';
-import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { CustomAsset } from '@/modules/assets/types';
+import { set } from '@vueuse/shared';
+import { type MaybeRefOrGetter, type Ref, shallowRef, toValue, watch } from 'vue';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
 
 interface UseCustomAssetDialogOptions {

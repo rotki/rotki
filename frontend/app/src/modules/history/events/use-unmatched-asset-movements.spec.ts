@@ -1,7 +1,9 @@
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
 import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 
 const { spies } = vi.hoisted(() => ({

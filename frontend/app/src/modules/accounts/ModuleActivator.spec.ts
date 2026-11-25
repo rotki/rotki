@@ -1,4 +1,6 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ModuleActivator from '@/modules/accounts/ModuleActivator.vue';
 import { Module } from '@/modules/core/common/modules';

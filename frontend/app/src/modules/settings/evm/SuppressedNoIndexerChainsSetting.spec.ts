@@ -3,7 +3,9 @@ import { Blockchain } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import SuppressedNoIndexerChainsSetting from '@/modules/settings/evm/SuppressedNoIndexerChainsSetting.vue';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 

@@ -1,7 +1,9 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { ActionStatus } from '@/modules/core/common/action';
 import { createTestExchange } from '@test/utils/create-data';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Ref, ref } from 'vue';
 import { toggleNonSyncingExchange, useNonSyncingExchanges } from '@/modules/balances/exchanges/use-non-syncing-exchanges';
 
 const stored = ref<string[]>([]);

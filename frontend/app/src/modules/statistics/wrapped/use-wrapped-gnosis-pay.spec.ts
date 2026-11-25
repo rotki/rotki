@@ -1,6 +1,8 @@
 import type { WrapStatisticsResult } from '@/modules/statistics/api/use-wrap-statistics-api';
 import { bigNumberify } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useWrappedGnosisPay } from '@/modules/statistics/wrapped/use-wrapped-gnosis-pay';
 
 const mockAllowed = ref<boolean>(true);

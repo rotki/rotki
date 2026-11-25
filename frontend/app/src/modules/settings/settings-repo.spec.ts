@@ -1,4 +1,5 @@
 import { BigNumber, Blockchain, Theme, TimeFramePeriod } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { createPinia, type Pinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CurrencyLocation } from '@/modules/assets/amount-display/currency-location';

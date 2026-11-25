@@ -1,4 +1,5 @@
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransactionsQueryStatus, type UnifiedTransactionStatusData } from '@/modules/core/messaging/types';

@@ -1,6 +1,7 @@
 import { startPromise } from '@shared/utils';
+import { set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { effectScope, type EffectScope, nextTick } from 'vue';
+import { effectScope, type EffectScope, nextTick, ref } from 'vue';
 import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
 import { useSessionStateCleaner } from './use-session-state-cleaner';
 

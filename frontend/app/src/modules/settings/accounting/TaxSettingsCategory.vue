@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { useI18n } from 'vue-i18n';
 import CryptoToCryptoTradeSetting from '@/modules/settings/accounting/CryptoToCryptoTradeSetting.vue';
 import EthStakingTaxableAfterWithdrawalSetting from '@/modules/settings/accounting/EthStakingTaxableAfterWithdrawalSetting.vue';
 import GasCostSetting from '@/modules/settings/accounting/GasCostSetting.vue';

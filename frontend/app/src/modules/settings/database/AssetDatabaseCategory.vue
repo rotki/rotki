@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ManageCustomAssets from '@/modules/settings/data-security/ManageCustomAssets.vue';
 import RestoreAssetsDatabase from '@/modules/settings/data-security/RestoreAssetsDatabase.vue';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';

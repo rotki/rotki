@@ -6,7 +6,9 @@ import { type Blockchain, HistoryEventEntryType, NotificationKind, Severity } fr
 import { startPromise } from '@shared/utils';
 import { createTestExchange } from '@test/utils/create-data';
 import { createMock } from '@test/utils/create-mock';
+import { set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { effectScope, nextTick, ref, type Ref } from 'vue';
 import { useHistoryStore } from '@/modules/history/use-history-store';

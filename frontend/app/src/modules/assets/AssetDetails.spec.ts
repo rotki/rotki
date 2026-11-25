@@ -1,8 +1,8 @@
-import type { MaybeRefOrGetter } from 'vue';
 import type { AssetActions, AssetDisplay, AssetIdentifierResolution } from '@/modules/assets/types';
 import type { AssetResolutionOptions } from '@/modules/assets/use-asset-info-retrieval';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type ComponentPublicInstance, computed, type MaybeRefOrGetter, toValue } from 'vue';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 
 const IDENTIFIER = 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F';

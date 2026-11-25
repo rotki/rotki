@@ -2,6 +2,10 @@
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { PoolAsset, PoolLiquidityBalance } from './types';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, onBeforeMount, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { calculatePercentage } from '@/modules/core/common/data/calculation';
 import { TableColumn } from '@/modules/core/table/table-column';

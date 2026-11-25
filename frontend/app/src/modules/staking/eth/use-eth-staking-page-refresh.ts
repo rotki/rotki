@@ -1,4 +1,6 @@
-import type { ComputedRef } from 'vue';
+import { logicAnd, logicNot, logicOr } from '@vueuse/math';
+import { set } from '@vueuse/shared';
+import { type ComputedRef, shallowRef } from 'vue';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { useRefreshHandlers } from '@/modules/history/events/tx/use-refresh-handlers';
 import { provideHistoryEventsSection } from '@/modules/history/events/use-history-events-section';

@@ -1,5 +1,6 @@
 import type { EIP1193Provider } from '@/types';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { ref } from 'vue';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';

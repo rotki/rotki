@@ -2,8 +2,12 @@
 import type { AssetBalance } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/modules/balances/types/exchanges';
+import { watchImmediate } from '@vueuse/core';
+import { set } from '@vueuse/shared';
 import { pipe } from 'plainfp';
 import { map } from 'plainfp/result-async';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';

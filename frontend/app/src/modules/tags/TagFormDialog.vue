@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { Tag } from '@/modules/tags/tags';
+import { get, set } from '@vueuse/shared';
 import { tap } from 'plainfp/result';
+import { ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import { useFailureSlot } from '@/modules/shell/components/named-failure';
 import TagForm from '@/modules/tags/TagForm.vue';

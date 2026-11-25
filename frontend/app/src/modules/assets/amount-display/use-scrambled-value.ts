@@ -1,5 +1,6 @@
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, ref, toValue, watchEffect } from 'vue';
 import { useNumberScrambler } from '@/modules/assets/amount-display/use-number-scrambler';
 import { generateRandomScrambleMultiplier } from '@/modules/session/session-utils';
 import { useAmountDisplaySettings } from './use-amount-display-settings';

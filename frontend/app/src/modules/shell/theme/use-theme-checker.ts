@@ -1,4 +1,8 @@
 import { Theme } from '@rotki/common';
+import { createSharedComposable, useLocalStorage } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { onBeforeMount, onUnmounted, ref, watch } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useDarkMode } from '@/modules/shell/theme/use-dark-mode';

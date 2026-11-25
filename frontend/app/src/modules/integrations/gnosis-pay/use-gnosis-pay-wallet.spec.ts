@@ -1,6 +1,7 @@
-import type { Ref } from 'vue';
 import type { EnhancedProviderDetail } from '@/modules/wallet/providers/provider-detection';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { type Ref, ref } from 'vue';
 import { type GnosisPayAdminsMapping, GnosisPayError } from './types';
 import { useGnosisPayWallet } from './use-gnosis-pay-wallet';
 

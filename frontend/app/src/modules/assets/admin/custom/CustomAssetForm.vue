@@ -2,7 +2,10 @@
 import type { ZodType } from 'zod';
 import type { CustomAsset } from '@/modules/assets/types';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { get } from '@vueuse/shared';
 import { ok, type Result } from 'plainfp/result';
+import { computed, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AssetIconForm from '@/modules/assets/admin/AssetIconForm.vue';
 import { customAssetSchema } from '@/modules/assets/admin/custom/custom-asset-form';
 import { useModelForm } from '@/modules/core/form/use-model-form';

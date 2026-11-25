@@ -1,3 +1,6 @@
+import { get, set } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, shallowRef } from 'vue';
 import { UserMessageKey } from '@/modules/core/messaging/types/base';
 import { type BackendProblem, foldReport, type ProblemReport, withoutItems } from '@/modules/core/notifications/problems/backend-problem-tree';
 

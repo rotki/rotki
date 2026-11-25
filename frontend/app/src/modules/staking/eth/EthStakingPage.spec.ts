@@ -2,6 +2,7 @@ import type { useEthStakingAccess } from '@/modules/staking/eth/use-eth-staking-
 import type { useEthStakingRefresh } from '@/modules/staking/eth/use-eth-staking-refresh';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, nextTick } from 'vue';

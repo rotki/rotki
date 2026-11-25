@@ -1,4 +1,6 @@
+import { set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { effectScope, nextTick, ref } from 'vue';
 import { useBalanceRefreshScheduler } from './use-balance-refresh-scheduler';
 
 const MINUTE = 60 * 1000;

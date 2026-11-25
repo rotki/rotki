@@ -1,7 +1,9 @@
 import type { RemoteBackup } from '@/modules/session/sync';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { FailureCause } from '@/modules/core/api/failure-cause';
 import { ApiRequestError } from '@/modules/core/api/types/errors';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';

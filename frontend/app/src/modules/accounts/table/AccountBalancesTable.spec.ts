@@ -3,6 +3,7 @@ import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { AccountKind, type BlockchainAccountGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
 import AccountBalancesTable from '@/modules/accounts/table/AccountBalancesTable.vue';
 

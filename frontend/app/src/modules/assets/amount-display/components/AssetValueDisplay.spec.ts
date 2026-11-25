@@ -1,9 +1,11 @@
-import type { Pinia } from 'pinia';
 import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
+import { type Pinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 import AssetValueDisplay from '@/modules/assets/amount-display/components/AssetValueDisplay.vue';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';

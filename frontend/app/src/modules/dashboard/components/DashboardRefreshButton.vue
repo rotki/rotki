@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { set } from '@vueuse/shared';
+import { computed, ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type BalanceSource, RefreshSource } from '@/modules/balances/refresh/core/refresh-types';
 import {
   DashboardExtraSource,

@@ -3,8 +3,9 @@ import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { computed, defineComponent, ref } from 'vue';
 import {
   useHistoryEventsPillBar,
   type UseHistoryEventsPillBarReturn,

@@ -1,6 +1,7 @@
-import type { MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { toHumanReadable } from '@rotki/common';
+import { type MaybeRefOrGetter, type Ref, toValue, type WritableComputedRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useBlockchainAccountOptions } from '@/modules/accounts/use-blockchain-account-options';
 import { type AccountFieldOptions, toAccountField } from '@/modules/core/table/filters/shared/account-field';
 import { listParam, type PillParams, stringParam, toPillParams } from '@/modules/core/table/param-refs';

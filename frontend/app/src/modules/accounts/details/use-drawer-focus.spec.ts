@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, ref } from 'vue';
+import { defineComponent, h, nextTick, ref } from 'vue';
 import { useDrawerFocus } from '@/modules/accounts/details/use-drawer-focus';
 
 interface FocusHarness {

@@ -1,7 +1,7 @@
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { WrapStatisticsResult } from '@/modules/statistics/api/use-wrap-statistics-api';
 import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';

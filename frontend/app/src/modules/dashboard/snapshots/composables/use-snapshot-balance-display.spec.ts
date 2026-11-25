@@ -1,5 +1,6 @@
 import type { Snapshot } from '@/modules/dashboard/snapshots';
 import { bigNumberify } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { useSnapshotBalanceDisplay } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-display';

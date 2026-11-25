@@ -1,4 +1,6 @@
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { get } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import { toInternalTxConflictFields } from '@/modules/history/internal-tx-conflicts/internal-tx-conflict-fields';

@@ -1,6 +1,7 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { Blockchain } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { each } from 'es-toolkit/compat';
+import { type ComputedRef, type MaybeRefOrGetter, onMounted, toValue, watch, watchEffect } from 'vue';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 

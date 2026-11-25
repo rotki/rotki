@@ -1,3 +1,4 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMoneriumSessionHandler } from '@/modules/core/messaging/handlers/monerium-session';
 import { RaisedConditionKind, SessionCause, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { StatusTally } from '@/modules/task-center/core/status';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ActivityStatus } from '@/modules/task-center/core/types';
 
 const { attention = 0, tally } = defineProps<{

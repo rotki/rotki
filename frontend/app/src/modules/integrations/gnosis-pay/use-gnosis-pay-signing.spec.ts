@@ -1,8 +1,10 @@
-import type { Ref } from 'vue';
 import { runSpecWith } from '@test/utils/mocks/native-task';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok, type Result } from 'plainfp/result';
 import { InternalRpcError } from 'viem';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { type Ref, ref } from 'vue';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { RaisedConditionKind, SessionCause, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 import { GnosisPayError, type GnosisPayErrorContext } from './types';

@@ -1,5 +1,6 @@
 import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import HistoryEventsSkippedExternalEvents from '@/modules/history/events/HistoryEventsSkippedExternalEvents.vue';
 

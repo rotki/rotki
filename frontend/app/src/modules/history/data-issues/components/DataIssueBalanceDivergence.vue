@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { DivergenceBoundaryEvent } from '@/modules/history/balances/use-balance-divergence';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import DivergenceComparison from '@/modules/history/balances/DivergenceComparison.vue';
 import DivergenceOutcome from '@/modules/history/balances/DivergenceOutcome.vue';
 import { useDataIssueDivergence } from '@/modules/history/data-issues/use-data-issue-divergence';

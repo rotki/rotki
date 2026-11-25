@@ -1,7 +1,7 @@
 import type { UserDbBackupWithId } from '@/modules/session/backup';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
-import { defineComponent, type Ref } from 'vue';
+import { defineComponent, nextTick, type Ref } from 'vue';
 import DatabaseBackups from '@/modules/settings/data-security/backups/DatabaseBackups.vue';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 

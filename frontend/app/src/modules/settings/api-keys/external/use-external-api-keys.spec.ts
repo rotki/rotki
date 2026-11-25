@@ -1,4 +1,5 @@
 import type { ExternalServiceKeys } from '@/modules/integrations/types';
+import { get } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 

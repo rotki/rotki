@@ -1,9 +1,10 @@
 import { type NotificationData, NotificationKind, Severity } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type Ref, ref } from 'vue';
+import { nextTick, type Ref, ref } from 'vue';
 import NotificationSidebar from '@/modules/core/notifications/NotificationSidebar.vue';
 import { useBackendProblemsStore } from '@/modules/core/notifications/problems/use-backend-problems-store';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';

@@ -1,4 +1,7 @@
 import type { EvmTokensRecord } from '@/modules/balances/types/balances';
+import { get, set } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { shallowRef } from 'vue';
 
 type Tokens = Record<string, EvmTokensRecord>;
 

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { onMounted, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useGoogleCalendarIntegration } from '@/modules/calendar/use-google-calendar-integration';
 import { useBackendMessages } from '@/modules/shell/app/use-backend-messages';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';

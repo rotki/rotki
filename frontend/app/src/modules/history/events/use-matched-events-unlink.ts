@@ -1,6 +1,7 @@
 import type { ComputedRef } from 'vue';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmitFn, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
+import { useI18n } from 'vue-i18n';
 import { useAssetMovementMatchingApi } from '@/modules/history/api/events/use-asset-movement-matching-api';
 import { useBridgeMatchingApi } from '@/modules/history/api/events/use-bridge-matching-api';
 import { getMatchedMovementIgnoreIds, isAssetMovementEvent } from '@/modules/history/event-utils';

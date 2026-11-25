@@ -1,5 +1,6 @@
 import { ThemeColors } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useThemeSettings } from '@/modules/shell/theme/use-theme-settings';
 import { CURRENT_DEFAULT_THEME_VERSION, DARK_COLORS, DEFAULT_THEME_HISTORIES, LIGHT_COLORS } from '@/plugins/theme';

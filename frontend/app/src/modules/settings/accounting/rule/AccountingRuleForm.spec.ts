@@ -3,7 +3,7 @@ import { RuiAutoCompleteStub } from '@test/stubs/RuiAutoComplete';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ComponentPublicInstance, defineComponent, h, type VNode } from 'vue';
+import { type ComponentPublicInstance, defineComponent, h, nextTick, type VNode } from 'vue';
 import AccountingRuleForm from '@/modules/settings/accounting/rule/AccountingRuleForm.vue';
 import { type AccountingRuleEntry, AccountingTreatment } from '@/modules/settings/types/accounting';
 

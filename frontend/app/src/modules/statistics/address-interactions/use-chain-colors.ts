@@ -1,5 +1,7 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { InteractionConnection } from './address-interaction-graph';
+import { useRotkiTheme } from '@rotki/ui-library';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 
 /**
  * Categorical edge colors, in a fixed order, each stepped separately for the light and dark surface.

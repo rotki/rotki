@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
+import { logicAnd } from '@vueuse/math';
+import { get } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { isEvmNativeToken } from '@/modules/assets/types';
 import { hasAwaitingClaim } from '@/modules/core/common/display/balances';
 

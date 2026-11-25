@@ -1,6 +1,8 @@
-import type { EffectScope } from 'vue';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { type EffectScope, effectScope, nextTick, reactive, type Ref, ref } from 'vue';
 import { endSession } from '@/modules/core/session/session-lifecycle';
 import { useHistoryWatchers } from './use-history-watchers';
 

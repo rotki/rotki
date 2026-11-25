@@ -1,5 +1,6 @@
 import type { ParseTimestamp } from '@/modules/core/table/pill/core/typed-filters';
 import { toHumanReadable } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { dateBoundParser, dateDeserializer } from '@/modules/core/common/data/date';
 import { capitalizeAcronyms } from '@/modules/core/common/display/acronyms';

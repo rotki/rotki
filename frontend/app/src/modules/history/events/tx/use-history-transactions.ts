@@ -9,7 +9,10 @@ import type {
   RepullingTransactionResponse,
 } from '@/modules/history/events/event-payloads';
 import { toHumanReadable } from '@rotki/common';
+import { createSharedComposable } from '@vueuse/core';
+import { get } from '@vueuse/shared';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { logger } from '@/modules/core/common/logging/logging';

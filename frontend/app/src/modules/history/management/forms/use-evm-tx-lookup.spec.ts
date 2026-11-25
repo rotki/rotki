@@ -1,10 +1,11 @@
-import type { Ref } from 'vue';
 import { createMock } from '@test/utils/create-mock';
 import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Ref, ref } from 'vue';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';

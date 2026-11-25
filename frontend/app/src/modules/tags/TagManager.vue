@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';

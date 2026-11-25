@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { CLIENT_CONFIG } from './bridge-config';
 import StatusDot from './StatusDot.vue';
 import { BridgeConnectionPhase, type BridgeConnectionState } from './use-wallet-proxy-client';

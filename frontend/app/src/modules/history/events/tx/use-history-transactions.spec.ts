@@ -4,6 +4,7 @@ import type { EditEvmHistoryEventPayload } from '@/modules/history/events/event-
 import type { EvmHistoryEvent, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { RunBackendTask } from '@/modules/task-center/use-native-task';
 import { assert, type Blockchain } from '@rotki/common';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiValidationError } from '@/modules/core/api/types/errors';

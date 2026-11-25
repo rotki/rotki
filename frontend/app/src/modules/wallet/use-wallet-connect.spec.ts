@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/modules/core/common/logging/logging', () => ({

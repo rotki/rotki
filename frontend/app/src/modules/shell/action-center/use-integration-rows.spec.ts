@@ -1,7 +1,9 @@
-import type { EffectScope } from 'vue';
 import { externalLinks } from '@shared/external-links';
 import { createTestExchange } from '@test/utils/create-data';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type ComputedRef, type EffectScope, effectScope, nextTick, type Ref, ref } from 'vue';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { type ActionItem, type ActionItemOption, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';
 import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';

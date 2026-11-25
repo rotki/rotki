@@ -1,5 +1,7 @@
 import type { RouteActionEntry, RouteSearchEntry } from '@/modules/shell/layout/use-route-search';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Ref, ref } from 'vue';
 import { useGlobalSearch } from '@/modules/shell/layout/use-global-search';
 
 const searchEntries = ref<RouteSearchEntry[]>([]);

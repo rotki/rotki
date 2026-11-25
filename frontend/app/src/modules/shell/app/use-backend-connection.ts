@@ -1,5 +1,8 @@
 import type { Nullable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { onScopeDispose } from 'vue';
 import { defaultApiUrl } from '@/modules/core/api/api-urls';
 import { api } from '@/modules/core/api/rotki-api';
 import { logger, setLevel } from '@/modules/core/common/logging/logging';

@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { useManualBalanceTableActions } from '@/modules/accounts/manual-balances/use-manual-balance-table-actions';
 

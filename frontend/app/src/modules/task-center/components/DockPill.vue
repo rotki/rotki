@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { Activity, ActivityId } from '@/modules/task-center/core/types';
 import type { PendingJob } from '@/modules/task-center/use-pending-jobs';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { DockState } from '@/modules/task-center/dock-state';
 import { useDockPrimary } from '@/modules/task-center/use-dock-primary';
 import { useTaskDock } from '@/modules/task-center/use-task-dock';

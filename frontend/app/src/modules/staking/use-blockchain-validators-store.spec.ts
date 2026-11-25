@@ -1,5 +1,7 @@
 import type { ValidatorDetails } from '@/modules/accounts/blockchain-accounts';
 import { type Balance, Blockchain, Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';

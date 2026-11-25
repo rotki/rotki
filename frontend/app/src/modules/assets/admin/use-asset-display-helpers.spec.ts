@@ -1,5 +1,6 @@
 import type { SupportedAsset } from '@rotki/common';
 import type { Collection } from '@/modules/core/common/collection';
+import { get } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
 import { CUSTOM_ASSET } from '@/modules/assets/types';
 import { useAssetDisplayHelpers } from './use-asset-display-helpers';

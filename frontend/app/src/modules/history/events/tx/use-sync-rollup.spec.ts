@@ -1,4 +1,6 @@
 import { submitRefresh } from '@test/utils/history-refresh';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 import { useSyncRollup } from './use-sync-rollup';

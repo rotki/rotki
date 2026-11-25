@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { StatusCounts } from '@/modules/history/reconciliation/schemas';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ReconciliationCheckButton from '@/modules/history/reconciliation/components/ReconciliationCheckButton.vue';
 import { HEADLINE_LABEL, SUBLINE_LABEL } from '@/modules/history/reconciliation/messages';
 import { type Headline, headlineFor, notCheckedCount } from '@/modules/history/reconciliation/use-reconciliation-rows';

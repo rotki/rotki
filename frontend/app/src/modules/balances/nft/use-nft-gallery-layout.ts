@@ -1,6 +1,8 @@
-import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import type { GalleryNft } from '@/modules/assets/nfts';
 import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, readonly, type Ref, shallowRef, type WritableComputedRef } from 'vue';
 
 interface UseNftGalleryLayoutReturn {
   firstLimit: ComputedRef<number>;

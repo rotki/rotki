@@ -1,5 +1,6 @@
 import type { KnownPrice } from '@/modules/statistics/pricing/price-series';
 import { One } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { chunk } from 'es-toolkit';
 import { pipe } from 'plainfp';
 import { fromPromise, getOr, map, tapError } from 'plainfp/result-async';

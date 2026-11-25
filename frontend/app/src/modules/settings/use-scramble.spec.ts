@@ -1,4 +1,5 @@
 import { consistOfNumbers, isValidEthAddress } from '@rotki/common';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useScramble } from '@/modules/settings/use-scramble';

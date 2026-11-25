@@ -2,7 +2,11 @@
 import type { SupportedAsset, UnderlyingToken } from '@rotki/common';
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { ok, type Result } from 'plainfp/result';
+import { computed, onMounted, ref, toRef, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
 import { decimalsTextModel, startedEpochModel } from '@/modules/assets/admin/asset-field-models';
 import AssetIconForm from '@/modules/assets/admin/AssetIconForm.vue';

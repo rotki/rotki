@@ -1,4 +1,4 @@
-import type { RemovableRef } from '@vueuse/core';
+import { type RemovableRef, useLocalStorage } from '@vueuse/core';
 
 interface UseRememberSettingsReturn {
   savedRememberUsername: RemovableRef<string | null>;

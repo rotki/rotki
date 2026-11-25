@@ -1,6 +1,9 @@
 import type { DatabaseUploadProgress, DbUploadResult } from '@/modules/core/messaging/types';
 import { startPromise } from '@shared/utils';
+import { createSharedComposable } from '@vueuse/core';
+import { get } from '@vueuse/shared';
 import { err, ok, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { automaticSyncActivity, manualSyncActivity } from '@/modules/session/session.activity';
 import { useSync } from '@/modules/session/use-session-sync';

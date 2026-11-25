@@ -1,5 +1,6 @@
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { createMock } from '@test/utils/create-mock';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockFetchHistoryEvents = vi.fn();

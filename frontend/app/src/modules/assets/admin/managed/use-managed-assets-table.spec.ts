@@ -3,6 +3,8 @@ import type { Collection } from '@/modules/core/common/collection';
 import type { useServerTable } from '@/modules/core/table/use-server-table';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
+import { setActivePinia, storeToRefs } from 'pinia';
 import { ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, defineComponent, h, ref } from 'vue';

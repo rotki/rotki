@@ -4,6 +4,8 @@ import type { LocationAndTxRef, PullLocationTransactionPayload } from '@/modules
 import type { RefreshTransactionsParams } from '@/modules/history/events/tx/types';
 import type { RepullingTransactionResult } from '@/modules/history/events/tx/use-history-transactions';
 import { type NotificationAction, NotificationKind, Severity } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
 interface UseHistoryEventsDialogHandlersDeps {

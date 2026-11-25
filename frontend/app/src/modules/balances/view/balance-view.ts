@@ -1,4 +1,4 @@
-import { type ComputedRef, hasInjectionContext, type InjectionKey } from 'vue';
+import { computed, type ComputedRef, hasInjectionContext, inject, type InjectionKey, provide } from 'vue';
 
 /** Which balances a page shows: queried from chains, exchanges and banks, or derived from history. */
 export const BalanceView = {

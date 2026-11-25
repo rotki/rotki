@@ -3,6 +3,7 @@ import type { useAirdropsPage } from '@/pages/airdrops/use-airdrops-page';
 import { bigNumberify } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, nextTick, type Ref } from 'vue';

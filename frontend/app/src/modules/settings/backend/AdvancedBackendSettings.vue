@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { BackendOptions } from '@shared/ipc';
 import type { AdvancedBackendField } from '@/modules/settings/backend/backend-options-form';
+import { useI18n } from 'vue-i18n';
 import SettingResetButton from '@/modules/settings/SettingResetButton.vue';
 
 const maxLogSize = defineModel<string>('maxLogSize', { required: true });

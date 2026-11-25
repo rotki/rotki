@@ -3,6 +3,8 @@ import type { Filters } from '@/modules/history/events/history-event-filter-keys
 import type { HistoryEventsRestrictions } from '@/modules/history/events/history-events-restrictions';
 import { HistoryEventEntryType } from '@rotki/common';
 import { createLocationNode as node } from '@test/utils/location-tree';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';
 import { useHistoryEventFields } from '@/modules/history/events/use-history-event-fields';

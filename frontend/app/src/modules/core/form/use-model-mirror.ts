@@ -1,5 +1,6 @@
-import type { Ref, UnwrapNestedRefs } from 'vue';
+import { get, set } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
+import { type Ref, type UnwrapNestedRefs, watch } from 'vue';
 
 export interface ModelMirrorOptions<TModel extends object, TState extends object> {
   /** The payload the parent owns, saves, and reseeds. Edits are mirrored back into it. */

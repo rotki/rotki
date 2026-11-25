@@ -1,6 +1,7 @@
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
 import { createAssetMovementEvent, createOnlineHistoryEvent } from '@test/utils/history-events';
+import { get } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UNMATCHED_ACTIONS, type UnmatchedRowActionSpec } from '@/modules/history/events/unmatched-actions';
 import { type UnmatchedMovementRow, useUnmatchedMovementRows } from '@/modules/history/events/use-unmatched-movement-rows';

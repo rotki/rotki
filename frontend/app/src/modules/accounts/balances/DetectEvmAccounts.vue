@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { useTimeoutFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { evmAccountDetectionActivity } from '@/modules/accounts/accounts.activity';
 import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';
 import { useEvmAccountDetection } from '@/modules/accounts/use-evm-account-detection';

@@ -1,4 +1,5 @@
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { useI18n } from 'vue-i18n';
 import { dateBoundParser, dateDeserializer } from '@/modules/core/common/data/date';
 import { toDateFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 import { useSetting } from '@/modules/settings/use-setting';

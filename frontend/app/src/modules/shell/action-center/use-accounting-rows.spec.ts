@@ -1,6 +1,7 @@
-import type { EffectScope } from 'vue';
+import { get, set } from '@vueuse/shared';
 import { ok } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope } from 'vue';
 import { useAccountingRows } from '@/modules/shell/action-center/use-accounting-rows';
 
 const { count, recount } = await vi.hoisted(async () => {

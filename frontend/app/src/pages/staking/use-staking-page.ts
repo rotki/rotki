@@ -1,6 +1,8 @@
-import type { Component, ComputedRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
-import type { RouteLocationRaw } from 'vue-router';
 import { startPromise } from '@shared/utils';
+import { useLocalStorage } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { type Component, computed, type ComputedRef, type MaybeRefOrGetter, nextTick, onMounted, type Ref, toValue, type WritableComputedRef } from 'vue';
+import { type RouteLocationRaw, useRoute, useRouter } from 'vue-router';
 import { type StakingLocation, stakingPages } from '@/pages/staking/staking-pages';
 import { type StakingInfo, useStakingLocations } from '@/pages/staking/use-staking-locations';
 

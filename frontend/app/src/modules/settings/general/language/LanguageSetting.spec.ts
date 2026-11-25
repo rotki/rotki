@@ -1,6 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { defineComponent, nextTick } from 'vue';
 import LanguageSetting from '@/modules/settings/general/language/LanguageSetting.vue';
 import { SupportedLanguage } from '@/modules/settings/types/frontend-settings';
 

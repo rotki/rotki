@@ -1,4 +1,7 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import { createSharedComposable } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type ActivityModel, type ActivityOverall, assembleActivityModel } from './core/model';
 import {
   type Activity,

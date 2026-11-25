@@ -1,4 +1,5 @@
 import { runSpecWith } from '@test/utils/mocks/native-task';
+import { createPinia, setActivePinia } from 'pinia';
 import { hasTag } from 'plainfp/tagged';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ActivityId, ActivityKind, makeActivityId } from '@/modules/task-center/core/types';

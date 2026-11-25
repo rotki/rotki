@@ -1,3 +1,6 @@
+import { get, set } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, ref } from 'vue';
 import { IssueState } from '@/modules/history/data-issues/constants';
 import { PinnedNames } from '@/modules/session/types';
 import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';

@@ -1,7 +1,7 @@
-import type { ComputedRef } from 'vue';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { shallowMount } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
+import { computed, type ComputedRef } from 'vue';
 import HistoryEventsGroupItem from '@/modules/history/events/components/HistoryEventsGroupItem.vue';
 import { HistoryEventAccountingRuleStatus, type HistoryEventEntry } from '@/modules/history/events/schemas';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';

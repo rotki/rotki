@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
+import { get } from '@vueuse/shared';
+import { computed, type HTMLAttributes } from 'vue';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import EnsAvatar from '@/modules/shell/components/display/EnsAvatar.vue';
 

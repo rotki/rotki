@@ -1,6 +1,10 @@
 import type { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { startPromise } from '@shared/utils';
+import { createSharedComposable } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 
 export { useHistoryEventHighlights } from '@/modules/history/events/use-history-event-highlights';

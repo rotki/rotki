@@ -2,7 +2,7 @@ import type { MissingMapping } from '@/modules/user-data/schemas';
 import { get, set } from '@vueuse/core';
 import Dexie, { type EntityTable } from 'dexie';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick, type Ref, ref } from 'vue';
+import { effectScope, nextTick, type Ref, ref } from 'vue';
 import { NewDetectedTokenKind } from '@/modules/assets/detection/types';
 
 const POLL_UNTIL_READY = { interval: 5, timeout: 2000 } as const;

@@ -2,6 +2,9 @@
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import type { NarrowSuggestion } from '@/modules/core/table/pill/core/narrowing';
 import type { ActiveFilter, FieldDef, PillBarLabels } from '@/modules/core/table/pill/core/types';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue';
 import { useFilterState } from '@/modules/core/table/pill/composables/use-filter-state';
 import { useNarrowSuggestions } from '@/modules/core/table/pill/composables/use-narrow-suggestions';
 import { useRecentFilterValues } from '@/modules/core/table/pill/composables/use-recent-filter-values';

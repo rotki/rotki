@@ -3,6 +3,7 @@ import type { EvmChainInfo } from '@/modules/core/api/types/chains';
 import { Blockchain } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ComponentPublicInstance, nextTick } from 'vue';
 import { XpubKeyType } from '@/modules/accounts/blockchain-accounts';

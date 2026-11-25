@@ -1,4 +1,6 @@
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { get, set } from '@vueuse/shared';
+import { setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useAddressNamesStore } from '@/modules/accounts/address-book/use-address-names-store';
 

@@ -1,4 +1,5 @@
-import type { Ref } from 'vue';
+import { get } from '@vueuse/shared';
+import { computed, type Ref } from 'vue';
 import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseHistoryQueryIndicatorThreshold {

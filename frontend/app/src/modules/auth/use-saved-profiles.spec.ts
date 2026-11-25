@@ -1,4 +1,6 @@
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 
 const mockGetUserProfiles = vi.fn();
 const mockSavedUsername = ref<string>('');

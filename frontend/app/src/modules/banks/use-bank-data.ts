@@ -1,6 +1,8 @@
-import type { ComputedRef } from 'vue';
 import type { BankAccountBalance, BankConnection, BankConnectionBalances } from '@/modules/banks/types';
 import { type AssetBalanceWithPriceAndChains, type BigNumber, Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef } from 'vue';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { fromExchanges } from '@/modules/balances/aggregation/core/sources';
 import { summarizeBalances } from '@/modules/balances/aggregation/core/summarize';

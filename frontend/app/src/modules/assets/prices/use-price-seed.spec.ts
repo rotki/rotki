@@ -1,5 +1,7 @@
 import type { Balances } from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePriceSeed } from '@/modules/assets/prices/use-price-seed';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';

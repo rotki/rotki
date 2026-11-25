@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { WelcomeMessage } from '@/modules/core/messaging/dynamic-messages';
 import { checkIfDevelopment } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
 import { ofetch } from 'ofetch';
+import { computed, onMounted, ref, watch } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useRandomStepper } from '@/modules/core/common/use-random-stepper';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';

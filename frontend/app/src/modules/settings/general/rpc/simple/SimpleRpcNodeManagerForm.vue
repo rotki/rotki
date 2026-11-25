@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { syncRefs } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { noSubmit, useForm } from '@/modules/core/form/use-form';
 import { SETTING_FIELD, type SettingFieldState, textSettingSchema } from '@/modules/settings/controls/setting-field-schemas';
 

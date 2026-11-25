@@ -1,4 +1,4 @@
-import type { Raw, Ref } from 'vue';
+import { markRaw, type Raw, type Ref, shallowRef } from 'vue';
 
 /** One resolved key/value pair, as a batch fetch yields it. */
 interface CacheEntry<T> {

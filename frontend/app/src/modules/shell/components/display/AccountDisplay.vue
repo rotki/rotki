@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { type Account, Blockchain } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useScramble } from '@/modules/settings/use-scramble';

@@ -1,3 +1,5 @@
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 

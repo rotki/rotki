@@ -1,5 +1,6 @@
-import type { Ref } from 'vue';
+import { get } from '@vueuse/shared';
 import { once } from 'es-toolkit';
+import { computed, type Ref } from 'vue';
 import { useFrontendSettingsWriter } from '@/modules/settings/use-frontend-settings-writer';
 import { useSetting } from '@/modules/settings/use-setting';
 

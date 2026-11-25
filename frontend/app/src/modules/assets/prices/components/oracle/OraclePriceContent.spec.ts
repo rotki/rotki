@@ -5,6 +5,7 @@ import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, ref } from 'vue';
 import OraclePriceContent from '@/modules/assets/prices/components/oracle/OraclePriceContent.vue';
 import OraclePriceEditDialog from '@/modules/assets/prices/components/oracle/OraclePriceEditDialog.vue';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { provideHistoryEventsSection } from '@/modules/history/events/use-history-events-section';
 import ModuleNotActive from '@/modules/settings/modules/ModuleNotActive.vue';
 import ModuleSettingsMenu from '@/modules/settings/modules/ModuleSettingsMenu.vue';

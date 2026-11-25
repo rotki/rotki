@@ -1,8 +1,9 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { UseHistoryEventsSelectionModeReturn } from './use-selection-mode';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, ref, shallowReadonly, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useHistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
 import { useIgnore } from '@/modules/history/use-ignore';
 

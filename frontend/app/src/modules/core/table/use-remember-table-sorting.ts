@@ -1,6 +1,7 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
-import { objectOmit } from '@vueuse/shared';
+import { useLocalStorage } from '@vueuse/core';
+import { get, objectOmit, set } from '@vueuse/shared';
+import { type ComputedRef, onBeforeMount, type Ref, watch, type WritableComputedRef } from 'vue';
 import { arrayify } from '@/modules/core/common/data/array';
 import { useSetting } from '@/modules/settings/use-setting';
 

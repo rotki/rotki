@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { ExchangeAccountOption } from '@/modules/balances/exchanges/use-exchange-account-selection';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 

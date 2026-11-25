@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ExportReportCsv from '@/modules/reports/ExportReportCsv.vue';
 import ConfirmMenu from '@/modules/shell/components/ConfirmMenu.vue';
 import { useDeleteQuestion } from '@/modules/shell/components/row-delete-question';

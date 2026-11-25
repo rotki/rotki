@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 

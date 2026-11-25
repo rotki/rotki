@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useLocationBalanceStatus } from '@/modules/balances/use-location-balance-status';

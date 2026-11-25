@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { PendingSuggestion, SuggestionAction, SuggestionChoice, SuggestionRequirement } from './settings-suggestions';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const { suggestion } = defineProps<{
   suggestion: PendingSuggestion;

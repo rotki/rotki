@@ -1,5 +1,7 @@
 import { bigNumberify, Blockchain, isEvmIdentifier } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { get } from '@vueuse/shared';
+import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { type NoteFormat, NoteType, useHistoryEventNote } from '@/modules/history/events/use-history-event-note';

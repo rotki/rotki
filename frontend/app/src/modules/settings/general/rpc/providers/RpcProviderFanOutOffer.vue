@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { RpcProviderCandidate } from '@/modules/settings/general/rpc/providers/rpc-provider-plan';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import RpcProviderCandidateRow from '@/modules/settings/general/rpc/providers/RpcProviderCandidateRow.vue';
 
 const modelEnabled = defineModel<boolean>({ required: true });

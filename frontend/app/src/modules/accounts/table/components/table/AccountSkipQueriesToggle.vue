@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { SkipState, useAccountSkipQueries } from '@/modules/accounts/table/use-account-skip-queries';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 

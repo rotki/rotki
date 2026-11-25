@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import PremiumLock from '@/modules/premium/PremiumLock.vue';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';

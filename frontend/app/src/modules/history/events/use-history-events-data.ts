@@ -1,11 +1,15 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import { HistoryEventEntryType } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { useArraySome, watchImmediate } from '@vueuse/core';
+import { logicOr } from '@vueuse/math';
+import { get, set } from '@vueuse/shared';
 import { flatten } from 'es-toolkit';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type MaybeRefOrGetter, readonly, type Ref, ref, shallowReadonly, shallowRef, toValue, watch } from 'vue';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { isRequestFailure, type RequestFailure } from '@/modules/core/api/request-result';
 import { api } from '@/modules/core/api/rotki-api';

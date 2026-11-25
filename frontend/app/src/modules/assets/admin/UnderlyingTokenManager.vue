@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { EvmTokenKind, isValidEthAddress, type UnderlyingToken } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { z, type ZodType } from 'zod';
 import UnderlyingTokenWeightHint from '@/modules/assets/admin/UnderlyingTokenWeightHint.vue';
 import { evmTokenKindsData } from '@/modules/core/common/chains';

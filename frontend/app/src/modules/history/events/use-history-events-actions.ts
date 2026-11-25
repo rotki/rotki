@@ -1,4 +1,3 @@
-import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { DialogEventHandlers } from '@/modules/history/events/dialog-types';
 import type {
@@ -11,6 +10,10 @@ import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import { type Blockchain, HistoryEventEntryType } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { type MaybeRefOrGetter, type Ref, toValue, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import {
   isEthBlockEvent,
   isEvmEvent,

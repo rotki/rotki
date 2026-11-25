@@ -4,6 +4,7 @@ import { createCustomPinia } from '@test/utils/create-pinia';
 import { type DOMWrapper, flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import LidoCsmTable from '@/modules/staking/lido-csm/LidoCsmTable.vue';

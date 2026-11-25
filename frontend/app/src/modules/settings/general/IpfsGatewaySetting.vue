@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import SettingText from '@/modules/settings/controls/SettingText.vue';
 
 const { t } = useI18n({ useScope: 'global' });

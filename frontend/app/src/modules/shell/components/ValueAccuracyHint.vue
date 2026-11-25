@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { useSetting } from '@/modules/settings/use-setting';
 

@@ -1,5 +1,7 @@
+import type { Ref } from 'vue';
 import { NotificationGroup } from '@rotki/common';
 import { createSharedComposable, useSessionStorage } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 
 const NOTIFICATION_COOLDOWN_MS = 60_000;
 

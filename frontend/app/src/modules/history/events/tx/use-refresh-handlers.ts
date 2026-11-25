@@ -1,7 +1,9 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { BankConnectionIdentity } from '@/modules/banks/types';
 import type { ActivityId } from '@/modules/task-center/core/types';
+import { get } from '@vueuse/shared';
 import { err, isErr, mapError, map as mapResult, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { ApiKeyMissingError } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';

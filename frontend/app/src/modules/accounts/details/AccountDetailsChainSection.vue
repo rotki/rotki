@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AccountDetailsAssets from '@/modules/accounts/details/AccountDetailsAssets.vue';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { useBlockchainBalanceStaleness } from '@/modules/balances/use-blockchain-balance-staleness';

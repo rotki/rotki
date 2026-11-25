@@ -1,7 +1,8 @@
-import type { Ref } from 'vue';
 import type { SupportedCurrency } from '@/modules/assets/amount-display/currencies';
 import type { CreateAccountMode, CreateAccountStepId } from '@/modules/auth/create-account/types';
 import type { CreateAccountPayload, LoginCredentials, PremiumSetup } from '@/modules/auth/login';
+import { get, set } from '@vueuse/shared';
+import { type Ref, ref, shallowRef } from 'vue';
 import { suggestCurrency } from '@/modules/auth/create-account/locale-currency';
 import { stepPosition } from '@/modules/auth/create-account/use-create-account-steps';
 

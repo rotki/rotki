@@ -2,6 +2,9 @@
 import type { ZodType } from 'zod';
 import type { ManualBalance, RawManualBalance } from '@/modules/balances/types/manual-balances';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import {
   type ManualBalanceFormState,
   manualBalanceSchema,

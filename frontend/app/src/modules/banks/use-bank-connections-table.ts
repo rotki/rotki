@@ -1,8 +1,11 @@
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
-import type { ComputedRef, Ref } from 'vue';
 import type { BankConnection, BankConnectionIdentity } from '@/modules/banks/types';
 import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import { type BigNumber, Zero } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type Ref, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { connectionKey } from '@/modules/banks/bank-balances';

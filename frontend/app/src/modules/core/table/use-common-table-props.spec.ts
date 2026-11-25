@@ -1,3 +1,4 @@
+import { get, set } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
 

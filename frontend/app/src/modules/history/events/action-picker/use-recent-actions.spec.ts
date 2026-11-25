@@ -1,5 +1,7 @@
 import { HistoryEventEntryType } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 import { useRecentActions } from '@/modules/history/events/action-picker/use-recent-actions';
 
 describe('useRecentActions', () => {

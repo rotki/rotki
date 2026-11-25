@@ -1,6 +1,7 @@
 import { bigNumberify } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, ref } from 'vue';
 import AssetValueRow from '@/modules/assets/AssetValueRow.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 

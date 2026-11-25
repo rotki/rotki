@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { ChainActivity, SharedDeposit } from './address-interaction-graph';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useScramble } from '@/modules/settings/use-scramble';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';

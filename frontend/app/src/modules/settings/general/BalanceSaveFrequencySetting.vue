@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { Constraints } from '@/modules/core/common/constraints';
 import { Defaults } from '@/modules/core/common/defaults';
 import SettingNumber from '@/modules/settings/controls/SettingNumber.vue';

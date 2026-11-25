@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { useTemplateRef } from 'vue';
+import { useFocus, useFocusWithin, useVirtualList } from '@vueuse/core';
+import { logicOr } from '@vueuse/math';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import TradeAddressDisplay from '@/modules/wallet/send/TradeAddressDisplay.vue';

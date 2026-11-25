@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { watchImmediate } from '@vueuse/core';
+import { useI18n } from 'vue-i18n';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';

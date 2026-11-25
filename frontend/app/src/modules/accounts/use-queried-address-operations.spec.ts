@@ -1,5 +1,6 @@
 import type { QueriedAddresses, QueriedAddressPayload } from '@/modules/session/types';
-import { createPinia, setActivePinia } from 'pinia';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Module } from '@/modules/core/common/modules';

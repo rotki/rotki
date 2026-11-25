@@ -2,6 +2,8 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { DuplicateRow } from '@/modules/history/events/use-customized-event-duplicates';
 import type { NamedFailure } from '@/modules/shell/components/named-failure';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';

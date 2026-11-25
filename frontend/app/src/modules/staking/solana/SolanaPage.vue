@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import StakingHeadlineBalance from '@/modules/staking/components/StakingHeadlineBalance.vue';
 import StakingPageLayout from '@/modules/staking/components/StakingPageLayout.vue';
 import { SOL_IDENTIFIER, SOLANA_STAKING_RESTRICTIONS } from '@/modules/staking/solana/constants';

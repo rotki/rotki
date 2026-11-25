@@ -2,6 +2,8 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { OracleCacheMeta } from '@/modules/assets/prices/price-types';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { computed, toRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';

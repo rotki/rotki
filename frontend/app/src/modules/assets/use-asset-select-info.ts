@@ -1,11 +1,14 @@
 import type { AssetInfo } from '@rotki/common';
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { AssetMap } from '@/modules/assets/types';
 import type { AssetStringField } from '@/modules/assets/use-asset-info-retrieval';
 import { startPromise } from '@shared/utils';
+import { createSharedComposable } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { chunk } from 'es-toolkit';
+import { computed, type ComputedRef, type MaybeRefOrGetter, shallowRef, toValue } from 'vue';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { processAssetInfo, useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
+import { useDebounceFn } from '@/modules/core/common/async/scoped-timers';
 import { logger } from '@/modules/core/common/logging/logging';
 
 interface AssetWithResolutionStatus extends AssetInfo {

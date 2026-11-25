@@ -2,7 +2,7 @@ import type { UnmatchedEventGroup } from '@/modules/history/events/matching/type
 import { FAKE_MATCHING_KIND_CASES, fakeMatchingKind } from '@test/utils/fake-matching-kind';
 import { mountGeneric } from '@test/utils/mount-generic';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, nextTick, toRaw } from 'vue';
 import UnmatchedMatchingDialog from '@/modules/history/events/UnmatchedMatchingDialog.vue';
 
 const { pin, pinnedNames } = vi.hoisted(() => {

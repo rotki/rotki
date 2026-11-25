@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import LoginActionAlert from '@/modules/auth/login/LoginActionAlert.vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';

@@ -3,6 +3,9 @@ import type { MatchingKind } from '@/modules/history/events/matching/matching-ki
 import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
 import type { UnmatchedRow } from '@/modules/history/events/unmatched-row';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import UnmatchedCards from '@/modules/history/events/UnmatchedCards.vue';
 import UnmatchedMatchDisabledAlert from '@/modules/history/events/UnmatchedMatchDisabledAlert.vue';
 import UnmatchedTable from '@/modules/history/events/UnmatchedTable.vue';

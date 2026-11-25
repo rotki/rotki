@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useToNumber } from '@vueuse/core';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import FullSizeContent from '@/modules/shell/components/FullSizeContent.vue';
 
 const { progress = '' } = defineProps<{

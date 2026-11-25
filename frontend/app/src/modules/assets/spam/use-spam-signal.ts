@@ -1,5 +1,6 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import type { SpamSignal } from '@/modules/assets/api/use-asset-spam-prediction-api';
+import { useI18n } from 'vue-i18n';
 
 interface SpamSignalDescription {
   icon: RuiIcons;

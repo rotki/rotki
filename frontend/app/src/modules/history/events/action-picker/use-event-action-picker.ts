@@ -1,7 +1,8 @@
 import type { HistoryEventEntryType } from '@rotki/common';
 import type { RuiIcons } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { EventTypeCombination } from '@/modules/history/events/event-type';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 
 export interface EventActionRow {

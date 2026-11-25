@@ -1,4 +1,5 @@
 import { Blockchain } from '@rotki/common';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount, createValidatorAccount } from '@/modules/accounts/create-account';
 import { useAccountExport } from '@/modules/accounts/import-export/use-account-export';

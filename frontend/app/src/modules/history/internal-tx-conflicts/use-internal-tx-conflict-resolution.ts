@@ -1,8 +1,10 @@
-import type { Ref } from 'vue';
 import type { InternalTxConflict } from './types';
 import type { ActivityId } from '@/modules/task-center/core/types';
 import { NotificationKind, Severity } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { err, getOr, ok, type Result } from 'plainfp/result';
+import { type Ref, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { logger } from '@/modules/core/common/logging/logging';
 import { createPersistentSharedComposable } from '@/modules/core/common/use-persistent-shared-composable';

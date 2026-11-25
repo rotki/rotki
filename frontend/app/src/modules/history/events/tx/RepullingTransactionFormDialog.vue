@@ -2,7 +2,8 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { RepullingTransactionResult } from '@/modules/history/events/tx/use-history-transactions';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
-import { useTemplateRef } from 'vue';
+import { computed, ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import RepullingTransactionForm from '@/modules/history/events/tx/RepullingTransactionForm.vue';
 import { useRepullingTransactionSubmission } from '@/modules/history/events/tx/use-repulling-transaction-submission';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';

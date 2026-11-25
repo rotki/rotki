@@ -7,9 +7,11 @@ import type {
   YAXisComponentOption,
 } from 'echarts';
 import type { DataZoomComponentOption, GridComponentOption } from 'echarts/components';
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
+import { useRotkiTheme } from '@rotki/ui-library';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { estimatedBands } from '@/modules/dashboard/graph/net-value-estimated-bands';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useGraph } from '@/modules/statistics/use-graph';

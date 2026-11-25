@@ -7,6 +7,10 @@
  * So the section opens by itself as soon as one of its fields shows an error, and its header counts
  * them while it is closed.
  */
+import { set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+
 defineOptions({
   inheritAttrs: false,
 });

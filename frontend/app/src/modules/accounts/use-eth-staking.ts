@@ -1,8 +1,11 @@
-import type { Ref } from 'vue';
 import type { Eth2Validator } from '@/modules/balances/types/balances';
 import type { ActionStatus } from '@/modules/core/common/action';
 import { type BigNumber, Blockchain, type EthValidatorFilter } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { computed, type Ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { isValidatorAccount } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';

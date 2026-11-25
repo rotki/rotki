@@ -1,5 +1,6 @@
-import type { EffectScope, MaybeRefOrGetter } from 'vue';
+import { set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, type MaybeRefOrGetter, nextTick, ref, toValue } from 'vue';
 import { usePeriodicPollingScheduler } from './use-periodic-polling-scheduler';
 
 interface SchedulerOptions {

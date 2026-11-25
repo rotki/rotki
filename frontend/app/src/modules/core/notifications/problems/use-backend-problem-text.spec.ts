@@ -1,5 +1,6 @@
 import type { MessageKey } from '@/message-key';
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import en from '@/locales/en.json';
 import {

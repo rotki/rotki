@@ -1,5 +1,7 @@
 import type { ActionResult } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
 import { nftAssetsActivity } from '@/modules/assets/assets.activity';
 import { NftResponse } from '@/modules/assets/nfts';

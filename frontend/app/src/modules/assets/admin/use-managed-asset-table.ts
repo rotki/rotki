@@ -1,9 +1,11 @@
 import type { SupportedAsset } from '@rotki/common';
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { SpamPredictionToken } from '@/modules/assets/api/use-asset-spam-prediction-api';
 import type { Collection } from '@/modules/core/common/collection';
+import { get, set } from '@vueuse/shared';
 import { some } from 'es-toolkit/compat';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, toValue, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type SpamAssessment, useSpamAssessments } from '@/modules/assets/spam/use-spam-assessments';
 import { EVM_TOKEN, isSpammableAssetType, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { type TableEmptyState, useTableEmptyState } from '@/modules/core/table/use-table-empty-state';

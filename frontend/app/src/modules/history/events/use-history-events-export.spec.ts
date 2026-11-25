@@ -1,5 +1,6 @@
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { Severity } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { computed, type ComputedRef } from 'vue';

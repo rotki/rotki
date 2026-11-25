@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { KrakenStakingDateFilter } from '@/modules/staking/staking-types';
 import { type AssetBalance, type BigNumber, HistoryEventEntryType } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { sum } from '@/modules/core/common/display/balances';
 import HistoryEventsView from '@/modules/history/events/HistoryEventsView.vue';

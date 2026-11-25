@@ -1,5 +1,6 @@
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
+import { computed } from 'vue';
 import { HistoryEventAccountingRuleStatus, type HistoryEventEntry, type HistoryEventRow } from '@/modules/history/events/schemas';
 import { useCompleteEvents } from './use-complete-events';
 

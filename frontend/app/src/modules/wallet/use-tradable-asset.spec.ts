@@ -1,7 +1,9 @@
 import type { Balances } from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify, Zero } from '@rotki/common';
-import { createPinia, setActivePinia } from 'pinia';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useTradableAsset } from './use-tradable-asset';

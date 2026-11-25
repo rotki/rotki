@@ -4,7 +4,7 @@ import type { UseHistoryEventsTableReturn } from '@/modules/history/events/use-h
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type Component, defineComponent, h } from 'vue';
+import { type Component, computed, defineComponent, h, nextTick, type Ref, ref, shallowRef } from 'vue';
 import { RequestFailed, type RequestFailure } from '@/modules/core/api/request-result';
 import { provideTableFetchError } from '@/modules/core/table/use-table-empty-state';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';

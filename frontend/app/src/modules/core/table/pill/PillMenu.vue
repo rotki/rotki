@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, useId, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { FilterValueTypes } from '@/modules/core/table/filtering';
 import { resolveText } from '@/modules/core/table/pill/core/text';
 import PillComboboxSearch from '@/modules/core/table/pill/PillComboboxSearch.vue';

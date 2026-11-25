@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { set } from '@vueuse/shared';
+import { onBeforeMount, onBeforeUnmount, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
+import { definePage } from 'vue-router/experimental';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
 import { CLIENT_CONFIG } from '@/modules/wallet/bridge/bridge-config';

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
+import { get, set } from '@vueuse/shared';
+import { ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import HistoryRefreshBanks from '@/modules/history/refresh/HistoryRefreshBanks.vue';
 import HistoryRefreshChains from '@/modules/history/refresh/HistoryRefreshChains.vue';
 import HistoryRefreshExchanges from '@/modules/history/refresh/HistoryRefreshExchanges.vue';

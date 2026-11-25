@@ -1,4 +1,7 @@
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { onUnmounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
 
 export interface UsePinnedHighlightNavigationReturn {

@@ -1,6 +1,8 @@
 import type { LocationLabel } from '@/modules/core/common/location';
 import type { TransactionStatus, useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import '@test/i18n';

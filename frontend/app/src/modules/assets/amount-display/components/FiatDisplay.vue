@@ -21,7 +21,9 @@
 import type { BigNumber } from '@rotki/common';
 import type { SymbolDisplay, Timestamp } from '@/modules/assets/amount-display/types';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
-import { createReusableTemplate } from '@vueuse/core';
+import { createReusableTemplate, isDefined } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import { useAmountDisplaySettings, useFiatConversion, useOracleInfo, useScrambledValue } from '@/modules/assets/amount-display';
 import { type Currency, useCurrencies } from '@/modules/assets/amount-display/currencies';
 import AmountDisplayBase from './AmountDisplayBase.vue';

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { InternalTxConflict } from './types';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { onBeforeMount, ref, watch } from 'vue';
 import { HighlightTargetTypes, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
 import { PinnedNames } from '@/modules/session/types';
 import InternalTxConflictRepullSettings from '@/modules/settings/general/InternalTxConflictRepullSettings.vue';

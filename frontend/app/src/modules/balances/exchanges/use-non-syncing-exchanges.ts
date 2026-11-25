@@ -1,4 +1,7 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
+import { get, set } from '@vueuse/shared';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';

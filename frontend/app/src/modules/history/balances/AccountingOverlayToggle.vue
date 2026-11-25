@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 
 const modelValue = defineModel<OverlayMode>({ required: true });

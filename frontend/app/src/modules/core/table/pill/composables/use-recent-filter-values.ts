@@ -1,5 +1,6 @@
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 

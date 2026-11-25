@@ -1,4 +1,8 @@
 import { startPromise } from '@shared/utils';
+import { useDocumentVisibility, useEventListener } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, onScopeDispose, watch } from 'vue';
 import { useAutoLogoutNotice } from '@/modules/auth/auto-logout/use-auto-logout-notice';
 import { useLogout } from '@/modules/auth/use-logout';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';

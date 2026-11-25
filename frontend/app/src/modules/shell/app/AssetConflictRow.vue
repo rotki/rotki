@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { UnderlyingToken } from '@rotki/common';
+import { computed } from 'vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 

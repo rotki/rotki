@@ -1,5 +1,5 @@
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { normalizeScrambleMultiplier } from '@/modules/session/session-utils';
 
 export interface ScramblerOptions {

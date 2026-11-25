@@ -1,3 +1,4 @@
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { useCustomBackend } from './use-custom-backend';
 

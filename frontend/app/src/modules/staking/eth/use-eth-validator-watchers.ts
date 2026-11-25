@@ -1,4 +1,5 @@
 import { Blockchain } from '@rotki/common';
+import { watch } from 'vue';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useEthValidatorFetching } from '@/modules/staking/eth/use-eth-validator-fetching';

@@ -2,8 +2,10 @@ import type { OracleCacheMeta } from '@/modules/assets/prices/price-types';
 import { componentVm } from '@test/utils/component-vm';
 import { mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
 

@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import type { Exchange, ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { externalLinks } from '@shared/external-links';
+import { useTimeoutFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { onBeforeMount, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import ExchangeBalancesEmpty from '@/modules/balances/exchanges/ExchangeBalancesEmpty.vue';

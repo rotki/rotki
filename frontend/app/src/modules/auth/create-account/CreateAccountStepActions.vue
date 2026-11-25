@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+
 const {
   issueCount = 0,
   loading = false,

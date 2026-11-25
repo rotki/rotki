@@ -2,8 +2,9 @@ import type { Collection } from '@/modules/core/common/collection';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type DefineComponent, defineComponent, h } from 'vue';
+import { computed, type DefineComponent, defineComponent, h, nextTick, ref } from 'vue';
 import HistoryEventsView from '@/modules/history/events/HistoryEventsView.vue';
 
 const groups = ref<Collection<HistoryEventRow>>(

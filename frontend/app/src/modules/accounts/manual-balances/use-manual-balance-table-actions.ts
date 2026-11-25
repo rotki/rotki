@@ -3,6 +3,7 @@ import type { ManualBalance, ManualBalanceWithPrice } from '@/modules/balances/t
 import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { omit } from 'es-toolkit';
+import { useI18n } from 'vue-i18n';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';

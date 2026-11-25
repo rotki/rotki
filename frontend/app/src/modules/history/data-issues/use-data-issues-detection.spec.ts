@@ -1,3 +1,5 @@
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStatusError } from '@/modules/core/api/response-handlers';

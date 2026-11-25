@@ -1,4 +1,5 @@
 import { createTestExchange } from '@test/utils/create-data';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';

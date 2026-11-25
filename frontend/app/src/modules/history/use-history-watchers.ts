@@ -1,6 +1,10 @@
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
+import { storeToRefs } from 'pinia';
+import { watch } from 'vue';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
+import { watchDebounced } from '@/modules/core/common/async/scoped-timers';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 import { useHistoricalBalances } from '@/modules/history/balances/use-historical-balances';

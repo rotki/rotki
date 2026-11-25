@@ -5,7 +5,10 @@ import {
   LiquityStakingDetails,
   LiquityStatistics,
 } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { map as mapResult, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Module } from '@/modules/core/common/modules';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';

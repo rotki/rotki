@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { createReusableTemplate, useScroll } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { NotificationDayLabel } from '@/modules/core/notifications/notification-days';
 import Notification from '@/modules/core/notifications/Notification.vue';
 import BackendProblemCard from '@/modules/core/notifications/problems/BackendProblemCard.vue';

@@ -2,6 +2,10 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { PremiumDevice } from '@/modules/premium/devices/premium';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, onMounted, ref, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 import PremiumDeviceFormDialog from '@/modules/premium/devices/components/PremiumDeviceFormDialog.vue';

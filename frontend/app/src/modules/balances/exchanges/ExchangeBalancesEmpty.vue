@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useLocations } from '@/modules/core/common/use-locations';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';

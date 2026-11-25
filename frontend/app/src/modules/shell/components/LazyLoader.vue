@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import { useElementBounding, useElementVisibility } from '@vueuse/core';
+import { logicAnd } from '@vueuse/math';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, useTemplateRef, watch } from 'vue';
+import { refDebounced } from '@/modules/core/common/async/scoped-timers';
+
 const { initialAppear = false, minHeight = '16px' } = defineProps<{
   minHeight?: string;
   initialAppear?: boolean;

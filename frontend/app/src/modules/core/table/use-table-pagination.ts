@@ -1,7 +1,8 @@
 import type { TablePaginationData } from '@rotki/ui-library';
-import type { MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { ChangeSource } from '@/modules/core/table/use-change-intent';
+import { get } from '@vueuse/shared';
+import { computed, type MaybeRefOrGetter, type Ref, ref, toValue, type WritableComputedRef } from 'vue';
 import { applyPaginationDefaults } from '@/modules/core/table/pagination-filter-utils';
 
 interface UseTablePaginationReturn {

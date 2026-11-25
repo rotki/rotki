@@ -1,4 +1,6 @@
 import type { PendingSuggestion } from './settings-suggestions';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { ref, shallowRef } from 'vue';
 
 /**
  * Holds the UI state for the post-login settings-suggestions dialog.

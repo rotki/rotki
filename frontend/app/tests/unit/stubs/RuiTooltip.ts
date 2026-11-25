@@ -1,3 +1,5 @@
+import { ref } from 'vue';
+
 export const RuiTooltipStub = {
   setup() {
     const open = ref(false);

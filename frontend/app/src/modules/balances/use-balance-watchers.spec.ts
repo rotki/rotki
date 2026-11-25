@@ -1,5 +1,7 @@
-import type { EffectScope } from 'vue';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, nextTick, ref } from 'vue';
 import { BalanceSource, type BalanceValueThreshold } from '@/modules/settings/types/frontend-settings';
 
 const fetchManualBalances = vi.fn(async (): Promise<void> => {});

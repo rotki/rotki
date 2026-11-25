@@ -1,10 +1,11 @@
-import type { EffectScope, Ref } from 'vue';
 import type { PreparedBucket } from './accounting-overlay-helpers';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { type BigNumber, bigNumberify } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, type Ref, ref, shallowRef } from 'vue';
 import { useAccountingOverlaySparkline } from './use-accounting-overlay-sparkline';
 
 const seriesFor = vi.fn<(locationLabel: string, asset: string) => Promise<PreparedBucket[] | undefined>>();

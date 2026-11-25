@@ -1,9 +1,10 @@
-import type { EffectScope } from 'vue';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { SigilEventMap, SigilQueueEntry } from '@/modules/core/sigil/types';
 import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import { flushPromises } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, nextTick, ref } from 'vue';
 import { sigilBus } from '@/modules/core/sigil/event-bus';
 
 const mockEnqueue = vi.fn<(entry: Omit<SigilQueueEntry, 'id'>) => Promise<void>>().mockResolvedValue(undefined);

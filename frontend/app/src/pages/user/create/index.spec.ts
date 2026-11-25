@@ -1,7 +1,9 @@
-import type { Pinia } from 'pinia';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { shallowMount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
+import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import CreateAccountWizard from '@/modules/auth/create-account/CreateAccountWizard.vue';
 import CreateAccountPage from './index.vue';
 

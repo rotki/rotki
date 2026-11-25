@@ -1,5 +1,6 @@
 import { mockT } from '@test/i18n';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { type BackendProblem, foldReport, type ProblemMessage, type ProblemReport } from '@/modules/core/notifications/problems/backend-problem-tree';
 import BackendProblemCard from '@/modules/core/notifications/problems/BackendProblemCard.vue';

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { OAuthResult } from '@shared/ipc';
 import { type Notification, NotificationGroup, NotificationKind, Severity } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import { logger } from '@/modules/core/common/logging/logging';

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
 const rememberUsername = defineModel<boolean>('rememberUsername', { required: true });

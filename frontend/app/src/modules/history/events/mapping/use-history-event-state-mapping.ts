@@ -1,4 +1,6 @@
 import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
+import { createSharedComposable } from '@vueuse/core';
+import { useI18n } from 'vue-i18n';
 import { HistoryEventState } from '@/modules/history/events/schemas';
 
 interface EventStateConfig {

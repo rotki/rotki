@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get, set } from '@vueuse/shared';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
 import { useAssetIconApi } from '@/modules/assets/api/use-asset-icon-api';

@@ -1,6 +1,7 @@
 import type { MaybeRef } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import { OwnedAssets, type SupportedAsset } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import {
   type AssetIdResponse,
   type AssetRequestPayload,

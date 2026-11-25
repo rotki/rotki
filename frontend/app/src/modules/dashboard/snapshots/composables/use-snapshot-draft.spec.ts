@@ -1,6 +1,8 @@
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { BalanceSnapshot, LocationDataSnapshot, Snapshot } from '@/modules/dashboard/snapshots';
 import { bigNumberify } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { nextTick, ref } from 'vue';
 import { BalanceType } from '@/modules/balances/types/balances';

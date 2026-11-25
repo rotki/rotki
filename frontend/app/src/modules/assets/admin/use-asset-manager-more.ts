@@ -1,6 +1,9 @@
 import type { RuiIcons } from '@rotki/ui-library';
-import type { ComputedRef } from 'vue';
 import type { RouteName } from '@/types/router';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
 import { msg } from '@/message-key';
 
 /** A tool under the More section of Manage Assets: its path, label and icon from its nav meta, and what it is for. */

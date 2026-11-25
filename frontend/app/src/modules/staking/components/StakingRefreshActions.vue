@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import RefreshSplitButton from '@/modules/shell/components/RefreshSplitButton.vue';
 
 /**

@@ -1,4 +1,6 @@
 import type { Accounts } from '@/modules/accounts/blockchain-accounts';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 function stubAccount(address: string): Accounts[string][number] {

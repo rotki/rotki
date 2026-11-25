@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { assert, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { isDefined } from '@vueuse/core';
+import { logicOr } from '@vueuse/math';
+import { get, set } from '@vueuse/shared';
+import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSessionApi } from '@/modules/session/api/use-session-api';
 import { useCacheClear } from '@/modules/session/use-cache-clear';
 import { useSessionPurge } from '@/modules/session/use-purge';

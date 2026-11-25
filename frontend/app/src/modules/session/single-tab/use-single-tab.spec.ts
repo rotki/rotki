@@ -1,7 +1,9 @@
 import type { UseSingleTabReturn } from './use-single-tab';
 import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 
 const isPackaged = ref<boolean>(false);
 const reload = vi.fn();

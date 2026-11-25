@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { useI18n } from 'vue-i18n';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import Explorers from '@/modules/settings/explorers/Explorers.vue';
 import AddressNamePrioritySetting from '@/modules/settings/frontend/AddressNamePrioritySetting.vue';

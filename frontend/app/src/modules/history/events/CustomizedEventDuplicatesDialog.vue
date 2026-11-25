@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { set } from '@vueuse/shared';
+import { onBeforeMount } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import CustomizedEventDuplicatesFooter from '@/modules/history/events/CustomizedEventDuplicatesFooter.vue';
 import CustomizedEventDuplicatesList from '@/modules/history/events/CustomizedEventDuplicatesList.vue';

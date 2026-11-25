@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { externalLinks } from '@shared/external-links';
-import { useTemplateRef } from 'vue';
+import { get } from '@vueuse/shared';
+import { computed, ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type SolanaTokenMigrationData, useSolanaTokenMigrationDialog } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-dialog';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';

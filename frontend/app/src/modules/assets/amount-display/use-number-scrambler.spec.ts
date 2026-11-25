@@ -1,4 +1,5 @@
 import { bigNumberify } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
 import { useNumberScrambler } from './use-number-scrambler';
 

@@ -1,6 +1,8 @@
-import type { ComputedRef } from 'vue';
 import type { Exchange, ExchangeInfo } from '@/modules/balances/types/exchanges';
 import type { ConnectionRef } from '@/modules/core/common/connection';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef } from 'vue';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';

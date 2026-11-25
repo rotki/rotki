@@ -2,6 +2,10 @@
 import type { BackendOptions } from '@shared/ipc';
 import type { BackendConfiguration } from '@/modules/shell/app/backend';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useForm } from '@/modules/core/form/use-form';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';

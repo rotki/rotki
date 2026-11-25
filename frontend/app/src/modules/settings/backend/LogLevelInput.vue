@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
 import { LogLevel } from '@shared/log-level';
+import { createReusableTemplate } from '@vueuse/core';
+import { useI18n } from 'vue-i18n';
 
 const model = defineModel<LogLevel>({ required: true });
 

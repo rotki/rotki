@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import NonFungibleBalances from '@/modules/balances/non-fungible/components/NonFungibleBalances.vue';
 import { NoteLocation } from '@/modules/core/common/notes';

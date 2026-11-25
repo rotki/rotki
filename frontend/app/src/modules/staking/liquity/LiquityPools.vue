@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LiquityPoolDetailEntry } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
 import StakingHeadlineBalance from '@/modules/staking/components/StakingHeadlineBalance.vue';
 import { liquityActivity } from '@/modules/staking/liquity/liquity.activity';

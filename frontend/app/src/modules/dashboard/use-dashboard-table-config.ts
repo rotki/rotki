@@ -1,7 +1,10 @@
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import type { DashboardTableType } from '@/modules/settings/types/frontend-settings';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type DeepReadonly, type MaybeRefOrGetter, readonly, type Ref, ref, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAssetBalanceColumns } from '@/modules/balances/use-asset-balance-columns';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';

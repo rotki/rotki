@@ -1,8 +1,8 @@
-import type { EffectScope } from 'vue';
 import type { HistoricalBalanceSeriesPayload } from './types';
 import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import { err, ok } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope } from 'vue';
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 import { useAccountingOverlaySeries, type UseAccountingOverlaySeriesReturn } from './use-accounting-overlay-series';
 

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { SolanaStakeAccountRow } from '@/modules/staking/solana/use-solana-stake-accounts';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import { SOL_IDENTIFIER, SOLANA_LOCATION } from '@/modules/staking/solana/constants';

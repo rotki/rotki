@@ -2,6 +2,10 @@
 import type { RouteLocationRaw } from 'vue-router';
 import type { ProfitLossReportPeriod } from '@/modules/reports/report-types';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';
 import { useSyncRollup } from '@/modules/history/events/tx/use-sync-rollup';

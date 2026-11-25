@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { exchangeBalancesActivity } from '@/modules/balances/balances.activity';
 import { useLocations } from '@/modules/core/common/use-locations';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';

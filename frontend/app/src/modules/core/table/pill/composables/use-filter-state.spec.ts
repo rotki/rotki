@@ -1,6 +1,7 @@
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
-import { get } from '@vueuse/shared';
+import { get, set } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
+import { nextTick, ref } from 'vue';
 import { useFilterState } from '@/modules/core/table/pill/composables/use-filter-state';
 
 const protocol: FieldDef = {

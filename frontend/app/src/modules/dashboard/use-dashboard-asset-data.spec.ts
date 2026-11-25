@@ -1,6 +1,8 @@
 import type { DataTableSortData } from '@rotki/ui-library';
 import { type AssetBalanceWithPrice, bigNumberify } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, ref } from 'vue';
 import { useDashboardAssetData } from '@/modules/dashboard/use-dashboard-asset-data';
 
 const mockTotalNetWorth = ref(bigNumberify(1000));

@@ -1,3 +1,7 @@
+import { get, set } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, shallowRef } from 'vue';
+
 /** What a condition is about. Kebab-case, since each one prefixes the row ids it lands in. */
 export const RaisedConditionKind = {
   BINANCE_PAIRS_MISSING: 'binance-pairs-missing',

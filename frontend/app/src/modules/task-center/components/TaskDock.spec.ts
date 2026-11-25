@@ -1,6 +1,8 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, type ComputedRef, nextTick, type Ref, ref } from 'vue';
 import TaskDock from '@/modules/task-center/components/TaskDock.vue';
 import { type ActivityModel, assembleActivityModel } from '@/modules/task-center/core/model';
 import {

@@ -1,7 +1,10 @@
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import type { ComputedRef, MaybeRefOrGetter, WritableComputedRef } from 'vue';
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue, type WritableComputedRef } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';

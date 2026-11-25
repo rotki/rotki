@@ -7,6 +7,7 @@ import {
   WALLET_EVENT_TYPES,
 } from '@shared/proxy/constants';
 import { createMock } from '@test/utils/create-mock';
+import { set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { ref } from 'vue';
 import { useBridgeLogging } from '@/modules/wallet/bridge/use-bridge-logging';

@@ -1,3 +1,4 @@
+import type { useI18n } from 'vue-i18n';
 import type { MessageHandler } from '../interfaces';
 import type { BalanceSnapshotError } from '@/modules/core/messaging/types';
 import { createConditionalHandler } from '@/modules/core/messaging/utils';

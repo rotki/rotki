@@ -1,5 +1,5 @@
-import type { StubInstance } from '@test/utils/component-vm';
 import { EvmTokenKind, type UnderlyingToken } from '@rotki/common';
+import { findStub, type StubInstance } from '@test/utils/component-vm';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import UnderlyingTokenManager from '@/modules/assets/admin/UnderlyingTokenManager.vue';
@@ -59,7 +59,7 @@ describe('underlyingTokenManager', () => {
   }
 
   function addDisabled(): unknown {
-    return wrapper.findComponent<StubInstance>('[data-testid=underlying-token-add]').props('disabled');
+    return findStub(wrapper, '[data-testid=underlying-token-add]').props('disabled');
   }
 
   async function typeWithoutBlurring(testId: string, value: string): Promise<void> {

@@ -1,8 +1,10 @@
 import type { AssetLocation } from '@/modules/assets/use-asset-locations-data';
 import { bigNumberify, Blockchain } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, type Ref } from 'vue';
+import { defineComponent, nextTick, type Ref } from 'vue';
 import AssetLocations from '@/modules/assets/AssetLocations.vue';
 
 const { isPricePending, matchChain, visibleAssetLocations } = await vi.hoisted(async () => {

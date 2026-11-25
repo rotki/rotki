@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { ExplorerUrls } from '@/modules/assets/asset-urls';
 import { Blockchain } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef } from 'vue';
 import { AssetAmountDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import { type HistoryEventNoteContext, type NoteFormat, NoteType, useHistoryEventNote } from '@/modules/history/events/use-history-event-note';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';

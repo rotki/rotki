@@ -1,6 +1,8 @@
 import { bigNumberify, Zero } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, nextTick, ref } from 'vue';
 import AssetsBySource from '@/modules/dashboard/holdings/components/AssetsBySource.vue';
 import { type SourceContribution, SourceKind } from '@/modules/dashboard/holdings/core/holdings-types';
 import { summarizeSources } from '@/modules/dashboard/holdings/core/source-summary';

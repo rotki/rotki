@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { RpcProviderUsage } from '@/modules/settings/general/rpc/providers/rpc-provider-usage';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useRpcProviderRemoval } from '@/modules/settings/general/rpc/providers/use-rpc-provider-removal';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';

@@ -1,4 +1,6 @@
 import { createTestingPinia } from '@pinia/testing';
+import { get } from '@vueuse/shared';
+import { setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { PINNED_DEFAULT_WIDTH } from '@/modules/shell/layout/sidebar-resize-constants';

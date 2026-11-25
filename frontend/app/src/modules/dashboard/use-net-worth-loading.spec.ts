@@ -1,5 +1,7 @@
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, nextTick, ref } from 'vue';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { useNetWorthLoading } from '@/modules/dashboard/use-net-worth-loading';

@@ -5,6 +5,9 @@
  * It is off while no backup is known, and says why. The menu asks the server when it opens and no
  * backup is known, so the button only ever deletes and never doubles as a check.
  */
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
 const { checkFailed = false, checking = false, disabled = false, noBackup = false } = defineProps<{
   disabled?: boolean;
   /** No backup is known on the server, so there is nothing to delete. */

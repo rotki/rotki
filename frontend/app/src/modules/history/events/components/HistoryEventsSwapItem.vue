@@ -4,6 +4,9 @@ import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/mod
 import type { HistoryEventNoteContext } from '@/modules/history/events/use-history-event-note';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
 import CostBasisOverlayCell from '@/modules/history/cost-basis/CostBasisOverlayCell.vue';
 import { getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';

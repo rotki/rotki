@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { isAddressAccount, isValidatorAccount } from '@/modules/accounts/account-utils';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';

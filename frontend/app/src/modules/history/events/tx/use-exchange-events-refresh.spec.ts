@@ -2,6 +2,7 @@ import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { createTestExchange } from '@test/utils/create-data';
 import { createMock } from '@test/utils/create-mock';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';

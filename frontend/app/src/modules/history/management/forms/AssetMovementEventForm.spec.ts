@@ -9,7 +9,7 @@ import dayjs from 'dayjs';
 import flushPromises from 'flush-promises';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
+import { computed, nextTick } from 'vue';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';

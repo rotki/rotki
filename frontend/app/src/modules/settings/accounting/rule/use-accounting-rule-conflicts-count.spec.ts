@@ -1,5 +1,8 @@
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { effectScope, nextTick } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { RequestCancelled, type RequestError, RequestFailed } from '@/modules/core/api/request-result';
 

@@ -1,9 +1,10 @@
-import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { type Notification, NotificationKind, Severity } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { type MaybeRefOrGetter, type Ref, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';

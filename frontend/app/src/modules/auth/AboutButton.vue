@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 
 const { t } = useI18n({ useScope: 'global' });

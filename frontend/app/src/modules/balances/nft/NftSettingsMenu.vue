@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { transformCase } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import QueriedAddressDialog from '@/modules/accounts/QueriedAddressDialog.vue';
 import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-address-operations';
 import { Module } from '@/modules/core/common/modules';

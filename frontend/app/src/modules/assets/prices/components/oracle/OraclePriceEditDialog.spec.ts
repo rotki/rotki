@@ -3,6 +3,7 @@ import { bigNumberify } from '@rotki/common';
 import { componentVm } from '@test/utils/component-vm';
 import { mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import '@test/i18n';
 

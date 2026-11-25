@@ -1,3 +1,4 @@
+import { useI18n } from 'vue-i18n';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { useSpamAsset } from '@/modules/assets/use-spam-asset';

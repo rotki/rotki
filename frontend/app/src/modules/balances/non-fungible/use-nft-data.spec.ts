@@ -3,6 +3,7 @@ import type { Collection } from '@/modules/core/common/collection';
 import type { useServerTable } from '@/modules/core/table/use-server-table';
 import { bigNumberify } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, defineComponent, h, ref } from 'vue';
 import { TableColumn } from '@/modules/core/table/table-column';

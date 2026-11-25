@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 const { hours, tolerance, explanation, canWiden = true } = defineProps<{
   /** The time range the fruitless search used, in hours. */
   hours: string;

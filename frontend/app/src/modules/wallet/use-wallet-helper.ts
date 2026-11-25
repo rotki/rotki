@@ -1,5 +1,6 @@
 import type { Blockchain } from '@rotki/common';
 import type { RecentTransaction } from '@/modules/wallet/types';
+import { get } from '@vueuse/shared';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';

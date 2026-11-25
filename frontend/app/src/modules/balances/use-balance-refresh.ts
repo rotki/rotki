@@ -1,4 +1,6 @@
 import type { MaybeRef } from 'vue';
+import { createSharedComposable } from '@vueuse/core';
+import { get } from '@vueuse/shared';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';

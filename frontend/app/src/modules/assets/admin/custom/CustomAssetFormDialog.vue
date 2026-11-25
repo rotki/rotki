@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { CustomAsset } from '@/modules/assets/types';
-import { useTemplateRef } from 'vue';
+import { set } from '@vueuse/shared';
+import { ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import CustomAssetForm from '@/modules/assets/admin/custom/CustomAssetForm.vue';
 import { useCustomAssetFormDialog } from '@/modules/assets/admin/custom/use-custom-asset-form-dialog';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';

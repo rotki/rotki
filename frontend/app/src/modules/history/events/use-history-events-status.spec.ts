@@ -1,6 +1,8 @@
 import type { Result } from 'plainfp/result';
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import { neverSettles } from '@test/utils/never-settles';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**

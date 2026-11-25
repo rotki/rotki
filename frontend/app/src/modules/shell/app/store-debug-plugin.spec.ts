@@ -1,6 +1,6 @@
 import { createPinia, defineStore, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createApp } from 'vue';
+import { createApp, nextTick, ref, shallowRef } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { StoreStatePersistsPlugin } from './store-debug-plugin';
 

@@ -1,6 +1,8 @@
-import type { ShallowRef } from 'vue';
-import type { LocationQueryRaw, RouteLocationRaw } from 'vue-router';
+import { watchImmediate } from '@vueuse/core';
+import { get } from '@vueuse/shared';
 import { omit } from 'es-toolkit';
+import { nextTick, type ShallowRef } from 'vue';
+import { type LocationQueryRaw, type RouteLocationRaw, useRoute, useRouter } from 'vue-router';
 import { DIALOG_TYPES, type DialogShowOptions, type DialogType } from '@/modules/history/events/dialog-types';
 
 /**

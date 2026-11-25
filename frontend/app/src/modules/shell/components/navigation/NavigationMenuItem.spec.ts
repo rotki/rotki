@@ -1,5 +1,6 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { nextTick } from 'vue';
 import NavigationMenuItem from '@/modules/shell/components/navigation/NavigationMenuItem.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 

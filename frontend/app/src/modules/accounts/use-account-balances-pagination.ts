@@ -1,11 +1,12 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import type {
   BlockchainAccountGroupWithBalance,
   BlockchainAccountRequestPayload,
 } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/core/common/collection';
 import type { LocationQuery, RawLocationQuery } from '@/modules/core/table/route';
+import { get, set } from '@vueuse/shared';
+import { computed, type MaybeRefOrGetter, type Ref, toValue, type WritableComputedRef } from 'vue';
 import { AccountExternalFilterSchema } from '@/modules/accounts/account-route-schema';
 import { ACCOUNT_DETAILS_QUERY_KEYS } from '@/modules/accounts/details/use-account-details-route';
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';

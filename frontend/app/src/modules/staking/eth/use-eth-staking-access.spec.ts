@@ -1,5 +1,6 @@
-import type { Ref } from 'vue';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Ref, ref } from 'vue';
 import { PremiumFeature } from '@/modules/premium/use-feature-access';
 import { Module } from '@/modules/session/use-module-enabled';
 import { useEthStakingAccess } from '@/modules/staking/eth/use-eth-staking-access';

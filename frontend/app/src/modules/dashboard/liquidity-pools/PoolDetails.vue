@@ -2,6 +2,9 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { PoolAsset } from './types';
 import { type AssetBalanceWithPrice, Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';

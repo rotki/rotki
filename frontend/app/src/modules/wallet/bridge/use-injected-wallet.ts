@@ -1,7 +1,8 @@
-import type { Ref } from 'vue';
 import type { EIP1193EventName, EIP1193Provider, EIP1193ProviderEvents } from '@/types';
 import { assert } from '@rotki/common';
 import { createSharedComposable } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { type Ref, ref } from 'vue';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';

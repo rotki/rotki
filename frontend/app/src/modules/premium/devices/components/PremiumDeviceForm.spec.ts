@@ -1,10 +1,11 @@
-import type { StubInstance } from '@test/utils/component-vm';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { PremiumDevice } from '@/modules/premium/devices/premium';
+import { findStub, type StubInstance } from '@test/utils/component-vm';
 import { settleFormDebounce } from '@test/utils/form-timing';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, type VNode } from 'vue';
+import { defineComponent, h, ref, type VNode } from 'vue';
 import PremiumDeviceForm from '@/modules/premium/devices/components/PremiumDeviceForm.vue';
 import '@test/i18n';
 
@@ -211,7 +212,7 @@ describe('premiumDeviceForm', () => {
     const { name, parent } = mountUnderParent();
     await vi.advanceTimersToNextTimerAsync();
 
-    const field = parent.findComponent<StubInstance>('[data-testid=premium-device-name]');
+    const field = findStub(parent, '[data-testid=premium-device-name]');
     field.vm.$emit('update:modelValue', 'workstation');
     await vi.advanceTimersToNextTimerAsync();
 

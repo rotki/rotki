@@ -1,4 +1,5 @@
 import type { CreateAccountMode } from '@/modules/auth/create-account/types';
+import { get } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
 import { ref } from 'vue';
 import { stepPosition, useCreateAccountSteps } from '@/modules/auth/create-account/use-create-account-steps';

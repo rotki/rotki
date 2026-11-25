@@ -3,6 +3,8 @@ import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { Blockchain } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { withSetup } from '@test/utils/with-setup';
+import { get } from '@vueuse/shared';
+import { setActivePinia } from 'pinia';
 import { assert, describe, expect, it } from 'vitest';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useEthStakingSelectionFields } from './use-eth-staking-selection-fields';

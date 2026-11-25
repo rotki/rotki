@@ -1,5 +1,7 @@
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { createMock } from '@test/utils/create-mock';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok, type Result } from 'plainfp/result';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';

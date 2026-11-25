@@ -1,4 +1,5 @@
 import { mount } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, ref } from 'vue';
 import { DRAWER_OPENER_ATTRIBUTE, useDrawerOutsideClose } from '@/modules/accounts/details/use-drawer-outside-close';

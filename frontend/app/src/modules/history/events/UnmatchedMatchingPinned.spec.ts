@@ -3,8 +3,9 @@ import type { MatchingFlow, UnmatchedEventGroup } from '@/modules/history/events
 import type { UsePinnedMatchPanelOptions } from '@/modules/history/events/use-pinned-match-panel';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type Component, defineComponent, h } from 'vue';
+import { type Component, defineComponent, h, nextTick, ref, toRaw, toValue } from 'vue';
 import MatchAssetMovementsPinned from '@/modules/history/events/MatchAssetMovementsPinned.vue';
 import MatchBridgeTransactionsPinned from '@/modules/history/events/MatchBridgeTransactionsPinned.vue';
 import { assetMovementMatchingKind } from '@/modules/history/events/matching/asset-movement-matching-kind';

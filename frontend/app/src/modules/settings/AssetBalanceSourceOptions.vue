@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import SettingsMenuSection from '@/modules/settings/SettingsMenuSection.vue';
 
 /** The balance source choice for the asset graph, drawn inside whichever menu offers it. */

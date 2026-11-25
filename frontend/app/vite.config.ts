@@ -6,13 +6,11 @@ import process from 'node:process';
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
 import { ruiIconsPlugin } from '@rotki/ui-library/vite-plugin';
 import vue from '@vitejs/plugin-vue';
-import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
 import { createLogger, type Logger, type LogOptions, type Plugin } from 'vite';
 import checker from 'vite-plugin-checker';
 import vueDevTools from 'vite-plugin-vue-devtools';
 import { defineConfig } from 'vitest/config';
-import { VueRouterAutoImports } from 'vue-router/unplugin';
 import VueRouter from 'vue-router/vite';
 import { backendIcons } from './backend-icons.generated.ts';
 import { sharedHelperModules, vendorGroupEntries } from './scripts/chunk-groups.ts';
@@ -209,6 +207,9 @@ export default defineConfig({
       'plainfp/tagged',
       '@rotki/ui-library/components',
       'vue-echarts',
+      /* Pages import `definePage` from here. The macro is stripped from the build, but in dev the
+         import stays, and finding it on the first page visit makes Vite re-optimize and reload. */
+      'vue-router/experimental',
     ],
   },
   plugins: [
@@ -226,37 +227,6 @@ export default defineConfig({
           },
         })]
       : []),
-    AutoImport({
-      include: [
-        /\.[jt]sx?$/, // .ts, .tsx, .js, .jsx
-        /\.vue$/,
-        /\.vue\?vue/, // .vue
-        /\.md$/, // .md
-      ],
-      imports: [
-        'vue',
-        '@vueuse/core',
-        '@vueuse/math',
-        'pinia',
-        { '@vueuse/shared': ['get', 'set'] },
-        VueRouterAutoImports,
-        {
-          'vue-i18n': ['useI18n'],
-        },
-        {
-          '@rotki/ui-library': ['useRotkiTheme', 'useBreakpoint', 'contextColors'],
-        },
-        // Take over VueUse's debounce/throttle helpers: theirs keep firing after the scope that made them is gone.
-        {
-          from: '@/modules/core/common/async/scoped-timers',
-          imports: ['refDebounced', 'refThrottled', 'useDebounceFn', 'useThrottleFn', 'watchDebounced', 'watchThrottled'],
-          priority: 10,
-        },
-      ],
-      dts: './auto-imports.d.ts',
-      vueTemplate: true,
-      injectAtEnd: true,
-    }),
     Components({
       dts: true,
       include: [],

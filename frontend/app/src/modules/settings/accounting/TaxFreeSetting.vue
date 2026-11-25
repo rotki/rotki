@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import SettingToggleNumber from '@/modules/settings/controls/SettingToggleNumber.vue';
 
 const DAY_IN_SECONDS = 86400;

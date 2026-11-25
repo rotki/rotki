@@ -2,6 +2,7 @@ import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> => ({

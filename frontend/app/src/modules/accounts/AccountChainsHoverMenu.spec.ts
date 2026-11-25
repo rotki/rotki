@@ -1,5 +1,6 @@
 import type { AccountChainState } from '@/modules/accounts/AccountChainsOverflow.vue';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { h } from 'vue';
 import AccountChainsHoverMenu from '@/modules/accounts/AccountChainsHoverMenu.vue';

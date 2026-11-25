@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PriceOracle } from '@/modules/settings/types/price-oracle';
+import { useI18n } from 'vue-i18n';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 

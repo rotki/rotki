@@ -1,8 +1,10 @@
 import type { TransactionParams } from './types';
 import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { endSession } from '@/modules/core/session/session-lifecycle';
 import { WALLET_MODES } from './constants';
 

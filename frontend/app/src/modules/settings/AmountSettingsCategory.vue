@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
 import { bigNumberify } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import AbbreviateNumberSetting from '@/modules/settings/general/amount/AbbreviateNumberSetting.vue';

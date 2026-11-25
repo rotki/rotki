@@ -1,4 +1,11 @@
 <script setup lang="ts">
+import { useBreakpoint } from '@rotki/ui-library';
+import { watchImmediate } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, onBeforeMount, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';

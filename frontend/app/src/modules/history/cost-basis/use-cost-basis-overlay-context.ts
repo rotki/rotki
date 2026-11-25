@@ -1,5 +1,5 @@
-import type { InjectionKey, Ref } from 'vue';
 import type { UseCostBasisOverlayReturn } from '@/modules/history/cost-basis/use-cost-basis-overlay';
+import { inject, type InjectionKey, provide, type Ref } from 'vue';
 
 /**
  * Context shared from the history events view down to the (deeply nested, virtualized) event

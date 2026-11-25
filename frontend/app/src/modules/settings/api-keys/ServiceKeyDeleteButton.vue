@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { computed } from 'vue';
 import ConfirmInPlace from '@/modules/shell/components/ConfirmInPlace.vue';
 
 /**

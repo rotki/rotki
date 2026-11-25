@@ -1,5 +1,7 @@
+import { set } from '@vueuse/shared';
 import { isErr, isOk, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useSyncActivity } from '@/modules/session/use-sync-activity';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 

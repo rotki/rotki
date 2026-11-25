@@ -3,6 +3,8 @@ import type { EvmChainInfo, SupportedChains } from '@/modules/core/api/types/cha
 import { bigNumberify, Blockchain } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
+import { setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';

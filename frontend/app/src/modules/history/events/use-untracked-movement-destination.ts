@@ -1,7 +1,10 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
 import { HistoryEventEntryType } from '@rotki/common';
+import { createSharedComposable } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { useTrackedAddresses } from '@/modules/history/events/use-tracked-addresses';
 

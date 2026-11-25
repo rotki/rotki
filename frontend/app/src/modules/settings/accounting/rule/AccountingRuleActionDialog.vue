@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { AccountingRuleAction } from '@/modules/settings/types/accounting';
+import { set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AccountingRuleActionButton from '@/modules/settings/accounting/rule/AccountingRuleActionButton.vue';
 import AccountingRuleEventsDialog from '@/modules/settings/accounting/rule/AccountingRuleEventsDialog.vue';
 import AccountingRuleViewEventsButton from '@/modules/settings/accounting/rule/AccountingRuleViewEventsButton.vue';

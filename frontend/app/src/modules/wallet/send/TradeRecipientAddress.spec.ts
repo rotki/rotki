@@ -1,7 +1,8 @@
 import type { RecipientOption } from '@/modules/wallet/send/use-trade-recipient-address';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, nextTick } from 'vue';
+import { defineComponent, nextTick, ref } from 'vue';
 import TradeRecipientAddress from '@/modules/wallet/send/TradeRecipientAddress.vue';
 
 const ALICE = '0x9531C059098e3d194fF87FebB587aB07B30B1306';

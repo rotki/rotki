@@ -2,6 +2,9 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { SpamPredictionToken } from '@/modules/assets/api/use-asset-spam-prediction-api';
 import type { Filters } from '@/modules/assets/detection/newly-detected-filter-keys';
+import { get } from '@vueuse/shared';
+import { computed, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useNewlyDetectedFields } from '@/modules/assets/detection/use-newly-detected-fields';

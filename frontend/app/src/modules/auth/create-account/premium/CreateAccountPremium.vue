@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import type { PremiumSetup } from '@/modules/auth/login';
 import { externalLinks } from '@shared/external-links';
+import { useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import CreateAccountStepActions from '@/modules/auth/create-account/CreateAccountStepActions.vue';
 import CreateAccountPremiumForm
   from '@/modules/auth/create-account/premium/CreateAccountPremiumForm.vue';

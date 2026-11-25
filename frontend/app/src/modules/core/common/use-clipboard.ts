@@ -1,4 +1,6 @@
-import type { MaybeRefOrGetter, Ref } from 'vue';
+import { createSharedComposable, useClipboard, useTimeoutFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { type MaybeRefOrGetter, readonly, type Ref, shallowRef, toValue } from 'vue';
 
 interface UseCopyReturn {
   copy: () => Promise<void>;

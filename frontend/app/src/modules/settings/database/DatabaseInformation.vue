@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { DatabaseInfo } from '@/modules/session/backup';
 import { NotificationKind, Severity } from '@rotki/common';
+import { createReusableTemplate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { size } from '@/modules/core/common/data/data';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';

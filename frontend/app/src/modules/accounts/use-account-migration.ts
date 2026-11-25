@@ -1,8 +1,10 @@
-import type { MaybeRef } from 'vue';
 import type { MigratedAddresses } from '@/modules/core/messaging/types';
 import { assert } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useSessionStorage } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { type MaybeRef, ref, type Ref, watch } from 'vue';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';

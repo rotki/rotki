@@ -1,6 +1,7 @@
-import type { MaybeElementRef } from '@vueuse/core';
-import type { ComputedRef, InjectionKey, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
+import { type MaybeElementRef, unrefElement, useEventListener, useResizeObserver, useTimeoutFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { clamp, isEqual } from 'es-toolkit';
+import { computed, type ComputedRef, inject, type InjectionKey, type MaybeRefOrGetter, onMounted, onScopeDispose, onUpdated, provide, type Ref, shallowRef, toValue, watch, type WritableComputedRef } from 'vue';
 
 const TableScrollerKey: InjectionKey<Readonly<Ref<HTMLElement | null | undefined>>> = Symbol('table-scroller');
 

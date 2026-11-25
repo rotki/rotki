@@ -1,7 +1,9 @@
 import type { UseHistoryEventsFiltersChipsOptions } from '@/modules/history/events/use-history-events-filters-chips';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import HistoryEventsFiltersChips from '@/modules/history/events/HistoryEventsFiltersChips.vue';
 

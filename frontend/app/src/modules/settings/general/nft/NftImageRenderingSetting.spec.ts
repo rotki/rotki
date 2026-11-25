@@ -1,5 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import NftImageRenderingSetting from '@/modules/settings/general/nft/NftImageRenderingSetting.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 

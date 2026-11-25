@@ -1,3 +1,5 @@
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';

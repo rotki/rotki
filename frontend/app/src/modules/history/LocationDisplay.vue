@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
+import { get } from '@vueuse/shared';
+import { computed, type HTMLAttributes } from 'vue';
 import { useLocations } from '@/modules/core/common/use-locations';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import NavigatorLink from '@/modules/shell/components/NavigatorLink.vue';

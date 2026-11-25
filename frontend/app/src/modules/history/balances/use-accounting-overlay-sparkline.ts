@@ -1,8 +1,9 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { SparklinePoint } from '@/modules/history/balances/use-accounting-overlay';
 import type { UseAccountingOverlaySeriesReturn } from '@/modules/history/balances/use-accounting-overlay-series';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { type BigNumber, Zero } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, onWatcherCleanup, shallowRef, toValue, watch } from 'vue';
 import { type PreparedBucket, valueAt } from '@/modules/history/balances/accounting-overlay-helpers';
 import { downsample, SPARKLINE_MAX_POINTS } from '@/modules/history/balances/sparkline';
 

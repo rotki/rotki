@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSetting } from '@/modules/settings/use-setting';
 
 const { assetPadding = 0, justify = 'end', value } = defineProps<{

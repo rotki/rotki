@@ -1,6 +1,7 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { TradableAsset } from '@/modules/wallet/types';
 import { getAddressFromEvmIdentifier, isEvmIdentifier, Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { isNonFungible } from '@/modules/assets/nft-utils';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';

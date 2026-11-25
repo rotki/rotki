@@ -5,6 +5,7 @@ import type { InteractionFilters } from './interaction-scene';
 import { ClickButtonStub, graphOf, graphSeries, interaction, OTHER, sceneOf, SOURCE, TARGET } from '@test/utils/address-interactions';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick, ref } from 'vue';
 import AddressInteractionCanvas from './AddressInteractionCanvas.vue';

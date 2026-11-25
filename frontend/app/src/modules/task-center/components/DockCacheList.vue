@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import DockCacheRow from '@/modules/task-center/components/DockCacheRow.vue';
 
 interface DockCache {

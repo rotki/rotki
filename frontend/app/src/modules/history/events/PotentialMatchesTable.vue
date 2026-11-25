@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { PotentialMatchRow } from '@/modules/history/events/matching/types';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';

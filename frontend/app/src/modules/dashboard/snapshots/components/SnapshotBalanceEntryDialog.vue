@@ -2,6 +2,9 @@
 import type { BalanceSnapshot, BalanceSnapshotPayload, Snapshot } from '@/modules/dashboard/snapshots';
 import type { BalanceMutation, LocationAttribution, LocationSplit } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { assert, type BigNumber, Zero } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
 import ConfirmSnapshotConflictReplacementDialog

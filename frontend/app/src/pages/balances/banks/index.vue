@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { storeToRefs } from 'pinia';
+import { computed, onBeforeMount, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
 import { bankAmountFormat } from '@/modules/banks/bank-balances';

@@ -1,8 +1,9 @@
 import { type AssetBalanceWithPrice, bigNumberify, Zero } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type Component, type ComputedRef, defineComponent, h, type VNode } from 'vue';
+import { type Component, computed, type ComputedRef, defineComponent, h, nextTick, ref, type VNode } from 'vue';
 import DashboardAssetTable from '@/modules/dashboard/DashboardAssetTable.vue';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 

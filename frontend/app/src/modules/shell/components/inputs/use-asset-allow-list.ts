@@ -1,7 +1,8 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { AssetMap } from '@/modules/assets/types';
 import { type AssetInfoWithId, transformCase } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { chunk } from 'es-toolkit';
+import { computed, type ComputedRef, type MaybeRefOrGetter, readonly, type Ref, shallowRef, toValue, watch } from 'vue';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { mapWithConcurrency, MAX_PARALLEL_ASSET_BATCHES } from '@/modules/assets/use-asset-select-info';
 

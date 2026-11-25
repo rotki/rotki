@@ -1,6 +1,7 @@
 import type { RotkiApi } from '@/modules/core/api/rotki-api';
 import type { Collection } from '@/modules/core/common/collection';
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
 import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequestCancelled, type RequestError, RequestFailed } from '@/modules/core/api/request-result';

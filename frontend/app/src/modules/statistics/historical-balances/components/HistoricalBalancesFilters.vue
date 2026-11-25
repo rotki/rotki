@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import { historicalBalancesParams } from '@/modules/statistics/historical-balances/historical-balances-fields';

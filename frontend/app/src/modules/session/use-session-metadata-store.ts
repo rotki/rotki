@@ -1,5 +1,8 @@
 import type { QueriedAddresses } from '@/modules/session/types';
 import type { Tag, Tags } from '@/modules/tags/tags';
+import { get } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, ref, shallowRef } from 'vue';
 
 export const useSessionMetadataStore = defineStore('session/metadata', () => {
   const lastBalanceSave = ref<number>(0);

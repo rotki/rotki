@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { PinnedNames } from '@/modules/session/types';
 import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';

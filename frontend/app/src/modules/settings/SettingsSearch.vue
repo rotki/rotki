@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { SettingsSearchEntry } from '@/modules/settings/setting-highlight-ids';
 import { startPromise } from '@shared/utils';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
+import { watchDebounced } from '@/modules/core/common/async/scoped-timers';
 import SettingsSearchItem from '@/modules/settings/SettingsSearchItem.vue';
 import { useSettingsHighlight } from '@/modules/settings/use-settings-highlight';
 import { useSettingsSearch } from '@/modules/settings/use-settings-search';

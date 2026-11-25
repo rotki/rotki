@@ -1,4 +1,7 @@
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { effectScope, nextTick } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { endSession } from '@/modules/core/session/session-lifecycle';
 

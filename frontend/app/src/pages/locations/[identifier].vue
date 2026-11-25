@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import LocationAssets from '@/modules/balances/LocationAssets.vue';
 import LocationValueRow from '@/modules/balances/LocationValueRow.vue';

@@ -1,5 +1,6 @@
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { effectScope, type EffectScope, nextTick } from 'vue';
+import { effectScope, type EffectScope, nextTick, ref } from 'vue';
 import { useSingleTabGuard } from './use-single-tab-guard';
 
 const logged = ref<boolean>(false);

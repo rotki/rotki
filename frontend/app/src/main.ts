@@ -1,6 +1,8 @@
-import { createRuiI8nPlugin } from '@rotki/ui-library';
+import { createRuiI8nPlugin, useBreakpoint } from '@rotki/ui-library';
 import { checkIfDevelopment } from '@shared/utils';
-import { createPinia } from 'pinia';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
+import { computed, createApp } from 'vue';
 import App from '@/App.vue';
 import { i18n } from '@/i18n';
 import { setupFormatter } from '@/modules/assets/amount-display/setup-formatter';

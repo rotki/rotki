@@ -1,4 +1,5 @@
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { useI18n } from 'vue-i18n';
 
 /** What is being unlinked, as far as the question asked before it cares. */
 export type UnlinkKind = { type: 'asset-movement' } | { type: 'bridge'; hasSynthetic: boolean };

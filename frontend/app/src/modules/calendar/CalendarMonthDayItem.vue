@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { Dayjs } from 'dayjs';
 import type { CalendarEvent } from '@/modules/calendar/types';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const { day, events, isPast, isToday, isSelected } = defineProps<{
   day: {

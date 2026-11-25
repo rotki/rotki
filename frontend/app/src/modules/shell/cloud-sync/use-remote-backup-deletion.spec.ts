@@ -1,4 +1,5 @@
 import type { RemoteBackup } from '@/modules/session/sync';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FailureCause } from '@/modules/core/api/failure-cause';

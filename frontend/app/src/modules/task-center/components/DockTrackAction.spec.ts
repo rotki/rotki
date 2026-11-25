@@ -1,6 +1,8 @@
 import type { ActivityId } from '@/modules/task-center/core/types';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { accountAddActivity, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { addAccountLink } from '@/modules/accounts/add-account-link';
 import DockTrackAction from '@/modules/task-center/components/DockTrackAction.vue';

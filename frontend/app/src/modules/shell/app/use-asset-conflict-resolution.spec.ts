@@ -1,6 +1,8 @@
 import type { SupportedAsset } from '@rotki/common';
 import type { AssetUpdateConflictResult } from '@/modules/assets/types';
+import { get, set } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
+import { ref } from 'vue';
 import {
   getConflictFields,
   isDiff,

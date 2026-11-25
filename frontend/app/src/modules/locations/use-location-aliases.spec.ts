@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLocationAliases } from '@/modules/locations/use-location-aliases';
 

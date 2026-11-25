@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 import { type BigNumber, Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 import { COST_BASIS_FIAT_FORMAT } from '@/modules/history/cost-basis/cost-basis-helpers';

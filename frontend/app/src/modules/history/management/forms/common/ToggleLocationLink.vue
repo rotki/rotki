@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { isDefined, watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
 const modelValue = defineModel<string | undefined>({ required: true });

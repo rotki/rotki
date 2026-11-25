@@ -1,3 +1,4 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createNoAvailableIndexersHandler } from '@/modules/core/messaging/handlers/no-available-indexers';
 import { NoIndexersCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';

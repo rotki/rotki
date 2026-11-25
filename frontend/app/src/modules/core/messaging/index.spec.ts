@@ -2,6 +2,8 @@ import type { EvmChainInfo } from '@/modules/core/api/types/chains';
 import type { ProblemItem } from '@/modules/core/notifications/problems/backend-problem-tree';
 import { assert, type Blockchain, Severity } from '@rotki/common';
 import { mount } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import LiquityStatisticRow from '@/modules/staking/liquity/LiquityStatisticRow.vue';
 

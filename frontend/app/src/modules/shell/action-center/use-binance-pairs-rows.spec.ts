@@ -1,6 +1,8 @@
-import type { EffectScope } from 'vue';
 import { createTestExchange } from '@test/utils/create-data';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, nextTick } from 'vue';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useBinancePairsRows } from '@/modules/shell/action-center/use-binance-pairs-rows';
 import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';

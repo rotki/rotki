@@ -1,7 +1,8 @@
-import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import type { NonFungibleBalance } from '@/modules/balances/types/nfbalances';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { type MaybeRefOrGetter, type Ref, ref, toValue } from 'vue';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { useSelectedAssetIgnoring } from '@/modules/assets/use-selected-asset-actions';

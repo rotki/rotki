@@ -1,5 +1,5 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { type Balance, type BigNumber, bigNumberify, Zero } from '@rotki/common';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 
 /**
  * Reads a numeric field reactively, answering zero for anything unreadable.

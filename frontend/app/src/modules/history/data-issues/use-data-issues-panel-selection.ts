@@ -1,6 +1,7 @@
-import type { ComputedRef } from 'vue';
-import type { RouteLocationRaw } from 'vue-router';
 import type { PanelRow } from '@/modules/history/data-issues/use-data-issues-panel-list';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef } from 'vue';
+import { type RouteLocationRaw, useRoute, useRouter } from 'vue-router';
 import { HighlightTargetTypes, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
 
 interface UseDataIssuesPanelSelectionReturn {

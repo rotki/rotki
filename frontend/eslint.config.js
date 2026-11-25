@@ -5,6 +5,7 @@ import { translationKeys } from '@rotki/ui-library';
 
 import { backendMappingKeys } from './app/backend-strings.generated.js';
 import { premiumComponentKeys } from './app/premium-keys.generated.js';
+import { importCapBaseline } from './eslint-import-cap-baseline.js';
 import { localRules } from './eslint-local-rules.js';
 
 const src = path.join('app', 'src');
@@ -92,6 +93,12 @@ export default rotki({
     '@rotki/no-dot-ts-imports': 'off',
   },
 }, {
+  // See `eslint-import-cap-baseline.js` for why these files get a higher cap.
+  files: importCapBaseline,
+  rules: {
+    '@rotki/max-dependencies': ['error', { max: 26 }],
+  },
+}, {
   files: ['**/src/**/*.ts'],
   rules: {
     '@typescript-eslint/explicit-function-return-type': 'error',
@@ -105,7 +112,7 @@ export default rotki({
   },
 }, {
   /* VueUse's debounce/throttle helpers keep firing after the scope that made them is gone. The
-     auto-imported names resolve to the scoped versions; an explicit import would bypass them.
+     scoped versions share their names, so importing them from VueUse instead is an easy slip.
      Later blocks that ban @vueuse outright replace this one for their files, which is fine. */
   files: ['app/src/**/*.ts', 'app/src/**/*.vue'],
   // setup-premium publishes the whole namespace to the premium bundle, with these helpers swapped
@@ -114,7 +121,7 @@ export default rotki({
     'no-restricted-imports': ['error', {
       paths: ['@vueuse/core', '@vueuse/shared'].map(name => ({
         importNames: ['refDebounced', 'refThrottled', 'useDebounceFn', 'useThrottleFn', 'watchDebounced', 'watchThrottled'],
-        message: 'Use the auto-imported scoped version from `modules/core/common/async/scoped-timers`, which stops when its scope is disposed.',
+        message: 'Import the scoped version from `@/modules/core/common/async/scoped-timers`, which stops when its scope is disposed.',
         name,
       })),
     }],
@@ -221,8 +228,7 @@ export default rotki({
   /*
    * Pure feature cores: plain functions over plain data, with the app reached only through ports a
    * `use-*` adapter passes in. That is what lets their specs run without mounting, Pinia or
-   * `vi.mock`. Auto-imports never appear as import statements, so the globals rule is the half that
-   * catches a stray `computed(` or `get(`.
+   * `vi.mock`.
    */
   files: [
     'app/src/modules/accounts/core/**/*.ts',
@@ -231,30 +237,6 @@ export default rotki({
     'app/src/modules/dashboard/holdings/core/**/*.ts',
   ],
   rules: {
-    'no-restricted-globals': ['error', ...[
-      'computed',
-      'createSharedComposable',
-      'defineStore',
-      'get',
-      'logicAnd',
-      'logicNot',
-      'logicOr',
-      'reactive',
-      'ref',
-      'set',
-      'shallowRef',
-      'storeToRefs',
-      'toRef',
-      'toValue',
-      'useI18n',
-      'useRoute',
-      'useRouter',
-      'watch',
-      'watchEffect',
-    ].map(name => ({
-      message: 'A core module stays free of vue, stores and i18n. Take the value or the function through a port instead.',
-      name,
-    }))],
     'no-restricted-imports': ['error', {
       patterns: [{
         group: ['vue', 'vue-*', '@vue/*', '@vueuse/*', 'pinia', 'vue-router', 'vue-i18n', '@/modules/**/use-*'],

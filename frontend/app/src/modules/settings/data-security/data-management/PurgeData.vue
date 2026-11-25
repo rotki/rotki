@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { DECENTRALIZED_EXCHANGES } from '@/modules/core/common/modules';

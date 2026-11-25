@@ -4,6 +4,7 @@ import type { ProfitLossEvent } from '@/modules/reports/report-types';
 import { bigNumberify, Zero } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import '@test/i18n';
 
 const addHistoricalPrice = vi.fn<(payload: HistoricalPriceFormPayload) => Promise<boolean>>();

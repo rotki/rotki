@@ -1,6 +1,7 @@
 import type { DatabaseUploadProgress, DbUploadResult } from '@/modules/core/messaging/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref, shallowRef } from 'vue';
 import { SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';

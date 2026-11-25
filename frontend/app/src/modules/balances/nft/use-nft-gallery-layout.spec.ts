@@ -1,7 +1,8 @@
-import type { ComputedRef } from 'vue';
 import type { GalleryNft } from '@/modules/assets/nfts';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, type ComputedRef, ref } from 'vue';
 import { useNftGalleryLayout } from './use-nft-gallery-layout';
 
 const breakpoint = {

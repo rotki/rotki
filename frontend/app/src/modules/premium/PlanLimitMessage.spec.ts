@@ -1,5 +1,7 @@
 import { externalLinks } from '@shared/external-links';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PlanLimitMessage from '@/modules/premium/PlanLimitMessage.vue';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';

@@ -1,7 +1,9 @@
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed } from 'vue';
 import { useHistoryEventsActionFailure } from './use-history-events-action-failure';
 import { useMatchedEventsUnlink } from './use-matched-events-unlink';
 

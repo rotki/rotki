@@ -1,3 +1,4 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useSolanaTokenMigrationStore } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-store';
 import { createSolanaTokensHandler } from './solana-tokens-migration-handler';

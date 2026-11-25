@@ -1,4 +1,5 @@
-import type { ComputedRef } from 'vue';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef } from 'vue';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
 /**

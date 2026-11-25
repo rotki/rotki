@@ -1,8 +1,8 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { LocationAndTxRef } from '@/modules/history/events/event-payloads';
 import type { HistoryEventBridgeUnlinkPayload } from '@/modules/history/events/types';
 import { HistoryEventEntryType } from '@rotki/common';
 import { snakeCase } from 'es-toolkit';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import {
   type AssetMovementEvent,
   type EthBlockEvent,

@@ -2,7 +2,7 @@ import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { ChainInfo } from '@/modules/core/api/types/chains';
 import type { Rule } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chain-queries-state';
 import { afterEach, assert, describe, expect, it } from 'vitest';
-import { effectScope, ref } from 'vue';
+import { effectScope, nextTick, ref } from 'vue';
 import { useRuleEditorForm, type UseRuleEditorFormReturn } from '@/modules/settings/general/disabled-chain-queries/use-rule-editor-form';
 
 type AddressOption = UseRuleEditorFormReturn['addressOptions']['value'][number];

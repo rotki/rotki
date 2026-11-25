@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
+import { defineAsyncComponent, type HTMLAttributes } from 'vue';
+import { useI18n } from 'vue-i18n';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import AutoCreateProfitEventsSetting from '@/modules/settings/general/AutoCreateProfitEventsSetting.vue';
 import InternalTxConflictRepullSettings from '@/modules/settings/general/InternalTxConflictRepullSettings.vue';

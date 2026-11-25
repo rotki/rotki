@@ -1,6 +1,9 @@
 <script lang="ts" setup>
 import type { AssetBalance } from '@rotki/common';
 import type { AssetResolutionOptions } from '@/modules/assets/use-asset-info-retrieval';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import { useSetting } from '@/modules/settings/use-setting';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';

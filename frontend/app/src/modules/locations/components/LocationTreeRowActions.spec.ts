@@ -1,7 +1,9 @@
 import type { LocationNode } from '@/modules/locations/use-location-tree-api';
 import { createLocationNode as node } from '@test/utils/location-tree';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import LocationTreeRowActions from '@/modules/locations/components/LocationTreeRowActions.vue';
 import '@test/i18n';
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
+import { useI18n } from 'vue-i18n';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import ImportNotes from '@/modules/user-data/ImportNotes.vue';
 import ImportSource from '@/modules/user-data/ImportSource.vue';

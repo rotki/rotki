@@ -1,5 +1,7 @@
-import type { ComputedRef, Ref } from 'vue';
+import { useLocalStorage } from '@vueuse/core';
 import { get, isDefined, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, readonly, type Ref, shallowRef } from 'vue';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { isMajorOrMinorUpdate } from '@/modules/history/sync-status/is-major-or-minor-update';

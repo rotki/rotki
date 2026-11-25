@@ -1,6 +1,8 @@
+import type { useI18n } from 'vue-i18n';
 import type { MessageHandler } from '../interfaces';
 import type { PremiumStatusUpdateData } from '../types/shared-types';
 import { NotificationKind, Severity } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { createStateWithNotificationHandler } from '@/modules/core/messaging/utils';
 import { readPremiumStatus } from '@/modules/premium/core/premium-status';
 import { usePremium } from '@/modules/premium/use-premium';

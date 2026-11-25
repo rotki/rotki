@@ -1,7 +1,9 @@
 import type { useActionCenter as UseActionCenter } from '@/modules/core/action-center/use-action-center';
 import { logoutThenLogin, sessionRequest } from '@test/utils/realistic-logout';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, ref } from 'vue';
 import { type ActionItem, ActionUrgency } from '@/modules/core/action-center/types';
 import { endSession } from '@/modules/core/session/session-lifecycle';
 

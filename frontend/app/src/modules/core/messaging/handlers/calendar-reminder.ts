@@ -1,3 +1,5 @@
+import type { useI18n } from 'vue-i18n';
+import type { useRouter } from 'vue-router';
 import type { NotificationHandler } from '../interfaces';
 import type { CalendarEventWithReminder } from '@/modules/calendar/types';
 import { NotificationKind, Severity } from '@rotki/common';

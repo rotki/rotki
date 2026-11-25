@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { createReusableTemplate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { useNotesCount } from '@/modules/notes/use-notes-count';
 import UserNotesList from '@/modules/notes/UserNotesList.vue';

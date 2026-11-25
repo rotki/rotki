@@ -1,5 +1,5 @@
-import type { MaybeRefOrGetter } from 'vue';
 import { startPromise } from '@shared/utils';
+import { type MaybeRefOrGetter, onScopeDispose, toValue, watch } from 'vue';
 
 interface UseIntervalSchedulerOptions {
   /** The callback to invoke on each tick */

@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { BackendProblem, ProblemItem } from '@/modules/core/notifications/problems/backend-problem-tree';
+import { useClipboard } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { type ProblemItemAction, useBackendProblemActions } from '@/modules/core/notifications/problems/use-backend-problem-actions';
 import { type ProblemItemHeading, useBackendProblemText } from '@/modules/core/notifications/problems/use-backend-problem-text';

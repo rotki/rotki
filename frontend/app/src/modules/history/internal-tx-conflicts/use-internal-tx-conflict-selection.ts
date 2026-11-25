@@ -1,5 +1,7 @@
-import type { ComputedRef, Ref } from 'vue';
 import type { InternalTxConflict } from './types';
+import { createSharedComposable } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type Ref, ref } from 'vue';
 import { getConflictKey } from './use-internal-tx-conflicts';
 
 interface UseInternalTxConflictSelectionReturn {

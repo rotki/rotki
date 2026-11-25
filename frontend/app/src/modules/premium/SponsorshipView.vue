@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import { externalLinks } from '@shared/external-links';
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';

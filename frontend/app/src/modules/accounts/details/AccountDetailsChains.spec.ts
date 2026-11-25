@@ -1,6 +1,8 @@
-import type { MaybeRefOrGetter, Ref } from 'vue';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type MaybeRefOrGetter, nextTick, type Ref } from 'vue';
 import AccountDetailsChains from '@/modules/accounts/details/AccountDetailsChains.vue';
 
 const { excluded, held, loading, unloaded } = await vi.hoisted(async () => {

@@ -1,4 +1,5 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useFrontendSettingsWriter } from '@/modules/settings/use-frontend-settings-writer';
 import { useSetting } from '@/modules/settings/use-setting';

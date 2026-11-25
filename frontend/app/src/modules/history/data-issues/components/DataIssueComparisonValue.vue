@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { DecodingComparisonEvent } from '@/modules/history/data-issues/schemas';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ValueDisplay from '@/modules/assets/amount-display/components/ValueDisplay.vue';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { type ComparisonField, comparisonNotes } from '@/modules/history/data-issues/decoding-comparison';

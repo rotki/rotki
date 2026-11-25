@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useElementBounding } from '@vueuse/core';
+import { useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type Module, SUPPORTED_MODULES } from '@/modules/core/common/modules';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';

@@ -8,9 +8,12 @@ import type {
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import type { WorkStatus } from '@/modules/task-center/core/types';
 import { toSentenceCase } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { pipe } from 'plainfp';
 import { filter, unique } from 'plainfp/arrays';
 import { map as mapResult, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { exchangeSavingsActivity } from '@/modules/balances/balances.activity';

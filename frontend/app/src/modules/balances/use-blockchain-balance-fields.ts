@@ -1,6 +1,8 @@
 import type { Ref, WritableComputedRef } from 'vue';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { Blockchain } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { decorateSharedField, SharedFieldKinds } from '@/modules/core/table/filters/shared/shared-fields';
 import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';

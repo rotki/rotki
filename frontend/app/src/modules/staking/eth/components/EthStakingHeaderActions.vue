@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AccountFormApiKeyOffer from '@/modules/accounts/management/AccountFormApiKeyOffer.vue';
 import { useApiKeyNotice } from '@/modules/accounts/management/use-api-key-notice';
 import { Module } from '@/modules/core/common/modules';

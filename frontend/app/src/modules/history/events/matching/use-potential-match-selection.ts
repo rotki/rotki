@@ -1,5 +1,6 @@
 import type { Ref } from 'vue';
 import type { PotentialMatchRow } from '@/modules/history/events/matching/types';
+import { get, set } from '@vueuse/shared';
 
 interface UsePotentialMatchSelectionReturn {
   isSelected: (row: PotentialMatchRow) => boolean;

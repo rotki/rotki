@@ -1,8 +1,10 @@
-import type { MaybeRefOrGetter } from 'vue';
 import type { Filters } from '@/modules/accounts/manual-balances/manual-balance-filter-keys';
 import type { AssetsWithId } from '@/modules/assets/types';
 import type { TagFieldOption } from '@/modules/core/table/filters/shared/tag-field';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { get } from '@vueuse/shared';
+import { computed, type MaybeRefOrGetter, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { toManualBalanceFields } from '@/modules/accounts/manual-balances/manual-balance-fields';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { assetSuggestions } from '@/modules/core/common/display/assets';

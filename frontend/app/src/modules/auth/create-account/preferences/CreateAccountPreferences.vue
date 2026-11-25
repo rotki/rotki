@@ -1,5 +1,8 @@
 <script lang="ts" setup>
 import type { PremiumSetup } from '@/modules/auth/login';
+import { get } from '@vueuse/shared';
+import { computed, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type SupportedCurrency, useCurrencies } from '@/modules/assets/amount-display/currencies';
 import CreateAccountAnalyticsOption from '@/modules/auth/create-account/CreateAccountAnalyticsOption.vue';
 import CreateAccountStepActions from '@/modules/auth/create-account/CreateAccountStepActions.vue';

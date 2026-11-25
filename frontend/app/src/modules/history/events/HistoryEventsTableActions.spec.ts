@@ -2,8 +2,9 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import type { UseHistoryEventsPillBarOptions } from '@/modules/history/events/use-history-events-pill-bar';
 import type { SelectionState } from '@/modules/history/events/use-selection-mode';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type DefineComponent, defineComponent, h } from 'vue';
+import { type DefineComponent, defineComponent, h, ref } from 'vue';
 import HistoryEventsTableActions from '@/modules/history/events/HistoryEventsTableActions.vue';
 
 const pillBar = {

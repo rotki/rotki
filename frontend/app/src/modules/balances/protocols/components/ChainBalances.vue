@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import type { Balance } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import ChainBalanceTooltipIcon from '@/modules/balances/protocols/components/ChainBalanceTooltipIcon.vue';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 

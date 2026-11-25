@@ -2,6 +2,7 @@ import type { EventPriceUpdatePayload } from '@/modules/history/events/prices/us
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import EventAssetPriceUpdateDialog from '@/modules/history/events/prices/EventAssetPriceUpdateDialog.vue';

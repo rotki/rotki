@@ -1,6 +1,10 @@
-import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import type { ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/modules/integrations/types';
 import { toCapitalCase } from '@rotki/common';
+import { createSharedComposable, tryOnScopeDispose, watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type DeepReadonly, type MaybeRefOrGetter, readonly, type Ref, ref, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';

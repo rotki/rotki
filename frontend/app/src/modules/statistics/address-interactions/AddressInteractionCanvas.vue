@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { ECElementEvent, EChartsOption } from 'echarts';
 import type { InteractionIds, InteractionScene } from './interaction-scene';
+import { useRotkiTheme } from '@rotki/ui-library';
+import { get, set } from '@vueuse/shared';
+import { computed, markRaw, ref, watch } from 'vue';
 import VChart from 'vue-echarts';
+import { useI18n } from 'vue-i18n';
 import { useScramble } from '@/modules/settings/use-scramble';
 import { useGraph } from '@/modules/statistics/use-graph';
 import { type InteractionConnection, type InteractionGraph, type InteractionNode, transactionsOn } from './address-interaction-graph';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import { useI18n } from 'vue-i18n';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import ShowInEventsButton from '@/modules/history/events/ShowInEventsButton.vue';

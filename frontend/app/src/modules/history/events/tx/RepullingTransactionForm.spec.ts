@@ -6,7 +6,7 @@ import { Blockchain } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, useTemplateRef } from 'vue';
+import { computed, defineComponent, ref, useTemplateRef } from 'vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import RepullingTransactionForm, { type AccountType } from '@/modules/history/events/tx/RepullingTransactionForm.vue';

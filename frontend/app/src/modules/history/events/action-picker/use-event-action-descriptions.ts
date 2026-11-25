@@ -1,3 +1,7 @@
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
 interface UseEventActionDescriptionsReturn {
   readonly describe: (verbKey: string) => string | undefined;
 }

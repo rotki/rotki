@@ -1,7 +1,9 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/modules/assets/prices/price-types';
 import { type BigNumber, Zero } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { err, isErr, ok, type Result } from 'plainfp/result';
+import { computed, type ComputedRef, type MaybeRefOrGetter, readonly, type Ref, ref, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';

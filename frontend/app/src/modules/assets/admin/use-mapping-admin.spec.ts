@@ -1,3 +1,4 @@
+import { get, set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type Ref, ref } from 'vue';
 import { useMappingAdmin } from './use-mapping-admin';

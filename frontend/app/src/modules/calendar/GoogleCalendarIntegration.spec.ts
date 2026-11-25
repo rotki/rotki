@@ -1,6 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
+import { nextTick, ref } from 'vue';
 import GoogleCalendarIntegration from '@/modules/calendar/GoogleCalendarIntegration.vue';
 
 const { interop } = vi.hoisted(() => ({ interop: { isPackaged: false, openUrl: vi.fn() } }));

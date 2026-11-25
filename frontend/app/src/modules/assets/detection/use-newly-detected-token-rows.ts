@@ -1,6 +1,7 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { SpamAssessment } from '@/modules/assets/spam/use-spam-assessments';
 import { type BigNumber, getAddressFromEvmIdentifier, getAddressFromSolanaIdentifier } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getTokenChain } from './get-token-chain';

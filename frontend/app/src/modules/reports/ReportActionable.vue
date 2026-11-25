@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { Report } from '@/modules/reports/report-types';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ReportActionableCard from '@/modules/reports/ReportActionableCard.vue';
 import { useReportsStore } from '@/modules/reports/use-reports-store';
 

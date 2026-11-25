@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { ReconciliationAccount } from '@/modules/history/reconciliation/schemas';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ReconciliationAccountIdentity from '@/modules/history/reconciliation/components/ReconciliationAccountIdentity.vue';
 import { ACCOUNT_SUMMARY_LABEL } from '@/modules/history/reconciliation/messages';
 import { type AccountSummary, accountSummaryFor, type ReconciliationView } from '@/modules/history/reconciliation/use-reconciliation-rows';

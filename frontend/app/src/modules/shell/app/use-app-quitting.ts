@@ -1,4 +1,6 @@
-import type { Ref } from 'vue';
+import { createGlobalState } from '@vueuse/core';
+import { set } from '@vueuse/shared';
+import { readonly, type Ref, shallowRef } from 'vue';
 
 interface UseAppQuittingInternalReturn {
   quitting: Readonly<Ref<boolean>>;

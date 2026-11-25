@@ -1,4 +1,6 @@
-import type { ComputedRef } from 'vue';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef } from 'vue';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { type PinnedName, type PinnedPanelProps, toPinned } from '@/modules/session/types';
 

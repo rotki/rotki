@@ -1,6 +1,6 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { defineComponent, nextTick } from 'vue';
 import AccountBalancesExportImport from '@/modules/accounts/AccountBalancesExportImport.vue';
 
 const { exportAccounts, importAccounts } = vi.hoisted(() => ({

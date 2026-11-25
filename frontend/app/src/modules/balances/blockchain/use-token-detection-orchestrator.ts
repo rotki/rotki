@@ -1,8 +1,11 @@
 import type { Result } from 'plainfp/result';
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import { assert } from '@rotki/common';
+import { createSharedComposable } from '@vueuse/core';
+import { get } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { tokenDetectionActivity } from '@/modules/balances/balances.activity';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';

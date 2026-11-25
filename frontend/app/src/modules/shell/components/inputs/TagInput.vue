@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { invertColor, randomColor } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import ListItem from '@/modules/shell/components/ListItem.vue';

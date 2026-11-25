@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from 'vue-router';
+import { get } from '@vueuse/shared';
+import { computed, ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { type RouteLocationRaw, useRouter } from 'vue-router';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import OracleCacheContent from '@/modules/assets/prices/components/oracle/OracleCacheContent.vue';
 import OraclePriceContent from '@/modules/assets/prices/components/oracle/OraclePriceContent.vue';

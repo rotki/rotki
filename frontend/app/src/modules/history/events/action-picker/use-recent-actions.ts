@@ -1,5 +1,7 @@
 import type { HistoryEventEntryType } from '@rotki/common';
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import { useLocalStorage } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 
 /**
  * Persists the verbs a user picks per entry type so the picker can pin the ones they reach for

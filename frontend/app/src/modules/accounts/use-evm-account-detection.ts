@@ -1,5 +1,7 @@
 import type { EvmChainLikeAddress } from '@/modules/history/events/event-payloads';
+import { get } from '@vueuse/shared';
 import { isErr, ok, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { evmAccountDetectionActivity } from '@/modules/accounts/accounts.activity';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';

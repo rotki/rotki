@@ -1,6 +1,7 @@
-import type { ComputedRef } from 'vue';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
+import { computed, type ComputedRef, nextTick, ref } from 'vue';
 import { HistoryEventAccountingRuleStatus, type HistoryEventEntry, type HistoryEventRow } from '@/modules/history/events/schemas';
 import { ROW_HEIGHTS, useVirtualRows, type VirtualRow } from './use-virtual-rows';
 

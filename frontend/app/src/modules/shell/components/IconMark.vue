@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
 import { toRem } from '@/modules/core/common/data/data';
 import { getPublicPlaceholderImagePath } from '@/modules/core/common/file/file';
 import { fillsFrame } from '@/modules/shell/components/icon-mark-shape';

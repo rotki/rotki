@@ -1,6 +1,7 @@
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
+import { ref } from 'vue';
 import { provideTableSelectionCollapsed } from '@/modules/core/table/table-selection-collapse';
 import TableSelectionAction from '@/modules/core/table/TableSelectionAction.vue';
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { addAccountLink } from '@/modules/accounts/add-account-link';
 
 const { t } = useI18n({ useScope: 'global' });

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { AddressBookPayload } from '@/modules/accounts/address-book/eth-names';
-import { useTemplateRef } from 'vue';
+import { isDefined, watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type MessageKey, msg } from '@/message-key';
 import AddressBookForm from '@/modules/accounts/address-book/AddressBookForm.vue';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';

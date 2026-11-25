@@ -1,5 +1,7 @@
 import type { BlockchainBalances } from '@/modules/balances/types/blockchain-balances';
 import { Blockchain } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, isErr, isOk, ok, type Result } from 'plainfp/result';
 import { hasTag } from 'plainfp/tagged';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';

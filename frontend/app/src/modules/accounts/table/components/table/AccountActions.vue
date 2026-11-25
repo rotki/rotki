@@ -1,6 +1,9 @@
 <script setup lang="ts" generic="T extends BlockchainAccountBalance">
 import type { AccountDataRow } from '../../types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getAccountAddress, isAddressAccount } from '@/modules/accounts/account-utils';
 import TokenDetection from '@/modules/accounts/blockchain/TokenDetection.vue';
 import { useAccountDelete } from '@/modules/accounts/blockchain/use-account-delete';

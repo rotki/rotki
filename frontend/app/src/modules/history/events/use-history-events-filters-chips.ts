@@ -1,7 +1,10 @@
-import type { ComputedRef, Ref } from 'vue';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
 import { tap } from 'plainfp/result';
+import { computed, type ComputedRef, type Ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
 import { useHistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';

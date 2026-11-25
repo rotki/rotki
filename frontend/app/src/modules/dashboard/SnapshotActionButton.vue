@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import SnapshotImportDialog from '@/modules/dashboard/SnapshotImportDialog.vue';
 import { useSnapshotActions } from '@/modules/dashboard/snapshots/composables/use-snapshot-actions';
 import { usePremium } from '@/modules/premium/use-premium';

@@ -7,6 +7,9 @@
  * to type, and `autofocus` alone is ignored for an input inserted into an already-loaded document.
  * Arrow and Enter keys are re-emitted for the parent, which owns the highlighted row.
  */
+import { get } from '@vueuse/shared';
+import { nextTick, onMounted, useTemplateRef } from 'vue';
+
 const search = defineModel<string>({ required: true });
 
 const { placeholder, listId, activeRowId, testId } = defineProps<{

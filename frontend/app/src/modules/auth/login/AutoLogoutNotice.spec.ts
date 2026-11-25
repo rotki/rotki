@@ -1,5 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get } from '@vueuse/shared';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { defineComponent, nextTick } from 'vue';
 import { useAutoLogoutNotice } from '@/modules/auth/auto-logout/use-auto-logout-notice';
 import AutoLogoutNotice from '@/modules/auth/login/AutoLogoutNotice.vue';
 

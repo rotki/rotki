@@ -1,5 +1,6 @@
 import { type AssetBalanceWithPrice, bigNumberify } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
+import { get } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, type ComputedRef, type Ref } from 'vue';
 import { useAssetDetail } from './use-asset-detail';

@@ -1,6 +1,8 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { CreateAccountMode, CreateAccountStepId } from '@/modules/auth/create-account/types';
 import { externalLinks } from '@shared/external-links';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 /** What the side panel says about the screen on show, beside the form rather than inside it. */
 interface CreateAccountContext {

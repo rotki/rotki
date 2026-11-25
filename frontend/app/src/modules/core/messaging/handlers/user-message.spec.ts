@@ -1,6 +1,8 @@
 import type { UserMessageData } from '@/modules/core/messaging/types/base';
 import type { BackendProblem } from '@/modules/core/notifications/problems/backend-problem-tree';
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { get } from '@vueuse/shared';
+import { setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { createUserMessageHandler } from '@/modules/core/messaging/handlers/user-message';

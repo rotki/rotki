@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { useI18n } from 'vue-i18n';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import AutoDetectTokensCooldownSetting from '@/modules/settings/general/AutoDetectTokensCooldownSetting.vue';
 import AutoDetectTokensOnLoginSetting from '@/modules/settings/general/AutoDetectTokensOnLoginSetting.vue';

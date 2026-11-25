@@ -5,7 +5,7 @@ import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import MoneriumAuth from './MoneriumAuth.vue';
 

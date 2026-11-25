@@ -1,5 +1,6 @@
 import type { CustomAsset } from '@/modules/assets/types';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type Ref, ref, shallowRef } from 'vue';
 import { useCustomAssetDialog } from './use-custom-asset-dialog';

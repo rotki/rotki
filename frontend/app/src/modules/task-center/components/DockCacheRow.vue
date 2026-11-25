@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';

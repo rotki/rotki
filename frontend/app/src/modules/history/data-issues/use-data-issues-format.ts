@@ -1,3 +1,4 @@
+import { useI18n } from 'vue-i18n';
 import { IssueKind, IssueState } from '@/modules/history/data-issues/constants';
 
 interface UseDataIssuesFormatReturn {

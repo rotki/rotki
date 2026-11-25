@@ -5,9 +5,12 @@ import type {
   NonFungibleBalancesRequestPayload,
 } from '@/modules/balances/types/nfbalances';
 import type { Collection } from '@/modules/core/common/collection';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { pipe } from 'plainfp';
 import { map as mapResult, type Result } from 'plainfp/result';
 import { map, type ResultAsync } from 'plainfp/result-async';
+import { useI18n } from 'vue-i18n';
 import { manualPriceAddActivity } from '@/modules/assets/prices/prices.activity';
 import { useNftBalancesApi } from '@/modules/balances/api/use-nft-balances-api';
 import { nftBalancesActivity } from '@/modules/balances/balances.activity';

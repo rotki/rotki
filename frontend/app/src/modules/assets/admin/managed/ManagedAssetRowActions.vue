@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { useI18n } from 'vue-i18n';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 

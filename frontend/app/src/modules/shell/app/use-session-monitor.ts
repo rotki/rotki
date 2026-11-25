@@ -1,4 +1,5 @@
 import { startPromise } from '@shared/utils';
+import { onScopeDispose } from 'vue';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useMonitorWatchers } from '@/modules/shell/app/use-monitor-watchers';

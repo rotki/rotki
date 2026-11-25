@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { MenuNavItem } from '@/modules/shell/layout/use-navigation-menu';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
 import NavigationMenuItem from '@/modules/shell/components/navigation/NavigationMenuItem.vue';
 
 const { item, mini = false, subMenu = false } = defineProps<{

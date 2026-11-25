@@ -2,6 +2,7 @@ import type { Component, Ref } from 'vue';
 import type { CreateAccountMode } from '@/modules/auth/create-account/types';
 import type { CreateAccountPayload } from '@/modules/auth/login';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { assert, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import CreateAccountWizard from '@/modules/auth/create-account/CreateAccountWizard.vue';
 import { createRuiPlugin } from '@/plugins/rui';

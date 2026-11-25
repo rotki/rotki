@@ -2,6 +2,9 @@
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import { assert, NotificationKind, Severity } from '@rotki/common';
 import { RuiFileUpload } from '@rotki/ui-library';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, shallowRef, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { assetExportActivity } from '@/modules/assets/assets.activity';
 import { useAssets } from '@/modules/assets/use-assets';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';

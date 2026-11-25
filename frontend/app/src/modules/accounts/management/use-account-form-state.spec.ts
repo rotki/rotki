@@ -3,6 +3,7 @@ import type {
   XpubManage,
 } from '@/modules/accounts/blockchain/use-account-manage';
 import { Blockchain } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { assert, beforeEach, describe, expect, it } from 'vitest';
 import { type Ref, ref } from 'vue';
 import { XpubKeyType } from '@/modules/accounts/blockchain-accounts';

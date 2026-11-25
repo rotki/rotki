@@ -1,7 +1,9 @@
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { ComputedRef, Ref } from 'vue';
 import type { CustomAsset } from '@/modules/assets/types';
+import { get, set } from '@vueuse/shared';
 import { some } from 'es-toolkit/compat';
+import { computed, type ComputedRef, type Ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 /** A custom asset shaped for `AssetDetailsBase`, which renders resolved and custom assets alike. */
 interface CustomAssetDetails {

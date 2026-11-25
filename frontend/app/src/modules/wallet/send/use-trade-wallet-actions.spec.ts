@@ -1,7 +1,8 @@
-import type { EffectScope } from 'vue';
 import type { EnhancedProviderDetail } from '@/modules/wallet/providers/provider-detection';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, ref } from 'vue';
 import { useTradeWalletActions } from '@/modules/wallet/send/use-trade-wallet-actions';
 
 const connected = ref<boolean>(false);

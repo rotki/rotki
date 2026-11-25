@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { PremiumDevice } from '@/modules/premium/devices/premium';
-import { useTemplateRef } from 'vue';
+import { isDefined, watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSaveFailure } from '@/modules/core/form/use-save-failure';
 import PremiumDeviceForm from '@/modules/premium/devices/components/PremiumDeviceForm.vue';
 import { usePremiumDevicesApi } from '@/modules/premium/devices/devices';

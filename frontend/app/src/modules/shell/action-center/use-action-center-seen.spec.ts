@@ -1,5 +1,6 @@
-import type { EffectScope } from 'vue';
+import { get, set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it } from 'vitest';
+import { computed, type EffectScope, effectScope, nextTick, ref } from 'vue';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 import { type ActionItem, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';
 import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';

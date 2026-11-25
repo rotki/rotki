@@ -1,4 +1,5 @@
 import { assert } from '@rotki/common';
+import { effectScope, onScopeDispose } from 'vue';
 import { onSessionEnd } from '@/modules/core/session/session-lifecycle';
 import { useMonitorService } from '@/modules/shell/app/use-monitor-service';
 import { useSessionMonitor } from '@/modules/shell/app/use-session-monitor';

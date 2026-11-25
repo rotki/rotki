@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { PoapDeliveryDetails } from '@/modules/airdrops/airdrops';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import images from '@/modules/airdrops/poap.json';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import IconMark from '@/modules/shell/components/IconMark.vue';

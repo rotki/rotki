@@ -1,5 +1,6 @@
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { toHumanReadable } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';
 import { EthValidatorFilterKeys, validStatuses } from '@/modules/staking/eth/eth-validator-filter-keys';
 

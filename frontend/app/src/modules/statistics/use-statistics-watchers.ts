@@ -1,3 +1,6 @@
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { watch } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useSnapshotRates } from '@/modules/statistics/pricing/use-snapshot-rates';

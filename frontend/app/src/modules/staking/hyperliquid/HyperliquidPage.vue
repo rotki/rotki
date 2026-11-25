@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import StakingPageLayout from '@/modules/staking/components/StakingPageLayout.vue';
 import StakingTotals, { type StakingTotal } from '@/modules/staking/components/StakingTotals.vue';
 import { HYPE_IDENTIFIER, HYPERLIQUID_STAKING_RESTRICTIONS } from '@/modules/staking/hyperliquid/constants';

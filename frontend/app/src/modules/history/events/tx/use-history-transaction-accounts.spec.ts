@@ -1,4 +1,6 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useHistoryTransactionAccounts } from './use-history-transaction-accounts';
 

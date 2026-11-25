@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import type { Snapshot } from '@/modules/dashboard/snapshots';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { isNonFungible } from '@/modules/assets/nft-utils';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';

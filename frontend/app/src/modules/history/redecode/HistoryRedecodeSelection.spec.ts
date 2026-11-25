@@ -1,6 +1,8 @@
 import type { ChainInfo } from '@/modules/core/api/types/chains';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { describe, expect, it, vi } from 'vitest';
+import { nextTick, ref } from 'vue';
 import HistoryRedecodeSelection from '@/modules/history/redecode/HistoryRedecodeSelection.vue';
 import '@test/i18n';
 

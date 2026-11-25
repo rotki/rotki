@@ -1,5 +1,7 @@
 import type { Notification } from '@rotki/common';
 import type { NotificationStrategy, NotificationStrategyContext } from './strategies/types';
+import { get } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
 import { logger } from '@/modules/core/common/logging/logging';
 import { createNotification } from '@/modules/core/notifications/notification-utils';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';

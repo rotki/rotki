@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, onBeforeMount, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { size } from '@/modules/core/common/data/data';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { RemoteBackupDeletionPhase, useRemoteBackupDeletion } from '@/modules/shell/cloud-sync/use-remote-backup-deletion';

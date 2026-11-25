@@ -1,4 +1,6 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UnmatchedVariant } from '@/modules/history/events/unmatched-row';
 import UnmatchedMatchDisabledAlert from '@/modules/history/events/UnmatchedMatchDisabledAlert.vue';

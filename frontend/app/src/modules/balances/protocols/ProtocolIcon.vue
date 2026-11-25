@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { Blockchain, toSentenceCase } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
 import { useProxyProtocol } from '@/modules/balances/protocols/use-proxy-protocol';
 import HashLink from '@/modules/shell/components/HashLink.vue';

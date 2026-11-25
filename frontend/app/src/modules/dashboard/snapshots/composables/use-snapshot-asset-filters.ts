@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';

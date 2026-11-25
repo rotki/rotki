@@ -1,4 +1,3 @@
-import type { EffectScope, MaybeRefOrGetter, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { AccountingOverlayContext } from '@/modules/history/balances/use-accounting-overlay-context';
 import type { UseAccountingOverlaySeriesReturn } from '@/modules/history/balances/use-accounting-overlay-series';
@@ -6,9 +5,11 @@ import type { UseCostBasisOverlayReturn } from '@/modules/history/cost-basis/use
 import type { CostBasisOverlayContext } from '@/modules/history/cost-basis/use-cost-basis-overlay-context';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, type MaybeRefOrGetter, type Ref, ref, toValue } from 'vue';
 import { createHistoricalBalanceProcessingCompletedHandler } from '@/modules/core/messaging/handlers/historical-balance-processing-completed';
 import { WebsocketMessage } from '@/modules/core/messaging/messages';
 import { HistoricalBalanceProcessingPhase } from '@/modules/core/messaging/types/status-types';

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import BankConnectorIcon from '@/modules/banks/components/BankConnectorIcon.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';

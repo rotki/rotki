@@ -1,7 +1,7 @@
 import type { RuiIcons } from '@rotki/ui-library';
-import type { ComputedRef } from 'vue';
-import type { RouteRecordNameGeneric } from 'vue-router';
 import type { RouteName, RouteNavMeta } from '@/types/router';
+import { computed, type ComputedRef } from 'vue';
+import { type RouteRecordNameGeneric, useRouter } from 'vue-router';
 import { ACCOUNTING_UPDATE_ROUTES, isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 
 interface MenuEntry {

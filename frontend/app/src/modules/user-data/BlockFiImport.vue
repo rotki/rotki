@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import ImportNotes from '@/modules/user-data/ImportNotes.vue';
 import ImportSource from '@/modules/user-data/ImportSource.vue';
 

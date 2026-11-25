@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import type { Component } from 'vue';
 import type { Pinned } from '@/modules/session/types';
+import { useBreakpoint } from '@rotki/ui-library';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { type Component, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { PINNED_CAP, useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { useSidebarResize } from '@/modules/shell/layout/use-sidebar-resize';
 import { PINNED_PANELS } from '@/modules/shell/pinned/pinned-registry';

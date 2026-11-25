@@ -1,5 +1,9 @@
 import type { IncompleteUpgradeConflict, SyncConflict } from '@/modules/auth/login';
 import type { DataMigrationStatusData, DbUpgradeStatusData } from '@/modules/core/messaging/types';
+import { logicOr } from '@vueuse/math';
+import { get, set } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, type ComputedRef, ref } from 'vue';
 
 export const useSessionAuthStore = defineStore('session/auth', () => {
   const logged = ref<boolean>(false);

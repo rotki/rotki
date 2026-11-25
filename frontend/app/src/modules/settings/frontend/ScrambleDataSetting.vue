@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
 import { useScrambleSetting } from '@/modules/settings/use-scramble-settings';

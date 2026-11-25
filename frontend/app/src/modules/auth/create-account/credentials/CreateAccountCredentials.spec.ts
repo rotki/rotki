@@ -1,7 +1,8 @@
 import type { LoginCredentials } from '@/modules/auth/login';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, ref } from 'vue';
+import { defineComponent, h, nextTick, ref } from 'vue';
 import CreateAccountCredentials from '@/modules/auth/create-account/credentials/CreateAccountCredentials.vue';
 import '@test/i18n';
 

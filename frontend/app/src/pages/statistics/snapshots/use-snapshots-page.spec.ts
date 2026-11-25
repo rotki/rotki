@@ -1,6 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { SnapshotListRow } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
 import { withSetup } from '@test/utils/with-setup';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSnapshotsPage } from './use-snapshots-page';

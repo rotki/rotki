@@ -1,6 +1,7 @@
 import type { ResultAsync } from 'plainfp/result-async';
-import type { MaybeRef, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
+import { set } from '@vueuse/shared';
+import { type MaybeRef, type Ref, shallowReadonly, shallowRef } from 'vue';
 import { fromRequest, isRequestFailure, type RequestError, type RequestFailure } from '@/modules/core/api/request-result';
 import { api } from '@/modules/core/api/rotki-api';
 import { defaultCollectionState } from '@/modules/core/common/data/collection-utils';

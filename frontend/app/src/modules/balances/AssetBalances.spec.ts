@@ -2,9 +2,10 @@ import { type AssetBalanceWithPrice, bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { defineComponent, h, type VNode } from 'vue';
+import { defineComponent, h, nextTick, ref, shallowRef, type VNode } from 'vue';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
 import { provideTableScroller } from '@/modules/core/table/use-table-row-window';
 

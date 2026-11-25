@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
 import { useHistoryEventsSelectionMode } from './use-selection-mode';
 

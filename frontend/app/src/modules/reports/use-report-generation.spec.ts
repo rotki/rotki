@@ -1,5 +1,7 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { effectScope } from 'vue';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { clampProgress, useReportGeneration } from '@/modules/reports/use-report-generation';
 import { useReportsStore } from '@/modules/reports/use-reports-store';

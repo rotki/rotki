@@ -1,5 +1,5 @@
 import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
-import type { MaybeRefOrGetter } from 'vue';
+import { type MaybeRefOrGetter, toValue } from 'vue';
 
 type HistoryEventsPeriod =
   | { fromTimestamp?: string; toTimestamp?: string }

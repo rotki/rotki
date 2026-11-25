@@ -4,6 +4,7 @@ import type { UnmatchedEventGroup } from '@/modules/history/events/matching/type
 import type { UnmatchedFailure } from '@/modules/history/events/unmatched-actions';
 import { mountGeneric } from '@test/utils/mount-generic';
 import { libraryDefaults } from '@test/utils/provide-defaults';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, defineComponent } from 'vue';
 import { assetMovementMatchingKind } from '@/modules/history/events/matching/asset-movement-matching-kind';

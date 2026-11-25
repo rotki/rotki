@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import OnboardingSettings from '@/modules/settings/OnboardingSettings.vue';
 

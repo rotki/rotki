@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { rgbPointsToHex } from '@rotki/common';
+import { contextColors } from '@rotki/ui-library';
+import { watchImmediate } from '@vueuse/core';
+import { set } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
 
 const model = defineModel<string | undefined>({ required: true });
 

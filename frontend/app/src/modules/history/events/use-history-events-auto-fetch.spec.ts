@@ -1,6 +1,8 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, type Ref, shallowRef } from 'vue';
+import { defineComponent, ref, type Ref, shallowRef } from 'vue';
 import { ActivityKind } from '@/modules/task-center/core/types';
 import { useHistoryEventsAutoFetch } from './use-history-events-auto-fetch';
 

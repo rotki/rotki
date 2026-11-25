@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { AssetIdentifierResolution } from '@/modules/assets/types';
+import { get, set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import HistoricalBalancesBuckets from '@/modules/statistics/historical-balances/components/HistoricalBalancesBuckets.vue';

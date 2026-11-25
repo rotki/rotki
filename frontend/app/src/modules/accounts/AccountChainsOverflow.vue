@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { computed, onBeforeUnmount } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AccountChainSkipButton from '@/modules/accounts/AccountChainSkipButton.vue';
 import { type SkipChainItem, useAccountSkipQueries } from '@/modules/accounts/table/use-account-skip-queries';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';

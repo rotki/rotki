@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
+import { computed, type HTMLAttributes } from 'vue';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useSetting } from '@/modules/settings/use-setting';
 import IconMark from '@/modules/shell/components/IconMark.vue';

@@ -1,5 +1,7 @@
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { PremiumCredentialsPayload } from '@/modules/session/types';
+import { set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useFetchPremiumCapabilities } from '@/modules/premium/use-fetch-premium-capabilities';

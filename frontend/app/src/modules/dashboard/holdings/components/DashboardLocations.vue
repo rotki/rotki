@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { SourceKind } from '@/modules/dashboard/holdings/core/holdings-types';
 import { Blockchain, toCapitalCase, toSentenceCase } from '@rotki/common';
+import { useElementSize, useSessionStorage } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import Eth2ValidatorLimitTooltip from '@/modules/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { calculatePercentage } from '@/modules/core/common/data/calculation';

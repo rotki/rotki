@@ -1,5 +1,7 @@
 import type { SessionConfigPayload } from '@/modules/core/sigil/types';
 import { Theme } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
 import { useSetting } from '@/modules/settings/use-setting';

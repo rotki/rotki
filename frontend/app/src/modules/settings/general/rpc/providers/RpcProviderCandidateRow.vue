@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RpcProviderCandidate } from '@/modules/settings/general/rpc/providers/rpc-provider-plan';
+import { useI18n } from 'vue-i18n';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 

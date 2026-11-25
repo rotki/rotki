@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import type { RouteLocationRaw } from 'vue-router';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import ManualAmountNote from '@/modules/balances/components/ManualAmountNote.vue';

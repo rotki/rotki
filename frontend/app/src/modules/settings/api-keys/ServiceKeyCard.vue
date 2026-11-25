@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { get, set } from '@vueuse/shared';
+import { computed, nextTick, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
 import PremiumLock from '@/modules/premium/PremiumLock.vue';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import BigDialog, { type BigDialogAction } from '@/modules/shell/components/dialogs/BigDialog.vue';

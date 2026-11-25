@@ -1,7 +1,9 @@
 import type { AddressBookEntry } from '@/modules/accounts/address-book/eth-names';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { defineComponent, nextTick } from 'vue';
 import AddressBookManagement from '@/modules/accounts/address-book/AddressBookManagement.vue';
 
 const { fetch, getAddressBook, refetch } = await vi.hoisted(async () => {

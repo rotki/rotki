@@ -1,4 +1,5 @@
 import { getOr, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';

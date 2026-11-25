@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { usePrivacyMode } from '@/modules/settings/use-privacy';
 import { useScrambleSetting } from '@/modules/settings/use-scramble-settings';

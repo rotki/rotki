@@ -1,9 +1,10 @@
-import type { EffectScope } from 'vue';
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify, Zero } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, ref } from 'vue';
 import { useEthValidatorManagement } from '@/modules/staking/eth/use-eth-validator-management';
 
 const mockQueryEth2Validators = vi.fn();

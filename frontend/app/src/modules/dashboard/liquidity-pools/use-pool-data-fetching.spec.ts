@@ -1,8 +1,9 @@
 import { runSpecWith } from '@test/utils/mocks/native-task';
+import { get } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type EffectScope, effectScope } from 'vue';
+import { type EffectScope, effectScope, ref, type Ref } from 'vue';
 import { Module } from '@/modules/core/common/modules';
 import { Cancelled } from '@/modules/core/tasks/task-result';
 import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';

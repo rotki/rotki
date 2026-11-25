@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { LOCATION_ICONS, type LocationIcon } from '@/modules/locations/location-icons';
 
 const model = defineModel<LocationIcon>({ required: true });

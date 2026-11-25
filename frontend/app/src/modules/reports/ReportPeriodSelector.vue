@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { PeriodChangedEvent, SelectionChangedEvent } from '@/modules/reports/report-types';
+import { get, set } from '@vueuse/shared';
 import dayjs from 'dayjs';
+import { computed, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { convertToTimestamp } from '@/modules/core/common/data/date';
 import { Quarter } from '@/modules/settings/types/frontend-settings';
 

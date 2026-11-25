@@ -1,4 +1,6 @@
-import { type ComputedRef, hasInjectionContext, type InjectionKey, type MaybeRef, type MaybeRefOrGetter, type Ref } from 'vue';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, getCurrentInstance, hasInjectionContext, inject, type InjectionKey, type MaybeRef, type MaybeRefOrGetter, provide, type Ref, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 
 const TableFetchErrorKey: InjectionKey<Ref<unknown>> = Symbol('table-fetch-error');

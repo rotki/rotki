@@ -2,6 +2,8 @@ import type { Exchange, ExchangeFormData } from '@/modules/balances/types/exchan
 import { bigNumberify } from '@rotki/common';
 import { createTestExchange } from '@test/utils/create-data';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { exchangeBalancesActivity } from '@/modules/balances/balances.activity';

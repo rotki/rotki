@@ -2,6 +2,7 @@ import type { SupportedAsset } from '@rotki/common';
 import type { AssetUpdateConflictResult } from '@/modules/assets/types';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 import AssetConflictDialog from '@/modules/shell/app/AssetConflictDialog.vue';
 
 /**

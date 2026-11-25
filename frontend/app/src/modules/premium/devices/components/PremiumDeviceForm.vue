@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { PremiumDevice } from '@/modules/premium/devices/premium';
+import { get, set } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useModelForm } from '@/modules/core/form/use-model-form';
 import { deviceNameSchema, type DeviceNameState } from '@/modules/premium/devices/device-form-schema';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';

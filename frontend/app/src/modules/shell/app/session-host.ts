@@ -1,3 +1,4 @@
+import { defineComponent } from 'vue';
 import { useSessionHost } from '@/modules/shell/app/use-session-host';
 
 /**

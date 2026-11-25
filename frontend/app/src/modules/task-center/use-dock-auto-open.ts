@@ -1,6 +1,8 @@
-import type { Ref } from 'vue';
 import type { Activity, ActivityId } from '@/modules/task-center/core/types';
 import type { PendingJob } from '@/modules/task-center/use-pending-jobs';
+import { useTimeoutFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { type Ref, shallowRef, watch } from 'vue';
 import { useSetting } from '@/modules/settings/use-setting';
 
 /** How long a clean run's summary stays open before the panel folds back into the pill. */

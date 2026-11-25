@@ -1,5 +1,6 @@
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { createLocationNode as node } from '@test/utils/location-tree';
+import { get } from '@vueuse/shared';
 import { setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useLocationStore } from '@/modules/core/common/use-location-store';

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { RuiMenuSelect } from '@rotki/ui-library';
-
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { BalanceType } from '@/modules/balances/types/balances';
 
 defineOptions({

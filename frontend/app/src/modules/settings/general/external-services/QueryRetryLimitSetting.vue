@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { Defaults } from '@/modules/core/common/defaults';
 import CommonExternalServiceSetting
   from '@/modules/settings/general/external-services/CommonExternalServiceSetting.vue';

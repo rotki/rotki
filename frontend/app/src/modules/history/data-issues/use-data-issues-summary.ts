@@ -1,4 +1,5 @@
 import type { Ref } from 'vue';
+import { storeToRefs } from 'pinia';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { useDataIssuesApi } from '@/modules/history/data-issues/api/use-data-issues-api';
 import { IssueState } from '@/modules/history/data-issues/constants';

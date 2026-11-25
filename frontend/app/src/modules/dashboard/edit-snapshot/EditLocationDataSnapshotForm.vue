@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { LocationDataSnapshotPayload } from '@/modules/dashboard/snapshots';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { useModelForm } from '@/modules/core/form/use-model-form';
 import {

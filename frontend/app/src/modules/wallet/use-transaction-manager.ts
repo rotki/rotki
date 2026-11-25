@@ -1,8 +1,9 @@
-import type { Ref } from 'vue';
 import type { RecentTransaction, TransactionParams } from '@/modules/wallet/types';
 import type { Hash, ViemWalletClient } from '@/modules/wallet/viem-client';
 import { bigNumberify } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { type Ref, ref, shallowReadonly } from 'vue';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useWalletHelper } from '@/modules/wallet/use-wallet-helper';
 

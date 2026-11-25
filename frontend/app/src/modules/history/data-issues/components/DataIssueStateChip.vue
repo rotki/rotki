@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { type IssueState, STATE_META } from '@/modules/history/data-issues/constants';
 import { useDataIssuesFormat } from '@/modules/history/data-issues/use-data-issues-format';
 

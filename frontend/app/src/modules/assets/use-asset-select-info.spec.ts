@@ -1,7 +1,8 @@
-import type { EffectScope } from 'vue';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, ref } from 'vue';
 import { MAX_PARALLEL_ASSET_BATCHES } from '@/modules/assets/use-asset-select-info';
 
 /** Comfortably past the composable's 200ms batch debounce, so a queued batch has been sent. */

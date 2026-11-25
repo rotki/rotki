@@ -1,6 +1,8 @@
 import type { AssetSearchSource } from '@/modules/shell/components/inputs/use-asset-search';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent, nextTick } from 'vue';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';

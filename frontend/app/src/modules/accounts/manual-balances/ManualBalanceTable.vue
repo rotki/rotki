@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import type { DataTableColumn, RuiIcons } from '@rotki/ui-library';
 import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type Filters, manualBalanceTagsParams } from '@/modules/accounts/manual-balances/manual-balance-filter-keys';
 import ManualBalanceAssetCell from '@/modules/accounts/manual-balances/ManualBalanceAssetCell.vue';
 import { useManualBalanceFields } from '@/modules/accounts/manual-balances/use-manual-balance-fields';
 import { useManualBalanceTableActions } from '@/modules/accounts/manual-balances/use-manual-balance-table-actions';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display';
 import { useManualBalancesOrLiabilities } from '@/modules/balances/manual/use-manual-balances-or-liabilities';
+import { watchDebounced } from '@/modules/core/common/async/scoped-timers';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';

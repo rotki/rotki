@@ -1,4 +1,5 @@
 import type { AssetInfo } from '@rotki/common';
+import { set } from '@vueuse/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { ref, type Ref } from 'vue';
 import { useSnapshotAssetFilters } from '@/modules/dashboard/snapshots/composables/use-snapshot-asset-filters';

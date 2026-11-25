@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import type { Component, ComputedRef } from 'vue';
 import { getTextToken } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { type Component, computed, type ComputedRef, defineAsyncComponent, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { definePage } from 'vue-router/experimental';
 import { type MessageKey, msg } from '@/message-key';
 import { useMoneriumOAuth } from '@/modules/integrations/monerium/use-monerium-auth';
 import { EXTERNAL_API_KEY_SERVICES, type ExternalApiKeyService } from '@/modules/settings/api-keys/external/external-api-key-services';

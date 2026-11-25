@@ -1,5 +1,6 @@
 import type { StarlingServiceStatus } from '@shared/ipc';
-import type { Ref } from 'vue';
+import { set } from '@vueuse/shared';
+import { readonly, type Ref, shallowRef } from 'vue';
 
 const mcpServerState = shallowRef<StarlingServiceStatus>();
 

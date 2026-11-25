@@ -1,5 +1,6 @@
 import { useOverlayStack } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
+import { nextTick } from 'vue';
 import { createRouter, createWebHashHistory, type RouteLocationRaw, type RouteRecordNameGeneric, type RouteRecordRaw } from 'vue-router';
 import { handleHotUpdate, routes } from 'vue-router/auto-routes';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';

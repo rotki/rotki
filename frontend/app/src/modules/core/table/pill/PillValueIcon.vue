@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { type DisplayKind, DisplayKinds, type FieldDef, type ValueDisplay, type ValueIcon, type ValueSwatch } from '@/modules/core/table/pill/core/types';
 import { useScramble } from '@/modules/settings/use-scramble';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';

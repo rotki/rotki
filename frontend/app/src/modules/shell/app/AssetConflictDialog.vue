@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { AssetUpdateConflictResult, ConflictResolution } from '@/modules/assets/types';
+import { get } from '@vueuse/shared';
+import { computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import AssetConflictRow from '@/modules/shell/app/AssetConflictRow.vue';
 import {

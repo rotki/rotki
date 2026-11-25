@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import BalanceViewPanel from '@/modules/balances/components/BalanceViewPanel.vue';
 import { useHistoricalSnapshotStore } from '@/modules/balances/use-historical-snapshot-store';
 import { useBalanceView } from '@/modules/balances/view/use-balance-view';

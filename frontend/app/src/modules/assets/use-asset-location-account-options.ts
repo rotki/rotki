@@ -1,6 +1,6 @@
-import type { MaybeRefOrGetter } from 'vue';
 import type { AssetLocation } from '@/modules/assets/use-asset-locations-data';
 import type { AccountFieldOptions } from '@/modules/core/table/filters/shared/account-field';
+import { computed, type MaybeRefOrGetter, toValue } from 'vue';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { isBlockchain } from '@/modules/core/common/chains';
 import { type AccountOption, useAccountOptionResolvers } from '@/modules/core/table/filters/shared/use-account-option-resolvers';

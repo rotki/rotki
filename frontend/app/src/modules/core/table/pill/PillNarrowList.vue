@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { NarrowSuggestion } from '@/modules/core/table/pill/core/narrowing';
+import { get } from '@vueuse/shared';
+import { useTemplateRef, watch } from 'vue';
 import { narrowExampleId, narrowRowId } from '@/modules/core/table/pill/core/narrow-ids';
 import { resolveText } from '@/modules/core/table/pill/core/text';
 import PillValueIcon from '@/modules/core/table/pill/PillValueIcon.vue';

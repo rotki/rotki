@@ -127,7 +127,6 @@
     "tailwindcss": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
-    "unplugin-auto-import": "catalog:",
     "unplugin-vue-components": "catalog:",
     "vite": "catalog:",
     "vite-plugin-checker": "catalog:",

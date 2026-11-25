@@ -1,6 +1,8 @@
-import type { Ref } from 'vue';
 import { withSetup } from '@test/utils/with-setup';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, nextTick, type Ref, ref } from 'vue';
 
 const suggestions = ref<string[]>([]);
 const getAddressName = vi.fn();

@@ -1,5 +1,6 @@
-import type { EffectScope } from 'vue';
+import { get, set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it } from 'vitest';
+import { type EffectScope, effectScope, nextTick } from 'vue';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 import { useActionCenterFolds } from '@/modules/shell/action-center/use-action-center-folds';
 

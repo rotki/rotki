@@ -1,4 +1,5 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';

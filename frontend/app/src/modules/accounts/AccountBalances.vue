@@ -4,6 +4,11 @@ import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { BlockchainAccountGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import { startPromise } from '@shared/utils';
+import { createReusableTemplate, isDefined, watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getGroupId } from '@/modules/accounts/account-utils';
 import AccountAssetSelectionActions from '@/modules/accounts/AccountAssetSelectionActions.vue';
 import AccountBalancesFilterBar from '@/modules/accounts/AccountBalancesFilterBar.vue';
@@ -16,6 +21,7 @@ import { useAccountCategoryHelper } from '@/modules/accounts/use-account-categor
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { watchDebounced } from '@/modules/core/common/async/scoped-timers';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 

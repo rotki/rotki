@@ -1,7 +1,7 @@
 import { NotificationKind, Severity } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { defineComponent, nextTick } from 'vue';
 import AddressBookManagementMore from '@/modules/accounts/address-book/AddressBookManagementMore.vue';
 
 const { importAddressBook, notify } = vi.hoisted(() => ({

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { BackendProblem, ProblemItem } from '@/modules/core/notifications/problems/backend-problem-tree';
+import { get, set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import BackendProblemItem from '@/modules/core/notifications/problems/BackendProblemItem.vue';
 import { useBackendProblemText } from '@/modules/core/notifications/problems/use-backend-problem-text';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';

@@ -1,9 +1,11 @@
 import type { EChartsType } from 'echarts/core';
-import type { MaybeRefOrGetter, Ref, ShallowRef } from 'vue';
 import type VChart from 'vue-echarts';
 import type { NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { assert, type BigNumber } from '@rotki/common';
+import { isDefined, useTimeoutFn } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { type MaybeRefOrGetter, onUnmounted, type Ref, ref, type ShallowRef, shallowRef, toValue } from 'vue';
 import { readZoomFields, resolveZoomRange } from '@/modules/dashboard/graph/net-value-zoom-event';
 import { type TooltipData, useGraphTooltip } from '@/modules/statistics/use-graph-tooltip';
 

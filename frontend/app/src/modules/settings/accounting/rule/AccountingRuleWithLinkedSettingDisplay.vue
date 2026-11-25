@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { AccountingRuleWithLinkedProperty } from '@/modules/settings/types/accounting';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAccountingRuleMappings } from '@/modules/settings/accounting/use-accounting-rule-mappings';
 import SuccessDisplay from '@/modules/shell/components/display/SuccessDisplay.vue';
 

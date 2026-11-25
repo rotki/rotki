@@ -1,4 +1,5 @@
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { useI18n } from 'vue-i18n';
 import { toOraclePriceFields } from '@/modules/assets/prices/oracle-price-fields';
 import { getOracleSourceLabel, ORACLE_SOURCES } from '@/modules/assets/prices/oracle-source-labels';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';

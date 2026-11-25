@@ -1,7 +1,9 @@
 import type { AssetInfoWithId } from '@rotki/common';
 import type { ActiveFilter, FieldDef } from '@/modules/core/table/pill/core/types';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, ref } from 'vue';
 import AssetValueEditor from '@/modules/core/table/pill/AssetValueEditor.vue';
 import ValueSelectList from '@/modules/core/table/pill/ValueSelectList.vue';
 

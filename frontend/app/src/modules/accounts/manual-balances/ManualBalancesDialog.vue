@@ -2,7 +2,10 @@
 import type { ManualBalance, RawManualBalance } from '@/modules/balances/types/manual-balances';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { startPromise } from '@shared/utils';
-import { useTemplateRef } from 'vue';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, shallowRef, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ManualBalancesForm from '@/modules/accounts/manual-balances/ManualBalancesForm.vue';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';

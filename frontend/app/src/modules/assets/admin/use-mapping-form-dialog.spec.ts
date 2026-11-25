@@ -1,3 +1,4 @@
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type Ref, ref, shallowRef } from 'vue';

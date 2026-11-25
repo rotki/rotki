@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { reactify, useToNumber } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type Ref } from 'vue';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { useScramble } from '@/modules/settings/use-scramble';
 import { useSetting } from '@/modules/settings/use-setting';

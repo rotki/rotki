@@ -1,5 +1,5 @@
-import type { MaybeRefOrGetter } from 'vue';
 import type { AccountFieldOptions } from '@/modules/core/table/filters/shared/account-field';
+import { type MaybeRefOrGetter, toValue } from 'vue';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useScramble } from '@/modules/settings/use-scramble';
 

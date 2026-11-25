@@ -1,5 +1,6 @@
 import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { createMock } from '@test/utils/create-mock';
+import { set } from '@vueuse/shared';
 import { none, some } from 'plainfp';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useStoredCredentials } from './use-stored-credentials';

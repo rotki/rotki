@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { InteractionNode } from './address-interaction-graph';
+import { useI18n } from 'vue-i18n';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import { useInteractionLabels } from './use-interaction-labels';

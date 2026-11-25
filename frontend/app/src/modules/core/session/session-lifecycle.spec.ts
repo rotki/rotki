@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { beginSession, captureSession, endSession, hasLiveSession, liveSessionKey, liveSessionSignal, onSessionCleared, onSessionEnd, scheduleSessionClear, sessionWorkSignal } from '@/modules/core/session/session-lifecycle';
 

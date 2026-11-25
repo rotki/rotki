@@ -1,5 +1,4 @@
 import type { ResultAsync } from 'plainfp/result-async';
-import type { MaybeRef } from 'vue';
 import type {
   EthereumValidator,
   EthereumValidatorRequestPayload,
@@ -7,8 +6,11 @@ import type {
 import type { BlockchainAssetBalances } from '@/modules/balances/types/blockchain-balances';
 import type { Collection } from '@/modules/core/common/collection';
 import { type Balance, type BigNumber, bigNumberify, Blockchain, Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { omit } from 'es-toolkit';
+import { defineStore, storeToRefs } from 'pinia';
 import { ok } from 'plainfp/result';
+import { computed, type MaybeRef, ref } from 'vue';
 import { isValidatorAccount } from '@/modules/accounts/account-utils';
 import { sortAndFilterValidators } from '@/modules/accounts/account-validator';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';

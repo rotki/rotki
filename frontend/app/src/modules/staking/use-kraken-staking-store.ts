@@ -4,7 +4,10 @@ import type {
   KrakenStakingPagination,
 } from '@/modules/staking/staking-types';
 import { type AssetBalance, Zero } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { omit } from 'es-toolkit';
+import { defineStore } from 'pinia';
+import { computed, ref, shallowRef } from 'vue';
 import { useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
 import { balanceSum } from '@/modules/core/common/data/calculation';
 

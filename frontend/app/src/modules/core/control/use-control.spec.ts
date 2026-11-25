@@ -5,6 +5,7 @@ import { StarlingServiceStatus } from '@shared/ipc';
 import { StarlingService } from '@shared/starling/starling-protocol';
 import { server } from '@test/setup-files/server';
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

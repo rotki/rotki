@@ -1,7 +1,9 @@
 import { type ComponentMountingOptions, mount } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { defineComponent, ref } from 'vue';
 import { useStatisticsWatchers } from './use-statistics-watchers';
 import '@test/i18n';
 

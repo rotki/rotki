@@ -1,6 +1,8 @@
 import type { AssetBalanceWithPrice } from '@rotki/common';
-import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type DeepReadonly, type MaybeRefOrGetter, type Ref, toValue } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useBalanceViewData } from '@/modules/balances/view/use-balance-view-data';
 import { usePremium } from '@/modules/premium/use-premium';

@@ -1,6 +1,8 @@
 import type { AssetMap } from '@/modules/assets/types';
 import { NotificationGroup } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';

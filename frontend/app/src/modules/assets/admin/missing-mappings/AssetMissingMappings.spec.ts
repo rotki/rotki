@@ -1,7 +1,7 @@
 import type { MissingMapping } from '@/modules/user-data/schemas';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { defineComponent, nextTick } from 'vue';
 import AssetMissingMappings from '@/modules/assets/admin/missing-mappings/AssetMissingMappings.vue';
 import MissingMappingDismissButton from '@/modules/assets/admin/missing-mappings/MissingMappingDismissButton.vue';
 

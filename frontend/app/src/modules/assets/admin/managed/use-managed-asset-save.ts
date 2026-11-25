@@ -1,6 +1,7 @@
 import type { SupportedAsset, UnderlyingToken } from '@rotki/common';
-import type { MaybeRefOrGetter, Ref } from 'vue';
+import { get } from '@vueuse/shared';
 import { omit } from 'es-toolkit';
+import { type MaybeRefOrGetter, type Ref, toValue } from 'vue';
 import { buildManagedAssetPayload } from '@/modules/assets/admin/managed/managed-asset-payload';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 

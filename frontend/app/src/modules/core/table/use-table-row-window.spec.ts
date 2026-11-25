@@ -1,6 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, type Ref, useTemplateRef, type VNode } from 'vue';
+import { defineComponent, h, nextTick, ref, type Ref, shallowRef, useTemplateRef, type VNode, watchEffect } from 'vue';
 import {
   provideTableScroller,
   rangeSelection,

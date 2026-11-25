@@ -1,6 +1,7 @@
 import type { Tag } from '@/modules/tags/tags';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';

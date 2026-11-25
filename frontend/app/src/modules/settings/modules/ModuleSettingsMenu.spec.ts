@@ -1,6 +1,8 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import { Module } from '@/modules/core/common/modules';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import ModuleSettingsMenu from '@/modules/settings/modules/ModuleSettingsMenu.vue';

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import CostBasisMethodSettings from '@/modules/settings/accounting/CostBasisMethodSettings.vue';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingModel } from '@/modules/settings/use-setting-model';

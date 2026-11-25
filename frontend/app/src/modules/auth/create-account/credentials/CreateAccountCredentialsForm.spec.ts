@@ -1,8 +1,9 @@
 import type { StubInstance } from '@test/utils/component-vm';
 import type { LoginCredentials } from '@/modules/auth/login';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { assert, describe, expect, it } from 'vitest';
-import { defineComponent, h, ref, shallowRef, type VNode } from 'vue';
+import { defineComponent, h, nextTick, ref, shallowRef, type VNode } from 'vue';
 import CreateAccountCredentialsForm from '@/modules/auth/create-account/credentials/CreateAccountCredentialsForm.vue';
 import '@test/i18n';
 

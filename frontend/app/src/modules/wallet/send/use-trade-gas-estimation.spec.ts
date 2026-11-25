@@ -1,7 +1,8 @@
-import type { EffectScope, Ref } from 'vue';
 import type { GasFeeEstimation } from '@/modules/wallet/types';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, nextTick, type Ref, ref } from 'vue';
 import { useTradeGasEstimation } from '@/modules/wallet/send/use-trade-gas-estimation';
 
 const ETHEREUM_CHAIN_ID = 1;

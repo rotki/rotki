@@ -1,6 +1,8 @@
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { withSetup } from '@test/utils/with-setup';
+import { get } from '@vueuse/shared';
+import { setActivePinia } from 'pinia';
 import { describe, expect, it } from 'vitest';
 import { useEthStakingFilterFields } from './use-eth-staking-filter-fields';
 import '@test/i18n';

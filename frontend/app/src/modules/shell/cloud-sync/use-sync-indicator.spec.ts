@@ -1,9 +1,10 @@
 import type { DatabaseUploadProgress, DbUploadResult } from '@/modules/core/messaging/types';
 import { createMock } from '@test/utils/create-mock';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { effectScope, type Ref, ref, shallowRef } from 'vue';
+import { effectScope, nextTick, type Ref, ref, shallowRef } from 'vue';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
 import { useSyncIndicator } from './use-sync-indicator';
 

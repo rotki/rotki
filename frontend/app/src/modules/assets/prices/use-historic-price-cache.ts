@@ -1,4 +1,3 @@
-import type { ComputedRef, Ref } from 'vue';
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import type { ActivityId } from '@/modules/task-center/core/types';
 import {
@@ -8,7 +7,12 @@ import {
   NoPrice,
 } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { createSharedComposable } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { getOr, map as mapResult, ok, type Result } from 'plainfp/result';
+import { computed, type ComputedRef, type Ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { HistoricPrices } from '@/modules/assets/prices/price-types';
 import {
   dailyPricesActivity,

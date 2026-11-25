@@ -1,5 +1,6 @@
-import type { MaybeElementRef } from '@vueuse/core';
-import type { InjectionKey, MaybeRefOrGetter, Ref } from 'vue';
+import { type MaybeElementRef, unrefElement, useResizeObserver } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { inject, type InjectionKey, type MaybeRefOrGetter, onUpdated, provide, readonly, type Ref, shallowRef, toValue } from 'vue';
 
 const TableSelectionCollapsedKey: InjectionKey<Readonly<Ref<boolean>>> = Symbol('table-selection-collapsed');
 

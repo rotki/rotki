@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { watchImmediate } from '@vueuse/core';
+import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import DataIssuesView from '@/modules/history/data-issues/DataIssuesView.vue';

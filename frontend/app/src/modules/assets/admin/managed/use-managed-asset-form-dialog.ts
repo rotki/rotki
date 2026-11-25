@@ -1,7 +1,10 @@
 import type { SupportedAsset } from '@rotki/common';
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { omit } from 'es-toolkit';
 import { isErr, type Result } from 'plainfp/result';
+import { computed, type ComputedRef, type MaybeRefOrGetter, readonly, type Ref, ref, shallowRef, toValue, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { type NamedFailure, useFailureSlot } from '@/modules/shell/components/named-failure';

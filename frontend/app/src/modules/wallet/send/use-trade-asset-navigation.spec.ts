@@ -1,7 +1,9 @@
 import type { TradeAssetOption } from '@/modules/wallet/send/use-trade-asset-options';
 import { bigNumberify } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, ref } from 'vue';
 import { useTradeAssetNavigation } from './use-trade-asset-navigation';
 
 function option(identifier: string, chain = 'eth'): TradeAssetOption {

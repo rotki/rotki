@@ -1,4 +1,5 @@
-import type { Ref } from 'vue';
+import { createSharedComposable } from '@vueuse/core';
+import { type Ref, ref } from 'vue';
 
 /**
  * Shared UI state for the pinned internal-tx-conflicts panel. The settings toggle

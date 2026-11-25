@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution } from '@/modules/assets/types';
+import { useLocalStorage } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { UnlockPhase, type UnlockState } from '@/modules/auth/unlock-flow/use-unlock-flow';
 import UpgradeProgressDisplay from '@/modules/auth/upgrade/UpgradeProgressDisplay.vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';

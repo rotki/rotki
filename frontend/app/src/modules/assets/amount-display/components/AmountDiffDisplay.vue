@@ -13,6 +13,8 @@
  * each value differently.
  */
 import type { BigNumber } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import { useAmountDisplaySettings, useAmountFormatter, useScrambledValue } from '@/modules/assets/amount-display';
 import { sameMagnitude, sharesSignificantDigit, splitSharedPrefix } from '@/modules/assets/amount-display/amount-comparison';
 import CopyTooltip from '@/modules/shell/components/CopyTooltip.vue';

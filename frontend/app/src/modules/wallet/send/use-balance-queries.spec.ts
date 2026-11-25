@@ -1,4 +1,7 @@
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, ref } from 'vue';
 import { useBalanceQueries } from '@/modules/wallet/send/use-balance-queries';
 
 const addressesRef = ref<Record<string, string[]>>({});

@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import { type TabContent, tabKey } from '@/modules/core/common/tabs';
 import SettingsSearch from '@/modules/settings/SettingsSearch.vue';

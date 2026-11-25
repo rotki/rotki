@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { NODE_STATUS, type NodeStatus } from '@/modules/settings/general/rpc/rpc-node-status';
 import RpcReconnectButton from '@/modules/settings/general/rpc/RpcReconnectButton.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';

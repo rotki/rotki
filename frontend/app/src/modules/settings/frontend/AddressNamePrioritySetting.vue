@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { BaseMessage } from '@/modules/core/messaging/base-message';
+import { get, set } from '@vueuse/shared';
+import { computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AddressNamePriority } from '@/modules/accounts/address-book/types/address-name-priorities';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import EnableEnsNamesSetting from '@/modules/settings/frontend/EnableEnsNamesSetting.vue';

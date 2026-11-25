@@ -1,6 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type Ref, ref } from 'vue';
+import { nextTick, type Ref, ref } from 'vue';
 import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
 
 const { useSettingModelMock } = vi.hoisted(() => ({ useSettingModelMock: vi.fn() }));

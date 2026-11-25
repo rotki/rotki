@@ -1,4 +1,5 @@
 import { startPromise } from '@shared/utils';
+import { useRouter } from 'vue-router';
 import { type ActionTarget, leavesCenter } from '@/modules/core/action-center/types';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { useSettingsHighlight } from '@/modules/settings/use-settings-highlight';

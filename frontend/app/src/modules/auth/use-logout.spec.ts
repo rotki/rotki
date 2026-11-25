@@ -1,8 +1,11 @@
 import type { RotkiApi } from '@/modules/core/api/rotki-api';
 import type { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useLogout } from '@/modules/auth/use-logout';
 import { endSession, hasLiveSession, onPendingWrite } from '@/modules/core/session/session-lifecycle';
 

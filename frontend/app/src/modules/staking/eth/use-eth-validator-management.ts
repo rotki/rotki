@@ -1,7 +1,9 @@
-import type { DeepReadonly, Ref } from 'vue';
 import { type BigNumber, type Eth2ValidatorEntry, type Eth2Validators, type EthStakingCombinedFilter, type EthStakingFilter, Zero } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
+import { storeToRefs } from 'pinia';
+import { type DeepReadonly, readonly, type Ref, ref, watch } from 'vue';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { nonEmptyProperties } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';

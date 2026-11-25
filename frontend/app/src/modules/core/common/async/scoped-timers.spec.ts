@@ -1,3 +1,4 @@
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, nextTick, ref } from 'vue';
 import {

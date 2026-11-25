@@ -3,6 +3,7 @@ import type { BalanceMutation } from '@/modules/dashboard/snapshots/utils/snapsh
 import { type BigNumber, bigNumberify, One } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick, type Ref, ref } from 'vue';

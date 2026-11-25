@@ -1,8 +1,10 @@
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef } from 'vue';
 import type { Balances } from '@/modules/accounts/blockchain-accounts';
 import type { BlockchainTotal } from '@/modules/balances/blockchain-types';
+import { get } from '@vueuse/shared';
 import { isEmpty } from 'es-toolkit/compat';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef } from 'vue';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';

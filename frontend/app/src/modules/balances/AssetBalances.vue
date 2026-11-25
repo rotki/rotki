@@ -2,6 +2,10 @@
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { DataTableSortData } from '@rotki/ui-library';
 import type { AssetBalancesDisplay, AssetBreakdownOptions } from '@/modules/balances/types/balances';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { isEvmNativeToken } from '@/modules/assets/types';
@@ -11,6 +15,7 @@ import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocol
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
 import { useAssetBalancesHeaders } from '@/modules/balances/use-asset-balances-headers';
 import { useValuePending } from '@/modules/balances/value-pending';
+import { refDebounced } from '@/modules/core/common/async/scoped-timers';
 import { bigNumberSum, calculatePercentage } from '@/modules/core/common/data/calculation';
 import { hasAwaitingClaim, sortAssetBalances } from '@/modules/core/common/display/balances';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';

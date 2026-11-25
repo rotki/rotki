@@ -1,5 +1,6 @@
-import type { EffectScope, Ref } from 'vue';
+import { get, set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, nextTick, type Ref, ref } from 'vue';
 import { useTradeNetworkMatch } from '@/modules/wallet/send/use-trade-network-match';
 
 const ETHEREUM_CHAIN_ID = 1;

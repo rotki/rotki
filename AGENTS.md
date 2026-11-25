@@ -120,7 +120,9 @@ rules resolve paths relative to the workspace. Add a workspace script if one is 
   consider a typed `Map`. Use one justified assertion at an unavoidable boundary; never go through
   `any` to bypass lint. For new enum-like types use an `as const` object and a derived union;
   leave existing enums alone unless you are already reworking that file.
-- VueUse helpers (`get`, `set`, ...) and `useI18n` are auto-imported.
+- Nothing is auto-imported except `Rui*` components in templates: import Vue, VueUse, Pinia,
+  vue-router and vue-i18n APIs explicitly (`get`/`set` from `@vueuse/shared`). Import the debounce
+  and throttle helpers from `@/modules/core/common/async/scoped-timers`, not `@vueuse/core`.
 - Use `startPromise()` from `@shared/utils` for intentionally unawaited promises, not `void`.
 - Call `useI18n({ useScope: 'global' })` where translations are needed; don't pass `t` into a composable.
 - Destructure props with inline defaults (factories for arrays/objects). For composable inputs prefer

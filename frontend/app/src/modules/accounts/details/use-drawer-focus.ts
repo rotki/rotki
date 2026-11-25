@@ -1,4 +1,6 @@
-import type { MaybeRefOrGetter } from 'vue';
+import { useActiveElement } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { type MaybeRefOrGetter, nextTick, toValue, watch } from 'vue';
 
 /**
  * Moves focus into a drawer when it opens and back to whatever opened it when it closes.

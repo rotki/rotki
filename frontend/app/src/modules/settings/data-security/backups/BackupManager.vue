@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
+import { set } from '@vueuse/shared';
+import { type HTMLAttributes, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import TableSelectionAction from '@/modules/core/table/TableSelectionAction.vue';
 import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
 import DatabaseBackups from '@/modules/settings/data-security/backups/DatabaseBackups.vue';

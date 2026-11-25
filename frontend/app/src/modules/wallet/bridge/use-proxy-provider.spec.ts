@@ -1,5 +1,6 @@
 import type { RpcRequest } from '@/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { effectScope } from 'vue';
 import { useProxyProvider } from '@/modules/wallet/bridge/use-proxy-provider';
 
 interface MockWalletBridge {

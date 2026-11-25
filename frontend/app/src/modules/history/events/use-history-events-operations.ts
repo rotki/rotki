@@ -1,4 +1,3 @@
-import type { ComputedRef, Ref } from 'vue';
 import type {
   LinkedMovementMatch,
   LocationAndTxRef,
@@ -10,7 +9,10 @@ import type {
 } from '@/modules/history/events/schemas';
 import type { HistoryEventDeletePayload, HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import { HistoryEventEntryType } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { tap } from 'plainfp/result-async';
+import { type ComputedRef, readonly, type Ref, ref, shallowReadonly, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Defaults } from '@/modules/core/common/defaults';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';

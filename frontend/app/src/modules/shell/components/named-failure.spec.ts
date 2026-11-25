@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { err, ok, type Result } from 'plainfp/result';
 import { describe, expect, it, vi } from 'vitest';
 import { isReadonly } from 'vue';

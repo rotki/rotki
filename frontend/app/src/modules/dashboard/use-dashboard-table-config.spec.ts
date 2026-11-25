@@ -1,5 +1,7 @@
 import { type BigNumber, bigNumberify } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { useDashboardTableConfig } from '@/modules/dashboard/use-dashboard-table-config';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';

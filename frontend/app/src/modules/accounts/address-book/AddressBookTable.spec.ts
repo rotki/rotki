@@ -1,7 +1,7 @@
 import type { AddressBookEntry, AddressBookLocation } from '@/modules/accounts/address-book/eth-names';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, type MaybeRefOrGetter, toValue } from 'vue';
+import { defineComponent, type MaybeRefOrGetter, nextTick, toValue } from 'vue';
 import AddressBookTable from '@/modules/accounts/address-book/AddressBookTable.vue';
 
 const { deleteEntry, locations } = vi.hoisted(() => {

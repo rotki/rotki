@@ -2,7 +2,7 @@ import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test
 import dayjs from 'dayjs';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, type VNode } from 'vue';
+import { defineComponent, h, nextTick, type VNode } from 'vue';
 import { setupDayjs } from '@/modules/core/common/data/date';
 import DateTimeRangePicker from '@/modules/shell/components/inputs/DateTimeRangePicker.vue';
 

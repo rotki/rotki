@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { AccountingRuleWithLinkedProperty } from '@/modules/settings/types/accounting';
+import { get } from '@vueuse/shared';
+import { computed, reactive } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useModelMirror } from '@/modules/core/form/use-model-mirror';
 import { type LinkedPropertyState, toLinkedProperty, toLinkedPropertyState } from '@/modules/settings/accounting/rule/accounting-rule-form';
 import { useAccountingRuleMappings } from '@/modules/settings/accounting/use-accounting-rule-mappings';

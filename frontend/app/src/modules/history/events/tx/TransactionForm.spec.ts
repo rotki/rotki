@@ -9,6 +9,7 @@ import { type ModelFormHarness, mountModelForm } from '@test/utils/model-form-ha
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed } from 'vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import TransactionForm from '@/modules/history/events/tx/TransactionForm.vue';
 import '@test/i18n';

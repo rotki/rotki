@@ -2,7 +2,10 @@
 import type { BigNumber } from '@rotki/common';
 import type { EChartsOption, LineSeriesOption } from 'echarts';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import VChart from 'vue-echarts';
+import { useI18n } from 'vue-i18n';
 import { useAmountDisplaySettings } from '@/modules/assets/amount-display';
 import { injectAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
 import { useAccountingOverlaySparkline } from '@/modules/history/balances/use-accounting-overlay-sparkline';

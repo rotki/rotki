@@ -1,3 +1,4 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 

@@ -1,8 +1,10 @@
 import type { Ref } from 'vue';
 import type { LocationQuery } from '@/modules/core/table/route';
 import type { TableId } from '@/modules/core/table/use-remember-table-sorting';
-import { objectOmit } from '@vueuse/shared';
+import { useLocalStorage } from '@vueuse/core';
+import { get, objectOmit, set } from '@vueuse/shared';
 import { isEmpty } from 'es-toolkit/compat';
+import { useRouter } from 'vue-router';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 
 interface UseRememberTableFilterOptions {

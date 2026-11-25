@@ -1,6 +1,7 @@
-import type { EffectScope } from 'vue';
 import { captureConsoleError } from '@test/utils/capture-console-error';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope } from 'vue';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useTaskPollingScheduler } from './use-task-polling-scheduler';

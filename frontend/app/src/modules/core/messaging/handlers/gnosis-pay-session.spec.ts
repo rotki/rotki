@@ -1,3 +1,4 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createGnosisPaySessionHandler } from '@/modules/core/messaging/handlers/gnosis-pay-session';
 import { RaisedConditionKind, SessionCause, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';

@@ -1,6 +1,7 @@
 import type { BankConnectionIdentity } from '@/modules/banks/types';
 import type { ActivityId } from '@/modules/task-center/core/types';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanksApi } from '@/modules/banks/use-banks-api';

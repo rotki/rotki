@@ -1,4 +1,3 @@
-import type { Ref, WritableComputedRef } from 'vue';
 import type { DialogState } from '@/modules/history/events/dialog-manager/types';
 import type { AddTransactionHashPayload } from '@/modules/history/events/event-payloads';
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
@@ -9,6 +8,8 @@ import type {
   StandaloneEventData,
 } from '@/modules/history/management/forms/form-types';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { computed, type Ref, shallowReadonly, shallowRef, type WritableComputedRef } from 'vue';
 import { useHistoryEventsDialogManager } from '@/modules/history/events/dialog-manager/use-history-events-dialog-manager';
 import { DIALOG_TYPES, type DialogShowOptions } from '@/modules/history/events/dialog-types';
 

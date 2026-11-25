@@ -1,5 +1,4 @@
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import type {
   EthereumValidator,
   EthereumValidatorRequestPayload,
@@ -7,6 +6,10 @@ import type {
 import type { Collection } from '@/modules/core/common/collection';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { Filters } from '@/modules/staking/eth/eth-validator-filter-keys';
+import { watchImmediate } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type Ref, ref, type WritableComputedRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable } from '@/modules/core/table/use-server-table';
 import { useEthValidatorFields } from '@/modules/staking/eth/use-eth-validator-fields';

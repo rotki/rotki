@@ -1,8 +1,10 @@
 import type { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { createMock } from '@test/utils/create-mock';
 import { runSpecWith } from '@test/utils/mocks/native-task';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, isErr } from 'plainfp/result';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, ref } from 'vue';
 import { ApiKeyMissingError } from '@/modules/core/api/types/errors';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';

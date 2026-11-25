@@ -1,4 +1,8 @@
 import type { Nullable } from '@rotki/common';
+import { useLocalStorage } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { watch } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { type PinnedName, PinnedNames, toPinned } from '@/modules/session/types';

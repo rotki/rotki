@@ -1,8 +1,10 @@
 import type { ActionResult } from '@rotki/common';
 import { server } from '@test/setup-files/server';
+import { get, set } from '@vueuse/shared';
 import { http, HttpResponse } from 'msw';
-import { type Pinia, setActivePinia } from 'pinia';
+import { createPinia, type Pinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, ref } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { type PremiumCapabilities, PremiumFeature, type PremiumFeatureCapability } from '@/modules/session/types';

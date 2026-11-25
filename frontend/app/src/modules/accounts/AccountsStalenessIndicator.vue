@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { formatTimeAgo } from '@vueuse/core';
+import { formatTimeAgo, useIntervalFn, useNow } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type ChainRefreshState, useCategoryChainRefresh } from '@/modules/accounts/use-category-chain-refresh';
 
 const { category } = defineProps<{

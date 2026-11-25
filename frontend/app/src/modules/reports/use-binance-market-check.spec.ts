@@ -1,6 +1,8 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import { createTestExchange } from '@test/utils/create-data';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useBinanceMarketCheck } from '@/modules/reports/use-binance-market-check';
 
 const queryBinanceUserMarkets = vi.fn<(identifier: string) => Promise<string[]>>();

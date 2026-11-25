@@ -1,5 +1,7 @@
 import { startPromise } from '@shared/utils';
+import { createSharedComposable } from '@vueuse/core';
 import { err, ok, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { BackendCancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { BACKGROUND_LANE, Priority } from '@/modules/task-center/core/orchestrator/spec';

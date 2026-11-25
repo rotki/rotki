@@ -2,6 +2,7 @@ import type { AddressBookSimplePayload, EthNames } from '@/modules/accounts/addr
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import { isValidEthAddress } from '@rotki/common';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { ensResolveActivity } from '@/modules/accounts/accounts.activity';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';

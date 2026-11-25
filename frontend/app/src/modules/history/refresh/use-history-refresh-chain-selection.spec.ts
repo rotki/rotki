@@ -1,4 +1,5 @@
 import type { ChainAddress } from '@/modules/history/events/event-payloads';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, nextTick, ref } from 'vue';
 import { useHistoryRefreshChainSelection } from './use-history-refresh-chain-selection';

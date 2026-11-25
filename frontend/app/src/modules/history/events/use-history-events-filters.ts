@@ -1,5 +1,4 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import type { WritableRef } from '@/modules/core/common/common-types';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
@@ -7,7 +6,10 @@ import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types
 import type { Filters } from '@/modules/history/events/history-event-filter-keys';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
+import { get, set } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
+import { computed, type ComputedRef, type MaybeRef, type MaybeRefOrGetter, type Ref, ref, shallowReadonly, watch, type WritableComputedRef } from 'vue';
+import { useRoute } from 'vue-router';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import { TableId } from '@/modules/core/table/use-remember-table-sorting';
 import { type ChangeSource, routeWhen, useServerTable } from '@/modules/core/table/use-server-table';

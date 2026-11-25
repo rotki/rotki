@@ -1,4 +1,7 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
+import { set } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { ref } from 'vue';
 
 export const useConnectedExchangesStore = defineStore('exchanges', () => {
   const connectedExchanges = ref<Exchange[]>([]);

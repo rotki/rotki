@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { useSetting } from '@/modules/settings/use-setting';

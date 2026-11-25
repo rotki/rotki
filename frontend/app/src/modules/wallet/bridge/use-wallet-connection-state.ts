@@ -1,5 +1,5 @@
 import { createSharedComposable, set } from '@vueuse/core';
-import { ref, type Ref } from 'vue';
+import { readonly, ref, type Ref } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 
 interface WalletConnectionStateComposable {

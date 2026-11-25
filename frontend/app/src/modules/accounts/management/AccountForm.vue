@@ -3,6 +3,9 @@ import type { AccountManageState } from '@/modules/accounts/blockchain/use-accou
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { computed, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AccountFormApiKeyAlertContent from '@/modules/accounts/management/AccountFormApiKeyAlertContent.vue';
 import AccountSelector from '@/modules/accounts/management/inputs/AccountSelector.vue';
 import AddressAccountForm from '@/modules/accounts/management/types/AddressAccountForm.vue';

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DecodeScope } from '@/modules/history/events/event-payloads';
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
+import { useI18n } from 'vue-i18n';
 import { DIALOG_TYPES, type DialogShowOptions } from '@/modules/history/events/dialog-types';
 import HistoryRedecodeButton from '@/modules/history/redecode/HistoryRedecodeButton.vue';
 import HistoryRefreshButton from '@/modules/history/refresh/HistoryRefreshButton.vue';

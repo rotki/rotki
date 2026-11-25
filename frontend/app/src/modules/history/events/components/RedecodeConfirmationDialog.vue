@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { PullEventPayload } from '@/modules/history/events/event-payloads';
 import { HistoryEventEntryType } from '@rotki/common';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { initialIndexerOrder } from '@/modules/history/events/components/redecode-indexer-order';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';

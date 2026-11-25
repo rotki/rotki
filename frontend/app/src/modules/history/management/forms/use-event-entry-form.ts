@@ -1,8 +1,11 @@
-import type { ComputedRef, ModelRef, Ref } from 'vue';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventSaveResult } from '@/modules/history/management/forms/history-event-save-result';
 import { HistoryEventEntryType, toSnakeCase } from '@rotki/common';
 import { generateUUID } from '@shared/utils';
+import { useLocalStorage, watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type ModelRef, type Ref, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';

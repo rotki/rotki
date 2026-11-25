@@ -1,8 +1,10 @@
 import type { RotkiApi } from '@/modules/core/api/rotki-api';
 import { createMock } from '@test/utils/create-mock';
 import { flushPromises } from '@vue/test-utils';
+import { get } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { effectScope } from 'vue';
 import '@test/i18n';
 
 /**

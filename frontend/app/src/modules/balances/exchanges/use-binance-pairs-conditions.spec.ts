@@ -1,5 +1,7 @@
 import type { ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { createTestExchange } from '@test/utils/create-data';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 import { useBinancePairsConditions } from './use-binance-pairs-conditions';

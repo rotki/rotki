@@ -2,6 +2,10 @@
 import type { BaseMessage } from '@/modules/core/messaging/base-message';
 import type { PrioritizedListData, PrioritizedListItemData } from '@/modules/settings/types/prioritized-list-data';
 import { assert, type Nullable, pluralize } from '@rotki/common';
+import { createReusableTemplate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { EmptyListId, type PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
 import PrioritizedListEntry from '@/modules/shell/components/PrioritizedListEntry.vue';
 import PrioritizedListRow from '@/modules/shell/components/PrioritizedListRow.vue';

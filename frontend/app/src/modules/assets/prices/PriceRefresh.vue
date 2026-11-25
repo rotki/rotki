@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 

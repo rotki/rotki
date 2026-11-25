@@ -1,6 +1,9 @@
 import type { UseHistoryEventsSelectionModeReturn } from './use-selection-mode';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, type ComputedRef, readonly, ref, type Ref } from 'vue';
 import {
   type EvmHistoryEvent,
   HistoryEventAccountingRuleStatus,

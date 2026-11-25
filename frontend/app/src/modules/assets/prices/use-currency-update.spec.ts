@@ -1,6 +1,8 @@
 import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import { bigNumberify } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { BalanceSource, type BalanceValueThreshold } from '@/modules/settings/types/frontend-settings';
 import { useCurrencyUpdate } from './use-currency-update';
 

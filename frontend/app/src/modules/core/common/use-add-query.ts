@@ -1,5 +1,7 @@
-import type { LocationQuery } from 'vue-router';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { watch } from 'vue';
+import { type LocationQuery, useRoute, useRouter } from 'vue-router';
 
 interface UseAddQueryReturn {
   /**

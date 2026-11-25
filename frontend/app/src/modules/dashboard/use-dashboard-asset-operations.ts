@@ -1,6 +1,7 @@
 import type { AssetBalanceWithPrice } from '@rotki/common';
-import type { MaybeRefOrGetter, Ref } from 'vue';
 import { startPromise } from '@shared/utils';
+import { type MaybeRefOrGetter, type Ref, ref, toValue } from 'vue';
+import { useRouter } from 'vue-router';
 import { isEvmNativeToken } from '@/modules/assets/types';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 

@@ -1,3 +1,4 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequestFailed } from '@/modules/core/api/request-result';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber, toSentenceCase } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 
 interface Props {

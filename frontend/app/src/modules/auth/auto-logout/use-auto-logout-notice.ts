@@ -1,4 +1,6 @@
-import type { Ref } from 'vue';
+import { createGlobalState } from '@vueuse/core';
+import { set } from '@vueuse/shared';
+import { readonly, type Ref, shallowRef } from 'vue';
 
 interface UseAutoLogoutNoticeReturn {
   /** The idle period, in minutes, that ended the last session, while the login screen should say so. */

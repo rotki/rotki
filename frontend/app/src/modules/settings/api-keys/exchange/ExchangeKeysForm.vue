@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { RuiRevealableTextField, RuiTextField } from '@rotki/ui-library';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, onMounted, type Ref, ref, toRef, type WritableComputedRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type MessageKey, msg } from '@/message-key';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { type ExchangeFormData, GateLocation, KrakenAccountType, OkxLocation } from '@/modules/balances/types/exchanges';

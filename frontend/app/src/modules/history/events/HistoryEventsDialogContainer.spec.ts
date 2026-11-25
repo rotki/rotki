@@ -4,7 +4,9 @@ import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatc
 import type { UnmatchedBridgeTransaction } from '@/modules/history/events/use-unmatched-bridge-transactions';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, ref } from 'vue';
 import * as stubs from '@/modules/history/events/dialog-components';
 import { DIALOG_TYPES, type DialogEventHandlers } from '@/modules/history/events/dialog-types';
 import HistoryEventsDialogContainer from '@/modules/history/events/HistoryEventsDialogContainer.vue';

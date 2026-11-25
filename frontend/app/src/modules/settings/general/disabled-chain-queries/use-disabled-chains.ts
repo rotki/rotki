@@ -1,4 +1,5 @@
 import { get } from '@vueuse/core';
+import { computed } from 'vue';
 import { toChainKey } from '@/modules/core/common/chains';
 import { useSetting } from '@/modules/settings/use-setting';
 

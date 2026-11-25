@@ -4,6 +4,10 @@ import type {
   BlockchainAccountBalance,
 } from '@/modules/accounts/blockchain-accounts';
 import { consistOfNumbers } from '@rotki/common';
+import { useElementSize } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getAccountAddress, getAccountLabel, getChain, isXpubAccount } from '@/modules/accounts/account-utils';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useScramble } from '@/modules/settings/use-scramble';

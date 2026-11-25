@@ -1,6 +1,8 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { Collection, CollectionResponse } from '@/modules/core/common/collection';
 import { type BigNumber, Zero } from '@rotki/common';
+import { isDefined } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, toValue } from 'vue';
 import { usePremium } from '@/modules/premium/use-premium';
 
 type Entries = 'entries' | 'entriesFound' | 'entriesLimit' | 'entriesTotal';

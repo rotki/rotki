@@ -1,7 +1,10 @@
-import type { MaybeRefOrGetter } from 'vue';
 import type { ProtocolMetadata } from '@/modules/balances/protocols/types';
 import { transformCase } from '@rotki/common';
+import { asyncComputed, createSharedComposable } from '@vueuse/core';
+import { get } from '@vueuse/shared';
 import { camelCase } from 'es-toolkit';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, ref, toValue } from 'vue';
 import { useDefiApi } from '@/modules/airdrops/use-defi-api';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import { useMainStore } from '@/modules/core/common/use-main-store';

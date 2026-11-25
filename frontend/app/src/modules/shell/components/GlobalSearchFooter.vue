@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 const { assetSearchError } = defineProps<{
   /** Why the asset search failed, if it did; pages and settings still search without it. */
   assetSearchError?: string;

@@ -1,5 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { Defaults } from '@/modules/core/common/defaults';
 import InternalTxConflictRepullSettings from '@/modules/settings/general/InternalTxConflictRepullSettings.vue';
 import { createRuiPlugin } from '@/plugins/rui';

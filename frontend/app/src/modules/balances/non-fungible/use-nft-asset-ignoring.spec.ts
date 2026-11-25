@@ -1,5 +1,6 @@
 import type { NonFungibleBalance } from '@/modules/balances/types/nfbalances';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useNftAssetIgnoring } from './use-nft-asset-ignoring';
 

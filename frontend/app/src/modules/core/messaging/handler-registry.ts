@@ -1,3 +1,5 @@
+import type { useI18n } from 'vue-i18n';
+import type { useRouter } from 'vue-router';
 import type { MessageHandlerRegistry } from './interfaces';
 import { createBusinessRegistry } from './registries/business-registry';
 import { createNotificationRegistry } from './registries/notification-registry';

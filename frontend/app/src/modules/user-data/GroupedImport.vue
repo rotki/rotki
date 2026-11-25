@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
 import type { ImportSource } from '@/modules/core/common/upload-types';
+import { createReusableTemplate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, defineAsyncComponent, markRaw, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 import IconMark from '@/modules/shell/components/IconMark.vue';

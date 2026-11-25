@@ -1,5 +1,6 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { externalLinks } from '@shared/external-links';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
 interface UseLinksReturn {

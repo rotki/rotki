@@ -1,5 +1,7 @@
-import type { Ref } from 'vue';
 import { startPromise } from '@shared/utils';
+import { createGlobalState } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { onScopeDispose, readonly, type Ref, shallowRef } from 'vue';
 import { api } from '@/modules/core/api/rotki-api';
 import { delay } from '@/modules/core/common/async/async-utilities';
 import { logger } from '@/modules/core/common/logging/logging';

@@ -1,7 +1,9 @@
 import type { Nullable } from '@rotki/common';
-import type { ComputedRef, Ref } from 'vue';
 import type { MessageKey } from '@/message-key';
 import type { PinnedName } from '@/modules/session/types';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type Ref } from 'vue';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { PINNED_PANELS } from '@/modules/shell/pinned/pinned-registry';
 

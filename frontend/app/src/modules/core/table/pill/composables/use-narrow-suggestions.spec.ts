@@ -1,5 +1,6 @@
 import type { AssetsWithId } from '@/modules/assets/types';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';

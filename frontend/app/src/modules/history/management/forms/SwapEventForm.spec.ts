@@ -1,4 +1,3 @@
-import type { Pinia } from 'pinia';
 import type { TradeLocationData } from '@/modules/core/common/location';
 import type { EvmSwapEvent, SolanaSwapEvent, SwapEvent } from '@/modules/history/events/schemas';
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
@@ -6,8 +5,10 @@ import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { selectorContract } from '@test/utils/selector-contract';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
+import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
+import { computed, nextTick, toValue } from 'vue';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { SOLANA_CHAIN } from '@/modules/assets/types';

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { RecentTransaction } from '@/modules/wallet/types';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';

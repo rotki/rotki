@@ -1,12 +1,14 @@
 import type { TablePaginationData } from '@rotki/ui-library';
-import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { Schema } from 'zod';
 import type { SingleColumnSorting, Sorting } from '@/modules/core/table/pagination-filter-types';
 import type { LocationQuery } from '@/modules/core/table/route';
 import type { ChangeSource } from '@/modules/core/table/use-change-intent';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { isEqual, omit, pick } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
-import { isNavigationFailure } from 'vue-router';
+import { type MaybeRefOrGetter, type Ref, toValue } from 'vue';
+import { isNavigationFailure, useRoute, useRouter } from 'vue-router';
 import {
   applyPaginationDefaults,
   parseQueryHistory,

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { CurrencyLocation } from '@/modules/assets/amount-display/currency-location';
 import SettingSelect from '@/modules/settings/controls/SettingSelect.vue';
 

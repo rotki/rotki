@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { LocationDataSnapshot, LocationDataSnapshotPayload } from '@/modules/dashboard/snapshots';
+import { get, set } from '@vueuse/shared';
+import { ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { parseNumericInput } from '@/modules/core/common/data/bignumbers';
 import EditLocationDataSnapshotForm from '@/modules/dashboard/edit-snapshot/EditLocationDataSnapshotForm.vue';
 import { useHistoricFiatConversion } from '@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion';

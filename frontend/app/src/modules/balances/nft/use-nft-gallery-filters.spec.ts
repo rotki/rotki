@@ -1,9 +1,10 @@
-import type { ComputedRef } from 'vue';
 import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import type { GalleryNft, Nfts } from '@/modules/assets/nfts';
 import { bigNumberify } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, type ComputedRef, ref } from 'vue';
 import { createAccount } from '@/modules/accounts/create-account';
 import { useNftGalleryFilters } from './use-nft-gallery-filters';
 

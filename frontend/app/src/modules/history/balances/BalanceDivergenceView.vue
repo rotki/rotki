@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import DivergenceComparison from '@/modules/history/balances/DivergenceComparison.vue';

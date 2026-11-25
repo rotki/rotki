@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { PremiumSetup } from '@/modules/auth/login';
+import { get } from '@vueuse/shared';
+import { computed, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { premiumSetupSchema } from '@/modules/auth/create-account/premium/premium-setup-form';
 import { useFormErrorFocus } from '@/modules/core/common/use-form-error-focus';
 import { useModelForm } from '@/modules/core/form/use-model-form';

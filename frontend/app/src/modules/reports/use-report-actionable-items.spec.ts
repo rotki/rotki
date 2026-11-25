@@ -1,11 +1,12 @@
-import type { Component } from 'vue';
 import type {
   EditableMissingPrice,
   MissingAcquisition,
   MissingPrice,
 } from '@/modules/reports/report-types';
 import { One, Zero } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
+import { type Component, nextTick, ref } from 'vue';
 import {
   summarizeMissingPrices,
   useMissingPriceFinishPrompt,

@@ -1,4 +1,5 @@
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, type Ref, ref, shallowRef } from 'vue';
 import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/modules/assets/types';

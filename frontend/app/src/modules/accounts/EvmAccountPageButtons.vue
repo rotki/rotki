@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import { Blockchain } from '@rotki/common';
+import { logicOr } from '@vueuse/math';
+import { useI18n } from 'vue-i18n';
 import AccountBalancesExportImport from '@/modules/accounts/AccountBalancesExportImport.vue';
 import AccountsRefreshButton from '@/modules/accounts/AccountsRefreshButton.vue';
 import EvmAccountsRefreshMenu from '@/modules/accounts/EvmAccountsRefreshMenu.vue';

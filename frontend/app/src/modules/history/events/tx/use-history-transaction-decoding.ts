@@ -1,4 +1,7 @@
+import { createSharedComposable } from '@vueuse/core';
+import { get } from '@vueuse/shared';
 import { map as mapResult, ok, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';

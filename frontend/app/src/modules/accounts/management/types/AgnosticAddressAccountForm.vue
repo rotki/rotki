@@ -2,6 +2,9 @@
 import type { AccountAgnosticManage } from '@/modules/accounts/blockchain/use-account-manage';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert } from '@rotki/common';
+import { isDefined } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, useTemplateRef } from 'vue';
 import AddressInput from '@/modules/accounts/blockchain/AddressInput.vue';
 import AccountDataInput from '@/modules/accounts/management/inputs/AccountDataInput.vue';
 

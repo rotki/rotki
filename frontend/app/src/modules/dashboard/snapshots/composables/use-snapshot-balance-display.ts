@@ -1,7 +1,9 @@
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { BalanceSnapshot, Snapshot } from '@/modules/dashboard/snapshots';
 import type { IndexedBalanceSnapshot } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-rows';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { isNonFungible } from '@/modules/assets/nft-utils';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { formatPercent } from '@/modules/dashboard/snapshots/utils/snapshot-percent';

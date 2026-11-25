@@ -1,6 +1,7 @@
 import type { NonFungibleBalance } from '@/modules/balances/types/nfbalances';
 import { bigNumberify } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { get } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useNftPriceManagement } from './use-nft-price-management';
 

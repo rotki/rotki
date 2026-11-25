@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { registryEntries } from '@/modules/settings/settings-registry';

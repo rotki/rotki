@@ -1,3 +1,4 @@
+import type { useI18n } from 'vue-i18n';
 import type { NotificationHandler } from '../interfaces';
 import type { CsvImportResult } from '../types/status-types';
 import { NotificationKind, Severity } from '@rotki/common';

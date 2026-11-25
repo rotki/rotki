@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import BalanceDivergenceView from '@/modules/history/balances/BalanceDivergenceView.vue';
 import DataIssueBalanceDivergence from '@/modules/history/data-issues/components/DataIssueBalanceDivergence.vue';

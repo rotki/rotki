@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+
 type Style = Record<string, string>;
 
 interface Dimension {

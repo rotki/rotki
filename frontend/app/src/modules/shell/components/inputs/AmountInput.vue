@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { assert } from '@rotki/common';
 import { type FormDetails, RuiTextField } from '@rotki/ui-library';
+import { get, set } from '@vueuse/shared';
 import IMask, { type InputMask } from 'imask';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSetting } from '@/modules/settings/use-setting';
 

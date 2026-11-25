@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type { ManualPriceFormPayload } from '@/modules/assets/prices/price-types';
+import { isDefined, watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { isErr } from 'plainfp/result';
-import { useTemplateRef } from 'vue';
+import { computed, ref, shallowRef, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import LatestPriceForm from '@/modules/assets/prices/latest/LatestPriceForm.vue';
 import { useLatestPrices } from '@/modules/assets/prices/use-latest-price-manager';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';

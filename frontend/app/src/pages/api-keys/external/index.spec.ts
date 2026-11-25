@@ -6,7 +6,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed } from 'vue';
+import { computed, nextTick } from 'vue';
 import ServiceKey from '@/modules/settings/api-keys/ServiceKey.vue';
 import ServiceKeyCard from '@/modules/settings/api-keys/ServiceKeyCard.vue';
 import { useExternalServicesApi } from '@/modules/settings/api/use-external-services-api';

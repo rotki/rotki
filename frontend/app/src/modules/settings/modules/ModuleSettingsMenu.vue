@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { type Nullable, transformCase } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import QueriedAddressDialog from '@/modules/accounts/QueriedAddressDialog.vue';
 import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-address-operations';
 import { type Module, SUPPORTED_MODULES } from '@/modules/core/common/modules';

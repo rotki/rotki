@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { LogLevel } from '@shared/log-level';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { computed, onBeforeMount, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { api } from '@/modules/core/api/rotki-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useControl } from '@/modules/core/control/use-control';

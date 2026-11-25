@@ -1,6 +1,7 @@
 import type { DatabaseInfo, UserDbBackup } from '@/modules/session/backup';
 import { neverSettles } from '@test/utils/never-settles';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
 import { useDatabaseBackups } from './use-database-backups';

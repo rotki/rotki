@@ -1,6 +1,7 @@
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, nextTick, type Ref, ref } from 'vue';
 import ConfirmMenu from '@/modules/shell/components/ConfirmMenu.vue';

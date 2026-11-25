@@ -2,6 +2,9 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { UserDbBackup, UserDbBackupWithId } from '@/modules/session/backup';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { get, set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { size } from '@/modules/core/common/data/data';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { getFilepath } from '@/modules/core/common/file/file';

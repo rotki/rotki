@@ -2,7 +2,12 @@
 import type { AssetMovementEvent } from '@/modules/history/events/schemas';
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
 import { generateUUID } from '@shared/utils';
+import { useLocalStorage, watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
+import { storeToRefs } from 'pinia';
+import { computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';

@@ -1,10 +1,11 @@
 import type { RotkiApi } from '@/modules/core/api/rotki-api';
 import { createMock } from '@test/utils/create-mock';
 import { flushPromises } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { none, ok, some } from 'plainfp';
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
-import { type EffectScope, effectScope } from 'vue';
+import { type EffectScope, effectScope, ref } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { logger } from '@/modules/core/common/logging/logging';
 import { beginSession, endSession, hasLiveSession } from '@/modules/core/session/session-lifecycle';

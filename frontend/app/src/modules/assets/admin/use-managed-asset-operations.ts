@@ -1,6 +1,7 @@
 import type { SupportedAsset } from '@rotki/common';
-import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
+import { get, set } from '@vueuse/shared';
+import { type ComputedRef, type DeepReadonly, type MaybeRefOrGetter, readonly, type Ref, ref, toValue } from 'vue';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';

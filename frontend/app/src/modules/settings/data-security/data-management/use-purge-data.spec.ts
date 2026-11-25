@@ -1,5 +1,6 @@
 import { invalid } from '@test/utils/invalid';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope, nextTick } from 'vue';
 import { DECENTRALIZED_EXCHANGES, Module, PurgeableOnlyModule } from '@/modules/core/common/modules';

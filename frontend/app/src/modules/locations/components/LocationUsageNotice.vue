@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { LocationNode } from '@/modules/locations/use-location-tree-api';
+import { get, set } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { locationUsageEntries, type LocationUsageEntry } from '@/modules/locations/location-usage';
 import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 

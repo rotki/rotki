@@ -6,6 +6,7 @@ import {
   type LiquityStatisticDetails,
 } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LUSD_ID } from './liquity-assets';
 import { StatisticView } from './liquity-statistics';

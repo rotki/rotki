@@ -1,5 +1,6 @@
 import type { AdditionOptions } from '@/modules/accounts/use-account-additions';
 import type { ActivityId } from '@/modules/task-center/core/types';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { accountActivityLabel, accountAddActivity, accountImportActivity, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';

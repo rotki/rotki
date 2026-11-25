@@ -1,6 +1,8 @@
 import type { BankAuthChallenge } from '@/modules/banks/types';
 import { withSetup } from '@test/utils/with-setup';
+import { get, set } from '@vueuse/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useBankAuthenticationPolling } from '@/modules/banks/use-bank-authentication-polling';
 
 const appApproval: BankAuthChallenge = {

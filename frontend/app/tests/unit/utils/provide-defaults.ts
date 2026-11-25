@@ -1,3 +1,5 @@
+import { ref } from 'vue';
+
 const TableSymbol = Symbol.for('rui:table');
 
 export const libraryDefaults = {

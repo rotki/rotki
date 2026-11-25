@@ -1,3 +1,5 @@
+import { createSharedComposable, useLocalStorage } from '@vueuse/core';
+
 /**
  * Shared, global instance of the `animationsEnabled` session setting's localStorage backing
  * (`rotki.animations_enabled`).

@@ -1,5 +1,8 @@
 <script lang="ts" setup>
 import { Blockchain, type ProtocolBalance, toSentenceCase, transformCase } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';

@@ -1,5 +1,6 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { BinaryPlatform, BinaryStatus, type UnusableBinary } from '@shared/starling/binary-types';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 interface MissingBinaryCopy {
   header: string;

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AccountFormApiKeyAlertContent from '@/modules/accounts/management/AccountFormApiKeyAlertContent.vue';
 import { type ApiKeyNoticeService, useApiKeyNotice } from '@/modules/accounts/management/use-api-key-notice';
 

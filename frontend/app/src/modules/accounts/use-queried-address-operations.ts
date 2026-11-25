@@ -1,6 +1,9 @@
 import type { QueriedAddresses, QueriedAddressPayload } from '@/modules/session/types';
+import { set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { map as mapResult, type Result } from 'plainfp/result';
 import { fromPromise } from 'plainfp/result-async';
+import { useI18n } from 'vue-i18n';
 import { useQueriedAddressApi } from '@/modules/accounts/api/use-queried-address-api';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';

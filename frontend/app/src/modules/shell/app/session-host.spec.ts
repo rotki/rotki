@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getCurrentInstance, nextTick } from 'vue';
+import { getCurrentInstance, nextTick, watch } from 'vue';
 import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
 
 const { built, watched } = await vi.hoisted(async () => {

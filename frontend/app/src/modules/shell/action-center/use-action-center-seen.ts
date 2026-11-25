@@ -1,5 +1,7 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { ActionItem } from '@/modules/core/action-center/types';
+import { useLocalStorage } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, toValue, watchEffect } from 'vue';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 

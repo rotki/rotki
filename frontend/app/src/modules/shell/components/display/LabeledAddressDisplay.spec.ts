@@ -1,6 +1,7 @@
 import type { Ref } from 'vue';
 import type { AddressAccount, BlockchainAccount, XpubAccount } from '@/modules/accounts/blockchain-accounts';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import LabeledAddressDisplay from '@/modules/shell/components/display/LabeledAddressDisplay.vue';
 import { createRuiPlugin } from '@/plugins/rui';

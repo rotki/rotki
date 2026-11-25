@@ -2,8 +2,10 @@ import type { AdditionSummary } from '@/modules/accounts/use-account-addition-se
 import type { GnosisPaySafeMigration } from '@/modules/integrations/gnosis-pay/types';
 import { Blockchain } from '@rotki/common';
 import { logoutThenLogin, sessionRequest } from '@test/utils/realistic-logout';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, ref } from 'vue';
 import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 

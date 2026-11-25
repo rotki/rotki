@@ -1,6 +1,7 @@
 import type { KrakenStakingEvents } from '@/modules/staking/staking-types';
 import { bigNumberify, Zero } from '@rotki/common';
-import { createPinia, setActivePinia } from 'pinia';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useKrakenStakingStore } from '@/modules/staking/use-kraken-staking-store';
 

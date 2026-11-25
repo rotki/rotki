@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { NftSortKey } from '@/modules/balances/nft/use-nft-gallery-filters';
+import { get, set } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
 
 const sortByModel = defineModel<NftSortKey>('sortBy', { required: true });
 const sortDescModel = defineModel<boolean>('sortDesc', { required: true });

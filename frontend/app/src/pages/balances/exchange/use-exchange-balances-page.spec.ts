@@ -1,5 +1,6 @@
 import { type AssetBalanceWithPrice, bigNumberify } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
+import { get } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ComputedRef, ref, type Ref } from 'vue';

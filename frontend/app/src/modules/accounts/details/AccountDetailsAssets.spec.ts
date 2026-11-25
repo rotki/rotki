@@ -1,6 +1,7 @@
 import { type AssetBalanceWithPrice, bigNumberify } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AccountDetailsAssets from '@/modules/accounts/details/AccountDetailsAssets.vue';
 

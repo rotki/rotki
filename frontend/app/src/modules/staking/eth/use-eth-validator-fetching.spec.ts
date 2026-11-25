@@ -1,6 +1,8 @@
 import { runSpecWith } from '@test/utils/mocks/native-task';
+import { get, set } from '@vueuse/shared';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { reactive, ref } from 'vue';
 import { Cancelled, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useEthValidatorFetching } from '@/modules/staking/eth/use-eth-validator-fetching';
 

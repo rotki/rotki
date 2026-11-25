@@ -1,4 +1,4 @@
-import type { Component } from 'vue';
+import { type Component, defineAsyncComponent } from 'vue';
 
 export type StakingLocation = 'eth2' | 'liquity' | 'kraken' | 'lido-csm' | 'solana' | 'hyperliquid';
 

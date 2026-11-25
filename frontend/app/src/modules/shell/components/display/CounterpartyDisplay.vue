@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { toHumanReadable } from '@rotki/common';
+import { useRotkiTheme } from '@rotki/ui-library';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
 import IconMark from '@/modules/shell/components/IconMark.vue';

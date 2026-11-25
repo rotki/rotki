@@ -1,7 +1,8 @@
 import type { AssetBalanceWithPriceAndChains, BigNumber } from '@rotki/common';
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { BankConnection } from '@/modules/banks/types';
 import type { ConnectionRef } from '@/modules/core/common/connection';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, ref, toValue } from 'vue';
 import { BankConnectionState, bankConnectionState } from '@/modules/banks/bank-connection-state';
 import { type BankBalanceData, useBankData } from '@/modules/banks/use-bank-data';
 import { useBanks } from '@/modules/banks/use-banks';

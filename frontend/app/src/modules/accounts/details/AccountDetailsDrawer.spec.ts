@@ -2,7 +2,9 @@ import type { AccountDetailsView } from '@/modules/accounts/details/account-deta
 import type { AccountDetailsOpenMode } from '@/modules/accounts/details/use-account-details-route';
 import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { AccountKind, type BlockchainAccountGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
 import AccountDetailsDrawer from '@/modules/accounts/details/AccountDetailsDrawer.vue';
 import { DRAWER_SLIDE_MS } from '@/modules/accounts/details/use-drawer-presence';

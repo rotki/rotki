@@ -3,7 +3,9 @@ import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { createMock } from '@test/utils/create-mock';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import PotentialMatchesCards from '@/modules/history/events/PotentialMatchesCards.vue';
 import PotentialMatchesTable from '@/modules/history/events/PotentialMatchesTable.vue';
 

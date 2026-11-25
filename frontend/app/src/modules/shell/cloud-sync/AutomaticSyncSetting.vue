@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import type { RuiSwitch } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+import { watchImmediate } from '@vueuse/core';
+import { set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';

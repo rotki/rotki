@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { addAccountLink } from '@/modules/accounts/add-account-link';
 import DataIssuesTabs from '@/modules/history/data-issues/DataIssuesTabs.vue';
 import BucketTraceDrawer from '@/modules/history/reconciliation/components/BucketTraceDrawer.vue';

@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { BankConnectionIdentity } from '@/modules/banks/types';
 import { getTextToken } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { isEqual, sortBy } from 'es-toolkit';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import AirdropDisplay from '@/modules/airdrops/AirdropDisplay.vue';
 import PoapDeliveryAirdrops from '@/modules/airdrops/PoapDeliveryAirdrops.vue';

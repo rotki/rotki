@@ -1,5 +1,7 @@
-import type { ComputedRef } from 'vue';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { NewlyDetectedFilterKeys } from '@/modules/assets/detection/newly-detected-filter-keys';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';

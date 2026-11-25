@@ -1,3 +1,4 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAutoTokenDetection } from '@/modules/balances/blockchain/use-auto-token-detection';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';

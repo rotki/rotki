@@ -1,3 +1,4 @@
+import { useI18n } from 'vue-i18n';
 import { ExtraKind, SourceKind, type SummaryKind } from '@/modules/dashboard/holdings/core/holdings-types';
 
 /** The legend name of a source kind. */

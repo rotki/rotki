@@ -1,4 +1,3 @@
-import type { MaybeRefOrGetter } from 'vue';
 import type { ActionDataEntry } from '@/modules/core/common/action';
 import type {
   EventTypeCombination,
@@ -8,7 +7,12 @@ import type {
 } from '@/modules/history/events/event-type';
 import { HistoryEventEntryType, NotificationKind, Severity, toCapitalCase, toSentenceCase, toSnakeCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { createSharedComposable, useArrayMap } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { cloneDeep } from 'es-toolkit';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type MaybeRefOrGetter, onBeforeMount, ref, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';

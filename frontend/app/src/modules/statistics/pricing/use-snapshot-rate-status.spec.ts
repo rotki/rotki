@@ -1,5 +1,6 @@
 import { BigNumber, type FailedHistoricalAssetPriceResponse, PriceQuality } from '@rotki/common';
 import { withSetup } from '@test/utils/with-setup';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';

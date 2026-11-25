@@ -1,6 +1,7 @@
-import type { EffectScope } from 'vue';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope } from 'vue';
 import { endSession, finishPendingWrites } from '@/modules/core/session/session-lifecycle';
 import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';

@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useWalletConnectionState } from '@/modules/wallet/bridge/use-wallet-connection-state';
 

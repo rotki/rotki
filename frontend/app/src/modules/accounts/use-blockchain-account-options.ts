@@ -1,5 +1,6 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { AccountFieldOptions } from '@/modules/core/table/filters/shared/account-field';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter } from 'vue';
 import { getAccountAddress, getAccountLabel, getChain, isXpubAccount } from '@/modules/accounts/account-utils';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';

@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
 import type { InteractionFilterMode } from './interaction-filter-mode';
 import type { LocationLabel } from '@/modules/core/common/location';
+import { get } from '@vueuse/shared';
+import { computed, type HTMLAttributes } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import LocationLabelSelector from '@/modules/history/LocationLabelSelector.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';

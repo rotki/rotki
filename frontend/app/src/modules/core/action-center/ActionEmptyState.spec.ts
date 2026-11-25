@@ -1,4 +1,5 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ActionEmptyState from '@/modules/core/action-center/ActionEmptyState.vue';
 import { type ActionItem, type ActionItemDefinition, type ActionTarget, ActionUrgency, createActionItem } from '@/modules/core/action-center/types';

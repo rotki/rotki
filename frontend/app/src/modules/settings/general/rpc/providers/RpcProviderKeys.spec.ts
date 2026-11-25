@@ -1,6 +1,7 @@
 import type { RpcProviderUsage } from '@/modules/settings/general/rpc/providers/rpc-provider-usage';
 import { Blockchain } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import RpcProviderKeys from '@/modules/settings/general/rpc/providers/RpcProviderKeys.vue';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';

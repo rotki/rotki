@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AssetBalance } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
 import ValueAccuracyHint from '@/modules/shell/components/ValueAccuracyHint.vue';

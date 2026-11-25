@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { MessageKey } from '@/message-key';
 import type { SettingKey } from '@/modules/settings/use-setting';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type ActionKey, anchorId, getActionEntry } from '@/modules/settings/settings-actions';
 import { getRegistryEntry } from '@/modules/settings/settings-registry';
 

@@ -2,6 +2,7 @@ import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, type ComputedRef } from 'vue';
 import { HistoryEventAccountingRuleStatus, type HistoryEventEntry } from '@/modules/history/events/schemas';
 import HistoryEventType from './HistoryEventType.vue';
 

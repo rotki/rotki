@@ -5,6 +5,10 @@ import type {
   TransactionParams,
 } from '@/modules/wallet/types';
 import { assert } from '@rotki/common';
+import { logicOr } from '@vueuse/math';
+import { get, set } from '@vueuse/shared';
+import { defineStore, getActivePinia } from 'pinia';
+import { computed, ref, watch } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { hasLiveSession } from '@/modules/core/session/session-lifecycle';

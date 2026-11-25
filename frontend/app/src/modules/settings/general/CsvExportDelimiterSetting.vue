@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { Defaults } from '@/modules/core/common/defaults';
 import SettingText from '@/modules/settings/controls/SettingText.vue';
 

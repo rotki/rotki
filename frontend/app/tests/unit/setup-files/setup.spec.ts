@@ -1,3 +1,4 @@
+import { get } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
 import { useRoute, useRouter } from 'vue-router';
 

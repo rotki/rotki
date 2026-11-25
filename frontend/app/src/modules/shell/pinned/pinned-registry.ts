@@ -1,4 +1,4 @@
-import type { Component } from 'vue';
+import { type Component, defineAsyncComponent } from 'vue';
 import { type MessageKey, msg } from '@/message-key';
 import { isAccountingUpdateEnabled } from '@/modules/core/common/feature-flags';
 import { type PinnedName, PinnedNames } from '@/modules/session/types';

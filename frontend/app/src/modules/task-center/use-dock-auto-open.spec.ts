@@ -1,6 +1,7 @@
 import type { PendingJob } from '@/modules/task-center/use-pending-jobs';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { effectScope } from 'vue';
+import { effectScope, nextTick, type Ref, ref } from 'vue';
 import { type Activity, ActivityKind, ActivitySourceType, ActivityStatus, makeActivityId } from '@/modules/task-center/core/types';
 import { DockState } from './dock-state';
 import { useDockAutoOpen } from './use-dock-auto-open';

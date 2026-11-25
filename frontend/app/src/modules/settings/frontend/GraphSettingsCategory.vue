@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { useI18n } from 'vue-i18n';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import ShowGraphRangeSelectorSetting from '@/modules/settings/frontend/ShowGraphRangeSelectorSetting.vue';
 import TimeFrameSetting from '@/modules/settings/frontend/TimeFrameSetting.vue';

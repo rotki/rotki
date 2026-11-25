@@ -1,7 +1,8 @@
 import { Blockchain } from '@rotki/common';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, type VNode } from 'vue';
+import { computed, defineComponent, nextTick, type VNode } from 'vue';
 import RpcSettings from '@/modules/settings/general/rpc/RpcSettings.vue';
 import {
   RpcSettingKey,

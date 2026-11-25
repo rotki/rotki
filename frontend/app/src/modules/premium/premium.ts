@@ -1,6 +1,6 @@
 import type { PremiumApi } from '@rotki/common';
-import type { App, Component } from 'vue';
 import { checkIfDevelopment } from '@shared/utils';
+import { type App, type Component, defineAsyncComponent } from 'vue';
 import { app } from '@/main';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';

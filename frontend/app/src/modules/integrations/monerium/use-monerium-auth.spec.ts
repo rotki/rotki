@@ -1,6 +1,9 @@
 import type { MoneriumOAuthResult, MoneriumStatus } from './types';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { RaisedConditionKind, SessionCause, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 import { useMoneriumOAuth } from './use-monerium-auth';
 

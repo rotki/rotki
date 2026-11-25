@@ -1,3 +1,4 @@
+import type { useI18n } from 'vue-i18n';
 import type { MessageHandlerRegistry } from '../interfaces';
 import { createSolanaTokensHandler } from '@/modules/assets/admin/solana-token-migration/solana-tokens-migration-handler';
 import { createBinancePairsMissingHandler } from '../handlers/binance-pairs-missing';

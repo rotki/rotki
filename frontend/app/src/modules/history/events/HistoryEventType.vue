@@ -3,6 +3,8 @@ import type { RuiIcons } from '@rotki/ui-library';
 import type { HistoryEventCategoryDetailWithId } from '@/modules/history/events/event-type';
 import type { HistoryEventEntry, HistoryEventState } from '@/modules/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { toNeutralCategory } from '@/modules/history/events/event-direction';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';

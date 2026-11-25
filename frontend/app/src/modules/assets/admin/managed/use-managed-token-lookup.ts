@@ -1,7 +1,8 @@
-import type { MaybeRefOrGetter, Ref } from 'vue';
 import { isValidEthAddress, type SupportedAsset } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
 import { pick } from 'es-toolkit';
+import { type MaybeRefOrGetter, readonly, type Ref, shallowRef, toValue, watch } from 'vue';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 

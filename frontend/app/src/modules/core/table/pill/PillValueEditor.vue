@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ActiveFilter, FieldDef } from '@/modules/core/table/pill/core/types';
+import { computed } from 'vue';
 import AssetValueEditor from '@/modules/core/table/pill/AssetValueEditor.vue';
 import { resolveEditor } from '@/modules/core/table/pill/core/field-adapter';
 import DateValueEditor from '@/modules/core/table/pill/DateValueEditor.vue';

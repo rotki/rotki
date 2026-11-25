@@ -1,4 +1,6 @@
 import { startPromise } from '@shared/utils';
+import { set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useHistoryApi } from '@/modules/history/api/use-history-api';

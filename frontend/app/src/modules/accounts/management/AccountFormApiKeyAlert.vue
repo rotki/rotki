@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import AccountFormApiKeyAlertContent from '@/modules/accounts/management/AccountFormApiKeyAlertContent.vue';
 
 const { service } = defineProps<{

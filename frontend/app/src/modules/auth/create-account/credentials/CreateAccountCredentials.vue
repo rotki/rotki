@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import type { CreateAccountMode } from '@/modules/auth/create-account/types';
 import type { LoginCredentials } from '@/modules/auth/login';
+import { computed, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import CreateAccountStepActions from '@/modules/auth/create-account/CreateAccountStepActions.vue';
 import CreateAccountCredentialsForm
   from '@/modules/auth/create-account/credentials/CreateAccountCredentialsForm.vue';

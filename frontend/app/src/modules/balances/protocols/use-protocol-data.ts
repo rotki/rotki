@@ -1,5 +1,6 @@
-import type { MaybeRefOrGetter, Ref } from 'vue';
 import { toSentenceCase } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed, type MaybeRefOrGetter, type Ref, toValue } from 'vue';
 import { useProtocolMetadata } from '@/modules/balances/protocols/use-protocol-metadata';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';

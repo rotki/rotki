@@ -1,7 +1,8 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { computed, defineComponent, ref } from 'vue';
 import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import { useHistoryEventsActionFailure } from '@/modules/history/events/use-history-events-action-failure';
 import {

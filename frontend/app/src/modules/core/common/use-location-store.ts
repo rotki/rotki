@@ -1,6 +1,10 @@
 import type { ExchangeConnector } from '@/modules/balances/types/exchanges';
 import type { AllLocation, TradeLocationData } from '@/modules/core/common/location';
 import { toSentenceCase } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore, storeToRefs } from 'pinia';
+import { computed, type ComputedRef, type MaybeRefOrGetter, ref, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import { DEFAULT_LOCATION_ICON, isLocationIcon } from '@/modules/locations/location-icons';
 import { locationImageUrl, type LocationNode } from '@/modules/locations/use-location-tree-api';

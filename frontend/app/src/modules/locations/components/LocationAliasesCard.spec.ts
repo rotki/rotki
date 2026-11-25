@@ -5,7 +5,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
+import { nextTick, ref } from 'vue';
 import LocationAliasesCard from '@/modules/locations/components/LocationAliasesCard.vue';
 import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import '@test/i18n';

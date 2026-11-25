@@ -1,6 +1,7 @@
 import { type BigNumber, bigNumberify } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, nextTick, ref } from 'vue';

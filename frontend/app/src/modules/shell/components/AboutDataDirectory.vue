@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
 
 const { directory, isPackaged = false } = defineProps<{

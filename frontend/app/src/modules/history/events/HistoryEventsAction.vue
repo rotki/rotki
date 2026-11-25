@@ -10,6 +10,9 @@ import type {
 } from '@/modules/history/events/schemas';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import HistoryEventDuplicateActions from '@/modules/history/events/HistoryEventDuplicateActions.vue';
 import RedecodeEventsButton from '@/modules/history/events/RedecodeEventsButton.vue';
 import { useHistoryEventActionMenu } from '@/modules/history/events/use-history-event-action-menu';

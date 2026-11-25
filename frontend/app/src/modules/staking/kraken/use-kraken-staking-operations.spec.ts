@@ -2,8 +2,10 @@ import type { KrakenStakingEvents } from '@/modules/staking/staking-types';
 import type { WorkStatus } from '@/modules/task-center/core/types';
 import { Zero } from '@rotki/common';
 import { runSpecWith } from '@test/utils/mocks/native-task';
-import { createPinia, setActivePinia } from 'pinia';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { effectScope, ref } from 'vue';
 import { useKrakenStakingOperations } from './use-kraken-staking-operations';
 import '@test/i18n';
 

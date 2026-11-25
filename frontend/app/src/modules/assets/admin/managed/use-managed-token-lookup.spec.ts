@@ -1,7 +1,8 @@
-import type { Ref } from 'vue';
 import { EvmTokenKind, type SupportedAsset } from '@rotki/common';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, nextTick, type Ref, ref } from 'vue';
 import { EVM_TOKEN } from '@/modules/assets/types';
 
 /** Nullable on purpose: the backend sends null, not absent, for a field the contract does not answer. */

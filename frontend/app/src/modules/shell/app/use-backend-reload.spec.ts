@@ -1,5 +1,6 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { BackendRestartStatus } from '@/modules/shell/app/use-backend-management';
 import { useBackendReload } from './use-backend-reload';
 import '@test/i18n';

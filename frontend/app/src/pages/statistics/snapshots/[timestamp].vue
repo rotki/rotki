@@ -2,6 +2,12 @@
 import type { Snapshot } from '@/modules/dashboard/snapshots';
 import { type BigNumber, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { onKeyStroke, useEventListener } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import { useSpamAsset } from '@/modules/assets/use-spam-asset';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';

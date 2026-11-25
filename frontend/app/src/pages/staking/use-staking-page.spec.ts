@@ -1,5 +1,6 @@
 import type { StakingLocation } from '@/pages/staking/staking-pages';
 import { withSetup } from '@test/utils/with-setup';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useStakingPage } from './use-staking-page';

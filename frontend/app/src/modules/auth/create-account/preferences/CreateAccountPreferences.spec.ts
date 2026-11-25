@@ -1,6 +1,7 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, nextTick } from 'vue';
 import CreateAccountPreferences from '@/modules/auth/create-account/preferences/CreateAccountPreferences.vue';
 import '@test/i18n';
 

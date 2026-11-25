@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import CustomAssetContent from '@/modules/assets/admin/custom/CustomAssetContent.vue';
 

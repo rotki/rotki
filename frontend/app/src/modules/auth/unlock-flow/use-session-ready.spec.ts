@@ -1,4 +1,5 @@
-import { createPinia, setActivePinia } from 'pinia';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useSessionReady } from './use-session-ready';

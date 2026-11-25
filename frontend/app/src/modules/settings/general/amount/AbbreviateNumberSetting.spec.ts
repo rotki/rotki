@@ -1,6 +1,7 @@
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { defineComponent, nextTick } from 'vue';
 import AbbreviateNumberSetting from '@/modules/settings/general/amount/AbbreviateNumberSetting.vue';
 
 const { abbreviate, model, writeError, writeSuccess } = await vi.hoisted(async () => {

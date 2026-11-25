@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from 'vue-router';
+import { ref } from 'vue';
+import { type RouteLocationRaw, useRouter } from 'vue-router';
 import { type TabContent, tabKey } from '@/modules/core/common/tabs';
 
 const { tabs, hideRouterView = false, child = false, plain = false } = defineProps<{

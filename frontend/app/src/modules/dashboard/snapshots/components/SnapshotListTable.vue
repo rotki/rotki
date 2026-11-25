@@ -2,6 +2,8 @@
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { SnapshotListRow } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import SnapshotDeltaDisplay from '@/modules/dashboard/snapshots/components/SnapshotDeltaDisplay.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';

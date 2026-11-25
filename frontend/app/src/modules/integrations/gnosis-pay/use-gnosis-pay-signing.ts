@@ -1,6 +1,9 @@
 import type { MaybePromise } from '@rotki/common';
 import type { Ref } from 'vue';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { err, flatMap, isErr, map as mapResult, ok, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { logger } from '@/modules/core/common/logging/logging';
 import { isActionable, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';

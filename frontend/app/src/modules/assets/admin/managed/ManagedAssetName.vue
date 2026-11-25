@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AssetDisplay } from '@/modules/assets/admin/use-asset-display-helpers';
+import { useI18n } from 'vue-i18n';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
 
 defineProps<{

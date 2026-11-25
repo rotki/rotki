@@ -1,4 +1,5 @@
-import type { MaybeRefOrGetter } from 'vue';
+import { onClickOutside } from '@vueuse/core';
+import { type MaybeRefOrGetter, toValue } from 'vue';
 
 /** Marks a control that opens the details drawer: a click on it switches the account instead of closing. */
 export const DRAWER_OPENER_ATTRIBUTE = 'data-account-details-opener';

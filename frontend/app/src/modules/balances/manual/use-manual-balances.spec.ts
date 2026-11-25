@@ -1,9 +1,11 @@
 import type { ManualBalanceWithValue, RawManualBalance } from '@/modules/balances/types/manual-balances';
 import { bigNumberify } from '@rotki/common';
 import { runSpecWith } from '@test/utils/mocks/native-task';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { ApiValidationError } from '@/modules/core/api/types/errors';

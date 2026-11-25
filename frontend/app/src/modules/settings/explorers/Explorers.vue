@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
+import { createReusableTemplate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
 import { type ExplorerUrls, explorerUrls } from '@/modules/assets/asset-urls';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';

@@ -1,4 +1,9 @@
 import type { Message, SemiPartial } from '@rotki/common';
+import { isDefined } from '@vueuse/core';
+import { set } from '@vueuse/shared';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { logger } from '@/modules/core/common/logging/logging';
 import { hasLiveSession } from '@/modules/core/session/session-lifecycle';
 

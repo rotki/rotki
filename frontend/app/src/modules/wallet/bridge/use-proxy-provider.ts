@@ -1,5 +1,6 @@
 import type { EIP1193EventName, EIP1193Provider, EIP1193ProviderEvents, RpcRequest } from '@/types';
 import { defaultWindow } from '@vueuse/core';
+import { onScopeDispose } from 'vue';
 import { logger } from '@/modules/core/common/logging/logging';
 
 /**

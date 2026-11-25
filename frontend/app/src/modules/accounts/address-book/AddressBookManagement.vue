@@ -5,6 +5,10 @@ import type {
   AddressBookPayload,
   AddressBookRequestPayload,
 } from '@/modules/accounts/address-book/eth-names';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { addressBookChainParams, type Filters } from '@/modules/accounts/address-book/address-book-filter-keys';
 import AddressBookFormDialog from '@/modules/accounts/address-book/AddressBookFormDialog.vue';
 import AddressBookManagementMore from '@/modules/accounts/address-book/AddressBookManagementMore.vue';

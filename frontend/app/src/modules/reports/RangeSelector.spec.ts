@@ -1,8 +1,9 @@
 import type { StubInstance } from '@test/utils/component-vm';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import dayjs from 'dayjs';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, type Ref, type VNode } from 'vue';
+import { defineComponent, h, ref, type Ref, type VNode } from 'vue';
 import { Quarter } from '@/modules/settings/types/frontend-settings';
 import '@test/i18n';
 

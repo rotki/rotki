@@ -1,7 +1,8 @@
 import type { SupportedAsset, Writeable } from '@rotki/common';
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { AssetUpdateConflictResult, ConflictResolution } from '@/modules/assets/types';
 import type { ConflictResolutionStrategy } from '@/modules/core/common/common-types';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, readonly, type Ref, ref, shallowRef, toValue } from 'vue';
 import { objectKeys } from '@/modules/core/common/data/array';
 import { uniqueObjects, uniqueStrings } from '@/modules/core/common/data/data';
 

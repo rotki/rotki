@@ -2,7 +2,8 @@
 import type { AssetDisplay } from '@/modules/assets/types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { type AssetInfoWithId, Zero } from '@rotki/common';
-import { useTemplateRef } from 'vue';
+import { get, set } from '@vueuse/shared';
+import { computed, ref, useTemplateRef, watch } from 'vue';
 import { AssetAmountDisplay, AssetValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import AssetDetailsMenuContent from '@/modules/assets/AssetDetailsMenuContent.vue';

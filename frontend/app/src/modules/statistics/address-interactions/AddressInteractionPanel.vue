@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { AddressInteractionExplorer } from './use-address-interaction-explorer';
+import { set } from '@vueuse/shared';
+import { shallowRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { PAGE_SIZE } from './address-interaction-panel';
 import AddressInteractionClusters from './AddressInteractionClusters.vue';
 import AddressInteractionConnectionList from './AddressInteractionConnectionList.vue';

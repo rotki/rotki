@@ -1,9 +1,10 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { ParamSource } from '@/modules/core/table/param-sources';
 import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { type HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, toValue } from 'vue';
 import { type LocationQuery, RouterLocationLabelsSchema } from '@/modules/core/table/route';
 import { OverlayMode, parseOverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 import { useEventActionPicker } from '@/modules/history/events/action-picker/use-event-action-picker';

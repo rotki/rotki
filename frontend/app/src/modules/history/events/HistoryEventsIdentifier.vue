@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { Blockchain, toSentenceCase } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useHistoryEventsIdentifier } from '@/modules/history/events/use-history-events-identifier';
 import HashLink from '@/modules/shell/components/HashLink.vue';

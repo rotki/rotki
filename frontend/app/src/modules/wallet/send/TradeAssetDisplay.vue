@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import type { TradableAsset } from '@/modules/wallet/types';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';

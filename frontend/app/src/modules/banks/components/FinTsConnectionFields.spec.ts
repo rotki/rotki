@@ -1,6 +1,7 @@
 import type { BankConnection, BankManifest } from '@/modules/banks/types';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { type Pinia, setActivePinia } from 'pinia';
 import { assert, beforeEach, describe, expect, it } from 'vitest';
 import { reactive, ref, type Ref } from 'vue';

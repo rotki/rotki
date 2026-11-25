@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import type { CreateAccountMode } from '@/modules/auth/create-account/types';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const emit = defineEmits<{
   select: [mode: CreateAccountMode];

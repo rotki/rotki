@@ -2,7 +2,7 @@ import type { DivergenceBoundaryEvent } from '@/modules/history/balances/use-bal
 import { bigNumberify } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
-import { type ComputedRef, defineComponent } from 'vue';
+import { computed, type ComputedRef, defineComponent, toValue } from 'vue';
 import DivergenceComparison from '@/modules/history/balances/DivergenceComparison.vue';
 
 const stubs = {

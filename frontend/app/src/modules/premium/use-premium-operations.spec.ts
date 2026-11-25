@@ -1,3 +1,4 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePremiumOperations } from '@/modules/premium/use-premium-operations';
 import { PremiumInactiveCause, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';

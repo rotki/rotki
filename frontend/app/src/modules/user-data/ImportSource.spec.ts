@@ -1,10 +1,10 @@
-import type { StubInstance } from '@test/utils/component-vm';
 import type { ActivityContext, NativeActivitySpec } from '@/modules/task-center/use-native-task';
+import { findStub, type StubInstance } from '@test/utils/component-vm';
 import { createMock } from '@test/utils/create-mock';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { err, ok } from 'plainfp/result';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { DateFormat } from '@/modules/core/common/date-format';
 import { TaskFailed } from '@/modules/core/tasks/task-result';
 import '@test/i18n';
@@ -119,7 +119,7 @@ describe('importSource', () => {
   }
 
   function importDisabled(): unknown {
-    return wrapper.findComponent<StubInstance>('[data-testid=button-import]').props('disabled');
+    return findStub(wrapper, '[data-testid=button-import]').props('disabled');
   }
 
   function upload(): VueWrapper<StubInstance> {

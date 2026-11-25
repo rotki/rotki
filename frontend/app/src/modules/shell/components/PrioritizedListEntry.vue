@@ -2,6 +2,7 @@
 import type { PrioritizedListItemData } from '@/modules/settings/types/prioritized-list-data';
 import type { PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
 import { toSentenceCase } from '@rotki/common';
+import { useI18n } from 'vue-i18n';
 import { AddressNamePriority } from '@/modules/accounts/address-book/types/address-name-priorities';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';

@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { useI18n } from 'vue-i18n';
 import CopyTooltip from '@/modules/shell/components/CopyTooltip.vue';
 
 const { text, size } = defineProps<{

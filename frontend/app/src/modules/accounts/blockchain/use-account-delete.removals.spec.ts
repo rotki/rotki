@@ -6,6 +6,7 @@ import type {
   XpubGroupWithBalance,
 } from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify } from '@rotki/common';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Cancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';

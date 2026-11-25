@@ -1,6 +1,6 @@
-import type { Ref } from 'vue';
 import type { EIP1193Provider } from '@/types';
 import { set } from '@vueuse/shared';
+import { readonly, type Ref, ref, shallowRef } from 'vue';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getAddress } from '../viem-client';

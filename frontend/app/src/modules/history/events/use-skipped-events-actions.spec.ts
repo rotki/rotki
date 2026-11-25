@@ -1,4 +1,5 @@
 import { flushPromises } from '@vue/test-utils';
+import { get } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
 import { useSkippedEventsActions } from './use-skipped-events-actions';

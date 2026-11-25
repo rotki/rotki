@@ -2,7 +2,9 @@ import type { StubInstance } from '@test/utils/component-vm';
 import type { ManualPriceFormPayload } from '@/modules/assets/prices/price-types';
 import { settleMountedWork } from '@test/utils/model-form-harness';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed } from 'vue';
 import '@test/i18n';
 
 vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({

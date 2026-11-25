@@ -1,4 +1,6 @@
 import type { PremiumCapabilities } from '@/modules/session/types';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { ref } from 'vue';
 
 export const usePremiumStore = defineStore('session/premium', () => {
   const premium = ref<boolean>(false);

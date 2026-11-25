@@ -1,7 +1,8 @@
 import type { AccountAgnosticManage, AccountManage, StakingValidatorManage, XpubManage } from './use-account-manage';
 import type { ActionStatus } from '@/modules/core/common/action';
 import { bigNumberify, Blockchain, Zero } from '@rotki/common';
-import { type Pinia, setActivePinia } from 'pinia';
+import { get } from '@vueuse/shared';
+import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAccountGroupId } from '@/modules/accounts/account-utils';
 import { ALL_EVM_CHAINS, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';

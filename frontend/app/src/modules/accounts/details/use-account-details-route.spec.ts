@@ -1,4 +1,6 @@
+import { get } from '@vueuse/shared';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { useAccountDetailsRoute } from '@/modules/accounts/details/use-account-details-route';
 
 type Query = Record<string, string | string[]>;

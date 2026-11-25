@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { AccountingOverlayBucket } from '@/modules/history/balances/use-accounting-overlay';
 import { type BigNumber, Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay, AssetValueDisplay } from '@/modules/assets/amount-display/components';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import AccountingOverlayBucketIcon from '@/modules/history/balances/AccountingOverlayBucketIcon.vue';

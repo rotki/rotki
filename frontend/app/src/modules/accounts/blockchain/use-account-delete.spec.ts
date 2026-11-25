@@ -3,6 +3,7 @@ import type { EthBalance } from '@/modules/balances/types/blockchain-balances';
 import type { TaskError } from '@/modules/core/tasks/task-result';
 import { bigNumberify } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { createPinia, setActivePinia } from 'pinia';
 import { ok, type Result } from 'plainfp/result';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountDelete } from '@/modules/accounts/blockchain/use-account-delete';

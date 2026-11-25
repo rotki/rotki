@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { computed, ref } from 'vue';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useBlockie } from '@/modules/accounts/use-blockie';
 

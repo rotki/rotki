@@ -1,4 +1,5 @@
 import { type AssetInfo, getAddressFromEvmIdentifier, isEvmIdentifier } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { CUSTOM_ASSET } from '@/modules/assets/types';
 import { useSetting } from '@/modules/settings/use-setting';
 

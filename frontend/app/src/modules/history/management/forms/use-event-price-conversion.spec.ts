@@ -1,8 +1,11 @@
 import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { withSetup } from '@test/utils/with-setup';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import '@test/i18n';
 

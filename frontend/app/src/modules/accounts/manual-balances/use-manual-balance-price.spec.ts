@@ -1,6 +1,8 @@
 import { type BigNumber, bigNumberify, Zero } from '@rotki/common';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useManualBalancePrice } from '@/modules/accounts/manual-balances/use-manual-balance-price';
 
 const addLatestPrice = vi.fn<(payload: { fromAsset: string; price: string; toAsset: string }) => Promise<boolean>>();

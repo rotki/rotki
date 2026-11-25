@@ -1,4 +1,5 @@
 import type { ActivityModel } from './core/model';
+import { createPinia, setActivePinia } from 'pinia';
 import { ok } from 'plainfp/result';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';

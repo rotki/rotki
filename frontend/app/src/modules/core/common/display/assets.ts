@@ -21,6 +21,7 @@ import {
 } from '@/modules/assets/types';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { getAssetNameFallback } from '@/modules/assets/use-resolve-asset-identifier';
+import { useDebounceFn } from '@/modules/core/common/async/scoped-timers';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 

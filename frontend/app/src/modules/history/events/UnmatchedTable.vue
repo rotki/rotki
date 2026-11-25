@@ -1,5 +1,8 @@
 <script setup lang="ts" generic="TRow extends UnmatchedRow<unknown>">
 import type { DataTableColumn } from '@rotki/ui-library';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';

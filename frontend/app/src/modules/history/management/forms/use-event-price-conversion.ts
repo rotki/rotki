@@ -1,5 +1,7 @@
 import type { BigNumber } from '@rotki/common';
-import type { DeepReadonly, MaybeRefOrGetter, Ref, ShallowRef } from 'vue';
+import { watchImmediate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { type DeepReadonly, type MaybeRefOrGetter, readonly, type Ref, type ShallowRef, shallowRef, toValue, watch } from 'vue';
 import { historicPriceActivity } from '@/modules/assets/prices/prices.activity';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';

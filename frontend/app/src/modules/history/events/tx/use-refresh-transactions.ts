@@ -1,6 +1,8 @@
 import type { RefreshTransactionsParams } from './types';
 import { startPromise } from '@shared/utils';
 import { err, type Result } from 'plainfp/result';
+import { onScopeDispose } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { logger } from '@/modules/core/common/logging/logging';
 import { sigilBus } from '@/modules/core/sigil/event-bus';

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { AssetBreakdownOptions } from '@/modules/balances/types/balances';
+import { computed } from 'vue';
 import { isEvmNativeToken } from '@/modules/assets/types';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
 import EvmNativeTokenBreakdown from '@/modules/balances/EvmNativeTokenBreakdown.vue';

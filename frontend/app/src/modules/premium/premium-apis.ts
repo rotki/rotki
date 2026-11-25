@@ -1,4 +1,3 @@
-import type { MaybeRef } from 'vue';
 import {
   type AssetsApi,
   type BalancesApi,
@@ -12,6 +11,8 @@ import {
   type TimedBalances,
   type UserSettingsApi,
 } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed, type MaybeRef } from 'vue';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { isNft } from '@/modules/assets/nft-utils';
 import { dailyPricesActivity, historicPriceActivity } from '@/modules/assets/prices/prices.activity';

@@ -3,6 +3,8 @@ import { createTestBalance } from '@test/utils/create-data';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { createMockExchangeBalances } from '@test/utils/test-data';
+import { get, set } from '@vueuse/shared';
+import { setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';

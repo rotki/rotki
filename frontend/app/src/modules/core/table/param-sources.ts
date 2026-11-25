@@ -1,5 +1,5 @@
-import type { MaybeRefOrGetter } from 'vue';
 import type { LocationQuery } from '@/modules/core/table/route';
+import { type MaybeRefOrGetter, toValue } from 'vue';
 import { nonEmptyProperties } from '@/modules/core/common/data/data';
 import { FilterBehaviours, type FilterObjectWithBehaviour } from '@/modules/core/table/filtering';
 

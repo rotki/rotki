@@ -1,7 +1,10 @@
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import type { PillParams } from '@/modules/core/table/param-refs';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { useLocalStorage } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, onMounted, readonly, type Ref, ref, shallowRef, watch, type WritableComputedRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { airdropParams, useAirdropFields } from '@/modules/airdrops/use-airdrop-fields';
 import { useAirdrops } from '@/modules/airdrops/use-airdrops';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';

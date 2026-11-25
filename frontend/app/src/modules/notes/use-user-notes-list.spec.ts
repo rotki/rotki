@@ -1,6 +1,7 @@
 import type { Collection } from '@/modules/core/common/collection';
 import type { UserNote } from '@/modules/core/common/notes';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ComputedRef, effectScope, type Ref, ref } from 'vue';

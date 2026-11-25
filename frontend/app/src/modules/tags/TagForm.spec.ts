@@ -1,7 +1,8 @@
-import type { ComponentPublicInstance } from 'vue';
 import type { Tag } from '@/modules/tags/tags';
 import { invertColor } from '@rotki/common';
+import { findStub } from '@test/utils/component-vm';
 import { type DOMWrapper, mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@test/i18n';
 
@@ -42,7 +43,7 @@ describe('tagForm', () => {
   }
 
   function nameMessages(): string[] {
-    const name = wrapper.findComponent<ComponentPublicInstance<Record<string, unknown>>>('[data-testid=tag-creator-name]');
+    const name = findStub(wrapper, '[data-testid=tag-creator-name]');
     const value: unknown = name.props('errorMessages');
     assert(Array.isArray(value));
     return value.map(String);

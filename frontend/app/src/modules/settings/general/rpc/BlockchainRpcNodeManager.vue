@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { Blockchain } from '@rotki/common';
+import { onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import BlockchainRpcNodeFormDialog from '@/modules/settings/general/rpc/BlockchainRpcNodeFormDialog.vue';
 import RpcNodeStatusCell from '@/modules/settings/general/rpc/RpcNodeStatusCell.vue';
 import RpcReconnectButton from '@/modules/settings/general/rpc/RpcReconnectButton.vue';

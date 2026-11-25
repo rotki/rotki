@@ -1,7 +1,10 @@
 import type { ExchangeBalancePayload } from '@/modules/accounts/blockchain-accounts';
 import { assert, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { err, flatMap as flatMapResult, ok, type Result } from 'plainfp/result';
+import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
 import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';

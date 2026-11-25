@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
+import { computed } from 'vue';
 import { numberSettingSchema } from '@/modules/settings/controls/setting-field-schemas';
 import SettingNumber from '@/modules/settings/controls/SettingNumber.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';

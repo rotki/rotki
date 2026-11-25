@@ -1,6 +1,7 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { defineComponent, nextTick } from 'vue';
 import { Currency } from '@/modules/assets/amount-display/currencies';
 import CurrencyDropdown from '@/modules/assets/amount-display/CurrencyDropdown.vue';
 

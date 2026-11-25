@@ -1,3 +1,4 @@
+import { get, set } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
 import { ref } from 'vue';
 import { useStepTransition } from '@/modules/auth/create-account/use-step-transition';

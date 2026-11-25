@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { get, set } from '@vueuse/core';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import { bigNumberifyFromRef, parseNumericInput } from '@/modules/core/common/data/bignumbers';
 import { useSetting } from '@/modules/settings/use-setting';

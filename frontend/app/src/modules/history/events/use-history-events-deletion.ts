@@ -1,10 +1,11 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/use-selection-mode';
 import { get, objectOmit, set } from '@vueuse/shared';
 import { all, err, flatMap, ok, type Result } from 'plainfp/result';
 import { fromAsync, fromPromise, tap } from 'plainfp/result-async';
+import { type ComputedRef, type MaybeRefOrGetter, readonly, type Ref, ref, shallowRef, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useConfirm } from '@/modules/core/common/use-confirm';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';

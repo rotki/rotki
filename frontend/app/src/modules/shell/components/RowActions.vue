@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { createReusableTemplate } from '@vueuse/core';
+import { computed } from 'vue';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 import { type RowDeleteQuestion, useDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 

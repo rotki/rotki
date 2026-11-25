@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get, set } from '@vueuse/shared';
+import { computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type SupportedCurrency, useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingModel } from '@/modules/settings/use-setting-model';

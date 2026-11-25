@@ -1,8 +1,9 @@
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { bigNumberify } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type EffectScope, effectScope, type Ref } from 'vue';
+import { type EffectScope, effectScope, nextTick, ref, type Ref } from 'vue';
 import { TableId } from '@/modules/core/table/use-remember-table-sorting';
 import { useEthValidatorData } from '@/modules/staking/eth/use-eth-validator-data';
 

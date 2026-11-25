@@ -2,6 +2,8 @@
 import type { RuiSwitch } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
+import { get, set } from '@vueuse/shared';
+import { computed } from 'vue';
 
 import { useSettingModel } from '@/modules/settings/use-setting-model';
 import { resolveSettingMessage, useSettingWriteFeedback } from '@/modules/settings/use-setting-write-feedback';

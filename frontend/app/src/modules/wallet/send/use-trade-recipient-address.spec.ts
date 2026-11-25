@@ -1,8 +1,9 @@
-import type { Ref } from 'vue';
 import type { AddressBookEntry } from '@/modules/accounts/address-book/eth-names';
 import type { Collection } from '@/modules/core/common/collection';
+import { get, set } from '@vueuse/shared';
 import { err, ok, type Result } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, type Ref, ref } from 'vue';
 import { type RequestError, RequestFailed } from '@/modules/core/api/request-result';
 import { useTradeRecipientAddress } from '@/modules/wallet/send/use-trade-recipient-address';
 

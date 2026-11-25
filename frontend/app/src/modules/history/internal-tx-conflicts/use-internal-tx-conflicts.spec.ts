@@ -1,6 +1,7 @@
-import type { EffectScope, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
+import { get } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, type Ref, ref } from 'vue';
 import { type InternalTxConflict, type InternalTxConflictsCountResponse, InternalTxConflictStatuses } from './types';
 import { useInternalTxConflicts } from './use-internal-tx-conflicts';
 

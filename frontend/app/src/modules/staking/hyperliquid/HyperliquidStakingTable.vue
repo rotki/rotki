@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { HyperliquidStakingRow } from '@/modules/staking/hyperliquid/use-hyperliquid-staking';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import { HYPE_IDENTIFIER, HYPERLIQUID_LOCATION } from '@/modules/staking/hyperliquid/constants';

@@ -1,7 +1,9 @@
-import type { ComputedRef } from 'vue';
 import { startPromise } from '@shared/utils';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, type ComputedRef, ref } from 'vue';
 import { EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { type XpubAccountPayload, XpubKeyType } from '@/modules/accounts/blockchain-accounts';
 import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { RuiButton } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useReportOperations } from '@/modules/reports/use-report-operations';

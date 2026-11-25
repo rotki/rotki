@@ -1,5 +1,8 @@
 <script setup lang="ts" generic="TTarget extends { kind: string }">
 import type { ActionCenterSection, ActionItem } from '@/modules/core/action-center/types';
+import { get, set } from '@vueuse/shared';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ActionCenterGroup from '@/modules/core/action-center/ActionCenterGroup.vue';
 
 /** ids of the sections the user folded */

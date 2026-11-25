@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
+import { get, set } from '@vueuse/shared';
+import { onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { supportedLanguages } from '@/modules/core/common/supported-language';
 import { useLocale } from '@/modules/session/use-locale';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';

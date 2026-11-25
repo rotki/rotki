@@ -4,6 +4,8 @@ import type {
   SwapSubEventField,
   SwapSubEventState,
 } from '@/modules/history/management/forms/swap/swap-sub-event';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import EventDetailsSection from '@/modules/history/management/forms/common/EventDetailsSection.vue';
 import EventLocationLabel from '@/modules/history/management/forms/common/EventLocationLabel.vue';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';

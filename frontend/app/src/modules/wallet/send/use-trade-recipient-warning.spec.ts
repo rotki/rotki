@@ -1,6 +1,7 @@
-import type { EffectScope, Ref } from 'vue';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type EffectScope, effectScope, type Ref, ref } from 'vue';
 import { useTradeRecipientWarning } from '@/modules/wallet/send/use-trade-recipient-warning';
 
 const FROM = '0x9531C059098e3d194fF87FebB587aB07B30B1306';

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { get, set } from '@vueuse/shared';
+import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 
 const open = defineModel<boolean>({ required: true });

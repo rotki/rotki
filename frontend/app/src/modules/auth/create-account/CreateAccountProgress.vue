@@ -9,6 +9,7 @@
  * be positioned.
  */
 import type { CreateAccountStep } from '@/modules/auth/create-account/use-create-account-steps';
+import { useI18n } from 'vue-i18n';
 
 defineProps<{
   steps: CreateAccountStep[];

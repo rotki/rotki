@@ -1,7 +1,10 @@
-import type { MaybeRefOrGetter } from 'vue';
 import type { ActionDataEntry } from '@/modules/core/common/action';
 import { isValidEthAddress, NotificationKind, Severity, toHumanReadable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { createSharedComposable, useArrayMap } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, onBeforeMount, ref, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';

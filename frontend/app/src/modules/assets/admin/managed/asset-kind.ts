@@ -1,6 +1,7 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { SelectOption } from '@/modules/core/common/common-types';
 import { EvmTokenKind, toSentenceCase } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { CUSTOM_ASSET, EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_TOKEN } from '@/modules/assets/types';
 
 interface AssetKind {

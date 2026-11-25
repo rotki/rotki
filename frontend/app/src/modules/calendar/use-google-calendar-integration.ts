@@ -1,6 +1,8 @@
 import type { OAuthResult } from '@shared/ipc';
-import type { Ref } from 'vue';
 import { NotificationKind, Severity } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
+import { readonly, type Ref, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useFailureMessage } from '@/modules/core/api/use-failure-message';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';

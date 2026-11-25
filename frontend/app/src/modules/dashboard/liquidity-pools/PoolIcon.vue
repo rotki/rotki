@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import AppImage from '@/modules/shell/components/AppImage.vue';

@@ -1,7 +1,9 @@
-import type { ComputedRef } from 'vue';
 import type { AggregationContext, AssetBalanceEntries } from '@/modules/balances/aggregation/core/aggregation-types';
 import type { HistoricalBalanceEntry } from '@/modules/history/balances/types';
 import { type BigNumber, bigNumberify } from '@rotki/common';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef } from 'vue';
 import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { fromHistoricalEntries, type HistoricalSourceContext, visibleHistoricalEntries } from '@/modules/balances/aggregation/core/historical-source';

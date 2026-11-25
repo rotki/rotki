@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type BlockchainRpcNodeManager from '@/modules/settings/general/rpc/BlockchainRpcNodeManager.vue';
 import type SimpleRpcNodeManager from '@/modules/settings/general/rpc/simple/SimpleRpcNodeManager.vue';
+import { useBreakpoint } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
+import { defineAsyncComponent, nextTick, onMounted, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import RpcProviderKeys from '@/modules/settings/general/rpc/providers/RpcProviderKeys.vue';
 import RpcSettingOption from '@/modules/settings/general/rpc/RpcSettingOption.vue';
 import { isChainTab, tabKey, useRpcSettingsTabs } from '@/modules/settings/general/rpc/use-rpc-settings-tabs';

@@ -2,6 +2,7 @@ import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Ref } from 'vue';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import HistoryEventsVirtualHeader from '@/modules/history/events/components/HistoryEventsVirtualHeader.vue';
 import { createRuiPlugin } from '@/plugins/rui';

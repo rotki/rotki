@@ -3,6 +3,8 @@ import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import type { StakingValidatorManage } from '@/modules/accounts/blockchain/use-account-manage';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { Blockchain } from '@rotki/common';
+import { logicOr } from '@vueuse/math';
+import { useI18n } from 'vue-i18n';
 import { accountAddActivity, accountRemoveActivity } from '@/modules/accounts/accounts.activity';
 import { useAccountDelete } from '@/modules/accounts/blockchain/use-account-delete';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';

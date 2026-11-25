@@ -1,6 +1,7 @@
 import { resetOverlayStack, useOverlayStack } from '@rotki/ui-library';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { get, set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import AppDrawer from '@/modules/shell/app/AppDrawer.vue';

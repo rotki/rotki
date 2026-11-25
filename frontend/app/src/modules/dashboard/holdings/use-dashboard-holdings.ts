@@ -1,6 +1,7 @@
-import type { ComputedRef } from 'vue';
 import type { HoldingsSummary, LocationHolding } from '@/modules/dashboard/holdings/core/holdings-types';
 import type { HoldingsInputs } from '@/modules/dashboard/holdings/use-holdings-contributions';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef } from 'vue';
 import { mergeLocations } from '@/modules/dashboard/holdings/core/location-holdings';
 import { summarizeSources } from '@/modules/dashboard/holdings/core/source-summary';
 import { useViewHoldingsContributions } from '@/modules/dashboard/holdings/use-history-holdings-contributions';

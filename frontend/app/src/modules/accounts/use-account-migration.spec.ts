@@ -1,6 +1,7 @@
 import type { MigratedAddresses } from '@/modules/core/messaging/types';
 import { flushPromises } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { useDetectedAccountsStore } from '@/modules/accounts/use-detected-accounts-store';

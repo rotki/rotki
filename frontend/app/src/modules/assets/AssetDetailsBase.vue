@@ -2,8 +2,11 @@
 import type { NftAsset } from '@/modules/assets/nfts';
 import type { AssetActions, AssetDisplay, AssetResolution } from '@/modules/assets/types';
 import { startPromise } from '@shared/utils';
+import { createReusableTemplate } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { omit } from 'es-toolkit';
-import { type HTMLAttributes, useTemplateRef } from 'vue';
+import { computed, type HTMLAttributes, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AssetDetailsMenuContent from '@/modules/assets/AssetDetailsMenuContent.vue';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetPageNavigation } from '@/modules/assets/use-asset-page-navigation';

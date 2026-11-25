@@ -1,3 +1,5 @@
+import { get } from '@vueuse/shared';
+import { useRouter } from 'vue-router';
 import { redirectAfterUnlock } from '@/modules/shell/layout/login-redirect';
 
 interface UseAppNavigationReturn {

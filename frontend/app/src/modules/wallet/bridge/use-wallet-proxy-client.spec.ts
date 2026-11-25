@@ -1,4 +1,5 @@
 import type { WalletBridgeRequest, WalletBridgeResponse } from '@shared/wallet-bridge-types';
+import { get } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBridgeMessageHandlers } from '@/modules/wallet/bridge/use-bridge-message-handlers';

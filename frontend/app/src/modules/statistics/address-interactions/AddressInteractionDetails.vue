@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { InteractionConnection } from './address-interaction-graph';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import AddressInteractionChainActivity from './AddressInteractionChainActivity.vue';
 import { useChainColors } from './use-chain-colors';

@@ -1,5 +1,8 @@
-import type { EffectScope } from 'vue';
+import { until } from '@vueuse/core';
+import { set } from '@vueuse/shared';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { type EffectScope, effectScope } from 'vue';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useDatabase } from '@/modules/user-data/use-database';

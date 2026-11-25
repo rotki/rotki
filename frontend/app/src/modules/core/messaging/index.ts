@@ -1,5 +1,7 @@
 import { NotificationKind, Severity } from '@rotki/common';
 import { backoff } from '@shared/utils';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { camelCaseTransformer } from '@/modules/core/api/transformers';
 import { logger } from '@/modules/core/common/logging/logging';

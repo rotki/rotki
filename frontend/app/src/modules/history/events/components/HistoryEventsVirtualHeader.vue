@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { type DataTableSortData, type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
+import { get, set } from '@vueuse/shared';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import {
   leadingSortColumn,
   pageCount,

@@ -1,6 +1,9 @@
-import type { Ref } from 'vue';
 import type { EnhancedProviderDetail } from '@/modules/wallet/providers/provider-detection';
 import type { TransactionParams } from '@/modules/wallet/types';
+import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { readonly, type Ref, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getWalletErrorMessage, isUserRejectedError } from '@/modules/wallet/constants';
 import { useProviderSelection } from '@/modules/wallet/providers/use-provider-selection';

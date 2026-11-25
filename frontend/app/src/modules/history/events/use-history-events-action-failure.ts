@@ -1,3 +1,4 @@
+import { createSharedComposable } from '@vueuse/core';
 import { useFailureSlot } from '@/modules/shell/components/named-failure';
 
 /**

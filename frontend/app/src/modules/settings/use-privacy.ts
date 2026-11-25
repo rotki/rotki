@@ -1,6 +1,7 @@
 import type { RuiIcons } from '@rotki/ui-library';
-import type { ComputedRef, Ref } from 'vue';
 import type { PrivacyMode } from '@/modules/session/types';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type Ref } from 'vue';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 

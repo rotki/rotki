@@ -1,8 +1,11 @@
 import type { RuleDraft } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chain-queries-state';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, nextTick, ref } from 'vue';
 
 const buildDraftMock = vi.fn<() => RuleDraft | undefined>();
 const resetMock = vi.fn();

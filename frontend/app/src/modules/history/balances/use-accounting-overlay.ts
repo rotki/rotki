@@ -1,8 +1,11 @@
-import type { MaybeRefOrGetter } from 'vue';
 import type { HistoricalBalancesAtEventsResponse, HistoricalBalanceStop } from '@/modules/history/balances/types';
 import { type BigNumber, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { tryOnScopeDispose } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
+import { computed, type MaybeRefOrGetter, shallowRef, toValue, watch } from 'vue';
 import { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
+import { watchDebounced } from '@/modules/core/common/async/scoped-timers';
 import { logger } from '@/modules/core/common/logging/logging';
 import { EventOverlayStatus } from '@/modules/history/balances/accounting-overlay-helpers';
 

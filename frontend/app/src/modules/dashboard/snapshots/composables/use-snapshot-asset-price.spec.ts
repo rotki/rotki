@@ -1,5 +1,6 @@
 import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

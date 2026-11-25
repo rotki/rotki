@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';

@@ -1,4 +1,3 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { ERC20Token } from '@/modules/accounts/blockchain-accounts';
 import type { EvmChainAddress } from '@/modules/history/events/event-payloads';
 import {
@@ -13,7 +12,10 @@ import {
   isSolanaTokenIdentifier,
 } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/shared';
 import { err, isErr, type Result } from 'plainfp/result';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { type AssetSearchParams, useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { erc20InfoActivity } from '@/modules/assets/assets.activity';
 import { type AssetsWithId, EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';

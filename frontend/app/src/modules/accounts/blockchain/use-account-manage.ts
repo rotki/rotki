@@ -1,4 +1,3 @@
-import type { Ref } from 'vue';
 import type {
   AccountPayload,
   BlockchainAccountBalance,
@@ -12,6 +11,9 @@ import type { AccountCategory } from '@/modules/core/api/types/chains';
 import type { Module } from '@/modules/core/common/modules';
 import { assert, bigNumberify, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { set } from '@vueuse/shared';
+import { readonly, type Ref, ref, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getAccountAddress, getChain, matchKind } from '@/modules/accounts/account-utils';
 import { ALL_EVM_CHAINS, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { additionError, awaitsAddition, isNothingButCancelled } from '@/modules/accounts/blockchain/addition-outcome';

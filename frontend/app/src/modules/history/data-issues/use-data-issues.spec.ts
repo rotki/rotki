@@ -1,6 +1,7 @@
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { err, ok } from 'plainfp/result';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { isRequestFailure, RequestFailed } from '@/modules/core/api/request-result';
 import { createStatusError } from '@/modules/core/api/response-handlers';

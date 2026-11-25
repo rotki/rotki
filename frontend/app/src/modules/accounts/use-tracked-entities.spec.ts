@@ -4,8 +4,10 @@ import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-bal
 import type { BankConnection } from '@/modules/banks/types';
 import { createMock } from '@test/utils/create-mock';
 import { createCustomPinia } from '@test/utils/create-pinia';
-import { setActivePinia } from 'pinia';
+import { get, set } from '@vueuse/shared';
+import { setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useTrackedEntities } from '@/modules/accounts/use-tracked-entities';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';

@@ -1,7 +1,10 @@
 import { runSpecWith } from '@test/utils/mocks/native-task';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import { ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 import { useEth2Staking } from '@/modules/staking/eth2/use-eth2';

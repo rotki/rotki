@@ -1,4 +1,6 @@
 import type { EvmTokensRecord } from '@/modules/balances/types/balances';
+import { get } from '@vueuse/shared';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useTokenDetectionStore } from './use-token-detection-store';
 

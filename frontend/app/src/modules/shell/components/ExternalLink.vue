@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { ContextColorsType } from '@rotki/ui-library';
-import type { HTMLAttributes } from 'vue';
 import { externalLinks } from '@shared/external-links';
+import { get, set } from '@vueuse/shared';
+import { computed, type HTMLAttributes, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 import { useLinks } from '@/modules/shell/layout/use-links';

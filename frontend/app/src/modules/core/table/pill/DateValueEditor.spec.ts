@@ -1,7 +1,7 @@
 import type { ActiveFilter, FieldDef } from '@/modules/core/table/pill/core/types';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { assert, describe, expect, it } from 'vitest';
-import { defineComponent } from 'vue';
+import { defineComponent, nextTick } from 'vue';
 import DateValueEditor from '@/modules/core/table/pill/DateValueEditor.vue';
 
 const ButtonGroupStub = defineComponent({

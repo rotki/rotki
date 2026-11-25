@@ -2,6 +2,8 @@
 import type { MatchingKind } from '@/modules/history/events/matching/matching-kind';
 import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { UnmatchedRow } from '@/modules/history/events/unmatched-row';
+import { get } from '@vueuse/shared';
+import { useI18n } from 'vue-i18n';
 import PotentialMatchesContent from '@/modules/history/events/PotentialMatchesContent.vue';
 import UnmatchedMatchingContent from '@/modules/history/events/UnmatchedMatchingContent.vue';
 import { usePinnedMatchPanel } from '@/modules/history/events/use-pinned-match-panel';

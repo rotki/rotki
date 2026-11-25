@@ -1,4 +1,6 @@
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick, ref } from 'vue';
 import { DRAWER_SLIDE_MS, useDrawerPresence } from '@/modules/accounts/details/use-drawer-presence';
 
 describe('useDrawerPresence', () => {

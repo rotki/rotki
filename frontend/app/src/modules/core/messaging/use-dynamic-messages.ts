@@ -1,5 +1,8 @@
 import { checkIfDevelopment } from '@shared/utils';
+import { createSharedComposable, isDefined, useSessionStorage } from '@vueuse/core';
+import { get, set } from '@vueuse/shared';
 import { FetchError, ofetch } from 'ofetch';
+import { computed } from 'vue';
 import { camelCaseTransformer } from '@/modules/core/api/transformers';
 import { logger } from '@/modules/core/common/logging/logging';
 import { DashboardSchema, type VisibilityPeriod, WelcomeSchema } from '@/modules/core/messaging/dynamic-messages';

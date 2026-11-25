@@ -9,8 +9,11 @@ import {
   testExchangeBalances,
   testManualBalances,
 } from '@test/utils/test-data';
+import { get, set } from '@vueuse/shared';
 import { sortBy } from 'es-toolkit';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';

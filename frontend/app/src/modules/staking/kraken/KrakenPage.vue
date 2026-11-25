@@ -1,8 +1,14 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from 'vue-router';
+import { watchImmediate } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
+import { computed, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { type RouteLocationRaw, useRouter } from 'vue-router';
 import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
+import { refDebounced } from '@/modules/core/common/async/scoped-timers';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import { provideHistoryEventsSection } from '@/modules/history/events/use-history-events-section';
 import { usePremium } from '@/modules/premium/use-premium';

@@ -2,6 +2,7 @@ import type { Tag } from '@/modules/tags/tags';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 import { PrivacyMode } from '@/modules/session/types';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import TagIcon from '@/modules/tags/TagIcon.vue';

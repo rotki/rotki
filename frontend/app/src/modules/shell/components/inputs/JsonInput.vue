@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Content, JsonEditor } from 'vanilla-jsoneditor';
+import { get, set } from '@vueuse/shared';
 import { debounce } from 'es-toolkit';
+import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue';
 
 const modelValue = defineModel<Record<string, any>>({ required: true });
 

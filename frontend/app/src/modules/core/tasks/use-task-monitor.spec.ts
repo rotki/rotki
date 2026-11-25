@@ -1,5 +1,7 @@
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { get } from '@vueuse/shared';
 import { FetchError } from 'ofetch';
+import { setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockQueryTasks = vi.fn();

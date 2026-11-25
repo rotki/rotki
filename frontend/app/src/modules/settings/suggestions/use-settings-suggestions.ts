@@ -1,6 +1,9 @@
 import type { FrontendSettings, FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import type { GeneralSettings, SettingsUpdate } from '@/modules/settings/types/user-settings';
+import { get } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';

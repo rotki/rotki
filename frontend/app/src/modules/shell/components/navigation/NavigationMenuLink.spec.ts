@@ -1,6 +1,7 @@
 import type { MenuNavItem } from '@/modules/shell/layout/use-navigation-menu';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent } from 'vue';
 import NavigationMenuLink from './NavigationMenuLink.vue';
 
 /**

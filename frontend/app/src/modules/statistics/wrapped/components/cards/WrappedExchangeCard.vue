@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';

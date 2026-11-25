@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
+import { useI18n } from 'vue-i18n';
 import { useHistoryEventsExport } from '@/modules/history/events/use-history-events-export';
 
 const { filters, matchExactEvents } = defineProps<{

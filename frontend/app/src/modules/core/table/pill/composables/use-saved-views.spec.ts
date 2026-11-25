@@ -1,6 +1,7 @@
 import type { LegacySavedFilterEntry } from '@/modules/core/table/pill/core/legacy-saved-filter';
 import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { get } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

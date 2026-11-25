@@ -1,7 +1,7 @@
 import type { Report } from '@/modules/reports/report-types';
 import { createMock } from '@test/utils/create-mock';
 import { get, set } from '@vueuse/core';
-import { createPinia, setActivePinia } from 'pinia';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type EffectScope, effectScope, nextTick } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';

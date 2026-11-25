@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 

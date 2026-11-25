@@ -1,5 +1,6 @@
 import type { useRestoreAssetDb } from '@/modules/assets/admin/use-restore-asset-db';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { get } from '@vueuse/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';
 import ConfirmMenu from '@/modules/shell/components/ConfirmMenu.vue';

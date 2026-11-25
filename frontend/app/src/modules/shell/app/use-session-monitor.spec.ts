@@ -1,6 +1,9 @@
 import type { SessionMonitor } from '@/modules/shell/app/use-session-monitor';
 import { createCustomPinia } from '@test/utils/create-pinia';
+import { set } from '@vueuse/shared';
+import { setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { effectScope, ref } from 'vue';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 
 const mockConnect = vi.fn();

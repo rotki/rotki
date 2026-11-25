@@ -1,5 +1,6 @@
 import type { SpamPrediction, SpamPredictionResponse, SpamPredictionToken } from '@/modules/assets/api/use-asset-spam-prediction-api';
 import { flushPromises } from '@vue/test-utils';
+import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type EffectScope, effectScope, type Ref, ref } from 'vue';
 import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { LocationAliases } from '@/modules/locations/use-location-tree-api';
+import { get, set } from '@vueuse/shared';
+import { computed, onMounted, ref, shallowRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import { stringParam, toPillParams } from '@/modules/core/table/param-refs';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';

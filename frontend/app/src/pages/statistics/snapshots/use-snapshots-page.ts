@@ -1,8 +1,11 @@
 import type { TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, Ref } from 'vue';
 import type { LocationQuery } from '@/modules/core/table/route';
 import { startPromise } from '@shared/utils';
+import { get, set } from '@vueuse/shared';
 import { err, ok } from 'plainfp/result';
+import { computed, type ComputedRef, type Ref, ref, shallowRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
 import { applyPaginationDefaults, parseQueryPagination } from '@/modules/core/table/pagination-filter-utils';
 import { useSnapshotActions } from '@/modules/dashboard/snapshots/composables/use-snapshot-actions';
 import { useSnapshotExport } from '@/modules/dashboard/snapshots/composables/use-snapshot-export';

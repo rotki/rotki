@@ -1,6 +1,8 @@
 import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import { bigNumberify, Blockchain } from '@rotki/common';
+import { get, set } from '@vueuse/shared';
 import { cloneDeep } from 'es-toolkit';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';

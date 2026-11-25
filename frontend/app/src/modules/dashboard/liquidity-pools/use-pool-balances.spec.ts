@@ -1,4 +1,5 @@
 import { bigNumberify, Zero } from '@rotki/common';
+import { get } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type PoolBalances, PoolType } from './types';
