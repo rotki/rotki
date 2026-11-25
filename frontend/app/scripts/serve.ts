@@ -4,7 +4,6 @@ import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import process from 'node:process';
 import { cac } from 'cac';
 import consola from 'consola';
-import electron from 'electron';
 import { build, createLogger, createServer, type Plugin, type ViteDevServer } from 'vite';
 import { type BuildOutput, LOG_LEVEL, sharedConfig } from './setup';
 
@@ -46,7 +45,7 @@ let childProcesses: ChildProcessWithoutNullStreams[] = [];
  * The dev server's url is assembled here and exported as `VITE_DEV_SERVER_URL`, which is how the
  * spawned main process learns where to load the renderer from.
  */
-async function setupMainPackageWatcher({ config: { server } }: ViteDevServer, mode: string, remoteDebuggingPort?: number): Promise<BuildOutput> {
+async function setupMainPackageWatcher({ config: { server } }: ViteDevServer, mode: string, electronPath: string, remoteDebuggingPort?: number): Promise<BuildOutput> {
   const protocol = server.https ? 'https:' : 'http:';
   const host = server.host ?? 'localhost';
   const port = server.port; // Vite searches for and occupies the first free port: 3000, 3001, 3002, and so on
@@ -75,7 +74,7 @@ async function setupMainPackageWatcher({ config: { server } }: ViteDevServer, mo
       if (process.env.XDG_SESSION_TYPE === 'wayland')
         args.push('--enable-features=WaylandWindowDecorations', '--ozone-platform-hint=auto');
 
-      spawnProcess = spawn(String(electron), args);
+      spawnProcess = spawn(electronPath, args);
       childProcesses.push(spawnProcess);
 
       spawnProcess.stdout.on('data', (d) => {
@@ -157,10 +156,24 @@ function shouldOpenBrowser(web: boolean, open: boolean): boolean {
   return true;
 }
 
+/**
+ * Path of the Electron binary, for the desktop app only.
+ *
+ * @remarks
+ * Importing `electron` downloads the binary when it is missing, which web mode never needs, so it
+ * is not a top-level import. Resolving it before the dev server starts keeps a failed download a
+ * startup error.
+ */
+async function resolveElectronPath(): Promise<string> {
+  const { default: electron } = await import('electron');
+  return String(electron);
+}
+
 async function serve(options: ServeOptions): Promise<void> {
   const { web, remoteDebuggingPort, mode, port, open } = options;
 
   try {
+    const electronPath = web ? undefined : await resolveElectronPath();
     // A plain boolean, so Vite opens the resolved URL and honours the instance's port.
     const openBrowser = shouldOpenBrowser(web, open);
     const viteDevServer = await createServer({
@@ -176,9 +189,9 @@ async function serve(options: ServeOptions): Promise<void> {
     await viteDevServer.listen();
     viteDevServer.printUrls();
 
-    if (!web) {
+    if (electronPath !== undefined) {
       await setupPreloadPackageWatcher(viteDevServer, mode);
-      await setupMainPackageWatcher(viteDevServer, mode, remoteDebuggingPort);
+      await setupMainPackageWatcher(viteDevServer, mode, electronPath, remoteDebuggingPort);
     }
 
     const cleanup = (signal: string): void => {
