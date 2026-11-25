@@ -19,6 +19,10 @@ import time
 from itertools import starmap
 from typing import TYPE_CHECKING, Final
 
+from rotkehlchen.accounting.cost_basis.eth2 import (
+    Eth2StakingCostBasis,
+    validator_eth2_bucket,
+)
 from rotkehlchen.accounting.cost_basis.lots import (
     BasisSource,
     BucketLots,
@@ -31,25 +35,15 @@ from rotkehlchen.api.websockets.typedefs import (
     WSMessageType,
 )
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
-from rotkehlchen.chain.ethereum.modules.eth2.constants import (
-    CPT_ETH2,
-    MAX_EFFECTIVE_BALANCE,
-    MIN_EFFECTIVE_BALANCE,
-    UNKNOWN_VALIDATOR_INDEX,
-)
+from rotkehlchen.chain.ethereum.modules.eth2.constants import UNKNOWN_VALIDATOR_INDEX
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorType
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.concurrency import TaskCancelledError, checkpoint
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_KFEE
+from rotkehlchen.constants.assets import A_ETH2, A_KFEE
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.filtering import (
-    AccountingRulesFilterQuery,
-    EthWithdrawalFilterQuery,
-    EvmEventFilterQuery,
-    HistoryEventFilterQuery,
-)
+from rotkehlchen.db.filtering import AccountingRulesFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.cause import TRANSIENT_FAILURE_CAUSES
 from rotkehlchen.errors.misc import RemoteError
@@ -70,7 +64,7 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.locations.constants import LOCATION_ETHEREUM, LOCATION_KRAKEN
+from rotkehlchen.locations.constants import LOCATION_KRAKEN
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.historical_balances import (
     MIN_EVENTS_PROCESSED_TO_SLEEP,
@@ -85,6 +79,7 @@ from rotkehlchen.utils.mixins.lockable import skip_if_running
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from rotkehlchen.accounting.cost_basis.lots import ConsumedLot, SpendResult
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
@@ -166,16 +161,6 @@ def _swap_leg_direction(
     return bucket_directions[0][1] if len(bucket_directions) == 1 else None
 
 
-def _validator_eth2_bucket(validator_index: int) -> Bucket:
-    """Internal lot bucket holding staked ETH principal for a specific validator."""
-    return Bucket(
-        location=LOCATION_ETHEREUM,
-        location_label=f'validator:{validator_index}',
-        protocol=CPT_ETH2,
-        asset=A_ETH.identifier,
-    )
-
-
 class _CostBasisPass:
     """The state of one walk over the events.
 
@@ -193,18 +178,12 @@ class _CostBasisPass:
             stored_basis: dict[int, FVal],
             tracked_eth_accounts: set[str] | None = None,
             validator_types: dict[int, ValidatorType] | None = None,
-            accumulating_requested_withdrawal_ids: set[int] | None = None,
     ) -> None:
         self.settings = settings
         self.rules = rules
         self.from_ts = from_ts
         self.stored_basis = stored_basis
         self.tracked_eth_accounts = tracked_eth_accounts
-        self.validator_types = validator_types
-        self.accumulating_requested_withdrawal_ids = (
-            set() if accumulating_requested_withdrawal_ids is None
-            else accumulating_requested_withdrawal_ids
-        )
         self.method = settings.cost_basis_method.serialize()
         self.profit_currency = settings.main_currency.resolve_to_asset_with_oracles()
         self.lots = BucketLots[Bucket](settings)
@@ -218,12 +197,9 @@ class _CostBasisPass:
         self._swap_proceeds: dict[int, tuple[FVal | None, bool, bool]] = {}
         # The receiving side of a basis transfer, which is applied along with its other side.
         self._basis_transfer_receives: set[int] = set()
-        # Per-validator ETH2 staking state separating principal from consensus rewards/losses.
-        self._validator_principal: dict[int, FVal] = {}
-        self._validator_skimmed: dict[int, FVal] = {}
-        self._consolidated_sources: set[int] = set()
+        self.eth2 = Eth2StakingCostBasis(host=self, validator_types=validator_types)
 
-    def _price(self, asset: Asset, timestamp: Timestamp) -> Price | None:
+    def get_price(self, asset: Asset, timestamp: Timestamp) -> Price | None:
         """The price of the asset in the profit currency, or None if no oracle knows it.
 
         An oracle rejecting the query (e.g. a 401 for history beyond its plan or a 404 for a
@@ -279,8 +255,8 @@ class _CostBasisPass:
         """
         assert out_event.identifier is not None
         assert in_event.identifier is not None
-        out_price = self._price(asset=out_event.asset, timestamp=timestamp)
-        in_price = self._price(asset=in_event.asset, timestamp=timestamp)
+        out_price = self.get_price(asset=out_event.asset, timestamp=timestamp)
+        in_price = self.get_price(asset=in_event.asset, timestamp=timestamp)
         source = BasisSource.PRICE_ORACLE
         if out_event.asset.is_fiat() and out_price is not None:
             base_total, source = out_event.amount * out_price, BasisSource.EVENT_AMOUNT
@@ -297,7 +273,7 @@ class _CostBasisPass:
         total_fees = ZERO
         if self.settings.include_fees_in_cost_basis:
             for fee_event in fee_events:
-                if (fee_price := self._price(asset=fee_event.asset, timestamp=timestamp)) is not None:  # noqa: E501
+                if (fee_price := self.get_price(asset=fee_event.asset, timestamp=timestamp)) is not None:  # noqa: E501
                     total_fees += fee_event.amount * fee_price
 
         if in_event.asset.is_fiat():
@@ -323,7 +299,7 @@ class _CostBasisPass:
             elif fee_event.asset == out_event.asset and priced:
                 fee_rate = out_rate
             else:
-                fee_rate = self._price(asset=fee_event.asset, timestamp=timestamp)
+                fee_rate = self.get_price(asset=fee_event.asset, timestamp=timestamp)
             fee_taxable = not self.settings.include_fees_in_cost_basis
             fee_proceeds.append((fee_event.identifier, (fee_rate, fee_taxable, fee_taxable)))
 
@@ -336,7 +312,7 @@ class _CostBasisPass:
         for fee_id, entry in fee_proceeds:
             self._swap_proceeds[fee_id] = entry
 
-    def _add_row(
+    def add_row(
             self,
             event: HistoryBaseEntry,
             bucket: Bucket,
@@ -375,12 +351,46 @@ class _CostBasisPass:
             self.method,
         ))
 
-    def _transfer(
+    def move_lots(
             self,
             event: HistoryBaseEntry,
             source: Bucket,
             destination: Bucket,
-            timestamp: Timestamp,
+            move_amount: FVal,
+            dest_amount: FVal,
+            received: HistoryBaseEntry,
+    ) -> tuple[list[ConsumedLot], list[str], FVal]:
+        """Move lots between buckets, creating a zero-basis lot for any uncovered remainder."""
+        moved = self.lots.transfer(
+            source=source,
+            destination=destination,
+            asset=event.asset,
+            amount=move_amount,
+            destination_amount=dest_amount,
+            event=event,
+        )
+        lot_ids = list(dict.fromkeys(entry.lot.lot_id for entry in moved))
+        if (unknown_amount := move_amount - sum((entry.amount for entry in moved), start=ZERO)) > ZERO:  # noqa: E501
+            lot_ids.append(lot_id := str(received.identifier))
+            scaled_unknown = (
+                unknown_amount if dest_amount == move_amount
+                else unknown_amount * dest_amount / move_amount
+            )
+            self.lots.obtain(
+                bucket=destination,
+                lot_id=lot_id,
+                amount=scaled_unknown,
+                basis_per_unit=ZERO,
+                timestamp=ts_ms_to_sec(received.timestamp),
+            )
+        basis = sum((entry.amount * entry.basis_per_unit for entry in moved), start=ZERO)
+        return moved, lot_ids, basis
+
+    def transfer(
+            self,
+            event: HistoryBaseEntry,
+            source: Bucket,
+            destination: Bucket,
             is_stale: bool,
             in_event: HistoryBaseEntry | None = None,
             transfer_amount: FVal | None = None,
@@ -400,31 +410,20 @@ class _CostBasisPass:
         source_basis_before = (
             self.lots.basis_remaining(source) if is_stale and source == destination else None
         )
-        moved = self.lots.transfer(
+        moved, lot_ids, basis = self.move_lots(
+            event=event,
             source=source,
             destination=destination,
-            asset=event.asset,
-            amount=move_amount,
-            destination_amount=dest_amount,
-            event=event,
+            move_amount=move_amount,
+            dest_amount=dest_amount,
+            received=received,
         )
-        lot_ids = list(dict.fromkeys(entry.lot.lot_id for entry in moved))
-        if (unknown_amount := move_amount - sum((entry.amount for entry in moved), start=ZERO)) > ZERO:  # noqa: E501
-            lot_ids.append(lot_id := str(received.identifier))
-            self.lots.obtain(
-                bucket=destination,
-                lot_id=lot_id,
-                amount=unknown_amount * dest_amount / move_amount,
-                basis_per_unit=ZERO,
-                timestamp=ts_ms_to_sec(received.timestamp),
-            )
 
         if not (in_is_stale := self.from_ts is None or received.timestamp >= self.from_ts):
             return
 
-        basis = sum((entry.amount * entry.basis_per_unit for entry in moved), start=ZERO)
         if is_stale:
-            self._add_row(
+            self.add_row(
                 event=event,
                 bucket=source if row_source is None else row_source,
                 direction=CostBasisDirection.SPEND,
@@ -437,7 +436,7 @@ class _CostBasisPass:
                 ),
             )
         if in_is_stale:
-            self._add_row(
+            self.add_row(
                 event=received,
                 bucket=destination if row_destination is None else row_destination,
                 direction=CostBasisDirection.RECEIVE,
@@ -463,401 +462,113 @@ class _CostBasisPass:
             return True
 
         if isinstance(event, EthBlockEvent):
-            return (
-                event.event_type == HistoryEventType.STAKING and
-                (
-                    self.tracked_eth_accounts is None or
-                    event.location_label in self.tracked_eth_accounts
-                )
-            )
-
-        if isinstance(event, EthWithdrawalEvent):
-            validator_type: ValidatorType | None = (
-                ValidatorType.DISTRIBUTING if self.validator_types is None
-                else self.validator_types.get(event.validator_index)
-            )
-            if validator_type is None:
-                return False
-
-            is_exit = event.is_exit_or_blocknumber != 0
-            if validator_type == ValidatorType.ACCUMULATING:
-                if is_exit or event.identifier in self.accumulating_requested_withdrawal_ids:
-                    return False
-                return self.settings.eth_staking_taxable_after_withdrawal_enabled
-
-            if (
-                (is_exit and event.validator_index in self._consolidated_sources) or
-                (not is_exit and event.amount < MIN_EFFECTIVE_BALANCE)
-            ):
-                return self.settings.eth_staking_taxable_after_withdrawal_enabled
-            return False
+            return event.event_type == HistoryEventType.STAKING
 
         return rule is not None and rule.taxable
 
-    def _consolidate_validator(
+    def resolve_receive_basis(
             self,
             event: HistoryBaseEntry,
-            source_validator: int,
-            target_validator: int,
-    ) -> None:
-        """Transfer staked principal and lots from a consolidated source validator to target."""
-        self._consolidated_sources.add(source_validator)
-        if source_validator in self._validator_principal:
-            source_principal = self._validator_principal.pop(source_validator)
-            has_source_principal = True
-        elif (
-            self.validator_types is not None and
-            (source_type := self.validator_types.get(source_validator)) is not None and
-            source_type != ValidatorType.ACCUMULATING
-        ):
-            source_principal = MIN_EFFECTIVE_BALANCE
-            has_source_principal = True
-        else:
-            source_principal = ZERO
-            has_source_principal = False
-
-        if has_source_principal:
-            self._validator_principal[target_validator] = (
-                self._validator_principal.get(target_validator, ZERO) + source_principal
-            )
-
-        source_bucket = _validator_eth2_bucket(source_validator)
-        target_bucket = _validator_eth2_bucket(target_validator)
-        if (
-            source_bucket not in self.blocked_buckets and
-            target_bucket not in self.blocked_buckets and
-            (lot_amount := self.lots.amount_remaining(source_bucket)) > ZERO
-        ):
-            self.lots.transfer(
-                source=source_bucket,
-                destination=target_bucket,
-                asset=A_ETH,
-                amount=lot_amount,
-                event=event,
-            )
-
-    def _apply_eth2_principal_withdrawal(
-            self,
-            event: EthWithdrawalEvent,
-            validator_bucket: Bucket,
-            wallet_bucket: Bucket,
             timestamp: Timestamp,
             is_stale: bool,
-            principal_eth: FVal,
-            loss_eth: FVal,
-            excess_eth: FVal,
-            taxable_reward_eth: FVal,
-            drain_validator: bool,
-    ) -> None:
-        """Transfer validator principal lots to the wallet and realize any exit loss or reward."""
+            swap_basis: tuple[FVal, BasisSource] | None = None,
+            *,
+            use_stored_basis: bool = True,
+    ) -> tuple[FVal, BasisSource]:
+        """Resolve per-unit basis and source for an incoming lot."""
         assert event.identifier is not None
-        eth2_row_bucket = Bucket(
-            location=LOCATION_ETHEREUM,
-            location_label=event.location_label,
-            protocol=CPT_ETH2,
-            asset=A_ETH.identifier,
-        )
-        if loss_eth > ZERO:
-            loss_result = self.lots.spend(
-                bucket=validator_bucket,
-                asset=event.asset,
-                amount=loss_eth,
-                timestamp=timestamp,
-                event=event,
-            )
-            moved = []
-            lot_ids: list[str] = []
-            if event.amount > ZERO:
-                moved = self.lots.transfer(
-                    source=validator_bucket,
-                    destination=wallet_bucket,
-                    asset=event.asset,
-                    amount=event.amount,
-                    destination_amount=event.amount,
-                    event=event,
-                )
-                lot_ids = list(dict.fromkeys(entry.lot.lot_id for entry in moved))
-                if (unknown_amount := event.amount - sum((entry.amount for entry in moved), start=ZERO)) > ZERO:  # noqa: E501
-                    lot_ids.append(lot_id := str(event.identifier))
-                    self.lots.obtain(
-                        bucket=wallet_bucket,
-                        lot_id=lot_id,
-                        amount=unknown_amount,
-                        basis_per_unit=ZERO,
-                        timestamp=timestamp,
-                    )
+        if (
+            not is_stale and
+            use_stored_basis and
+            (stored := self.stored_basis.get(event.identifier)) is not None
+        ):
+            return stored, BasisSource.PRICE_ORACLE
+        if swap_basis is not None:
+            return swap_basis
+        if (price := self.get_price(asset=event.asset, timestamp=timestamp)) is not None:
+            return price, BasisSource.PRICE_ORACLE
+        return ZERO, BasisSource.ZERO_COST
 
-            if drain_validator and (leftover := self.lots.amount_remaining(validator_bucket)) > ZERO:  # noqa: E501
-                self.lots.spend(
-                    bucket=validator_bucket,
-                    asset=event.asset,
-                    amount=leftover,
-                    timestamp=timestamp,
-                    event=event,
-                )
+    @staticmethod
+    def compute_receive_pnl(
+            amount: FVal,
+            basis: FVal,
+            basis_source: BasisSource,
+            is_taxable: bool,
+    ) -> tuple[FVal | None, FVal | None]:
+        """Compute `(realized_pnl, taxfree_pnl)` for an incoming event."""
+        if is_taxable and basis_source != BasisSource.ZERO_COST:
+            return amount * basis, ZERO
+        return None, None
 
-            if not is_stale:
-                return
-
-            taxable_loss = self.settings.eth_staking_taxable_after_withdrawal_enabled
-            proceeds: FVal | None = None
-            realized_pnl: FVal | None
-            taxfree_pnl: FVal | None
-            if taxable_loss:
-                if (rate := self._price(asset=event.asset, timestamp=timestamp)) is not None:
-                    proceeds = loss_eth * rate
-                    realized_pnl = (
-                        -proceeds +
-                        loss_result.taxable_amount * rate -
-                        loss_result.taxable_basis
-                    )
-                    taxfree_pnl = (
-                        (loss_eth - loss_result.taxable_amount) * rate -
-                        loss_result.taxfree_basis
-                    )
-                else:
-                    realized_pnl = taxfree_pnl = None
-            else:
-                realized_pnl = taxfree_pnl = ZERO
-
-            transferred_basis = sum((entry.amount * entry.basis_per_unit for entry in moved), start=ZERO)  # noqa: E501
-            self._add_row(
-                event=event,
-                bucket=eth2_row_bucket,
-                direction=CostBasisDirection.SPEND,
-                lots_consumed=[entry.serialize() for entry in (*loss_result.consumed, *moved)],
-                proceeds=proceeds,
-                realized_pnl=realized_pnl,
-                taxfree_pnl=taxfree_pnl,
-                basis_removed=loss_result.basis_removed + transferred_basis,
-                post_spend_basis_remaining=self.lots.basis_remaining(validator_bucket),
-                is_taxable=taxable_loss,
-            )
-            if event.amount > ZERO:
-                self._add_row(
-                    event=event,
-                    bucket=wallet_bucket,
-                    direction=CostBasisDirection.RECEIVE,
-                    lot_created_id=','.join(lot_ids),
-                    basis_per_unit=transferred_basis / event.amount,
-                    basis_source=BasisSource.TRANSFER_IN,
-                )
-            return
-
-        if principal_eth > ZERO:
-            self._transfer(
-                event=event,
-                source=validator_bucket,
-                destination=wallet_bucket,
-                timestamp=timestamp,
-                is_stale=is_stale,
-                transfer_amount=principal_eth,
-                row_source=eth2_row_bucket,
-            )
-
-        if drain_validator and (leftover := self.lots.amount_remaining(validator_bucket)) > ZERO:
-            self.lots.spend(
-                bucket=validator_bucket,
-                asset=event.asset,
-                amount=leftover,
-                timestamp=timestamp,
-                event=event,
-            )
-
-        if excess_eth > ZERO:
-            basis_source = BasisSource.PRICE_ORACLE
-            if not is_stale and (stored := self.stored_basis.get(event.identifier)) is not None:
-                basis: FVal = stored
-            elif (price := self._price(asset=event.asset, timestamp=timestamp)) is not None:
-                basis = price
-            else:
-                basis, basis_source = ZERO, BasisSource.ZERO_COST
-
-            self.lots.obtain(
-                bucket=wallet_bucket,
-                lot_id=(lot_id := str(event.identifier)),
-                amount=excess_eth,
-                basis_per_unit=basis,
-                timestamp=timestamp,
-            )
-            if is_stale:
-                is_taxable = (
-                    taxable_reward_eth > ZERO and
-                    self.settings.eth_staking_taxable_after_withdrawal_enabled
-                )
-                if is_taxable and basis_source != BasisSource.ZERO_COST:
-                    realized_pnl = taxable_reward_eth * basis
-                    taxfree_pnl = ZERO
-                else:
-                    realized_pnl = taxfree_pnl = None
-                self._add_row(
-                    event=event,
-                    bucket=wallet_bucket,
-                    direction=CostBasisDirection.RECEIVE,
-                    lot_created_id=lot_id,
-                    basis_per_unit=basis,
-                    basis_source=basis_source,
-                    realized_pnl=realized_pnl,
-                    taxfree_pnl=taxfree_pnl,
-                    is_taxable=is_taxable,
-                )
-
-    def _apply_eth_withdrawal(
+    def _resolve_spend_treatment(
             self,
-            event: EthWithdrawalEvent,
-            wallet_bucket: Bucket,
+            event: HistoryBaseEntry,
             timestamp: Timestamp,
-            is_stale: bool,
             rule: BaseEventSettings | None,
-    ) -> None:
-        """Apply an ETH2 withdrawal or exit according to validator type and principal history."""
-        validator_type: ValidatorType | None = (
-            ValidatorType.DISTRIBUTING if self.validator_types is None
-            else self.validator_types.get(event.validator_index)
-        )
-        if validator_type is None:
-            self._receive(event, wallet_bucket, timestamp, is_stale, rule)
-            return
-
-        is_exit = event.is_exit_or_blocknumber != 0
-        v_index = event.validator_index
-        validator_bucket = _validator_eth2_bucket(v_index)
-        if validator_bucket in self.blocked_buckets:
-            return
-
-        if validator_type != ValidatorType.ACCUMULATING:
-            if (
-                (not is_exit and event.amount < MIN_EFFECTIVE_BALANCE) or
-                (is_exit and v_index in self._consolidated_sources)
-            ):
-                if is_exit:
-                    self._validator_principal.pop(v_index, None)
-                self._receive(event, wallet_bucket, timestamp, is_stale, rule)
-                return
-
-            if is_exit:
-                self._validator_principal.pop(v_index, None)
-            net_pnl_eth = event.amount - MIN_EFFECTIVE_BALANCE
-            excess_eth = max(ZERO, net_pnl_eth)
-            self._apply_eth2_principal_withdrawal(
-                event=event,
-                validator_bucket=validator_bucket,
-                wallet_bucket=wallet_bucket,
-                timestamp=timestamp,
-                is_stale=is_stale,
-                principal_eth=MIN_EFFECTIVE_BALANCE,
-                loss_eth=abs(net_pnl_eth) if net_pnl_eth < ZERO else ZERO,
-                excess_eth=excess_eth,
-                taxable_reward_eth=excess_eth,
-                drain_validator=is_exit,
+            swap_proceeds: tuple[FVal | None, bool, bool] | None,
+            *,
+            price_non_taxable_rule: bool = True,
+    ) -> tuple[FVal | None, bool, bool]:
+        """Resolve `(rate, counts_cost_basis, count_entire_amount_spend)` for a spend event."""
+        if event.asset == A_KFEE:
+            return None, False, False
+        if swap_proceeds is not None:
+            return swap_proceeds
+        if rule is not None:
+            counts_cost_basis = rule.taxable and rule.count_cost_basis_pnl
+            count_entire_amount_spend = rule.taxable and rule.count_entire_amount_spend
+            rate = (
+                self.get_price(asset=event.asset, timestamp=timestamp)
+                if price_non_taxable_rule or count_entire_amount_spend else None
             )
-            return
+            return rate, counts_cost_basis, count_entire_amount_spend
+        if isinstance(event, AssetMovement) and event.event_subtype == HistoryEventSubType.FEE:
+            return self.get_price(asset=event.asset, timestamp=timestamp), True, True
+        return None, False, False
 
-        if not is_exit:
-            if event.identifier in self.accumulating_requested_withdrawal_ids:
-                if v_index in self._validator_principal:
-                    self._validator_principal[v_index] = max(
-                        ZERO,
-                        self._validator_principal[v_index] - event.amount,
-                    )
-                self._apply_eth2_principal_withdrawal(
-                    event=event,
-                    validator_bucket=validator_bucket,
-                    wallet_bucket=wallet_bucket,
-                    timestamp=timestamp,
-                    is_stale=is_stale,
-                    principal_eth=event.amount,
-                    loss_eth=ZERO,
-                    excess_eth=ZERO,
-                    taxable_reward_eth=ZERO,
-                    drain_validator=False,
-                )
+    @staticmethod
+    def compute_spend_pnl(
+            amount: FVal,
+            rate: FVal | None,
+            counts_cost_basis: bool,
+            count_entire_amount_spend: bool,
+            result: SpendResult | None = None,
+    ) -> tuple[FVal | None, FVal | None, FVal | None]:
+        """Compute `(proceeds, realized_pnl, taxfree_pnl)` for a spend event."""
+        if rate is not None:
+            proceeds = amount * rate
+            realized_pnl = -proceeds if count_entire_amount_spend else ZERO
+            if counts_cost_basis and result is not None:
+                realized_pnl += result.taxable_amount * rate - result.taxable_basis
+                taxfree_pnl = (amount - result.taxable_amount) * rate - result.taxfree_basis
             else:
-                self._validator_skimmed[v_index] = (
-                    self._validator_skimmed.get(v_index, ZERO) + event.amount
-                )
-                self._receive(event, wallet_bucket, timestamp, is_stale, rule)
-            return
+                taxfree_pnl = ZERO
+            return proceeds, realized_pnl, taxfree_pnl
 
-        has_principal_history = v_index in self._validator_principal
-        principal_eth = self._validator_principal.pop(v_index, ZERO)
-        skimmed_eth = self._validator_skimmed.pop(v_index, ZERO)
-        if not has_principal_history:
-            if event.amount > MAX_EFFECTIVE_BALANCE:
-                excess_eth = event.amount - MAX_EFFECTIVE_BALANCE
-                self._apply_eth2_principal_withdrawal(
-                    event=event,
-                    validator_bucket=validator_bucket,
-                    wallet_bucket=wallet_bucket,
-                    timestamp=timestamp,
-                    is_stale=is_stale,
-                    principal_eth=MAX_EFFECTIVE_BALANCE,
-                    loss_eth=ZERO,
-                    excess_eth=excess_eth,
-                    taxable_reward_eth=max(ZERO, excess_eth - skimmed_eth),
-                    drain_validator=True,
-                )
-            else:
-                self._apply_eth2_principal_withdrawal(
-                    event=event,
-                    validator_bucket=validator_bucket,
-                    wallet_bucket=wallet_bucket,
-                    timestamp=timestamp,
-                    is_stale=is_stale,
-                    principal_eth=event.amount,
-                    loss_eth=ZERO,
-                    excess_eth=ZERO,
-                    taxable_reward_eth=ZERO,
-                    drain_validator=True,
-                )
-        elif event.amount < principal_eth:
-            self._apply_eth2_principal_withdrawal(
-                event=event,
-                validator_bucket=validator_bucket,
-                wallet_bucket=wallet_bucket,
-                timestamp=timestamp,
-                is_stale=is_stale,
-                principal_eth=principal_eth,
-                loss_eth=principal_eth - event.amount,
-                excess_eth=ZERO,
-                taxable_reward_eth=ZERO,
-                drain_validator=True,
-            )
-        else:
-            excess_eth = event.amount - principal_eth
-            self._apply_eth2_principal_withdrawal(
-                event=event,
-                validator_bucket=validator_bucket,
-                wallet_bucket=wallet_bucket,
-                timestamp=timestamp,
-                is_stale=is_stale,
-                principal_eth=principal_eth,
-                loss_eth=ZERO,
-                excess_eth=excess_eth,
-                taxable_reward_eth=max(ZERO, excess_eth - skimmed_eth),
-                drain_validator=True,
-            )
+        if counts_cost_basis or count_entire_amount_spend:
+            return None, None, None
 
-    def _receive(
+        return None, ZERO, ZERO
+
+    def receive(
             self,
             event: HistoryBaseEntry,
             bucket: Bucket,
             timestamp: Timestamp,
             is_stale: bool,
             rule: BaseEventSettings | None,
+            *,
+            is_taxable: bool | None = None,
     ) -> None:
         assert event.identifier is not None
-        basis_source = BasisSource.PRICE_ORACLE
         swap_basis = self._swap_basis.pop(event.identifier, None)
-        if not is_stale and (stored := self.stored_basis.get(event.identifier)) is not None:
-            basis: FVal = stored
-        elif swap_basis is not None:
-            basis, basis_source = swap_basis
-        elif (price := self._price(asset=event.asset, timestamp=timestamp)) is not None:
-            basis = price
-        else:
-            basis, basis_source = ZERO, BasisSource.ZERO_COST
-
+        basis, basis_source = self.resolve_receive_basis(
+            event=event,
+            timestamp=timestamp,
+            is_stale=is_stale,
+            swap_basis=swap_basis,
+        )
         self.lots.obtain(
             bucket=bucket,
             lot_id=(lot_id := str(event.identifier)),
@@ -866,13 +577,17 @@ class _CostBasisPass:
             timestamp=timestamp,
         )
         if is_stale:
-            is_taxable = swap_basis is None and self._is_taxable_receive(event, rule)
-            if is_taxable and basis_source != BasisSource.ZERO_COST:
-                realized_pnl: FVal | None = event.amount * basis
-                taxfree_pnl: FVal | None = ZERO
-            else:
-                realized_pnl = taxfree_pnl = None
-            self._add_row(
+            taxable = (
+                swap_basis is None and self._is_taxable_receive(event, rule)
+                if is_taxable is None else is_taxable
+            )
+            realized_pnl, taxfree_pnl = self.compute_receive_pnl(
+                amount=event.amount,
+                basis=basis,
+                basis_source=basis_source,
+                is_taxable=taxable,
+            )
+            self.add_row(
                 event=event,
                 bucket=bucket,
                 direction=CostBasisDirection.RECEIVE,
@@ -881,7 +596,7 @@ class _CostBasisPass:
                 basis_source=basis_source,
                 realized_pnl=realized_pnl,
                 taxfree_pnl=taxfree_pnl,
-                is_taxable=is_taxable,
+                is_taxable=taxable,
             )
 
     def _spend(
@@ -910,43 +625,20 @@ class _CostBasisPass:
         if not is_stale:
             return
 
-        proceeds: FVal | None = None
-        realized_pnl: FVal | None
-        taxfree_pnl: FVal | None
-        counts_cost_basis = False
-        count_entire_amount_spend = False
-        if event.asset == A_KFEE:
-            rate: FVal | None = None
-        elif swap_proceeds is not None:
-            rate, counts_cost_basis, count_entire_amount_spend = swap_proceeds
-        elif rule is not None:
-            rate = self._price(asset=event.asset, timestamp=timestamp)
-            counts_cost_basis = rule.taxable and rule.count_cost_basis_pnl
-            count_entire_amount_spend = rule.taxable and rule.count_entire_amount_spend
-        elif isinstance(event, AssetMovement) and event.event_subtype == HistoryEventSubType.FEE:
-            rate = self._price(asset=event.asset, timestamp=timestamp)
-            counts_cost_basis = True
-            count_entire_amount_spend = True
-        else:
-            rate = None  # an event without a rule realizes nothing, so its worth is not needed
-
-        if rate is not None:
-            proceeds = event.amount * rate
-            pnl = -proceeds if count_entire_amount_spend else ZERO
-            if counts_cost_basis:
-                pnl += result.taxable_amount * rate - result.taxable_basis
-                taxfree_pnl = (
-                    (event.amount - result.taxable_amount) * rate - result.taxfree_basis
-                )
-            else:
-                taxfree_pnl = ZERO
-            realized_pnl = pnl
-        elif counts_cost_basis or count_entire_amount_spend:
-            realized_pnl = taxfree_pnl = None
-        else:
-            realized_pnl = taxfree_pnl = ZERO
-
-        self._add_row(
+        rate, counts_cost_basis, count_entire_amount_spend = self._resolve_spend_treatment(
+            event=event,
+            timestamp=timestamp,
+            rule=rule,
+            swap_proceeds=swap_proceeds,
+        )
+        proceeds, realized_pnl, taxfree_pnl = self.compute_spend_pnl(
+            amount=event.amount,
+            rate=rate,
+            counts_cost_basis=counts_cost_basis,
+            count_entire_amount_spend=count_entire_amount_spend,
+            result=result,
+        )
+        self.add_row(
             event=event,
             bucket=bucket,
             direction=CostBasisDirection.SPEND,
@@ -981,33 +673,23 @@ class _CostBasisPass:
         )
         direction = event.maybe_get_direction()
         if swap_proceeds is not None or direction == EventDirection.OUT:
-            if swap_proceeds is not None:
-                rate, _counts_cost_basis, count_entire_amount_spend = swap_proceeds
-            elif rule is not None:
-                count_entire_amount_spend = rule.taxable and rule.count_entire_amount_spend
-                rate = self._price(asset=event.asset, timestamp=timestamp) if count_entire_amount_spend else None  # noqa: E501
-            elif isinstance(event, AssetMovement) and event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
-                count_entire_amount_spend = True
-                rate = self._price(asset=event.asset, timestamp=timestamp)
-            else:
-                count_entire_amount_spend = False
-                rate = None
-
+            rate, _counts_cost_basis, count_entire_amount_spend = self._resolve_spend_treatment(
+                event=event,
+                timestamp=timestamp,
+                rule=rule,
+                swap_proceeds=swap_proceeds,
+                price_non_taxable_rule=False,
+            )
             if not count_entire_amount_spend:
                 return
 
-            proceeds: FVal | None
-            realized_pnl: FVal | None
-            taxfree_pnl: FVal | None
-            if rate is not None:
-                spend_value = event.amount * rate
-                proceeds = spend_value
-                realized_pnl = -spend_value
-                taxfree_pnl = ZERO
-            else:
-                proceeds = realized_pnl = taxfree_pnl = None
-
-            self._add_row(
+            proceeds, realized_pnl, taxfree_pnl = self.compute_spend_pnl(
+                amount=event.amount,
+                rate=rate,
+                counts_cost_basis=False,
+                count_entire_amount_spend=True,
+            )
+            self.add_row(
                 event=event,
                 bucket=bucket,
                 direction=CostBasisDirection.SPEND,
@@ -1022,16 +704,18 @@ class _CostBasisPass:
             return
 
         if swap_basis is None and direction == EventDirection.IN and self._is_taxable_receive(event, rule):  # noqa: E501
-            if (rate := self._price(asset=event.asset, timestamp=timestamp)) is not None:
-                basis: FVal = rate
-                basis_source = BasisSource.PRICE_ORACLE
-                realized_pnl = event.amount * basis
-                taxfree_pnl = ZERO
-            else:
-                basis = ZERO
-                basis_source = BasisSource.ZERO_COST
-                realized_pnl = taxfree_pnl = None
-            self._add_row(
+            basis, basis_source = self.resolve_receive_basis(
+                event=event,
+                timestamp=timestamp,
+                is_stale=True,
+            )
+            realized_pnl, taxfree_pnl = self.compute_receive_pnl(
+                amount=event.amount,
+                basis=basis,
+                basis_source=basis_source,
+                is_taxable=True,
+            )
+            self.add_row(
                 event=event,
                 bucket=bucket,
                 direction=CostBasisDirection.RECEIVE,
@@ -1048,7 +732,6 @@ class _CostBasisPass:
             event: HistoryBaseEntry,
             in_event: HistoryBaseEntry,
             out_buckets: Sequence[tuple[Bucket, EventDirection]],
-            timestamp: Timestamp,
             is_stale: bool,
             treat_eth2_as_eth: bool,
     ) -> bool:
@@ -1072,11 +755,10 @@ class _CostBasisPass:
             return False
 
         self._basis_transfer_receives.add(in_event.identifier)
-        self._transfer(
+        self.transfer(
             event=event,
             source=out_buckets[0][0],
             destination=in_buckets[0][0],
-            timestamp=timestamp,
             is_stale=is_stale,
             in_event=in_event,
         )
@@ -1109,9 +791,7 @@ class _CostBasisPass:
             'blocked_buckets': [list(bucket) for bucket in self.blocked_buckets],
             'invalid_amount_event_ids': list(self.invalid_amount_event_ids),
             'events_since_interval': events_since_interval,
-            'validator_principal': {str(k): str(v) for k, v in self._validator_principal.items()},
-            'validator_skimmed': {str(k): str(v) for k, v in self._validator_skimmed.items()},
-            'consolidated_sources': sorted(self._consolidated_sources),
+            **self.eth2.serialize_state(),
         }, separators=(',', ':'))
 
     def restore_checkpoint(self, serialized: str) -> int | None:
@@ -1129,13 +809,7 @@ class _CostBasisPass:
         )
         self.blocked_buckets = set(starmap(Bucket, state['blocked_buckets']))
         self.invalid_amount_event_ids = set(state['invalid_amount_event_ids'])
-        self._validator_principal = {
-            int(k): FVal(v) for k, v in state.get('validator_principal', {}).items()
-        }
-        self._validator_skimmed = {
-            int(k): FVal(v) for k, v in state.get('validator_skimmed', {}).items()
-        }
-        self._consolidated_sources = set(state.get('consolidated_sources', ()))
+        self.eth2.restore_state(state)
         return int(state.get('events_since_interval', 0))
 
     def apply(
@@ -1171,21 +845,7 @@ class _CostBasisPass:
         if event.identifier is None:
             return
 
-        if (
-            isinstance(event, OnchainEvent) and
-            event.counterparty == CPT_ETH2 and
-            event.event_type == HistoryEventType.INFORMATIONAL and
-            event.event_subtype == HistoryEventSubType.CONSOLIDATE and
-            event.extra_data is not None and
-            (source_validator := event.extra_data.get('source_validator_index')) is not None and
-            (target_validator := event.extra_data.get('target_validator_index')) is not None and
-            source_validator != target_validator
-        ):
-            self._consolidate_validator(
-                event=event,
-                source_validator=source_validator,
-                target_validator=target_validator,
-            )
+        if self.eth2.handle_informational_event(event):
             return
 
         if event.amount == ZERO:
@@ -1212,7 +872,7 @@ class _CostBasisPass:
                 isinstance(event, EthDepositEvent | EthWithdrawalEvent) and
                 event.validator_index != UNKNOWN_VALIDATOR_INDEX
             ):
-                self.blocked_buckets.add(_validator_eth2_bucket(event.validator_index))
+                self.blocked_buckets.add(validator_eth2_bucket(event.validator_index))
             return
 
         rule = self.rules.get(event)
@@ -1229,7 +889,6 @@ class _CostBasisPass:
                     event=event,
                     in_event=next_event,
                     out_buckets=bucket_directions,
-                    timestamp=timestamp,
                     is_stale=is_stale,
                     treat_eth2_as_eth=treat_eth2_as_eth,
                 ):
@@ -1293,7 +952,7 @@ class _CostBasisPass:
                     return
 
                 if isinstance(event, EthWithdrawalEvent):
-                    self._apply_eth_withdrawal(
+                    self.eth2.apply_withdrawal(
                         event=event,
                         wallet_bucket=bucket,
                         timestamp=timestamp,
@@ -1301,7 +960,7 @@ class _CostBasisPass:
                         rule=rule,
                     )
                 else:
-                    self._receive(event, bucket, timestamp, is_stale, rule)
+                    self.receive(event, bucket, timestamp, is_stale, rule)
             else:
                 self._spend(event, bucket, timestamp, is_stale, rule)
             return
@@ -1314,22 +973,12 @@ class _CostBasisPass:
             source is not None and
             destination is not None
         ):
-            self._validator_principal[event.validator_index] = (
-                self._validator_principal.get(event.validator_index, ZERO) + event.amount
+            self.eth2.apply_deposit(
+                event=event,
+                source=source,
+                destination=destination,
+                is_stale=is_stale,
             )
-            validator_bucket = _validator_eth2_bucket(event.validator_index)
-            if (
-                source not in self.blocked_buckets and
-                validator_bucket not in self.blocked_buckets
-            ):
-                self._transfer(
-                    event=event,
-                    source=source,
-                    destination=validator_bucket,
-                    timestamp=timestamp,
-                    is_stale=is_stale,
-                    row_destination=destination,
-                )
             return
 
         if (
@@ -1339,7 +988,7 @@ class _CostBasisPass:
             source not in self.blocked_buckets and
             destination not in self.blocked_buckets
         ):
-            self._transfer(event, source, destination, timestamp, is_stale)
+            self.transfer(event, source, destination, is_stale)
 
 
 def _write_rows(
@@ -1587,66 +1236,6 @@ def _record_failure(
             )
 
 
-def _get_accumulating_requested_withdrawal_ids(
-        cursor: DBCursor,
-        database: DBHandler,
-        validator_types: dict[int, ValidatorType],
-) -> set[int]:
-    """Return identifiers of 0x02 partial withdrawals matched by an EIP-7002 request.
-
-    Mirrors `DBEth2.process_accumulating_validators_balances_and_pnl()` so matched partial
-    withdrawals are treated as principal (non-taxable) while unmatched skimming withdrawals
-    remain taxable income.
-    """
-    accumulating_indices = {
-        v_idx for v_idx, v_type in validator_types.items()
-        if v_type == ValidatorType.ACCUMULATING
-    }
-    if len(accumulating_indices) == 0:
-        return set()
-
-    events_db = DBHistoryEvents(database)
-    requests_by_validator: dict[int, list[tuple[TimestampMS, FVal]]] = {}
-    for request_event in events_db.get_history_events_internal(
-        cursor=cursor,
-        filter_query=EvmEventFilterQuery.make(
-            event_types=[HistoryEventType.INFORMATIONAL],
-            event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
-            counterparties=[CPT_ETH2],
-            order_by_rules=[('timestamp', False)],
-        ),
-    ):
-        if (
-            request_event.extra_data is not None and
-            (v_index := request_event.extra_data.get('validator_index')) in accumulating_indices
-        ):
-            requests_by_validator.setdefault(v_index, []).append(
-                (request_event.timestamp, request_event.amount),
-            )
-
-    if len(requests_by_validator) == 0:
-        return set()
-
-    matched_ids: set[int] = set()
-    for withdrawal in events_db.get_history_events_internal(
-        cursor=cursor,
-        filter_query=EthWithdrawalFilterQuery.make(
-            validator_indices=list(requests_by_validator),
-            order_by_rules=[('timestamp', True)],
-        ),
-    ):
-        if withdrawal.is_exit_or_blocknumber != 0 or withdrawal.identifier is None:
-            continue
-        requests = requests_by_validator.get(withdrawal.validator_index, [])
-        for idx, (req_ts, req_amount) in enumerate(requests):
-            if req_ts <= withdrawal.timestamp and req_amount == withdrawal.amount:
-                matched_ids.add(withdrawal.identifier)
-                requests.pop(idx)
-                break
-
-    return matched_ids
-
-
 @skip_if_running
 def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) -> bool:
     """Materialize the cost basis of the history events that are stale.
@@ -1683,11 +1272,6 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                 'WHERE validator_index IS NOT NULL',
             )
         }
-        accumulating_requested_withdrawal_ids = _get_accumulating_requested_withdrawal_ids(
-            cursor=cursor,
-            database=database,
-            validator_types=validator_types,
-        )
         from_ts: TimestampMS | None = None
         if (
             unprocessed_from_ts > 0 and
@@ -1706,7 +1290,6 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             stored_basis={},
             tracked_eth_accounts=tracked_eth_accounts,
             validator_types=validator_types,
-            accumulating_requested_withdrawal_ids=accumulating_requested_withdrawal_ids,
         )
         start_ts = TimestampMS(0)
         restored_terminal_ts: TimestampMS | None = None
@@ -1773,6 +1356,15 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
     record_failure = True  # unless the pass ends or is cancelled
     try:
         for idx, event in enumerate(events):
+            if isinstance(event, EthWithdrawalEvent) and event.is_exit_or_blocknumber == 0:
+                lookahead = idx + 1
+                while lookahead < total_events and events[lookahead].timestamp == event.timestamp:
+                    cost_basis_pass.eth2.buffer_withdrawal_request(
+                        events[lookahead],
+                        prebuffered=True,
+                    )
+                    lookahead += 1
+
             next_event = events[idx + 1] if idx + 1 < total_events else None
             swap_fee_events: Sequence[HistoryBaseEntry] = (
                 _collect_swap_fee_events(events, idx)

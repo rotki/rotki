@@ -202,14 +202,16 @@ class DBEth2:
 
         if (exit_ts := ts_ms_to_sec(latest_result[1])) >= withdrawable_timestamp:
             write_cursor.execute(  # the withdrawal notes follow from this flag, see auto_notes()
-                'UPDATE eth_staking_events_info SET is_exit_or_blocknumber=? WHERE identifier=?',
+                'UPDATE eth_staking_events_info SET is_exit_or_blocknumber=? '
+                'WHERE identifier=? AND is_exit_or_blocknumber IS NOT 1',
                 (1, latest_result[0]),
             )
+            exit_updated = write_cursor.rowcount > 0
             write_cursor.execute(
                 'UPDATE eth2_validators SET exited_timestamp=? WHERE validator_index=?',
                 (exit_ts, index),
             )
-            if is_accounting_update_enabled():
+            if exit_updated and is_accounting_update_enabled():
                 mark_stale_from_ts(
                     write_cursor=write_cursor,
                     from_ts=TimestampMS(latest_result[1]),
@@ -272,27 +274,22 @@ class DBEth2:
             ).fetchone()
             if result is not None:  # update case
                 db_validator = ValidatorDetails.deserialize_from_db(result)
-                type_changed = False
-                index_changed = False
                 for attr in updatable_attributes:
                     if getattr(db_validator, attr) != (new_value := getattr(validator, attr)):
                         if attr == 'validator_type':
-                            type_changed = True
                             new_value = new_value.serialize_for_db()
-                        elif attr == 'validator_index':
-                            index_changed = True
+                        if attr in ('validator_type', 'validator_index'):
+                            affected_validator_indices.update(
+                                idx for idx in (
+                                    db_validator.validator_index,
+                                    validator.validator_index,
+                                ) if idx is not None
+                            )
 
                         write_cursor.execute(
                             f'UPDATE eth2_validators SET {attr}=? WHERE public_key=?',
                             (new_value, validator.public_key),
                         )
-                if index_changed:
-                    if db_validator.validator_index is not None:
-                        affected_validator_indices.add(db_validator.validator_index)
-                    if validator.validator_index is not None:
-                        affected_validator_indices.add(validator.validator_index)
-                elif type_changed and db_validator.validator_index is not None:
-                    affected_validator_indices.add(db_validator.validator_index)
             else:  # insertion case
                 write_cursor.execute(
                     'INSERT INTO '
