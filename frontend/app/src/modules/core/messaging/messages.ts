@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { NewDetectedToken } from '@/modules/assets/detection/types';
 import { CalendarEventWithReminder } from '@/modules/calendar/types';
-import { BackgroundTaskStatusData } from '@/modules/task-center/background/background-task-types';
+import { BackgroundTaskStatusData, CostBasisStalled } from '@/modules/task-center/background/background-task-types';
 import { SocketMessageType, UserMessageData } from './types/base';
 import {
   AccountingRuleConflictData,
@@ -173,7 +173,9 @@ const UnmatchedBridgeTransactionsMessage = z.object({
 });
 
 const HistoricalBalanceProcessingCompletedMessage = z.object({
-  data: z.object({}),
+  data: z.object({
+    costBasisStalled: CostBasisStalled.optional(),
+  }),
   type: z.literal(SocketMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED),
 });
 

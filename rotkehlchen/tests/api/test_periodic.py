@@ -82,3 +82,13 @@ def test_query_periodic(rotkehlchen_api_server_with_exchanges: APIServer) -> Non
     result = assert_proper_sync_response_with_result(response)
     assert result['failed_to_connect'] == {'eth': ['custom node']}
     assert len(result['cooling_down_nodes']['eth']) == 1
+    assert 'cost_basis_stalled' not in result
+
+    with rotki.data.db.user_write() as write_cursor:
+        rotki.data.db.set_static_cache(write_cursor, DBCacheStatic.STALE_COST_BASIS_FROM_TS, '1000')  # noqa: E501
+        rotki.data.db.set_static_cache(write_cursor, DBCacheStatic.COST_BASIS_STALLED_REASON, 'rate_limited')  # noqa: E501
+        rotki.data.db.set_static_cache(write_cursor, DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS, start_ts)  # noqa: E501
+
+    response = requests.get(periodic_url)
+    result = assert_proper_sync_response_with_result(response)
+    assert result['cost_basis_stalled'] == {'reason': 'rate_limited', 'since': start_ts}

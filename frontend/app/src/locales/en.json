@@ -7408,6 +7408,11 @@
       "transaction_decoding": "Transaction decoding",
       "xpub_derivation": "Xpub addresses"
     },
+    "cost_basis_stalled": {
+      "network": "Paused because a price oracle could not be reached. Will retry automatically.",
+      "rate_limited": "Paused because a price oracle hit its rate limit. Will retry automatically.",
+      "unknown": "Paused while fetching historical prices. Will retry automatically."
+    },
     "count": {
       "transactions": "{count} transaction | {count} transactions"
     },

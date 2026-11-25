@@ -22,10 +22,12 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
 }));
 
 const mockResync = vi.fn();
+const mockSyncCostBasisStalled = vi.fn();
 
 vi.mock('@/modules/task-center/background/use-background-tasks', () => ({
   useBackgroundTasks: vi.fn(() => ({
     resync: mockResync,
+    syncCostBasisStalled: mockSyncCostBasisStalled,
   })),
 }));
 
@@ -80,6 +82,23 @@ describe('usePeriodicDataFetcher', () => {
     vi.useRealTimers();
 
     expect(mockResync).toHaveBeenCalledWith(runningTasks, 5_000);
+    expect(mockSyncCostBasisStalled).toHaveBeenCalledWith(undefined);
+  });
+
+  it('should forward persisted costBasisStalled state to useBackgroundTasks', async () => {
+    const costBasisStalled = { reason: 'rate_limited', since: 1_700_000_000 };
+    mockFetchPeriodicData.mockResolvedValue({
+      connectedNodes: {},
+      costBasisStalled,
+      lastBalanceSave: 0,
+      lastDataUploadTs: 0,
+      runningTasks: [],
+    });
+
+    const { usePeriodicDataFetcher } = await importModule();
+    await usePeriodicDataFetcher().check();
+
+    expect(mockSyncCostBasisStalled).toHaveBeenCalledWith(costBasisStalled);
   });
 
   it('should skip update when result is empty (user not logged in)', async () => {

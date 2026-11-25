@@ -16,8 +16,9 @@ of the PnL report are not applied.
 import json
 import logging
 import time
+from http import HTTPStatus
 from itertools import starmap
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.accounting.cost_basis.eth2 import (
     Eth2StakingCostBasis,
@@ -45,7 +46,7 @@ from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.cause import TRANSIENT_FAILURE_CAUSES
+from rotkehlchen.errors.cause import TRANSIENT_FAILURE_CAUSES, FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
@@ -1143,10 +1144,45 @@ def _write_invalid_amount_issues(
         )
 
 
+def _interruption_reason(error: NoPriceForGivenTimestamp | RemoteError) -> FailureCause:
+    """Classify the transient price-oracle failure that interrupted cost basis processing."""
+    if isinstance(error, NoPriceForGivenTimestamp):
+        return FailureCause.RATE_LIMITED if error.rate_limited else FailureCause.NETWORK
+    if (
+        error.cause == FailureCause.RATE_LIMITED or
+        error.error_code == HTTPStatus.TOO_MANY_REQUESTS
+    ):
+        return FailureCause.RATE_LIMITED
+    return FailureCause.NETWORK
+
+
+def get_cost_basis_stalled_info(
+        cursor: DBCursor,
+        database: DBHandler,
+) -> dict[str, Any] | None:
+    """Return the persisted stall reason and timestamp when cost basis processing is paused
+    waiting to retry after a transient price-oracle failure, or None otherwise."""
+    stale_from_ts, stalled_reason, last_processing_ts = database.get_static_caches(
+        cursor=cursor,
+        names=(
+            DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            DBCacheStatic.COST_BASIS_STALLED_REASON,
+            DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
+        ),
+    )
+    if stale_from_ts is None or stalled_reason is None:
+        return None
+    return {
+        'reason': stalled_reason,
+        'since': int(last_processing_ts or 0),
+    }
+
+
 def _finalize_processing(
         database: DBHandler,
         modification_ts_at_start: int | None,
         interrupted_at: TimestampMS | None = None,
+        interrupted_reason: FailureCause | None = None,
 ) -> None:
     """Record the pass, and clear or advance the stale marker if nothing changed while it ran.
 
@@ -1154,7 +1190,8 @@ def _finalize_processing(
 
     Events that changed keep the marker they set, and so does a change of the cost basis
     settings, which wipes what the pass wrote. A pass that stopped early advances the marker to
-    the event it stopped at, so earlier events are no longer seen as stale.
+    the event it stopped at, so earlier events are no longer seen as stale, and persists the
+    transient failure reason until a later pass completes cleanly.
     """
     with database.user_write() as write_cursor:
         database.set_static_cache(
@@ -1162,14 +1199,30 @@ def _finalize_processing(
             name=DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
             value=ts_now(),
         )
-        write_cursor.execute(
-            'DELETE FROM key_value_cache WHERE name IN (?, ?, ?)',
-            (
-                DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS.value,
-                DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS.value,
-                DBCacheStatic.LAST_COST_BASIS_FAILURE_TS.value,
-            ),
-        )
+        if interrupted_at is not None and interrupted_reason is not None:
+            write_cursor.execute(
+                'DELETE FROM key_value_cache WHERE name IN (?, ?, ?)',
+                (
+                    DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS.value,
+                    DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS.value,
+                    DBCacheStatic.LAST_COST_BASIS_FAILURE_TS.value,
+                ),
+            )
+            database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.COST_BASIS_STALLED_REASON,
+                value=interrupted_reason.value,
+            )
+        else:
+            write_cursor.execute(
+                'DELETE FROM key_value_cache WHERE name IN (?, ?, ?, ?)',
+                (
+                    DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS.value,
+                    DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS.value,
+                    DBCacheStatic.LAST_COST_BASIS_FAILURE_TS.value,
+                    DBCacheStatic.COST_BASIS_STALLED_REASON.value,
+                ),
+            )
         modification_ts = database.get_static_cache(
             cursor=write_cursor,
             name=DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
@@ -1353,6 +1406,7 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
     first_batch_written, total_events = False, len(events)
     send_ws_every = msg_aggregator.how_many_events_per_ws(total_events)
     interrupted_at: TimestampMS | None = None
+    interrupted_reason: FailureCause | None = None
     record_failure = True  # unless the pass ends or is cancelled
     try:
         for idx, event in enumerate(events):
@@ -1386,6 +1440,7 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             except (NoPriceForGivenTimestamp, RemoteError) as e:
                 log.warning('Stopping cost basis processing at event %s: %s', event.identifier, e)
                 interrupted_at = event.timestamp
+                interrupted_reason = _interruption_reason(e)
                 break
 
             events_since_interval += 1
@@ -1470,6 +1525,7 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                 None if modification_ts_at_start is None else int(modification_ts_at_start)
             ),
             interrupted_at=interrupted_at,
+            interrupted_reason=interrupted_reason,
         )
         record_failure = False
     except TaskCancelledError:
@@ -1514,6 +1570,7 @@ def process_balances_and_cost_basis(
     shown covers both. Returns None if the requested pass is already running.
     """
     ran = True
+    cost_basis_interrupted = False
     try:
         if skip_balances:
             if (processed := process_cost_basis(
@@ -1522,6 +1579,7 @@ def process_balances_and_cost_basis(
             )) is None:
                 ran = False
                 return None
+            cost_basis_interrupted = processed is False
             return processed
 
         if (processed := process_historical_balances(
@@ -1534,11 +1592,22 @@ def process_balances_and_cost_basis(
             ran = False
             return None
 
-        process_cost_basis(database=database, msg_aggregator=msg_aggregator)
+        cost_basis_interrupted = process_cost_basis(
+            database=database,
+            msg_aggregator=msg_aggregator,
+        ) is False
         return processed
     finally:
         if ran:
+            completion_data: dict[str, Any] = {}
+            if cost_basis_interrupted:
+                with database.conn.read_ctx() as cursor:
+                    if (stalled := get_cost_basis_stalled_info(
+                        cursor=cursor,
+                        database=database,
+                    )) is not None:
+                        completion_data['cost_basis_stalled'] = stalled
             msg_aggregator.add_message(
                 message_type=WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED,
-                data={},
+                data=completion_data,
             )

@@ -3,11 +3,12 @@ import type { Module } from '@/modules/core/common/modules';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { Report } from '@/modules/reports/report-types';
 import { z } from 'zod';
-import { BackgroundTask } from '@/modules/task-center/background/background-task-types';
+import { BackgroundTask, CostBasisStalled } from '@/modules/task-center/background/background-task-types';
 
 export const PeriodicClientQueryResultSchema = z.object({
   connectedNodes: z.record(z.string(), z.array(z.string())),
   coolingDownNodes: z.record(z.string(), z.array(z.string())).optional(),
+  costBasisStalled: CostBasisStalled.optional(),
   failedToConnect: z.record(z.string(), z.array(z.string())).optional(),
   lastBalanceSave: z.number(),
   lastDataUploadTs: z.number(),

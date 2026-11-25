@@ -60,6 +60,9 @@ class DBCacheStatic(Enum):
     STALE_COST_BASIS_MODIFICATION_TS: Final = 'stale_cost_basis_modification_ts'
     LAST_COST_BASIS_PROCESSING_TS: Final = 'last_cost_basis_processing_ts'
     LAST_COST_BASIS_FAILURE_TS: Final = 'last_cost_basis_failure_ts'
+    # Transient FailureCause ('rate_limited' or 'network') recorded when cost basis processing
+    # stops early due to price oracle failures and waits for the next retry. Cleared on completion.
+    COST_BASIS_STALLED_REASON: Final = 'cost_basis_stalled_reason'
     # How far a cost basis pass that has not finished got: the rows of events before this
     # timestamp are its own. It only holds while the cost basis modification marker is still the
     # one the pass started with, which is stored along with it.

@@ -839,11 +839,12 @@ class DBHandler:
         write_cursor.execute('DELETE FROM event_cost_basis')
         write_cursor.execute('DELETE FROM cost_basis_checkpoints')
         write_cursor.execute(
-            'DELETE FROM key_value_cache WHERE name IN (?, ?, ?)',
+            'DELETE FROM key_value_cache WHERE name IN (?, ?, ?, ?)',
             (
                 DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS.value,
                 DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS.value,
                 DBCacheStatic.LAST_COST_BASIS_FAILURE_TS.value,
+                DBCacheStatic.COST_BASIS_STALLED_REASON.value,
             ),
         )
         mark_stale_from_ts(write_cursor=write_cursor, from_ts=0, include_balances=False)
@@ -957,6 +958,7 @@ class DBHandler:
             DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
             DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS,
             DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS,
+            DBCacheStatic.COST_BASIS_STALLED_REASON,
             DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
             DBCacheStatic.CURRENT_BALANCE_DETECTION_CURSOR,
         ):
@@ -981,6 +983,7 @@ class DBHandler:
                 DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
                 DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS,
                 DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS,
+                DBCacheStatic.COST_BASIS_STALLED_REASON,
             ],
     ) -> str | None:
         ...

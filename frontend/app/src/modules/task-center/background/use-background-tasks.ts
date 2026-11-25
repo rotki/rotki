@@ -1,19 +1,30 @@
+import type { ActivityId } from '@/modules/task-center/core/types';
 import { startPromise } from '@shared/utils';
 import { createSharedComposable } from '@vueuse/core';
 import { err, ok, type Result } from 'plainfp/result';
 import { useI18n } from 'vue-i18n';
+import { type MessageKey, msg } from '@/message-key';
+import { FailureCause, parseFailureCause } from '@/modules/core/api/failure-cause';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { onSessionCleared } from '@/modules/core/session/session-lifecycle';
 import { BackendCancelled, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { BACKGROUND_LANE, Priority } from '@/modules/task-center/core/orchestrator/spec';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
+import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 import {
   type BackgroundTask,
   BackgroundTaskKind,
   backgroundTaskKindOf,
   BackgroundTaskStatus,
   type BackgroundTaskStatusData,
+  type CostBasisStalled,
 } from './background-task-types';
 import { backgroundTaskActivity, backgroundTaskLabel, backgroundTaskTitle } from './background-task.activity';
+
+const STALLED_REASON_KEYS: Partial<Record<FailureCause, MessageKey>> = {
+  [FailureCause.NETWORK]: msg.$t('task_center.cost_basis_stalled.network'),
+  [FailureCause.RATE_LIMITED]: msg.$t('task_center.cost_basis_stalled.rate_limited'),
+};
 
 type MirrorOutcome = Result<void, TaskError>;
 
@@ -35,6 +46,15 @@ interface UseBackgroundTasksReturn {
    * may be missing from the list only because the read predates it, so it is left alone.
    */
   resync: (running: readonly BackgroundTask[], requestedAt: number) => void;
+  /**
+   * Surface a persisted cost-basis stall as a failed background row, or clear it once processing
+   * catches up.
+   *
+   * @remarks
+   * Keyed by `(since, reason)` so repeated periodic polls neither duplicate nor re-open a row the
+   * user already dismissed, while a later retry stalling again supersedes the earlier row.
+   */
+  syncCostBasisStalled: (stalled: CostBasisStalled | undefined) => void;
 }
 
 /**
@@ -59,8 +79,14 @@ export const useBackgroundTasks = createSharedComposable((): UseBackgroundTasksR
   const { t } = useI18n({ useScope: 'global' });
   const { getChainName } = useSupportedChains();
   const { submitTask } = useNativeTask();
+  const { forget } = useTaskOrchestrator();
 
   const mirrors = new Map<number, Mirror>();
+  let stalledEntry: { readonly id: ActivityId; readonly key: string } | undefined;
+
+  onSessionCleared('background-tasks-stalled', () => {
+    stalledEntry = undefined;
+  });
 
   function mirror(task: BackgroundTask, settled?: MirrorOutcome): void {
     if (mirrors.has(task.id))
@@ -150,5 +176,34 @@ export const useBackgroundTasks = createSharedComposable((): UseBackgroundTasksR
     }
   }
 
-  return { onStatus, resync };
+  function syncCostBasisStalled(stalled: CostBasisStalled | undefined): void {
+    if (stalled === undefined) {
+      if (stalledEntry !== undefined) {
+        forget(stalledEntry.id);
+        stalledEntry = undefined;
+      }
+      return;
+    }
+
+    const key = `${stalled.since}:${stalled.reason}`;
+    if (stalledEntry?.key === key)
+      return;
+
+    if (stalledEntry !== undefined)
+      forget(stalledEntry.id);
+
+    const task: BackgroundTask = {
+      id: stalled.since,
+      kind: BackgroundTaskKind.HISTORICAL_BALANCES,
+      name: 'Process historical balances',
+      startedAt: stalled.since,
+      subject: {},
+    };
+    const cause = parseFailureCause(stalled.reason);
+    const message = t(STALLED_REASON_KEYS[cause] ?? msg.$t('task_center.cost_basis_stalled.unknown'));
+    stalledEntry = { id: backgroundTaskActivity.id(task), key };
+    mirror(task, err(TaskFailed({ failureCause: cause, message })));
+  }
+
+  return { onStatus, resync, syncCostBasisStalled };
 });

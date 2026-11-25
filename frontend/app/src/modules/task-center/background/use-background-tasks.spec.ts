@@ -9,9 +9,10 @@ import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BACKGROUND_LANE } from '@/modules/task-center/core/orchestrator/spec';
 import { ActivityKind } from '@/modules/task-center/core/types';
 
-const { specs, submitTask } = vi.hoisted(() => {
+const { forget, specs, submitTask } = vi.hoisted(() => {
   const specs: NativeActivitySpec[] = [];
   return {
+    forget: vi.fn(),
     specs,
     submitTask: vi.fn(async (spec: NativeActivitySpec): Promise<TaskOutcome> => {
       specs.push(spec);
@@ -22,6 +23,10 @@ const { specs, submitTask } = vi.hoisted(() => {
 
 vi.mock('@/modules/task-center/use-native-task', () => ({
   useNativeTask: (): { submitTask: typeof submitTask } => ({ submitTask }),
+}));
+
+vi.mock('@/modules/task-center/use-task-orchestrator', () => ({
+  useTaskOrchestrator: (): { forget: typeof forget } => ({ forget }),
 }));
 
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
@@ -66,6 +71,7 @@ describe('useBackgroundTasks', () => {
     vi.resetModules();
     specs.length = 0;
     submitTask.mockClear();
+    forget.mockClear();
   });
 
   it('should mirror a started task as a background activity that is not interruptible and is forgotten unless it fails', async () => {
@@ -209,5 +215,46 @@ describe('useBackgroundTasks', () => {
     vi.useRealTimers();
 
     expect(await outcomeOf(0)).toBeUndefined();
+  });
+
+  it('should surface a persisted cost-basis stall once per (since, reason) and clear it on recovery', async () => {
+    const { syncCostBasisStalled } = await setup();
+
+    syncCostBasisStalled({ reason: 'rate_limited', since: 1_700_000_000 });
+    syncCostBasisStalled({ reason: 'rate_limited', since: 1_700_000_000 });
+
+    expect(submitTask).toHaveBeenCalledOnce();
+    expect(specs[0]).toMatchObject({
+      forgetUnlessFailed: true,
+      id: 'background-task:historical_balances:1700000000',
+      kind: ActivityKind.BACKGROUND_TASK,
+      title: 'task_center.background_task.historical_balances',
+    });
+    const outcome = await outcomeOf(0);
+    assert(outcome && !outcome.ok);
+    expect(hasTag(outcome.error, 'TaskFailed')).toBe(true);
+    expect(outcome.error.message).toBe('task_center.cost_basis_stalled.rate_limited');
+
+    // A later retry stalling again forgets the previous row and submits the new one.
+    syncCostBasisStalled({ reason: 'network', since: 1_700_003_600 });
+    expect(forget).toHaveBeenCalledWith('background-task:historical_balances:1700000000');
+    expect(submitTask).toHaveBeenCalledTimes(2);
+    const second = await outcomeOf(1);
+    assert(second && !second.ok);
+    expect(second.error.message).toBe('task_center.cost_basis_stalled.network');
+
+    // Clearing removes the stalled row from the dock.
+    syncCostBasisStalled(undefined);
+    expect(forget).toHaveBeenCalledWith('background-task:historical_balances:1700003600');
+  });
+
+  it('should fall back to the unknown message for an unrecognized stall reason', async () => {
+    const { syncCostBasisStalled } = await setup();
+
+    syncCostBasisStalled({ reason: 'something_new', since: 1_700_000_123 });
+
+    const outcome = await outcomeOf(0);
+    assert(outcome && !outcome.ok);
+    expect(outcome.error.message).toBe('task_center.cost_basis_stalled.unknown');
   });
 });

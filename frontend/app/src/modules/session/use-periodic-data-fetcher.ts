@@ -25,7 +25,7 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
 
   const { notifyFailure } = useNotifications();
   const { fetchPeriodicData } = useSessionApi();
-  const { resync } = useBackgroundTasks();
+  const { resync, syncCostBasisStalled } = useBackgroundTasks();
   const failureMessage = useFailureMessage();
 
   const check = async (): Promise<void> => {
@@ -44,6 +44,7 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
       const {
         connectedNodes: connected,
         coolingDownNodes: cooling,
+        costBasisStalled,
         failedToConnect: failed,
         lastBalanceSave: balance,
         lastDataUploadTs: upload,
@@ -51,6 +52,7 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
       } = result;
 
       resync(runningTasks, requestedAt);
+      syncCostBasisStalled(costBasisStalled);
 
       if (get(lastBalanceSave) !== balance)
         set(lastBalanceSave, balance);
