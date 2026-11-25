@@ -32,6 +32,7 @@ from rotkehlchen.api.websockets.typedefs import (
 )
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.chain.ethereum.modules.eth2.constants import MIN_EFFECTIVE_BALANCE
+from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorType
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.concurrency import TaskCancelledError, checkpoint
 from rotkehlchen.constants import ONE, ZERO
@@ -99,6 +100,7 @@ type CostBasisRow = tuple[
     str | None,  # taxfree_pnl
     str | None,  # basis_removed
     str | None,  # post_spend_basis_remaining
+    int,  # is_taxable
     str,  # method
 ]
 
@@ -166,12 +168,14 @@ class _CostBasisPass:
             from_ts: TimestampMS | None,
             stored_basis: dict[int, FVal],
             tracked_eth_accounts: set[str] | None = None,
+            validator_types: dict[int, ValidatorType] | None = None,
     ) -> None:
         self.settings = settings
         self.rules = rules
         self.from_ts = from_ts
         self.stored_basis = stored_basis
         self.tracked_eth_accounts = tracked_eth_accounts
+        self.validator_types = validator_types
         self.method = settings.cost_basis_method.serialize()
         self.profit_currency = settings.main_currency.resolve_to_asset_with_oracles()
         self.lots = BucketLots[Bucket](settings)
@@ -313,6 +317,7 @@ class _CostBasisPass:
             taxfree_pnl: FVal | None = None,
             basis_removed: FVal | None = None,
             post_spend_basis_remaining: FVal | None = None,
+            is_taxable: bool = False,
     ) -> None:
         assert event.identifier is not None
         self.rows.append((
@@ -333,6 +338,7 @@ class _CostBasisPass:
             None if taxfree_pnl is None else str(taxfree_pnl),
             None if basis_removed is None else str(basis_removed),
             str(post_spend_basis_remaining) if post_spend_basis_remaining is not None else None,
+            int(is_taxable),
             self.method,
         ))
 
@@ -428,7 +434,14 @@ class _CostBasisPass:
             )
 
         if isinstance(event, EthWithdrawalEvent):
-            if event.is_exit_or_blocknumber == 0 and event.amount < MIN_EFFECTIVE_BALANCE:
+            if (
+                event.is_exit_or_blocknumber == 0 and
+                event.amount < MIN_EFFECTIVE_BALANCE and
+                (
+                    self.validator_types is None or
+                    self.validator_types.get(event.validator_index) == ValidatorType.DISTRIBUTING
+                )
+            ):
                 return self.settings.eth_staking_taxable_after_withdrawal_enabled
             return False
 
@@ -462,11 +475,12 @@ class _CostBasisPass:
             timestamp=timestamp,
         )
         if is_stale:
-            realized_pnl: FVal | None = None
-            taxfree_pnl: FVal | None = None
-            if swap_basis is None and self._is_taxable_receive(event, rule):
-                realized_pnl = event.amount * basis
-                taxfree_pnl = ZERO
+            is_taxable = swap_basis is None and self._is_taxable_receive(event, rule)
+            if is_taxable and basis_source != BasisSource.ZERO_COST:
+                realized_pnl: FVal | None = event.amount * basis
+                taxfree_pnl: FVal | None = ZERO
+            else:
+                realized_pnl = taxfree_pnl = None
             self._add_row(
                 event=event,
                 bucket=bucket,
@@ -476,6 +490,7 @@ class _CostBasisPass:
                 basis_source=basis_source,
                 realized_pnl=realized_pnl,
                 taxfree_pnl=taxfree_pnl,
+                is_taxable=is_taxable,
             )
 
     def _spend(
@@ -550,6 +565,7 @@ class _CostBasisPass:
             taxfree_pnl=taxfree_pnl,
             basis_removed=result.basis_removed,
             post_spend_basis_remaining=self.lots.basis_remaining(bucket),
+            is_taxable=counts_cost_basis or count_entire_amount_spend,
         )
 
     def _apply_fiat_event(
@@ -610,13 +626,20 @@ class _CostBasisPass:
                 taxfree_pnl=taxfree_pnl,
                 basis_removed=ZERO,
                 post_spend_basis_remaining=ZERO,
+                is_taxable=True,
             )
             return
 
         if swap_basis is None and direction == EventDirection.IN and self._is_taxable_receive(event, rule):  # noqa: E501
-            rate = self._price(asset=event.asset, timestamp=timestamp)
-            basis = rate if rate is not None else ZERO
-            basis_source = BasisSource.PRICE_ORACLE if rate is not None else BasisSource.ZERO_COST
+            if (rate := self._price(asset=event.asset, timestamp=timestamp)) is not None:
+                basis: FVal = rate
+                basis_source = BasisSource.PRICE_ORACLE
+                realized_pnl = event.amount * basis
+                taxfree_pnl = ZERO
+            else:
+                basis = ZERO
+                basis_source = BasisSource.ZERO_COST
+                realized_pnl = taxfree_pnl = None
             self._add_row(
                 event=event,
                 bucket=bucket,
@@ -624,8 +647,9 @@ class _CostBasisPass:
                 lot_created_id=None,
                 basis_per_unit=basis,
                 basis_source=basis_source,
-                realized_pnl=event.amount * basis,
-                taxfree_pnl=ZERO,
+                realized_pnl=realized_pnl,
+                taxfree_pnl=taxfree_pnl,
+                is_taxable=True,
             )
 
     def _maybe_transfer_basis(
@@ -890,8 +914,8 @@ def _write_rows(
         'INSERT OR REPLACE INTO event_cost_basis(event_identifier, location, location_label, '
         'protocol, asset, timestamp, sequence_index, direction, lot_created_id, basis_per_unit, '
         'basis_source, lots_consumed_json, proceeds, realized_pnl, taxfree_pnl, basis_removed, '
-        'post_spend_basis_remaining, method) '
-        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'post_spend_basis_remaining, is_taxable, method) '
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         rows,
     )
 
@@ -1133,6 +1157,13 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
         settings = database.get_settings(cursor)
         rules = _Rules(database=database, cursor=cursor)
         tracked_eth_accounts: set[str] = set(database.get_blockchain_accounts(cursor).eth)
+        validator_types: dict[int, ValidatorType] = {
+            validator_index: ValidatorType.deserialize_from_db(validator_type)
+            for validator_index, validator_type in cursor.execute(
+                'SELECT validator_index, validator_type FROM eth2_validators '
+                'WHERE validator_index IS NOT NULL',
+            )
+        }
         from_ts: TimestampMS | None = None
         if (
             unprocessed_from_ts > 0 and
@@ -1150,6 +1181,7 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             from_ts=from_ts,
             stored_basis={},
             tracked_eth_accounts=tracked_eth_accounts,
+            validator_types=validator_types,
         )
         start_ts = TimestampMS(0)
         restored_terminal_ts: TimestampMS | None = None

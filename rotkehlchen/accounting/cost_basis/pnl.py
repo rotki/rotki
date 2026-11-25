@@ -76,7 +76,7 @@ def query_realized_pnl(
             'cost_basis.event_identifier '
             'FROM event_cost_basis AS cost_basis '
             'WHERE (cost_basis.direction = ? '
-            'OR (cost_basis.direction = ? AND cost_basis.realized_pnl IS NOT NULL)) '
+            'OR (cost_basis.direction = ? AND cost_basis.is_taxable = 1)) '
             'AND cost_basis.event_identifier IN '
             '(SELECT history_events.identifier AS history_events_identifier '
             f'{ALL_EVENTS_DATA_JOIN} {filters})',

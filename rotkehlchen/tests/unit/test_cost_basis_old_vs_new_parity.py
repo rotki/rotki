@@ -10,6 +10,7 @@ from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.cost_basis.pnl import RealizedPnlGroupBy, query_realized_pnl
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
+from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails, ValidatorType
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.constants import ZERO
@@ -883,6 +884,104 @@ def test_eth2_block_and_withdrawal_parity(
     expected = FVal(900) if taxable_after_withdrawal else FVal(400)
     assert old_totals == (expected, ZERO)
     _assert_pnl_parity(old_totals, new_result)
+
+
+def test_eth2_accumulating_validator_requested_partial_withdrawal_parity(
+        database: DBHandler,
+) -> None:
+    """A 0x02 accumulating validator's requested partial withdrawal is principal, not income."""
+    _add_rule(database, HistoryEventType.SPEND)
+    with database.user_write() as write_cursor:
+        database.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.ETHEREUM,
+                address=TEST_ADDR1,
+            )],
+        )
+        DBEth2(database).add_or_update_validators(
+            write_cursor=write_cursor,
+            validators=[ValidatorDetails(
+                validator_index=42,
+                public_key=Eth2PubKey('0x' + 'bb' * 48),
+                validator_type=ValidatorType.ACCUMULATING,
+                ownership_proportion=FVal(1),
+                withdrawal_address=TEST_ADDR1,
+                activation_timestamp=Timestamp(SHAPPELA_TIMESTAMP - 10_000),
+            )],
+        )
+
+    t_block = Timestamp(SHAPPELA_TIMESTAMP + 100)
+    t_req = Timestamp(SHAPPELA_TIMESTAMP + 150)
+    t_wd = Timestamp(SHAPPELA_TIMESTAMP + 200)
+    t_spend = Timestamp(SHAPPELA_TIMESTAMP + 300)
+    prices = {
+        (A_ETH, t_block): Price(FVal(2000)),
+        (A_ETH, t_wd): Price(FVal(2500)),
+        (A_ETH, t_spend): Price(FVal(3000)),
+    }
+
+    def price_fn(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        return prices[from_asset, timestamp]
+
+    events: list[HistoryBaseEntry] = [
+        # Tracked block reward: taxable (0.1 ETH @ 2000 = 200)
+        EthBlockEvent(
+            validator_index=42,
+            timestamp=ts_sec_to_ms(t_block),
+            amount=FVal('0.1'),
+            fee_recipient=TEST_ADDR1,
+            fee_recipient_tracked=True,
+            block_number=17_000_001,
+            is_mev_reward=False,
+        ),
+        # EIP-7002 partial withdrawal request for 5 ETH of principal
+        EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=0,
+            timestamp=ts_sec_to_ms(t_req),
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_ETH,
+            amount=FVal(5),
+            location_label=TEST_ADDR1,
+            counterparty=CPT_ETH2,
+            extra_data={'validator_index': 42},
+        ),
+        # Matching 5 ETH partial withdrawal from 0x02 validator: principal, 0 income
+        EthWithdrawalEvent(
+            validator_index=42,
+            timestamp=ts_sec_to_ms(t_wd),
+            amount=FVal(5),
+            withdrawal_address=TEST_ADDR1,
+            is_exit=False,
+        ),
+        # Spend 0.1 ETH @ 3000 (consumes block reward lot: 300 - 200 = +100 capital gain)
+        EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=0,
+            timestamp=ts_sec_to_ms(t_spend),
+            location=LOCATION_ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal('0.1'),
+            location_label=TEST_ADDR1,
+        ),
+    ]
+
+    old_totals, new_result = _run_both_pipelines(
+        database=database,
+        events=events,
+        price_fn=price_fn,
+        start_ts=Timestamp(SHAPPELA_TIMESTAMP),
+        end_ts=Timestamp(SHAPPELA_TIMESTAMP + 1000),
+        eth_staking_taxable_after_withdrawal_enabled=True,
+    )
+    assert old_totals == (FVal(300), ZERO)
+    _assert_pnl_parity(old_totals, new_result)
+    assert new_result['num_unpriced_events'] == 0
 
 
 def test_multi_bucket_intentional_divergence_vs_global_pot(database: DBHandler) -> None:

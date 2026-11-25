@@ -5204,6 +5204,7 @@ def test_upgrade_db_53_to_54(
         assert table_exists(cursor=cursor, name='remediation_plans')
         assert table_exists(cursor=cursor, name='remediation_plan_audit')
         assert table_exists(cursor=cursor, name='event_cost_basis')
+        assert column_exists(cursor, 'event_cost_basis', 'is_taxable')
         assert table_exists(cursor=cursor, name='cost_basis_checkpoints')
         for index_name in (
             'idx_event_cost_basis_bucket',

@@ -14384,7 +14384,7 @@ Realized PnL of history events
 
       {"from_timestamp": 1672531200, "to_timestamp": 1704067199, "group_by": "asset"}
 
-   The request takes the same filters as the history events endpoint, documented `here <filter-request-args-label_>`_, other than the ordering and pagination ones. All filters apply to the history event that realized the PnL. The events of the swaps, transfers and basis transfers that realized nothing, as well as unpriced spends whose realized PnL is unknown, still count in ``basis_removed`` and ``num_events`` while adding nothing to ``realized_pnl``. Unpriced taxable spends are counted in ``num_unpriced_events`` so callers can tell that the realized PnL total is incomplete.
+   The request takes the same filters as the history events endpoint, documented `here <filter-request-args-label_>`_, other than the ordering and pagination ones. All filters apply to the history event that realized the PnL. The events of the swaps, transfers and basis transfers that realized nothing, as well as unpriced spends and taxable acquisitions whose realized PnL is unknown, still count in ``basis_removed`` and ``num_events`` while adding nothing to ``realized_pnl``. Unpriced taxable events (spends and taxable acquisitions) are counted in ``num_unpriced_events`` so callers can tell that the realized PnL total is incomplete.
 
    :reqjson string[optional] group_by: What to break the result down by. One of ``"asset"``, ``"location"``, ``"location_label"``, ``"protocol"``, which are parts of the bucket the event occurred in, or ``"day"``, ``"week"``, ``"month"``, ``"year"``, which are the period of the event in UTC using ISO 8601 weeks (``YYYY-Www``). If missing the breakdown has a single entry.
 
@@ -14412,7 +14412,7 @@ Realized PnL of history events
 
    :resjson string total_realized_pnl: The sum of the taxable realized PnL of all matching priced events.
    :resjson string total_taxfree_pnl: The sum of the tax-free realized PnL of all matching priced events (e.g. gains on lots held past ``taxfree_after_period``).
-   :resjson int num_unpriced_events: The number of matching taxable spend events whose realized PnL is unknown because no historical price was available.
+   :resjson int num_unpriced_events: The number of matching taxable events (spends and taxable acquisitions) whose realized PnL is unknown because no historical price was available.
    :resjson list breakdown: One entry per group, ordered by ``group_key``. Empty if no event matches. ``group_key`` is the value of the grouping, e.g. the asset identifier or ``"2023-05"`` for a month, and is null when no grouping was requested or when the bucket has no value for it, e.g. no protocol. ``realized_pnl`` is the taxable PnL, ``taxfree_pnl`` the tax-free PnL, ``basis_removed`` the cost basis of what was spent, ``num_events`` the number of events in the group, and ``num_unpriced_events`` how many of those had no price for their realized PnL.
    :resjson bool stale: True if the cost basis has not been processed yet or is waiting to be processed again, in which case the amounts may be incomplete.
    :resjson string method: The cost basis method of the amounts.
