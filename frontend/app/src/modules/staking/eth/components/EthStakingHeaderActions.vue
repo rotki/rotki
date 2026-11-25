@@ -10,10 +10,10 @@ import StakingRefreshActions from '@/modules/staking/components/StakingRefreshAc
  * it, the optional Beaconcha.in key. The settings button carries a dot while the key offer has not
  * been answered.
  */
-const { optionalApiKeyService, queryingEvents = false } = defineProps<{
+const { optionalApiKeyService } = defineProps<{
   refreshing: boolean;
   /** Staking events are being queried without the page's Refresh, shown as a note beside it. */
-  queryingEvents?: boolean;
+  queryingEvents: boolean;
   syncingHistory: boolean;
   /** The chain the history sync queries, named in its menu entry. */
   chainName: string;
@@ -35,9 +35,19 @@ const attentionHint = computed<string | undefined>(() =>
 </script>
 
 <template>
+  <span
+    role="status"
+    class="sr-only"
+    data-testid="eth-staking-querying-events-status"
+  >
+    <template v-if="queryingEvents">
+      {{ t('staking_page.eth.querying_events') }}
+    </template>
+  </span>
   <div
     v-if="queryingEvents"
     class="flex items-center gap-2 text-caption text-rui-text-secondary"
+    aria-hidden="true"
     data-testid="eth-staking-querying-events"
   >
     <RuiProgress

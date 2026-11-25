@@ -1,3 +1,4 @@
+import type { useTaskCenter } from '@/modules/task-center/use-task-center';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, ref } from 'vue';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
@@ -6,9 +7,10 @@ import { ActivityKind } from '@/modules/task-center/core/types';
 
 const reloadEvents = vi.fn();
 const queryOnlineEvent = vi.fn(async (): Promise<void> => {});
+const syncChainHistory = vi.fn(async (): Promise<void> => {});
 const withdrawalsLoading = ref<boolean>(false);
 const blockProductionsLoading = ref<boolean>(false);
-const useIsActive = vi.fn((_kind: string, queryType: string) => computed<boolean>(() =>
+const useIsActive = vi.fn<ReturnType<typeof useTaskCenter>['useIsActive']>((_kind, queryType) => computed<boolean>(() =>
   get(queryType === OnlineHistoryEventsQueryType.ETH_WITHDRAWALS ? withdrawalsLoading : blockProductionsLoading)));
 
 vi.mock('@/modules/history/events/use-history-events-section', () => ({
@@ -22,7 +24,7 @@ vi.mock('@/modules/history/events/tx/use-refresh-handlers', () => ({
 vi.mock('@/modules/staking/use-staking-history-sync', () => ({
   useStakingHistorySync: vi.fn(() => ({
     chainName: computed<string>(() => 'Ethereum'),
-    syncHistory: vi.fn(),
+    syncHistory: syncChainHistory,
     syncingHistory: computed<boolean>(() => false),
   })),
 }));
@@ -98,12 +100,10 @@ describe('useEthStakingPageRefresh', () => {
   });
 
   it('should count as refreshing until its own refresh settles, without also reporting its queries as querying', async () => {
-    let finishBlocks: () => void = () => {};
-    queryOnlineEvent
-      .mockImplementationOnce(async (): Promise<void> => {})
-      .mockImplementationOnce(async () => new Promise<void>((resolve) => {
-        finishBlocks = resolve;
-      }));
+    let finishQuery: () => void = () => {};
+    queryOnlineEvent.mockImplementationOnce(async () => new Promise<void>((resolve) => {
+      finishQuery = resolve;
+    }));
     const { queryingEvents, refreshPage, refreshing } = useEthStakingPageRefresh(refreshStaking, computed<boolean>(() => get(stakingRefreshing)));
 
     const pending = refreshPage();
@@ -111,10 +111,28 @@ describe('useEthStakingPageRefresh', () => {
     expect(get(refreshing)).toBe(true);
     expect(get(queryingEvents)).toBe(false);
 
-    finishBlocks();
+    finishQuery();
     set(blockProductionsLoading, false);
     await pending;
     expect(get(refreshing)).toBe(false);
+  });
+
+  it('should not report the staking events its own history sync queries as querying', async () => {
+    let finishSync: () => void = () => {};
+    syncChainHistory.mockImplementationOnce(async () => new Promise<void>((resolve) => {
+      finishSync = resolve;
+    }));
+    const { queryingEvents, refreshing, syncHistory } = useEthStakingPageRefresh(refreshStaking, computed<boolean>(() => get(stakingRefreshing)));
+
+    const pending = syncHistory();
+    set(withdrawalsLoading, true);
+    expect(get(queryingEvents)).toBe(false);
+    expect(get(refreshing)).toBe(false);
+
+    finishSync();
+    await pending;
+    expect(syncChainHistory).toHaveBeenCalledOnce();
+    expect(get(queryingEvents)).toBe(true);
   });
 
   it('should pass the history sync through for the refresh menu', () => {
