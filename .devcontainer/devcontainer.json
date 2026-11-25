@@ -1,0 +1,65 @@
+{
+  // Pins no tool version: setup.sh reads them from the files CI uses. See README.md.
+  "name": "rotki",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+  "remoteUser": "vscode",
+  "containerEnv": {
+    // The checkout is shared with the host, so the venv lives in a volume
+    // instead of .venv, which the host may be using. uv and dev:web honor this.
+    "UV_PROJECT_ENVIRONMENT": "/home/vscode/venv",
+    // The venv and the uv cache sit on different volumes, so hardlinks between
+    // them fail. Copy instead of warning on every sync.
+    "UV_LINK_MODE": "copy",
+    // pnpm otherwise puts its store at the root of the checkout's filesystem,
+    // which here is the bind mount, so the store lands in the host checkout.
+    // pnpm 12 ignores the npm_config_ spelling.
+    "pnpm_config_store_dir": "/home/vscode/.cache/pnpm-store",
+    // There is no xdg-open in the container, and Vite crashes trying to open a
+    // tab. The editor opens the forwarded port instead (onAutoForward below).
+    "BROWSER": "none",
+    // Vite listens on `localhost`, which Node would otherwise resolve to ::1
+    // only, leaving nothing on 127.0.0.1:8080 for the port forwarder.
+    "NODE_OPTIONS": "--dns-result-order=ipv4first"
+  },
+  "remoteEnv": {
+    "PATH": "/home/vscode/.local/bin:/home/vscode/.local/node/bin:/home/vscode/.cargo/bin:${containerEnv:PATH}"
+  },
+  // Toolchains and download caches are shared by every checkout, so a rebuild
+  // or a second worktree does not download them again. Everything tied to one
+  // checkout gets a volume named after it (devcontainerId): the venv, the
+  // node_modules folders, which would otherwise replace the host's, and the
+  // rotki dev data, so two branches never open each other's databases.
+  // setup.sh refuses to run if a workspace package's node_modules is missing here.
+  "mounts": [
+    "source=rotki-devcontainer-cargo,target=/home/vscode/.cargo,type=volume",
+    "source=rotki-devcontainer-rustup,target=/home/vscode/.rustup,type=volume",
+    "source=rotki-devcontainer-cache,target=/home/vscode/.cache,type=volume",
+    "source=rotki-devcontainer-local,target=/home/vscode/.local,type=volume",
+    "source=rotki-devcontainer-${devcontainerId}-data,target=/home/vscode/.local/share/rotki,type=volume",
+    "source=rotki-devcontainer-${devcontainerId}-venv,target=/home/vscode/venv,type=volume",
+    "source=rotki-devcontainer-${devcontainerId}-nm,target=${containerWorkspaceFolder}/frontend/node_modules,type=volume",
+    "source=rotki-devcontainer-${devcontainerId}-nm-app,target=${containerWorkspaceFolder}/frontend/app/node_modules,type=volume",
+    "source=rotki-devcontainer-${devcontainerId}-nm-common,target=${containerWorkspaceFolder}/frontend/common/node_modules,type=volume",
+    "source=rotki-devcontainer-${devcontainerId}-nm-dev-proxy,target=${containerWorkspaceFolder}/frontend/dev-proxy/node_modules,type=volume"
+  ],
+  "postCreateCommand": ".devcontainer/setup.sh",
+  // The page loads from Vite (8080) and calls starling's proxy (4141) directly,
+  // so both must keep their numbers on the host. requireLocalPort makes a busy
+  // host port fail loudly instead of being remapped and breaking the API calls.
+  "forwardPorts": [8080, 4141],
+  "portsAttributes": {
+    "8080": { "label": "rotki web", "onAutoForward": "openBrowser", "requireLocalPort": true },
+    "4141": { "label": "rotki api", "onAutoForward": "silent", "requireLocalPort": true }
+  },
+  "otherPortsAttributes": { "onAutoForward": "ignore" },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/home/vscode/venv/bin/python"
+      }
+    }
+  },
+  "hostRequirements": {
+    "memory": "8gb"
+  }
+}
