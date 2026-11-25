@@ -246,6 +246,12 @@ export default defineConfig({
         {
           '@rotki/ui-library': ['useRotkiTheme', 'useBreakpoint', 'contextColors'],
         },
+        // Take over VueUse's debounce/throttle helpers: theirs keep firing after the scope that made them is gone.
+        {
+          from: '@/modules/core/common/async/scoped-timers',
+          imports: ['refDebounced', 'refThrottled', 'useDebounceFn', 'useThrottleFn', 'watchDebounced', 'watchThrottled'],
+          priority: 10,
+        },
       ],
       dts: './auto-imports.d.ts',
       vueTemplate: true,

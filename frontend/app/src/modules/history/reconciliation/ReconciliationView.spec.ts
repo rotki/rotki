@@ -383,4 +383,30 @@ describe('reconciliationView', () => {
     expect(wrapper.find('[data-testid="reconciliation-filter-error"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="reconciliation-nothing-attention"]').exists()).toBe(false);
   });
+
+  it('should not rewrite the route query from a filter sync still pending when the view goes away', async () => {
+    const globalReport = report(false);
+    fetchSummary.mockResolvedValue(globalReport);
+
+    await useRouter().replace({ query: { asset: 'USDC' } });
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const wrapper = mountView();
+      await flushPromises();
+
+      // clearing the filters also schedules the debounced filter sync
+      await wrapper.get('[data-testid="reconciliation-clear-filters"]').trigger('click');
+      await flushPromises();
+      wrapper.unmount();
+
+      await useRouter().replace({ query: { asset: 'DAI' } });
+      await vi.advanceTimersByTimeAsync(300); // past the debounce
+      await flushPromises();
+
+      expect(useRouter().currentRoute.value.query).toEqual({ asset: 'DAI' });
+    }
+    finally {
+      vi.useRealTimers();
+    }
+  });
 });
