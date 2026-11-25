@@ -126,8 +126,9 @@ def test_rate_limit_waits_reported_only_inside_a_staking_query(
         database,
         messages_aggregator,
 ) -> None:
-    """Test that a beaconcha.in rate limit wait is reported as a wait of the staking events
-    query running in the thread, and not reported for any other beaconcha.in query."""
+    """Test that a beaconcha.in rate limit wait, and its end, are reported as a wait of the
+    staking events query running in the thread, and not reported for any other beaconcha.in
+    query."""
     with database.user_write() as write_cursor:
         database.add_external_service_credentials(write_cursor, [ExternalServiceApiCredentials(
             service=ExternalService.BEACONCHAIN,
@@ -165,8 +166,8 @@ def test_rate_limit_waits_reported_only_inside_a_staking_query(
         'query_type': 'block_productions',
         'processed': 0,
         'total': 4,
-        'waiting_seconds': 2,
-    }]
+        'waiting_seconds': waiting_seconds,
+    } for waiting_seconds in (2, None)]  # the wait, then its end
 
 
 def test_free_trial_expired_deletes_api_key(
