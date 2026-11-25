@@ -52,10 +52,8 @@ vi.mock('@/modules/core/tasks/use-task-store', () => ({
 vi.mock('@/modules/task-center/use-task-center', () => ({
   ActivityKind: { ONLINE_EVENTS: 'online-events', STAKING: 'staking' },
   useTaskCenter: vi.fn(() => ({
-    useIsActive: vi.fn((kind: string) => computed<boolean>(() =>
-      kind === 'online-events' ? get(mockBlockProductionLoading) : get(mockPerformanceRefreshing))),
-    useWorkStatus: vi.fn((kind: string) => computed(() => {
-      const active = kind === 'online-events' ? get(mockBlockProductionLoading) : get(mockPerformanceRefreshing);
+    useWorkStatus: vi.fn(() => computed(() => {
+      const active = get(mockPerformanceRefreshing);
       return {
         active,
         everCompleted: !get(mockEverCompleted),
@@ -223,13 +221,6 @@ describe('useEthStakingRefresh', () => {
       set(mockEth2Loading, true);
 
       expect(get(refreshing)).toBe(true);
-    });
-
-    it('should not be refreshing while only block production is queried', () => {
-      const { refreshing } = useEthStakingRefresh(createCallbacks());
-      set(mockBlockProductionLoading, true);
-
-      expect(get(refreshing)).toBe(false);
     });
 
     it('should not be refreshing when nothing is loading', () => {

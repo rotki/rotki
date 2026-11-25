@@ -4,13 +4,14 @@ import { libraryDefaults } from '@test/utils/provide-defaults';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent } from 'vue';
+import { defineComponent, nextTick } from 'vue';
 import EthStakingPage from '@/modules/staking/eth/EthStakingPage.vue';
 
-const { access, refresh } = await vi.hoisted(async () => {
+const { access, pageRefreshing, refresh } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   return {
     access: { allowed: ref<boolean>(true), enabled: ref<boolean>(true) },
+    pageRefreshing: ref<boolean>(false),
     refresh: vi.fn<(userInitiated?: boolean) => Promise<void>>(async () => {}),
   };
 });
@@ -47,7 +48,7 @@ vi.mock('@/modules/staking/eth/use-eth-staking-page-refresh', async () => {
       chainName: computed<string>(() => 'Ethereum'),
       queryingEvents: computed<boolean>(() => false),
       refreshPage: vi.fn(),
-      refreshing: computed<boolean>(() => false),
+      refreshing: computed<boolean>(() => get(pageRefreshing)),
       syncHistory: vi.fn(),
       syncingHistory: computed<boolean>(() => false),
     })),
@@ -94,7 +95,11 @@ vi.mock('@/modules/settings/use-setting', async () => {
 vi.mock('@/modules/premium/premium', async () => {
   const { defineComponent } = await import('vue');
   return {
-    EthStaking: defineComponent({ name: 'EthStakingStub', template: '<div data-testid="eth-staking" />' }),
+    EthStaking: defineComponent({
+      name: 'EthStakingStub',
+      props: { refreshing: Boolean },
+      template: '<div data-testid="eth-staking" :data-refreshing="String(refreshing)" />',
+    }),
   };
 });
 
@@ -140,6 +145,7 @@ describe('modules/staking/eth/EthStakingPage', () => {
     vi.clearAllMocks();
     set(access.allowed, true);
     set(access.enabled, true);
+    set(pageRefreshing, false);
   });
 
   describe('without premium', () => {
@@ -181,6 +187,15 @@ describe('modules/staking/eth/EthStakingPage', () => {
       expect(wrapper.findComponent(HeaderActionsStub).exists()).toBe(true);
       expect(refresh).toHaveBeenCalledOnce();
       expect(refresh).toHaveBeenCalledWith(false);
+    });
+
+    it('should keep the staking figures out of loading while only its Refresh waits on the event queries', async () => {
+      const wrapper = await mountPage();
+
+      set(pageRefreshing, true);
+      await nextTick();
+
+      expect(wrapper.find('[data-testid=eth-staking]').attributes('data-refreshing')).toBe('false');
     });
   });
 });

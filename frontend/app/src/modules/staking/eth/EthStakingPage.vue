@@ -114,7 +114,7 @@ onBeforeMount(async () => {
       <EthStaking
         v-model:performance-pagination="performancePagination"
         v-model:filter="modelFilter"
-        :refreshing="refreshing"
+        :refreshing="stakingRefreshing"
         :total="total"
         :accounts="modelSelection"
         :performance="performance"

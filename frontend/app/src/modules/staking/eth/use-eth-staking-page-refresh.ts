@@ -7,10 +7,11 @@ import { ActivityKind, useTaskCenter } from '@/modules/task-center/use-task-cent
 
 interface UseEthStakingPageRefreshReturn {
   chainName: ComputedRef<string>;
-  refreshPage: () => Promise<void>;
-  refreshing: ComputedRef<boolean>;
-  /** Staking events being queried that the page's own Refresh did not ask for. */
+  /** Staking events being queried that neither the page's Refresh nor its history sync asked for. */
   queryingEvents: ComputedRef<boolean>;
+  refreshPage: () => Promise<void>;
+  /** The page's figures loading, or its own Refresh running until every query it started settles. */
+  refreshing: ComputedRef<boolean>;
   syncHistory: () => Promise<void>;
   syncingHistory: ComputedRef<boolean>;
 }
@@ -33,10 +34,15 @@ export function useEthStakingPageRefresh(
 ): UseEthStakingPageRefreshReturn {
   const { reload: reloadEvents } = provideHistoryEventsSection();
   const { queryOnlineEvent } = useRefreshHandlers();
-  const { chainName, syncHistory, syncingHistory } = useStakingHistorySync(reloadEvents);
+  const { chainName, syncHistory: syncChainHistory, syncingHistory } = useStakingHistorySync(reloadEvents);
   const { useIsActive } = useTaskCenter();
 
   const pageRefreshing = shallowRef<boolean>(false);
+  /**
+   * Only the sync this page's menu started. `syncingHistory` cannot stand in for it: the events
+   * section's own refresh runs under the same history sync activity.
+   */
+  const pageSyncing = shallowRef<boolean>(false);
 
   const eventsLoading = logicOr(
     useIsActive(ActivityKind.ONLINE_EVENTS, OnlineHistoryEventsQueryType.ETH_WITHDRAWALS),
@@ -44,7 +50,7 @@ export function useEthStakingPageRefresh(
   );
 
   const refreshing = logicOr(stakingRefreshing, pageRefreshing);
-  const queryingEvents = logicAnd(eventsLoading, logicNot(pageRefreshing));
+  const queryingEvents = logicAnd(eventsLoading, logicNot(logicOr(pageRefreshing, pageSyncing)));
 
   async function refreshPage(): Promise<void> {
     set(pageRefreshing, true);
@@ -59,6 +65,16 @@ export function useEthStakingPageRefresh(
       set(pageRefreshing, false);
     }
     reloadEvents();
+  }
+
+  async function syncHistory(): Promise<void> {
+    set(pageSyncing, true);
+    try {
+      await syncChainHistory();
+    }
+    finally {
+      set(pageSyncing, false);
+    }
   }
 
   return {
