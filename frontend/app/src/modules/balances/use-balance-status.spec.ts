@@ -1,10 +1,10 @@
-import type { Result } from 'plainfp/result';
-import type { TaskError } from '@/modules/core/tasks/task-result';
 import { neverSettles } from '@test/utils/never-settles';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { err, type Result } from 'plainfp/result';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
-import { useBalanceStatus } from '@/modules/balances/use-balance-status';
+import { useBalanceStatus, useChainLoadStates } from '@/modules/balances/use-balance-status';
+import { Skipped, type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { ActivityKind, makeActivityId } from '@/modules/task-center/core/types';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
@@ -151,5 +151,54 @@ describe('useBalanceStatus', () => {
       refreshState.stop('optimism');
       expect(get(isRefreshing)).toBe(false);
     });
+  });
+});
+
+describe('useChainLoadStates', () => {
+  /** A fetch that ends at once with the given outcome. */
+  async function settleFetch(chain: string, outcome: Result<unknown, TaskError>): Promise<void> {
+    useTaskOrchestrator().submit({
+      id: makeActivityId(ActivityKind.BLOCKCHAIN_BALANCES, chain),
+      kind: ActivityKind.BLOCKCHAIN_BALANCES,
+      run: async (): Promise<Result<unknown, TaskError>> => outcome,
+      title: chain,
+    });
+    await vi.waitFor(() => expect(useTaskOrchestrator().statusOfPrefix(ActivityKind.BLOCKCHAIN_BALANCES, chain).active).toBe(false));
+  }
+
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    useTaskOrchestrator().reset();
+  });
+
+  it('should count every chain that has never loaded as loading until the login load settles, when asked to', () => {
+    expect(get(useChainLoadStates(['eth', 'gnosis'], { untilFirstLoad: true }).loading)).toStrictEqual(['eth', 'gnosis']);
+    expect(get(useChainLoadStates(['eth', 'gnosis']).loading)).toStrictEqual([]);
+  });
+
+  it('should count a chain as loading only while it is read for the first time', () => {
+    useBalanceRefreshState().settleFirstLoad();
+    const { loading } = useChainLoadStates(['eth', 'gnosis', 'base'], { untilFirstLoad: true });
+    startFetch('eth');
+    useBalanceRefreshState().startHydration('gnosis');
+
+    expect(get(loading)).toStrictEqual(['eth', 'gnosis']);
+  });
+
+  it('should not count a chain that loaded before as loading when it refreshes again', () => {
+    markLoaded('eth');
+    startFetch('eth');
+
+    expect(get(useChainLoadStates(['eth']).loading)).toStrictEqual([]);
+  });
+
+  it('should call unloaded a chain that never loaded or whose last load failed, but not one switched off', async () => {
+    useBalanceRefreshState().settleFirstLoad();
+    markLoaded('eth');
+    markLoaded('base');
+    await settleFetch('base', err(TaskFailed({ message: 'rpc down' })));
+    await settleFetch('gnosis', err(Skipped({ message: 'disabled in settings' })));
+
+    expect(get(useChainLoadStates(['eth', 'base', 'gnosis', 'monad']).unloaded)).toStrictEqual(['base', 'monad']);
   });
 });

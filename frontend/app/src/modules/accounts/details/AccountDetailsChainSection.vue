@@ -32,7 +32,6 @@ const chains = computed<string[]>(() => [chain]);
       :chains="chains"
       :selection-mode="selectionMode"
       :limit="CHAIN_ASSET_LIMIT"
-      hide-empty
     >
       <template #header="{ value }">
         <header class="flex items-center gap-2">

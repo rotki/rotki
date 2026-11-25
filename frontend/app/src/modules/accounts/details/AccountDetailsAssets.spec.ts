@@ -4,9 +4,9 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AccountDetailsAssets from '@/modules/accounts/details/AccountDetailsAssets.vue';
 
-const { assets } = await vi.hoisted(async () => {
+const { assets, liabilities } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
-  return { assets: ref<AssetBalanceWithPrice[]>([]) };
+  return { assets: ref<AssetBalanceWithPrice[]>([]), liabilities: ref<AssetBalanceWithPrice[]>([]) };
 });
 
 vi.mock('@/modules/balances/use-aggregated-balances', async () => {
@@ -14,7 +14,7 @@ vi.mock('@/modules/balances/use-aggregated-balances', async () => {
   return {
     useAggregatedBalances: (): object => ({
       useBlockchainBalances: (_chains: unknown, _group: unknown, kind?: string): unknown =>
-        computed<AssetBalanceWithPrice[]>(() => (kind === 'liabilities' ? [] : get(assets))),
+        computed<AssetBalanceWithPrice[]>(() => get(kind === 'liabilities' ? liabilities : assets)),
     }),
   };
 });
@@ -33,7 +33,7 @@ function asset(id: string, value: number): AssetBalanceWithPrice {
   return createMock<AssetBalanceWithPrice>({ asset: id, value: bigNumberify(value) });
 }
 
-function createWrapper(props: { searchable?: boolean; limit?: number; hideEmpty?: boolean } = {}): VueWrapper {
+function createWrapper(props: { searchable?: boolean; limit?: number } = {}): VueWrapper {
   return mount(AccountDetailsAssets, {
     global: { stubs },
     props: { chains: ['eth'], groupId: '0x1', selected: undefined, ...props },
@@ -48,6 +48,7 @@ function listed(wrapper: VueWrapper): string[] {
 describe('modules/accounts/details/AccountDetailsAssets', () => {
   beforeEach(() => {
     set(assets, [asset('A', 1), asset('B', 30), asset('C', 5), asset('D', 20)]);
+    set(liabilities, []);
   });
 
   it('should hand its header the value of every asset in scope, the ones past the limit too', () => {
@@ -104,17 +105,14 @@ describe('modules/accounts/details/AccountDetailsAssets', () => {
     expect(wrapper.find('[data-testid=account-details-assets-show-all]').exists()).toBe(false);
   });
 
-  it('should leave out the assets table when asked to hide it while there are no assets', () => {
+  it('should leave out the empty assets table when the liabilities fill the space', () => {
     set(assets, []);
+    set(liabilities, [asset('DAI', 1)]);
 
-    expect(createWrapper({ hideEmpty: true }).findComponent({ name: 'AssetBalances' }).exists()).toBe(false);
+    expect(createWrapper().findComponent({ name: 'AssetBalances' }).exists()).toBe(false);
   });
 
-  it('should keep the assets table when asked to hide it empty but there are assets', () => {
-    expect(createWrapper({ hideEmpty: true }).findComponent({ name: 'AssetBalances' }).exists()).toBe(true);
-  });
-
-  it('should keep the empty assets table unless asked to hide it', () => {
+  it('should keep the empty assets table when there are no liabilities either', () => {
     set(assets, []);
 
     expect(createWrapper().findComponent({ name: 'AssetBalances' }).exists()).toBe(true);

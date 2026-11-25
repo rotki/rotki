@@ -7,7 +7,7 @@ import { type AccountGroupId, getAccountLabel, getGroupId, isXpubAccount } from 
 import AccountGroupDetailsTable from '@/modules/accounts/AccountGroupDetailsTable.vue';
 import { AccountDetailsView, accountDetailsViews } from '@/modules/accounts/details/account-details-views';
 import AccountDetailsAssets from '@/modules/accounts/details/AccountDetailsAssets.vue';
-import AccountDetailsChainSection from '@/modules/accounts/details/AccountDetailsChainSection.vue';
+import AccountDetailsChains from '@/modules/accounts/details/AccountDetailsChains.vue';
 import AccountDetailsHeader from '@/modules/accounts/details/AccountDetailsHeader.vue';
 import { useAccountDetailsRoute } from '@/modules/accounts/details/use-account-details-route';
 import { useDrawerDismiss } from '@/modules/accounts/details/use-drawer-dismiss';
@@ -17,7 +17,6 @@ import { useDrawerPresence } from '@/modules/accounts/details/use-drawer-presenc
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
-import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { provideTableScroller } from '@/modules/core/table/use-table-row-window';
 
 const selectedAssets = defineModel<string[] | undefined>('selectedAssets', { required: true });
@@ -59,7 +58,6 @@ const { isChainSettled } = useBlockchainAccountsStore();
 
 const { accountId, close, discard, open, setView, view } = useAccountDetailsRoute();
 const { getAccountsByCategory } = useBlockchainAccountData();
-const { getBlockchainBalances } = useAggregatedBalances();
 const { chainIds } = useAccountCategoryHelper(() => category);
 const groups = getAccountsByCategory(() => category);
 
@@ -99,16 +97,7 @@ const chains = computed<string[]>(() => {
   return current.chains.filter(chain => !excluded.includes(chain));
 });
 
-/** The chains in scope where the account holds assets or owes liabilities; the rest get no section. */
-const chainsWithBalances = computed<string[]>(() => {
-  const id = get(groupId);
-  if (!id)
-    return [];
-
-  return get(chains).filter(chain =>
-    getBlockchainBalances([chain], id).length > 0 || getBlockchainBalances([chain], id, 'liabilities').length > 0,
-  );
-});
+const chainsFiltered = computed<boolean>(() => (get(shownGroup)?.chains.length ?? 0) > get(chains).length);
 
 /**
  * The derived addresses of an xpub that hold nothing, which the list hides until asked.
@@ -268,26 +257,14 @@ defineExpose({
             :selection-mode="selectionMode"
             searchable
           />
-          <div
+          <AccountDetailsChains
             v-else-if="currentView === AccountDetailsView.CHAINS"
-            class="flex flex-col gap-6"
-          >
-            <AccountDetailsChainSection
-              v-for="chain in chainsWithBalances"
-              :key="`${groupId}:${chain}`"
-              v-model:selected="selectedAssets"
-              :chain="chain"
-              :group-id="groupId"
-              :selection-mode="selectionMode"
-            />
-            <p
-              v-if="chainsWithBalances.length === 0"
-              class="text-body-2 text-rui-text-secondary"
-              data-testid="account-details-no-chain-balances"
-            >
-              {{ t('account_balances.no_chain_balances') }}
-            </p>
-          </div>
+            v-model:selected="selectedAssets"
+            :group-id="groupId"
+            :chains="chains"
+            :filtered="chainsFiltered"
+            :selection-mode="selectionMode"
+          />
           <AccountGroupDetailsTable
             v-else
             ref="detailsTable"

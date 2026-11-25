@@ -88,7 +88,9 @@
       "account": "Account",
       "chain": "Chain"
     },
+    "loading_chain_balances": "Loading balances on {count} chain | Loading balances on {count} chains",
     "no_chain_balances": "This account holds nothing on any of its chains.",
+    "no_shown_chain_balances": "Nothing on the chains shown. Switch more chains on above to see the rest.",
     "open_details": "Open details of {account}",
     "per_chain": "Per chain",
     "refresh_menu": {
@@ -122,6 +124,7 @@
       "skipped": "Queries skipped",
       "title": "Last balance refresh per chain"
     },
+    "unloaded_chain_balances": "Balances on {chains} have not loaded yet. Refresh balances to try again.",
     "xpub": {
       "empty_hidden": "{count} address with no balance is hidden. | {count} addresses with no balance are hidden.",
       "funded": "{funded} of {count} address holds a balance | {funded} of {count} addresses hold a balance",

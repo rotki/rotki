@@ -37,6 +37,10 @@ vi.mock('@/modules/task-center/use-task-orchestrator', () => ({
       state.prefixReads.push(args);
       return { active: false, everCompleted: state.everCompleted };
     },
+    useWorkStatus: (...args: unknown[]): ComputedRef<OrchestratorStatus> => computed<OrchestratorStatus>(() => {
+      state.kindReads.push(args);
+      return { active: false, everCompleted: state.everCompleted };
+    }),
     version: computed<number>(() => 0),
   })),
 }));
