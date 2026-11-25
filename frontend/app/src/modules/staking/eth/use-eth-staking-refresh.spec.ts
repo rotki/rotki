@@ -204,13 +204,6 @@ describe('useEthStakingRefresh', () => {
   });
 
   describe('loading states', () => {
-    it('should expose block production loading state', () => {
-      const { blockProductionLoading } = useEthStakingRefresh(createCallbacks());
-      set(mockBlockProductionLoading, true);
-
-      expect(get(blockProductionLoading)).toBe(true);
-    });
-
     it('should expose performance refreshing state', () => {
       const { performanceRefreshing } = useEthStakingRefresh(createCallbacks());
       set(mockPerformanceRefreshing, true);
@@ -232,11 +225,11 @@ describe('useEthStakingRefresh', () => {
       expect(get(refreshing)).toBe(true);
     });
 
-    it('should be refreshing when block production is loading', () => {
+    it('should not be refreshing while only block production is queried', () => {
       const { refreshing } = useEthStakingRefresh(createCallbacks());
       set(mockBlockProductionLoading, true);
 
-      expect(get(refreshing)).toBe(true);
+      expect(get(refreshing)).toBe(false);
     });
 
     it('should not be refreshing when nothing is loading', () => {

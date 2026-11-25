@@ -9,6 +9,8 @@ interface UseEthStakingPageRefreshReturn {
   chainName: ComputedRef<string>;
   refreshPage: () => Promise<void>;
   refreshing: ComputedRef<boolean>;
+  /** Staking events being queried that the page's own Refresh did not ask for. */
+  queryingEvents: ComputedRef<boolean>;
   syncHistory: () => Promise<void>;
   syncingHistory: ComputedRef<boolean>;
 }
@@ -34,21 +36,34 @@ export function useEthStakingPageRefresh(
   const { chainName, syncHistory, syncingHistory } = useStakingHistorySync(reloadEvents);
   const { useIsActive } = useTaskCenter();
 
-  const withdrawalsLoading = useIsActive(ActivityKind.ONLINE_EVENTS, OnlineHistoryEventsQueryType.ETH_WITHDRAWALS);
+  const pageRefreshing = shallowRef<boolean>(false);
 
-  const refreshing = logicOr(stakingRefreshing, withdrawalsLoading);
+  const eventsLoading = logicOr(
+    useIsActive(ActivityKind.ONLINE_EVENTS, OnlineHistoryEventsQueryType.ETH_WITHDRAWALS),
+    useIsActive(ActivityKind.ONLINE_EVENTS, OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS),
+  );
+
+  const refreshing = logicOr(stakingRefreshing, pageRefreshing);
+  const queryingEvents = logicAnd(eventsLoading, logicNot(pageRefreshing));
 
   async function refreshPage(): Promise<void> {
-    await Promise.all([
-      refreshStaking(true),
-      queryOnlineEvent(OnlineHistoryEventsQueryType.ETH_WITHDRAWALS),
-      queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS),
-    ]);
+    set(pageRefreshing, true);
+    try {
+      await Promise.all([
+        refreshStaking(true),
+        queryOnlineEvent(OnlineHistoryEventsQueryType.ETH_WITHDRAWALS),
+        queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS),
+      ]);
+    }
+    finally {
+      set(pageRefreshing, false);
+    }
     reloadEvents();
   }
 
   return {
     chainName,
+    queryingEvents,
     refreshPage,
     refreshing,
     syncHistory,

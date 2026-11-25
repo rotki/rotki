@@ -7,7 +7,9 @@ import { ActivityKind } from '@/modules/task-center/core/types';
 const reloadEvents = vi.fn();
 const queryOnlineEvent = vi.fn(async (): Promise<void> => {});
 const withdrawalsLoading = ref<boolean>(false);
-const useIsActive = vi.fn(() => computed<boolean>(() => get(withdrawalsLoading)));
+const blockProductionsLoading = ref<boolean>(false);
+const useIsActive = vi.fn((_kind: string, queryType: string) => computed<boolean>(() =>
+  get(queryType === OnlineHistoryEventsQueryType.ETH_WITHDRAWALS ? withdrawalsLoading : blockProductionsLoading)));
 
 vi.mock('@/modules/history/events/use-history-events-section', () => ({
   provideHistoryEventsSection: vi.fn(() => ({ reload: reloadEvents })),
@@ -38,6 +40,7 @@ describe('useEthStakingPageRefresh', () => {
     vi.clearAllMocks();
     set(stakingRefreshing, false);
     set(withdrawalsLoading, false);
+    set(blockProductionsLoading, false);
   });
 
   it('should query the staking figures and only the two staking event sources, then reload the events', async () => {
@@ -68,18 +71,50 @@ describe('useEthStakingPageRefresh', () => {
     expect(reloadEvents).toHaveBeenCalledOnce();
   });
 
-  it('should count as refreshing while the staking figures or the withdrawals load', () => {
+  it('should count as refreshing while the staking figures load', () => {
     const { refreshing } = useEthStakingPageRefresh(refreshStaking, computed<boolean>(() => get(stakingRefreshing)));
 
-    expect(useIsActive).toHaveBeenCalledWith(ActivityKind.ONLINE_EVENTS, OnlineHistoryEventsQueryType.ETH_WITHDRAWALS);
     expect(get(refreshing)).toBe(false);
 
     set(stakingRefreshing, true);
     expect(get(refreshing)).toBe(true);
+  });
 
-    set(stakingRefreshing, false);
+  it('should not count staking events queried without its refresh as refreshing, but report them as querying', () => {
+    const { queryingEvents, refreshing } = useEthStakingPageRefresh(refreshStaking, computed<boolean>(() => get(stakingRefreshing)));
+
+    expect(useIsActive).toHaveBeenCalledWith(ActivityKind.ONLINE_EVENTS, OnlineHistoryEventsQueryType.ETH_WITHDRAWALS);
+    expect(useIsActive).toHaveBeenCalledWith(ActivityKind.ONLINE_EVENTS, OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS);
+    expect(get(queryingEvents)).toBe(false);
+
+    set(blockProductionsLoading, true);
+    expect(get(refreshing)).toBe(false);
+    expect(get(queryingEvents)).toBe(true);
+
+    set(blockProductionsLoading, false);
     set(withdrawalsLoading, true);
+    expect(get(refreshing)).toBe(false);
+    expect(get(queryingEvents)).toBe(true);
+  });
+
+  it('should count as refreshing until its own refresh settles, without also reporting its queries as querying', async () => {
+    let finishBlocks: () => void = () => {};
+    queryOnlineEvent
+      .mockImplementationOnce(async (): Promise<void> => {})
+      .mockImplementationOnce(async () => new Promise<void>((resolve) => {
+        finishBlocks = resolve;
+      }));
+    const { queryingEvents, refreshPage, refreshing } = useEthStakingPageRefresh(refreshStaking, computed<boolean>(() => get(stakingRefreshing)));
+
+    const pending = refreshPage();
+    set(blockProductionsLoading, true);
     expect(get(refreshing)).toBe(true);
+    expect(get(queryingEvents)).toBe(false);
+
+    finishBlocks();
+    set(blockProductionsLoading, false);
+    await pending;
+    expect(get(refreshing)).toBe(false);
   });
 
   it('should pass the history sync through for the refresh menu', () => {
