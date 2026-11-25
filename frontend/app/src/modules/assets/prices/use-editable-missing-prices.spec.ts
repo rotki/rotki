@@ -179,6 +179,27 @@ describe('modules/assets/prices/useEditableMissingPrices', () => {
       expect(addHistoricalPrice).not.toHaveBeenCalled();
       expect(editHistoricalPrice).not.toHaveBeenCalled();
       expect(deleteHistoricalPrice).not.toHaveBeenCalled();
+      expect(onPriceUpdated).not.toHaveBeenCalled();
+    });
+
+    it('should report a row whose saved price was deleted, and not as priced', async () => {
+      scope = effectScope();
+      const onPriceDeleted = vi.fn<(item: EditableMissingPrice) => void>();
+      const api = scope.run(() => useEditableMissingPrices({ items, keyOf, onPriceDeleted, onPriceUpdated }))!;
+      await api.getHistoricalPrices();
+      await api.updatePrice({ ...get(api.formattedItems)[0], price: '', saved: true });
+
+      expect(deleteHistoricalPrice).toHaveBeenCalledOnce();
+      expect(onPriceDeleted).toHaveBeenCalledWith(expect.objectContaining({ fromAsset: 'ETH', time: 1_700_000_000 }));
+      expect(onPriceUpdated).not.toHaveBeenCalled();
+    });
+
+    it('should not report a row as priced when saving its price failed', async () => {
+      const { api, row } = await firstRow();
+      addHistoricalPrice.mockRejectedValueOnce(new Error('the backend rejected the price'));
+      await api.updatePrice({ ...row, price: '1500' });
+
+      expect(onPriceUpdated).not.toHaveBeenCalled();
     });
 
     it('should write nothing for a rate that came from an oracle', async () => {

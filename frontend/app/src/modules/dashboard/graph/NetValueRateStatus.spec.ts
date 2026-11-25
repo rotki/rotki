@@ -55,7 +55,7 @@ describe('netValueRateStatus', () => {
 
   it('should open the missing rates of USD to add them by hand when the oracles have none', async () => {
     set(status, { pending: 0, rateLimited: false, unavailable: 2 });
-    set(failedDailyPrices, { USD: { noPricesTimestamps: [86400], rateLimitedPricesTimestamps: [] } });
+    set(failedDailyPrices, { USD: { failedPricesTimestamps: [], noPricesTimestamps: [86400], rateLimitedPricesTimestamps: [] } });
     const wrapper = createWrapper();
     expect(wrapper.find('[data-testid=net-value-rate-status-unavailable]').exists()).toBe(true);
 

@@ -1,6 +1,7 @@
 import type { KnownPrice } from '@/modules/statistics/pricing/price-series';
 import { onSessionCleared } from '@/modules/core/session/session-lifecycle';
 import { useSetting } from '@/modules/settings/use-setting';
+import { dayStart } from '@/modules/statistics/pricing/backfill-plan';
 
 type PricesByAsset = Readonly<Record<string, readonly KnownPrice[]>>;
 
@@ -48,6 +49,18 @@ export const usePriceSeriesStore = defineStore('statistics/price-series', () => 
     set(prices, { ...current, [asset]: merge(current[asset] ?? [], added) });
   }
 
+  /**
+   * Drops an asset's prices on the given UTC days, for a price that was deleted: the cache is read
+   * again for them, and a price still cached comes back.
+   */
+  function removeDays(asset: string, days: ReadonlySet<number>): void {
+    const current = get(prices);
+    const existing = current[asset] ?? [];
+    const kept = existing.filter(point => !days.has(dayStart(point.time)));
+    if (kept.length !== existing.length)
+      set(prices, { ...current, [asset]: kept });
+  }
+
   function isRequested(key: string): boolean {
     return requested.has(key);
   }
@@ -77,6 +90,7 @@ export const usePriceSeriesStore = defineStore('statistics/price-series', () => 
     isRequested,
     markRequested,
     prices,
+    removeDays,
   };
 });
 

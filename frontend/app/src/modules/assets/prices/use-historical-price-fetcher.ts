@@ -6,7 +6,9 @@ import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-pric
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { logger } from '@/modules/core/common/logging/logging';
 import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
+import { usePriceSeriesStore } from '@/modules/statistics/pricing/use-price-series-store';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
 
@@ -21,18 +23,41 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
   const { submitTask } = useNativeTask();
   const { getAssetField } = useAssetInfoRetrieval();
   const { failedDailyPrices, resolvedFailedDailyPrices } = useHistoricPriceCache();
+  const priceSeries = usePriceSeriesStore();
+  const currencySymbol = useSetting('currencySymbol');
 
-  const resetFailedStates = (asset: string, parsed: HistoricalAssetPriceResponse, excludeTimestamps: number[]): void => {
-    const { noPricesTimestamps, rateLimitedPricesTimestamps } = parsed;
-
+  /**
+   * Files what this fetch could not price. Only the timestamps its answer settles (priced, or
+   * filed on one of its lists) change; every other one keeps what was filed for it, since this
+   * fetch says nothing about it: the backfill files the days it gave up on at their day start,
+   * and the excluded timestamps were not asked about.
+   *
+   * A cache-only read says nothing about the oracles, so it only takes the timestamps it found a
+   * price for off the lists and files nothing.
+   */
+  const resetFailedStates = (payload: HistoricalAssetPricePayload, parsed: HistoricalAssetPriceResponse): void => {
+    const asset = payload.asset;
     const failedState = { ...get(failedDailyPrices) };
     const resolvedState = { ...get(resolvedFailedDailyPrices) };
+    const previous = failedState[asset];
+    const cacheOnly = payload.onlyCachePeriod !== undefined;
+    const settled = new Set([
+      ...Object.keys(parsed.prices).map(Number),
+      ...(cacheOnly ? [] : [...parsed.failedPricesTimestamps, ...parsed.noPricesTimestamps, ...parsed.rateLimitedPricesTimestamps]),
+    ]);
+    const merge = (kept: number[] | undefined, fetched: number[]): number[] => [...new Set([
+      ...(kept ?? []).filter(time => !settled.has(time)),
+      ...(cacheOnly ? [] : fetched),
+    ])];
 
-    if ((noPricesTimestamps.length === 0 && excludeTimestamps.length === 0) && rateLimitedPricesTimestamps.length === 0) {
+    const failedPricesTimestamps = merge(previous?.failedPricesTimestamps, parsed.failedPricesTimestamps);
+    const noPricesTimestamps = merge(previous?.noPricesTimestamps, parsed.noPricesTimestamps);
+    const rateLimitedPricesTimestamps = merge(previous?.rateLimitedPricesTimestamps, parsed.rateLimitedPricesTimestamps);
+
+    if (noPricesTimestamps.length === 0 && rateLimitedPricesTimestamps.length === 0 && failedPricesTimestamps.length === 0) {
       if (failedState[asset]) {
-        const updatedFailedPrices = { ...failedState };
-        delete updatedFailedPrices[asset];
-        set(failedDailyPrices, updatedFailedPrices);
+        delete failedState[asset];
+        set(failedDailyPrices, failedState);
       }
       if (resolvedState[asset]) {
         delete resolvedState[asset];
@@ -42,16 +67,24 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
     else {
       set(failedDailyPrices, {
         ...failedState,
-        [asset]: {
-          noPricesTimestamps: noPricesTimestamps.length > 0 ? noPricesTimestamps : excludeTimestamps,
-          rateLimitedPricesTimestamps,
-        },
+        [asset]: { failedPricesTimestamps, noPricesTimestamps, rateLimitedPricesTimestamps },
       });
     }
   };
 
+  /**
+   * Hands the prices this fetch found to the graphs, which would otherwise not read a day the
+   * backfill gave up on again. Prices are in the main currency, so an answer that arrives after a
+   * switch is left out.
+   */
+  const publishPrices = (asset: string, parsed: HistoricalAssetPriceResponse, currency: string): void => {
+    if (get(currencySymbol) === currency)
+      priceSeries.addPrices(asset, Object.entries(parsed.prices).map(([time, price]) => ({ price, time: Number(time) })));
+  };
+
   const fetchHistoricalAssetPrice = async (payload: HistoricalAssetPricePayload): Promise<HistoricalAssetPriceResponse> => {
     const asset = payload.asset;
+    const currency = get(currencySymbol);
     const failedState = { ...get(failedDailyPrices) };
     const resolvedState = { ...get(resolvedFailedDailyPrices) };
     const failedTimestamps = failedState[asset]?.noPricesTimestamps || [];
@@ -61,6 +94,7 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
       = failedTimestamps.filter(timestamp => !resolvedTimestamps.includes(timestamp));
 
     const empty: HistoricalAssetPriceResponse = {
+      failedPricesTimestamps: [],
       noPricesTimestamps: [],
       prices: {},
       rateLimitedPricesTimestamps: [],
@@ -78,7 +112,8 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
         ),
         (result) => {
           const parsed = HistoricalAssetPriceResponse.parse(result);
-          resetFailedStates(asset, parsed, excludeTimestamps);
+          resetFailedStates(payload, parsed);
+          publishPrices(asset, parsed, currency);
           return parsed;
         },
       ),

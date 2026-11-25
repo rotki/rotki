@@ -20,8 +20,10 @@ interface UseEditableMissingPricesOptions {
    * triple, while a single-asset dialog only needs the timestamp.
    */
   keyOf: (item: MissingPrice) => string;
-  /** Called after a row's price is written, for bookkeeping the caller owns. */
+  /** Called after a price is saved for a row, for bookkeeping the caller owns. Not called when nothing was saved or the save failed. */
   onPriceUpdated?: (item: EditableMissingPrice) => void;
+  /** Called after a row's saved price is deleted, so the caller can undo what it did on save. */
+  onPriceDeleted?: (item: EditableMissingPrice) => void;
 }
 
 interface UseEditableMissingPricesReturn {
@@ -59,7 +61,7 @@ interface UseEditableMissingPricesReturn {
  * @returns the rows and the two things a user can do to one
  */
 export function useEditableMissingPrices(options: UseEditableMissingPricesOptions): UseEditableMissingPricesReturn {
-  const { items, keyOf, onPriceUpdated } = options;
+  const { items, keyOf, onPriceDeleted, onPriceUpdated } = options;
 
   const { t } = useI18n({ useScope: 'global' });
 
@@ -111,7 +113,8 @@ export function useEditableMissingPrices(options: UseEditableMissingPricesOption
       set(errorMessages, rest);
   }
 
-  async function writePrice(item: EditableMissingPrice, payload: HistoricalPriceDeletePayload): Promise<void> {
+  /** Saves, edits or deletes the row's price, and says which of the two it did, if any. */
+  async function writePrice(item: EditableMissingPrice, payload: HistoricalPriceDeletePayload): Promise<'saved' | 'deleted' | undefined> {
     if (item.price) {
       const formPayload: HistoricalPriceFormPayload = {
         ...payload,
@@ -121,10 +124,12 @@ export function useEditableMissingPrices(options: UseEditableMissingPricesOption
       if (item.saved)
         await editHistoricalPrice(formPayload);
       else await addHistoricalPrice(formPayload);
+      return 'saved';
     }
-    else if (item.saved) {
-      await deleteHistoricalPrice(payload);
-    }
+    if (!item.saved)
+      return undefined;
+    await deleteHistoricalPrice(payload);
+    return 'deleted';
   }
 
   async function updatePrice(item: EditableMissingPrice): Promise<void> {
@@ -138,8 +143,9 @@ export function useEditableMissingPrices(options: UseEditableMissingPricesOption
       toAsset: item.toAsset,
     };
 
+    let written: 'saved' | 'deleted' | undefined;
     try {
-      await writePrice(item, payload);
+      written = await writePrice(item, payload);
     }
     catch (error: unknown) {
       let errorMessage = getErrorMessage(error);
@@ -152,7 +158,10 @@ export function useEditableMissingPrices(options: UseEditableMissingPricesOption
     }
 
     resetHistoricalPricesData([payload]);
-    onPriceUpdated?.(item);
+    if (written === 'saved')
+      onPriceUpdated?.(item);
+    else if (written === 'deleted')
+      onPriceDeleted?.(item);
 
     await getHistoricalPrices();
   }
