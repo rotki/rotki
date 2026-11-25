@@ -4092,8 +4092,24 @@ class DataIssueResolveManuallyResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json')
-    def patch(self, issue_id: int, note: str | None) -> Response:
-        return self.rest_api.resolve_data_issue_manually(issue_id=issue_id, note=note)
+    def patch(
+            self,
+            issue_id: int,
+            note: str | None,
+            disposition: str | None,
+    ) -> Response:
+        return self.rest_api.resolve_data_issue_manually(
+            issue_id=issue_id,
+            note=note,
+            disposition=disposition,
+        )
+
+
+class DataIssueReopenResource(BaseMethodView):
+
+    @require_loggedin_user()
+    def patch(self, issue_id: int) -> Response:
+        return self.rest_api.reopen_data_issue(issue_id=issue_id)
 
 
 class DataIssueRetryAutoRemediationResource(BaseMethodView):

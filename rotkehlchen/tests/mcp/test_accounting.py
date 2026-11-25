@@ -306,3 +306,178 @@ def test_approval_prompt_names_the_event_rewrites() -> None:
         }],
     }})
     assert '- Redecodes one ethereum transaction: 1 events changed, 2 added, 0 removed.' in redecode_prompt  # noqa: E501
+
+
+def test_sanitize_preserves_assets_and_anonymizes_suggested_actions() -> None:
+    issue = {
+        'id': 42,
+        'kind': 'missing_price',
+        'state': 'open',
+        'event_identifier': 7,
+        'group_identifier': f'1{TX_HASH}',
+        'bucket': {
+            'location': 'ethereum',
+            'location_label': TEST_ADDR1,
+            'protocol': None,
+            'asset': USDC,
+        },
+        'excluded_assets': [USDC],
+        'suggested_actions': [
+            {
+                'action': 'set_manual_price',
+                'params': {
+                    'from_asset': USDC,
+                    'to_asset': 'USD',
+                    'timestamp': 1_700_000_000,
+                    'source_type': 'manual',
+                },
+                'endpoint': 'PUT /api/1/assets/prices/historical',
+                'requires_input': ['price'],
+            },
+            {
+                'action': 'ignore_asset',
+                'params': {'assets': [USDC]},
+                'endpoint': 'PUT /api/1/assets/ignored',
+                'requires_input': [],
+            },
+            {
+                'action': 'ignore_action',
+                'params': {'data': [f'1{TX_HASH}']},
+                'endpoint': 'PUT /api/1/actions/ignored',
+                'requires_input': [],
+            },
+            {
+                'action': 'confirm_zero_basis',
+                'params': {'disposition': 'confirm_zero_basis'},
+                'endpoint': 'PATCH /api/1/data_issues/42/resolve_manually',
+                'requires_input': [],
+            },
+            {
+                'action': 'edit_event',
+                'params': {'identifier': 7, 'group_identifier': f'1{TX_HASH}'},
+                'endpoint': 'PATCH /api/1/history/events',
+                'requires_input': ['entry_type'],
+            },
+            {
+                'action': 'add_acquisition',
+                'params': {
+                    'asset': USDC,
+                    'location': 'ethereum',
+                    'location_label': TEST_ADDR1,
+                    'timestamp': 1_700_000_000_000,
+                },
+                'endpoint': 'PUT /api/1/history/events',
+                'requires_input': ['entry_type', 'sequence_index', 'timestamp'],
+            },
+        ],
+    }
+
+    sanitized = sanitize(issue, privacy_mode='balanced')
+    assert TEST_ADDR1 not in str(sanitized)
+    assert TX_HASH[2:] not in str(sanitized)
+    assert sanitized['issue_ui_route'] == '/history/data-issues/issues?issue=42'
+    assert sanitized['excluded_assets'] == [USDC]
+
+    actions = {item['action']: item for item in sanitized['suggested_actions']}
+    assert actions['set_manual_price']['params']['from_asset'] == USDC
+    assert actions['set_manual_price']['params']['to_asset'] == 'USD'
+    assert actions['ignore_asset']['params']['assets'] == [USDC]
+    # ignore_action's params.data contains a group_identifier -> anonymized & resolvable
+    hashed_group = actions['ignore_action']['params']['data'][0]
+    assert hashed_group == sanitized['group_identifier']
+    assert get_reference_registry().resolve(hashed_group, 'balanced') == f'1{TX_HASH}'
+    assert actions['edit_event']['params']['group_identifier'] == hashed_group
+    # params dicts must not get UI route keys injected (even in raw mode)
+    assert 'issue_ui_route' not in actions['confirm_zero_basis']['params']
+    raw_actions = {
+        item['action']: item for item in sanitize(issue, privacy_mode='raw')['suggested_actions']
+    }
+    assert 'ui_route' not in raw_actions['edit_event']['params']
+    assert actions['add_acquisition']['params']['asset'] == USDC
+    assert actions['add_acquisition']['params']['location_label'].startswith('anon_')
+
+
+def test_mcp_list_data_issues_manual_only_and_get_realized_pnl(
+        monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, Any]] = []
+
+    def query_backend(**kwargs: Any) -> BackendOutcome:
+        calls.append(kwargs)
+        if kwargs['endpoint'] == 'data_issues/diagnostics/issues':
+            return BackendOutcome(
+                ok=True,
+                result={'entries': [], 'entries_found': 0, 'asset_signals': {}, 'groups': []},
+                message='',
+                status_code=HTTPStatus.OK,
+            )
+        group_by = kwargs['json_data'].get('group_by')
+        group_key = USDC if group_by == 'asset' else TEST_ADDR1
+        return BackendOutcome(
+            ok=True,
+            result={
+                'total_realized_pnl': '500',
+                'total_taxfree_pnl': '0',
+                'num_unpriced_events': 0,
+                'num_unruled_events': 1,
+                'breakdown': [{
+                    'group_key': group_key,
+                    'realized_pnl': '500',
+                    'taxfree_pnl': '0',
+                    'basis_removed': '100',
+                    'num_events': 1,
+                    'num_unpriced_events': 0,
+                }],
+                'stale': False,
+                'method': 'fifo',
+                'report_readiness': {
+                    'ready': True,
+                    'stale': False,
+                    'open_issues_count': 0,
+                    'open_issues_by_kind': {},
+                    'num_unpriced_events': 0,
+                    'num_unruled_events': 1,
+                    'evaluated_through_ts': 1_700_000_000_000,
+                },
+            },
+            message='',
+            status_code=HTTPStatus.OK,
+        )
+
+    monkeypatch.setattr(accounting, 'query_backend', query_backend)
+    monkeypatch.setattr(accounting, '_privacy_mode', lambda: 'balanced')
+
+    account_ref = sanitize(DIAGNOSIS, privacy_mode='balanced')['bucket']['location_label']
+    accounting.list_data_issues(
+        kinds=['missing_price'],
+        states=None,
+        asset=None,
+        location=None,
+        account=account_ref,
+        limit=10,
+        offset=0,
+        manual_only=True,
+    )
+    assert calls[0]['params']['manual_only'] == 'true'
+    assert calls[0]['params']['kind'] == 'missing_price'
+    assert calls[0]['params']['location_label'] == TEST_ADDR1
+
+    by_asset = accounting.get_realized_pnl(
+        from_timestamp=1_600_000_000,
+        to_timestamp=1_700_000_000,
+        account=account_ref,
+        group_by='asset',
+    )
+    assert calls[1]['endpoint'] == 'history/events/pnl'
+    assert calls[1]['json_data'] == {
+        'from_timestamp': 1_600_000_000,
+        'to_timestamp': 1_700_000_000,
+        'location_labels': [TEST_ADDR1],
+        'group_by': 'asset',
+    }
+    assert by_asset['result']['breakdown'][0]['group_key'] == USDC
+    assert by_asset['result']['report_readiness']['ready'] is True
+
+    by_account = accounting.get_realized_pnl(group_by='location_label')
+    assert by_account['result']['breakdown'][0]['group_key'] == account_ref
+    assert TEST_ADDR1 not in str(by_account)

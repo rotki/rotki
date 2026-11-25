@@ -95,6 +95,7 @@ def list_data_issues(
         account: str | None,
         limit: int,
         offset: int,
+        manual_only: bool = False,
 ) -> dict[str, Any]:
     def run(privacy_mode: Any) -> dict[str, Any]:
         params: dict[str, Any] = {'limit': limit, 'offset': offset}
@@ -108,11 +109,64 @@ def list_data_issues(
             params['location'] = location
         if account is not None:
             params['location_label'] = get_reference_registry().resolve(account, privacy_mode)
+        if manual_only:
+            params['manual_only'] = 'true'
         return _outcome(query_backend(
             endpoint='data_issues/diagnostics/issues',
             params=params,
             timeout=DIAGNOSIS_TIMEOUT_SECONDS,
         ), privacy_mode)
+
+    return _call(run)
+
+
+def get_realized_pnl(
+        from_timestamp: int | None = None,
+        to_timestamp: int | None = None,
+        asset: str | None = None,
+        location: str | None = None,
+        account: str | None = None,
+        group_by: str | None = None,
+) -> dict[str, Any]:
+    def run(privacy_mode: Any) -> dict[str, Any]:
+        body: dict[str, Any] = {}
+        if from_timestamp is not None:
+            body['from_timestamp'] = from_timestamp
+        if to_timestamp is not None:
+            body['to_timestamp'] = to_timestamp
+        if asset is not None:
+            body['asset'] = asset
+        if location is not None:
+            body['location'] = location
+        if account is not None:
+            body['location_labels'] = [get_reference_registry().resolve(account, privacy_mode)]
+        if group_by is not None:
+            body['group_by'] = group_by
+        outcome = query_backend(
+            endpoint='history/events/pnl',
+            method='POST',
+            json_data=body,
+            timeout=DIAGNOSIS_TIMEOUT_SECONDS,
+        )
+        response = _outcome(outcome, privacy_mode)
+        if (
+            group_by in ('asset', 'location_label') and
+            'result' in response and
+            isinstance(outcome.result, dict)
+        ):
+            key_kind = 'asset' if group_by == 'asset' else 'location_label'
+            for raw_row, sanitized_row in zip(
+                outcome.result.get('breakdown', ()),
+                response['result'].get('breakdown', ()),
+                strict=False,
+            ):
+                if isinstance(raw_key := raw_row.get('group_key'), str):
+                    sanitized_row['group_key'] = sanitize(
+                        raw_key,
+                        privacy_mode=privacy_mode,
+                        key=key_kind,
+                    )
+        return response
 
     return _call(run)
 

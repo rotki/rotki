@@ -115,7 +115,11 @@ from rotkehlchen.constants.misc import (
     GLOBALDIR_NAME,
     HTTP_STATUS_INTERNAL_DB_ERROR,
 )
-from rotkehlchen.db.cache import IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX, DBCacheStatic
+from rotkehlchen.db.cache import (
+    IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX,
+    DBCacheStatic,
+    mark_stale_from_ts,
+)
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     LINKABLE_ACCOUNTING_PROPERTIES,
@@ -185,6 +189,7 @@ from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.actions import build_suggested_actions
 from rotkehlchen.history.data_issues.constants import IssueState
 from rotkehlchen.history.data_issues.diagnostics import (
     explain_data_issue,
@@ -4094,6 +4099,7 @@ class RestAPI:
             'location_label': issue.location_label or None,
             'protocol': issue.protocol or None,
             'asset': issue.asset or None,
+            'event_identifier': issue.event_identifier,
             'group_identifier': issue.group_identifier,
             'ts_start': issue.ts_start,
             'ts_end': issue.ts_end,
@@ -4101,6 +4107,7 @@ class RestAPI:
             'state': issue.state,
             'auto_remediation_attempts': issue.auto_remediation_attempts,
             'payload': issue.payload,
+            'suggested_actions': build_suggested_actions(issue),
             'created_at': issue.created_at,
             'resolved_at': issue.resolved_at,
         }
@@ -4138,11 +4145,33 @@ class RestAPI:
         return api_response(OkResult(result))
 
     @accounting_update_required('Data issues are disabled', response=True)
-    def resolve_data_issue_manually(self, issue_id: int, note: str | None = None) -> Response:
+    def resolve_data_issue_manually(
+            self,
+            issue_id: int,
+            note: str | None = None,
+            disposition: str | None = None,
+    ) -> Response:
         try:
             result = self._serialize_data_issue(DataIssuesManager(
                 self.rotkehlchen.data.db,
-            ).resolve_manually(issue_id=issue_id, note=note))
+            ).resolve_manually(issue_id=issue_id, note=note, disposition=disposition))
+        except NotFoundError as e:
+            return api_response(FailResult(str(e), HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND))
+        except InputError as e:
+            return api_response(FailResult(
+                str(e),
+                HTTPStatus.CONFLICT,
+                FailureCause.INVALID_INPUT,
+            ))
+
+        return api_response(OkResult(result))
+
+    @accounting_update_required('Data issues are disabled', response=True)
+    def reopen_data_issue(self, issue_id: int) -> Response:
+        try:
+            result = self._serialize_data_issue(DataIssuesManager(
+                self.rotkehlchen.data.db,
+            ).reopen(issue_id))
         except NotFoundError as e:
             return api_response(FailResult(str(e), HTTPStatus.NOT_FOUND, FailureCause.NOT_FOUND))
         except InputError as e:
@@ -4178,6 +4207,7 @@ class RestAPI:
         if should_schedule and task_manager.retry_data_issue_auto_remediation(
             issue_id=issue.id,
             from_ts=TimestampMS(issue.ts_start),
+            kind=issue.kind,
         ) is False:
             issues_manager.update_state(
                 issue_id=issue.id,
@@ -5259,11 +5289,23 @@ class RestAPI:
 
             # No matched event specified. Mark as having no match so this movement will be ignored.
             with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
-                write_cursor.execute(
+                cursor_result = write_cursor.execute(
                     'INSERT OR IGNORE INTO history_event_link_ignores(event_id, link_type) '
                     'VALUES(?, ?)',
                     (asset_movement_identifier, HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()),  # noqa: E501
                 )
+                if cursor_result.rowcount > 0 and (
+                    ts_row := write_cursor.execute(
+                        'SELECT timestamp FROM history_events WHERE identifier=?',
+                        (asset_movement_identifier,),
+                    ).fetchone()
+                ) is not None:
+                    mark_stale_from_ts(
+                        write_cursor=write_cursor,
+                        from_ts=ts_row[0],
+                        include_balances=False,
+                        include_cost_basis=True,
+                    )
             return api_response(OkResult(True))
 
         asset_movement, matched_events, fee_event = None, [], None
@@ -5473,15 +5515,27 @@ class RestAPI:
                 # group is restored since resolving rewrites the movement's fee alongside
                 # it; events with no backup are skipped, so a merely ignored movement (which
                 # was never rewritten) is unaffected.
-                group_event_ids = [x[0] for x in write_cursor.execute(
-                    'SELECT identifier FROM history_events WHERE group_identifier='
+                group_rows = write_cursor.execute(
+                    'SELECT identifier, timestamp FROM history_events WHERE group_identifier='
                     '(SELECT group_identifier FROM history_events WHERE identifier=?)',
                     (identifier,),
-                )]
+                ).fetchall()
+                group_event_ids = [row[0] for row in group_rows]
+                timestamps = [row[1] for row in group_rows]
                 DBHistoryEvents.maybe_restore_history_events_from_backup(
                     write_cursor=write_cursor,
                     identifiers=group_event_ids,
                 )
+                if len(group_event_ids) > 0:
+                    placeholders = ','.join(['?'] * len(group_event_ids))
+                    if (
+                        restored_min := write_cursor.execute(
+                            f'SELECT MIN(timestamp) FROM history_events '
+                            f'WHERE identifier IN ({placeholders})',
+                            group_event_ids,
+                        ).fetchone()[0]
+                    ) is not None:
+                        timestamps.append(restored_min)
                 write_cursor.executemany(
                     'DELETE FROM history_events_mappings '
                     'WHERE parent_identifier=? AND name=? AND value=?',
@@ -5491,10 +5545,28 @@ class RestAPI:
                         HistoryMappingState.MATCHED.serialize_for_db(),
                     ) for event_id in group_event_ids],
                 )
+                if len(timestamps) > 0:
+                    mark_stale_from_ts(
+                        write_cursor=write_cursor,
+                        from_ts=min(timestamps),
+                        include_balances=True,
+                        include_cost_basis=True,
+                    )
                 return api_response(OkResult(True))
 
         with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+            affected_timestamps: list[int] = []
             for asset_movement_identifier, matched_event_identifiers in linked_ids.items():
+                affected_ids = [*matched_event_identifiers, asset_movement_identifier]
+                placeholders = ','.join(['?'] * len(affected_ids))
+                if (
+                    pre_min := write_cursor.execute(
+                        f'SELECT MIN(timestamp) FROM history_events '
+                        f'WHERE identifier IN ({placeholders})',
+                        affected_ids,
+                    ).fetchone()[0]
+                ) is not None:
+                    affected_timestamps.append(pre_min)
                 write_cursor.execute(
                     'DELETE FROM history_event_links WHERE left_event_id=? AND link_type=?',
                     (asset_movement_identifier, HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()),  # noqa: E501
@@ -5509,6 +5581,26 @@ class RestAPI:
                     ) for matched_event_identifier in matched_event_identifiers],
                 )
                 # Remove any adjustment event that was added during matching
+                affected_timestamps.extend(
+                    adj_min
+                    for matched_event_identifier in matched_event_identifiers
+                    if (
+                        adj_min := write_cursor.execute(
+                            'SELECT MIN(timestamp) FROM history_events WHERE type=? '
+                            'AND group_identifier IN '
+                            '(SELECT group_identifier FROM history_events WHERE identifier IN (?, ?))'  # noqa: E501
+                            'AND identifier IN (SELECT parent_identifier FROM history_events_mappings '  # noqa: E501
+                            'WHERE name=? AND value=?)',
+                            (
+                                HistoryEventType.EXCHANGE_ADJUSTMENT.serialize(),
+                                asset_movement_identifier,
+                                matched_event_identifier,
+                                HISTORY_MAPPING_KEY_STATE,
+                                HistoryMappingState.MATCHED.serialize_for_db(),
+                            ),
+                        ).fetchone()[0]
+                    ) is not None
+                )
                 write_cursor.executemany(
                     'DELETE FROM history_events WHERE type=? AND group_identifier IN '
                     '(SELECT group_identifier FROM history_events WHERE identifier IN (?, ?))'
@@ -5525,10 +5617,17 @@ class RestAPI:
                 # Restore events from the backup created before matching
                 DBHistoryEvents.maybe_restore_history_events_from_backup(
                     write_cursor=write_cursor,
-                    identifiers=[*matched_event_identifiers, asset_movement_identifier],
+                    identifiers=affected_ids,
                 )
+                if (
+                    post_min := write_cursor.execute(
+                        f'SELECT MIN(timestamp) FROM history_events '
+                        f'WHERE identifier IN ({placeholders})',
+                        affected_ids,
+                    ).fetchone()[0]
+                ) is not None:
+                    affected_timestamps.append(post_min)
                 # Remove the auto-matched event state
-                placeholders = ','.join(['?'] * (len(matched_event_identifiers) + 1))
                 write_cursor.execute(
                     'DELETE FROM history_events_mappings '
                     f'WHERE parent_identifier IN({placeholders}) AND name=? AND value=?',
@@ -5538,6 +5637,13 @@ class RestAPI:
                         HISTORY_MAPPING_KEY_STATE,
                         HistoryMappingState.MATCHED.serialize_for_db(),
                     ),
+                )
+            if len(affected_timestamps) > 0:
+                mark_stale_from_ts(
+                    write_cursor=write_cursor,
+                    from_ts=min(affected_timestamps),
+                    include_balances=True,
+                    include_cost_basis=True,
                 )
 
         return api_response(OkResult(True))
