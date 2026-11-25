@@ -42,7 +42,13 @@
     "source=rotki-devcontainer-${devcontainerId}-nm-common,target=${containerWorkspaceFolder}/frontend/common/node_modules,type=volume",
     "source=rotki-devcontainer-${devcontainerId}-nm-dev-proxy,target=${containerWorkspaceFolder}/frontend/dev-proxy/node_modules,type=volume"
   ],
-  "postCreateCommand": ".devcontainer/setup.sh",
+  // Toolchains, then dependencies: prebuilds (Codespaces) cache each stage and
+  // re-run only updateContentCommand when the checkout changes.
+  "onCreateCommand": ".devcontainer/setup.sh toolchains",
+  "updateContentCommand": ".devcontainer/setup.sh deps",
+  // dev:web runs a tree of processes (pnpm, uv, starling, Vite); an init
+  // process reaps the ones that exit instead of leaving zombies.
+  "init": true,
   // The page loads from Vite (8080) and calls starling's proxy (4141) directly,
   // so both must keep their numbers on the host. requireLocalPort makes a busy
   // host port fail loudly instead of being remapped and breaking the API calls.
