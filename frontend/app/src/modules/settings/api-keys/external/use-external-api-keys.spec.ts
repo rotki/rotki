@@ -1,6 +1,6 @@
 import type { ExternalServiceKeys } from '@/modules/integrations/types';
 import { createPinia, setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockDelete, mockQuery, mockSet } = vi.hoisted(() => ({
   mockDelete: vi.fn(),
@@ -123,5 +123,40 @@ describe('useExternalApiKeys', () => {
 
     expect(getApiKey('blockscout')).toBe('new-key');
     expect(get(actionStatus('blockscout'))?.message).toContain('external_services.delete_error.description');
+  });
+
+  describe('the outcome shown on a card', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should clear the outcome after a while', async () => {
+      const { actionStatus, save } = api.useExternalApiKeys();
+
+      await save({ apiKey: 'new-key', name: 'blockscout' });
+      expect(get(actionStatus('blockscout'))?.success).toBe(true);
+
+      await vi.advanceTimersByTimeAsync(4500);
+      expect(get(actionStatus('blockscout'))).toBeUndefined();
+    });
+
+    it('should not let an earlier outcome\'s timer clear the one that replaced it', async () => {
+      const { actionStatus, deleteService, save } = api.useExternalApiKeys();
+      mockDelete.mockRejectedValue(new Error('rejected'));
+
+      await save({ apiKey: 'new-key', name: 'blockscout' });
+      await vi.advanceTimersByTimeAsync(3000);
+      await deleteService('blockscout');
+      await vi.advanceTimersByTimeAsync(2000); // past the save outcome's expiry
+
+      expect(get(actionStatus('blockscout'))?.message).toContain('external_services.delete_error.description');
+
+      await vi.advanceTimersByTimeAsync(2500);
+      expect(get(actionStatus('blockscout'))).toBeUndefined();
+    });
   });
 });
