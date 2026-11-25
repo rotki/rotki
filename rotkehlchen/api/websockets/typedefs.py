@@ -195,6 +195,7 @@ class ProgressUpdateSubType(StrEnum):
     STATS_PRICE_QUERY = auto()
     LIQUITY_STAKING_QUERY = auto()
     HISTORICAL_BALANCE_PROCESSING = auto()
+    STAKING_EVENTS_QUERY = auto()
 
 
 class HistoricalBalanceProcessingPhase(StrEnum):

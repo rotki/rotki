@@ -119,6 +119,7 @@ export const SocketMessageProgressUpdateSubType = {
   LIQUITY_STAKING_QUERY: 'liquity_staking_query',
   MULTIPLE_PRICES_QUERY_STATUS: 'multiple_prices_query_status',
   PROTOCOL_CACHE_UPDATES: 'protocol_cache_updates',
+  STAKING_EVENTS_QUERY: 'staking_events_query',
   STATS_PRICE_QUERY: 'stats_price_query',
   UNDECODED_TRANSACTIONS: 'undecoded_transactions',
 } as const;
