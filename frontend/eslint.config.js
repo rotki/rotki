@@ -108,7 +108,8 @@ export default rotki({
      auto-imported names resolve to the scoped versions; an explicit import would bypass them.
      Later blocks that ban @vueuse outright replace this one for their files, which is fine. */
   files: ['app/src/**/*.ts', 'app/src/**/*.vue'],
-  ignores: ['app/src/modules/core/common/async/scoped-timers.ts'],
+  // setup-premium publishes the whole namespace to the premium bundle, with these helpers swapped
+  ignores: ['app/src/modules/core/common/async/scoped-timers.ts', 'app/src/modules/premium/setup-premium.ts'],
   rules: {
     'no-restricted-imports': ['error', {
       paths: ['@vueuse/core', '@vueuse/shared'].map(name => ({
