@@ -859,6 +859,19 @@ class Coingecko(
 
         return prices
 
+    def supports_history_of(
+            self,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+            timestamp: Timestamp,
+    ) -> bool:
+        """Without a paid API key coingecko keeps a year of history"""
+        if self.api_key is None and ts_now() - timestamp > YEAR_IN_SECONDS:
+            return False
+
+        from_asset.to_coingecko()
+        return to_asset.identifier.lower() in COINGECKO_SIMPLE_VS_CURRENCIES
+
     def can_query_history(
             self,
             from_asset: Asset,  # pylint: disable=unused-argument

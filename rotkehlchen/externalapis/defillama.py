@@ -399,6 +399,16 @@ class Defillama(
             for asset, usd_price in all_usd_prices.items() if usd_price != ZERO_PRICE
         }
 
+    def supports_history_of(
+            self,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+            timestamp: Timestamp,
+    ) -> bool:
+        """Defillama prices the tokens it covers, in USD, and converts to the target"""
+        self._get_asset_id(from_asset)
+        return self.covers_token(from_asset)
+
     def can_query_history(
             self,
             from_asset: Asset,  # pylint: disable=unused-argument

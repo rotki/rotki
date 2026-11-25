@@ -301,6 +301,33 @@ class Cryptocompare(
     def has_api_key(self) -> bool:
         return self._get_api_key() is not None
 
+    def supports_history_of(
+            self,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+            timestamp: Timestamp,
+    ) -> bool:
+        """Cryptocompare answers historical queries only with an API key"""
+        if self.has_api_key() is False:
+            return False
+
+        from_asset.to_cryptocompare()
+        to_asset.to_cryptocompare()
+        return True
+
+    def skipped_for_rate_limit(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> bool:
+        """`can_query_history` skips an uncached query for a while after a rate limit"""
+        return self.rate_limited_in_last(CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME) and self.could_answer(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp,
+        )
+
     def can_query_history(
             self,
             from_asset: Asset,

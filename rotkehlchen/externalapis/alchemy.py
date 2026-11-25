@@ -1,11 +1,11 @@
 import logging
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 import requests
 
 from rotkehlchen.constants import HOUR_IN_SECONDS
-from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.assets import A_AVAX, A_BSC_BNB, A_ETH, A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
@@ -31,6 +31,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+# The native coins of the chains Alchemy covers, which it prices by symbol. Every other asset
+# that is not an EVM token is looked up by symbol too, but nothing says Alchemy knows it.
+ALCHEMY_NATIVE_ASSETS: Final = frozenset({A_ETH, A_BSC_BNB, A_AVAX})
 
 
 class AlchemyAssetData(NamedTuple):
@@ -215,6 +220,23 @@ class Alchemy(
             price = usd_price
 
         return price
+
+    def supports_history_of(
+            self,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+            timestamp: Timestamp,
+    ) -> bool:
+        """Alchemy prices the tokens it covers on the EVM chains it supports, and the native
+        coins of those chains, in USD.
+
+        Other assets are looked up by symbol, which says nothing about whether Alchemy knows them,
+        so of those only the native coins are claimed.
+        """
+        if from_asset.is_evm_token() is False:
+            return from_asset in ALCHEMY_NATIVE_ASSETS
+        self._get_alchemy_asset_data(from_asset)
+        return self.covers_token(from_asset)
 
     def can_query_history(
             self,

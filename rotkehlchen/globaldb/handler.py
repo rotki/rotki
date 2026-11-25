@@ -1647,6 +1647,15 @@ class GlobalDBHandler:
         return HistoricalPrice.deserialize_from_db(result)
 
     @staticmethod
+    def has_historical_price_from(asset: Asset, source: HistoricalPriceOracle) -> bool:
+        """Whether any price of the asset, at any time and in any currency, came from the source"""
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            return cursor.execute(
+                'SELECT 1 FROM price_history WHERE from_asset=? AND source_type=? LIMIT 1',
+                (asset.identifier, source.serialize_for_db()),
+            ).fetchone() is not None
+
+    @staticmethod
     def get_historical_prices(
             query_data: list[tuple[Asset, Asset, Timestamp]],
             max_seconds_distance: int,

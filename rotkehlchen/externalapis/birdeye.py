@@ -412,6 +412,16 @@ class Birdeye(
         rate_price = Inquirer.find_price(from_asset=A_USD, to_asset=to_asset) if to_asset != A_USD else ONE  # noqa: E501
         return {asset: Price(usd_price * rate_price) for asset, usd_price in all_usd_prices.items()}  # noqa: E501
 
+    def supports_history_of(
+            self,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+            timestamp: Timestamp,
+    ) -> bool:
+        """Birdeye prices the Solana and EVM tokens it covers on the chains it supports, in USD"""
+        self._get_chain_and_address(from_asset)
+        return self.covers_token(from_asset)
+
     def can_query_history(
             self,
             from_asset: Asset,  # pylint: disable=unused-argument

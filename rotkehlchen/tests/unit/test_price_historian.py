@@ -27,7 +27,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE, ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
-from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.constants.timing import DAY_IN_SECONDS, YEAR_IN_SECONDS
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
@@ -58,6 +58,7 @@ from rotkehlchen.types import (
     TokenKind,
 )
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
+from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import FiatAsset
@@ -198,6 +199,209 @@ def test_token_to_fiat_all_can_query_history_no_price_found_exception(fake_price
     for oracle_instance in price_historian._oracle_instances:
         assert oracle_instance.can_query_history.call_count == 1
         assert oracle_instance.query_historical_price.call_count == 0
+
+
+def _oracles_skip_without_reason(price_historian: Any) -> None:
+    """Every fake oracle (a mock, hence Any) declines the query, for no reason a later retry
+    would get past"""
+    oracle_instance: Any
+    for oracle_instance in price_historian._oracle_instances:
+        oracle_instance.can_query_history.return_value = False
+        if isinstance(oracle_instance, PenalizablePriceOracleMixin):
+            mock: Any = oracle_instance  # isinstance narrows away the mock's attributes
+            mock.skipped_for_penalty.return_value = False
+            mock.skipped_for_rate_limit.return_value = False
+
+
+@pytest.mark.parametrize('penalized', [True, False])
+def test_skipped_penalized_oracle_is_a_remote_error(fake_price_historian, inquirer, penalized):  # pylint: disable=unused-argument
+    """An oracle skipped because it is penalized after failures may answer once the penalty
+    ends, so the miss is reported as a remote error and not as a day without a price.
+    """
+    price_historian = fake_price_historian
+    _oracles_skip_without_reason(price_historian)
+    price_historian._coingecko.skipped_for_penalty.return_value = penalized
+
+    with pytest.raises(NoPriceForGivenTimestamp) as e:
+        price_historian.query_historical_price(
+            from_asset=A_BTC,
+            to_asset=A_USD,
+            timestamp=Timestamp(1611595466),
+        )
+
+    assert e.value.remote_error is penalized
+    assert e.value.rate_limited is False
+
+
+@pytest.mark.parametrize('timestamp', [Timestamp(1611532800), Timestamp(1611595466)])
+def test_penalty_skip_stays_an_outage_when_another_oracle_misses(
+        fake_price_historian,
+        inquirer,  # pylint: disable=unused-argument
+        timestamp,
+):
+    """Coingecko's miss doesn't settle a penalized defillama, even for an asset defillama prices
+    by its coingecko id and at midnight: coingecko reads the midnight snapshot, defillama searches
+    a window around the time, so a token that starts trading that day may have a defillama price.
+    """
+    price_historian = fake_price_historian
+    _oracles_skip_without_reason(price_historian)
+    price_historian._defillama.skipped_for_penalty.return_value = True
+    coingecko = price_historian._coingecko
+    coingecko.can_query_history.return_value = True
+    coingecko.query_historical_price.side_effect = NoPriceForGivenTimestamp(
+        from_asset=A_BTC,
+        to_asset=A_USD,
+        time=timestamp,
+        cacheable_miss=True,
+    )
+
+    with pytest.raises(NoPriceForGivenTimestamp) as e:
+        price_historian.query_historical_price(
+            from_asset=A_BTC,
+            to_asset=A_USD,
+            timestamp=timestamp,
+        )
+
+    assert e.value.remote_error is True
+
+
+@pytest.mark.parametrize('historical_price_oracles_order', [(
+    HistoricalPriceOracle.COINGECKO,
+    HistoricalPriceOracle.CRYPTOCOMPARE,
+)])
+def test_skipped_rate_limited_oracle_is_a_rate_limit(fake_price_historian, inquirer):  # pylint: disable=unused-argument
+    """Cryptocompare skips an uncached query for a while after a rate limit, so the miss is
+    reported as a rate limit and not as a day without a price."""
+    price_historian = fake_price_historian
+    _oracles_skip_without_reason(price_historian)
+    price_historian._cryptocompare.skipped_for_rate_limit.return_value = True
+
+    with pytest.raises(NoPriceForGivenTimestamp) as e:
+        price_historian.query_historical_price(
+            from_asset=A_BTC,
+            to_asset=A_USD,
+            timestamp=Timestamp(1611595466),
+        )
+
+    assert e.value.rate_limited is True
+
+
+def test_cryptocompare_rate_limit_skip(inquirer: Inquirer) -> None:
+    """Cryptocompare says it skipped for a rate limit only right after one, and only for a
+    pair it could answer."""
+    cryptocompare = inquirer._cryptocompare
+    recent = Timestamp(ts_now() - DAY_IN_SECONDS)
+    with patch.object(cryptocompare, 'has_api_key', return_value=True):
+        cryptocompare.last_rate_limit = ts_now()
+        assert cryptocompare.skipped_for_rate_limit(from_asset=A_BTC, to_asset=A_USD, timestamp=recent) is True  # noqa: E501
+        cryptocompare.last_rate_limit = 0
+        assert cryptocompare.skipped_for_rate_limit(from_asset=A_BTC, to_asset=A_USD, timestamp=recent) is False  # noqa: E501
+    with patch.object(cryptocompare, 'has_api_key', return_value=False):
+        cryptocompare.last_rate_limit = ts_now()
+        assert cryptocompare.skipped_for_rate_limit(from_asset=A_BTC, to_asset=A_USD, timestamp=recent) is False  # noqa: E501
+
+
+def test_penalty_skip_needs_an_oracle_that_could_answer(
+        inquirer: Inquirer,
+        globaldb: GlobalDBHandler,
+) -> None:
+    """A penalty is the reason a query skipped an oracle only when the oracle could otherwise
+    have priced it. Otherwise the miss stays a miss and not an outage.
+    """
+    coingecko, defillama = inquirer._coingecko, inquirer._defillama
+    coingecko.penalty_info.penalize()
+    defillama.penalty_info.penalize()
+    recent = Timestamp(ts_now() - DAY_IN_SECONDS)
+
+    assert coingecko.api_key is None
+    assert coingecko.skipped_for_penalty(from_asset=A_BTC, to_asset=A_USD, timestamp=recent) is True  # noqa: E501
+    # without an API key coingecko could never answer for a day older than a year
+    assert coingecko.skipped_for_penalty(
+        from_asset=A_BTC,
+        to_asset=A_USD,
+        timestamp=Timestamp(ts_now() - 2 * YEAR_IN_SECONDS),
+    ) is False
+
+    assert defillama.skipped_for_penalty(from_asset=A_BTC, to_asset=A_USD, timestamp=recent) is True  # noqa: E501
+    # an asset no oracle knows has no price to wait for
+    assert defillama.skipped_for_penalty(
+        from_asset=Asset('NOT-AN-ASSET-ANYWHERE'),
+        to_asset=A_USD,
+        timestamp=recent,
+    ) is False
+
+    # a real token no price list knows: an address-based oracle can't tell whether it has a price
+    unlisted = EvmToken.initialize(
+        address=string_to_evm_address('0x8A2C5B1f6DE5af2bC7Ba3E0f3a1D7C4e9B6F0A11'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        decimals=18,
+        name='Unlisted receipt',
+        symbol='URCPT',
+    )
+    globaldb.add_asset(unlisted)
+    assert defillama.skipped_for_penalty(from_asset=unlisted, to_asset=A_USD, timestamp=recent) is False  # noqa: E501
+
+    # address-based oracles price tokens coingecko does not list, like the packaged Solcex. Once
+    # the oracle itself priced one, a penalty skip for it is an outage; another oracle's price
+    # says nothing about it
+    solcex = Asset('solana/token:AMjzRn1TBQwQfNAjHFeBb7uGbbqbJB7FzXAnGgdFPk6K')
+    assert solcex.resolve_to_asset_with_oracles().has_coingecko() is False
+    oracles: list[tuple[PenalizablePriceOracleMixin, HistoricalPriceOracle, Asset]] = [
+        (defillama, HistoricalPriceOracle.DEFILLAMA, solcex),
+        (inquirer._birdeye, HistoricalPriceOracle.BIRDEYE, solcex),
+        (inquirer._moralis, HistoricalPriceOracle.MORALIS, unlisted),
+        (inquirer._alchemy, HistoricalPriceOracle.ALCHEMY, unlisted),
+    ]
+    for oracle, _, token in oracles:
+        oracle.penalty_info.penalize()
+        assert oracle.skipped_for_penalty(from_asset=token, to_asset=A_USD, timestamp=recent) is False  # noqa: E501
+    globaldb.add_historical_prices([HistoricalPrice(
+        from_asset=token,
+        to_asset=A_USD,
+        source=HistoricalPriceOracle.COINGECKO,
+        timestamp=Timestamp(1751328000),
+        price=Price(FVal('0.01')),
+    ) for token in (solcex, unlisted)])
+    for oracle, source, token in oracles:
+        assert oracle.skipped_for_penalty(from_asset=token, to_asset=A_USD, timestamp=recent) is False  # noqa: E501
+        globaldb.add_historical_prices([HistoricalPrice(
+            from_asset=token,
+            to_asset=A_USD,
+            source=source,
+            timestamp=Timestamp(1751328000),
+            price=Price(FVal('0.01')),
+        )])
+        assert oracle.skipped_for_penalty(from_asset=token, to_asset=A_USD, timestamp=recent) is True, oracle.name  # noqa: E501
+    globaldb.delete_historical_prices(from_asset=unlisted, to_asset=A_USD, source=HistoricalPriceOracle.ALCHEMY)  # noqa: E501
+
+    alchemy = inquirer._alchemy
+    alchemy.penalty_info.penalize()
+    assert alchemy.skipped_for_penalty(from_asset=A_AAVE, to_asset=A_USD, timestamp=recent) is True
+    assert alchemy.skipped_for_penalty(from_asset=unlisted, to_asset=A_USD, timestamp=recent) is False  # noqa: E501
+    # alchemy looks up anything that is not an EVM token by symbol, so it claims only the native
+    # coins of the chains it covers
+    assert alchemy.skipped_for_penalty(from_asset=A_ETH, to_asset=A_USD, timestamp=recent) is True
+    assert alchemy.skipped_for_penalty(from_asset=A_BTC, to_asset=A_USD, timestamp=recent) is False
+
+
+def test_penalty_skip_reads_the_penalty_without_side_effects(inquirer: Inquirer) -> None:
+    """Asking whether a skip was due to the penalty must not run the post-penalty probe or
+    send a notification, since the query made no request to the oracle."""
+    coingecko = inquirer._coingecko
+    coingecko.penalty_info.penalize()
+    coingecko.penalty_info.last_penalized_ts = Timestamp(0)  # expired, probe still pending
+    coingecko.msg_aggregator = MagicMock()
+    with patch.object(coingecko, 'probe_availability') as probe:
+        assert coingecko.skipped_for_penalty(
+            from_asset=A_BTC,
+            to_asset=A_USD,
+            timestamp=Timestamp(ts_now() - DAY_IN_SECONDS),
+        ) is False
+
+    assert probe.call_count == 0
+    assert coingecko.msg_aggregator.add_message.call_count == 0
+    assert coingecko.penalty_info.probe_pending is True
 
 
 def test_token_to_fiat_no_price_found_exception(fake_price_historian):
