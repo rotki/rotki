@@ -7,11 +7,15 @@ import requests
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
+from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -141,4 +145,74 @@ class PenalizablePriceOracleMixin:
                 return True
             penalty_info.probe_pending = False
 
+        return False
+
+    def is_penalty_active(self) -> bool:
+        """Whether the oracle is inside a penalty right now.
+
+        Unlike `is_penalized` this only reads the state: it starts no penalty, runs no probe
+        and sends no notification, so callers can ask it on paths that make no request.
+        """
+        return ts_now() - self.penalty_info.last_penalized_ts <= CachedSettings().oracle_penalty_duration  # noqa: E501
+
+    def covers_token(self, asset: AssetWithOracles) -> bool:
+        """Whether the oracle is known to price the token, for oracles that look tokens up by
+        address.
+
+        Those oracles accept any address, so asking them says nothing about whether they have a
+        price. An unknown token (a receipt token, unmarked spam) usually has none anywhere, and
+        claiming it would report its miss as an outage for the whole penalty. A token counts as
+        covered when a price list knows it or this oracle priced it before, since these oracles
+        also price tokens no price list knows.
+        """
+        return asset.has_coingecko() or GlobalDBHandler.has_historical_price_from(
+            asset=asset,
+            source=HistoricalPriceOracle[self.name.upper()],
+        )
+
+    def supports_history_of(
+            self,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+            timestamp: Timestamp,
+    ) -> bool:
+        """Whether the oracle could price this pair at this time, from local checks only
+        (API key, history limits, asset support). It makes no request.
+
+        May raise:
+        - UnsupportedAsset if the oracle can't price one of the assets
+
+        Oracles that don't override it claim nothing, so their penalty never turns a miss
+        into an outage.
+        """
+        return False
+
+    def could_answer(self, from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> bool:
+        """`supports_history_of` for unresolved assets, False for any it can't resolve"""
+        try:
+            return self.supports_history_of(
+                from_asset=from_asset.resolve_to_asset_with_oracles(),
+                to_asset=to_asset.resolve_to_asset_with_oracles(),
+                timestamp=timestamp,
+            )
+        except (UnknownAsset, UnsupportedAsset, WrongAssetType):
+            return False
+
+    def skipped_for_penalty(self, from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> bool:  # noqa: E501
+        """Whether a historical query skipped this oracle only because of its penalty, so the
+        same query may get a price once the penalty ends."""
+        return self.is_penalty_active() and self.could_answer(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp,
+        )
+
+    def skipped_for_rate_limit(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> bool:
+        """Whether a historical query skipped this oracle because it was rate limited recently,
+        so the same query may get a price later. Oracles that don't skip for that say False."""
         return False

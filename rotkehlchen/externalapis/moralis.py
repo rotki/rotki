@@ -194,6 +194,16 @@ class Moralis(
 
         return price
 
+    def supports_history_of(
+            self,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+            timestamp: Timestamp,
+    ) -> bool:
+        """Moralis prices the EVM tokens it covers on the chains it supports, in USD"""
+        self._get_moralis_chain(from_asset)
+        return self.covers_token(from_asset)
+
     def can_query_history(
             self,
             from_asset: Asset,  # pylint: disable=unused-argument

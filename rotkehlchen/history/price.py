@@ -32,6 +32,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp, TokenKind
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
+from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 
 from .types import (
     DAILY_GRANULARITY_ORACLES,
@@ -473,6 +474,22 @@ class PriceHistorian:
                 to_asset=to_asset,
                 timestamp=timestamp,
             ):
+                # An oracle set aside after repeated failures may answer once its penalty
+                # ends, and one skipped after a rate limit once the wait is over. Another
+                # oracle's miss doesn't settle it: no two oracles look up the same price point
+                if isinstance(oracle_instance, PenalizablePriceOracleMixin):
+                    if oracle_instance.skipped_for_penalty(
+                        from_asset=from_asset,
+                        to_asset=to_asset,
+                        timestamp=timestamp,
+                    ):
+                        remote_error = True
+                    elif oracle_instance.skipped_for_rate_limit(
+                        from_asset=from_asset,
+                        to_asset=to_asset,
+                        timestamp=timestamp,
+                    ):
+                        rate_limited = True
                 continue
 
             try:
