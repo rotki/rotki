@@ -1,6 +1,7 @@
 import { CommonQueryStatusData, NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { EvmChainLikeAddress } from '@/modules/history/events/event-payloads';
+import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { SocketMessageProgressUpdateSubType } from './base';
 
 export const DataMigrationStatusData = z.object({
@@ -158,7 +159,7 @@ const LiquityStakingQueryDataWithSubtype = CommonQueryStatusData.extend({
  * addresses. `waitingSeconds` is set while it waits out a beaconcha.in rate limit.
  */
 const StakingEventsQueryDataWithSubtype = CommonQueryStatusData.extend({
-  queryType: z.string(),
+  queryType: z.enum([OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS, OnlineHistoryEventsQueryType.ETH_WITHDRAWALS]),
   subtype: z.literal(SocketMessageProgressUpdateSubType.STAKING_EVENTS_QUERY),
   waitingSeconds: z.number().nullable(),
 });

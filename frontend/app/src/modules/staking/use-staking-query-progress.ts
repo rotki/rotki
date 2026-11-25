@@ -1,10 +1,9 @@
 import type { ProgressUpdateResultData, StakingEventsQueryData } from '@/modules/core/messaging/types/status-types';
 import { SocketMessageProgressUpdateSubType } from '@/modules/core/messaging/types/base';
-import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { onlineEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { liquityActivity } from '@/modules/staking/liquity/liquity.activity';
 import { ActivityPart } from '@/modules/task-center/core/types';
-import { publishActivityDetail } from '@/modules/task-center/use-activity-detail';
+import { peekActivityDetail, publishActivityDetail } from '@/modules/task-center/use-activity-detail';
 import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 type StakingQueryProgressData = Extract<ProgressUpdateResultData, {
@@ -14,12 +13,6 @@ type StakingQueryProgressData = Extract<ProgressUpdateResultData, {
 interface UseStakingQueryProgressReturn {
   isStakingQueryProgress: (data: ProgressUpdateResultData) => data is StakingQueryProgressData;
   reportStakingQueryProgress: (data: StakingQueryProgressData) => void;
-}
-
-const ONLINE_QUERY_TYPES: ReadonlySet<string> = new Set<string>(Object.values(OnlineHistoryEventsQueryType));
-
-function isOnlineQueryType(value: string): value is OnlineHistoryEventsQueryType {
-  return ONLINE_QUERY_TYPES.has(value);
 }
 
 /** Reports the progress frames of staking queries onto the activities that run them. */
@@ -38,18 +31,23 @@ export function useStakingQueryProgress(): UseStakingQueryProgressReturn {
    * @remarks
    * The backend's periodic withdrawal and block production queries send the same frames with no
    * activity behind them here, so only a running activity is reported on. The detail needs that
-   * check: it is only cleaned up for an activity the orchestrator has a record for.
+   * check: it is only cleaned up for an activity the orchestrator has a record for. It is published
+   * only when the wait changes, since every publish re-runs every dock row's detail, and a zero
+   * second wait is no wait.
+   *
+   * The frames carry nothing that tells the two producers apart, so a periodic query that holds
+   * the backend's query lock while the user's activity waits for it reports onto that activity:
+   * its bar fills, then restarts once the user's own query begins.
    */
   function reportStakingEventsProgress(data: StakingEventsQueryData): void {
-    if (!isOnlineQueryType(data.queryType))
-      return;
-
     const subject = { queryType: data.queryType };
     if (!statusOf(onlineEventsActivity.kind, ...onlineEventsActivity.partsOf(subject)).running)
       return;
 
     reportProgress(onlineEventsActivity.id(subject), { current: data.processed, total: data.total });
-    publishActivityDetail(onlineEventsActivity, subject, { waitingSeconds: data.waitingSeconds ?? undefined });
+    const waitingSeconds = data.waitingSeconds !== null && data.waitingSeconds > 0 ? data.waitingSeconds : undefined;
+    if (peekActivityDetail(onlineEventsActivity, subject)?.waitingSeconds !== waitingSeconds)
+      publishActivityDetail(onlineEventsActivity, subject, { waitingSeconds });
   }
 
   function reportStakingQueryProgress(data: StakingQueryProgressData): void {

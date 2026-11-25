@@ -80,7 +80,7 @@ describe('useDockActivityDetail', () => {
 
     expect(get(useDockActivityDetail(row))).toEqual({ period: undefined, step: 'task_dock.detail.rate_limited::2', type: 'query' });
 
-    publishActivityDetail(onlineEventsActivity, subject, {});
+    publishActivityDetail(onlineEventsActivity, subject, { waitingSeconds: undefined });
 
     expect(get(useDockActivityDetail(row))).toBeUndefined();
   });

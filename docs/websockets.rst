@@ -649,7 +649,7 @@ The ETH withdrawals and block productions queries report their progress, and any
 - ``total``: Number of validators for block productions, or of withdrawal addresses for withdrawals.
 - ``processed``: How many of them have been processed.
 - ``query_type``: Either "block_productions" or "eth_withdrawals", as given to the online events query.
-- ``waiting_seconds``: Seconds the query waits for beaconcha.in's rate limit before its next request. ``null`` when it is not waiting.
+- ``waiting_seconds``: Seconds the query waits for beaconcha.in's rate limit before its next request. ``null`` when it is not waiting, including the frame sent once a wait is over.
 - ``subtype``: Set to "staking_events_query" to identify staking events queries.
 
 

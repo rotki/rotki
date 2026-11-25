@@ -204,6 +204,9 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                 if (rate_limit_listener := BEACONCHAIN_RATE_LIMIT_LISTENER.get()) is not None:
                     rate_limit_listener(sleep_seconds)
                 cancellable_sleep(sleep_seconds)
+                if rate_limit_listener is not None:
+                    # clear the wait now: the next progress frame may be many requests away
+                    rate_limit_listener(None)
                 continue
             # else
             break

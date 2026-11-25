@@ -229,7 +229,16 @@ describe('createProgressUpdateHandler', () => {
     expect(mockReportProgress).toHaveBeenCalledWith(onlineEventsActivity.id(subject), { current: 3, total: 15 });
     expect(get(readActivityDetail(onlineEventsActivity, subject))).toEqual({ waitingSeconds: 2 });
 
+    const published = get(useActivityDetail().details);
+    await handler.handle(frame(2));
+
+    expect(get(useActivityDetail().details)).toBe(published);
+
     await handler.handle(frame(null));
+
+    expect(get(readActivityDetail(onlineEventsActivity, subject))).toEqual({ waitingSeconds: undefined });
+
+    await handler.handle(frame(0));
 
     expect(get(readActivityDetail(onlineEventsActivity, subject))).toEqual({ waitingSeconds: undefined });
   });

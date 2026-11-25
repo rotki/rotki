@@ -12,9 +12,10 @@ if TYPE_CHECKING:
 
 T = TypeVar('T')
 
-# Called with the seconds beaconcha.in makes the current thread wait out a rate limit. Set only
-# while a staking events query runs, so that other beaconcha.in callers report nothing.
-BEACONCHAIN_RATE_LIMIT_LISTENER: Final[ContextVar[Callable[[int], None] | None]] = ContextVar(
+# Called with the seconds beaconcha.in makes the current thread wait out a rate limit, and with
+# None once the wait is over. Set only while a staking events query runs, so that other
+# beaconcha.in callers report nothing.
+BEACONCHAIN_RATE_LIMIT_LISTENER: Final[ContextVar[Callable[[int | None], None] | None]] = ContextVar(  # noqa: E501
     'beaconchain_rate_limit_listener',
     default=None,
 )
@@ -73,7 +74,7 @@ class StakingEventsProgress:
             yield item
             self.advance(weight(item))
 
-    def report_wait(self, seconds: int) -> None:
+    def report_wait(self, seconds: int | None) -> None:
         self._send(waiting_seconds=seconds)
 
     @contextmanager
