@@ -6962,7 +6962,8 @@
   },
   "staking_page": {
     "eth": {
-      "api_key_hint": "An optional Beaconcha.in API key adds block production history"
+      "api_key_hint": "An optional Beaconcha.in API key adds block production history",
+      "querying_events": "Querying staking events"
     },
     "failed_addresses": "The staking information for this address could not be loaded: {addresses} | The staking information for these addresses could not be loaded: {addresses}",
     "hyperliquid": {

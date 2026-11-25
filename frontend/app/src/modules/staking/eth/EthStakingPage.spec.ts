@@ -32,7 +32,6 @@ vi.mock('@/modules/staking/eth/use-eth-staking-refresh', async () => {
   const { computed, ref } = await import('vue');
   return {
     useEthStakingRefresh: (): ReturnType<typeof useEthStakingRefresh> => ({
-      blockProductionLoading: computed<boolean>(() => false),
       lastRefresh: ref<number>(0),
       performanceRefreshing: computed<boolean>(() => false),
       refresh,
@@ -46,6 +45,7 @@ vi.mock('@/modules/staking/eth/use-eth-staking-page-refresh', async () => {
   return {
     useEthStakingPageRefresh: vi.fn(() => ({
       chainName: computed<string>(() => 'Ethereum'),
+      queryingEvents: computed<boolean>(() => false),
       refreshPage: vi.fn(),
       refreshing: computed<boolean>(() => false),
       syncHistory: vi.fn(),

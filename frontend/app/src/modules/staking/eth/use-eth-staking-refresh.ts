@@ -9,8 +9,6 @@ import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { logger } from '@/modules/core/common/logging/logging';
-import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
-import { onlineEventsActivity } from '@/modules/history/events/tx/sync.activity';
 import { stakingPerformanceActivity } from '@/modules/staking/staking.activity';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
@@ -22,7 +20,6 @@ interface RefreshCallbacks {
 }
 
 interface UseEthStakingRefreshReturn {
-  blockProductionLoading: ComputedRef<boolean>;
   lastRefresh: Ref<number>;
   performanceRefreshing: ComputedRef<boolean>;
   refresh: (userInitiated?: boolean) => Promise<void>;
@@ -35,7 +32,7 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
   const { fetchEthStakingValidators } = useEthStaking();
   const { hydrate } = useBalanceHydration();
   const { refreshBlockchainBalances } = useBlockchainBalances();
-  const { useIsActive, useWorkStatus, useIsActivePrefix } = useTaskCenter();
+  const { useWorkStatus, useIsActivePrefix } = useTaskCenter();
 
   const performanceStatus = useWorkStatus(stakingPerformanceActivity.kind, ...stakingPerformanceActivity.partsOf());
 
@@ -55,16 +52,11 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
     useIsActivePrefix(chainBalancesActivity.kind, ...chainBalancesActivity.partsWithin([Blockchain.ETH2])),
     useBalanceRefreshState().useIsHydrating(Blockchain.ETH2),
   );
-  const blockProductionLoading = useIsActive(
-    onlineEventsActivity.kind,
-    ...onlineEventsActivity.partsOf({ queryType: OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS }),
-  );
-
-  const refreshing = logicOr(
-    performanceRefreshing,
-    eth2Loading,
-    blockProductionLoading,
-  );
+  /**
+   * The page's own figures loading. Staking events queried in the background are left out, so a
+   * slow block production query does not keep the whole page loading.
+   */
+  const refreshing = logicOr(performanceRefreshing, eth2Loading);
 
   async function refresh(userInitiated = false): Promise<void> {
     const refreshValidators = async (userInitiated: boolean): Promise<void> => {
@@ -105,7 +97,6 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
   }
 
   return {
-    blockProductionLoading,
     lastRefresh,
     performanceRefreshing,
     refresh,

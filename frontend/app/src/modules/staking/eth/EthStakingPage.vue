@@ -70,7 +70,7 @@ const { refresh, refreshing: stakingRefreshing } = useEthStakingRefresh({
   setTotal,
 });
 
-const { chainName, refreshPage, refreshing, syncHistory, syncingHistory } = useEthStakingPageRefresh(refresh, stakingRefreshing);
+const { chainName, queryingEvents, refreshPage, refreshing, syncHistory, syncingHistory } = useEthStakingPageRefresh(refresh, stakingRefreshing);
 
 onBeforeMount(async () => {
   if (get(available))
@@ -91,6 +91,7 @@ onBeforeMount(async () => {
     >
       <EthStakingHeaderActions
         :refreshing="refreshing"
+        :querying-events="queryingEvents"
         :syncing-history="syncingHistory"
         :chain-name="chainName"
         :optional-api-key-service="optionalApiKeyService"
