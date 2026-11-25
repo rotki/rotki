@@ -15,7 +15,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import (
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID
 from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
 from rotkehlchen.concurrency import cancellable_sleep
-from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
@@ -64,6 +64,9 @@ BeaconChainValidatorEndpoint = Literal['validators', 'validators/proposal-slots'
 BEACONCHAIN_VALIDATOR_LIMIT_RE: Final = re.compile(r'validator identifiers exceeds allowed limit')
 BEACONCHAIN_FREE_VALIDATOR_CHUNK_SIZE: Final = 20
 BEACONCHAIN_VALIDATOR_LIMIT_CACHE_TTL: Final = 30 * DAY_IN_SECONDS
+# beaconcha.in only returns finalized proposals, so a block proposed shortly before the last
+# query may not have been returned by it. Re-query a little before it to not miss such blocks.
+PRODUCED_BLOCKS_REQUERY_MARGIN: Final = HOUR_IN_SECONDS
 
 
 @dataclass(frozen=True)
@@ -343,18 +346,20 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
             chunk: Sequence[int],
             endpoint: BeaconChainValidatorEndpoint,
             page_size: int,
+            query_range: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         data: list[dict[str, Any]] = []
         cursor: str | None = None
         while True:
-            response = self._query_with_paging(
-                endpoint=endpoint,
-                data={
-                    'validator': {'validator_identifiers': list(chunk)},
-                    'cursor': cursor or '',
-                    'page_size': page_size,
-                },
-            )
+            request_data: dict[str, Any] = {
+                'validator': {'validator_identifiers': list(chunk)},
+                'cursor': cursor or '',
+                'page_size': page_size,
+            }
+            if query_range is not None:
+                request_data['range'] = query_range
+
+            response = self._query_with_paging(endpoint=endpoint, data=request_data)
             result = response.data
             data.extend(result)  # type: ignore[arg-type]  # is a list here
             if not isinstance(result, list) or (cursor := response.next_cursor) in (None, ''):
@@ -368,6 +373,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
             endpoint: BeaconChainValidatorEndpoint,
             page_size: int,
             chunk_size: int,
+            query_range: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         data: list[dict[str, Any]] = []
         for chunk in calculate_query_chunks(indices_or_pubkeys=indices, chunk_size=chunk_size):
@@ -375,6 +381,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                 chunk=chunk,  # type: ignore[arg-type]  # chunk has the same type as indices
                 endpoint=endpoint,
                 page_size=page_size,
+                query_range=query_range,
             ))
 
         return data
@@ -384,14 +391,20 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
             indices: list[int],
             endpoint: BeaconChainValidatorEndpoint,
             page_size: int,
+            query_range: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
-        """Queries chunked endpoints with cursor pagination in beaconchain."""
+        """Queries chunked endpoints with cursor pagination in beaconchain.
+
+        `query_range` is the endpoint's optional `range` filter. Without it the whole
+        available history of the validators is returned.
+        """
         try:
             return self._query_chunked_endpoint_with_cursor_pagination_with_size(
                 indices=indices,
                 endpoint=endpoint,
                 page_size=page_size,
                 chunk_size=self.validator_query_chunk_size,
+                query_range=query_range,
             )
         except RemoteError as e:
             if not self._maybe_update_validator_query_limit(e):
@@ -407,6 +420,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
             endpoint=endpoint,
             page_size=page_size,
             chunk_size=BEACONCHAIN_FREE_VALIDATOR_CHUNK_SIZE,
+            query_range=query_range,
         )
 
     @staticmethod
@@ -526,6 +540,46 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         with self.produced_blocks_lock:
             self._get_and_store_produced_blocks(indices=indices, update_cache=update_cache)
 
+    def _produced_blocks_query_groups(
+            self,
+            indices: list[int],
+            update_cache: bool,
+    ) -> list[tuple[Timestamp | None, list[int]]]:
+        """Split validators by where their produced blocks query has to start.
+
+        Returns (start timestamp, indices) pairs. A start of None means the whole history:
+        used for validators never queried before, and for every validator when `update_cache`
+        is False since that refetches history. The rest only need what came after the
+        earliest of their last queries, minus PRODUCED_BLOCKS_REQUERY_MARGIN.
+        """
+        if update_cache is False:
+            return [(None, indices)]
+
+        never_queried, queried, earliest_query_ts = [], [], None
+        with self.db.conn.read_ctx() as cursor:
+            for index in indices:
+                if (last_query_ts := self.db.get_dynamic_cache(
+                    cursor=cursor,
+                    name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                    index=index,
+                )) is None:
+                    never_queried.append(index)
+                    continue
+
+                queried.append(index)
+                if earliest_query_ts is None or last_query_ts < earliest_query_ts:
+                    earliest_query_ts = last_query_ts
+
+        groups: list[tuple[Timestamp | None, list[int]]] = []
+        if len(never_queried) != 0:
+            groups.append((None, never_queried))
+        if earliest_query_ts is not None:
+            groups.append((
+                Timestamp(max(0, earliest_query_ts - PRODUCED_BLOCKS_REQUERY_MARGIN)),
+                queried,
+            ))
+        return groups
+
     def _get_and_store_produced_blocks(
             self,
             indices: list[int],
@@ -550,19 +604,26 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         can also tell us there is relay data but that relay data just saying recipient
         is same as producer and same amount, meaning no extra MEV reward.
 
-        If `update_cache` is True (default), updates LAST_PRODUCED_BLOCKS_QUERY_TS to now
-        for each validator. Set to False when refetching historical data so that the
-        normal periodic query schedule is not affected.
+        If `update_cache` is True (default), only proposals since each validator's last query
+        are requested and LAST_PRODUCED_BLOCKS_QUERY_TS is updated for each validator. Set to
+        False when refetching historical data: the whole history is queried and the normal
+        periodic query schedule is not affected.
 
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
-        # This will query everything. It can be filtered by time, but we need all history here.
-        data = self._query_chunked_endpoint_with_cursor_pagination(
-            indices=indices,
-            endpoint='validators/proposal-slots',
-            page_size=10,
-        )
+        data: list[dict[str, Any]] = []
+        query_ts = ts_now()
+        for start_ts, group_indices in self._produced_blocks_query_groups(indices, update_cache):
+            data.extend(self._query_chunked_endpoint_with_cursor_pagination(
+                indices=group_indices,
+                endpoint='validators/proposal-slots',
+                page_size=10,
+                query_range=None if start_ts is None else {  # beaconcha.in rejects start > end
+                    'timestamp': {'start': min(start_ts, query_ts), 'end': query_ts},
+                },
+            ))
+
         dbevents = DBHistoryEvents(self.db)
         with self.db.conn.read_ctx() as cursor:
             ethereum_tracked_accounts = self.db.get_blockchain_accounts(cursor).get(SupportedBlockchain.ETHEREUM)  # noqa: E501
@@ -658,12 +719,11 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
 
             if update_cache:
                 with self.db.user_write() as write_cursor:
-                    now = ts_now()
                     for index in indices:
                         self.db.set_dynamic_cache(
                             write_cursor=write_cursor,
                             name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
-                            value=now,
+                            value=query_ts,
                             index=index,
                         )
 
