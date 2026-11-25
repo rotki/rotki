@@ -126,7 +126,7 @@ def validator_eth2_bucket(validator_index: int) -> Bucket:
 
 
 class Eth2StakingCostBasis:
-    """Tracks per-validator ETH2 principal, skimmed rewards, consolidations, and EIP-7002 requests.
+    """Tracks per-validator ETH2 principal, consolidations, and EIP-7002 withdrawal requests.
 
     Separates staked principal (whose basis carries across validator deposits, consolidations,
     requested partial withdrawals, and exits) from consensus rewards and slashing losses.
@@ -140,7 +140,6 @@ class Eth2StakingCostBasis:
         self._host = host
         self.validator_types = validator_types
         self._validator_principal: dict[int, FVal] = {}
-        self._validator_skimmed: dict[int, FVal] = {}
         self._consolidated_sources: set[int] = set()
         self._withdrawal_requests: dict[int, list[tuple[TimestampMS, FVal]]] = {}
         self._prebuffered_request_ids: set[int] = set()
@@ -149,7 +148,6 @@ class Eth2StakingCostBasis:
         """Serialize ETH2 validator tracking state into top-level checkpoint JSON fields."""
         return {
             'validator_principal': {str(k): str(v) for k, v in self._validator_principal.items()},
-            'validator_skimmed': {str(k): str(v) for k, v in self._validator_skimmed.items()},
             'consolidated_sources': sorted(self._consolidated_sources),
             'validator_withdrawal_requests': {
                 str(k): [[ts, str(amount)] for ts, amount in requests]
@@ -162,9 +160,6 @@ class Eth2StakingCostBasis:
         """Restore ETH2 validator tracking state from checkpoint JSON fields."""
         self._validator_principal = {
             int(k): FVal(v) for k, v in state.get('validator_principal', {}).items()
-        }
-        self._validator_skimmed = {
-            int(k): FVal(v) for k, v in state.get('validator_skimmed', {}).items()
         }
         self._consolidated_sources = set(state.get('consolidated_sources', ()))
         self._withdrawal_requests = {
@@ -266,7 +261,6 @@ class Eth2StakingCostBasis:
     ) -> None:
         """Transfer staked principal and lots from a consolidated source validator to target."""
         self._consolidated_sources.add(source_validator)
-        self._validator_skimmed.pop(source_validator, None)
         if source_validator in self._validator_principal:
             source_principal = self._validator_principal.pop(source_validator)
             has_source_principal = True
@@ -337,7 +331,6 @@ class Eth2StakingCostBasis:
             principal_eth: FVal,
             loss_eth: FVal,
             excess_eth: FVal,
-            taxable_reward_eth: FVal,
             drain_validator: bool,
     ) -> None:
         """Transfer validator principal lots to the wallet and realize any exit loss or reward."""
@@ -455,12 +448,9 @@ class Eth2StakingCostBasis:
 
         if event.amount > ZERO:
             if excess_eth > ZERO:
-                is_taxable = (
-                    taxable_reward_eth > ZERO and
-                    self._host.settings.eth_staking_taxable_after_withdrawal_enabled
-                )
+                is_taxable = self._host.settings.eth_staking_taxable_after_withdrawal_enabled
                 recv_realized_pnl, recv_taxfree_pnl = self._host.compute_receive_pnl(
-                    amount=taxable_reward_eth,
+                    amount=excess_eth,
                     basis=excess_basis,
                     basis_source=excess_basis_source,
                     is_taxable=is_taxable,
@@ -533,13 +523,9 @@ class Eth2StakingCostBasis:
                 return
 
             effective_principal = MIN_EFFECTIVE_BALANCE
-            skimmed_eth = ZERO
             drain_validator = is_exit
         elif not is_exit:
             if not self._consume_withdrawal_request(v_index, event.timestamp, event.amount):
-                self._validator_skimmed[v_index] = (
-                    self._validator_skimmed.get(v_index, ZERO) + event.amount
-                )
                 self._host.receive(
                     event,
                     wallet_bucket,
@@ -556,12 +542,10 @@ class Eth2StakingCostBasis:
                     self._validator_principal[v_index] - event.amount,
                 )
             effective_principal = event.amount
-            skimmed_eth = ZERO
             drain_validator = False
         else:
             has_principal_history = v_index in self._validator_principal
             principal_eth = self._validator_principal.pop(v_index, ZERO)
-            skimmed_eth = self._validator_skimmed.pop(v_index, ZERO)
             self._consolidated_sources.discard(v_index)
             self._withdrawal_requests.pop(v_index, None)
             effective_principal = (
@@ -571,7 +555,6 @@ class Eth2StakingCostBasis:
             drain_validator = True
 
         net_pnl_eth = event.amount - effective_principal
-        excess_eth = max(ZERO, net_pnl_eth)
         self._apply_principal_withdrawal(
             event=event,
             validator_bucket=validator_bucket,
@@ -580,7 +563,6 @@ class Eth2StakingCostBasis:
             is_stale=is_stale,
             principal_eth=effective_principal,
             loss_eth=max(ZERO, -net_pnl_eth),
-            excess_eth=excess_eth,
-            taxable_reward_eth=max(ZERO, excess_eth - skimmed_eth),
+            excess_eth=max(ZERO, net_pnl_eth),
             drain_validator=drain_validator,
         )

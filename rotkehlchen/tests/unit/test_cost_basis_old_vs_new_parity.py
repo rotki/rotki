@@ -1418,12 +1418,10 @@ def test_eth2_accumulating_requested_partial_withdrawal_preserves_basis_parity(
 def test_eth2_accumulating_exit_with_skimming_and_consensus_rewards(
         database: DBHandler,
 ) -> None:
-    """A 0x02 exit books only rewards not already taxed via skimming, matching DBEth2 PnL.
+    """A 0x02 exit taxes the full `amount - principal` excess remaining in the validator.
 
-    Intentional divergence from legacy `EthWithdrawalEvent.process()`: legacy checks
-    `max(ZERO, amount - MAX_EFFECTIVE_BALANCE)` (2048 ETH) so it misses consensus profit on
-    exits below 2048 ETH, whereas `DBEth2.process_accumulating_validators_balances_and_pnl()`
-    and the materialized cost-basis pass both compute `amount - principal - skimmed`.
+    Skimming withdrawals already left the validator when they were taxed, so `amount - principal`
+    is strictly the remaining untaxed rewards still held in the validator at exit time.
     """
     _add_rule(database, HistoryEventType.RECEIVE, taxable=False)
     _add_rule(database, HistoryEventType.SPEND)
@@ -1461,19 +1459,19 @@ def test_eth2_accumulating_exit_with_skimming_and_consensus_rewards(
         eth_staking_taxable_after_withdrawal_enabled=True,
     )
     # Skimming: 2 ETH @ 2000 = 4000.
-    # Exit: excess = 67.5 - 64 = 3.5 ETH, minus 2 ETH skimmed = 1.5 ETH taxable @ 2500 = 3750.
+    # Exit: excess = 67.5 - 64 = 3.5 ETH taxable @ 2500 = 8750 (skims already left the validator).
     # Spend 69.5 ETH @ 3000: 64 @ 1000 (+128k) + 2 @ 2000 (+2k) + 3.5 @ 2500 (+1.75k) = +131_750.
-    assert FVal(new_result['total_realized_pnl']) == FVal(139_500)
-    assert new_result['stale'] is False
-    # Verify DBEth2 agrees on exits_pnl == 1.5 ETH (whereas legacy Accountant missed it).
-    _, withdrawals_pnl, exits_pnl = DBEth2(database).process_validators_balances_and_pnl(
-        from_ts=_shappela(0),
-        to_ts=_shappela(1000),
-        validator_indices={42},
-    )
-    assert withdrawals_pnl[42] == FVal(2)
-    assert exits_pnl[42] == FVal('1.5')
-    assert old_totals[0] != FVal(new_result['total_realized_pnl'])
+    # Total realized PnL = 4000 + 8750 + 131_750 = 144_500 == 69.5 * 3000 - 64 * 1000.
+    assert old_totals == (FVal(144_500), ZERO)
+    _assert_pnl_parity(old_totals, new_result)
+    with database.conn.read_ctx() as cursor:
+        exit_row = cursor.execute(
+            'SELECT cb.realized_pnl FROM event_cost_basis cb '
+            'JOIN history_events he ON he.identifier = cb.event_identifier '
+            'WHERE he.group_identifier = ? AND cb.direction = ?',
+            ('eth2_exit_42', 'receive'),
+        ).fetchone()
+    assert exit_row == ('8750',)
 
 
 @pytest.mark.parametrize('taxable_after_withdrawal', [True, False])
@@ -1553,7 +1551,7 @@ def test_eth2_accumulating_exit_slashing_consolidate_and_different_depositor_par
 
 def test_eth2_consolidated_source_exit_sweep_and_checkpoint_resume(database: DBHandler) -> None:
     """Consolidated 0x01 source exit sweep is treated as reward income (not slashing), and
-    resuming from a cost-basis checkpoint preserves validator principal, skimmed, and consolidated state."""  # noqa: E501
+    resuming from a cost-basis checkpoint preserves validator principal and consolidated state."""
     _add_rule(database, HistoryEventType.RECEIVE, taxable=False)
     _add_rule(database, HistoryEventType.SPEND)
     _setup_eth2_accounts_and_validators(
@@ -1588,7 +1586,7 @@ def test_eth2_consolidated_source_exit_sweep_and_checkpoint_resume(database: DBH
     later_events: list[HistoryBaseEntry] = [
         # Consolidated 0x01 source exit sweep of 0.1 ETH -> reward income (220), not slashing loss
         _eth_withdrawal(at=t_src_exit, amount='0.1', validator_index=10, is_exit=True),
-        # Target 0x02 exit of 34.5 ETH: 32 principal + 1 already skimmed + 1.5 new reward (3750)
+        # Target 0x02 exit of 34.5 ETH: 32 principal + 2.5 remaining rewards (6250)
         _eth_withdrawal(
             at=t_tgt_exit, amount='34.5', validator_index=20,
             is_exit=True, group_identifier='eth2_exit_20',
@@ -1611,10 +1609,10 @@ def test_eth2_consolidated_source_exit_sweep_and_checkpoint_resume(database: DBH
         )
     resumed_result = _run_new_pipeline(database, price_fn, _shappela(0), _shappela(1000))
 
-    # Skim (1 * 2000 = 2000) + src_exit (0.1 * 2200 = 220) + tgt_exit (1.5 * 2500 = 3750)
+    # Skim (1 * 2000 = 2000) + src_exit (0.1 * 2200 = 220) + tgt_exit (2.5 * 2500 = 6250)
     # + spend 35.6 @ 3000 (106_800) minus basis (32*1000 + 1*2000 + 0.1*2200 + 2.5*2500 = 40_470)
-    # = 5970 + 66_330 = 72_300.
-    assert FVal(resumed_result['total_realized_pnl']) == FVal(72_300)
+    # = 8470 + 66_330 = 74_800 == 35.6 * 3000 - 32 * 1000.
+    assert FVal(resumed_result['total_realized_pnl']) == FVal(74_800)
     assert resumed_result['stale'] is False
 
     # Verify a fresh full pass (without checkpoints) yields the exact same result.
@@ -1844,43 +1842,36 @@ def test_eth2_deposit_from_blocked_bucket_does_not_update_validator_principal(
     assert '42' not in state['validator_principal']
 
 
-def test_eth2_checkpoint_prunes_stale_validator_skimmed_and_consolidated_sources(
+def test_eth2_checkpoint_prunes_stale_consolidated_sources(
         database: DBHandler,
 ) -> None:
-    """Checkpoint state drops `validator_skimmed` for a consolidated source validator and drops
-    `consolidated_sources` once the non-accumulating source completes its exit sweep."""
+    """Checkpoint state drops `consolidated_sources` once the non-accumulating source completes
+    its exit sweep and does not persist unused skimmed-reward state."""
     _add_rule(database, HistoryEventType.RECEIVE, taxable=False)
     _setup_eth2_accounts_and_validators(
         database=database,
         accounts=[TEST_ADDR1],
         validators=[
-            _validator(10, ValidatorType.ACCUMULATING),
             _validator(11, ValidatorType.DISTRIBUTING),
             _validator(20, ValidatorType.ACCUMULATING),
         ],
     )
 
-    t_buy, t_dep10, t_dep11, t_dep20 = _shappela(10), _shappela(20), _shappela(30), _shappela(40)
-    t_skim10, t_cons10 = _shappela(100), _shappela(120)
+    t_buy, t_dep11, t_dep20 = _shappela(10), _shappela(30), _shappela(40)
     t_cons11, t_exit11 = _shappela(140), _shappela(200)
     price_fn = _price_lookup({
         (A_ETH, t_buy): Price(FVal(1000)),
-        (A_ETH, t_dep10): Price(FVal(1500)),
         (A_ETH, t_dep11): Price(FVal(1500)),
         (A_ETH, t_dep20): Price(FVal(1500)),
-        (A_ETH, t_skim10): Price(FVal(2000)),
         (A_ETH, t_exit11): Price(FVal(2200)),
     })
 
     _write_settings_and_events(
         database=database,
         events=[
-            _evm_event(at=t_buy, amount='96', event_type=HistoryEventType.RECEIVE),
-            _eth_deposit(at=t_dep10, validator_index=10),
+            _evm_event(at=t_buy, amount='64', event_type=HistoryEventType.RECEIVE),
             _eth_deposit(at=t_dep11, validator_index=11),
             _eth_deposit(at=t_dep20, validator_index=20),
-            _eth_withdrawal(at=t_skim10, amount='1', validator_index=10, group_identifier='skim_10'),  # noqa: E501
-            _eth2_consolidate(at=t_cons10, source_index=10, target_index=20),
             _eth2_consolidate(at=t_cons11, source_index=11, target_index=20),
             _eth_withdrawal(at=t_exit11, amount='0.1', validator_index=11, is_exit=True),
         ],
@@ -1889,10 +1880,8 @@ def test_eth2_checkpoint_prunes_stale_validator_skimmed_and_consolidated_sources
     _run_new_pipeline(database, price_fn, _shappela(0), _shappela(1000))
 
     state = _get_latest_checkpoint_state(database)
-    assert (
-        '10' in state['validator_skimmed'],
-        11 in state['consolidated_sources'],
-    ) == (False, False)
+    assert 'validator_skimmed' not in state
+    assert 11 not in state['consolidated_sources']
 
 
 def test_eth2_withdrawal_request_checkpoint_roundtrip_across_validator_upgrade(
