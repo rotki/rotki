@@ -1628,6 +1628,7 @@ def _refresh_rpc_nodes(
         inquirer: EvmNodeInquirer | SolanaInquirer,
         removed: set[NodeName],
         error: Exception | None = None,
+        show_traceback: bool = False,
 ) -> bool:
     """Refresh during a mocked network call, optionally failing that call."""
     inquirer.refresh_nodes(set(), removed)
