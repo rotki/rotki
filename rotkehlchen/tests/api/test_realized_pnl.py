@@ -5,15 +5,20 @@ import pytest
 import requests
 
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.locations.constants import LOCATION_ETHEREUM, LOCATION_OPTIMISM
+from rotkehlchen.locations.constants import (
+    LOCATION_ETHEREUM,
+    LOCATION_KRAKEN,
+    LOCATION_OPTIMISM,
+)
 from rotkehlchen.tasks.cost_basis import process_cost_basis
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
 from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
@@ -114,10 +119,12 @@ def _group(
         pnl: int,
         events: int = 1,
         unpriced_events: int = 0,
+        taxfree_pnl: int = 0,
 ) -> dict[str, Any]:
     return {
         'group_key': key,
         'realized_pnl': str(pnl),
+        'taxfree_pnl': str(taxfree_pnl),
         'basis_removed': str(100 * events),
         'num_events': events,
         'num_unpriced_events': unpriced_events,
@@ -143,6 +150,7 @@ def test_realized_pnl_is_broken_down_by_group(
 ) -> None:
     assert _query(rotkehlchen_api_server, group_by=group_by) == {
         'total_realized_pnl': '5700',
+        'total_taxfree_pnl': '0',
         'num_unpriced_events': 0,
         'breakdown': sorted(breakdown, key=lambda group: group['group_key'] or ''),
         'stale': False,
@@ -155,7 +163,7 @@ def test_realized_pnl_is_broken_down_by_group(
     ({'asset': 'ETH'}, '3800'),
     ({'location': 'optimism'}, '2900'),
     ({'location_labels': [TEST_ADDR1], 'to_timestamp': JAN_12_2023}, '900'),
-    ({'event_types': ['receive']}, '0'),  # only spends realize anything
+    ({'event_types': ['receive']}, '0'),  # non-taxable receives realize nothing
     ({'asset': 'ETH', 'location_labels': [TEST_ADDR2]}, '0'),
     ({'state_markers': ['customized']}, '0'),
     ({'state_markers': ['matched']}, '0'),
@@ -169,6 +177,7 @@ def test_realized_pnl_only_counts_the_events_matching_the_filter(
 ) -> None:
     result = _query(rotkehlchen_api_server, **filters)
     assert result['total_realized_pnl'] == total
+    assert result['total_taxfree_pnl'] == '0'
     assert result['num_unpriced_events'] == 0
     assert (result['breakdown'] == []) is (total == '0')
 
@@ -186,6 +195,7 @@ def test_realized_pnl_filters_by_identifiers(
 
     assert _query(rotkehlchen_api_server, identifiers=[optimism_spend_id]) == {
         'total_realized_pnl': '2900',
+        'total_taxfree_pnl': '0',
         'num_unpriced_events': 0,
         'breakdown': [_group(None, 2900, events=1)],
         'stale': False,
@@ -199,6 +209,7 @@ def test_realized_pnl_is_stale_until_the_cost_basis_is_processed(
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     empty = {
         'total_realized_pnl': '0',
+        'total_taxfree_pnl': '0',
         'num_unpriced_events': 0,
         'breakdown': [],
         'method': 'fifo',
@@ -357,6 +368,7 @@ def test_unpriced_spend_returns_null_pnl_and_does_not_fail_summary(
 
     assert _query(rotkehlchen_api_server, group_by='asset') == {
         'total_realized_pnl': '1900',
+        'total_taxfree_pnl': '0',
         'num_unpriced_events': 1,
         'breakdown': [
             _group('BTC', 1900, events=1, unpriced_events=0),
@@ -377,6 +389,149 @@ def test_unpriced_spend_returns_null_pnl_and_does_not_fail_summary(
     assert spend_entry['taxfree_pnl'] is None
     assert spend_entry['basis_removed'] == '100'
     assert spend_entry['basis_remaining'] == '0'
+
+
+def test_unpriced_taxable_receives_are_counted_as_unpriced(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Unpriced taxable crypto and fiat receives store null PnL and increment unpriced counts,
+    while unpriced non-taxable receives are excluded from PnL totals and unpriced counts."""
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    rules_db = DBAccountingRules(database)
+    rules_db.add_accounting_rule(
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        counterparty=None,
+        rule=BaseEventSettings(
+            taxable=False,
+            count_entire_amount_spend=False,
+            count_cost_basis_pnl=False,
+        ),
+        links={},
+    )
+    for subtype in (HistoryEventSubType.AIRDROP, HistoryEventSubType.INTEREST):
+        rules_db.add_accounting_rule(
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=subtype,
+            counterparty=None,
+            rule=BaseEventSettings(
+                taxable=True,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+            ),
+            links={},
+        )
+
+    events_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        nontaxable_eth = events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(timestamp=JAN_10_2023, event_type=HistoryEventType.RECEIVE),
+        )
+        unpriced_airdrop = events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(JAN_10_2023 * 1000),
+                location=LOCATION_ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.AIRDROP,
+                asset=A_ETH,
+                amount=FVal(1),
+                location_label=TEST_ADDR1,
+            ),
+        )
+        priced_airdrop = events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(JAN_12_2023 * 1000),
+                location=LOCATION_ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.AIRDROP,
+                asset=A_BTC,
+                amount=FVal(1),
+                location_label=TEST_ADDR1,
+            ),
+        )
+        unpriced_fiat_interest = events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                timestamp=TimestampMS(FEB_20_2024 * 1000),
+                location=LOCATION_KRAKEN,
+                location_label='kraken',
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.INTEREST,
+                asset=A_USD,
+                amount=FVal(100),
+                group_identifier='usd_interest_unpriced',
+                sequence_index=0,
+            ),
+        )
+    assert nontaxable_eth is not None
+    assert unpriced_airdrop is not None
+    assert priced_airdrop is not None
+    assert unpriced_fiat_interest is not None
+
+    def query_historical_price(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        if from_asset == A_BTC and timestamp == JAN_12_2023:
+            return Price(FVal(2000))
+        raise NoPriceForGivenTimestamp(from_asset=from_asset, to_asset=to_asset, time=timestamp)
+
+    with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
+        historian.return_value.query_historical_price = query_historical_price
+        assert process_cost_basis(database, database.msg_aggregator) is True
+
+    with database.conn.read_ctx() as cursor:
+        rows = {
+            row[0]: row[1:]
+            for row in cursor.execute(
+                'SELECT event_identifier, basis_source, realized_pnl, taxfree_pnl, is_taxable '
+                'FROM event_cost_basis',
+            )
+        }
+    assert rows == {
+        nontaxable_eth: ('zero_cost', None, None, 0),
+        unpriced_airdrop: ('zero_cost', None, None, 1),
+        priced_airdrop: ('price_oracle', '2000', '0', 1),
+        unpriced_fiat_interest: ('zero_cost', None, None, 1),
+    }
+
+    assert _query(rotkehlchen_api_server, group_by='asset') == {
+        'total_realized_pnl': '2000',
+        'total_taxfree_pnl': '0',
+        'num_unpriced_events': 2,
+        'breakdown': [
+            {
+                'group_key': 'BTC',
+                'realized_pnl': '2000',
+                'taxfree_pnl': '0',
+                'basis_removed': '0',
+                'num_events': 1,
+                'num_unpriced_events': 0,
+            },
+            {
+                'group_key': 'ETH',
+                'realized_pnl': '0',
+                'taxfree_pnl': '0',
+                'basis_removed': '0',
+                'num_events': 1,
+                'num_unpriced_events': 1,
+            },
+            {
+                'group_key': 'USD',
+                'realized_pnl': '0',
+                'taxfree_pnl': '0',
+                'basis_removed': '0',
+                'num_events': 1,
+                'num_unpriced_events': 1,
+            },
+        ],
+        'stale': False,
+        'method': 'fifo',
+    }
 
 
 def test_realized_pnl_groups_year_boundary_week_together(
@@ -412,6 +567,7 @@ def test_realized_pnl_groups_year_boundary_week_together(
 
     assert _query(rotkehlchen_api_server, group_by='week') == {
         'total_realized_pnl': '2800',
+        'total_taxfree_pnl': '0',
         'num_unpriced_events': 0,
         'breakdown': [_group('2025-W01', 2800, events=2)],
         'stale': False,

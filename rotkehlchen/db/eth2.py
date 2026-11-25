@@ -14,7 +14,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
 )
 from rotkehlchen.constants import WEEK_IN_MILLISECONDS, ZERO
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.cache import DBCacheDynamic, mark_stale_from_ts
 from rotkehlchen.db.filtering import (
     ETH_STAKING_EVENT_JOIN,
     EthStakingEventFilterQuery,
@@ -26,6 +26,7 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.auto_notes import NATIVE_TRANSFER_TEMPLATE
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
@@ -201,13 +202,21 @@ class DBEth2:
 
         if (exit_ts := ts_ms_to_sec(latest_result[1])) >= withdrawable_timestamp:
             write_cursor.execute(  # the withdrawal notes follow from this flag, see auto_notes()
-                'UPDATE eth_staking_events_info SET is_exit_or_blocknumber=? WHERE identifier=?',
+                'UPDATE eth_staking_events_info SET is_exit_or_blocknumber=? '
+                'WHERE identifier=? AND is_exit_or_blocknumber IS NOT 1',
                 (1, latest_result[0]),
             )
+            exit_updated = write_cursor.rowcount > 0
             write_cursor.execute(
                 'UPDATE eth2_validators SET exited_timestamp=? WHERE validator_index=?',
                 (exit_ts, index),
             )
+            if exit_updated and is_accounting_update_enabled():
+                mark_stale_from_ts(
+                    write_cursor=write_cursor,
+                    from_ts=TimestampMS(latest_result[1]),
+                    include_balances=False,
+                )
 
     def add_or_update_validators_except_ownership(
             self,
@@ -220,6 +229,28 @@ class DBEth2:
             validators=validators,
             updatable_attributes=('validator_index', 'validator_type', 'withdrawal_address', 'activation_timestamp', 'withdrawable_timestamp'),  # noqa: E501
         )
+
+    @staticmethod
+    def _mark_cost_basis_stale_for_validators(
+            write_cursor: DBCursor,
+            validator_indices: Collection[int],
+    ) -> None:
+        """Mark materialized cost basis stale from the earliest withdrawal of the given validators."""  # noqa: E501
+        if is_accounting_update_enabled() is False or len(validator_indices) == 0:
+            return
+
+        withdrawal_type = HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT.serialize_for_db()
+        timestamps = [
+            row[0] for chunk, placeholders in get_query_chunks(data=list(validator_indices))
+            if (row := write_cursor.execute(
+                f'SELECT MIN(HE.timestamp) FROM history_events HE '
+                f'INNER JOIN eth_staking_events_info SE ON SE.identifier = HE.identifier '
+                f'WHERE HE.entry_type = ? AND SE.validator_index IN ({placeholders})',
+                (withdrawal_type, *chunk),
+            ).fetchone()) is not None
+        ]
+        if (min_ts := min((ts for ts in timestamps if ts is not None), default=None)) is not None:
+            mark_stale_from_ts(write_cursor=write_cursor, from_ts=min_ts, include_balances=False)
 
     def add_or_update_validators(
             self,
@@ -234,6 +265,7 @@ class DBEth2:
         at the time of writing the daily stats have a foreign key relation to this table
         all the daily stats were deleted.
         """
+        affected_validator_indices: set[int] = set()
         for validator in validators:
             result = write_cursor.execute(
                 'SELECT validator_index, public_key, validator_type, ownership_proportion, withdrawal_address, '  # noqa: E501
@@ -246,6 +278,13 @@ class DBEth2:
                     if getattr(db_validator, attr) != (new_value := getattr(validator, attr)):
                         if attr == 'validator_type':
                             new_value = new_value.serialize_for_db()
+                        if attr in ('validator_type', 'validator_index'):
+                            affected_validator_indices.update(
+                                idx for idx in (
+                                    db_validator.validator_index,
+                                    validator.validator_index,
+                                ) if idx is not None
+                            )
 
                         write_cursor.execute(
                             f'UPDATE eth2_validators SET {attr}=? WHERE public_key=?',
@@ -257,6 +296,13 @@ class DBEth2:
                     'eth2_validators(validator_index, public_key, validator_type, ownership_proportion, withdrawal_address, activation_timestamp, withdrawable_timestamp, exited_timestamp) VALUES(?, ?, ?, ?, ?, ?, ?, ?)',  # noqa: E501
                     validator.serialize_for_db(),
                 )
+                if validator.validator_index is not None:
+                    affected_validator_indices.add(validator.validator_index)
+
+        self._mark_cost_basis_stale_for_validators(
+            write_cursor=write_cursor,
+            validator_indices=affected_validator_indices,
+        )
 
     def edit_validator_ownership(self, write_cursor: DBCursor, validator_index: int, ownership_proportion: FVal) -> None:  # noqa: E501
         """Edits the ownership proportion for a validator identified by its index.

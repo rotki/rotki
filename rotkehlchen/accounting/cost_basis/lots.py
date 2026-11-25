@@ -269,3 +269,13 @@ class BucketLots[K: Hashable]:
             (lot.remaining_amount * lot.rate for lot in manager.get_acquisitions()),
             start=ZERO,
         )
+
+    def amount_remaining(self, bucket: K) -> FVal:
+        """The total amount of what the bucket still holds."""
+        if isinstance(manager := self._get(bucket), AverageCostBasisMethod):
+            return manager.current_amount
+
+        return sum(
+            (lot.remaining_amount for lot in manager.get_acquisitions()),
+            start=ZERO,
+        )

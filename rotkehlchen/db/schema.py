@@ -1104,6 +1104,7 @@ CREATE TABLE IF NOT EXISTS event_cost_basis (
     taxfree_pnl TEXT,
     basis_removed TEXT,
     post_spend_basis_remaining TEXT,
+    is_taxable INTEGER NOT NULL DEFAULT 0 CHECK(is_taxable IN (0, 1)),
     method TEXT NOT NULL CHECK(method IN ('fifo', 'lifo', 'hifo', 'acb')),
     UNIQUE(event_identifier, location, location_label, protocol, asset, direction)
 );

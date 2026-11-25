@@ -59,7 +59,7 @@ def query_realized_pnl(
     The amounts are summed here and not in SQLite, where they would be summed as floats.
     """
     filters, bindings = filter_query.prepare(with_pagination=False, with_order=False)
-    groups: dict[str | None, tuple[FVal, FVal, set[int], set[int]]] = {}
+    groups: dict[str | None, tuple[FVal, FVal, FVal, set[int], set[int]]] = {}
     all_unpriced_events: set[int] = set()
     with database.conn.read_ctx() as cursor:
         stale_from_ts, last_processing_ts = database.get_static_caches(
@@ -70,39 +70,50 @@ def query_realized_pnl(
             ),
         )
         method = database.get_settings(cursor).cost_basis_method.serialize()
-        for group_key, realized_pnl, basis_removed, event_identifier in cursor.execute(
+        for group_key, realized_pnl, taxfree_pnl, basis_removed, event_identifier in cursor.execute(  # noqa: E501
             f'SELECT {"NULL" if group_by is None else GROUP_KEY_SQL[group_by]}, '
-            'cost_basis.realized_pnl, cost_basis.basis_removed, cost_basis.event_identifier '
+            'cost_basis.realized_pnl, cost_basis.taxfree_pnl, cost_basis.basis_removed, '
+            'cost_basis.event_identifier '
             'FROM event_cost_basis AS cost_basis '
-            'WHERE cost_basis.direction = ? AND cost_basis.event_identifier IN '
+            'WHERE (cost_basis.direction = ? '
+            'OR (cost_basis.direction = ? AND cost_basis.is_taxable = 1)) '
+            'AND cost_basis.event_identifier IN '
             '(SELECT history_events.identifier AS history_events_identifier '
             f'{ALL_EVENTS_DATA_JOIN} {filters})',
-            (CostBasisDirection.SPEND.value, *bindings),
+            (CostBasisDirection.SPEND.value, CostBasisDirection.RECEIVE.value, *bindings),
         ):
-            pnl, basis, events, unpriced_events = groups.get(group_key, (ZERO, ZERO, set(), set()))
+            pnl, taxfree, basis, events, unpriced_events = groups.get(
+                group_key,
+                (ZERO, ZERO, ZERO, set(), set()),
+            )
             events.add(event_identifier)
             if realized_pnl is None:
                 unpriced_events.add(event_identifier)
                 all_unpriced_events.add(event_identifier)
             else:
                 pnl += FVal(realized_pnl)
+                if taxfree_pnl is not None:
+                    taxfree += FVal(taxfree_pnl)
             groups[group_key] = (
                 pnl,
-                basis + FVal(basis_removed),
+                taxfree,
+                basis + (FVal(basis_removed) if basis_removed is not None else ZERO),
                 events,
                 unpriced_events,
             )
 
     return {
-        'total_realized_pnl': str(sum((pnl for pnl, _, _, _ in groups.values()), start=ZERO)),
+        'total_realized_pnl': str(sum((pnl for pnl, _, _, _, _ in groups.values()), start=ZERO)),
+        'total_taxfree_pnl': str(sum((taxfree for _, taxfree, _, _, _ in groups.values()), start=ZERO)),  # noqa: E501
         'num_unpriced_events': len(all_unpriced_events),
         'breakdown': [{
             'group_key': group_key,
             'realized_pnl': str(pnl),
+            'taxfree_pnl': str(taxfree),
             'basis_removed': str(basis),
             'num_events': len(events),
             'num_unpriced_events': len(unpriced_events),
-        } for group_key, (pnl, basis, events, unpriced_events) in sorted(
+        } for group_key, (pnl, taxfree, basis, events, unpriced_events) in sorted(
             groups.items(),
             key=lambda item: item[0] or '',
         )],
@@ -205,7 +216,7 @@ def query_events_cost_basis(
                 }
                 if row[1] == CostBasisDirection.RECEIVE.value:
                     entry |= {
-                        'lot_ids': row[7].split(','),
+                        'lot_ids': row[7].split(',') if row[7] else [],
                         'basis_per_unit': row[8],
                         'basis_source': row[9],
                     }

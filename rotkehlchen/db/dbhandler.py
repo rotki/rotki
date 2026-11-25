@@ -155,6 +155,7 @@ from rotkehlchen.history.data_issues.observations import (
     delete_wallet_observations,
     record_token_detection_observations,
 )
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.locations.chains import (
     location_from_chain,
@@ -1952,6 +1953,32 @@ class DBHandler:
         if (min_ts := min((ts for ts in timestamps if ts is not None), default=None)) is not None:
             mark_stale_from_ts(write_cursor=write_cursor, from_ts=min_ts, include_balances=False)
 
+    @staticmethod
+    def _mark_cost_basis_stale_for_eth_accounts(
+            write_cursor: DBCursor,
+            addresses: Sequence[str],
+    ) -> None:
+        """Mark materialized cost basis stale from the earliest EthBlockEvent or EthWithdrawalEvent
+        whose location_label is one of the given ETH addresses.
+        """
+        if is_accounting_update_enabled() is False or len(addresses) == 0:
+            return
+
+        entry_types = (
+            HistoryBaseEntryType.ETH_BLOCK_EVENT.serialize_for_db(),
+            HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT.serialize_for_db(),
+        )
+        timestamps = [
+            row[0] for chunk, placeholders in get_query_chunks(data=addresses)
+            if (row := write_cursor.execute(
+                f'SELECT MIN(timestamp) FROM history_events '
+                f'WHERE entry_type IN (?, ?) AND location_label IN ({placeholders})',
+                (*entry_types, *chunk),
+            ).fetchone()) is not None
+        ]
+        if (min_ts := min((ts for ts in timestamps if ts is not None), default=None)) is not None:
+            mark_stale_from_ts(write_cursor=write_cursor, from_ts=min_ts, include_balances=False)
+
     def add_to_ignored_assets(self, write_cursor: DBCursor, asset: Asset) -> None:
         """Add a new asset to the set of ignored assets. If the asset was already marked as
         ignored then we don't do anything. Also ignore history events with this asset.
@@ -2327,6 +2354,14 @@ class DBHandler:
             ) from e
 
         insert_tag_mappings(write_cursor=write_cursor, data=account_data, object_reference_keys=['address'])  # noqa: E501
+        if len(eth_addresses := [
+            entry.address for entry in account_data
+            if entry.chain == SupportedBlockchain.ETHEREUM
+        ]) > 0:
+            self._mark_cost_basis_stale_for_eth_accounts(
+                write_cursor=write_cursor,
+                addresses=eth_addresses,
+            )
 
     def edit_blockchain_accounts(
             self,
@@ -2433,6 +2468,11 @@ class DBHandler:
             'DELETE FROM blockchain_accounts WHERE '
             'blockchain = ? and account = ?;', tuples,
         )
+        if blockchain == SupportedBlockchain.ETHEREUM:
+            self._mark_cost_basis_stale_for_eth_accounts(
+                write_cursor=write_cursor,
+                addresses=accounts,
+            )
         if (location_code := get_evm_location_code(blockchain)) is not None:
             delete_balance_checks(
                 write_cursor=write_cursor,
