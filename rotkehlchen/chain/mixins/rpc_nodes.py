@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 import requests
 from ens import ENS
 from web3 import HTTPProvider, Web3
-from web3.exceptions import Web3Exception
+from web3.exceptions import ProviderConnectionError, Web3Exception
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE
@@ -459,9 +459,10 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
 
         web3, rpc_endpoint = self._init_web3(node)
         try:  # it is here that an actual connection is attempted
-            is_connected = web3.is_connected()
-        except requests.RequestException:
-            message = f'Failed to connect to {self.chain_name} node {node} at endpoint {rpc_endpoint}'  # noqa: E501
+            # without show_traceback web3 swallows the error (HTTP status, DNS failure, etc.)
+            is_connected = web3.is_connected(show_traceback=True)
+        except (requests.RequestException, ProviderConnectionError) as e:
+            message = f'Failed to connect to {self.chain_name} node {node} at endpoint {rpc_endpoint} due to {e!s}'  # noqa: E501
             log.warning(message)
             return False, message
         except json.JSONDecodeError as e:
@@ -479,7 +480,7 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
                         version = web3.net.version
                     except requests.RequestException as e:
                         msg = (
-                            f'Connected to node {node} at endpoint {rpc_endpoint} but'
+                            f'Connected to node {node} at endpoint {rpc_endpoint} but '
                             f'failed to request node version due to {e!s}'
                         )
                         log.warning(msg)
@@ -522,6 +523,7 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
                     f'Failed to connect to {self.chain_name} node {node} at endpoint '
                     f'{rpc_endpoint} due to {e!s}'
                 )
+                log.warning(message)
                 return False, message
 
             stored_archive_status, stored_pruned_status = self.database.get_rpc_node_capabilities(

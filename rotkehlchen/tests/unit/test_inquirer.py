@@ -2048,6 +2048,24 @@ def test_connect_rpc_with_broken_version_response(ethereum_inquirer: EthereumInq
     assert 'unexpected node version response' in msg
 
 
+@pytest.mark.parametrize('error', [
+    requests.HTTPError('410 Client Error: Gone for url: https://eth1.lava.build/'),
+    requests.ConnectionError('Failed to resolve eth1.lava.build'),
+])
+def test_connect_rpc_failure_reports_reason(ethereum_inquirer: EthereumInquirer, error):
+    """Test that a dead node's connection failure carries the reason the request failed"""
+    with patch.object(HTTPProvider, 'make_request', side_effect=error):
+        success, msg = ethereum_inquirer.attempt_connect(node=NodeName(
+            name='dead node',
+            endpoint='https://eth1.lava.build',
+            owned=False,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ))
+
+    assert success is False
+    assert str(error) in msg
+
+
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_fake_symbol_doesnt_query_cc(inquirer: Inquirer):
     """Test that a token that has the symbol of another token (like USDC) doesn't trigger

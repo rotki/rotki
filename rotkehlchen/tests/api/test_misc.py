@@ -758,7 +758,12 @@ def test_connecting_to_node(rotkehlchen_api_server: APIServer) -> None:
         assert response.status_code == HTTPStatus.OK
 
 
-def _change_rpc_through_api(url: str, payload: dict[str, Any], delete: bool) -> bool:
+def _change_rpc_through_api(
+        url: str,
+        payload: dict[str, Any],
+        delete: bool,
+        show_traceback: bool = False,
+) -> bool:
     response = (requests.delete if delete else requests.patch)(url, json=payload)
     assert_proper_sync_response_with_result(response)
     return True
