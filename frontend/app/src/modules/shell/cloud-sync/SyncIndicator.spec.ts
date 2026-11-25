@@ -88,7 +88,7 @@ const { checkIfUnknown } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/modules/shell/cloud-sync/use-remote-backup-check', () => ({
-  useRemoteBackupCheck: (): Record<string, unknown> => ({ checking: ref<boolean>(false), checkIfUnknown }),
+  useRemoteBackupCheck: (): Record<string, unknown> => ({ checkFailed: ref<boolean>(false), checking: ref<boolean>(false), checkIfUnknown }),
 }));
 
 vi.mock('@/modules/shell/layout/use-links', () => ({

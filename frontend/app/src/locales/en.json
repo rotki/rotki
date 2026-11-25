@@ -3616,6 +3616,7 @@
     "action": "Delete backup",
     "changed": "The server backup changed while you were looking, so it was kept. This is the current one.",
     "changed_unloaded": "The server backup changed and was kept, but the current one could not be loaded",
+    "check_failed": "Could not check the server for a backup. Open the menu again to retry.",
     "checking": "Checking the server for a backup",
     "delete_failed": "The backup was not deleted",
     "deleted": {

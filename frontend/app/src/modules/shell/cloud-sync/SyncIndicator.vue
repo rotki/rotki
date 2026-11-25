@@ -46,7 +46,11 @@ const showDeleteRemoteBackup = ref<boolean>(false);
 /** A deletion in flight keeps the menu open, so its outcome is not lost. */
 const deletingRemoteBackup = ref<boolean>(false);
 
-const { checking: checkingRemoteBackup, checkIfUnknown: checkRemoteBackupIfUnknown } = useRemoteBackupCheck();
+const {
+  checkFailed: remoteBackupCheckFailed,
+  checking: checkingRemoteBackup,
+  checkIfUnknown: checkRemoteBackupIfUnknown,
+} = useRemoteBackupCheck();
 
 /** Opening the menu asks the server when no backup is known; closing it abandons the deletion. */
 watch(modelVisible, (visible) => {
@@ -212,6 +216,7 @@ watch(showDeleteRemoteBackup, (shown) => {
             <DeleteRemoteBackupEntry
               :no-backup="!lastDataUpload"
               :checking="checkingRemoteBackup"
+              :check-failed="remoteBackupCheckFailed"
               :disabled="pending || isSyncing"
               @open="showDeleteRemoteBackup = true"
             />

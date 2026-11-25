@@ -1217,3 +1217,21 @@ def test_premium_added_mid_session_reads_remote_backup(
     assert rotki.premium is premium
     expected = 0 if metadata_fails else 1760882460
     assert rotki.premium_sync_manager.last_remote_data_upload_ts == expected
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_premium_reactivation_reads_remote_backup_only_when_it_was_off(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """The hourly premium check activates premium after every successful check. Only a
+    reactivation after premium was off reads the remote backup, not every check."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    premium = rotki.premium
+    assert premium is not None
+    with patch.object(rotki.premium_sync_manager, 'refresh_remote_backup_info') as refresh:
+        rotki.activate_premium_status(premium)  # an hourly check while premium is active
+        refresh.assert_not_called()
+
+        rotki.deactivate_premium_status()
+        rotki.activate_premium_status(premium)  # premium coming back
+        refresh.assert_called_once()
