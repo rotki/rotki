@@ -8,6 +8,9 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useExternalServicesApi } from '@/modules/settings/api/use-external-services-api';
 import { NoIndexersCause, type RaisedCondition, RaisedConditionKind, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
+/** How long a save or delete outcome stays on its card. */
+const STATUS_TTL_MS = 4500;
+
 /** The chain-row causes a service's key restores. */
 const KEY_CAUSES_BY_SERVICE = new Map<string, NoIndexersCause[]>([
   ['blockscout', [NoIndexersCause.BLOCKSCOUT_OR_PAID_ETHERSCAN_KEY]],
@@ -94,19 +97,30 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
     }
   }
 
+  /** One expiry per key, so an earlier status's timer cannot take down the one that replaced it. */
+  const statusTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
   function resetStatus(key: string): void {
+    clearTimeout(statusTimers.get(key));
+    statusTimers.delete(key);
     const { [key]: removed, ...newStatus } = get(status);
     set(status, newStatus);
   }
 
   function setStatus(key: string, message: Status): void {
-    setTimeout(resetStatus, 4500, key);
+    clearTimeout(statusTimers.get(key));
+    statusTimers.set(key, setTimeout(resetStatus, STATUS_TTL_MS, key));
 
     set(status, {
       ...get(status),
       [key]: message,
     });
   }
+
+  tryOnScopeDispose(() => {
+    statusTimers.forEach(clearTimeout);
+    statusTimers.clear();
+  });
 
   /**
    * Takes down the rows that asked for the key just saved: chains refused for want of it, and a
