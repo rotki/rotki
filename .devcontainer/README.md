@@ -9,7 +9,8 @@ frontend). The Electron app is out of scope.
 You need Docker and an editor that supports dev containers, such as VS Code with
 the Dev Containers extension (`ms-vscode-remote.remote-containers`). Open the
 repository and run **Dev Containers: Reopen in Container**. The first start runs
-`setup.sh`, which installs the toolchains and the dependencies. Then:
+`setup.sh` in two stages, `toolchains` and then `deps`, which install the
+toolchains and the dependencies. Then:
 
 ```sh
 cd frontend
@@ -20,7 +21,8 @@ The app opens on <http://localhost:8080>. It talks to the API on port 4141, so
 both ports have to be free on your machine.
 
 After pulling a change that bumps a toolchain or a lockfile, run
-`.devcontainer/setup.sh` again. It skips whatever is already current.
+`.devcontainer/setup.sh` again. With no argument it runs both stages and skips
+whatever is already current; `setup.sh deps` only reinstalls the dependencies.
 
 ### Git worktrees
 
