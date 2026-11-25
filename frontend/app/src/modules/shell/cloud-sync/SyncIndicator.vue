@@ -49,6 +49,12 @@ watch(modelVisible, (visible) => {
   if (!visible)
     set(showDeleteRemoteBackup, false);
 });
+
+/** A panel that goes away mid-deletion cannot report the end, so its busy flag goes with it. */
+watch(showDeleteRemoteBackup, (shown) => {
+  if (!shown)
+    set(deletingRemoteBackup, false);
+});
 </script>
 
 <template>
@@ -57,6 +63,7 @@ watch(modelVisible, (visible) => {
       id="balances-saved-dropdown"
       v-model="modelVisible"
       :persistent="modelSyncSettingMenuOpen || deletingRemoteBackup"
+      :persist-on-activator-click="deletingRemoteBackup"
     >
       <template #activator="{ attrs }">
         <MenuTooltipButton
@@ -197,7 +204,6 @@ watch(modelVisible, (visible) => {
             class="-mx-4 -mb-4 border-t border-default px-2 py-1"
           >
             <DeleteRemoteBackupEntry
-              :no-backup="!lastDataUpload"
               :disabled="pending || isSyncing"
               @open="showDeleteRemoteBackup = true"
             />

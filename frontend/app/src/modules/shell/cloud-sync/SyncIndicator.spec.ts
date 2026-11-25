@@ -79,7 +79,7 @@ vi.mock('@/modules/shell/cloud-sync/DeleteRemoteBackupPanel.vue', () => ({
   default: {
     emits: ['close', 'update:busy'],
     name: 'DeleteRemoteBackupPanel',
-    template: '<div data-testid="delete-remote-backup"><button data-testid="panel-close" @click="$emit(\'close\')" /></div>',
+    template: '<div data-testid="delete-remote-backup"><button data-testid="panel-close" @click="$emit(\'close\')" /><button data-testid="panel-busy" @click="$emit(\'update:busy\', true)" /></div>',
   },
 }));
 
@@ -94,7 +94,11 @@ function createWrapper(): VueWrapper {
       stubs: {
         DateDisplay: true,
         MenuTooltipButton: true,
-        RuiMenu: { template: '<div id="balances-saved-dropdown"><slot name="activator" :attrs="{}" /><slot /></div>' },
+        RuiMenu: {
+          emits: ['update:modelValue'],
+          props: ['modelValue', 'persistent', 'persistOnActivatorClick'],
+          template: '<div id="balances-saved-dropdown" :data-persistent="!!persistent" :data-persist-activator="!!persistOnActivatorClick"><button data-testid="menu-open" @click="$emit(\'update:modelValue\', true)" /><button data-testid="menu-close" @click="$emit(\'update:modelValue\', false)" /><slot name="activator" :attrs="{}" /><slot /></div>',
+        },
         SyncButtons: true,
         SyncConfirmation: true,
         SyncSettings: true,
@@ -154,11 +158,31 @@ describe('modules/shell/cloud-sync/SyncIndicator.vue', () => {
     expect(wrapper.find('[data-testid=sync-delete-remote-backup]').exists()).toBe(false);
   });
 
-  it('should not offer the remote backup deletion when the server has no backup', () => {
+  it('should keep the menu open, activator included, while a deletion runs and let it go once the menu closes', async () => {
+    const wrapper = createWrapper();
+    const menu = (): ReturnType<VueWrapper['find']> => wrapper.find('#balances-saved-dropdown');
+    await wrapper.find('[data-testid=menu-open]').trigger('click');
+    await wrapper.find('[data-testid=sync-delete-remote-backup]').trigger('click');
+    await flushPromises();
+
+    await wrapper.find('[data-testid=panel-busy]').trigger('click');
+
+    expect(menu().attributes('data-persistent')).toBe('true');
+    expect(menu().attributes('data-persist-activator')).toBe('true');
+
+    await wrapper.find('[data-testid=menu-close]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=delete-remote-backup]').exists()).toBe(false);
+    expect(menu().attributes('data-persistent')).toBe('false');
+    expect(menu().attributes('data-persist-activator')).toBe('false');
+  });
+
+  it('should offer the remote backup deletion even when the last upload reads never, which can be stale', () => {
     set(lastDataUpload, 0);
     const wrapper = createWrapper();
 
-    expect(wrapper.find('[data-testid=sync-delete-remote-backup]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[data-testid=sync-delete-remote-backup]').attributes('disabled')).toBeUndefined();
   });
 
   it('should hold the remote backup deletion while a sync runs', () => {
