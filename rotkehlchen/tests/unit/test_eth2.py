@@ -991,6 +991,67 @@ def test_query_chunked_endpoint_with_cursor_pagination(eth2):
     assert third_call_data['cursor'] == ''
 
 
+@pytest.mark.freeze_time('2026-11-25 07:00:00 GMT')
+def test_produced_blocks_query_only_since_last_query(eth2, database):
+    """Test that the beaconcha.in produced blocks query asks only for proposals since the last
+    query of already queried validators, and the whole history for the rest and for refetches.
+    Previously every query walked the whole history of every validator, which with a rate
+    limited key took minutes on each staking page visit."""
+    beaconchain, now = eth2.beacon_inquirer.beaconchain, ts_now()
+    with database.user_write() as write_cursor:
+        for index, last_query_ts in ((1, now - 3 * HOUR_IN_SECONDS), (2, now - 2 * HOUR_IN_SECONDS)):  # noqa: E501
+            database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                value=last_query_ts,
+                index=index,
+            )
+
+    beaconchain.validator_query_chunk_size = 100
+    with patch.object(
+        beaconchain,
+        '_query_with_paging',
+        return_value=BeaconChainQueryResponse(data=[], next_cursor=''),
+    ) as query_mock:
+        beaconchain.get_and_store_produced_blocks(indices=[1, 2, 3])
+        assert [call.kwargs['data'] for call in query_mock.call_args_list] == [{
+            'validator': {'validator_identifiers': [3]},
+            'cursor': '',
+            'page_size': 10,
+        }, {
+            'validator': {'validator_identifiers': [1, 2]},
+            'cursor': '',
+            'page_size': 10,
+            'range': {'timestamp': {'start': now - 4 * HOUR_IN_SECONDS, 'end': now}},
+        }]
+
+        query_mock.reset_mock()  # a refetch does not update the cache and needs everything
+        beaconchain.get_and_store_produced_blocks(indices=[1, 2, 3], update_cache=False)
+        assert [call.kwargs['data'] for call in query_mock.call_args_list] == [{
+            'validator': {'validator_identifiers': [1, 2, 3]},
+            'cursor': '',
+            'page_size': 10,
+        }]
+
+        query_mock.reset_mock()  # a last query after now, e.g. the clock moved back, must not make start > end  # noqa: E501
+        with database.user_write() as write_cursor:
+            database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                value=now + 2 * HOUR_IN_SECONDS,
+                index=1,
+            )
+        beaconchain.get_and_store_produced_blocks(indices=[1])
+        assert query_mock.call_args.kwargs['data']['range'] == {'timestamp': {'start': now, 'end': now}}  # noqa: E501
+
+    with database.conn.read_ctx() as cursor:
+        assert [database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+            index=index,
+        ) for index in (1, 2, 3)] == [now, now, now]
+
+
 def test_get_active_validator_indices(database):
     active_index, exited_index, noevents_index, consolidated_index = 1, 575645, 4242, 999
     dbeth2 = DBEth2(database)
