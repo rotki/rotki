@@ -17351,8 +17351,9 @@ Historical Balance Queries
               "1672617600": "19500",
               "1672704000": "19800"
             },
-            "no_prices_timestamps": [1672790400, 1672876800],
-            "rate_limited_prices_timestamps": [1672790400, 1672876800]
+            "no_prices_timestamps": [1672790400],
+            "rate_limited_prices_timestamps": [1672876800],
+            "failed_prices_timestamps": [1672963200]
           },
           "status_code": 200
         }
@@ -17360,6 +17361,7 @@ Historical Balance Queries
       :resjson object prices: Mapping of timestamps to price values in user's profit currency
       :resjson list[integer] no_prices_timestamps: List of timestamps where price data was not available
       :resjson list[integer] rate_limited_prices_timestamps: List of timestamps where price queries were rate-limited by the data provider
+      :resjson list[integer] failed_prices_timestamps: List of timestamps where the data provider could not be reached, for example because of a network error. Unlike ``no_prices_timestamps`` these are worth querying again later.
       :statuscode 200: Historical prices returned
       :statuscode 400: Malformed query
       :statuscode 401: User is not logged in

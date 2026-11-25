@@ -4911,6 +4911,7 @@ class RestAPI:
         prices = {}
         no_prices_ts: list[Timestamp] = []
         rate_limited_prices_ts: list[Timestamp] = []
+        failed_prices_ts: list[Timestamp] = []
         with (db := self.rotkehlchen.data.db).conn.read_ctx() as cursor:
             main_currency = db.get_setting(cursor=cursor, name='main_currency')
 
@@ -4944,6 +4945,7 @@ class RestAPI:
                 'prices': prices,
                 'no_prices_timestamps': [ts for ts in missing_timestamps if ts not in prices],
                 'rate_limited_prices_timestamps': rate_limited_prices_ts,
+                'failed_prices_timestamps': failed_prices_ts,
             })
 
         total = len(timestamps)
@@ -4957,6 +4959,8 @@ class RestAPI:
             except NoPriceForGivenTimestamp as e:
                 if e.rate_limited:
                     rate_limited_prices_ts.append(current_ts)
+                elif e.remote_error:  # the oracle could not be reached, so asking later may work
+                    failed_prices_ts.append(current_ts)
                 else:
                     no_prices_ts.append(current_ts)
             else:
@@ -4976,6 +4980,7 @@ class RestAPI:
             'prices': prices,
             'no_prices_timestamps': no_prices_ts,
             'rate_limited_prices_timestamps': rate_limited_prices_ts,
+            'failed_prices_timestamps': failed_prices_ts,
         })
 
     @async_api_call()

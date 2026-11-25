@@ -2032,6 +2032,49 @@ def test_get_historical_prices_per_asset(
         assert str(START_TS + 3 * DAY_IN_SECONDS) in result['prices']
 
 
+def test_historical_prices_per_asset_failure_kinds(rotkehlchen_api_server: APIServer) -> None:
+    """A day the oracle could not be reached is reported apart from rate limits and real misses.
+
+    A rate limit is also a remote error, so it has to stay rate limited rather than count as a
+    failure, and only a day with neither flag means the oracles have no price for it.
+    """
+    rate_limited_ts = DAY_AFTER_START_TS
+    no_price_ts = Timestamp(START_TS + 2 * DAY_IN_SECONDS)
+    unreachable_ts = Timestamp(START_TS + 3 * DAY_IN_SECONDS)
+    failures = {
+        rate_limited_ts: {'rate_limited': True, 'remote_error': True},
+        no_price_ts: {},
+        unreachable_ts: {'remote_error': True},
+    }
+
+    def mock_query_historical_price(from_asset, to_asset, timestamp):
+        if (flags := failures.get(timestamp)) is not None:
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+                **flags,
+            )
+        return Price(FVal('20000'))
+
+    with patch('rotkehlchen.history.price.PriceHistorian.query_historical_price', side_effect=mock_query_historical_price):  # noqa: E501
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'historicalpricesperassetresource'),
+            json={
+                'asset': 'BTC',
+                'from_timestamp': START_TS,
+                'to_timestamp': unreachable_ts,
+                'interval': DAY_IN_SECONDS,
+            },
+        )
+
+    result = assert_proper_sync_response_with_result(response)
+    assert result['prices'] == {str(START_TS): '20000'}
+    assert result['rate_limited_prices_timestamps'] == [rate_limited_ts]
+    assert result['no_prices_timestamps'] == [no_price_ts]
+    assert result['failed_prices_timestamps'] == [unreachable_ts]
+
+
 def test_historical_price_cache_only_special_assets(
         rotkehlchen_api_server: APIServer,
         globaldb: GlobalDBHandler,
@@ -2082,6 +2125,8 @@ def test_historical_price_cache_only_special_assets(
     result = assert_proper_sync_response_with_result(response)
     assert str(kfee_ts) in result['prices']
     assert result['prices'][str(kfee_ts)] == '0.01'
+    # a cache-only read never reaches an oracle, so nothing can fail to reach one
+    assert result['failed_prices_timestamps'] == []
 
     # Test that ETH2 should use ETH price
     globaldb.add_historical_prices(entries=[HistoricalPrice(
