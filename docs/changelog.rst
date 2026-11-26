@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` When the login form remembers your username, the cursor now starts in the password field. Before, it always started in the username field.
 * :feature:`2291` Premium users can now delete the database backup stored on the rotki server from the cloud backup menu. The confirmation shows which backup will be deleted and offers to turn off the automatic backup on this device, so it does not upload a new one right away.
 * :bug:`-` NFT prices and images now need your own OpenSea API key. Without one, rotki asks for it once and lets you choose not to be asked again, instead of retrying for half a minute and failing.
 * :bug:`-` A historical price that could not be fetched because the price source was unreachable, for example during a network error, is no longer treated as having no price. rotki now asks for it again later instead of skipping that day for the rest of the session, and the details of an asset's missing prices list such days separately. If the source stays unreachable for longer than the oracle penalty duration, rotki stops asking for that day in the background. It can still be fetched again from the asset's prices or priced by hand.

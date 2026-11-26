@@ -2,7 +2,7 @@
 import type { LoginCredentials, SyncApproval } from '@/modules/auth/login';
 import { RuiAlert, RuiButton, RuiRevealableTextField } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
-import { nextTick, onBeforeMount, onMounted, ref, useTemplateRef } from 'vue';
+import { nextTick, onBeforeMount, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { focusInput } from '@/modules/auth/login/focus-input';
 import LoginBackendToggle from '@/modules/auth/login/LoginBackendToggle.vue';
@@ -137,17 +137,26 @@ async function login(actions?: { syncApproval?: SyncApproval; resumeFromBackup?:
   await rememberCredentials(state.username, state.password);
 }
 
+/**
+ * Loads the profiles, then pre-fills the form and picks the field to focus.
+ *
+ * @remarks
+ * Vue does not await this hook, so the form mounts while the profiles load. The focus is chosen
+ * only once the load settles, since that is what restores the username and sends the user to the
+ * password field. A failed load still focuses the username field.
+ */
 onBeforeMount(async () => {
-  await loadProfiles();
-  if (get(savedUsernames).length === 0) {
-    newAccount();
-    return;
+  try {
+    await loadProfiles();
+    if (get(savedUsernames).length === 0) {
+      newAccount();
+      return;
+    }
+    loadSettings();
   }
-  loadSettings();
-});
-
-onMounted(() => {
-  updateFocus();
+  finally {
+    updateFocus();
+  }
 });
 </script>
 
