@@ -1,41 +1,27 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common';
 import { RuiAlert, RuiButton, RuiCard } from '@rotki/ui-library';
 import { logicOr } from '@vueuse/math';
-import { get, set } from '@vueuse/shared';
+import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
-import { computed, provide, ref, useTemplateRef, watch } from 'vue';
+import { computed, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useUnifiedProviders } from '@/modules/wallet/providers/use-unified-providers';
 import ProviderSelectionDialog from '@/modules/wallet/ProviderSelectionDialog.vue';
-import { isAmountExceeded, isTradeValid } from '@/modules/wallet/send/trade-send-utils';
 import TradeAmountInput from '@/modules/wallet/send/TradeAmountInput.vue';
 import TradeAssetSelector from '@/modules/wallet/send/TradeAssetSelector.vue';
 import TradeRecipientAddress from '@/modules/wallet/send/TradeRecipientAddress.vue';
 import TradeSendHeader from '@/modules/wallet/send/TradeSendHeader.vue';
 import { useBalanceQueries } from '@/modules/wallet/send/use-balance-queries';
-import { useTradeAssetBalance } from '@/modules/wallet/send/use-trade-asset-balance';
-import { useTradeGasEstimation } from '@/modules/wallet/send/use-trade-gas-estimation';
-import { useTradeNetworkMatch } from '@/modules/wallet/send/use-trade-network-match';
-import { useTradeRecipientWarning } from '@/modules/wallet/send/use-trade-recipient-warning';
+import { useTradeSendForm } from '@/modules/wallet/send/use-trade-send-form';
 import { useTradeWalletActions } from '@/modules/wallet/send/use-trade-wallet-actions';
-import { TradableAssetKey, useTradableAsset } from '@/modules/wallet/use-tradable-asset';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 import WalletConnectionButton from '@/modules/wallet/WalletConnectionButton.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 
-const amount = ref<string>('');
-const asset = ref<string>('');
-const assetChain = ref<string>(Blockchain.ETH);
-const toAddress = ref<string>('');
-
 const tradeAmountInputRef = useTemplateRef<InstanceType<typeof TradeAmountInput>>('tradeAmountInputRef');
-
-const { getNativeAsset } = useSupportedChains();
 
 const walletStore = useWalletStore();
 const {
@@ -49,27 +35,30 @@ const {
 } = storeToRefs(walletStore);
 const { useQueryingBalances, warnUntrackedAddress } = useBalanceQueries(connected, connectedAddress);
 
-const { switchToSelectedChain, wrongNetwork } = useTradeNetworkMatch(assetChain);
-
-const tradableAsset = useTradableAsset(connectedAddress);
-provide(TradableAssetKey, tradableAsset);
-const { getAssetDetail } = tradableAsset;
+const {
+  amount,
+  amountExceeded,
+  asset,
+  assetBalance,
+  assetChain,
+  estimatingGas,
+  isNativeAsset,
+  max,
+  refreshAssetBalance,
+  resetInput,
+  showNeverInteractedWarning,
+  switchToSelectedChain,
+  toAddress,
+  valid,
+  wrongNetwork,
+} = useTradeSendForm({
+  chainOptions: supportedChainsForConnectedAccount,
+  connectedAddress,
+});
 
 const { availableProviders, isDetecting: detectingProviders, showProviderSelection } = useUnifiedProviders();
 
 const isConnecting = logicOr(preparing, detectingProviders);
-
-const assetDetail = getAssetDetail(asset, assetChain);
-const isAssetResolved = computed<boolean>(() => !!get(assetDetail));
-
-const isNativeAsset = computed<boolean>(() => {
-  const chain = get(assetChain);
-  const assetVal = get(asset);
-  if (!chain || !assetVal)
-    return false;
-
-  return assetVal === getNativeAsset(chain);
-});
 
 const {
   clearError,
@@ -81,38 +70,7 @@ const {
   toggleConnection,
 } = useTradeWalletActions();
 
-const { showNeverInteractedWarning } = useTradeRecipientWarning({
-  fromAddress: connectedAddress,
-  toAddress,
-});
-
-const { estimatedGasFee, estimatingGas, gasEstimable } = useTradeGasEstimation({
-  asset,
-  chain: assetChain,
-  isAssetResolved,
-  isNativeAsset,
-});
-
-const { assetBalance, max, refreshAssetBalance, resetMax } = useTradeAssetBalance({
-  address: connectedAddress,
-  amount,
-  asset,
-  chain: assetChain,
-  estimatedGasFee,
-  gasEstimable,
-});
-
 const isWalletConnected = computed<boolean>(() => get(connected) && !!get(connectedAddress));
-
-const amountExceeded = computed<boolean>(() => isAmountExceeded(get(amount), get(max)));
-
-const valid = computed<boolean>(() => isTradeValid(get(amount), get(toAddress), get(max)));
-
-function resetInput(): void {
-  set(toAddress, '');
-  set(amount, '');
-  resetMax();
-}
 
 async function trackAddress(): Promise<void> {
   await router.push({
@@ -140,11 +98,6 @@ async function send(): Promise<void> {
   if (sent)
     resetInput();
 }
-
-watch([assetChain, supportedChainsForConnectedAccount], ([currentChain, chainOptions]) => {
-  if (!chainOptions.includes(currentChain))
-    set(assetChain, chainOptions[0]);
-});
 </script>
 
 <template>

@@ -1,25 +1,16 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
+import type { HTMLAttributes } from 'vue';
 import { RuiDataTable, RuiIcon, RuiTableRowExpander, RuiTooltip } from '@rotki/ui-library';
-import { get } from '@vueuse/shared';
-import { storeToRefs } from 'pinia';
-import { computed, type HTMLAttributes, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useTrackedAccountsRow } from '@/modules/accounts/use-tracked-accounts-row';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
-import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
-import { useValuePending } from '@/modules/balances/value-pending';
 import TableSearchField from '@/modules/core/table/TableSearchField.vue';
 import DashboardAssetWarnings from '@/modules/dashboard/DashboardAssetWarnings.vue';
 import DashboardExpandableTable from '@/modules/dashboard/DashboardExpandableTable.vue';
-import { useDashboardAssetData } from '@/modules/dashboard/use-dashboard-asset-data';
-import { useDashboardAssetOperations } from '@/modules/dashboard/use-dashboard-asset-operations';
-import { useDashboardStores } from '@/modules/dashboard/use-dashboard-stores';
-import { useDashboardTableConfig } from '@/modules/dashboard/use-dashboard-table-config';
+import { useDashboardAssetTable } from '@/modules/dashboard/use-dashboard-asset-table';
 import VisibleColumnsSelector from '@/modules/dashboard/VisibleColumnsSelector.vue';
-import { fitsEveryLimit } from '@/modules/session/use-items-per-page';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
@@ -41,69 +32,34 @@ defineSlots<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { totalNetWorth } = useDashboardStores();
-const { prices } = storeToRefs(useBalancePricesStore());
-const { isTotalPending, isValuePending } = useValuePending();
-
-// Use composables - sort needs to be defined first for the computed dependency
-const { modelSort, pagination, setPage, setTablePagination, tableHeaders } = useDashboardTableConfig(
-  () => tableType,
-  () => title,
-  totalNetWorth,
-  () => showComparison,
-);
-
 const {
+  emptyDescription,
+  hidePagination,
   isAssetMissing,
+  isPriceMissing,
+  isRowExpandable,
+  isValuePending,
+  modelExpanded,
+  modelSearch,
+  modelSort,
+  pagination,
   percentageOfCurrentGroup,
   percentageOfTotalNetValue,
-  modelSearch,
+  placeholderRowClass,
+  redirectToManualBalance,
+  searchable,
+  setTablePagination,
+  showTotal,
   sorted,
+  tableHeaders,
   total,
-} = useDashboardAssetData(() => balances, modelSort);
-
-const { isRowExpandable, modelExpanded, redirectToManualBalance } = useDashboardAssetOperations(() => tableType);
-
-const { raised: tracksNothing } = useTrackedAccountsRow();
-
-/**
- * The assets table's own text only while something is tracked.
- *
- * @remarks
- * With nothing tracked, the Assets by source card above already shows the tracked accounts row, so
- * the table stays neutral rather than saying it a second time.
- */
-const emptyDescription = computed<string>(() => tableType === DashboardTableType.ASSETS && !get(tracksNothing)
-  ? t('dashboard_asset_table.no_assets')
-  : t('data_table.no_data'));
-
-/**
- * Mutes a placeholder row: an asset listed at zero because only the other balance view holds it.
- *
- * @remarks
- * Only placeholder rows have a zero amount, since aggregation drops held assets that sum to zero.
- */
-function placeholderRowClass(row: AssetBalanceWithPrice): string {
-  return row.amount.isZero() ? 'opacity-60' : '';
-}
-
-function isPriceMissing(asset: string): boolean {
-  return get(prices)[asset]?.priceMissing === true;
-}
-
-/** Below this many rows the whole table is in view, so a search field only takes space. */
-const SEARCH_MIN_ROWS = 11;
-
-const totalPending = computed<boolean>(() => isTotalPending(get(sorted)));
-
-const searchable = computed<boolean>(() => balances.length >= SEARCH_MIN_ROWS);
-
-const hidePagination = computed<boolean>(() => fitsEveryLimit(get(sorted).length));
-
-/** With one row the row is its own total. */
-const showTotal = computed<boolean>(() => get(sorted).length > 1 && get(modelSearch).length === 0);
-
-watch(modelSearch, () => setPage(1));
+  totalPending,
+} = useDashboardAssetTable({
+  balances: () => balances,
+  showComparison: () => showComparison,
+  tableType: () => tableType,
+  title: () => title,
+});
 </script>
 
 <template>

@@ -1,5 +1,4 @@
 <script setup lang="ts" generic="T extends BlockchainAccountBalance">
-import type { AccountDataRow } from './types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/modules/core/common/collection';
@@ -10,17 +9,14 @@ import { useI18n } from 'vue-i18n';
 import { getAccountAddress, getAccountLabel, isAddressAccount } from '@/modules/accounts/account-utils';
 import AccountChains from '@/modules/accounts/AccountChains.vue';
 import AccountTopTokens from '@/modules/accounts/AccountTopTokens.vue';
-import { FiatDisplay } from '@/modules/assets/amount-display/components';
-import { useTableEmptyState, useTableFetchError } from '@/modules/core/table/use-table-empty-state';
-import RowAppend from '@/modules/shell/components/RowAppend.vue';
 import TagDisplay from '@/modules/tags/TagDisplay.vue';
+import AccountBalancesTotalRow from './components/AccountBalancesTotalRow.vue';
 import AccountLabelCell from './components/AccountLabelCell.vue';
 import AccountTableGroupHeader from './components/AccountTableGroupHeader.vue';
 import AccountActions from './components/table/AccountActions.vue';
 import AccountBalanceValue from './components/table/AccountBalanceValue.vue';
 import { useAccountLoadingStates } from './use-account-loading-states';
 import { useAccountOperations } from './use-account-operations';
-import { useAccountTableConfig } from './use-account-table-config';
 import { useAccountTableData } from './use-account-table-data';
 
 defineOptions({
@@ -65,23 +61,28 @@ const slots = defineSlots<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const emptyState = useTableEmptyState();
-const fetchError = useTableFetchError();
-/** A failed fetch is not something adding an account or clearing filters would fix. */
-const showEmptySlot = computed<boolean>(() => !!slots.empty && !(fetchError && get(fetchError)));
-
-const { createColumns, initializeTableSorting } = useAccountTableConfig<T>();
 const {
   anyExpansion,
   collapsed,
+  cols,
+  emptyState,
   expand,
   expanded,
   getCategoryTotal,
   getChains,
+  headerCategory,
   isExpanded,
   rows,
+  showEmptySlot,
   totalValue,
-} = useAccountTableData<T>(() => accounts, expandedIds, chainFilter);
+} = useAccountTableData<T>({
+  accounts: () => accounts,
+  chainFilter,
+  expandedIds,
+  group: () => group,
+  hasEmptySlot: () => !!slots.empty,
+  sort,
+});
 
 const { accountOperation, isInitialLoading, isRowLoading, isSectionLoading } = useAccountLoadingStates<T>(() => category);
 
@@ -91,15 +92,6 @@ const { deleteAccount, edit } = useAccountOperations<T>({
 });
 
 const expandsInline = computed<boolean>(() => !detailsInDrawer && get(anyExpansion));
-
-const cols = computed(() => createColumns(group, get(anyExpansion)));
-
-initializeTableSorting(sort, cols);
-
-/** The category a table group header stands for; only group rows carry one. */
-function headerCategory(group: Partial<AccountDataRow<T>>): string {
-  return 'category' in group && typeof group.category === 'string' ? group.category : '';
-}
 </script>
 
 <template>
@@ -170,22 +162,12 @@ function headerCategory(group: Partial<AccountDataRow<T>>): string {
       v-if="totalValue && accounts.data.length > 0"
       #body.append
     >
-      <RowAppend
-        :label="t('common.total')"
-        :left-patch-colspan="anyExpansion ? 1 : 0"
-        :label-colspan="group && group === 'evm' ? 4 : 2"
-        :is-mobile="false"
-        variant="fixed"
-      >
-        <template #custom-columns>
-          <td class="text-end">
-            <FiatDisplay
-              :value="totalValue"
-              :loading="isSectionLoading"
-            />
-          </td>
-        </template>
-      </RowAppend>
+      <AccountBalancesTotalRow
+        :total-value="totalValue"
+        :any-expansion="anyExpansion"
+        :group="group"
+        :loading="isSectionLoading"
+      />
     </template>
     <template
       v-if="expandsInline"

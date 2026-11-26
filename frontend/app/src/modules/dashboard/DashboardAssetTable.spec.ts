@@ -217,7 +217,7 @@ describe('dashboardAssetTable', () => {
       expect(wrapper.get('[data-pager]').attributes('data-pager')).toBe('hidden');
 
       await wrapper.setProps({ balances: createBalances(5) });
-      expect(Object.keys(rowValues()).toSorted()).toEqual(['A0', 'A1', 'A2', 'A3', 'A4']);
+      expect(Object.keys(rowValues()).sort()).toEqual(['A0', 'A1', 'A2', 'A3', 'A4']);
       expect(wrapper.find('[data-testid=search]').exists()).toBe(false);
       expect(wrapper.findAll('[data-testid=total-value]').map(el => el.attributes('data-value'))).toEqual(['30']);
 
