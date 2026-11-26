@@ -3,22 +3,18 @@ import type { ActionStatus } from '@/modules/core/common/action';
 import { type BigNumber, Blockchain, type EthValidatorFilter } from '@rotki/common';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
-import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { computed, type Ref } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { isValidatorAccount } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useEthValidatorAddition } from '@/modules/accounts/use-eth-validator-addition';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useEthValidatorFetching } from '@/modules/staking/eth/use-eth-validator-fetching';
-import { validatorAddActivity, validatorAddLabel } from '@/modules/staking/staking.activity';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
-import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseEthStakingReturn {
   validatorsLimitInfo: Readonly<Ref<{ showWarning: boolean; limit: number; total: number }>>;
@@ -31,7 +27,6 @@ interface UseEthStakingReturn {
 
 export function useEthStaking(): UseEthStakingReturn {
   const {
-    addEth2Validator: addEth2ValidatorCaller,
     deleteEth2Validators: deleteEth2ValidatorsCaller,
     editEth2Validator: editEth2ValidatorCaller,
   } = useBlockchainAccountsApi();
@@ -43,50 +38,7 @@ export function useEthStaking(): UseEthStakingReturn {
   const { fetchEthStakingValidators } = useEthValidatorFetching();
 
   const premium = usePremium();
-  const { submitTask } = useNativeTask();
-  const { t } = useI18n({ useScope: 'global' });
-
-  const addEth2Validator = async (payload: Eth2Validator): Promise<ActionStatus<ValidationErrors | string>> => {
-    if (!isEth2Enabled()) {
-      return {
-        message: '',
-        success: false,
-      };
-    }
-    const outcome = await submitTask<boolean>({
-      id: validatorAddActivity.id(payload),
-      kind: validatorAddActivity.kind,
-      rerunnable: false,
-      run: async ({ runTask }): Promise<Result<boolean, TaskError>> => mapResult(
-        await runTask<boolean>(
-          async () => addEth2ValidatorCaller(payload),
-        ),
-        result => result,
-      ),
-      subtitle: validatorAddLabel(payload),
-      title: t('task_center.group.staking'),
-      userStarted: true,
-    });
-
-    if (!isErr(outcome)) {
-      return {
-        message: '',
-        success: outcome.value,
-      };
-    }
-
-    if (!isActionable(outcome.error))
-      return { message: '', success: false };
-
-    logger.error(outcome.error.message);
-
-    const cause = outcome.error.cause;
-    const message: ValidationErrors | string = cause instanceof ApiValidationError
-      ? cause.getValidationErrors(payload)
-      : outcome.error.message;
-
-    return { message, success: false };
-  };
+  const { addEth2Validator } = useEthValidatorAddition();
 
   const editEth2Validator = async (payload: Eth2Validator): Promise<ActionStatus<ValidationErrors | string>> => {
     if (!isEth2Enabled())

@@ -1,7 +1,6 @@
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { ActivityId, ActivityKind } from '@/modules/task-center/core/types';
-import { get, set } from '@vueuse/shared';
-import { storeToRefs } from 'pinia';
+import { get } from '@vueuse/shared';
 import { isErr, map as mapResult, type Result } from 'plainfp/result';
 import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
@@ -12,14 +11,8 @@ import {
   manualBalanceEditActivity,
   manualBalancesFetchActivity,
 } from '@/modules/balances/balances.activity';
-import { BalanceType } from '@/modules/balances/types/balances';
-import {
-  type ManualBalance,
-  ManualBalances,
-  type ManualBalanceWithValue,
-  type RawManualBalance,
-} from '@/modules/balances/types/manual-balances';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useManualBalancesUpdate } from '@/modules/balances/manual/use-manual-balances-update';
+import { type ManualBalance, ManualBalances, type RawManualBalance } from '@/modules/balances/types/manual-balances';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -38,28 +31,11 @@ interface UseManualBalancesReturn {
 }
 
 export function useManualBalances(): UseManualBalancesReturn {
-  const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
+  const { updateBalances } = useManualBalancesUpdate();
   const { cancelActivity, statusOf, submitTask } = useNativeTask();
   const { addManualBalances, deleteManualBalances, editManualBalances, queryManualBalances } = useManualBalancesApi();
   const valueThreshold = useValueThreshold(BalanceSource.MANUAL);
   const { t } = useI18n({ useScope: 'global' });
-
-  function updateBalances(balances: ManualBalanceWithValue[]): void {
-    const assets: ManualBalanceWithValue[] = [];
-    const liabilities: ManualBalanceWithValue[] = [];
-
-    for (const balance of balances) {
-      if (balance.balanceType === BalanceType.LIABILITY) {
-        liabilities.push(balance);
-      }
-      else {
-        assets.push(balance);
-      }
-    }
-
-    set(manualBalances, assets);
-    set(manualLiabilities, liabilities);
-  }
 
   const fetchManualBalances = async (userInitiated = false): Promise<void> => {
     const status = statusOf(manualBalancesFetchActivity.kind, ...manualBalancesFetchActivity.partsOf());

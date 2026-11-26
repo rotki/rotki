@@ -4,16 +4,13 @@ import { get } from '@vueuse/shared';
 import { err, type Result } from 'plainfp/result';
 import { useI18n } from 'vue-i18n';
 import { msg } from '@/message-key';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { balancesRunActivity, chainBalancesActivity } from '@/modules/balances/balances.activity';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { RefreshMode } from '@/modules/balances/types/refresh-mode';
-import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
+import { useChainRefreshEligibility } from '@/modules/balances/use-chain-refresh-eligibility';
 import { arrayify } from '@/modules/core/common/data/array';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { Cancelled, Skipped, type TaskError } from '@/modules/core/tasks/task-result';
-import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
 import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { DEFAULT_PRIORITY, Priority } from '@/modules/task-center/core/orchestrator/spec';
 import { useActivityBatch } from '@/modules/task-center/use-activity-batch';
@@ -89,38 +86,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
   const { detectForChain } = useTokenDetectionOrchestrator();
   const { runActivityBatch } = useActivityBatch();
   const { submitTask, supersedeTask } = useNativeTask();
-  const refreshState = useBalanceRefreshState();
-  const { isAddressExcluded, isChainExcluded, isEveryAddressExcluded } = useDisabledChains();
-  const { getAccounts } = useBlockchainAccountsStore();
-
-  /**
-   * Whether every account tracked on `chain` is skipped one by one, so a query of the whole chain
-   * would ask the backend for nothing.
-   *
-   * @remarks
-   * The backend already leaves skipped addresses out of a whole-chain query; answering here spares
-   * the task round trip and settles the chain as skipped rather than refreshed. A chain without
-   * accounts is not this case: it is skipped later, for having no accounts, and its balances are
-   * cleared. These keep theirs.
-   */
-  const isEveryAccountExcluded = (chain: string): boolean =>
-    isEveryAddressExcluded(chain, getAccounts(chain).map(getAccountAddress));
-
-  /**
-   * Whether a *network* refresh is already running for this chain.
-   *
-   * It does not wait on the chain's hydration from the DB, and must not: the two layers overlap
-   * by design. A cached read landing after a network result would overwrite fresh balances with
-   * stale ones, which balance writes being monotonic prevents outright — the older payload is
-   * discarded whichever order the two land in. Two mechanisms for one hazard, and the cheaper one
-   * wins.
-   *
-   * Read by the `periodic` branch only, at submit and again at start. It is not redundant with
-   * `submitTask`'s id dedup: dedup covers a run that is *submitted*, this covers the window where
-   * the POST itself is in flight. The submit check is what keeps a tick from querying right after
-   * `oneBalanceQueryPerChain` released it, when the chain it was waiting on has just refreshed.
-   */
-  const isChainRefreshing = (chain: string): boolean => get(refreshState.refreshingChains).has(chain);
+  const { isAddressExcluded, isChainExcluded, isChainRefreshing, isEveryAccountExcluded } = useChainRefreshEligibility();
 
   /**
    * Refreshes blockchain balances from the network, as one BLOCKCHAIN_BALANCES activity per chain

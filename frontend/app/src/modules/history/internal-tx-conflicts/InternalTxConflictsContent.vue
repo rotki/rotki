@@ -1,17 +1,13 @@
 <script setup lang="ts">
-import { type DataTableColumn, RuiButton, RuiCheckbox, RuiChip, RuiDataTable, RuiProgress, RuiTab, RuiTabs, RuiTooltip } from '@rotki/ui-library';
+import { type DataTableColumn, RuiCheckbox, RuiChip, RuiDataTable, RuiTab, RuiTabs, RuiTooltip } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get } from '@vueuse/shared';
 import { computed, onBeforeMount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
-import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
-import TableSelectionAction from '@/modules/core/table/TableSelectionAction.vue';
-import TableSelectionBar from '@/modules/core/table/TableSelectionBar.vue';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import InternalTxConflictRowActions from '@/modules/history/internal-tx-conflicts/InternalTxConflictRowActions.vue';
-import { useInternalTxConflictFields } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflict-fields';
+import InternalTxConflictsToolbar from '@/modules/history/internal-tx-conflicts/InternalTxConflictsToolbar.vue';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
@@ -56,9 +52,6 @@ const {
 } = useInternalTxConflicts();
 
 const emptyState = useTableEmptyState({ error });
-
-const fields = useInternalTxConflictFields();
-const pillLabels = usePillBarLabels();
 
 const {
   areAllSelected,
@@ -200,56 +193,16 @@ defineExpose({
       </RuiTab>
     </RuiTabs>
 
-    <div
-      class="flex flex-col gap-2 pt-4 pb-2 shrink-0"
-      :class="compact ? 'px-3' : 'px-4 md:flex-row md:items-center'"
-    >
-      <div
-        v-if="isRunning"
-        class="flex items-center gap-3"
-      >
-        <RuiProgress
-          variant="indeterminate"
-          color="primary"
-          class="flex-1"
-        />
-        <span class="text-body-2 whitespace-nowrap">
-          {{ t('internal_tx_conflicts.resolution.progress', { completed: progress.completed, total: progress.total }) }}
-        </span>
-        <RuiButton
-          variant="outlined"
-          color="error"
-          size="sm"
-          @click="cancelResolution()"
-        >
-          {{ t('internal_tx_conflicts.resolution.cancel') }}
-        </RuiButton>
-      </div>
-
-      <TableSelectionBar
-        v-if="!isRunning && selectedCount > 0"
-        class="flex-1"
-        :count="selectedCount"
-        @clear="clearSelection()"
-      >
-        <TableSelectionAction
-          icon="lu-wrench"
-          color="primary"
-          data-testid="resolve-selected"
-          @click="onResolveSelected()"
-        >
-          {{ t('internal_tx_conflicts.resolution.resolve_selected', { count: selectedCount }) }}
-        </TableSelectionAction>
-      </TableSelectionBar>
-      <PillFilterBar
-        v-else
-        v-model:matches="filters"
-        :fields="fields"
-        :labels="pillLabels"
-        :disabled="loading"
-        class="flex-1"
-      />
-    </div>
+    <InternalTxConflictsToolbar
+      v-model:filters="filters"
+      :compact="compact"
+      :loading="loading"
+      :progress="progress"
+      :selected-count="selectedCount"
+      @cancel="cancelResolution()"
+      @clear="clearSelection()"
+      @resolve-selected="onResolveSelected()"
+    />
 
     <ScrollableDialogContent
       fill

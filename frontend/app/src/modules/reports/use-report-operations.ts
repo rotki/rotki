@@ -1,22 +1,16 @@
 import type { MaybeRef } from 'vue';
-import type { AddressBookSimplePayload } from '@/modules/accounts/address-book/eth-names';
 import type { Collection, CollectionResponse } from '@/modules/core/common/collection';
 import type { ProfitLossEvent, ProfitLossEventsPayload } from '@/modules/reports/report-types';
-import { Blockchain } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { pipe } from 'plainfp';
 import { type ResultAsync, tap } from 'plainfp/result-async';
 import { useI18n } from 'vue-i18n';
-import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
 import { fromRequest, type RequestError } from '@/modules/core/api/request-result';
-import { isBlockchain } from '@/modules/core/common/chains';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { logger } from '@/modules/core/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { getEthAddressesFromText } from '@/modules/history/history-utils';
-import { isTransactionEvent } from '@/modules/reports/report-utils';
+import { useReportEnsNames } from '@/modules/reports/use-report-ens-names';
 import { useReportsApi } from '@/modules/reports/use-reports-api';
 import { useReportsStore } from '@/modules/reports/use-reports-store';
 
@@ -31,7 +25,7 @@ interface UseReportOperationsReturn {
 export function useReportOperations(): UseReportOperationsReturn {
   const { notifyError, notifyFailure, notifyInfo } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
-  const { fetchEnsNames } = useEnsOperations();
+  const { fetchEnsNamesFromTransactions } = useReportEnsNames();
 
   const { actionableItems, reports } = storeToRefs(useReportsStore());
 
@@ -75,28 +69,6 @@ export function useReportOperations(): UseReportOperationsReturn {
       logger.error(error);
       notifyError(t('actions.reports.delete.error.title'), t('actions.reports.delete.error.description'));
     }
-  }
-
-  function fetchEnsNamesFromTransactions(events: Collection<ProfitLossEvent>): void {
-    const addressesNamesPayload: AddressBookSimplePayload[] = [];
-    events.data
-      .filter(event => isTransactionEvent(event))
-      .forEach((event) => {
-        const blockchain = event.location || Blockchain.ETH;
-        if (!event.notes || !isBlockchain(blockchain))
-          return;
-
-        const addresses = getEthAddressesFromText(event.notes);
-        addressesNamesPayload.push(
-          ...addresses.map(address => ({
-            address,
-            blockchain,
-          })),
-        );
-      });
-
-    if (addressesNamesPayload.length > 0)
-      startPromise(fetchEnsNames(addressesNamesPayload));
   }
 
   async function fetchReportEvents(payload: MaybeRef<ProfitLossEventsPayload>): ResultAsync<Collection<ProfitLossEvent>, RequestError> {

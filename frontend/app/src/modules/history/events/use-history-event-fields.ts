@@ -8,15 +8,12 @@ import { useI18n } from 'vue-i18n';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { assetSuggestions } from '@/modules/core/common/display/assets';
 import { useSharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
-import { useEventActionPicker } from '@/modules/history/events/action-picker/use-event-action-picker';
-import { type ActionFieldOption, toHistoryAccountField, toHistoryActionField, toHistoryEventFields, toHistoryIgnoredField, toHistoryStateField } from '@/modules/history/events/history-event-fields';
+import { toHistoryEventFields } from '@/modules/history/events/history-event-fields';
 import { type HistoryEventsRestrictions, toRestrictionGetters } from '@/modules/history/events/history-events-restrictions';
 import { subtypesForTypes } from '@/modules/history/events/mapping/event-type-subtypes';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
-import { isValidHistoryEventState, useHistoryEventStateMapping } from '@/modules/history/events/mapping/use-history-event-state-mapping';
-import { HistoryEventState } from '@/modules/history/events/schemas';
-import { useAccountFilterOptions } from '@/modules/history/use-account-filter-options';
+import { useHistoryEventParamFields } from '@/modules/history/events/use-history-event-param-fields';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import { useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 
@@ -63,12 +60,10 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
   const { t } = useI18n({ useScope: 'global' });
   const { getHistoryEventSubTypeName, getHistoryEventTypeName, historyEventTypeGlobalMapping, historyEventTypes } = useHistoryEventMappings();
   const { counterparties } = useHistoryEventCounterpartyMappings();
-  const { options: accountOptions, resolveCaption, resolveLabel } = useAccountFilterOptions();
   const { associatedLocations } = storeToRefs(useHistoryStore());
   const { sortByTree } = useLocationTreeStore();
   const { assetSearch } = useAssetInfoRetrieval();
-  const { stateConfigs } = useHistoryEventStateMapping();
-  const { rows: actionRows } = useEventActionPicker();
+  const { accountField, actionField, ignoredField, stateField } = useHistoryEventParamFields();
   const shared = useSharedFieldResolvers();
 
   /**
@@ -103,35 +98,6 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
    */
   const search = computed(() => assetSuggestions(assetSearch, get(location)));
   const searchAsset = async (value: string): Promise<AssetsWithId> => get(search)(value);
-
-  const accountKeywords = computed<Map<string, string | undefined>>(
-    () => new Map(get(accountOptions).map(option => [option.value, option.keywords])),
-  );
-  const accountLoading = computed<Set<string>>(
-    () => new Set(get(accountOptions).filter(option => option.loading).map(option => option.value)),
-  );
-  const accountValues = computed<string[]>(() => get(accountOptions).map(option => option.value));
-  const accountField = toHistoryAccountField(t, {
-    resolveCaption,
-    resolveKeywords: (value: string): string | undefined => get(accountKeywords).get(value),
-    resolveLabel,
-    resolveLoading: (value: string): boolean => get(accountLoading).has(value),
-    suggest: (): string[] => get(accountValues),
-  });
-  const ignoredField = toHistoryIgnoredField(t);
-  const directionColors = { in: 'success', neutral: 'secondary', out: 'error' } as const;
-  const actionOptions = computed<ActionFieldOption[]>(() => get(actionRows).map(row => ({
-    icon: { color: directionColors[row.direction], icon: row.icon },
-    label: row.label,
-    verbKey: row.verbKey,
-  })));
-  const actionField = toHistoryActionField(t, (): ActionFieldOption[] => get(actionOptions));
-  const stateField = toHistoryStateField(
-    t,
-    Object.values(HistoryEventState),
-    value => (isValidHistoryEventState(value) ? stateConfigs[value].label : value),
-    value => (isValidHistoryEventState(value) ? stateConfigs[value] : undefined),
-  );
 
   return computed<FieldDef[]>(() => {
     const base = toHistoryEventFields({
