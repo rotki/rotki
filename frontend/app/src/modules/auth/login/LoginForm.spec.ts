@@ -22,6 +22,7 @@ const rememberCredentials = vi.fn<(username: string, password: string) => Promis
 const rememberPassword = ref<boolean>(false);
 const rememberUsername = ref<boolean>(false);
 const usernameFocus = vi.fn<() => void>();
+const loadProfiles = vi.fn<() => Promise<void>>();
 
 type SavedProfilesMock = ReturnType<typeof useSavedProfiles>;
 
@@ -34,7 +35,7 @@ type LogoutMock = Pick<ReturnType<typeof useLogout>, 'logoutRemoteSession'>;
 vi.mock('@/modules/auth/use-saved-profiles', () => ({
   useSavedProfiles: (): SavedProfilesMock => ({
     hasProfiles: computed<boolean>(() => get(savedUsernames).length > 0),
-    loadProfiles: vi.fn(async () => Promise.resolve()),
+    loadProfiles,
     resolveStoredUsername: (): string => get(storedUsername),
     savedUsernames,
   }),
@@ -131,6 +132,7 @@ describe('loginForm', () => {
     set(rememberPassword, false);
     set(rememberUsername, false);
     usernameFocus.mockReset();
+    loadProfiles.mockReset().mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -570,18 +572,37 @@ describe('loginForm', () => {
   });
 
   describe('initial focus', () => {
-    /**
-     * Pins today's timing, not the intent: the focus is picked on mount, a tick before the awaited
-     * profile load restores the username, so the password branch never wins at mount.
-     */
-    it('should focus the username field at mount even when a username is then restored', async () => {
+    function passwordInput(): Element {
+      return wrapper.get('[data-testid=password-native-input]').element;
+    }
+
+    it('should focus the password field when a username is restored', async () => {
       set(storedUsername, 'saved-user');
       wrapper = createWrapper({}, { attachTo: document.body, stubs: { RuiRevealableTextField: PasswordWithInputStub } });
       await flushPromises();
 
       expect(usernameField().props('modelValue')).toBe('saved-user');
-      expect(usernameFocus).toHaveBeenCalledTimes(1);
-      expect(document.activeElement).not.toBe(wrapper.get('[data-testid=password-native-input]').element);
+      expect(usernameFocus).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(passwordInput());
+    });
+
+    it('should pick the field only once a slow profile load settles', async () => {
+      set(storedUsername, 'saved-user');
+      let finishLoad: () => void = () => {};
+      loadProfiles.mockReturnValue(new Promise<void>((resolve) => {
+        finishLoad = resolve;
+      }));
+      wrapper = createWrapper({}, { attachTo: document.body, stubs: { RuiRevealableTextField: PasswordWithInputStub } });
+      await flushPromises();
+
+      expect(usernameFocus).not.toHaveBeenCalled();
+      expect(document.activeElement).not.toBe(passwordInput());
+
+      finishLoad();
+      await flushPromises();
+
+      expect(usernameFocus).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(passwordInput());
     });
 
     it('should focus the username field when nothing is restored', async () => {
@@ -589,7 +610,7 @@ describe('loginForm', () => {
       await flushPromises();
 
       expect(usernameFocus).toHaveBeenCalledTimes(1);
-      expect(document.activeElement).not.toBe(wrapper.get('[data-testid=password-native-input]').element);
+      expect(document.activeElement).not.toBe(passwordInput());
     });
   });
 });
