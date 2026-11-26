@@ -129,7 +129,7 @@ describe('useTokenDetectionOrchestrator', () => {
 
     /**
      * Every detection path queues through `queueDetectionForChain`, so filtering there covers
-     * `detectTokens` and `detectAllTokens` too — automated detection was still firing
+     * `detectTokens` and `detectAllTokens` too. Automated detection was still firing
      * `POST /blockchains/<chain>/tokens/detect` for chains the user had switched off.
      */
     it('should not detect an address excluded by disabledChainQueries', async () => {
@@ -253,7 +253,7 @@ describe('useTokenDetectionOrchestrator', () => {
 
       await detectAllTokens(['btc', 'eth']);
 
-      // Only eth should be submitted — btc does not support transactions
+      // Only eth should be submitted: btc does not support transactions
       expect(mockSubmitTask).toHaveBeenCalledOnce();
       expect(mockDetectTokensForAddress).toHaveBeenCalledWith(mockRunTask, 'eth', '0xaddr1');
     });

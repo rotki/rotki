@@ -182,7 +182,7 @@ describe('useFetchPrices', () => {
 
       await Promise.all([
         fetcher.fetchPrices({ ignoreCache: false, selectedAssets: ['DAI', 'ETH'] }),
-        // Same set, different order — the digest sorts, so this is the same identity.
+        // Same set, different order: the digest sorts, so this is the same identity.
         fetcher.fetchPrices({ ignoreCache: false, selectedAssets: ['ETH', 'DAI'] }),
       ]);
 

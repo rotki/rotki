@@ -74,7 +74,7 @@ export function reconcileOverdrawnLocations(snapshot: Snapshot, targetTotal: Big
 /**
  * Reconciles a snapshot whose location subtotals don't add up to its net worth:
  * absorbs the whole difference (`targetTotal − locationsSum`) into a single
- * location — created if missing — and snaps the stored total to `targetTotal`.
+ * location (created if missing) and snaps the stored total to `targetTotal`.
  * `targetTotal` is the tracked net worth (the balances sum, minus NFTs when they
  * are excluded), so both locations and total land on it. With locations already
  * summing to it the difference is zero, so this just fixes the total. The caller

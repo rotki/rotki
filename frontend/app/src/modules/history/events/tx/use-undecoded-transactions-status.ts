@@ -23,7 +23,7 @@ interface UseUndecodedTransactionsStatusReturn {
  *
  * Read-only against the backend and separate from the decoding it informs: the count is what a
  * refresh consults to decide whether a decode has anything to do, what the decoding-status UI
- * renders, and what a redecode reads before it starts — none of which is decoding.
+ * renders, and what a redecode reads before it starts, none of which is decoding.
  */
 export function useUndecodedTransactionsStatus(): UseUndecodedTransactionsStatusReturn {
   const { t } = useI18n({ useScope: 'global' });

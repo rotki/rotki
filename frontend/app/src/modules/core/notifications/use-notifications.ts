@@ -30,13 +30,13 @@ interface UseNotificationsReturn {
   /**
    * Show a success message dialog.
    * When called with two args: `showSuccessMessage(title, description)`.
-   * When called with one arg: `showSuccessMessage(description)` — title is auto-generated.
+   * When called with one arg: `showSuccessMessage(description)` (title is auto-generated).
    */
   showSuccessMessage: (title: string, description?: string) => void;
   /**
    * Show an error message dialog.
    * When called with two args: `showErrorMessage(title, description)`.
-   * When called with one arg: `showErrorMessage(description)` — title is auto-generated.
+   * When called with one arg: `showErrorMessage(description)` (title is auto-generated).
    *
    * @remarks
    * Dropped when no session is live, like every message dialog, unless `options.sessionless` says

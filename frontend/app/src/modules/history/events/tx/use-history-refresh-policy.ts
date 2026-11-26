@@ -36,7 +36,7 @@ export interface RefreshTargets {
 
 /**
  * What invalidates a loaded history. Declared here, next to the rest of the refresh policy, rather
- * than inline at the submit site — and consumed as a `staleAfter` edge, so nothing reaches into
+ * than inline at the submit site, and consumed as a `staleAfter` edge, so nothing reaches into
  * history's status when data it derives from is purged. Prefix matching means a per-chain purge
  * (`purge:transactions:eth`) satisfies the `transactions` edge too.
  */
@@ -93,7 +93,7 @@ export function useHistoryRefreshPolicy(): UseHistoryRefreshPolicyReturn {
   /**
    * Novelty is "never attempted", which is what the old refreshed-keys set meant: it was written
    * when a refresh *started*, not when it succeeded. So this asks the completion ledger whether the
-   * activity ever settled — in any outcome — rather than whether it ever succeeded.
+   * activity ever settled (in any outcome) rather than whether it ever succeeded.
    *
    * Keying this on `everCompleted` instead would leave a failed or cancelled sync novel forever,
    * and `resolveForFullRefresh` escalates any novelty into a full re-sync of every account.

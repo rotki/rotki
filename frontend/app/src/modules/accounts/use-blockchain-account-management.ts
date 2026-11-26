@@ -66,7 +66,7 @@ export function useBlockchainAccountManagement(): UseBlockchainAccountManagement
    *
    * The running guard is against a user submitting the form twice, not against a batch proceeding.
    * A row of a batch declares its parent, and from the second row onwards an addition is always
-   * already running — refusing those silently dropped every row but the first while the progress
+   * already running. Refusing those silently dropped every row but the first while the progress
    * bar and the completion message still counted them.
    */
   const isRefused = (chain: string, filteredPayload: AccountPayload[], isXpub: boolean, parent?: ActivityId): boolean => {

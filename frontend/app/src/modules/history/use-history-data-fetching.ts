@@ -16,7 +16,7 @@ interface UseHistoryDataFetchingReturn {
 /**
  * In-flight reads, shared across every caller of this composable.
  *
- * One flow ending produces several reads of the location set — the redecode handler, the auto-fetch
+ * One flow ending produces several reads of the location set: the redecode handler, the auto-fetch
  * and a modification watcher can all fire around the same boundary, and none can see the others.
  *
  * Joining rather than caching: a caller always gets a promise resolving once the data is current, so

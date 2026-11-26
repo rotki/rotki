@@ -95,7 +95,7 @@ function defaultMessageForStatus(status: number): string {
   if (status === 413)
     return 'The request body exceeds the limit configured on the server (likely a reverse proxy in front of rotki). Increase its upload size limit or use a smaller file.';
   if (status === 502 || status === 503 || status === 504)
-    return 'The rotki backend is unreachable. It may be starting up, restarting, or overloaded — try again in a moment.';
+    return 'The rotki backend is unreachable. It may be starting up, restarting, or overloaded. Try again in a moment.';
   return `Request failed with status ${status}`;
 }
 

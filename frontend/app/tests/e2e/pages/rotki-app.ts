@@ -113,7 +113,7 @@ export class RotkiApp {
       await keepCurrentButton.waitFor({ state: 'detached', timeout: TIMEOUT_SHORT });
     }
     catch {
-      // Dialog didn't appear — nothing to dismiss
+      // Dialog didn't appear, nothing to dismiss
     }
   }
 

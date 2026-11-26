@@ -43,7 +43,7 @@ const ROW = '[data-testid=history-event-row]';
  *
  * Nothing here waits for the task queue to drain. The seeded tracked accounts keep a balance
  * query running that filtering does not depend on, so the gate is the row count settling on its
- * expected value — which is the thing under test anyway.
+ * expected value, which is the thing under test anyway.
  */
 /**
  * Creates a user, seeds the event set into it, and logs in.
@@ -338,11 +338,10 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  /* The asset field is the only one whose values are fetched, so its editor drives a remote
-     search. Searched by identifier: every chain's USDC ties on levenshtein distance and comes
-     back in query order, and the virtualized list never renders a row past the first screenful.
-     `parseAssetSearchKeyword` turns an identifier into an address search, leaving nothing to
-     rank. */
+  /* Only the asset field fetches its values, so its editor drives a remote search. Searched by
+     identifier: every chain's USDC ties on levenshtein distance and the virtualized list never
+     renders past the first screenful. `parseAssetSearchKeyword` turns an identifier into an
+     address search, leaving nothing to rank. */
   test('the asset editor filters on a remotely searched asset', async () => {
     await bar.addField('asset');
     await bar.selectValue(A_USDC);
@@ -454,11 +453,10 @@ test.describe.serial('history events pill filter', () => {
     await expectRows(TOTAL_SEEDED_EVENTS);
   });
 
-  /* The state pill's read-back is hand-written rather than codec-generic: the route's
-     comma-joined `stateMarkers` is split and validated in `applyHistoryEventRouteQuery`, then
-     bridged into the param bag. Nothing else covers URL -> pill for a param, and the failure is
-     quiet, the filter reaching the request while its pill never appears. No row assertion: no
-     seeded event is customized, so the rows say nothing about the binding. */
+  /* The state pill's read-back is hand-written: `applyHistoryEventRouteQuery` splits and
+     validates the comma-joined `stateMarkers`, then bridges it into the param bag. Nothing else
+     covers URL -> pill for a param, and the failure is quiet. No row assertion: no seeded event
+     is customized. */
   test('a url carrying a state marker rebuilds its pill', async () => {
     await ctx.sharedPage.goto('/#/history/events?stateMarkers=customized');
     await bar.waitForVisible();
@@ -844,7 +842,7 @@ test.describe.serial('history events pill filter', () => {
 /**
  * Pagination and sort live in their own user: 24 events would swamp every row count above.
  *
- * These cover the seam between the bar and `useServerTable` — a filter has to reset the page,
+ * These cover the seam between the bar and `useServerTable`: a filter has to reset the page,
  * and has to survive a sort. Date is the only column the events table sorts by.
  */
 test.describe.serial('history events pill filter paging', () => {

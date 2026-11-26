@@ -122,10 +122,9 @@ describe('useModelMirror', () => {
   });
 
   /*
-   * The equality guard is what makes this terminate rather than being defensive: `toState` answers
-   * with a new array every call, so without the comparison the mirroring would assign a fresh
-   * reference each pass, the write-back would answer with a fresh payload, and the two would trade
-   * writes until Vue's recursion limit.
+   * The equality guard is what makes this terminate: `toState` answers with a new array every call,
+   * so without the comparison the mirroring and the write-back would trade fresh references until
+   * Vue's recursion limit.
    */
   it('should settle even though the mapper answers with a new object each time', async () => {
     const { model, state } = mirror({ name: 'gas', tags: ['manual'] });

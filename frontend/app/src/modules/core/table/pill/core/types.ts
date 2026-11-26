@@ -73,8 +73,8 @@ type FieldBinding =
  * the pill components read, so they never branch on where a field's value ends up.
  *
  * @remarks
- * The resolver callbacks here — {@link FieldDef.resolveLabel}, {@link FieldDef.resolveCaption},
- * {@link FieldDef.resolveKeywords}, {@link FieldDef.suggest} — are called once per candidate value
+ * The resolver callbacks here ({@link FieldDef.resolveLabel}, {@link FieldDef.resolveCaption},
+ * {@link FieldDef.resolveKeywords}, {@link FieldDef.suggest}) are called once per candidate value
  * on every keystroke while the bar narrows. Anything they need should be indexed or built once
  * outside the callback: work done inside runs over the whole candidate list per character typed.
  *
@@ -107,7 +107,7 @@ export interface FieldDef {
    * `action` is one presentation of an event type/subtype pair, so offering it beside the Type and
    * Subtype fields would let two pills fight over the same request params. A field with an active
    * filter removes everything it excludes from the bar's add menu and narrowing, in both
-   * directions — declare the pair on both sides.
+   * directions. Declare the pair on both sides.
    */
   readonly excludes?: readonly string[];
   /**
@@ -117,7 +117,7 @@ export interface FieldDef {
    *
    * History's event subtype is the case that needs it: the backend reads types and subtypes as a
    * cross product, so a subtype no selected type admits matches nothing and the table goes silently
-   * empty. Narrowing the option list is only half the rule — a value already picked has to leave the
+   * empty. Narrowing the option list is only half the rule: a value already picked has to leave the
    * filter too, which is what the bar applies whenever its state changes, route restore included.
    *
    * Receives every active field's values, keyed by field key. Returning an empty list means "not

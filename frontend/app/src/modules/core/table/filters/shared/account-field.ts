@@ -28,13 +28,13 @@ export interface AccountFieldBinding {
  *
  * Always param-bound and multi-valued: an address is picked, not typed, and a table that offers
  * accounts at all offers all of them. It carries its addresses as values so an account can be
- * applied straight from the bar's inline input the way a location or protocol can — matched on its
+ * applied straight from the bar's inline input the way a location or protocol can, matched on its
  * address, name or ENS, none of which the pill's own label reliably shows (it is a name, or a
  * shortened and scrambled address).
  *
  * Which addresses exist, and what each is called, is the table's own business: history offers the
  * accounts its events mention, the balances table the accounts of the category being shown. Only
- * how they read is shared, which is the point — the two pills looked alike and were not.
+ * how they read is shared, which is the point: the two pills looked alike and were not.
  *
  * @packageDocumentation
  */

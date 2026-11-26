@@ -267,11 +267,9 @@ describe('settings/accounting/rule/AccountingRuleForm.vue', () => {
   });
 
   /*
-   * The three toggles are edited here like any other field, but they are answered by a linked
-   * accounting setting as often as by the user, so a change to one must reach the rule without
-   * counting as an unsaved edit. Both halves are asserted, because either alone would let the
-   * other regress: dropping them from the state stops the write, and dropping them from the
-   * transient keys makes the dialog prompt on close over something nobody touched.
+   * A linked accounting setting answers the three toggles as often as the user does, so a change
+   * must reach the rule without counting as an unsaved edit. Both halves are asserted: dropped from
+   * the state, the write stops; dropped from the transient keys, the dialog prompts on close.
    */
   describe('the linked toggles', () => {
     function toggle(identifier: string): VueWrapper<ComponentPublicInstance<Record<string, unknown>>> {

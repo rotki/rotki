@@ -53,7 +53,7 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
   /**
    * Only a refresh has to stand down for one already running: a second would stack on the same
    * backend task. A plain read is a cached call that always sends the pagination as it stands, so
-   * it can run alongside — which is what lets a filter changed mid-refresh reach the table instead
+   * it can run alongside, which is what lets a filter changed mid-refresh reach the table instead
    * of being dropped.
    */
   function shouldSkip(refresh: boolean): boolean {

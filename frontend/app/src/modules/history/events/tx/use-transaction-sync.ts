@@ -126,7 +126,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
    * {@link DECODE_LANE} (1 across all chains). A child cannot start before its parent, so declaring
    * the subtree early does not start it early.
    *
-   * The chain activity is submitted *before* its children, so the parent gate applies to them —
+   * The chain activity is submitted *before* its children, so the parent gate applies to them,
    * but its `run` needs their promises, which exist only once they are submitted. Hence the deferred
    * `subtree` promise rather than an array that would still be empty when `run` first executes. The
    * two halves arrive separately because only the accounts decide the chain's verdict; the decode is

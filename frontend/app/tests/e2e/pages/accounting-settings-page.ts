@@ -42,7 +42,7 @@ export class AccountingSettingsPage {
   }
 
   /**
-   * Asserts every visible rule is for this event type, and that there is at least one — an empty
+   * Asserts every visible rule is for this event type, and that there is at least one: an empty
    * table trivially satisfies "all of them match".
    */
   async expectOnlyEventType(eventType: string): Promise<void> {

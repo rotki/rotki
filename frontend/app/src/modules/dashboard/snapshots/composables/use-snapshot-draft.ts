@@ -104,7 +104,7 @@ interface UseSnapshotDraftReturn {
  * change list, the sum mismatch and undo are all derived deterministically.
  *
  * Net worth ALWAYS tracks the balances (assets − liabilities, minus NFTs when
- * excluded) — the balances are the source of truth, so there is no manual total.
+ * excluded). The balances are the source of truth, so there is no manual total.
  * A stale stored total is corrected to the balances on load (an unsaved change)
  * and re-tracked after every balance mutation; only the NFT-exclusion flag is
  * inferred on load.
@@ -163,7 +163,7 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
     set(undoStack, [...get(undoStack), entry].slice(-UNDO_LIMIT));
   }
 
-  /** A plain draft transform (no re-tracking) — for location ops and reconcile. */
+  /** A plain draft transform (no re-tracking), for location ops and reconcile. */
   function mutate(transform: (snapshot: Snapshot) => Snapshot): void {
     const current = get(draft);
     if (!current)
@@ -255,7 +255,7 @@ export function useSnapshotDraft(initial: MaybeRefOrGetter<Snapshot | undefined>
   /**
    * Reconcile the allocation by writing each split's USD value onto its location
    * row (creating missing rows). Locations are an independent allocation view, so
-   * this never touches the auto-tracked total — it only realigns the venue split.
+   * this never touches the auto-tracked total; it only realigns the venue split.
    */
   function distributeLocations(splits: LocationSplit[]): void {
     mutate(snapshot => distributeToLocations(snapshot, splits));

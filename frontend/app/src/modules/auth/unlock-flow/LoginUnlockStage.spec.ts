@@ -54,7 +54,7 @@ describe('modules/auth/unlock-flow/LoginUnlockStage', () => {
     wrapper.findComponent(AssetUpdateMessage).vm.$emit('dismiss', false);
     await nextTick();
 
-    // stays at the default (0) — the remote version (42) is not recorded
+    // stays at the default (0): the remote version (42) is not recorded
     expect(localStorage.getItem('rotki_skip_asset_db_version')).toBe('0');
     expect(wrapper.emitted('skip')).toHaveLength(1);
   });

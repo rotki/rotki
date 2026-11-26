@@ -90,7 +90,7 @@ export function acceptsSensitiveEdit(mode: string, editing: boolean): boolean {
 }
 
 /**
- * The fields the form's inputs bind to. The rest of the entry — the location, the mode — is carried
+ * The fields the form's inputs bind to. The rest of the entry (the location, the mode) is carried
  * by the entry itself and never edited here.
  *
  * The three enum-typed fields keep the entry's own types rather than widening to `string`, so the
@@ -112,8 +112,8 @@ export interface ExchangeKeysFormState {
 }
 
 /**
- * The editable fields, taken out of the entry the dialog owns. The entry carries more than this —
- * the location and the mode — which the form reads but never writes.
+ * The editable fields, taken out of the entry the dialog owns. The entry carries more than this
+ * (the location and the mode), which the form reads but never writes.
  *
  * It has to answer the same for the same entry: `useMappedModelForm` compares what this returns
  * against the state it already holds to decide whether an outside edit is news, so a value invented

@@ -10,7 +10,7 @@ import { type AccountOption, useAccountOptionResolvers } from '@/modules/core/ta
  * The account pill's values for the blockchain balances table: the tracked accounts of the
  * category being shown, deduped across chains.
  *
- * Scoped to the category on purpose — the accounts page shows one category at a time, so offering
+ * Scoped to the category on purpose: the accounts page shows one category at a time, so offering
  * every tracked account would offer accounts that cannot appear in the table. That scoping is why
  * this cannot simply reuse history's list, which is drawn from the events instead.
  *

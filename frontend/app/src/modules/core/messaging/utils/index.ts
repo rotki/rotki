@@ -4,7 +4,7 @@
  * This module provides:
  * - Standardized error handling for message handlers
  * - Factory functions for common handler patterns
- * - Utilities for creating robust, reusable handlers
+ * - Utilities for creating reusable handlers
  */
 
 export * from './error-handling';

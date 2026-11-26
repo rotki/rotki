@@ -225,7 +225,7 @@ describe('valueSelectList', () => {
     const wrapper = createWrapper([], true, 0);
     const input = wrapper.find('input');
     await input.setValue('a');
-    // Same three values, reordered as a selection would pin one — and now one row is pinned.
+    // Same three values, reordered as a selection would pin one, and now one row is pinned.
     await wrapper.setProps({
       options: [options[1], options[0], options[2]],
       pinned: 1,

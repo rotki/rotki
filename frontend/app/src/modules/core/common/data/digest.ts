@@ -1,5 +1,5 @@
 /**
- * A short, stable digest of a set of strings — for activity ids whose identity is "which things",
+ * A short, stable digest of a set of strings, for activity ids whose identity is "which things",
  * not "which order they arrived in".
  *
  * Order-independent by construction (the input is sorted first), so two callers naming the same

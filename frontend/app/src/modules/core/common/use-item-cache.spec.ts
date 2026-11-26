@@ -332,7 +332,7 @@ describe('createItemCache', () => {
 
       expect(calls).toHaveLength(1);
 
-      // Try to queue again — should be skipped (unknown not expired)
+      // Try to queue again: should be skipped (unknown not expired)
       queueIdentifier('KEY');
       vi.advanceTimersByTime(1000);
       await flushPromises();

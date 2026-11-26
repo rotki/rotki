@@ -1,6 +1,6 @@
 /**
  * Extracts a human-readable message from an unknown thrown value.
- * Pure function — no logging or side effects.
+ * Pure function: no logging or side effects.
  */
 export function getErrorMessage(error: unknown): string {
   if (error instanceof Error)

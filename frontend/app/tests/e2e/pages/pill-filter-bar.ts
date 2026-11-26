@@ -5,7 +5,7 @@ import { PillFilterKeyboard } from './pill-filter-keyboard';
 /**
  * Drives the pill filter bar (`modules/core/table/pill/PillFilterBar.vue`).
  *
- * The bar is shared across tables, so this object knows nothing about history events —
+ * The bar is shared across tables, so this object knows nothing about history events:
  * callers pass the field keys (the wire keys, e.g. `counterparties`) their table exposes.
  */
 export class PillFilterBar {
@@ -82,7 +82,7 @@ export class PillFilterBar {
    * Ticks a value in the open enum/asset checklist. Multi-select fields stay open.
    *
    * The list is virtualized, so a value far down it is not in the DOM until the list is
-   * narrowed — every selection goes through the search box first. Search matches the option's
+   * narrowed. Every selection goes through the search box first. Search matches the option's
    * label*, so pass `search` explicitly whenever the label differs from the wire value
    * (`uniswap-v2` renders as `Uniswap V2`).
    *
@@ -102,7 +102,7 @@ export class PillFilterBar {
   /**
    * Ticks a value only if it is not ticked already.
    *
-   * `selectValue` clicks unconditionally, which toggles — fine when building a filter up from
+   * `selectValue` clicks unconditionally, which toggles: fine when building a filter up from
    * nothing, wrong when the pill may already carry the value (a filter restored from the URL, say),
    * because unticking the last value drops the pill entirely.
    */
@@ -202,7 +202,7 @@ export class PillFilterBar {
   /**
    * Closes an open checklist editor.
    *
-   * The enum, asset and account editors have no `close` of their own — they rely on the menu
+   * The enum, asset and account editors have no `close` of their own. They rely on the menu
    * being dismissed. Escape usually does it, but it does not reach the asset editor while its
    * remote search is in flight, so passing the field key adds a deterministic fallback: clicking
    * the pill toggles its own menu shut. Selections in these editors commit on click, so nothing
@@ -259,7 +259,7 @@ export class PillFilterBar {
    * Types into the bar's inline narrowing input one key at a time.
    *
    * `fill()` sets the value in a single shot and so cannot catch the class of bug where the
-   * popover steals focus after the first keystroke — which is exactly how that bug once hid.
+   * popover steals focus after the first keystroke, which is exactly how that bug once hid.
    */
   async narrow(query: string): Promise<void> {
     await this.narrowInput.click();
@@ -324,7 +324,7 @@ export class PillFilterBar {
   /**
    * The first value suggestion offered for a field, whichever it happens to be.
    *
-   * Asset rows arrive from a remote search whose ranking is not ours to predict — the same
+   * Asset rows arrive from a remote search whose ranking is not ours to predict: the same
    * symbol exists on many chains and the per-field cap keeps only the first few. A test about
    * the async path should assert that a row arrives and applies, not which row won.
    */

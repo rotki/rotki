@@ -97,13 +97,13 @@ describe('modules/dashboard/snapshots/components/SnapshotListTable', () => {
   it('should render the delta when the row has a predecessor', () => {
     wrapper = createWrapper([createRow()]);
 
-    expect(wrapper.text()).not.toContain('—');
+    expect(wrapper.text()).not.toContain('\u{2014}');
     expect(wrapper.text()).toContain('10');
   });
 
   it('should render a dash in the delta column for the oldest snapshot', () => {
     wrapper = createWrapper([createRow({ previousTimestamp: undefined, previousUsdValue: undefined })]);
 
-    expect(wrapper.text()).toContain('—');
+    expect(wrapper.text()).toContain('\u{2014}');
   });
 });

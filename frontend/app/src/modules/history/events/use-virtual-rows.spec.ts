@@ -14,7 +14,7 @@ const LOAD_MORE_INCREMENT = 6;
 /** More legs than two pages, so a second load-more still leaves some hidden. */
 const LEG_COUNT = 15;
 
-/** Subgroup keys as the composable minted them — the specs must not encode the key format. */
+/** Subgroup keys as the composable minted them. The specs must not encode the key format. */
 function swapKeys(rows: ComputedRef<VirtualRow[]>): string[] {
   return get(rows).flatMap(row => (row.type === 'swap-row' ? [row.swapKey] : []));
 }

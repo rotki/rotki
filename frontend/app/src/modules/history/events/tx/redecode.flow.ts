@@ -10,13 +10,13 @@ const IGNORE_CACHE = true;
  * Re-derive decodable chains' events from transactions already in the database.
  *
  * One flow with a scope: "re-decode everything" and "re-decode these chains" are the same work over
- * a different set, and the set belongs in the identity — two requests for the same chains dedup, a
+ * a different set, and the set belongs in the identity: two requests for the same chains dedup, a
  * scoped and a full request must not.
  *
  * Reset-bearing: the backend deletes each location's non-customized events before re-deriving
  * (`reset_events_for_redecode`), so this must never overlap matching.
  *
- * Pulls nothing new — that is `refresh` (forward) and `re-pull` (a past range).
+ * Pulls nothing new. That is `refresh` (forward) and `re-pull` (a past range).
  */
 export const redecodeFlow: HistoryFlow<readonly string[], string> = {
   /**

@@ -127,13 +127,10 @@ export default rotki({
   },
 }, {
   /*
-   * A looser cap for presentational primitives, which are configured by many call sites; feature
-   * components keep the project-wide cap, where a high prop count is a decomposition signal.
-   * `settings/controls` counts as primitives: it imports nothing outside settings, shell and core.
-   *
-   * No file is exempted. Before exempting one, check `modules/premium/register-components.ts`:
-   * those props are a public API for the separately released bundle. The cap is restated because
-   * a flat config replaces a rule's options rather than merging them.
+   * A looser cap for presentational primitives, which many call sites configure. `settings/controls`
+   * counts as primitives: it imports nothing outside settings, shell and core. Before exempting a
+   * file, check `modules/premium/register-components.ts`: those props are the premium bundle's API.
+   * Restated because flat config replaces a rule's options rather than merging them.
    */
   files: [
     '**/src/modules/shell/components/**/*.vue',
@@ -239,13 +236,10 @@ export default rotki({
   },
 }, {
   /*
-   * A real-clock sleep in a unit spec is a race: it passes on an idle laptop, fails on a loaded CI
-   * box, and costs its full duration regardless. Use `vi.advanceTimersByTimeAsync()`,
-   * `vi.waitUntil`/`vi.waitFor`, or a promise the test resolves itself.
-   *
-   * Only an *awaited* sleep is matched, in both spellings: `await wait(n)` from `@shared/utils`
-   * and `await new Promise(resolve => setTimeout(resolve, n))`. Passing either as simulated work
-   * inside a mock is untouched.
+   * A real-clock sleep in a unit spec is a race: it passes on an idle laptop, fails on loaded CI,
+   * and costs its full duration. Use `vi.advanceTimersByTimeAsync()`, `vi.waitUntil`/`vi.waitFor`,
+   * or a promise the test resolves. Only an *awaited* `wait(n)` or `new Promise(resolve =>
+   * setTimeout(resolve, n))` is matched.
    */
   files: ['**/src/**/*.spec.ts', '**/shared/**/*.spec.ts', '**/electron/**/*.spec.ts'],
   rules: {

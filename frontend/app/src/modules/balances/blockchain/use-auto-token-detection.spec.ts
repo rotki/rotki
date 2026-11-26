@@ -47,7 +47,7 @@ describe('useAutoTokenDetection', () => {
   });
 
   /**
-   * The pass still runs — the refresh must happen either way. Only its `detect` argument
+   * The pass still runs: the refresh must happen either way. Only its `detect` argument
    * changes, which is the whole point of threading the flag through rather than skipping the call.
    */
   it('should still run the pass, without detection, when auto-detect is disabled', async () => {
@@ -99,7 +99,7 @@ describe('useAutoTokenDetection', () => {
     release();
     await first;
 
-    // Both passes run — the second is a refresh too — but only the first was told to detect.
+    // Both passes run (the second is a refresh too), but only the first was told to detect.
     expect(pass).toHaveBeenCalledTimes(2);
     expect(pass.mock.calls.filter(([detect]) => detect)).toHaveLength(1);
     expect(updateFrontendSetting).toHaveBeenCalledTimes(1);

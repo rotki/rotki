@@ -26,7 +26,7 @@ interface UseRpcProviderRemovalReturn {
  * @remarks
  * The counterpart to the fan-out: a key spread over a dozen chains would otherwise have to be
  * removed a dozen times, one chain tab at a time. Deletes are independent, so one failure does not
- * stop the rest — the count that comes back says how many survived.
+ * stop the rest. The count that comes back says how many survived.
  */
 export function useRpcProviderRemoval(): UseRpcProviderRemovalReturn {
   const { readNodes } = useRpcNodesByChain();

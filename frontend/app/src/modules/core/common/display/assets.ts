@@ -41,7 +41,7 @@ export function hasAssetMetadata(identifier: string, value?: Nullable<string>): 
  * The label for an asset that may have no symbol: its symbol when it has one, else its shortened
  * contract address.
  *
- * A raw identifier is unusable as a label — `eip155:1/erc20:0x214AF1443f6bB9FFB2bDcF301c762Df28Dd7f818`
+ * A raw identifier is unusable as a label: `eip155:1/erc20:0x214AF1443f6bB9FFB2bDcF301c762Df28Dd7f818`
  * swamps a pill or a suggestion row, and so does the `EVM Token: 0x…` an unresolved asset resolves
  * to. The shortened address is the usual display for an asset without metadata, and is what rotki
  * already shows for any unnamed address. A non-EVM identifier has no address to extract, so it is

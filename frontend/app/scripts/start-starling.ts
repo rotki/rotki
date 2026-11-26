@@ -15,13 +15,13 @@ import { StarlingRpc } from '../shared/starling/starling-rpc';
  * and left the suite exercising a two-origin topology no shipping mode uses.
  *
  * starling boots idle and is brought up with a `start` control request, whose
- * reply resolves only once both services are ready — so Playwright's `url` probe
+ * reply resolves only once both services are ready, so Playwright's `url` probe
  * finds the proxy already answering rather than racing it.
  */
 interface StarlingE2eOptions {
   data: string;
   logs: string;
-  /** Port the reverse proxy binds — the single origin the tests address. */
+  /** Port the reverse proxy binds: the single origin the tests address. */
   port: number;
   corePort: number;
   colibriPort: number;

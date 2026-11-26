@@ -27,7 +27,7 @@ export function isAirdropStatus(value: string): boolean {
 /**
  * The account pill's values for the airdrops table: the tracked EVM accounts that actually have an
  * airdrop, which is what the selector this replaces offered through `usable-addresses`. Only the
- * offered list is narrowed — how an account reads is the shared resolution every account pill uses.
+ * offered list is narrowed. How an account reads is the shared resolution every account pill uses.
  */
 function useAirdropAccountOptions(eligible: MaybeRefOrGetter<string[]>): AccountFieldOptions {
   const accounts = useBlockchainAccountOptions('evm');

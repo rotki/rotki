@@ -133,8 +133,8 @@ describe('modules/core/notifications/useNotificationCard', () => {
 
     it('should still report it when the date came back from serialization as a string', () => {
       const date = new Date('2026-03-04T05:06:07Z');
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- a persisted notification rehydrates with a string date
-      const serialized = date.toISOString() as unknown as Date;
+      /** A persisted notification rehydrates with a string date. */
+      const serialized: Date = JSON.parse(JSON.stringify(date));
 
       const { timestamp } = card(notification({ date: serialized }));
 

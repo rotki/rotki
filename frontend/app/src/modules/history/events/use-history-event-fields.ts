@@ -33,7 +33,7 @@ export interface HistoryEventFieldsOptions {
 
 /**
  * Assembles the pill-bar `FieldDef`s for history events: the fields it sends in its filter bag plus
- * the external param pills — action, state markers, ignored assets and account (`locationLabels`).
+ * the external param pills: action, state markers, ignored assets and account (`locationLabels`).
  * The account pill is omitted when the view is already pinned to an external account set.
  */
 export function useHistoryEventFields(options: HistoryEventFieldsOptions): ComputedRef<FieldDef[]> {
@@ -67,7 +67,7 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
   const shared = useSharedFieldResolvers();
 
   /**
-   * The field declares this twice over — as the option list it offers, and as what it `admits` —
+   * The field declares this twice over (as the option list it offers, and as what it `admits`),
    * so the narrowing and the pruning of an already-picked subtype cannot disagree.
    */
   const subtypesFor = (eventTypes: readonly string[]): string[] =>

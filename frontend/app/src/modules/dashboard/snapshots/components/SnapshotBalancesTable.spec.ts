@@ -34,7 +34,7 @@ function createSnapshot(): Snapshot {
     balancesSnapshot: [
       balance('ETH', 100),
       balance('DAI', 30, BalanceType.LIABILITY),
-      // An NFT whose amount isn't 1 — a genuine sanity warning that flags its row.
+      // An NFT whose amount isn't 1: a genuine sanity warning that flags its row.
       { amount: bigNumberify(2), assetIdentifier: '_nft_0xabc_1', category: BalanceType.ASSET, timestamp: TS, usdValue: bigNumberify(40) },
       balance('USDC', 0),
       balance('SAITAMA', 5),

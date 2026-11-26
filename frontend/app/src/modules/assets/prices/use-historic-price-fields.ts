@@ -14,7 +14,7 @@ export const HistoricPriceFilterKeys = {
 /**
  * The pill-bar fields for the historic prices table: the pair a price is quoted for.
  *
- * Both were `AssetSelect`s above the table, which is the same picker the asset pill carries — the
+ * Both were `AssetSelect`s above the table, which is the same picker the asset pill carries. The
  * difference is that a pill says which side of the pair it is and can be removed, where an empty
  * select still occupied half the toolbar. The oracle prices tab already reads this way, so the
  * three price tabs now speak one language.

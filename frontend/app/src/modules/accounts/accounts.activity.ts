@@ -59,7 +59,7 @@ function addressPart(address: string): string {
  * The narrow half of an activity key: what is being acted on, as one part.
  *
  * Joined with `,` rather than the id separator so `activityParts` recovers the set as a single
- * part instead of shredding it into members — the same reason `redecodeFlow` joins its chains that
+ * part instead of shredding it into members, the same reason `redecodeFlow` joins its chains that
  * way.
  */
 function targetKey(target: AccountTarget): string {
@@ -213,8 +213,8 @@ export const evmAccountDetectionActivity = defineActivity<void, readonly []>({
  *
  * The key opens with the literal `category` part so these ids cannot be confused with chain-scoped
  * ones by a prefix reader. Keying straight off the category name would have left the two apart only
- * because no chain happens to be called `evm` — incidental, and invisible once it stopped being
- * true.
+ * because no chain happens to be called `evm` (incidental, and invisible once it stopped
+ * being true).
  */
 export const accountAgnosticRemoveActivity = defineActivity<{ category: string; address: string }, readonly [ActivityPart, string, string]>({
   key: subject => [ActivityPart.CATEGORY, subject.category, subject.address],

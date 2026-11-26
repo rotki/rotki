@@ -96,7 +96,7 @@ describe('useTargetedRedecode', () => {
   /**
    * These three subtitles were built by hand and so bypassed `activityLabelFor` entirely, which is
    * why a sweep that grepped for that call missed them. They rendered a bare count ("Ethereum · 2"),
-   * a full 66-character transaction hash, and a bare block number — none of which say what the row
+   * a full 66-character transaction hash, and a bare block number, none of which say what the row
    * is doing. Asserting the {@link TranslatableText} shape rather than a rendered string keeps this
    * honest: a hand-built string cannot satisfy it.
    */

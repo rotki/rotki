@@ -17,7 +17,7 @@ defineOptions({
  * (`RuiNavigationDrawer`, `RuiDialog`) is **not** usable here: the rail keeps backgrounded panels
  * alive with `KeepAlive`, and a deactivated panel's teleported content leaks out of its target.
  *
- * Carries only the behaviour — scrim, slide-up, placement, modality. Panels bring their own header
+ * Carries only the behaviour: scrim, slide-up, placement, modality. Panels bring their own header
  * and actions, since the detail surfaces differ too much to share chrome.
  */
 const open = defineModel<boolean>({ required: true });

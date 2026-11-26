@@ -179,7 +179,7 @@ describe('useBalanceProcessingService', () => {
     /**
      * eth2's "accounts" are validators, produced by a backend task rather than an accounts read,
      * so `hasAccounts` is false until that task lands. Gating on it means a balance pass that
-     * overtakes the validator fetch skips eth2 entirely — and the backend would have answered:
+     * overtakes the validator fetch skips eth2 entirely, and the backend would have answered:
      * The backend's `ChainsAggregator.query_balances` exempts ETHEREUM_BEACONCHAIN from the same
      * check.
      */
@@ -217,7 +217,7 @@ describe('useBalanceProcessingService', () => {
       const service = useBalanceProcessingService();
       const { statusOf } = useTaskOrchestrator();
 
-      // `optimism` was never written by the accounts fetch — its set is unknown, not empty.
+      // `optimism` was never written by the accounts fetch: its set is unknown, not empty.
       service.clearChainBalances('optimism');
 
       expect(statusOf(ActivityKind.BLOCKCHAIN_BALANCES, 'optimism').everCompleted).toBe(false);
@@ -239,14 +239,14 @@ describe('useBalanceProcessingService', () => {
      * The destructive half. Every caller reaches `clearChainBalances` through
      * `!hasAccounts(chain)`, which cannot tell "fetched, genuinely empty" from "not fetched yet".
      * Clearing on unknown *erases* a chain's balances whenever a refresh races the account walk,
-     * rather than skipping it — and the balances are gone until something re-queries.
+     * rather than skipping it, and the balances are gone until something re-queries.
      */
     it('should not erase balances for a chain whose accounts are not loaded yet', () => {
       const service = useBalanceProcessingService();
       const { updateBalances } = useBalancesStore();
       vi.mocked(updateBalances).mockClear();
 
-      // `zksync_lite` was never written by the accounts fetch — unknown, not empty.
+      // `zksync_lite` was never written by the accounts fetch: unknown, not empty.
       service.clearChainBalances('zksync_lite');
 
       expect(updateBalances).not.toHaveBeenCalled();

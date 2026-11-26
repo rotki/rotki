@@ -10,7 +10,7 @@ import { PillFilterBar } from '../../pages/pill-filter-bar';
  *
  * Seeded rather than assumed: rotki's default rules come from the data repo, not from account
  * creation, so how many rules a fresh user has at any given moment is a race. That is also why
- * nothing below counts rows — the assertions are about *which* rules a filter leaves, which holds
+ * nothing below counts rows: the assertions are about *which* rules a filter leaves, which holds
  * whether the defaults have landed or not.
  */
 const SEEDED_RULES: SeedAccountingRule[] = [

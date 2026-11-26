@@ -62,11 +62,11 @@ export function useUsersApi(): UseUsersApiReturn {
 
   /**
    * Lock colibri's copy of the user db. Treats "already locked" as success: that is
-   * precisely the state this call aims for, and it is reached on every ordinary path —
+   * precisely the state this call aims for, and it is reached on every ordinary path:
    * a resumed session (page reload while logged in) never unlocks colibri at all.
    *
-   * Without this, the throw stops `logout` before it reaches core — colibri is locked
-   * first by design — so core keeps the session, `/users` still reports `loggedin`, and
+   * Without this, the throw stops `logout` before it reaches core (colibri is locked
+   * first by design), so core keeps the session, `/users` still reports `loggedin`, and
    * the user is stuck on "Logout failed / DB not unlocked" with no way out. Any other
    * colibri failure still rejects: an account is locked only once both are locked.
    */
@@ -178,13 +178,13 @@ export function useUsersApi(): UseUsersApiReturn {
    * is: `unlock_user` never records the username, so a stale handle from a previous
    * session and one belonging to another user are indistinguishable from here. Taking
    * it fresh with our own credentials is the only way to know colibri ends up serving
-   * the user we just logged in as — colibri's gate authorizes any live session, so a
+   * the user we just logged in as: colibri's gate authorizes any live session, so a
    * handle left open would otherwise serve the previous user's assets to this one.
    *
    * Safe because this only ever runs on a fresh login or account creation, and core
    * 409s those while any user is logged in. So core holds no unlocked user at this
    * point, and whatever db colibri still has open is a leftover from a session that
-   * has already ended — never a live one. A resumed session takes the other branch and
+   * has already ended, never a live one. A resumed session takes the other branch and
    * does not come through here at all. Should core ever allow two users to be logged
    * in at once, this has to grow a real identity check before it relocks.
    *

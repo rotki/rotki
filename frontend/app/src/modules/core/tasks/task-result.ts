@@ -24,7 +24,7 @@ export const BackendCancelled = tag('BackendCancelled');
  * settings"), which the task center renders on the row. Not a failure: nothing needs fixing.
  *
  * Not the `Skipped` tag removed in `6e128fcaa5`. That one meant "a duplicate was already in
- * flight" — an artefact of the dedup guard, invisible to users. This is a user-facing outcome.
+ * flight", an artefact of the dedup guard, invisible to users. This is a user-facing outcome.
  *
  * `attention` marks the rare skip that leaves the user without what they asked for, such as an
  * address they added that ends up tracked nowhere. The task center then holds it for the user the
@@ -76,13 +76,13 @@ export function errorOf(error: TaskError): Error {
  *
  * A parent must not claim a success its children did not earn. The shape this exists to kill is
  * `await Promise.all(children); return ok(undefined)`, which completes even when every child
- * failed — and where the parent's completion-ledger entry is load-bearing, that writes "we have
+ * failed, and where the parent's completion-ledger entry is load-bearing, that writes "we have
  * data" over nothing at all. Concretely: backend unreachable on the first history sync, every
  * account fails, the umbrella completes anyway, `everCompleted` goes true and every later
  * non-user-initiated refresh short-circuits on it, so history silently never syncs again.
  *
- * One success is enough. A fan-out is partial by nature — one chain failing is that chain's
- * failure, not the refresh's — so this reports a failure only when *nothing* got through. An empty
+ * One success is enough. A fan-out is partial by nature (one chain failing is that chain's
+ * failure, not the refresh's), so this reports a failure only when *nothing* got through. An empty
  * batch is `Skipped`: no work ran, so no work succeeded, and a parent that ran nothing must not
  * record a completion either.
  *

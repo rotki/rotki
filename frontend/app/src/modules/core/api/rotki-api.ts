@@ -207,7 +207,7 @@ export class RotkiApi {
   /**
    * The single sanctioned generic-boundary escape. Some options
    * (`skipResultUnwrap`, `treat409AsSuccess`) intentionally resolve to a value
-   * the wrapper cannot type as `T` — the caller opted into that shape — so this
+   * the wrapper cannot type as `T` (the caller opted into that shape), so this
    * is the one place that asserts it, keeping the assertion contained.
    *
    * Carrying the type instead was considered and does not work here: there is no schema and no

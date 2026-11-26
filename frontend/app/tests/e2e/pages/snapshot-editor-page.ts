@@ -79,7 +79,7 @@ export class SnapshotEditorPage {
   /**
    * Adds a new balance row. The asset's historic USD price must be seeded
    * (see `seedHistoricPrices`) so the value field auto-fills and the form's
-   * price fetch resolves — otherwise the value input stays `:disabled="fetching"`.
+   * price fetch resolves. Otherwise the value input stays `:disabled="fetching"`.
    */
   async addBalance(asset: string, amount: string, assetId?: string): Promise<void> {
     await this.balancesTable.locator('[data-testid=snapshot-balances-add]').click();

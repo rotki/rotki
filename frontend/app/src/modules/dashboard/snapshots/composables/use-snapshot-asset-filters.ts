@@ -12,15 +12,15 @@ interface UseSnapshotAssetFiltersReturn {
 
 /**
  * Predicates the snapshot editor uses to hide clutter rows and to keep them out
- * of the zero-value sanity warning — spam and ignored assets. Centralised so the
+ * of the zero-value sanity warning: spam and ignored assets. Centralised so the
  * balances table and the summary warning agree on what counts.
  *
- * Crucially these must NOT trigger asset resolution. `getAssetInfo` is a DISPLAY
+ * These must NOT trigger asset resolution. `getAssetInfo` is a DISPLAY
  * path: it queues a `/assets/mappings` fetch for every unresolved identifier, so
  * checking spam across a whole snapshot would reload hundreds of assets. Instead:
  * - spam is read straight from the asset-info cache RECORD (no queue, no fetch);
  *   assets not yet resolved read as non-spam, and any spam asset is also on the
- *   ignored list anyway (marking spam auto-ignores — see use-spam-asset.ts).
+ *   ignored list anyway (marking spam auto-ignores, see use-spam-asset.ts).
  * - ignored is a plain lookup in the preloaded `ignoredAssets` list.
  *
  * Both reads are reactive (they read the cache ref / ignored list), so a

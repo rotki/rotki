@@ -109,9 +109,8 @@ export function startProcess(cmd: string, tag: string, name: string, args: strin
 function killGroup(pid: number, signal: NodeJS.Signals, windowed = false): void {
   if (isWindows) {
     /* Windows has no process groups, so `taskkill /T` walks the parent-pid table instead. `/F`
-       is an unconditional terminate, which would kill electron mid-quit: a windowed child gets
-       a polite close during the graceful phase, while a windowless one, which would reject it,
-       goes straight to the forced kill rather than burning the grace period first. */
+       would kill electron mid-quit, so a windowed child gets a polite close during the graceful
+       phase. A windowless one would reject it, so it goes straight to the forced kill. */
     const force = windowed && signal !== 'SIGKILL' ? [] : ['/F'];
     spawnSync('taskkill', ['/pid', String(pid), '/T', ...force], { windowsHide: true });
     return;
@@ -180,7 +179,7 @@ const hooks: ShutdownHook[] = [];
 /**
  * Register work that must run before the tracked children are signalled.
  * `startProcess` inherits stdin, so a child driven over a stdio control channel
- * (starling) cannot live in the pool — it spawns itself and hooks in here to get
+ * (starling) cannot live in the pool: it spawns itself and hooks in here to get
  * its graceful stop ahead of the generic kill.
  */
 export function registerShutdownHook(hook: ShutdownHook): void {

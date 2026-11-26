@@ -7,7 +7,7 @@ const DEFAULT_TIMEOUT_MS = 60_000;
 /**
  * Awaits an async-query task the way the app's task store does: poll the
  * tasks endpoint until the id shows up as completed, then unwrap the outcome
- * through queryTaskResult — so the tasks-list shape, the camelCase transform
+ * through queryTaskResult, so the tasks-list shape, the camelCase transform
  * and the outcome envelope are all part of the contract under test. The
  * caller applies the same zod parse the app's call site applies to the
  * returned result.

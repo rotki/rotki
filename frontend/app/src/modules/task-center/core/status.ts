@@ -33,7 +33,7 @@ export function shouldSkipFetch(status: WorkStatus, userInitiated: boolean): boo
 
 /**
  * Precedence for deduplicating activities that share an id (the same work surfaced by two
- * sources — e.g. a floor task and its native producer during migration). Lower wins: a live
+ * sources, e.g. a floor task and its native producer during migration). Lower wins: a live
  * RUNNING/PENDING activity is kept over a terminal one.
  */
 const STATUS_RANK: Record<ActivityStatus, number> = {

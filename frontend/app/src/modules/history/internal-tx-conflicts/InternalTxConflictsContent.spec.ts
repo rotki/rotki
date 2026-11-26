@@ -242,7 +242,7 @@ describe('modules/history/internal-tx-conflicts/InternalTxConflictsContent', () 
 
       const wrapper = await mountContent();
 
-      expect(wrapper.text()).toContain('—');
+      expect(wrapper.text()).toContain('\u{2014}');
     });
   });
 });

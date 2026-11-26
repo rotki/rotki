@@ -153,7 +153,7 @@ describe('createPersistentSharedComposable', () => {
     expect(sameInstance).toBe(instance);
     scope2.stop();
 
-    // Release second time — now idle, no subscribers → disposed
+    // Release second time: now idle, no subscribers → disposed
     guard!.releaseBusy();
 
     const scope3 = effectScope();

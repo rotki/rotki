@@ -27,7 +27,7 @@ interface CassetteEntry {
   /**
    * Raw upstream response body, stored verbatim. Used on replay so that
    * numeric fields outside Number.MAX_SAFE_INTEGER (e.g. Solana's
-   * `rentEpoch: 18446744073709551615`) are returned with full precision —
+   * `rentEpoch: 18446744073709551615`) are returned with full precision:
    * a `JSON.parse → stringify` round-trip would silently corrupt them.
    */
   body?: string;
@@ -155,7 +155,7 @@ async function forwardRequest(rpcRequest: JsonRpcRequest): Promise<ForwardResult
     }
 
     lastStatus = response.status;
-    // 429 (rate limit) and 5xx are transient — retry with exponential backoff.
+    // 429 (rate limit) and 5xx are transient: retry with exponential backoff.
     const retriable = response.status === 429 || response.status >= 500;
     if (retriable && attempt < FORWARD_MAX_ATTEMPTS) {
       const delay = FORWARD_BACKOFF_MS * 2 ** (attempt - 1);

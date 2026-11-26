@@ -20,7 +20,7 @@ const BlockchainBalanceFilterKeys = {
  * The pill-bar fields for the blockchain balances table: which chains to total, and a keyword over
  * the asset.
  *
- * Both were controls beside the table — a chain multi-select and a search box. Param-bound, because
+ * Both were controls beside the table: a chain multi-select and a search box. Param-bound, because
  * the page holds the aggregated balances already: the chains narrow what is summed, and the keyword
  * is matched against each row's asset name and symbol.
  */

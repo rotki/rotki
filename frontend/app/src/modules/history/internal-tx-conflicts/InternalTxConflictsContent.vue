@@ -130,7 +130,7 @@ function getReasonLabel(row: InternalTxConflict): string {
   if (row.redecodeReason)
     return get(reasonLabels)[row.redecodeReason];
 
-  return '—';
+  return '\u{2014}';
 }
 
 async function refreshData(): Promise<void> {
@@ -258,7 +258,7 @@ defineExpose({
               :timestamp="row.timestamp"
             />
             <!-- eslint-disable-next-line @intlify/vue-i18n/no-raw-text -->
-            <span v-else>—</span>
+            <span v-else>&mdash;</span>
             <div
               v-if="compact"
               class="text-rui-text-secondary"
@@ -301,7 +301,7 @@ defineExpose({
             />
           </div>
           <!-- eslint-disable-next-line @intlify/vue-i18n/no-raw-text -->
-          <span v-else>—</span>
+          <span v-else>&mdash;</span>
         </template>
         <template #item.actions="{ row }">
           <InternalTxConflictRowActions

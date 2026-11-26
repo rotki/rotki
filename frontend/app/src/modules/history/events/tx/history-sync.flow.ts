@@ -30,7 +30,7 @@ export type RefreshWork =
   | { readonly type: 'bank'; readonly bank: BankConnectionIdentity }
   | { readonly type: 'online'; readonly query: OnlineHistoryEventsQueryType };
 
-/** The resolved set a refresh covers — the scope its children are derived from. */
+/** The resolved set a refresh covers: the scope its children are derived from. */
 export interface RefreshScope {
   readonly accounts: ChainAddress[];
   readonly exchanges: Exchange[];
@@ -42,7 +42,7 @@ export interface RefreshScope {
  * Pull everything new: transactions per tracked account, events per connected exchange and bank
  * connection, and the online event queries that belong to no chain.
  *
- * Singleton by identity — one refresh at a time, and `submitTask` dedup is what enforces that from
+ * Singleton by identity: one refresh at a time, and `submitTask` dedup is what enforces that from
  * every surface, including callers in other modules that button-state guarding cannot reach.
  * Unlike a re-decode it deletes nothing, so it needs no exclusion against matching.
  *
@@ -55,7 +55,7 @@ export const historySyncFlow: HistoryFlow<RefreshScope, RefreshWork> = {
    * user thinks in, and the group its per-account syncs and its decode hang from), one per
    * exchange, one per online query.
    *
-   * Conditionality has already happened — the scope is the resolved target set, so a child that
+   * Conditionality has already happened: the scope is the resolved target set, so a child that
    * may or may not turn out to exist cannot appear in this list.
    */
   children: (scope: RefreshScope): readonly FlowChild<RefreshWork>[] => [

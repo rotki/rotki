@@ -24,7 +24,7 @@ interface UseBinanceSavingsReturn {
 const SAVINGS_LOCATIONS: ReadonlySet<string> = new Set(['binance', 'binanceus']);
 
 /**
- * Whether a refresh should actually run — the functional restatement of the old `fetchDisabled`:
+ * Whether a refresh should actually run (the functional restatement of the old `fetchDisabled`):
  * never while a sync is in flight, and automatically (non user-initiated) only before the first
  * successful load.
  */

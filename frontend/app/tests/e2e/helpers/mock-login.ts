@@ -71,7 +71,7 @@ export async function mockLoginResult(page: Page, kind: LoginResult, username = 
 
 /**
  * Fills the login form and submits, handling both the autocomplete username field (normal
- * runs) and the plain field (`VITE_TEST=true`). Does NOT wait for a successful login — the
+ * runs) and the plain field (`VITE_TEST=true`). Does NOT wait for a successful login. The
  * callers assert on an error alert instead.
  */
 export async function submitLogin(page: Page, username = 'alice', password = 'a-password'): Promise<void> {

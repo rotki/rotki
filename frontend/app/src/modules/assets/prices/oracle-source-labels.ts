@@ -5,7 +5,7 @@
  *
  * These are the backend's `HistoricalPriceOracle` members, NOT the `PriceOracle` list the settings
  * use. The two overlap but are not the same, and only an oracle that can be a
- * `price_history.source_type` belongs here — borrowing `blockchain` or `fiat` from `PriceOracle`
+ * `price_history.source_type` belongs here. Borrowing `blockchain` or `fiat` from `PriceOracle`
  * makes the endpoint answer `source_type blockchain is not stored in price_history`.
  *
  * The keys are wire values as the oracle prices endpoint (colibri) sends and filters them:

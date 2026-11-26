@@ -10,7 +10,7 @@ export type SuggestionTranslate = (key: string, named?: Record<string, unknown>)
 
 /**
  * One of the mutually exclusive values a choice suggestion offers. The value is only ever handed
- * back to the settings update, so it is deliberately untyped here — the builder that creates the
+ * back to the settings update, so it is deliberately untyped here: the builder that creates the
  * choices is the one place that knows the setting it belongs to.
  */
 export interface SuggestionChoice {

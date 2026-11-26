@@ -521,7 +521,7 @@ describe('useSettingsSuggestions', () => {
       const general = createGeneralSettings({ evmIndexersOrder: { gnosis: [EvmIndexer.ETHERSCAN] } });
       const { checkForSuggestions } = useSettingsSuggestions([gnosisIndexerProvider]);
 
-      // No gnosis events, so the question can never be asked — and so would never be answered.
+      // No gnosis events, so the question can never be asked, and so would never be answered.
       await checkForSuggestions(createFrontendSettings(), general);
 
       expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({

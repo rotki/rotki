@@ -14,7 +14,7 @@ export interface SubmittedSpec {
   deps?: readonly string[];
   /** What the activity says it is doing, which a producer spec asserts the wording of. */
   subtitle?: string;
-  /** Whether this activity claims freshness for its kind — an umbrella must not. */
+  /** Whether this activity claims freshness for its kind. An umbrella must not. */
   container?: boolean;
   /** Whether the dock opens for it, which a producer spec asserts is the caller's choice. */
   userStarted?: boolean;
@@ -24,7 +24,7 @@ export interface SubmittedSpec {
  * Builds a `submitTask` stub that runs the submitted spec inline, the way `useNativeTask` does:
  * with a no-op progress sink and the task runner the spec is given.
  *
- * The runner is passed in rather than pulled off a mocked module, mirroring production — there
+ * The runner is passed in rather than pulled off a mocked module, mirroring production: there
  * the orchestrator hands each activity a runner bound to it. Use `vi.fn(runSpecWith(runTask))`
  * and keep asserting on `runTask` as before.
  */

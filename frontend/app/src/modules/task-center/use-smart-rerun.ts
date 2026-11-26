@@ -20,7 +20,7 @@ interface UseSmartRerunReturn {
 
 /**
  * Smart re-run (issue #6825). Listens for `event:mutated` on the task-center bus, maps the edit
- * through the pure {@link invalidatedKinds} policy to the activities it invalidated, then —
+ * through the pure {@link invalidatedKinds} policy to the activities it invalidated, then,
  * gated by the `autoRerunOnEdit` frontend setting:
  *  - **on:** re-runs them immediately through the controller.
  *  - **off (default):** collects them into {@link needsRerun} for a later UI prompt.

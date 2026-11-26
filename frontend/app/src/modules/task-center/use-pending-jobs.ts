@@ -21,7 +21,7 @@ export interface PendingJob {
 
 interface UsePendingJobsReturn {
   jobs: ComputedRef<PendingJob[]>;
-  /** Leaves across every live job — the panel's denominator. */
+  /** Leaves across every live job: the panel's denominator. */
   steps: ComputedRef<ActivitySteps>;
   percentage: ComputedRef<number>;
   /** The whole tree, so the recursive row component walks it without re-deriving anything. */

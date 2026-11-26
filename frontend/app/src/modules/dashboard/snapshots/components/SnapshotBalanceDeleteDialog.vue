@@ -85,7 +85,7 @@ const preview = computed<LocationBalancePreview | null>(() => {
 });
 
 /**
- * Preselect a venue when exactly one can cover the removal — both the lone-location
+ * Preselect a venue when exactly one can cover the removal: both the lone-location
  * case and the case where only one of several holds enough value. Leaves it empty
  * when several qualify (the user must choose) or none can (they must split).
  */

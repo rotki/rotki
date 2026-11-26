@@ -32,8 +32,8 @@ export interface ManagedAssetFieldOptions {
 /**
  * The pill-bar fields the managed assets table sends in its filter bag.
  *
- * Four of them are typed rather than picked — there is no list of every symbol, name, identifier or
- * contract address to offer — and the type/chain pairing is declared as a mutual exclusion.
+ * Four of them are typed rather than picked (there is no list of every symbol, name, identifier or
+ * contract address to offer), and the type/chain pairing is declared as a mutual exclusion.
  *
  * The chain field is declared here rather than in `filters/shared/`: the other filter-bag chain
  * field (internal tx conflicts) offers a different list and validates against it, so the two share
@@ -139,7 +139,7 @@ export function toAssetWhitelistedField(t: Translate): FieldDef {
 /**
  * The ignored-assets handling as a param-bound, single-value pill.
  *
- * The backend takes three values, but one of them — `exclude`, hiding ignored assets — is the
+ * The backend takes three values, but one of them (`exclude`, hiding ignored assets) is the
  * table's default, and a pill that says what would happen anyway is a control the user has to read
  * and dismiss for nothing. So only the two departures from it are offered, and removing the pill is
  * how the default is returned to. The wire form is unchanged: the param source still sends

@@ -29,7 +29,7 @@ export function additionError(failed: readonly AccountAdditionFailure[], fallbac
 /**
  * Nothing was added and every unit was cancelled. Not a success: treating it as one closes the
  * dialog, emits `complete` and refreshes for an account that was never added, discarding what the
- * user typed. Not an error either — the user asked for it, so nothing is reported.
+ * user typed. Not an error either: the user asked for it, so nothing is reported.
  *
  * A skipped unit breaks the "nothing but": it ran to an answer, which the dock is showing, so the
  * dialog has nothing left to hold open for.

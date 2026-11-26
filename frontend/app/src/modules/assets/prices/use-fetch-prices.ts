@@ -37,7 +37,7 @@ export function useFetchPrices(): UseFetchPricesReturn {
   const { prices } = storeToRefs(useBalancePricesStore());
   const { queryPrices } = usePriceApi();
 
-  /** Query one batch and fold the parsed response into the price store — failures stay errors. */
+  /** Query one batch and fold the parsed response into the price store. Failures stay errors. */
   const fetchBatch = async (runTask: RunBackendTask, assets: string[], ignoreCache: boolean): Promise<Result<void, TaskError>> => mapResult(
     await runTask<AssetPriceResponse>(
       async () => queryPrices(assets, get(currencySymbol), ignoreCache),

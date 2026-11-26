@@ -243,7 +243,7 @@ function duplicateTests(lines: string[]): Finding[] {
 
     const twin = bodies.get(key);
     if (twin)
-      findings.push({ file: '', kind: 'duplicate', line: test.line, text: `${test.name} — same body as "${twin.name}" at line ${twin.line}` });
+      findings.push({ file: '', kind: 'duplicate', line: test.line, text: `${test.name}: same body as "${twin.name}" at line ${twin.line}` });
     else
       bodies.set(key, test);
   }

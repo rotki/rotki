@@ -25,7 +25,7 @@ import consola from 'consola';
 const LOCALES_DIR = '../src/locales';
 const FALLBACK_LOCALE = 'en';
 
-/** `@:key`, `@.lower:key`, `@:{'key'}` and `@.lower:{'key'}` — the four linked-message forms. */
+/** The four linked-message forms: `@:key`, `@.lower:key`, `@:{'key'}` and `@.lower:{'key'}`. */
 const LINKED_MESSAGE = /@(?:\.[a-z]+)?:(?:\{\s*'([^']+)'\s*\}|([\w$.]+))/g;
 
 interface DanglingLink {

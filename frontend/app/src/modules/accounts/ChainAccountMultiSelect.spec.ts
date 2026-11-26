@@ -76,7 +76,7 @@ describe('chain-account-multi-select', () => {
       eth: [
         addressAccount('eth', '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'),
         addressAccount('eth', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'),
-        addressAccount('eth', '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'), // duplicate — should be ignored
+        addressAccount('eth', '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'), // duplicate, should be ignored
       ],
     };
 

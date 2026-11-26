@@ -94,7 +94,7 @@ test.describe.serial('csv import', () => {
       expect(count).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: TIMEOUT_MEDIUM });
 
-    // 5.00 XMR — exact, no rounding needed
+    // 5.00 XMR: exact, no rounding needed
     const deposit = await historyPage.rows.first('[data-testid=history-event-row]');
     await historyPage.rows.expectAmount(deposit, '5.00');
     await historyPage.rows.expectTypeLabel(deposit, 'Exchange deposit');

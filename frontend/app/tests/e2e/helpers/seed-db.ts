@@ -12,7 +12,7 @@ interface SeedInsert {
 }
 
 /**
- * Generic runner — sends JSON seed instructions to the Python script via stdin.
+ * Generic runner: sends JSON seed instructions to the Python script via stdin.
  * When a password is provided, opens the DB with SQLCipher (user DB).
  * When omitted, opens with plain sqlite3 (global DB).
  */
@@ -121,7 +121,7 @@ export function seedHistoricPrices(
  * Seeds tracked blockchain accounts into the user's encrypted DB.
  *
  * The account filter's options are the tracked addresses, so a filter test only needs the
- * accounts to exist — not their balances. Writing the rows directly avoids adding accounts
+ * accounts to exist, not their balances. Writing the rows directly avoids adding accounts
  * through the UI, which would pull in RPC mocking and a balance query for each one.
  */
 export function seedBlockchainAccounts(

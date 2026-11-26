@@ -3,7 +3,7 @@
  * Internal component for rendering a formatted amount. Style it with classes through `$attrs`.
  *
  * @remarks
- * Pure display, with **no scrambling of its own** — rendering a user value through this directly
+ * Pure display, with **no scrambling of its own**: rendering a user value through this directly
  * leaks it when privacy mode is on. Reach for a wrapper that scrambles: `FiatDisplay`,
  * `AssetValueDisplay`, `AssetAmountDisplay` or `ValueDisplay`.
  */

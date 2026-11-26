@@ -128,7 +128,7 @@ describe('useEthStakingRefresh', () => {
       const { refresh } = useEthStakingRefresh(createCallbacks());
       await refresh(false);
 
-      // A first load forces the query but has nothing to supersede — nobody asked for it.
+      // A first load forces the query but has nothing to supersede: nobody asked for it.
       expect(mockRefreshBlockchainBalances).toHaveBeenCalledWith({ blockchain: 'eth2' }, 'background');
       expect(mockHydrate).not.toHaveBeenCalled();
       expect(mockFetchEthStakingValidators).toHaveBeenCalledWith({ ignoreCache: true });

@@ -7,7 +7,7 @@ import { type NewDetectedToken, NewDetectedTokenKind } from './types';
  *
  * Used as the `location` prop for `HashLink` so the address/transaction column
  * shows the chain icon and the explorer link. We derive the chain straight from
- * the EVM identifier instead of waiting for the asset-info cache to populate —
+ * the EVM identifier instead of waiting for the asset-info cache to populate:
  * just-detected tokens are typically not yet cached at first render.
  *
  * Returns the evm chain name (e.g. `'monad'`, `'ethereum'`) for EVM tokens

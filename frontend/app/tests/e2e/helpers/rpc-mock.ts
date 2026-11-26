@@ -49,7 +49,7 @@ export async function switchMockRpcCassette(name: string): Promise<void> {
 }
 
 /**
- * Substrate chains (Polkadot/Kusama) don't use the multi-node API like EVM/Solana —
+ * Substrate chains (Polkadot/Kusama) don't use the multi-node API like EVM/Solana:
  * they have a single `<chain>_rpc_endpoint` user setting. Map each substrate chain
  * identifier to the corresponding settings key.
  */

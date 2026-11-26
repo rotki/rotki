@@ -7,7 +7,7 @@ import { RotkiApp } from './rotki-app';
 
 /**
  * Path to shared backend test data directory.
- * CSV fixtures live here — no need to duplicate them in the frontend.
+ * CSV fixtures live here. No need to duplicate them in the frontend.
  */
 const BACKEND_TEST_DATA = path.resolve(import.meta.dirname, '..', '..', '..', '..', '..', 'rotkehlchen', 'tests', 'data');
 

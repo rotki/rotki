@@ -72,7 +72,7 @@ export const useAccountLoadState = createSharedComposable((): UseAccountLoadStat
    * The wait is bounded here and only here, because "promised but never started" is the only
    * state that can hang forever. Once {@link track} holds a real promise the wait is safe to leave
    * open: that promise settles on rejection too, and every request under it carries its own
-   * timeout. An unstarted read has no such guarantee — `release()` is normally what ends it, but
+   * timeout. An unstarted read has no such guarantee: `release()` is normally what ends it, but
    * its caller sits behind `allSettled([fetchCached(), …])`, and `allSettled` cannot settle if
    * `fetchCached` never does. That is not hypothetical: a poisoned `prices:exchange-rates` id
    * stalled `fetchCached` on its first await, and without this the history sync waited forever.
@@ -98,7 +98,7 @@ export const useAccountLoadState = createSharedComposable((): UseAccountLoadStat
    * Ends the wait without a read having happened. The counterpart to {@link arm} for the paths that
    * turn out not to load accounts.
    *
-   * NOT the guarantee — its caller can itself fail to run. The bound is the timer in {@link arm}.
+   * NOT the guarantee: its caller can itself fail to run. The bound is the timer in {@link arm}.
    */
   const release = (): void => {
     settle();
@@ -142,7 +142,7 @@ export const useAccountLoadState = createSharedComposable((): UseAccountLoadStat
 
   /**
    * Must be called on logout. This is app-scoped, not a pinia store, so `resetState` does not
-   * reach it — the same reason the orchestrator needs an explicit reset. A read left here belongs
+   * reach it (the same reason the orchestrator needs an explicit reset). A read left here belongs
    * to a session that has ended, and the next user would wait on it.
    */
   const reset = (): void => {

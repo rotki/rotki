@@ -238,7 +238,7 @@ function guidanceMatch(field: FieldDef, typed: string): Ranked | undefined {
 }
 
 /**
- * Matches from a field's own option list, under their display labels — and, failing that, under
+ * Matches from a field's own option list, under their display labels and, failing that, under
  * whatever extra text the field exposes for the value (`resolveKeywords`). The label is not always
  * what the user has in hand: an account shows a name or a shortened, scrambled address, so an ENS
  * name or a pasted full address only matches through the keywords. A keyword hit ranks as a

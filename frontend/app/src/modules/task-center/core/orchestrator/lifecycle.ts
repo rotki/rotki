@@ -17,14 +17,14 @@ import { type ActivityId, type ActivityStatus, ActivityStatus as Status } from '
  * @packageDocumentation
  */
 
-/** The subset of a record these helpers need — structurally satisfied by `ActivityRecord`. */
+/** The subset of a record these helpers need, structurally satisfied by `ActivityRecord`. */
 export interface LifecycleRecord {
   readonly status: ActivityStatus;
   readonly spec: { readonly parent?: ActivityId };
 }
 
 /**
- * Terminal, but not a success — CANCELLED, FAILED or SKIPPED.
+ * Terminal, but not a success: CANCELLED, FAILED or SKIPPED.
  *
  * The distinction the subtree cascade turns on: an activity that ends this way takes its children
  * with it, while a COMPLETE one leaves them alone.

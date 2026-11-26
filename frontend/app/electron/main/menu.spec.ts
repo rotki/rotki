@@ -29,7 +29,7 @@ vi.mock('node:fs', () => ({ default: { statSync: statSyncMock } }));
 /**
  * The one seam this spec covers: Help ▸ Logs Directory must open the directory the
  * running app actually logs to, which `LogService` owns and can reconfigure, not the
- * platform default. The two differ exactly when a user sets a custom log directory —
+ * platform default. The two differ exactly when a user sets a custom log directory,
  * so the fixture keeps them different on purpose.
  */
 describe('menuManager', () => {

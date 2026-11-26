@@ -18,7 +18,7 @@ export interface TaskOrchestrator {
   /** Cancel every non-terminal activity of a kind. */
   readonly cancelByKind: (kind: ActivityKind) => void;
   /**
-   * Cancel every non-terminal activity whose id extends `kind:parts` — the cancel-side sibling of
+   * Cancel every non-terminal activity whose id extends `kind:parts`, the cancel-side sibling of
    * {@link statusOfPrefix}. Per-request producers give each submission its own id, so an exact-id
    * cancel can't express "abort whatever historic-price lookups are in flight"; matching on a
    * separator boundary keeps it narrower than {@link cancelByKind}.
@@ -29,7 +29,7 @@ export interface TaskOrchestrator {
   /** Re-run a terminal, rerunnable activity using its original spec. */
   readonly rerun: (id: ActivityId) => Result<void, ControlError>;
   /**
-   * Push step progress to a running activity from an external source — e.g. a backend websocket
+   * Push step progress to a running activity from an external source, e.g. a backend websocket
    * that streams progress for work the producer fired once. No-op unless the activity is currently
    * running. The internal `report` handed to a spec's `run` funnels through here too.
    */
@@ -43,24 +43,24 @@ export interface TaskOrchestrator {
   /** Current activities projected to the shared {@link Activity} model. */
   readonly snapshot: () => Activity[];
   /**
-   * Projected liveness + freshness for a kind, or — when `parts` are given — the specific
+   * Projected liveness + freshness for a kind, or, when `parts` are given, the specific
    * activity `makeActivityId(kind, ...parts)`. The single replacement for `useStatusUpdater`.
    */
   readonly statusOf: (kind: ActivityKind, ...parts: (string | number)[]) => WorkStatus;
   /**
    * Projected liveness + freshness aggregated over every activity whose id extends
-   * `kind:parts` — the coarse read for per-request producers (one activity per query), where
+   * `kind:parts`, the coarse read for per-request producers (one activity per query), where
    * an exact-id lookup would never match and a whole-kind aggregate would be too broad.
    */
   readonly statusOfPrefix: (kind: ActivityKind, ...parts: (string | number)[]) => WorkStatus;
   /**
-   * Record a completion for data that arrived without any work — a session restore reading a
+   * Record a completion for data that arrived without any work: a session restore reading a
    * cached snapshot, say. Writes the ledger only: liveness comes from the live records, so a
    * marked id reads as "we have data" without ever having looked active.
    */
   readonly markCompleted: (kind: ActivityKind, ...parts: (string | number)[]) => void;
   /**
-   * Drop the recorded completion of every id under `kind:parts` — the freshness-side sibling of
+   * Drop the recorded completion of every id under `kind:parts`, the freshness-side sibling of
    * {@link cancelByPrefix}. `everCompleted` flips back to false, so the next guarded fetch is
    * admitted.
    */
@@ -101,7 +101,7 @@ export interface OrchestratorOptions {
   readonly detail?: ActivityDetailSink;
   /** Caps for lanes minted per entity (one per chain, …) that cannot be named up front. */
   readonly laneFamilies?: LaneFamilyCaps;
-  /** How many distinct lanes of a family may run at once — the nesting a pre-submitted tree loses. */
+  /** How many distinct lanes of a family may run at once (the nesting a pre-submitted tree loses). */
   readonly laneFamilyActive?: LaneFamilyActiveCaps;
   readonly defaultCap?: number;
   readonly rules?: readonly EligibilityRule[];

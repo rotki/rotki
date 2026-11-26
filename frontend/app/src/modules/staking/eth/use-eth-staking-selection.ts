@@ -62,7 +62,7 @@ function toFilterMatches(combined: EthStakingCombinedFilter | undefined): Matche
  *    moment it is added.
  * 2. **The selection is a union with no empty member.** There is no "neither validators nor
  *    accounts", so clearing the last pill has to land somewhere: it lands on `{ validators: [] }`,
- *    which is the state the page starts in. Never `undefined` — the component branches on
+ *    which is the state the page starts in. Never `undefined`: the component branches on
  *    `'accounts' in filter`.
  * 3. **A validator index must survive a store that has not loaded.** The pill carries the index,
  *    the model wants the whole entry, and the entries arrive asynchronously. Resolving straight

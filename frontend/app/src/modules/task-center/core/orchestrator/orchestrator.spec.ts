@@ -960,7 +960,7 @@ describe('createTaskOrchestrator', () => {
 
     it('should not let a consumer invalidate itself', async () => {
       const orchestrator = createTaskOrchestrator();
-      // Declares an edge against its own kind — its own completion must still count as fresh.
+      // Declares an edge against its own kind. Its own completion must still count as fresh.
       await loadedConsumer(orchestrator, [{ kind: Kind.NFT_BALANCES }]);
 
       expect(orchestrator.statusOf(Kind.NFT_BALANCES).everCompleted).toBe(true);
@@ -1000,7 +1000,7 @@ describe('createTaskOrchestrator', () => {
       const orchestrator = createTaskOrchestrator({ caps: { balances: bothBalancesSlotsGoToTheChainJobs }, defaultCap: 4 });
       const children = new Map<ActivityId, Controllable>();
 
-      /** Resolves when that activity reaches a terminal status — the parent's real await. */
+      /** Resolves when that activity reaches a terminal status (the parent's real await). */
       const awaitTerminal = async (id: ActivityId): Promise<void> => new Promise<void>((resolve) => {
         const stop = orchestrator.onChange(() => {
           const activity = byId(orchestrator, id);
@@ -1092,7 +1092,7 @@ describe('createTaskOrchestrator', () => {
   });
 
   describe('cancel cascade', () => {
-    /** An umbrella, one chain under it, two accounts under the chain — the history-refresh shape. */
+    /** An umbrella, one chain under it, two accounts under the chain: the history-refresh shape. */
     function tree(orchestrator: TaskOrchestrator): {
       root: Controllable;
       chain: Controllable;
@@ -1114,7 +1114,7 @@ describe('createTaskOrchestrator', () => {
 
     /**
      * The bug this package exists for. Every native spec carries a cancel handle, so cancelling
-     * a parent always "succeeded" — but the handle only aborts that activity's own backend task,
+     * a parent always "succeeded", but the handle only aborts that activity's own backend task,
      * which an umbrella never has. The row settled CANCELLED and vanished while the whole subtree
      * carried on working.
      */
@@ -1147,7 +1147,7 @@ describe('createTaskOrchestrator', () => {
 
     /**
      * `eligible` only refused a child whose parent was still PENDING, so a queued child of a
-     * cancelled parent started the moment a lane freed up — the cancel bought nothing.
+     * cancelled parent started the moment a lane freed up. The cancel bought nothing.
      */
     it('should not start a queued child after its parent is cancelled', async () => {
       const orchestrator = createTaskOrchestrator({ caps: { default: 1 } });
@@ -1231,7 +1231,7 @@ describe('createTaskOrchestrator', () => {
 
     /**
      * The case an `eligible` guard could not have handled. `cancel` never runs here, so a
-     * cascade hung off cancellation would leave these children queued — and refusing them in
+     * cascade hung off cancellation would leave these children queued, and refusing them in
      * `eligible` instead would wedge them PENDING for the life of the process, since nothing would
      * ever settle them. Hanging the walk off the settle is what makes one rule cover both.
      */
@@ -1313,7 +1313,7 @@ describe('createTaskOrchestrator', () => {
      * that awaits and immediately re-submits the same id (the price-refresh queue walks its work
      * with exactly that shape) replaces the record while the old run is still in flight. Guarding
      * on the presence of the id rather than on record identity let the old run write a COMPLETE
-     * ledger entry for the *new* activity — `everCompleted` read true for work barely started.
+     * ledger entry for the *new* activity: `everCompleted` read true for work barely started.
      */
     it('should not let a superseded run complete the record that replaced it', async () => {
       const orchestrator = createTaskOrchestrator();
@@ -1336,7 +1336,7 @@ describe('createTaskOrchestrator', () => {
 
     /**
      * The identity guard stops the abandoned run from settling, which would also stop its
-     * `cleanup` from ever firing — trading a corrupted ledger for a leaked producer resource. It
+     * `cleanup` from ever firing, trading a corrupted ledger for a leaked producer resource. It
      * is released at the point of supersession instead, and exactly once.
      */
     it('should release the superseded run once when its id is re-submitted', async () => {

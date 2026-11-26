@@ -7,7 +7,7 @@ type Translate = (key: string) => string;
 
 /**
  * The chain pill: which chains of the shown category an account has to be on. Param-bound like the
- * account and tag pills, so this table declares no matchers at all — every filter it has reaches
+ * account and tag pills, so this table declares no matchers at all: every filter it has reaches
  * the request the same way.
  *
  * The values are the category's own chain ids (evm has around fifteen, bitcoin two, solana one),

@@ -33,8 +33,8 @@ export const useBalanceFetching = createSharedComposable(() => {
   const { fetchBalances, queueSnapshot } = useAllBalancesQuery();
 
   /**
-   * ⭐ `fetchAccounts`, not `refreshAccounts`. Passing no chain made the latter an accounts read and
-   * nothing else — both halves of its balance decision need one — so the name promised work it
+   * `fetchAccounts`, not `refreshAccounts`. Passing no chain made the latter an accounts read and
+   * nothing else (both halves of its balance decision need one), so the name promised work it
    * never did here. Each chain's hydration still happens inside the walk, as its accounts land.
    */
   const fetchCached = async (): Promise<void> => {
@@ -64,15 +64,15 @@ export const useBalanceFetching = createSharedComposable(() => {
   });
 
   /**
-   * §6's periodic flow: every chain, entering at the job, no detection.
+   * The periodic flow: every chain, entering at the job, no detection.
    *
-   * 🔴 The tick never asked a chain anything. It passed `{ periodic: true }` to `refreshAccounts`,
-   * whose no-chain branch is a *cached* read — the DB, not the network — so "Automatic balance
+   * The tick never asked a chain anything. It passed `{ periodic: true }` to `refreshAccounts`,
+   * whose no-chain branch is a *cached* read (the DB, not the network), so "Automatic balance
    * refresh" re-read balances the backend had already written on its own schedule and never
    * triggered a query itself. The `periodic` refresh mode, the one that settles SKIPPED on a busy
    * chain rather than joining it, had no caller that could reach it at all.
    *
-   * ⚠️ This does now cost network calls on a timer, which is why it belongs behind a setting the
+   * This does now cost network calls on a timer, which is why it belongs behind a setting the
    * user turns on: `refreshPeriod` defaults to `-1` and the scheduler only starts when it is
    * positive. A chain still mid-refresh is skipped rather than queued, so ticks cannot pile up.
    */

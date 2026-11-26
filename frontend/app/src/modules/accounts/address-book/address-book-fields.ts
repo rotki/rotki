@@ -38,7 +38,7 @@ export function toAddressBookChainField(
  * segment: adding the pill turns it on, removing it turns it off, which is the whole of its state.
  *
  * It only means anything alongside a chain, since it narrows that chain's entries to the ones
- * written for it rather than for every chain — hence the hint, which is the checkbox's old one.
+ * written for it rather than for every chain, hence the hint, which is the checkbox's old one.
  */
 export function toAddressBookStrictField(t: Translate): FieldDef {
   return toParamFieldDef({

@@ -313,16 +313,10 @@ export default defineConfig({
       },
     },
     /*
-     * One supervisor brings up core and colibri and fronts both behind its proxy. The gate is the
-     * supervisor's own `/health`, which answers 200 only once every service has passed its
-     * readiness probe: core `/api/1/ping`, colibri `/health`. Probing core through the proxy
-     * instead let the suite start with colibri still coming up, since the proxy binds and serves
-     * before the tree is brought up.
-     *
-     * `gracefulShutdown` is not politeness either. Playwright otherwise SIGKILLs the server's
-     * process tree, and starling puts core and colibri in their own process groups so it can reap
-     * them, so that kill never reaches them and both survive the run. SIGTERM plus a wait lets the
-     * supervisor drive the ordered shutdown; the window covers its own 10s grace with room spare.
+     * One supervisor fronts core and colibri. Its `/health` answers 200 only once both are ready;
+     * probing core through the proxy let tests start before colibri was up. `gracefulShutdown` is
+     * needed because Playwright's SIGKILL misses core and colibri, which starling runs in their own
+     * process groups.
      */
     {
       command: `tsx scripts/start-starling.ts --port ${PROXY_PORT} --core-port ${BACKEND_PORT} --colibri-port ${COLIBRI_PORT} --mcp-port ${MCP_PORT} --data ${dataDir} --logs ${logDir}`,

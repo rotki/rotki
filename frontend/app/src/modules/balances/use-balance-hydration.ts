@@ -14,14 +14,14 @@ import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 
 /**
- * Chains hydrated at a time. Hydration's own bound and nowhere else's — never a lane, and never
+ * Chains hydrated at a time. Hydration's own bound and nowhere else's: never a lane, and never
  * the same piece of work bounded twice (the `DECODE_LANE` trap).
  */
 const HYDRATION_CONCURRENCY = 4;
 
 /**
  * A failed read is retried silently: hydration is plumbing, so a transient failure is not the
- * user's problem to act on. Only a failure worth another attempt reaches this — see `readOnce`.
+ * user's problem to act on. Only a failure worth another attempt reaches this (see `readOnce`).
  */
 const HYDRATION_RETRY: RetryOptions = { backoff: 'exponential', delayMs: 500, times: 3 };
 
@@ -56,7 +56,7 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
   const { updatePrices } = useBalancesStore();
   const { startHydration, stopHydration } = useBalanceRefreshState();
 
-  /** The read in flight per chain — the subject dedup. Entries exist only while a read is live. */
+  /** The read in flight per chain: the subject dedup. Entries exist only while a read is live. */
   const inflight = new Map<string, Promise<void>>();
 
   /**
@@ -72,7 +72,7 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
     /**
      * One attempt, with its outcome placed in the channel `retry` reads.
      *
-     * `retry` takes no predicate — it retries anything in the `err` channel. A read that was
+     * `retry` takes no predicate: it retries anything in the `err` channel. A read that was
      * cancelled (a logout mid-walk, a request the queue dropped) must settle where it is rather
      * than be tried twice more against a session that is gone, so only an *actionable* failure
      * goes in `err`; everything else short-circuits as `ok`.
@@ -118,7 +118,7 @@ export const useBalanceHydration = createSharedComposable((): UseBalanceHydratio
     /**
      * `allWithConcurrency` **short-circuits on the first `err`**: in-flight factories finish and
      * no new ones start. One chain's read failing must not abandon the rest, so every factory is
-     * infallible — `ResultAsync<void, never>`. Nothing in the package enforces that, and the naive
+     * infallible (`ResultAsync<void, never>`). Nothing in the package enforces that, and the naive
      * call site silently drops chains while looking entirely correct.
      *
      * That is what the swallowed throw below buys, and it costs nothing: `handleCachedFetch` has

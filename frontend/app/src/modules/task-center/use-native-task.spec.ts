@@ -168,7 +168,7 @@ describe('useNativeTask', () => {
     /**
      * Cancelling settles the *record*; it cannot interrupt a running async body, because
      * nothing in JavaScript can. A body with more than one stage therefore runs to completion after
-     * the row already says CANCELLED — observed against a real backend as a cancelled chain going
+     * the row already says CANCELLED, observed against a real backend as a cancelled chain going
      * on to issue its balance query, `POST /balances/blockchains/eth` landing after the `DELETE`s
      * that aborted its detections.
      */
@@ -276,7 +276,7 @@ describe('useNativeTask', () => {
 
     /**
      * The regression this helper exists to prevent. `finish()` is what frees the id, and it runs
-     * when the cancelled activity settles — so submitting without awaiting dedups onto the corpse
+     * when the cancelled activity settles, so submitting without awaiting dedups onto the corpse
      * and the new spec never runs. Dropping the `await` in `supersedeTask` fails this.
      */
     it('should not dedup the replacement onto the cancelled run', async () => {

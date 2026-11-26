@@ -91,7 +91,7 @@ const CONTROL_ENDPOINT = '/_control';
 
 /**
  * Only a *positive* answer is cached. Whether the route exists cannot change
- * while the page is open, so a yes is durable — but a no can equally mean the
+ * while the page is open, so a yes is durable, but a no can equally mean the
  * proxy was briefly unreachable, and the connection-failure screen probes in
  * exactly that state. Latching that would disable the controls for the rest of
  * the page's life, with a reload the only way out.

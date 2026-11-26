@@ -128,7 +128,7 @@ describe('useAccountLoadState', () => {
 
     /**
      * The bound covers "promised but never started" only. A read that is genuinely in flight must
-     * be waited out however long it takes — expiring mid-read releases waiters into a half-filled
+     * be waited out however long it takes. Expiring mid-read releases waiters into a half-filled
      * store, which is the bug this composable exists to prevent.
      */
     it('should not expire while a read is actually in flight', async () => {

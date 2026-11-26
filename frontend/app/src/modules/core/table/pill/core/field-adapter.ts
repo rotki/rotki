@@ -169,7 +169,7 @@ function operatorsOf(valueType: FilterValueType, operators?: readonly FilterOp[]
  * declares `allowExclusion`, because the codec writes the `!` negation only for such a field
  * (`codec.ts`): offering it otherwise gives the user an operator that silently applies as `is`.
  *
- * The value-type defaults cannot be used directly here — they list `is_not` for every enum and
+ * The value-type defaults cannot be used directly here: they list `is_not` for every enum and
  * asset, which is what a field may express once its table declares the key as behaviour-carrying,
  * not what it can express today.
  */

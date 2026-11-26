@@ -11,7 +11,7 @@ const CONFIG_FILE = 'rotki_config.json';
  *
  * `scripts/dev/services.ts` hands the electron child the instance's four ports and this directory.
  * The ports were read (see `application.ts`) but the directory was not, so an instance run isolated
- * its ports and then opened the *shared* data directory anyway — taking its lock and failing to
+ * its ports and then opened the *shared* data directory anyway, taking its lock and failing to
  * start whenever another rotki was already running.
  *
  * It wins over the config file: an instance exists precisely so as not to touch the shared data.

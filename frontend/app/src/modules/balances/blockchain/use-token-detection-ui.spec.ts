@@ -62,7 +62,7 @@ describe('useTokenDetectionUi', () => {
     vi.clearAllMocks();
   });
 
-  describe('detectedTokens — query logic', () => {
+  describe('detectedTokens: query logic', () => {
     it('should return no tokens for unsupported chains', () => {
       const store = useTokenDetectionStore();
       store.setState('solana', { '0xaddr1': { lastUpdateTimestamp: 1000, tokens: ['SOL'] } });
@@ -121,7 +121,7 @@ describe('useTokenDetectionUi', () => {
       const { detectedTokens } = useTokenDetectionUi(chainRef, addrRef);
       expect(get(detectedTokens).total).toBe(0);
 
-      // Set address to 0xaddr1 — only eth chain will match
+      // Set address to 0xaddr1. Only eth chain will match
       set(addrRef, '0xaddr1');
       expect(get(detectedTokens).tokens).toContain('ETH');
       expect(get(detectedTokens).tokens).toContain('DAI');
@@ -213,7 +213,7 @@ describe('useTokenDetectionUi', () => {
 
   /**
    * The orchestrator drops excluded addresses silently, so without this the button stays
-   * enabled and pressing it does nothing at all — no row, no toast, no error.
+   * enabled and pressing it does nothing at all: no row, no toast, no error.
    */
   describe('detectionDisabled', () => {
     function setDisabled(value: Record<string, string[]>): void {

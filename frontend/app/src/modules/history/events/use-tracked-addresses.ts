@@ -5,7 +5,7 @@ import { useAccountLoadState } from '@/modules/accounts/use-account-load-state';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 
 interface UseTrackedAddressesReturn {
-  /** ⚠️ Only an answer once {@link accountsRead} is true. */
+  /** Only an answer once {@link accountsRead} is true. */
   isAddressTracked: (address: string | undefined | null) => boolean;
   /** The accounts have been read, so a negative {@link isAddressTracked} means untracked. */
   accountsRead: Readonly<Ref<boolean>>;
@@ -17,7 +17,7 @@ interface UseTrackedAddressesReturn {
  * all. That is what makes it the deciding question for an unmatched row - both for a bridge
  * leg and for an exchange withdrawal, whose counterpart can then only be external.
  *
- * ⚠️ The store only ever *gains* addresses, so a negative answer is worthless until the accounts
+ * The store only ever *gains* addresses, so a negative answer is worthless until the accounts
  * have been read: before that an empty store is indistinguishable from a user tracking nothing,
  * and every address on screen looks untracked. That is what {@link accountsRead} is for.
  */

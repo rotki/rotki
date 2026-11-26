@@ -16,7 +16,7 @@ interface AccountOption {
   /**
    * Whether the value is an address on a chain, and so must be shortened and scrambled. A
    * `locationLabel` on an exchange is an account *name* the user chose (`Kraken 1`), which the
-   * table itself never scrambles — cf. `HistoryEventAccount`'s `no-scramble`.
+   * table itself never scrambles (cf. `HistoryEventAccount`'s `no-scramble`).
    */
   readonly isAddress: boolean;
   /** Whether the name is still being resolved, drawn as a skeleton row rather than a flash. */
@@ -100,7 +100,7 @@ export function useDataIssueAccountOptions(): DataIssueAccountOptions {
 
   /**
    * Every row in the table carries a mark, so every row here does too: a blockie for an address,
-   * the exchange's own logo for an account held there — drawn from the location, since the value
+   * the exchange's own logo for an account held there, drawn from the location, since the value
    * is the account's name.
    */
   function resolveDisplay(value: string): ValueDisplay | undefined {

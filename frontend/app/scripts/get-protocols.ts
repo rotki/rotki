@@ -105,10 +105,10 @@ async function stopBackend(): Promise<void> {
     return;
 
   consola.info('Terminating backend...');
-  /* Signal this child alone, never its group: it stops starling over RPC, and starling brings
-     core and colibri down in order. A group signal would hit starling directly and strand
-     whatever it had not reaped. The escalation below is a kill for the same single child, whose
-     death closes starling's stdin, which starling reads as its own cue to tear the tree down. */
+  /* Signal this child alone, never its group: it stops starling over RPC, which brings core and
+     colibri down in order. A group signal would hit starling directly, stranding unreaped
+     children. The kill escalation targets the same child, whose death closes starling's stdin:
+     its cue to tear the tree down. */
   child.kill('SIGTERM');
 
   const escalation = setTimeout(() => {

@@ -48,7 +48,7 @@ export function valueAt(bucket: PreparedBucket, tsSec: number): BigNumber {
 }
 
 /**
- * Two entries that share a `(location, protocol)` scope are the same logical position — the
+ * Two entries that share a `(location, protocol)` scope are the same logical position: the
  * backend sometimes splits one position across several entries (e.g. a plain-wallet series
  * tagged `null` for an early window and `''` for a later one). Treating them as separate
  * buckets double-counts: `valueAt` holds each series' last value forever, so a recent event

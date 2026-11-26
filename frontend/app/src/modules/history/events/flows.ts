@@ -9,7 +9,7 @@ import type { ActivityId, ActivityKind } from '@/modules/task-center/core/types'
  * every surface, including callers button-state guarding cannot reach), the **parent** of its
  * mechanism activities, and assertable in a test without mounting.
  *
- * Declarations live beside their producers as `*.flow.ts`, never in a registry — a hub would
+ * Declarations live beside their producers as `*.flow.ts`, never in a registry: a hub would
  * breach the per-file import cap and pull every producer into anything importing it. Enumerability
  * comes at test time from `import.meta.glob('@/modules/**\/*.flow.ts')`, so a flow cannot be
  * forgotten by failing to register it.
@@ -22,7 +22,7 @@ import type { ActivityId, ActivityKind } from '@/modules/task-center/core/types'
  * Identity and kind are what a reader needs to see the shape of the work; `payload` is what the
  * producer needs to actually invoke the mechanism. Keeping the payload on the child is what lets
  * the composable drive the run *from* the declaration, instead of the declaration describing a list
- * the composable rebuilds separately — two lists that agree only by inspection.
+ * the composable rebuilds separately: two lists that agree only by inspection.
  */
 export interface FlowChild<Payload = void> {
   /**
@@ -32,7 +32,7 @@ export interface FlowChild<Payload = void> {
    */
   readonly id: ActivityId;
   readonly kind: ActivityKind;
-  /** What the mechanism is invoked with — a chain, an exchange, an online query type. */
+  /** What the mechanism is invoked with: a chain, an exchange, an online query type. */
   readonly payload: Payload;
 }
 
@@ -40,7 +40,7 @@ export interface HistoryFlow<Scope = void, ChildPayload = void> {
   /** The activity kind this flow submits under. */
   readonly kind: ActivityKind;
   /**
-   * Stable identity — what makes re-entry a no-op rather than a second run.
+   * Stable identity: what makes re-entry a no-op rather than a second run.
    *
    * The identity must encode the flow's **scope**, not just its name. A scoped run sharing the
    * id of an unscoped one is not merely mislabelled: `submitTask` dedups it against the broader run
@@ -49,7 +49,7 @@ export interface HistoryFlow<Scope = void, ChildPayload = void> {
    */
   readonly id: (scope?: Scope) => ActivityId;
   /**
-   * i18n key for the human-readable name, branded via `msg.$t` — a bare string here would be
+   * i18n key for the human-readable name, branded via `msg.$t`. A bare string here would be
    * invisible to the unused-key lint rule, since nothing translates it at the declaration site.
    */
   readonly titleKey: MessageKey;
@@ -67,7 +67,7 @@ export interface HistoryFlow<Scope = void, ChildPayload = void> {
    * for it would stop being data. The producer resolves first, so the whole shape exists in one
    * synchronous pass before any of it runs.
    *
-   * Heterogeneous by design — a refresh's children are per-chain syncs, exchange queries, online
+   * Heterogeneous by design: a refresh's children are per-chain syncs, exchange queries, online
    * queries and decodes. Conditionality belongs in the resolution producing the scope, never in a
    * child that may or may not turn out to exist.
    *
@@ -77,7 +77,7 @@ export interface HistoryFlow<Scope = void, ChildPayload = void> {
 }
 
 /**
- * Any flow, whatever it scopes by — for readers that enumerate declarations rather than invoke one.
+ * Any flow, whatever it scopes by, for readers that enumerate declarations rather than invoke one.
  *
  * `never` and not `unknown`: `id` is contravariant in its scope, so the supertype of every
  * `HistoryFlow<S>` is the one whose scope nothing can be passed for.

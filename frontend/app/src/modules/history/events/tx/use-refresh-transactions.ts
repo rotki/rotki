@@ -118,7 +118,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   }
 
   /**
-   * Dispatches every half of a refresh — chains, exchanges and online queries — and reduces them to
+   * Dispatches every half of a refresh (chains, exchanges and online queries) and reduces them to
    * the umbrella's single verdict.
    *
    * @remarks
@@ -135,7 +135,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
    *
    * @returns the **account half's** verdict alone. Nothing else may vote: fold all three kinds
    * together and a protocol query that happened to succeed records the completion over a run where
-   * every chain failed. Nor may it require every kind to succeed — an online source failing is
+   * every chain failed. Nor may it require every kind to succeed: an online source failing is
    * ordinary, a missing key or an unauthenticated integration, and failing the umbrella on that
    * re-syncs history forever. The entry answers one question, "has the account history loaded".
    */

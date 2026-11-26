@@ -120,7 +120,7 @@ export function useTargetedRedecode(): UseTargetedRedecodeReturn {
     return outcome;
   };
 
-  /** Group the requested transactions onto their chains — the resolution the declaration cannot do. */
+  /** Group the requested transactions onto their chains, the resolution the declaration cannot do. */
   const resolveScope = (transactions: LocationAndTxRef[], blockNumbers: number[]): TargetedRedecodeScope => {
     const byChain = new Map<string, string[]>();
     for (const item of transactions) {

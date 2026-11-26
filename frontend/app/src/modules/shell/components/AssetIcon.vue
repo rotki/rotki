@@ -131,7 +131,7 @@ watchImmediate(mappedIdentifier, async (identifier) => {
   set(pending, true);
   set(error, false);
 
-  // Fiat currencies render via their unicode symbol — no icon fetch needed.
+  // Fiat currencies render via their unicode symbol. No icon fetch needed.
   if (isDefined(currency)) {
     set(pending, false);
     return;

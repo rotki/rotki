@@ -32,7 +32,7 @@ const { toggleDrawer } = visibilityStore;
  *
  * Signing out is the obvious one. The other is a backend that is deliberately
  * down: every restart path clears `connected` before bouncing the tree, and
- * until it comes back the page behind is inert — its data is stale and every
+ * until it comes back the page behind is inert: its data is stale and every
  * request it makes fails. Leaving it visible and interactive for the whole
  * window (seconds, for a core restart) reads as a frozen app rather than a
  * deliberate operation.

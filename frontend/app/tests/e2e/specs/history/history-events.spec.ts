@@ -370,7 +370,7 @@ test.describe.serial('evm history events', () => {
   let ctx: SharedTestContext;
   let page: HistoryEventsPage;
 
-  /** The rows this block's `add` tests created — see the note on the block above. */
+  /** The rows this block's `add` tests created (see the note on the block above). */
   let evmRow: Locator;
   let evmSwapRow: Locator;
   let multiSwapRow: Locator;

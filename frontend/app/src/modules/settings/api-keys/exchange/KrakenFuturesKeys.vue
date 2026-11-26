@@ -6,7 +6,7 @@ import { useI18n } from 'vue-i18n';
 
 /**
  * Kraken carries a second pair of credentials for its futures API. They are optional, but only
- * together, and like the main pair they are shown masked until the user asks to replace them —
+ * together, and like the main pair they are shown masked until the user asks to replace them:
  * the app never held the saved secret, so there is nothing behind the asterisks to reveal.
  */
 const apiKey = defineModel<string | undefined>('apiKey', { required: true });

@@ -16,7 +16,7 @@ export interface EventMutated {
 /**
  * Decoupling bus between the history-event mutation sites and the Task Center. Producers emit
  * `event:mutated` at their existing success points; `use-smart-rerun` is the only subscriber.
- * Modeled on the sigil bus — a void-ish signal carrying just enough to drive a policy, never a
+ * Modeled on the sigil bus: a void-ish signal carrying just enough to drive a policy, never a
  * data channel.
  */
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- mitt requires a type alias, not an interface

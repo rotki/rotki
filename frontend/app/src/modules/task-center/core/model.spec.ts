@@ -118,7 +118,7 @@ describe('assembleActivityModel', () => {
    * The regression: rolling up per-kind groups counted a subtree twice, because an umbrella's
    * percentage is already the mean of its children. Here the umbrella and its three finished
    * children are one job at 100% and the unrelated activity is at 0, so the honest answer is 50.
-   * Group-based rollup answered 67 — the same finished work, weighted twice.
+   * Group-based rollup answered 67: the same finished work, weighted twice.
    */
   it('should roll up overall from roots only, not once per kind', () => {
     const umbrella = activity({

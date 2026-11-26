@@ -4,14 +4,14 @@ import { type Activity, type ActivityId, type ActivityKind, ActivitySourceType, 
 
 /**
  * The status projection: how live records and the completion ledger collapse into a
- * {@link WorkStatus}. Pure and orchestrator-agnostic — it reads only the two maps it is handed,
+ * {@link WorkStatus}. Pure and orchestrator-agnostic: it reads only the two maps it is handed,
  * which keeps the orchestrator module focused on lifecycle and scheduling.
  *
  * @packageDocumentation
  */
 
 /**
- * The subset of an activity record this projection needs — structurally satisfied by the
+ * The subset of an activity record this projection needs, structurally satisfied by the
  * orchestrator's `ActivityRecord`, so no adapter or per-call remapping is required.
  */
 export interface ProjectedRecord {
@@ -102,7 +102,7 @@ export function statusForId(
 /**
  * The progress projection: what fraction of an activity is done.
  *
- * Separate from the status projection above because it answers a different question — status is
+ * Separate from the status projection above because it answers a different question: status is
  * "is this work live", progress is "how far along". Both are pure over the record table.
  */
 
@@ -162,7 +162,7 @@ function percentageOf(status: ActivityStatus, steps: ActivitySteps | undefined, 
 }
 
 /**
- * The subset of a record {@link projectActivity} reads — structurally satisfied by the
+ * The subset of a record {@link projectActivity} reads, structurally satisfied by the
  * orchestrator's `ActivityRecord`, so no adapter is required.
  */
 export interface RenderableRecord {

@@ -20,7 +20,7 @@ const { t } = useI18n({ useScope: 'global' });
 const context = injectAccountingOverlay();
 // Graphs are a premium capability; non-premium tiers simply don't get the sparkline.
 const { allowed } = useFeatureAccess(PremiumFeature.GRAPHS_VIEW);
-// Respect privacy mode — a balance trend would otherwise leak shape while amounts are hidden.
+// Respect privacy mode: a balance trend would otherwise leak shape while amounts are hidden.
 const { shouldShowAmount } = useAmountDisplaySettings();
 // baseColor/gradient match the app's other charts; useGraph also provides the echarts theme.
 const { baseColor, gradient } = useGraph();
