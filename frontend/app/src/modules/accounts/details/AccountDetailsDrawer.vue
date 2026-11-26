@@ -1,27 +1,21 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
-import type { BlockchainAccountGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import { RuiNavigationDrawer, RuiTab, RuiTabs } from '@rotki/ui-library';
-import { startPromise } from '@shared/utils';
-import { isDefined, watchImmediate } from '@vueuse/core';
+import { isDefined } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { type AccountGroupId, getAccountLabel, getGroupId, isXpubAccount } from '@/modules/accounts/account-utils';
+import { getAccountLabel, isXpubAccount } from '@/modules/accounts/account-utils';
 import AccountGroupDetailsTable from '@/modules/accounts/AccountGroupDetailsTable.vue';
-import { AccountDetailsView, accountDetailsViews } from '@/modules/accounts/details/account-details-views';
+import { AccountDetailsView } from '@/modules/accounts/details/account-details-views';
 import AccountDetailsAssets from '@/modules/accounts/details/AccountDetailsAssets.vue';
 import AccountDetailsChains from '@/modules/accounts/details/AccountDetailsChains.vue';
 import AccountDetailsHeader from '@/modules/accounts/details/AccountDetailsHeader.vue';
-import { useAccountDetailsRoute } from '@/modules/accounts/details/use-account-details-route';
+import { useAccountDetailsTarget } from '@/modules/accounts/details/use-account-details-target';
 import { useDrawerDismiss } from '@/modules/accounts/details/use-drawer-dismiss';
 import { useDrawerFocus } from '@/modules/accounts/details/use-drawer-focus';
 import { useDrawerOutsideClose } from '@/modules/accounts/details/use-drawer-outside-close';
-import { useDrawerPresence } from '@/modules/accounts/details/use-drawer-presence';
-import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { provideTableScroller } from '@/modules/core/table/use-table-row-window';
 
 const selectedAssets = defineModel<string[] | undefined>('selectedAssets', { required: true });
@@ -59,91 +53,22 @@ const content = useTemplateRef<HTMLDivElement>('content');
 
 provideTableScroller(scroller);
 
-const { isChainSettled } = useBlockchainAccountsStore();
-
-const { accountId, close, discard, open, setView, view } = useAccountDetailsRoute();
-const { getAccountsByCategory } = useBlockchainAccountData();
-const { chainIds } = useAccountCategoryHelper(() => category);
-const groups = getAccountsByCategory(() => category);
-
-const group = computed<BlockchainAccountGroupWithBalance | undefined>(() => {
-  const id = get(accountId);
-  return id ? get(groups).find(item => getGroupId(item) === id) : undefined;
-});
-
-/** The account open and the tab the URL asks for, held together so neither changes while the drawer slides out. */
-const opened = computed<{ group: BlockchainAccountGroupWithBalance; view?: AccountDetailsView } | undefined>(() => {
-  const current = get(group);
-  return current ? { group: current, view: get(view) } : undefined;
-});
-
-const { onClosed, ready, shown } = useDrawerPresence(opened);
-
-const shownGroup = computed<BlockchainAccountGroupWithBalance | undefined>(() => get(shown)?.group);
-
-/** Every chain of the category has finished its accounts read, so a missing account is really gone. */
-const accountsSettled = computed<boolean>(() => {
-  const ids = get(chainIds);
-  return ids.length > 0 && ids.every(chain => isChainSettled(chain));
-});
-
-const groupId = computed<AccountGroupId | undefined>(() => {
-  const current = get(shownGroup);
-  return current ? getGroupId(current) : undefined;
-});
-
-const chains = computed<string[]>(() => {
-  const current = get(shownGroup);
-  const id = get(groupId);
-  if (!current || !id)
-    return [];
-
-  const excluded = get(chainExclusionFilter)[id] ?? [];
-  return current.chains.filter(chain => !excluded.includes(chain));
-});
-
-const chainsFiltered = computed<boolean>(() => (get(shownGroup)?.chains.length ?? 0) > get(chains).length);
-
-/**
- * The derived addresses of an xpub that hold nothing, which the list hides until asked.
- *
- * @remarks
- * Wallets keep a gap of unused addresses past the last used one, so most of an xpub's addresses are
- * empty. When none holds anything there is nothing else to show, so nothing is hidden.
- */
-const emptyAddressCount = computed<number>(() => {
-  const current = get(shownGroup);
-  if (!current || !isXpubAccount(current) || current.fundedAddressCount === 0)
-    return 0;
-  return current.addressCount - current.fundedAddressCount;
-});
-
-const views = computed<AccountDetailsView[]>(() => {
-  const current = get(shownGroup);
-  return current ? accountDetailsViews(current) : [AccountDetailsView.ASSETS];
-});
-
-const currentView = computed<AccountDetailsView>(() => {
-  const requested = get(shown)?.view;
-  const offered = get(views);
-  return requested && offered.includes(requested) ? requested : offered[0] ?? AccountDetailsView.ASSETS;
-});
-
-const tabIndex = computed<number>({
-  get: () => get(views).indexOf(get(currentView)),
-  set: (index: number) => {
-    const next = get(views)[index];
-    if (next)
-      startPromise(setView(next));
-  },
-});
-
-const isOpen = computed<boolean>({
-  get: () => isDefined(group),
-  set: (value: boolean) => {
-    if (!value)
-      startPromise(close());
-  },
+const {
+  chains,
+  chainsFiltered,
+  currentView,
+  emptyAddressCount,
+  groupId,
+  isOpen,
+  onClosed,
+  openAccount,
+  ready,
+  shownGroup,
+  tabIndex,
+  views,
+} = useAccountDetailsTarget({
+  category: () => category,
+  chainExclusionFilter,
 });
 
 const { onKeydown } = useDrawerDismiss({
@@ -158,20 +83,9 @@ const viewLabels = computed<Record<AccountDetailsView, string>>(() => ({
   [AccountDetailsView.CHAINS]: t('account_balances.per_chain'),
 }));
 
-/** A push while nothing shows, so Back closes it; a replace when it only switches the account. */
-async function openAccount(id: string): Promise<void> {
-  await open(id, isDefined(group) ? 'replace' : 'push');
-}
-
 async function refresh(): Promise<void> {
   if (isDefined(detailsTable))
     await get(detailsTable).refresh();
-}
-
-/** A key that names no account of this category (a stale link, a removed account) is dropped. */
-function discardUnknownAccount(): void {
-  if (get(accountId) && get(accountsSettled) && !isDefined(group))
-    startPromise(discard());
 }
 
 useDrawerFocus(isOpen, () => get(header)?.focusClose(), content);
@@ -188,8 +102,6 @@ watch(groupId, () => {
   if (element)
     element.scrollTop = 0;
 });
-
-watchImmediate([accountId, accountsSettled, group], discardUnknownAccount);
 
 defineExpose({
   isOpen,

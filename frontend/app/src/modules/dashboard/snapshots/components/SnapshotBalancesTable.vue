@@ -3,19 +3,17 @@ import type { Snapshot } from '@/modules/dashboard/snapshots';
 import type { BalanceDeletion } from '@/modules/dashboard/snapshots/composables/use-snapshot-draft';
 import type { BalanceMutation } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { toSentenceCase } from '@rotki/common';
-import { type DataTableColumn, type DataTableSortData, RuiAlert, RuiButton, RuiChip, RuiDataTable, RuiIcon, RuiTooltip } from '@rotki/ui-library';
+import { type DataTableColumn, type DataTableSortData, RuiAlert, RuiButton, RuiChip, RuiDataTable, RuiIcon } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
-import AssetDetails from '@/modules/assets/AssetDetails.vue';
-import NftDetails from '@/modules/balances/nft/NftDetails.vue';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import SnapshotBalanceDeleteDialog from '@/modules/dashboard/snapshots/components/SnapshotBalanceDeleteDialog.vue';
-import SnapshotBalanceEntryDialog from '@/modules/dashboard/snapshots/components/SnapshotBalanceEntryDialog.vue';
+import SnapshotBalanceAssetCell from '@/modules/dashboard/snapshots/components/SnapshotBalanceAssetCell.vue';
+import SnapshotBalanceEditDialogs from '@/modules/dashboard/snapshots/components/SnapshotBalanceEditDialogs.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 import { type Filters, revealHidden } from '@/modules/dashboard/snapshots/composables/snapshot-balance-filter';
 import { useSnapshotBalanceDisplay } from '@/modules/dashboard/snapshots/composables/use-snapshot-balance-display';
@@ -52,8 +50,7 @@ const sort = ref<DataTableSortData<IndexedBalanceSnapshot>>({
   column: 'usdValue',
   direction: 'desc',
 });
-const entryDialog = useTemplateRef<InstanceType<typeof SnapshotBalanceEntryDialog>>('entryDialog');
-const deleteDialog = useTemplateRef<InstanceType<typeof SnapshotBalanceDeleteDialog>>('deleteDialog');
+const editDialogs = useTemplateRef<InstanceType<typeof SnapshotBalanceEditDialogs>>('editDialogs');
 
 const {
   categoryChipColor,
@@ -128,23 +125,24 @@ const tableHeaders = computed<DataTableColumn<IndexedBalanceSnapshot>[]>(() => [
 
 useRememberTableSorting<IndexedBalanceSnapshot>(TableId.EDIT_BALANCE_SNAPSHOT, sort, tableHeaders);
 
+/** The dialogs render unconditionally, so a missing ref is a bug rather than a state to skip. */
+function dialogs(): InstanceType<typeof SnapshotBalanceEditDialogs> {
+  const instance = get(editDialogs);
+  if (!instance)
+    throw new Error('editDialogs is not mounted');
+  return instance;
+}
+
 function add(): void {
-  get(entryDialog)?.openAdd();
+  dialogs().openAdd();
 }
 
 function editClick(item: IndexedBalanceSnapshot): void {
-  get(entryDialog)?.openEdit(item);
-}
-
-function onSubmit(payload: { index: number | null; mutation: BalanceMutation }): void {
-  if (payload.index === null)
-    emit('add', payload.mutation);
-  else
-    emit('edit', { index: payload.index, mutation: payload.mutation });
+  dialogs().openEdit(item);
 }
 
 function deleteClick(item: IndexedBalanceSnapshot): void {
-  get(deleteDialog)?.open(item.index);
+  dialogs().openDelete(item);
 }
 
 /**
@@ -157,10 +155,6 @@ function bulkDeleteZeroValue(): void {
   const indices = get(data).filter(item => item.usdValue.isZero()).map(item => item.index);
   if (indices.length > 0)
     emit('bulk-delete', indices);
-}
-
-function onDelete(payload: BalanceDeletion): void {
-  emit('delete', payload);
 }
 </script>
 
@@ -249,41 +243,12 @@ function onDelete(payload: BalanceDeletion): void {
         </template>
 
         <template #item.assetIdentifier="{ row }">
-          <div class="flex items-center gap-2 min-w-0">
-            <RuiTooltip
-              v-if="warningsByIndex.has(row.index)"
-              :open-delay="200"
-            >
-              <template #activator>
-                <RuiIcon
-                  name="lu-triangle-alert"
-                  size="18"
-                  class="text-rui-warning shrink-0"
-                  data-testid="snapshot-balances-flag"
-                />
-              </template>
-              <ul class="list-disc pl-4">
-                <li
-                  v-for="warning in warningsByIndex.get(row.index)"
-                  :key="warning.code"
-                >
-                  {{ describeWarning(warning) }}
-                </li>
-              </ul>
-            </RuiTooltip>
-            <AssetDetails
-              v-if="!isNftRow(row)"
-              class="min-w-0 [&_.avatar]:ml-1.5 [&_.avatar]:mr-2"
-              :asset="row.assetIdentifier"
-              :actions="{ hideMenu: true }"
-              :resolution="{ enableAssociation: false }"
-            />
-            <NftDetails
-              v-else
-              class="min-w-0"
-              :identifier="row.assetIdentifier"
-            />
-          </div>
+          <SnapshotBalanceAssetCell
+            :row="row"
+            :warnings="warningsByIndex.get(row.index)"
+            :is-nft="isNftRow(row)"
+            :describe-warning="describeWarning"
+          />
         </template>
 
         <template #item.amount="{ row }">
@@ -339,18 +304,13 @@ function onDelete(payload: BalanceDeletion): void {
       </RuiDataTable>
     </TableFrame>
 
-    <SnapshotBalanceEntryDialog
-      ref="entryDialog"
+    <SnapshotBalanceEditDialogs
+      ref="editDialogs"
       :snapshot="snapshot"
       :timestamp="timestamp"
-      @submit="onSubmit($event)"
-    />
-
-    <SnapshotBalanceDeleteDialog
-      ref="deleteDialog"
-      :snapshot="snapshot"
-      :timestamp="timestamp"
-      @confirm="onDelete($event)"
+      @add="emit('add', $event)"
+      @edit="emit('edit', $event)"
+      @delete="emit('delete', $event)"
     />
   </section>
 </template>

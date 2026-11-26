@@ -1,27 +1,21 @@
 <script setup lang="ts">
-import type { Filters } from '@/modules/history/data-issues/data-issue-filter-keys';
-import type { DataIssue, DataIssuesRequestPayload } from '@/modules/history/data-issues/schemas';
+import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { RuiAlert, RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
-import { useIntervalFn, useTimeoutFn } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
-import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
 import DataIssueDetailDrawer from '@/modules/history/data-issues/components/DataIssueDetailDrawer.vue';
 import DataIssuesTable from '@/modules/history/data-issues/components/DataIssuesTable.vue';
 import DataIssueSummaryBar from '@/modules/history/data-issues/components/DataIssueSummaryBar.vue';
 import ResolveManuallyDialog from '@/modules/history/data-issues/components/ResolveManuallyDialog.vue';
-import { DEFAULT_LIST_STATES, IssueState } from '@/modules/history/data-issues/constants';
 import DataIssuesTabs from '@/modules/history/data-issues/DataIssuesTabs.vue';
 import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-data-issue-detail-actions';
-import { useDataIssueFields } from '@/modules/history/data-issues/use-data-issue-fields';
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
-import { useDataIssuesAutoReload } from '@/modules/history/data-issues/use-data-issues-auto-reload';
 import { useDataIssuesDetection } from '@/modules/history/data-issues/use-data-issues-detection';
-import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
+import { useDataIssuesPageList } from '@/modules/history/data-issues/use-data-issues-page-list';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
@@ -38,43 +32,27 @@ const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const currentRoute = router.currentRoute;
 
-const { fetchData, fetchIssue } = useDataIssues();
-const { baselineTotal, counts, dismissInlinePanels, refreshSummary, summaryFailed } = useDataIssuesSummary();
-
-const fields = useDataIssueFields();
+const { fetchIssue } = useDataIssues();
 
 const {
+  activeStates,
+  clearFilters,
   collection: state,
-  error: fetchError,
-  filter: filters,
-  isLoading,
-  pagination,
-  refetch: refresh,
-  setFilter: updateFilter,
-} = useServerTable<DataIssue, DataIssuesRequestPayload, Filters>({
-  fetch: fetchData,
+  counts,
+  dismissInlinePanels,
   fields,
-  params: [{
-    isDefault: true,
-    to: 'request',
-    values: computed<Record<string, unknown>>(() => ({ state: [...DEFAULT_LIST_STATES] })),
-  }],
-  urlState: routeWhen(mainPage),
-});
+  hasActiveFilters,
+  isAllClear,
+  isEmpty,
+  modelFilters: filters,
+  modelPagination: pagination,
+  reloadAll,
+  selectState,
+  showLoading,
+  summaryFailed,
+} = useDataIssuesPageList(() => mainPage);
 
 const pillLabels = usePillBarLabels();
-
-// The all-clear screen keys off this, not the transient `isLoading`, so a refresh cannot flash the table.
-const loadedOnce = ref<boolean>(false);
-
-async function reloadAll(): Promise<void> {
-  try {
-    await Promise.all([refresh(), refreshSummary()]);
-  }
-  finally {
-    set(loadedOnce, true);
-  }
-}
 
 const {
   actionFailure,
@@ -156,70 +134,11 @@ watch(modelDrawerOpen, async (open) => {
     await clearIssueQuery();
 });
 
-const activeStates = computed<string[]>(() => {
-  const value = get(filters).state;
-  if (Array.isArray(value))
-    return value.map(state => state.toString());
-  return value ? [value.toString()] : [];
-});
-
-const hasAnyIssues = computed<boolean>(() => get(baselineTotal) > 0);
-
-/** All clear only when both the table and the summary read succeeded: a failed one leaves the table up to say why. */
-const isAllClear = computed<boolean>(() => get(loadedOnce) && !get(hasAnyIssues) && !get(fetchError) && !get(summaryFailed));
-const hasActiveFilters = computed<boolean>(() => Object.keys(get(filters)).length > 0);
-const isEmpty = computed<boolean>(() => get(state).data.length === 0);
-
 const emptyDescription = computed<string>(() =>
   get(hasActiveFilters)
     ? t('data_issues.empty.filtered')
     : t('data_issues.empty.none'),
 );
-
-const hasRemediatingRows = computed<boolean>(() =>
-  get(state).data.some(issue => issue.state === IssueState.AUTO_REMEDIATING),
-);
-
-// Holding the indicator this long keeps a fast fetch, or the remediation poll, from flickering it.
-const MIN_LOADING_MS = 500;
-const showLoading = ref<boolean>(false);
-const canHide = ref<boolean>(true);
-const { start: startMinLoading } = useTimeoutFn(() => {
-  set(canHide, true);
-  if (!get(isLoading))
-    set(showLoading, false);
-}, MIN_LOADING_MS, { immediate: false });
-
-/**
- * Holds the spinner up for at least {@link MIN_LOADING_MS}, so a fast query does not flash it.
- *
- * @remarks
- * A load that finishes inside that window leaves the spinner up and hides nothing: `canHide` is
- * still false, and the timer takes it down when it fires. Only a load still running when the timer
- * fires, or one that finishes after it, is hidden here.
- *
- * @param loading - whether a query is in flight
- */
-function trackLoading(loading: boolean): void {
-  if (loading) {
-    set(showLoading, true);
-    set(canHide, false);
-    startMinLoading();
-  }
-  else if (get(canHide)) {
-    set(showLoading, false);
-  }
-}
-
-watch(isLoading, trackLoading);
-
-function selectState(issueState: IssueState): void {
-  updateFilter({ ...get(filters), state: [issueState] });
-}
-
-function clearFilters(): void {
-  updateFilter({});
-}
 
 /**
  * Opens the resolve dialog against one row's issue.
@@ -232,17 +151,6 @@ function onResolveFromRow(issue: DataIssue): void {
   set(modelSelectedIssue, issue);
   onResolveRequest();
 }
-
-const { pause, resume } = useIntervalFn(reloadAll, 10_000, { immediate: false });
-
-watch(hasRemediatingRows, (remediating) => {
-  if (remediating)
-    resume();
-  else
-    pause();
-});
-
-useDataIssuesAutoReload(reloadAll);
 
 /**
  * Closes the overlay and pinned copies of this list when it is shown as a page.

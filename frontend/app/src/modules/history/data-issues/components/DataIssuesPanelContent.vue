@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import type { Filters } from '@/modules/history/data-issues/data-issue-filter-keys';
-import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { RemediationTimelineItem } from '@/modules/history/data-issues/types';
 import { RuiAlert, RuiButton, RuiIcon, RuiProgress } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
-import { useScroll, useVirtualList } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -16,11 +14,8 @@ import DataIssueDetailContent from '@/modules/history/data-issues/components/Dat
 import DataIssuePanelCard from '@/modules/history/data-issues/components/DataIssuePanelCard.vue';
 import ResolveManuallyDialog from '@/modules/history/data-issues/components/ResolveManuallyDialog.vue';
 import { panelFilterFields } from '@/modules/history/data-issues/data-issues-panel-utils';
-import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-data-issue-detail-actions';
 import { useDataIssueFields } from '@/modules/history/data-issues/use-data-issue-fields';
-import { useDataIssuesPanelList } from '@/modules/history/data-issues/use-data-issues-panel-list';
-import { useDataIssuesPanelPolling } from '@/modules/history/data-issues/use-data-issues-panel-polling';
-import { useDataIssuesPanelSelection } from '@/modules/history/data-issues/use-data-issues-panel-selection';
+import { ITEM_HEIGHT, useDataIssuesPanel } from '@/modules/history/data-issues/use-data-issues-panel';
 import { usePanelFilterEngagement } from '@/modules/history/data-issues/use-panel-filter-engagement';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import PinnedDetailSheet from '@/modules/shell/pinned/PinnedDetailSheet.vue';
@@ -45,51 +40,33 @@ const filterWrapper = useTemplateRef<HTMLElement>('filterWrapper');
 const filterEngaged = usePanelFilterEngagement(filterWrapper);
 
 const {
+  actionFailure,
+  clearSelection,
+  containerProps,
   error,
-  hasRemediatingRows,
+  goToEvent,
+  hasActiveSelection,
+  isActiveRow,
   isEmpty,
   loading,
   loadingMore,
-  loadMore,
-  refreshList,
-  reloadAll,
-  rows,
-} = useDataIssuesPanelList(panelFilters);
-
-const {
-  actionFailure,
   modelActionBusy,
   modelDrawerOpen,
   modelResolveOpen,
   modelSelectedIssue,
   onDismiss,
   onResolveConfirm,
+  onResolveFromCard,
   onResolveRequest,
   onRetry,
   openDetail,
+  refreshList,
+  reloadAll,
   resolveFailure,
   selectedIssueFailure,
-} = useDataIssueDetailActions(
-  reloadAll,
-  () => get(rows).map(({ issue }) => issue),
-);
-
-const { clearSelection, goToEvent, hasActiveSelection, isActiveRow } = useDataIssuesPanelSelection();
-
-useDataIssuesPanelPolling(hasRemediatingRows, reloadAll);
-
-/**
- * Opens the resolve dialog on the issue whose card was acted on.
- *
- * @remarks
- * The two steps are ordered, not incidental. The dialog reads the selected-issue model rather
- * than taking an argument, so the selection has to be in place before the request; the other way
- * round opens it on whatever was selected before, or on nothing at all.
- */
-function onResolveFromCard(issue: DataIssue): void {
-  set(modelSelectedIssue, issue);
-  onResolveRequest();
-}
+  visibleRows,
+  wrapperProps,
+} = useDataIssuesPanel(panelFilters);
 
 watch([modelDrawerOpen, modelResolveOpen, filterEngaged, review], ([drawer, resolve, filter, comparison]) => {
   set(subDialogOpen, drawer || resolve || filter || !!comparison);
@@ -98,35 +75,6 @@ watch([modelDrawerOpen, modelResolveOpen, filterEngaged, review], ([drawer, reso
 watchDebounced(panelFilters, () => {
   startPromise(refreshList());
 }, { debounce: 300, deep: true });
-
-/** Fixed, because the card is `h-full` and distributes its own rows with flex. */
-const CARD_HEIGHT = 159;
-
-/** The `pb-2` on each row wrapper below; the two only agree if they are changed together. */
-const ROW_GAP = 8;
-
-const ITEM_HEIGHT = CARD_HEIGHT + ROW_GAP;
-
-// Only the visible window mounts: every card resolves an asset icon and runs its own observers.
-const { containerProps, list: visibleRows, wrapperProps } = useVirtualList(rows, {
-  itemHeight: ITEM_HEIGHT,
-  overscan: 4,
-});
-
-/**
- * Loads the next page once the user reaches the bottom of the cards already rendered.
- *
- * @remarks
- * Driven by scroll position rather than by the last visible index, which can loop: rendering the
- * new page moves that index, which requests another page.
- */
-function loadMoreAtBottom(atBottom: boolean): void {
-  if (atBottom)
-    startPromise(loadMore());
-}
-
-const { arrivedState } = useScroll(containerProps.ref);
-watch(() => arrivedState.bottom, loadMoreAtBottom);
 
 onMounted(() => {
   startPromise(reloadAll());

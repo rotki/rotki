@@ -320,7 +320,7 @@ describe('data-issues view loading and polling', () => {
   it('should keep the loading indicator up for 500 ms when a load finishes sooner', async () => {
     const wrapper = await createWrapper();
     const isLoading = mounted(table.isLoading);
-    const loadingShown = (): boolean => wrapper.findComponent(DataIssuesTable).props('loading');
+    const loadingShown = (): boolean | undefined => wrapper.findComponent(DataIssuesTable).props('loading');
     expect(loadingShown()).toBe(false);
 
     isLoading.value = true;
