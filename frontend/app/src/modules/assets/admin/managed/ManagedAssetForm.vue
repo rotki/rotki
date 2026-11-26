@@ -1,30 +1,20 @@
 <script setup lang="ts">
 import type { SupportedAsset, UnderlyingToken } from '@rotki/common';
-import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { RuiAccordion, RuiAccordions, RuiAutoComplete, RuiButton, RuiCard, RuiIcon, RuiMenuSelect, RuiSwitch, RuiTextField } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { ok, type Result } from 'plainfp/result';
-import { computed, onMounted, ref, toRef, useTemplateRef } from 'vue';
+import { computed, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
-import { decimalsTextModel, startedEpochModel } from '@/modules/assets/admin/asset-field-models';
 import AssetIconForm from '@/modules/assets/admin/AssetIconForm.vue';
-import { toAssetTypeOptions, useAssetKind } from '@/modules/assets/admin/managed/asset-kind';
-import {
-  type ManagedAssetFormState,
-  managedAssetSchema,
-  toManagedAssetFormState,
-} from '@/modules/assets/admin/managed/managed-asset-form';
 import ManagedAssetOracleFields from '@/modules/assets/admin/managed/ManagedAssetOracleFields.vue';
-import { useManagedAssetErrors } from '@/modules/assets/admin/managed/use-managed-asset-errors';
+import { useManagedAssetFormState } from '@/modules/assets/admin/managed/use-managed-asset-form-state';
 import { useManagedAssetSave } from '@/modules/assets/admin/managed/use-managed-asset-save';
-import { useManagedTokenLookup } from '@/modules/assets/admin/managed/use-managed-token-lookup';
 import UnderlyingTokenManager from '@/modules/assets/admin/UnderlyingTokenManager.vue';
 import { evmTokenKindsData, solanaTokenKindsData } from '@/modules/core/common/chains';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useMappedModelForm } from '@/modules/core/form/use-model-form';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
@@ -48,49 +38,30 @@ const { allEvmChains } = useSupportedChains();
 
 const identifier = computed<string>(() => get(modelValue).identifier);
 
-const {
-  isEvmToken,
-  isHyperliquidToken,
-  isNft,
-  isSolanaToken,
-  requiresAddress: isTokenRequiresAddress,
-} = useAssetKind(() => get(modelValue).assetType, () => get(modelValue).tokenKind);
-
 const { saveAsset } = useManagedAssetSave({
   asset: modelValue,
   editMode: () => editMode,
   underlyingTokens,
 });
 
-const { clearFields } = useManagedAssetErrors(errors, () => get(modelValue).assetType);
-
-const schema = computed<ZodType>(() => managedAssetSchema({
-  addressInvalid: t('asset_form.validation.valid_address'),
-  addressMissing: t('asset_form.validation.address_non_empty'),
-  assetTypeMissing: t('asset_form.validation.asset_type_non_empty'),
-  collectibleIdMissing: t('asset_form.validation.collectible_id_non_empty'),
-}, {
-  isNft: get(isNft),
-  requiresAddress: get(isTokenRequiresAddress),
-}));
-
-const form = useMappedModelForm<SupportedAsset, ManagedAssetFormState>({
-  model: modelValue,
-  schema,
-  serverErrors: errors,
+const {
+  decimalsModel,
+  fetching,
+  form,
+  isEvmToken,
+  isHyperliquidToken,
+  isNft,
+  isSolanaToken,
+  isTokenRequiresAddress,
+  refreshTokenData,
+  startedModel,
+  types,
+} = useManagedAssetFormState({
+  assetTypes: () => assetTypes,
+  editMode: () => editMode,
+  errors,
+  modelValue,
   stateUpdated,
-  toModel: (state, asset): SupportedAsset => ({ ...asset, ...state }),
-  toState: toManagedAssetFormState,
-});
-
-const startedModel = startedEpochModel(toRef(form.state, 'started'));
-const decimalsModel = decimalsTextModel(toRef(form.state, 'decimals'));
-
-const { fetching, refreshTokenData, suppressNextLookup } = useManagedTokenLookup({
-  address: () => form.state.address,
-  asset: modelValue,
-  evmChain: () => get(modelValue).evmChain,
-  onFilled: clearFields,
 });
 
 /** Uploads the chosen icon for the saved asset; `ok` straight away when the icon form is not there. */
@@ -98,8 +69,6 @@ async function saveIcon(identifier: string): Promise<Result<void, unknown>> {
   const iconForm = get(assetIconFormRef);
   return iconForm ? iconForm.saveIcon(identifier) : ok(undefined);
 }
-
-const types = computed<ReturnType<typeof toAssetTypeOptions>>(() => toAssetTypeOptions(assetTypes));
 
 watchImmediate(modelValue, (asset: SupportedAsset) => {
   if (asset.underlyingTokens && asset.underlyingTokens.length > 0) {
@@ -109,21 +78,6 @@ watchImmediate(modelValue, (asset: SupportedAsset) => {
     set(underlyingTokens, []);
   }
 });
-
-/**
- * Stops the address the form opens with from triggering a lookup.
- *
- * @remarks
- * Only in edit mode, where the field is seeded from the asset being edited. That write looks the
- * same to the watcher as one the user made, and acting on it would overwrite the very fields the
- * dialog was opened to show.
- */
-function suppressLookupForSeededAddress(): void {
-  if (editMode)
-    suppressNextLookup();
-}
-
-onMounted(suppressLookupForSeededAddress);
 
 defineExpose({
   saveAsset,

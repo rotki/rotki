@@ -1,24 +1,20 @@
 <script setup lang="ts">
 import type { LocationFormData } from '@/modules/locations/location-form';
-import type { LocationNode } from '@/modules/locations/use-location-tree-api';
-import { type DataTableColumn, RuiButton, RuiDataTable, RuiIcon, RuiSwitch, RuiTab, RuiTabs, type TablePaginationData } from '@rotki/ui-library';
+import { RuiButton, RuiDataTable, RuiIcon, RuiSwitch, RuiTab, RuiTabs } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
-import { computed, nextTick, onMounted, ref, shallowRef } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
-import { useRowHighlight } from '@/modules/core/table/use-row-highlight';
 import LocationAliasesCard from '@/modules/locations/components/LocationAliasesCard.vue';
 import LocationFormDialog from '@/modules/locations/components/LocationFormDialog.vue';
 import LocationTreeFilter from '@/modules/locations/components/LocationTreeFilter.vue';
 import LocationTreeRowActions from '@/modules/locations/components/LocationTreeRowActions.vue';
 import LocationTreeRowName from '@/modules/locations/components/LocationTreeRowName.vue';
 import LocationUsageNotice from '@/modules/locations/components/LocationUsageNotice.vue';
-import { type LocationRow, locationRows, onePage } from '@/modules/locations/location-rows';
-import { useLocationManagement } from '@/modules/locations/use-location-management';
-import { useLocationTreeExpansion } from '@/modules/locations/use-location-tree-expansion';
+import { useLocationManagerTree } from '@/modules/locations/use-location-manager-tree';
 import { ROOT_LOCATION, useLocationTreeStore } from '@/modules/locations/use-location-tree-store';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
@@ -26,27 +22,32 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 type ManagerTab = 'locations' | 'aliases';
 
-const search = ref<string>('');
-const showArchived = ref<boolean>(false);
-/** Locations archived on this visit, which stay listed so that restoring one is a click away. */
-const archivedHere = ref<Set<string>>(new Set());
 const formData = ref<LocationFormData>();
 const addingAlias = ref<boolean>(false);
-const blockedDeletion = ref<{ location: LocationNode; usage: Record<string, number> }>();
-/** The unused location whose row asks before deleting it, until the user answers. */
-const pendingDeletion = ref<LocationNode>();
-const deleting = ref<boolean>(false);
-/** Why the last archive, restore or deletion failed, until the next one. */
-const actionFailure = shallowRef<string>();
 
 const { t } = useI18n({ useScope: 'global' });
 const route = useRoute();
 const router = useRouter();
 
 const treeStore = useLocationTreeStore();
-const { deleteLocation, editLocation, fetchUsage } = useLocationManagement();
-const { isExpanded, reveal, toggle } = useLocationTreeExpansion();
-const { highlight, rowClass } = useRowHighlight<LocationRow>(row => row.node.identifier);
+const {
+  actionFailure,
+  bringIntoView,
+  cols,
+  confirmDeletion,
+  deleting,
+  empty,
+  modelBlockedDeletion: blockedDeletion,
+  modelPendingDeletion: pendingDeletion,
+  modelSearch: search,
+  modelShowArchived: showArchived,
+  requestDeletion,
+  rowClass,
+  rows,
+  setArchived,
+  toggle,
+  wholeTree,
+} = useLocationManagerTree();
 
 /** The open tab, kept in the url so a link can open the aliases directly. */
 const tab = computed<ManagerTab>({
@@ -56,92 +57,8 @@ const tab = computed<ManagerTab>({
   },
 });
 
-const rows = computed<LocationRow[]>(() => locationRows({
-  childrenOf: treeStore.childrenOf,
-  isExpanded,
-  keepArchived: get(archivedHere),
-  root: ROOT_LOCATION,
-  search: get(search),
-  showArchived: get(showArchived),
-}));
-
-/**
- * One page as long as the tree: pages would cut a subtree off from its parent, and the rows only
- * make sense in tree order.
- */
-const wholeTree = computed<TablePaginationData>(() => onePage(get(rows).length));
-
-const cols = computed<DataTableColumn<LocationRow>[]>(() => [{
-  cellClass: 'max-w-0 w-full',
-  key: 'name',
-  label: t('common.name'),
-}, {
-  cellClass: 'w-px',
-  key: 'actions',
-  label: t('common.actions_text'),
-}]);
-
-const empty = computed<{ label: string }>(() => {
-  const term = get(search).trim();
-  return { label: term === '' ? t('location_manager.empty.label') : t('location_manager.empty.search_label', { search: term }) };
-});
-
-/** Opens the branch holding a location, marks its row and scrolls it into view. */
-async function bringIntoView(identifier: string): Promise<void> {
-  reveal(identifier);
-  await nextTick();
-  const row = get(rows).find(item => item.node.identifier === identifier);
-  if (!row)
-    return;
-  highlight(row);
-  document.querySelector(`[data-location="${CSS.escape(identifier)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
 function addBelow(parentIdentifier: string, name?: string): void {
   set(formData, { mode: 'add', name, parentIdentifier });
-}
-
-async function setArchived(location: LocationNode, archived: boolean): Promise<void> {
-  set(actionFailure, undefined);
-  set(blockedDeletion, undefined);
-  set(pendingDeletion, undefined);
-  const outcome = await editLocation(location.identifier, { isActive: !archived });
-  if (!outcome.ok) {
-    set(actionFailure, outcome.error);
-    return;
-  }
-  if (archived)
-    set(archivedHere, new Set(get(archivedHere)).add(location.identifier));
-  await bringIntoView(location.identifier);
-}
-
-/**
- * A used location can not be deleted; the user then sees what uses it and may archive it. An unused
- * one asks in its own row before it goes.
- */
-async function requestDeletion(location: LocationNode): Promise<void> {
-  set(actionFailure, undefined);
-  set(blockedDeletion, undefined);
-  set(pendingDeletion, undefined);
-  const usage = await fetchUsage(location.identifier);
-  if (!usage.ok) {
-    set(actionFailure, usage.error);
-    return;
-  }
-  if (!usage.value.deletable) {
-    set(blockedDeletion, { location, usage: usage.value.usage });
-    return;
-  }
-  set(pendingDeletion, location);
-}
-
-async function confirmDeletion(location: LocationNode): Promise<void> {
-  set(deleting, true);
-  const outcome = await deleteLocation(location.identifier);
-  set(deleting, false);
-  set(pendingDeletion, undefined);
-  if (!outcome.ok)
-    set(actionFailure, outcome.error);
 }
 
 /** A quick-add link adds to the tab it names, which clearing the link from the url would otherwise lose. */

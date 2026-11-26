@@ -1,19 +1,14 @@
 <script setup lang="ts">
-import type { Snapshot } from '@/modules/dashboard/snapshots';
-import { type BigNumber, Zero } from '@rotki/common';
 import { RuiAlert } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
-import { onKeyStroke, useEventListener } from '@vueuse/core';
-import { get, set } from '@vueuse/shared';
-import { computed, ref, watch } from 'vue';
+import { onKeyStroke } from '@vueuse/core';
+import { get } from '@vueuse/shared';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
-import { useSpamAsset } from '@/modules/assets/use-spam-asset';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { NoteLocation } from '@/modules/core/common/notes';
-import { useConfirm } from '@/modules/core/common/use-confirm';
 import ExportSnapshotDialog from '@/modules/dashboard/ExportSnapshotDialog.vue';
 import SnapshotBalancesTable from '@/modules/dashboard/snapshots/components/SnapshotBalancesTable.vue';
 import SnapshotEditorToolbar from '@/modules/dashboard/snapshots/components/SnapshotEditorToolbar.vue';
@@ -24,10 +19,9 @@ import {
   isolateZeroValue,
   revealExcluded,
 } from '@/modules/dashboard/snapshots/composables/snapshot-balance-filter';
-import { useSnapshotDraft } from '@/modules/dashboard/snapshots/composables/use-snapshot-draft';
+import { useSnapshotEditorSession } from '@/modules/dashboard/snapshots/composables/use-snapshot-editor-session';
 import { useSnapshotList } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
-import { useSnapshotStore } from '@/modules/dashboard/snapshots/use-snapshot-store';
-import { getTotalValue } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
+import { useSnapshotNeighbours } from '@/modules/dashboard/snapshots/composables/use-snapshot-neighbours';
 import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
 
 definePage({
@@ -39,37 +33,26 @@ definePage({
 });
 
 const { t } = useI18n({ useScope: 'global' });
-const router = useRouter();
 const route = useRoute<'/statistics/snapshots/[timestamp]'>();
 
 const timestamp = computed<number>(() => Number(String(get(route).params.timestamp)));
 
-const loading = ref<boolean>(true);
-const saving = ref<boolean>(false);
-const loadError = ref<string>();
-const actionError = ref<string>();
-const saveSuccess = ref<boolean>(false);
-const loaded = ref<Snapshot>();
 const exportDialog = ref<boolean>(false);
 const locationsDrawer = ref<boolean>(false);
 const balanceFilters = ref<Filters>({});
 
-const { fetchSnapshot, persist, remove } = useSnapshotStore();
 /**
  * `rows`, and the prev/next order and deltas derived from them, come from the cached net-value
  * series. `refreshNetValue` re-pulls it, so a save or delete here reaches this page's navigation
  * and the list page alike, both reading the same store.
  */
 const { refresh: refreshNetValue, rows } = useSnapshotList();
-const { ask } = useConfirm();
-const { markAssetsAsSpam } = useSpamAsset();
 
 const {
   addBalance,
   addLocation,
   canUndo,
   changes,
-  commit,
   deleteBalance,
   deleteBalances,
   deleteLocation,
@@ -80,102 +63,20 @@ const {
   editLocation,
   excludeNfts,
   isDirty,
+  loadError,
+  loading,
   mismatch,
+  modelActionError: actionError,
+  modelSaveSuccess: saveSuccess,
+  netWorth,
+  performDelete,
   reconcileLocations,
+  save,
+  saving,
   undo,
-} = useSnapshotDraft(loaded);
+} = useSnapshotEditorSession({ refreshNetValue, timestamp });
 
-const netWorth = computed<BigNumber>(() => {
-  const current = get(draft);
-  return current ? getTotalValue(current.locationDataSnapshot) : Zero;
-});
-
-/** Snapshot timestamps oldest-first, used for prev/next navigation + the delta. */
-const orderedTimestamps = computed<number[]>(() => get(rows).map(row => row.timestamp).sort((a, b) => a - b));
-const currentIndex = computed<number>(() => get(orderedTimestamps).indexOf(get(timestamp)));
-const hasPrev = computed<boolean>(() => get(currentIndex) > 0);
-const hasNext = computed<boolean>(() => {
-  const index = get(currentIndex);
-  return index > -1 && index < get(orderedTimestamps).length - 1;
-});
-
-const previousTimestamp = computed<number | undefined>(() => {
-  const index = get(currentIndex);
-  return index > 0 ? get(orderedTimestamps)[index - 1] : undefined;
-});
-
-const previous = computed<{ value: BigNumber; timestamp: number } | undefined>(() => {
-  const ts = get(previousTimestamp);
-  if (ts === undefined)
-    return undefined;
-  const value = get(rows).find(row => row.timestamp === ts)?.usdValue;
-  return value !== undefined ? { timestamp: ts, value } : undefined;
-});
-
-async function load(): Promise<void> {
-  if (!get(loaded))
-    set(loading, true);
-  set(loadError, undefined);
-  try {
-    set(loaded, await fetchSnapshot(get(timestamp)));
-  }
-  catch (error: unknown) {
-    set(loadError, getErrorMessage(error));
-  }
-  finally {
-    set(loading, false);
-  }
-}
-
-watch(timestamp, load, { immediate: true });
-
-function navigate(direction: 'prev' | 'next'): void {
-  const target = get(orderedTimestamps)[get(currentIndex) + (direction === 'next' ? 1 : -1)];
-  if (target !== undefined)
-    startPromise(router.push(`/statistics/snapshots/${target}`));
-}
-
-async function save(): Promise<void> {
-  set(saving, true);
-  set(actionError, undefined);
-  try {
-    const result = await commit(
-      snapshot => persist(get(timestamp), snapshot),
-      async assets => markAssetsAsSpam(assets, { silent: true }),
-    );
-    if (!result.saved) {
-      set(actionError, t('dashboard.snapshot.detail.save.failure'));
-      return;
-    }
-    if (result.spamError === undefined)
-      set(saveSuccess, true);
-    else
-      set(actionError, t('dashboard.snapshot.detail.save.spam_failure', { message: result.spamError }));
-    await refreshNetValue();
-  }
-  catch (error: unknown) {
-    set(actionError, getErrorMessage(error));
-  }
-  finally {
-    set(saving, false);
-  }
-}
-
-async function performDelete(): Promise<void> {
-  set(actionError, undefined);
-  try {
-    const success = await remove(get(timestamp));
-    if (success) {
-      await refreshNetValue();
-      await router.push('/statistics/snapshots');
-      return;
-    }
-    set(actionError, t('dashboard.snapshot.delete.message.failure'));
-  }
-  catch (error: unknown) {
-    set(actionError, getErrorMessage(error));
-  }
-}
+const { hasNext, hasPrev, navigate, previous } = useSnapshotNeighbours({ rows, timestamp });
 
 /** Sweeps the valueless balances the table flagged, without asking: the draft's undo restores them. */
 function bulkDelete(indices: number[]): void {
@@ -220,43 +121,6 @@ onKeyStroke(['z', 'Z'], (event) => {
   if (get(canUndo))
     undo();
 });
-
-watch(isDirty, (dirty) => {
-  if (dirty)
-    set(saveSuccess, false);
-});
-
-/** Lets the user leave an edited snapshot, by prev/next or any other navigation, only once they agree. */
-async function confirmLeave(): Promise<boolean> {
-  if (!get(isDirty))
-    return true;
-
-  return await ask({
-    message: t('dashboard.snapshot.detail.leave.message'),
-    title: t('dashboard.snapshot.detail.leave.title'),
-  }) === 'confirm';
-}
-
-onBeforeRouteLeave(confirmLeave);
-
-/**
- * Raises the browser's own leave prompt for an unsaved snapshot.
- *
- * @remarks
- * Covers what the route guard above cannot see: a refresh, a tab close and an Electron window close
- * all bypass in-app navigation. Legacy Chromium needs `returnValue` set for the prompt to appear.
- *
- * @param event - the pending unload, cancelled to raise the prompt
- */
-function warnBeforeUnload(event: BeforeUnloadEvent): void {
-  if (!get(isDirty))
-    return;
-
-  event.preventDefault();
-  event.returnValue = '';
-}
-
-useEventListener(window, 'beforeunload', warnBeforeUnload);
 </script>
 
 <template>
