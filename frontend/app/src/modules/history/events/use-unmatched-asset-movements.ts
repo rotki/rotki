@@ -2,25 +2,19 @@ import type { LinkedMovementMatch } from '@/modules/history/events/event-payload
 import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { HistoryEventCollectionRow } from '@/modules/history/events/schemas';
 import { createSharedComposable } from '@vueuse/core';
-import { logicOr } from '@vueuse/math';
-import { get, set } from '@vueuse/shared';
-import { isErr, map as mapResult, type Result } from 'plainfp/result';
-import { computed, type ComputedRef, type Ref, ref, shallowReadonly, shallowRef } from 'vue';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type Ref, ref, shallowReadonly } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
-import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { type ActionStatus, actionStatusOf } from '@/modules/core/common/action';
 import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
-import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import { useAssetMovementMatchingApi } from '@/modules/history/api/events/use-asset-movement-matching-api';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
-import { activityLabelOf } from '@/modules/task-center/activity-labels';
-import { useNativeTask } from '@/modules/task-center/use-native-task';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
 import { assetMovementMatchActivity } from './history-events.activity';
+import { createUnmatchedLists, useAutoMatchingTask } from './use-unmatched-matching';
 
 export interface UnmatchedAssetMovement extends UnmatchedEventGroup {
   isFiat: boolean;
@@ -50,12 +44,15 @@ interface UseUnmatchedAssetMovementsReturn {
   triggerAssetMovementAutoMatching: () => Promise<void>;
 }
 
-const rawUnmatchedMovements = ref<UnmatchedEventGroup[]>([]);
-const rawIgnoredMovements = ref<UnmatchedEventGroup[]>([]);
-const loading = ref<boolean>(false);
-const ignoredLoading = ref<boolean>(false);
-const unmatchedError = shallowRef<unknown>();
-const ignoredError = shallowRef<unknown>();
+const {
+  ignored: rawIgnoredMovements,
+  ignoredError,
+  ignoredLoading,
+  load,
+  loading,
+  unmatched: rawUnmatchedMovements,
+  unmatchedError,
+} = createUnmatchedLists<UnmatchedEventGroup>();
 const triggerAutoMatchLoading = ref<boolean>(false);
 
 /**
@@ -75,8 +72,6 @@ function groupMovements(groupIdentifiers: string[], rows: HistoryEventCollection
 export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatchedAssetMovementsReturn => {
   const { t } = useI18n({ useScope: 'global' });
   const { getAssetInfo } = useAssetInfoRetrieval();
-  const { statusOf, submitTask } = useNativeTask();
-  const { useIsActive } = useTaskCenter();
 
   const { fetchHistoryEvents } = useHistoryEventsApi();
   const {
@@ -87,8 +82,6 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
   } = useAssetMovementMatchingApi();
   const { signalEventsModified } = useHistoryStore();
   const { allowed: isAssetMovementMatchingAllowed, minimumTier: assetMovementMatchingMinimumTier } = useFeatureAccess(PremiumFeature.ASSET_MOVEMENT_MATCHING);
-
-  const autoMatchLoading = logicOr(triggerAutoMatchLoading, useIsActive(assetMovementMatchActivity.kind, ...assetMovementMatchActivity.partsOf()));
 
   function addIsFiat(movements: UnmatchedEventGroup[]): UnmatchedAssetMovement[] {
     return movements.map(movement => ({
@@ -111,44 +104,23 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
    * to show rather than interrupting the user with a dialog. The rows of the last good load stay,
    * since the action center counts them, and the failure is kept until a load succeeds.
    */
-  const fetchUnmatchedAssetMovements = async (onlyIgnored?: boolean): Promise<void> => {
-    const isIgnored = onlyIgnored === true;
-    const loadingRef = isIgnored ? ignoredLoading : loading;
-    const movementsRef = isIgnored ? rawIgnoredMovements : rawUnmatchedMovements;
-    const errorRef = isIgnored ? ignoredError : unmatchedError;
+  const fetchUnmatchedAssetMovements = async (onlyIgnored?: boolean): Promise<void> => load(onlyIgnored, async (): Promise<UnmatchedEventGroup[]> => {
+    const groupIdentifiers = await getUnmatchedAssetMovements(onlyIgnored);
 
-    set(loadingRef, true);
-    try {
-      const groupIdentifiers = await getUnmatchedAssetMovements(onlyIgnored);
+    if (groupIdentifiers.length === 0)
+      return [];
 
-      if (groupIdentifiers.length === 0) {
-        set(movementsRef, []);
-        set(errorRef, undefined);
-        return;
-      }
+    const response = await fetchHistoryEvents({
+      aggregateByGroupIds: false,
+      groupIdentifiers,
+      limit: -1,
+      offset: 0,
+      orderByAttributes: ['timestamp'],
+      ascending: [false],
+    });
 
-      const response = await fetchHistoryEvents({
-        aggregateByGroupIds: false,
-        groupIdentifiers,
-        limit: -1,
-        offset: 0,
-        orderByAttributes: ['timestamp'],
-        ascending: [false],
-      });
-
-      set(movementsRef, groupMovements(groupIdentifiers, response.entries));
-      set(errorRef, undefined);
-    }
-    catch (error: unknown) {
-      if (isRequestCancellation(error))
-        return;
-      logger.error('Failed to fetch unmatched asset movements:', error);
-      set(errorRef, error);
-    }
-    finally {
-      set(loadingRef, false);
-    }
-  };
+    return groupMovements(groupIdentifiers, response.entries);
+  }, 'Failed to fetch unmatched asset movements:');
 
   const matchAssetMovement = async (
     assetMovementId: number,
@@ -199,36 +171,14 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     }
   };
 
-  const triggerAssetMovementAutoMatching = async (): Promise<void> => {
-    if (!get(isAssetMovementMatchingAllowed) || statusOf(assetMovementMatchActivity.kind, ...assetMovementMatchActivity.partsOf()).active)
-      return;
-
-    set(triggerAutoMatchLoading, true);
-
-    const outcome = await submitTask({
-      id: assetMovementMatchActivity.id(),
-      kind: assetMovementMatchActivity.kind,
-      rerunnable: true,
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<boolean>(
-          async () => triggerAssetMovementMatching(),
-        ),
-        () => {},
-      ),
-      subtitle: activityLabelOf(assetMovementMatchActivity),
-      title: t('task_center.group.history_events'),
-    });
-
-    if (!isErr(outcome)) {
-      await refreshUnmatchedAssetMovements(true);
-      signalEventsModified();
-    }
-    else if (isActionable(outcome.error)) {
-      logger.error('Failed to trigger auto match:', outcome.error);
-    }
-
-    set(triggerAutoMatchLoading, false);
-  };
+  const { autoMatchLoading, triggerAutoMatching: triggerAssetMovementAutoMatching } = useAutoMatchingTask({
+    activity: assetMovementMatchActivity,
+    allowed: isAssetMovementMatchingAllowed,
+    failureLog: 'Failed to trigger auto match:',
+    loading: triggerAutoMatchLoading,
+    onMatched: async (): Promise<void> => refreshUnmatchedAssetMovements(true),
+    trigger: triggerAssetMovementMatching,
+  });
 
   async function autoMatchMovement(linkedMovement: LinkedMovementMatch): Promise<boolean> {
     const { groupIdentifier, identifier, timeRange, tolerance } = linkedMovement;

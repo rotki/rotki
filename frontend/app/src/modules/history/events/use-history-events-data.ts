@@ -1,22 +1,19 @@
+import type { RequestFailure } from '@/modules/core/api/request-result';
 import type { Collection } from '@/modules/core/common/collection';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import { HistoryEventEntryType } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import { useArraySome, watchImmediate } from '@vueuse/core';
+import { useArraySome } from '@vueuse/core';
 import { logicOr } from '@vueuse/math';
 import { get, set } from '@vueuse/shared';
 import { flatten } from 'es-toolkit';
 import { storeToRefs } from 'pinia';
-import { computed, type ComputedRef, type MaybeRefOrGetter, readonly, type Ref, ref, shallowReadonly, shallowRef, toValue, watch } from 'vue';
+import { computed, type ComputedRef, type MaybeRefOrGetter, readonly, type Ref, shallowReadonly, shallowRef, toValue, watch } from 'vue';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { isRequestFailure, type RequestFailure } from '@/modules/core/api/request-result';
-import { api } from '@/modules/core/api/rotki-api';
 import { getCollectionData, setupEntryLimit } from '@/modules/core/common/data/collection-utils';
-import { logger } from '@/modules/core/common/logging/logging';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
-import { useHistoryEvents } from '@/modules/history/events/use-history-events';
+import { useHistoryEventsDetailFetch } from '@/modules/history/events/use-history-events-detail-fetch';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useCompleteEvents } from './use-complete-events';
@@ -97,70 +94,27 @@ export function useHistoryEventsData(
 ): UseHistoryEventsDataReturn {
   const { excludeIgnored, groupLoading, groups, identifiers, requestPayload } = options;
 
-  const eventsLoading = shallowRef<boolean>(false);
-  const eventsError = shallowRef<RequestFailure>();
-  const events = ref<HistoryEventRow[]>([]);
-  let fetchVersion = 0;
-
   const itemsPerPage = useSetting('itemsPerPage');
   const { data, entriesFoundTotal, found, limit, total } = getCollectionData(groups);
   const { showUpgradeRow } = setupEntryLimit(limit, found, total, entriesFoundTotal);
-  const { fetchHistoryEvents } = useHistoryEvents();
   const ignoredAssetsStore = useAssetsStore();
   const { isAssetIgnored } = ignoredAssetsStore;
   const { ignoredAssets } = storeToRefs(ignoredAssetsStore);
   const { sectionLoading } = useHistoryEventsStatus();
 
-  const groupIdentifiers = computed<string[]>(() =>
-    get(data).flatMap(item => Array.isArray(item) ? item.map(i => i.groupIdentifier) : item.groupIdentifier),
-  );
-
-  const EVENTS_CANCEL_TAG = 'history-events-detail';
-
-  /**
-   * Fetches every event belonging to the groups currently on screen.
-   *
-   * @remarks
-   * `limit: -1` lifts the page bound, which stays safe because `groupIdentifiers` already narrows
-   * the request to the groups the visible page holds. A later call supersedes an in-flight one:
-   * the response is discarded unless its version is still the current one.
-   */
-  async function fetchEvents(): Promise<void> {
-    const groupIds = get(groupIdentifiers);
-    if (groupIds.length === 0) {
-      set(events, []);
-      return;
+  watch([data, found, itemsPerPage], ([dataValue, foundValue, itemsPerPageValue]) => {
+    if (dataValue.length === 0 && foundValue > 0) {
+      const lastPage = Math.ceil(foundValue / itemsPerPageValue);
+      emit('set-page', lastPage);
     }
+  });
 
-    const currentVersion = ++fetchVersion;
-    set(eventsLoading, true);
-    set(eventsError, undefined);
-    api.cancelByTag(EVENTS_CANCEL_TAG);
-
-    const response = await fetchHistoryEvents({
-      ...toValue(requestPayload),
-      aggregateByGroupIds: false,
-      excludeIgnoredAssets: false,
-      groupIdentifiers: groupIds,
-      identifiers: toValue(identifiers),
-      limit: -1,
-      offset: 0,
-    }, { tags: [EVENTS_CANCEL_TAG] });
-
-    if (currentVersion !== fetchVersion)
-      return;
-
-    set(eventsLoading, false);
-
-    if (response.ok) {
-      set(events, response.value.data);
-    }
-    else if (isRequestFailure(response.error)) {
-      logger.error(response.error.cause);
-      set(events, []);
-      set(eventsError, response.error);
-    }
-  }
+  const { events, eventsError, eventsLoading, fetchEvents } = useHistoryEventsDetailFetch({
+    data,
+    groupLoading,
+    identifiers,
+    requestPayload,
+  });
 
   /**
    * All events grouped by groupIdentifier, including events with ignored assets.
@@ -301,24 +255,6 @@ export function useHistoryEventsData(
   const flattenedGroups = computed<HistoryEventEntry[]>(() => flatten(get(data)));
 
   const flattenedEvents = computed<HistoryEventEntry[]>(() => flatten(get(events)));
-
-  watch([data, found, itemsPerPage], ([dataValue, foundValue, itemsPerPageValue]) => {
-    if (dataValue.length === 0 && foundValue > 0) {
-      const lastPage = Math.ceil(foundValue / itemsPerPageValue);
-      emit('set-page', lastPage);
-    }
-  });
-
-  // Cancel stale events fetch as soon as new groups fetch starts
-  watch(() => toValue(groupLoading), (loading) => {
-    if (loading)
-      api.cancelByTag(EVENTS_CANCEL_TAG);
-  });
-
-  // Trigger events fetch when groups change (tied to fetchData completion in pagination filter)
-  watchImmediate(data, () => {
-    startPromise(fetchEvents());
-  });
 
   // Watched on the store, not the child's emit: marking spam destroys the row before it propagates.
   watch(ignoredAssets, () => {

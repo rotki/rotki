@@ -1,27 +1,22 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { Schema } from 'zod';
 import type { Collection } from '@/modules/core/common/collection';
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { get, set } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
-import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, ref, toValue, watch, type WritableComputedRef } from 'vue';
-import { watchDebounced } from '@/modules/core/common/async/scoped-timers';
-import { getApiSortingParams } from '@/modules/core/table/pagination-filter-utils';
-import { collectSources, mergeParams, type ParamSource, transformFilters } from '@/modules/core/table/param-sources';
-import { behaviourKeysFromFields, routeSchemaFromFields } from '@/modules/core/table/route';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, ref, watch, type WritableComputedRef } from 'vue';
+import { collectSources, type ParamSource } from '@/modules/core/table/param-sources';
 import { type ChangeSource, useChangeIntent } from '@/modules/core/table/use-change-intent';
 import { type TableFetch, useTableData, type UseTableDataReturn } from '@/modules/core/table/use-table-data';
 import { provideTableFetchError, useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import { useTablePagination } from '@/modules/core/table/use-table-pagination';
 import { type PersistFilterSetting, useTablePersistence } from '@/modules/core/table/use-table-persistence';
 import { reduce, type TableEvent, type TableState } from '@/modules/core/table/use-table-reducer';
+import { useTableRequestPayload } from '@/modules/core/table/use-table-request-payload';
 import { useTableSorting } from '@/modules/core/table/use-table-sorting';
 import { routeWhen, type UrlState, useUrlStateSync } from '@/modules/core/table/use-url-state-sync';
 import { useItemsPerPage } from '@/modules/session/use-items-per-page';
-
-export type { ChangeSource };
 
 export { routeWhen, useTableEmptyState };
 
@@ -124,13 +119,6 @@ export function useServerTable<
 
   const { markUserIntent, pendingIntent, pendingUrlSource } = useChangeIntent();
 
-  // Recomputed rather than captured: a gated field list can change while the table is mounted.
-  const behaviourKeys = computed<string[]>(() => behaviourKeysFromFields(toValue(fields) ?? []));
-  const routeFilterSchema = computed<Schema | undefined>(() => {
-    const declared = toValue(fields);
-    return declared ? routeSchemaFromFields(declared) : undefined;
-  });
-
   const commitSort = (sorting: DataTableSortData<SortEntry<TItem>>): void => dispatch({ sorting, type: 'sort-set' });
   const commitPage = (page: number, source: ChangeSource = 'user'): void => dispatch({ page, source, type: 'page-set' });
   const commitLimit = (limit: number): void => dispatch({ limit, type: 'limit-set' });
@@ -165,20 +153,14 @@ export function useServerTable<
     commitLimit,
   );
 
-  const requestPayload = computed<TPayload>(() => {
-    const { limit, page } = get(internalPagination);
-    const offset = (page - 1) * limit;
-
-    const merged = mergeParams(params, 'request', get(filters) ?? {});
-    const transformed = transformFilters(merged, get(behaviourKeys));
-
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- only the caller's payload type describes its filter bag plus its param sources
-    return {
-      ...transformed,
-      limit,
-      offset,
-      ...getApiSortingParams(get(internalSorting), defaultSorting()),
-    } as TPayload;
+  const { requestPayload, routeFilterSchema, watchRequestPayload } = useTableRequestPayload<SortEntry<TItem>, TPayload, TFilter>({
+    debounce: fetchDebounce,
+    defaultSorting,
+    fields,
+    filters,
+    internalPagination,
+    internalSorting,
+    params,
   });
 
   const filter = computed<TFilter>({
@@ -203,7 +185,7 @@ export function useServerTable<
     resetTransientValues,
     restorePersistedFilter,
     params,
-    routeFilterSchema: (): Schema | undefined => get(routeFilterSchema),
+    routeFilterSchema,
     urlState,
   });
 
@@ -294,12 +276,7 @@ export function useServerTable<
     await refetch();
   };
 
-  if (fetchDebounce > 0) {
-    watchDebounced(requestPayload, fetchHandler, { debounce: fetchDebounce });
-  }
-  else {
-    watch(requestPayload, fetchHandler);
-  }
+  watchRequestPayload(fetchHandler);
 
   return {
     collection,

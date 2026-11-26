@@ -1,36 +1,21 @@
 <script setup lang="ts">
 import type { Collection } from '@/modules/core/common/collection';
-import type { ProfitLossEvent, ProfitLossEvents, ProfitLossEventsPayload, Report } from '@/modules/reports/report-types';
-import { type DataTableColumn, RuiDataTable, RuiTableRowExpander, RuiTooltip } from '@rotki/ui-library';
+import type { ProfitLossEvent, Report } from '@/modules/reports/report-types';
+import { RuiDataTable, RuiTableRowExpander, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { some } from 'es-toolkit/compat';
-import { computed, onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
-import { getCollectionData } from '@/modules/core/common/data/collection-utils';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
-import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useServerTable } from '@/modules/core/table/use-server-table';
-import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import UpgradeRow from '@/modules/history/UpgradeRow.vue';
 import CostBasisTable from '@/modules/reports/CostBasisTable.vue';
 import ProfitLossEventNotes from '@/modules/reports/ProfitLossEventNotes.vue';
 import ProfitLossEventType from '@/modules/reports/ProfitLossEventType.vue';
-import { stoppedAtPlanLimit } from '@/modules/reports/report-utils';
 import ReportProfitLossEventAction from '@/modules/reports/ReportProfitLossEventAction.vue';
-import { useReportOperations } from '@/modules/reports/use-report-operations';
+import { type PnLItem, useProfitLossEventsTable } from '@/modules/reports/use-profit-loss-events-table';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
-
-interface GroupLine {
-  top: boolean;
-  bottom: boolean;
-}
-
-interface PnLItem extends ProfitLossEvent {
-  id: number;
-  groupLine: GroupLine;
-}
 
 const reportEvents = defineModel<Collection<ProfitLossEvent>>('reportEvents', { required: true });
 
@@ -46,147 +31,17 @@ const { t } = useI18n({ useScope: 'global' });
 
 const expanded = ref<PnLItem[]>([]);
 
-const { fetchReportEvents } = useReportOperations();
-
 const {
-  collection: state,
-  error,
+  emptyState,
+  fetchData,
   isLoading,
+  items,
   pagination,
-  refetch: fetchData,
+  showPlanLimit,
   sort,
-} = useServerTable<
-  ProfitLossEvent,
-  ProfitLossEventsPayload
->({
-  fetch: fetchReportEvents,
-  params: [{
-    to: 'both',
-    values: computed<Record<string, unknown>>(() => ({
-      reportId: report.identifier,
-    })),
-  }],
-  sort: {
-    default: [{
-      column: 'timestamp',
-      direction: 'desc',
-    }],
-  },
-  urlState: { mode: 'route' },
-});
-
-const emptyState = useTableEmptyState({ error });
-
-const tableHeaders = computed<DataTableColumn<PnLItem>[]>(() => [
-  // widths that hold from page to page (group line room kept, figures start wide), so paging never shifts
-  {
-    cellClass: 'p-0! h-px',
-    class: 'p-0! w-8.5 min-w-8.5',
-    key: 'group',
-    label: '',
-  },
-  {
-    cellClass: 'px-1!',
-    class: 'px-1!',
-    key: 'expand',
-    label: '',
-  },
-  // the date over its time, the column only as wide as the date; type and location share one column
-  {
-    cellClass: 'whitespace-normal',
-    class: 'w-28',
-    key: 'timestamp',
-    label: t('common.datetime'),
-    sortable: true,
-  },
-  {
-    align: 'center',
-    class: 'w-px whitespace-nowrap',
-    key: 'type',
-    label: t('profit_loss_events.headers.event'),
-  },
-  {
-    align: 'center',
-    class: 'w-px',
-    key: 'asset',
-    label: t('common.asset'),
-    sortable: true,
-  },
-  {
-    align: 'end',
-    cellClass: 'whitespace-nowrap',
-    class: 'min-w-36',
-    key: 'free_amount',
-    label: t('profit_loss_events.headers.tax_free_amount'),
-  },
-  {
-    align: 'end',
-    cellClass: 'whitespace-nowrap',
-    class: 'min-w-36',
-    key: 'taxable_amount',
-    label: t('profit_loss_events.headers.taxable_amount'),
-  },
-  {
-    align: 'end',
-    cellClass: 'whitespace-nowrap',
-    class: 'min-w-32',
-    key: 'price',
-    label: t('common.price'),
-  },
-  {
-    align: 'end',
-    cellClass: 'whitespace-nowrap',
-    class: 'min-w-36',
-    key: 'pnl_free',
-    label: t('profit_loss_events.headers.pnl_free'),
-    sortable: true,
-  },
-  {
-    align: 'end',
-    cellClass: 'whitespace-nowrap',
-    class: 'min-w-36',
-    key: 'pnl_taxable',
-    label: t('profit_loss_events.headers.pnl_taxable'),
-    sortable: true,
-  },
-  {
-    cellClass: 'min-w-80',
-    key: 'notes',
-    label: t('common.notes'),
-  },
-  {
-    align: 'end',
-    class: 'w-px',
-    key: 'actions',
-    label: '',
-  },
-]);
-
-useRememberTableSorting<PnLItem>(TableId.REPORT_EVENTS, sort, tableHeaders);
-
-const { data, limit } = getCollectionData<ProfitLossEvent>(state);
-
-const showPlanLimit = computed<boolean>(() => stoppedAtPlanLimit(report, get(limit)));
-
-const items = computed<PnLItem[]>(() => {
-  const dataVal = get(data);
-  return dataVal.map((value, index) => ({
-    ...value,
-    groupLine: checkGroupLine(dataVal, index),
-    id: index,
-  }));
-});
-
-function checkGroupLine(entries: ProfitLossEvents, index: number): GroupLine {
-  const groupId = entries[index]?.groupId;
-  if (!groupId)
-    return { bottom: false, top: false };
-
-  return {
-    bottom: index + 1 < entries.length && groupId === entries[index + 1]?.groupId,
-    top: index > 0 && groupId === entries[index - 1]?.groupId,
-  };
-}
+  state,
+  tableHeaders,
+} = useProfitLossEventsTable(() => report);
 
 function isExpanded(id: number) {
   return some(get(expanded), { id });

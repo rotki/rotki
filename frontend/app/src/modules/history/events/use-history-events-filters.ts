@@ -1,33 +1,23 @@
-import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { Collection } from '@/modules/core/common/collection';
 import type { WritableRef } from '@/modules/core/common/common-types';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
 import type { Filters } from '@/modules/history/events/history-event-filter-keys';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import { get, set } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
-import { computed, type ComputedRef, type MaybeRef, type MaybeRefOrGetter, type Ref, ref, shallowReadonly, watch, type WritableComputedRef } from 'vue';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, ref, shallowReadonly, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
-import { TableId } from '@/modules/core/table/use-remember-table-sorting';
-import { type ChangeSource, routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
 import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
-import {
-  isBankTransactionEventType,
-  isEvmEventType,
-  isOnlineHistoryEventType,
-} from '@/modules/history/event-utils';
 import { DuplicateHandlingStatus, type HighlightType } from '@/modules/history/events/action-types';
 import { buildHistoryEventSources } from '@/modules/history/events/history-event-query';
 import { type HistoryEventsRestrictions, toRestrictionGetters } from '@/modules/history/events/history-events-restrictions';
 import { useHistoryEventHighlights, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
-import { useHistoryEvents } from '@/modules/history/events/use-history-events';
+import { useHistoryEventsFilterScope } from '@/modules/history/events/use-history-events-filter-scope';
+import { useHistoryEventsGroupsTable, type UseHistoryEventsGroupsTableReturn } from '@/modules/history/events/use-history-events-groups-table';
 
 /**
  * The payload without its sorting, so a re-sort is not read as a change of what is being asked for.
- * Written out rather than pulled from a helper: this file is at the dependency cap.
  */
 function withoutSorting(
   { ascending, orderByAttributes, ...rest }: HistoryEventRequestPayload,
@@ -65,10 +55,10 @@ interface UseHistoryEventsFiltersReturn {
   onActionChanged: (verbKey: string | undefined) => void;
   locationLabels: Readonly<Ref<string[]>>;
   groupIdentifiers: ComputedRef<string[] | undefined>;
-  refetch: () => Promise<void>;
-  filters: WritableComputedRef<Filters>;
-  groupLoading: Ref<boolean>;
-  groups: Ref<Collection<HistoryEventRow>>;
+  refetch: UseHistoryEventsGroupsTableReturn['refetch'];
+  filters: UseHistoryEventsGroupsTableReturn['filter'];
+  groupLoading: UseHistoryEventsGroupsTableReturn['isLoading'];
+  groups: UseHistoryEventsGroupsTableReturn['collection'];
   hasActiveFilters: ComputedRef<boolean>;
   highlightedGroupIdentifier: ComputedRef<string | undefined>;
   highlightedIdentifiers: ComputedRef<string[] | undefined>;
@@ -77,11 +67,11 @@ interface UseHistoryEventsFiltersReturn {
   includes: ComputedRef<{ evmEvents: boolean; onlineEvents: boolean }>;
   locations: ComputedRef<string[]>;
   onLocationLabelsChanged: (locationLabels: string[]) => void;
-  requestPayload: ComputedRef<HistoryEventRequestPayload>;
-  pagination: WritableComputedRef<TablePaginationData>;
-  setPage: (page: number, source?: ChangeSource) => void;
-  sort: WritableComputedRef<DataTableSortData<HistoryEventEntry>>;
-  setFilter: (newFilter: Filters) => void;
+  requestPayload: UseHistoryEventsGroupsTableReturn['requestPayload'];
+  pagination: UseHistoryEventsGroupsTableReturn['pagination'];
+  setPage: UseHistoryEventsGroupsTableReturn['setPage'];
+  sort: UseHistoryEventsGroupsTableReturn['sort'];
+  setFilter: UseHistoryEventsGroupsTableReturn['setFilter'];
   usedLocationLabels: ComputedRef<string[]>;
 }
 
@@ -111,19 +101,11 @@ export function useHistoryEventsFilters(
 
   const locationLabels = ref<string[]>([]);
 
-  const GROUPS_CANCEL_TAG = 'history-events-groups';
-
   const route = useRoute();
-  const { fetchHistoryEvents } = useHistoryEvents();
   const { clearAllHighlightTargets, isNavigating } = useHistoryEventNavigation();
 
   const highlightKeys = ['highlightedAccountingEvent', 'highlightedAssetMovement', 'highlightedInternalTxConflict', 'highlightedGroupIdentifier', 'highlightedPotentialMatch', 'highlightedNegativeBalanceEvent'] as const;
   const shouldPreserveHighlights = ref<boolean>(highlightKeys.some(key => !!get(route).query[key]));
-
-  const fetchHistoryEventsTagged = async (
-    payload: MaybeRef<HistoryEventRequestPayload>,
-  ): ReturnType<typeof fetchHistoryEvents> =>
-    fetchHistoryEvents(payload, { tags: [GROUPS_CANCEL_TAG] });
 
   // Define these early since they're used in extraParams / requestParams
   const missingAcquisitionFromQuery = computed<string[] | undefined>(() => {
@@ -206,62 +188,16 @@ export function useHistoryEventsFilters(
     setFilter,
     setPage,
     sort,
-  } = useServerTable<
-    HistoryEventRow,
-    HistoryEventRequestPayload,
-    Filters
-  >({
-    fetch: fetchHistoryEventsTagged,
+  } = useHistoryEventsGroupsTable({
     fields,
     filters: modelFilters,
+    mainPage,
     params: sources,
-    persist: {
-      keys: {
-        duplicateHandlingStatus: 'never',
-        groupIdentifiers: 'never',
-        highlightedAccountingEvent: 'never',
-        highlightedAssetMovement: 'never',
-        highlightedInternalTxConflict: 'never',
-        highlightedGroupIdentifier: 'never',
-        highlightedNegativeBalanceEvent: 'never',
-        highlightedPotentialMatch: 'never',
-        missingAcquisitionIdentifier: 'never',
-        // Keep the overlay out of the remembered filter so it never persists across sessions.
-        overlay: 'never',
-        targetGroupIdentifier: 'never',
-        txRefs: 'untilChanged',
-      },
-      tableId: TableId.HISTORY,
-    },
-    request: {
-      cancelTag: GROUPS_CANCEL_TAG,
-    },
-    urlState: routeWhen(mainPage),
   });
 
-  const locations = computed<string[]>(() => {
-    const filteredData = get(filters);
-
-    if ('location' in filteredData) {
-      if (typeof filteredData.location === 'string')
-        return [filteredData.location];
-      else if (Array.isArray(filteredData.location))
-        return filteredData.location;
-
-      return [];
-    }
-    return [];
-  });
+  const { includes, locations } = useHistoryEventsFilterScope(filters, entryTypes);
 
   const { highlightedGroupIdentifier, highlightedIdentifiers, highlightTypes } = useHistoryEventHighlights();
-
-  const includes = computed<{ evmEvents: boolean; onlineEvents: boolean }>(() => {
-    const entryTypesValue = entryTypes();
-    return {
-      evmEvents: entryTypesValue ? entryTypesValue.some(type => isEvmEventType(type)) : true,
-      onlineEvents: entryTypesValue ? entryTypesValue.some(type => isOnlineHistoryEventType(type) || isBankTransactionEventType(type)) : true,
-    };
-  });
 
   const hasActiveFiltersRaw = computed<boolean>(() =>
     Object.keys(get(filters)).length > 0
