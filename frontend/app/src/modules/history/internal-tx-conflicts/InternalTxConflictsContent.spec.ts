@@ -238,7 +238,21 @@ describe('modules/history/internal-tx-conflicts/InternalTxConflictsContent', () 
     });
 
     it('should show a dash when a row names no reason at all', async () => {
-      set(conflictsApi.conflicts, [conflict()]);
+      set(conflictsApi.conflicts, [conflict({ lastError: 'boom' })]);
+
+      const wrapper = await mountContent();
+
+      expect(wrapper.text()).toContain('\u{2014}');
+    });
+  });
+
+  describe('a row without a timestamp', () => {
+    it('should show a dash in the timestamp cell', async () => {
+      set(conflictsApi.conflicts, [conflict({
+        lastError: 'boom',
+        repullReason: RepullReasons.ALL_ZERO_GAS,
+        timestamp: null,
+      })]);
 
       const wrapper = await mountContent();
 
