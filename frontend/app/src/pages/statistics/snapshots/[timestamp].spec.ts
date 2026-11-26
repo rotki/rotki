@@ -3,6 +3,7 @@ import type { Snapshot } from '@/modules/dashboard/snapshots';
 import type { SnapshotListRow } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
 import type { BalanceMutation } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { type BigNumber, bigNumberify, One } from '@rotki/common';
+import { RuiAlert } from '@rotki/ui-library';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
@@ -19,6 +20,7 @@ import SnapshotDetailPage from '@/pages/statistics/snapshots/[timestamp].vue';
 
 const TIMESTAMP = 1_600_000_000;
 const NEXT_TIMESTAMP = 1_600_086_400;
+const PREV_TIMESTAMP = 1_599_913_600;
 
 function createSnapshot(): Snapshot {
   return {
@@ -36,10 +38,15 @@ const fetchSnapshot = vi.fn(async (): Promise<Snapshot> => createSnapshot());
 const persist = vi.fn(async (_timestamp: number, _snapshot: Snapshot): Promise<boolean> => true);
 const remove = vi.fn(async (): Promise<boolean> => true);
 const refreshNetValue = vi.fn(async (): Promise<void> => {});
-const pushMock = vi.fn();
+const pushMock = vi.fn(async (_path: string): Promise<void> => {});
+const snapshotRows = ref<SnapshotListRow[]>([]);
 const markAssetsAsSpam = vi.fn(async (_assets: string[], _options?: { silent?: boolean }): Promise<ActionStatus> => ({ success: true }));
 
 const route = vi.hoisted(() => ({ setTimestamp: (_value: number): void => {} }));
+const routeLeave = vi.hoisted(() => {
+  const guards: (() => Promise<boolean>)[] = [];
+  return { guards };
+});
 
 vi.mock('vue-router', async () => {
   const { computed, ref } = await import('vue');
@@ -48,7 +55,9 @@ vi.mock('vue-router', async () => {
     current.value = value;
   };
   return {
-    onBeforeRouteLeave: vi.fn(),
+    onBeforeRouteLeave: (guard: () => Promise<boolean>): void => {
+      routeLeave.guards.push(guard);
+    },
     useRoute: (): ComputedRef<{ params: { timestamp: string } }> =>
       computed(() => ({ params: { timestamp: String(current.value) } })),
     useRouter: (): { push: typeof pushMock } => ({ push: pushMock }),
@@ -71,7 +80,7 @@ vi.mock('@/modules/assets/use-spam-asset', () => ({
 vi.mock('@/modules/dashboard/snapshots/composables/use-snapshot-list', () => ({
   useSnapshotList: (): { refresh: typeof refreshNetValue; rows: ComputedRef<SnapshotListRow[]> } => ({
     refresh: refreshNetValue,
-    rows: computed(() => []),
+    rows: computed(() => snapshotRows.value),
   }),
 }));
 
@@ -93,6 +102,13 @@ const mutation: BalanceMutation = {
   balance: { amount: bigNumberify(2), assetIdentifier: 'BTC', category: BalanceType.ASSET, timestamp: TIMESTAMP, usdValue: bigNumberify(50) },
   location: 'kraken',
 };
+
+/** Presses a key the way the page's shortcuts listen for it, on the window. */
+function press(key: string, modifiers: { ctrlKey?: boolean } = {}): KeyboardEvent {
+  const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key, ...modifiers });
+  window.dispatchEvent(event);
+  return event;
+}
 
 describe('pages/statistics/snapshots/[timestamp]', () => {
   let wrapper: VueWrapper<InstanceType<typeof SnapshotDetailPage>>;
@@ -124,6 +140,8 @@ describe('pages/statistics/snapshots/[timestamp]', () => {
     remove.mockImplementation(async (): Promise<boolean> => true);
     refreshNetValue.mockClear();
     pushMock.mockClear();
+    snapshotRows.value = [];
+    routeLeave.guards.length = 0;
     markAssetsAsSpam.mockClear();
     markAssetsAsSpam.mockImplementation(async (): Promise<ActionStatus> => ({ success: true }));
   });
@@ -274,5 +292,203 @@ describe('pages/statistics/snapshots/[timestamp]', () => {
     expect(wrapper.find('[data-testid=snapshot-action-error]').text()).toContain('spam_failure::backend down');
     expect(wrapper.findComponent(SnapshotEditorToolbar).props('changes')).toEqual([{ asset: 'ETH', kind: 'spam-marked' }]);
     expect(refreshNetValue).toHaveBeenCalledOnce();
+  });
+
+  describe('keyboard shortcuts', () => {
+    afterEach(() => {
+      document.body.innerHTML = '';
+    });
+
+    it('should save on Ctrl+S once the draft is dirty', async () => {
+      wrapper = mountPage();
+      await flushPromises();
+
+      press('s', { ctrlKey: true });
+      await flushPromises();
+      expect(persist).not.toHaveBeenCalled();
+
+      wrapper.findComponent(SnapshotBalancesTable).vm.$emit('add', mutation);
+      await flushPromises();
+
+      const event = press('s', { ctrlKey: true });
+      await flushPromises();
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(persist).toHaveBeenCalledOnce();
+      expect(persist.mock.calls[0][0]).toBe(TIMESTAMP);
+    });
+
+    it('should swallow Ctrl+S while the snapshot is still loading', async () => {
+      fetchSnapshot.mockImplementation(async (): Promise<Snapshot> => new Promise(() => {}));
+      wrapper = mountPage();
+      await nextTick();
+      expect(wrapper.findComponent(ProgressScreen).exists()).toBe(true);
+
+      const event = press('s', { ctrlKey: true });
+      await flushPromises();
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(persist).not.toHaveBeenCalled();
+    });
+
+    it('should undo on Ctrl+Z', async () => {
+      wrapper = mountPage();
+      await flushPromises();
+
+      wrapper.findComponent(SnapshotBalancesTable).vm.$emit('add', mutation);
+      await flushPromises();
+      expect(wrapper.findComponent(SnapshotEditorToolbar).props('canUndo')).toBe(true);
+
+      const event = press('z', { ctrlKey: true });
+      await flushPromises();
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(wrapper.findComponent(SnapshotEditorToolbar).props('canUndo')).toBe(false);
+      expect(wrapper.findComponent(SnapshotEditorToolbar).props('changes')).toEqual([]);
+    });
+
+    it('should leave Ctrl+Z to a focused input', async () => {
+      wrapper = mountPage();
+      await flushPromises();
+
+      wrapper.findComponent(SnapshotBalancesTable).vm.$emit('add', mutation);
+      await flushPromises();
+
+      const input = document.createElement('input');
+      document.body.append(input);
+      input.focus();
+
+      const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ctrlKey: true, key: 'z' });
+      input.dispatchEvent(event);
+      await flushPromises();
+
+      expect(event.defaultPrevented).toBe(false);
+      expect(wrapper.findComponent(SnapshotEditorToolbar).props('canUndo')).toBe(true);
+    });
+  });
+
+  describe('arrow keys, with neighbouring snapshots', () => {
+    beforeEach(() => {
+      snapshotRows.value = [
+        { timestamp: NEXT_TIMESTAMP, usdValue: bigNumberify(120) },
+        { timestamp: PREV_TIMESTAMP, usdValue: bigNumberify(80) },
+        { timestamp: TIMESTAMP, usdValue: bigNumberify(100) },
+      ];
+    });
+
+    it('should hand the summary the previous snapshot\'s net worth', async () => {
+      wrapper = mountPage();
+      await flushPromises();
+
+      const previous: { timestamp: number; value: BigNumber } | undefined = wrapper.findComponent(SnapshotSummary).props('previous');
+      expect(previous?.timestamp).toBe(PREV_TIMESTAMP);
+      expect(previous?.value.toNumber()).toBe(80);
+
+      const toolbar = wrapper.findComponent(SnapshotEditorToolbar);
+      expect(toolbar.props('hasPrev')).toBe(true);
+      expect(toolbar.props('hasNext')).toBe(true);
+    });
+
+    it('should go to the previous snapshot on ArrowLeft', async () => {
+      wrapper = mountPage();
+      await flushPromises();
+
+      const event = press('ArrowLeft');
+      await flushPromises();
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(pushMock).toHaveBeenCalledExactlyOnceWith(`/statistics/snapshots/${PREV_TIMESTAMP}`);
+    });
+
+    it('should go to the next snapshot on ArrowRight', async () => {
+      wrapper = mountPage();
+      await flushPromises();
+
+      const event = press('ArrowRight');
+      await flushPromises();
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(pushMock).toHaveBeenCalledExactlyOnceWith(`/statistics/snapshots/${NEXT_TIMESTAMP}`);
+    });
+
+    it('should stay put on ArrowRight at the newest snapshot', async () => {
+      route.setTimestamp(NEXT_TIMESTAMP);
+      wrapper = mountPage();
+      await flushPromises();
+
+      const event = press('ArrowRight');
+      await flushPromises();
+
+      expect(event.defaultPrevented).toBe(false);
+      expect(pushMock).not.toHaveBeenCalled();
+      expect(wrapper.findComponent(SnapshotEditorToolbar).props('hasNext')).toBe(false);
+    });
+  });
+
+  describe('leaving the page', () => {
+    function leaveGuard(): () => Promise<boolean> {
+      const guard = routeLeave.guards.at(-1);
+      if (!guard)
+        throw new Error('the page registered no route-leave guard');
+      return guard;
+    }
+
+    it('should let the route change through while the draft is clean', async () => {
+      wrapper = mountPage();
+      await flushPromises();
+
+      await expect(leaveGuard()()).resolves.toBe(true);
+      expect(useConfirmStore().visible).toBe(false);
+    });
+
+    it('should ask before leaving a dirty draft, and follow the answer', async () => {
+      wrapper = mountPage();
+      await flushPromises();
+
+      wrapper.findComponent(SnapshotBalancesTable).vm.$emit('add', mutation);
+      await flushPromises();
+
+      const store = useConfirmStore();
+      const guard = leaveGuard();
+
+      const declined = guard();
+      expect(store.visible).toBe(true);
+      store.dismiss();
+      await expect(declined).resolves.toBe(false);
+
+      const accepted = guard();
+      expect(store.visible).toBe(true);
+      store.confirm();
+      await expect(accepted).resolves.toBe(true);
+    });
+
+    it('should cancel an unload only while the draft is dirty', async () => {
+      wrapper = mountPage();
+      await flushPromises();
+
+      const clean = new Event('beforeunload', { cancelable: true });
+      window.dispatchEvent(clean);
+      expect(clean.defaultPrevented).toBe(false);
+
+      wrapper.findComponent(SnapshotBalancesTable).vm.$emit('add', mutation);
+      await flushPromises();
+
+      const dirty = new Event('beforeunload', { cancelable: true });
+      window.dispatchEvent(dirty);
+      expect(dirty.defaultPrevented).toBe(true);
+    });
+  });
+
+  it('should show the load error when the snapshot cannot be fetched', async () => {
+    fetchSnapshot.mockRejectedValue(new Error('no such snapshot'));
+    wrapper = mountPage();
+    await flushPromises();
+
+    expect(wrapper.findComponent(ProgressScreen).exists()).toBe(false);
+    expect(wrapper.findComponent(SnapshotSummary).exists()).toBe(false);
+    const alert = wrapper.findComponent(RuiAlert);
+    expect(alert.props('type')).toBe('error');
+    expect(alert.attributes('title')).toBe('dashboard.snapshot.detail.not_found');
+    expect(alert.text()).toContain('load_error::no such snapshot');
   });
 });

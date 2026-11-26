@@ -38,18 +38,20 @@ describe('locationManager', () => {
   let pinia: Pinia;
   let wrapper: VueWrapper<InstanceType<typeof LocationManager>>;
 
-  function createWrapper(): VueWrapper<InstanceType<typeof LocationManager>> {
+  function createWrapper(attachTo?: HTMLElement): VueWrapper<InstanceType<typeof LocationManager>> {
     return mount(LocationManager, {
+      attachTo,
       global: {
         plugins: [pinia],
         stubs: {
           LocationAliasesCard: { props: ['adding'], setup: (): void => onAliasesMounted(), template: '<div data-testid="location-aliases-stub" :data-adding="adding" />' },
           LocationFormDialog: true,
           LocationIcon: { props: ['item'], template: '<span>{{ item }}</span>' },
+          LocationTreeFilter: { name: 'LocationTreeFilter', props: ['name'], template: '<div data-testid="location-tree-filter-stub" />' },
           RuiDataTable: {
             name: 'RuiDataTable',
-            props: ['rows', 'pagination', 'globalItemsPerPage'],
-            template: '<div><slot name="body.prepend" /><div v-for="row in rows" :key="row.path" data-testid="table-row"><slot name="item.name" :row="row" /><slot name="item.actions" :row="row" /></div></div>',
+            props: ['rows', 'pagination', 'globalItemsPerPage', 'itemClass'],
+            template: '<div><slot name="body.prepend" /><div v-for="row in rows" :key="row.path" data-testid="table-row" :class="itemClass?.(row)"><slot name="item.name" :row="row" /><slot name="item.actions" :row="row" /></div></div>',
           },
           RuiDialog: { props: ['modelValue'], template: '<div v-if="modelValue"><slot /></div>' },
           TablePageLayout: { template: '<div><slot name="buttons" /><slot name="tabs" /><slot /></div>' },
@@ -251,5 +253,51 @@ describe('locationManager', () => {
 
     await flushPromises();
     expect(wrapper.find('[data-testid=location-manager-error]').text()).toContain('Location custom:ing is still in use');
+  });
+
+  it('should keep the search and the archived switch across a trip to the aliases tab', async () => {
+    wrapper = createWrapper();
+    wrapper.findComponent({ name: 'LocationTreeFilter' }).vm.$emit('update:name', 'clo');
+    await wrapper.find('[data-testid=location-manager-show-archived] input').setValue(true);
+    expect(row('custom:closed')).toBeDefined();
+    expect(row('custom:ing')).toBeUndefined();
+
+    route.query = { tab: 'aliases' };
+    await nextTick();
+    expect(wrapper.find('[data-testid=table-row]').exists()).toBe(false);
+    route.query = {};
+    await nextTick();
+
+    expect(wrapper.findComponent({ name: 'LocationTreeFilter' }).props('name')).toBe('clo');
+    const archivedSwitch = wrapper.find('[data-testid=location-manager-show-archived] input');
+    assert(archivedSwitch.element instanceof HTMLInputElement);
+    expect(archivedSwitch.element.checked).toBe(true);
+    expect(row('custom:closed')).toBeDefined();
+    expect(row('custom:ing')).toBeUndefined();
+  });
+
+  it('should reveal, mark and scroll to a location once the form saves it', async () => {
+    useLocationTreeStore().setNodes([
+      ...useLocationTreeStore().nodes,
+      node('exchanges', 'total', 'Exchanges'),
+      node('kraken', 'exchanges', 'Kraken'),
+    ]);
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {});
+    wrapper = createWrapper(document.body);
+    expect(row('exchanges')).toBeDefined();
+    expect(row('kraken')).toBeUndefined();
+
+    wrapper.findComponent({ name: 'LocationFormDialog' }).vm.$emit('saved', 'kraken');
+    await flushPromises();
+
+    const revealed = row('kraken');
+    assert(revealed);
+    expect(revealed.classes()).toContain('bg-rui-primary/8');
+    expect(actionsOf('exchanges').classes()).not.toContain('bg-rui-primary/8');
+    expect(scrollIntoView).toHaveBeenCalledExactlyOnceWith({ behavior: 'smooth', block: 'center' });
+    assert(scrollIntoView.mock.contexts[0] instanceof Element);
+    expect(scrollIntoView.mock.contexts[0].getAttribute('data-location')).toBe('kraken');
+    wrapper.unmount();
+    scrollIntoView.mockRestore();
   });
 });
