@@ -5,8 +5,10 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 PARASWAP_AUGUSTUS_V6_ROUTER: Final = string_to_evm_address('0x6A000F20005980200259B80c5102003040001068')  # noqa: E501
 PARASWAP_V6_FEE_CLAIMER: Final = string_to_evm_address('0x00700052c0608F670705380a4900e0a8080010CC')  # noqa: E501
 
+SWAP_EXACT_AMOUNT_IN: Final = b'\xe3\xea\xd5\x9e'
+
 PARASWAP_METHODS: Final = {
-    b'\xe3\xea\xd5\x9e',  # swapExactAmountIn
+    SWAP_EXACT_AMOUNT_IN,
     b'\xd8\\\xa1s',  # swapExactAmountInOnBalancerV2
     b'\x1a\x01\xc52',  # swapExactAmountInOnCurveV1
     b'\xe3~\xd2V',  # swapExactAmountInOnCurveV2

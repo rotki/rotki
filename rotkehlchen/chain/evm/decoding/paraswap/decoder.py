@@ -52,10 +52,12 @@ class ParaswapCommonDecoder(EvmDecoderInterface, ABC):
             context: DecoderContext,
             sender: ChecksumEvmAddress,
             receiver: ChecksumEvmAddress | None = None,
+            candidate_events: tuple[EvmEvent, EvmEvent] | None = None,
     ) -> EvmDecodingOutput:
         """This function is used to decode the swap done by paraswap.
         In v6 swaps, receiver is unavailable and is ignored,
         since sender should always be a tracked address.
+        If the caller already matched the swap legs, only inspect those events.
         """
         if not self.base.any_tracked((sender,) if receiver is None else (sender, receiver)):
             return DEFAULT_EVM_DECODING_OUTPUT
@@ -64,7 +66,7 @@ class ParaswapCommonDecoder(EvmDecoderInterface, ABC):
         receive_events: list[EvmEvent] = []
         fee_event: EvmEvent | None = None
         fee_asset: CryptoAsset | None = None
-        for event in context.decoded_events:
+        for event in context.decoded_events if candidate_events is None else candidate_events:
             if sender != event.location_label:  # in this case, it's not a valid send/receive event
                 continue
             if (
