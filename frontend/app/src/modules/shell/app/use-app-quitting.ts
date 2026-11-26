@@ -17,7 +17,7 @@ interface UseAppQuittingInternalReturn {
  * that is about to disappear.
  *
  * It is a plain flag rather than a route so the swap is synchronous and cannot
- * be delayed or vetoed by a navigation guard — any gap between the quit signal
+ * be delayed or vetoed by a navigation guard. Any gap between the quit signal
  * and the UI going away is a gap where those errors show up.
  */
 function useAppQuittingInternal(): UseAppQuittingInternalReturn {

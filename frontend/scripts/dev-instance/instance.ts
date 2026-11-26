@@ -139,7 +139,7 @@ function ensureInstanceData(name: string, dir: string, wantSeed: boolean, includ
   if (!source) {
     logger.warn(
       'No rotki seed data dir found (set ROTKI_SEED_SOURCE to override). '
-      + 'Creating an empty instance data dir — backend will start with no preloaded assets/users.',
+      + 'Creating an empty instance data dir. Backend will start with no preloaded assets/users.',
     );
     fs.mkdirSync(dir, { recursive: true });
     return;

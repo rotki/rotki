@@ -157,10 +157,9 @@ describe('modules/accounts/management/AccountForm', () => {
   });
 
   /*
-   * Choosing a chain does not edit the state, it replaces it: each chain implies a different kind
-   * of account, with a different shape of `data` and a different child form to edit it in. What is
-   * pinned here is that one choice produces one coherent state, because the shapes are a
-   * discriminated union and a `chain` written onto the wrong variant type-checks by accident.
+   * Choosing a chain replaces the state rather than editing it. Each chain implies a different
+   * `data` shape and child form; the shapes are a discriminated union, so a `chain` written onto
+   * the wrong variant type-checks by accident. These pin that one choice yields one coherent state.
    */
   describe('choosing a chain', () => {
     function selector(): VueWrapper<ComponentPublicInstance<Record<string, unknown>>> {

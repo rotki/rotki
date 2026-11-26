@@ -12,7 +12,7 @@ export interface UseStoredCredentialsReturn {
 /**
  * Resolves the credentials for a background auto-unlock from local state only: the username
  * from the last login, and the password from the OS keychain when the app is packaged and
- * remember-password is on. Returns `none` when there is no saved profile — the flow then
+ * remember-password is on. Returns `none` when there is no saved profile. The flow then
  * shows the manual login form. Kept separate from the flow steps so the keychain/remember
  * sourcing is unit-testable on its own.
  */

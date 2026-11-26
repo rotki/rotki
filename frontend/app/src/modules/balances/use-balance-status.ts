@@ -19,7 +19,7 @@ interface UseBalanceStatusReturn {
  *
  * A chain's *work* runs under one activity id (`…:<chain>`), so a per-chain read is a prefix
  * aggregate. Chains that hold no accounts never submit an activity at all: `markCompleted` is what
- * puts those in the ledger — and it is also what records a hydration, which is not an activity, so
+ * puts those in the ledger, and it is also what records a hydration, which is not an activity, so
  * `everCompleted` covers both layers on its own.
  *
  * Liveness does not. Hydration has no activity to be active, so `isInitialLoading` reads it

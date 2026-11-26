@@ -19,13 +19,13 @@ interface BatchUmbrella extends BatchLabels {
   readonly id: ActivityId;
   readonly kind: ActivityKind;
   /**
-   * The umbrella's own parent, when this batch is itself part of a larger one — a CSV import fans
+   * The umbrella's own parent, when this batch is itself part of a larger one: a CSV import fans
    * out over rows, each of which fans out over addresses. Passed through to the children when the
    * umbrella is suppressed, so a single-item batch does not orphan its child from the outer batch.
    */
   readonly parent?: ActivityId;
   /**
-   * Keep this umbrella out of the completion ledger — see {@link ActivitySpec.container}.
+   * Keep this umbrella out of the completion ledger. See {@link ActivitySpec.container}.
    *
    * Opt-in per caller, because it is not always right: an umbrella that *is* the subject for its
    * kind (`HISTORY_SYNC`) has a load-bearing ledger entry. Set it where the children are the

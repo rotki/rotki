@@ -213,7 +213,7 @@ describe('useBlockchainBalances', () => {
     /**
      * Account addition and account migration are the flows that know which addresses are new, and
      * detecting the chain's other fifty on their behalf is work nobody asked for. Without the
-     * forward the option is silently inert — the call still succeeds and still detects everything.
+     * forward the option is silently inert: the call still succeeds and still detects everything.
      */
     it('should forward the detection narrowing to the chain job', async () => {
       await blockchainBalances.refreshBlockchainBalances(
@@ -262,7 +262,7 @@ describe('useBlockchainBalances', () => {
     /**
      * A detecting run and a plain one must not share an id. `submitTask` dedups by id, so a
      * login sweep landing while any background refresh is in flight (wallet transaction, websocket
-     * refresh, eth2 watcher) would join it and never detect — no row, no log, no error — while
+     * refresh, eth2 watcher) would join it and never detect (no row, no log, no error) while
      * `withDetection` still recorded the sweep, suppressing the next login's too.
      */
     it('should not share an id between a detecting and a plain refresh', async () => {
@@ -340,13 +340,13 @@ describe('useBlockchainBalances', () => {
         .map(([spec]) => spec.id)
         .filter(id => id.includes(`:${ActivityPart.RUN}:`));
 
-      // Same scope, different mode — two runs, not one.
+      // Same scope, different mode: two runs, not one.
       expect(new Set(runs).size).toBe(2);
     });
 
     /**
      * A parent over one child is a second row describing the same work, so a single-chain refresh
-     * has no umbrella at all — the caller never branches on the count.
+     * has no umbrella at all. The caller never branches on the count.
      */
     it('should not raise an umbrella for a single-chain run', async () => {
       await blockchainBalances.refreshBlockchainBalances({ blockchain: Blockchain.ETH }, 'background');
@@ -374,7 +374,7 @@ describe('useBlockchainBalances', () => {
     /**
      * Seen against a real backend. Cancelling Ethereum mid-detection aborted both running
      * children (`DELETE /api/1/tasks/424` and `/425`) and left the other seven addresses never
-     * attempted — the cascade doing its job — and then the chain job's own body carried straight
+     * attempted (the cascade doing its job), and then the chain job's own body carried straight
      * on and issued `POST /balances/blockchains/eth` anyway, writing balances and recording a
      * completion for a chain the user had stopped. Nothing can interrupt a running async body, so
      * the body has to ask.
@@ -400,7 +400,7 @@ describe('useBlockchainBalances', () => {
     /**
      * `disabledChainQueries` reaches the query path, not just the sync panel. Without this the
      * app kept issuing `POST /balances/blockchains/<chain>` and `tokens/detect` for a chain the
-     * user switched off — observed against a real backend.
+     * user switched off (observed against a real backend).
      */
     it('should skip an excluded chain instead of querying or detecting it', async () => {
       setDisabled({ [Blockchain.ETH]: [] });

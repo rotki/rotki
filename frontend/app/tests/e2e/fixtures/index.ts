@@ -14,7 +14,7 @@ export const testEnv = {
   // WARNING: avoid exercising transaction-history fetching against this address;
   // it would query signatures and inflate the cassette.
   SOLANA_ADDRESS: '8GbwASqdpw4dVcwbWUxbHXMrjyQx2aKkoBR5H1GJF8iD',
-  // Stable Polkadot fixture wallet — picked because it holds a non-trivial,
+  // Stable Polkadot fixture wallet, picked because it holds a non-trivial,
   // long-running DOT balance, so the test's "USD value > 0" assertion is
   // stable across re-recordings.
   POLKADOT_ADDRESS: '13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB',

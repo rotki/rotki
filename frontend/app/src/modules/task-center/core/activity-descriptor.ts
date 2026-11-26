@@ -53,14 +53,14 @@ export interface ActivityDescriptor<TSubject, TKey extends KeyParts, TDetail = n
   /** The full activity id for one subject. */
   readonly id: (subject: TSubject) => ActivityId;
   /**
-   * The parts a reader passes to `useWorkStatus*` — `[part, ...key]`. Spread it rather than
+   * The parts a reader passes to `useWorkStatus*`: `[part, ...key]`. Spread it rather than
    * rebuilding the shape at the call site, which is the drift this type exists to prevent.
    */
   readonly partsOf: (subject: TSubject) => KeyParts;
   /** As {@link partsOf}, for a prefix of the key: the coarse read. */
   readonly partsWithin: (prefix: Prefixes<TKey>) => KeyParts;
   /**
-   * The id of the umbrella that parents a fan-out over `prefix` — one row per chain rather than one
+   * The id of the umbrella that parents a fan-out over `prefix`: one row per chain rather than one
    * per address. It sits under the same prefix as its children, so a coarse reader covers both, and
    * ends in a literal that no subject key part can produce.
    */

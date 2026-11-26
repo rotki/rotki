@@ -260,7 +260,7 @@ describe('useTaskHandler', () => {
      * The monitor and the handler are only wrong *together*, so this drives the real pair rather
      * than a mocked `handleResult`: the monitor's 404 payload once carried `result: {}`, which is
      * not `null`, so the handler took its success branch and resolved the producer `ok({})` for a
-     * task the backend had forgotten — silently, since the message was dropped with it.
+     * task the backend had forgotten (silently, since the message was dropped with it).
      *
      * `useTaskHandler` and `useTaskMonitor` are both `createSharedComposable`, so importing the
      * monitor here (no `resetModules` since `beforeEach`) hands it the same handler instance.

@@ -9,7 +9,7 @@ import { type ActivityKind, type ActivityPart, ActivityKind as Kind, ActivityPar
  * value, and the pure core must stay free of i18n at runtime) and is keyed by **kind then part**,
  * since `EXPORT` belongs to four kinds and one wording cannot serve them all.
  *
- * Writing one: verb-first, succinct, and a full sentence — a bare value ("Ethereum") says nothing
+ * Writing one: verb-first, succinct, and a full sentence: a bare value ("Ethereum") says nothing
  * the row does not already show. Values go *inside* the sentence as named params, never appended:
  * `Querying the {chain} network`. Do not repeat the group title. A producer whose text is already
  * built elsewhere passes it straight through instead of duplicating it here.
@@ -71,7 +71,7 @@ const ACTIVITY_LABEL: Partial<Record<ActivityKind, Partial<Record<ActivityPart, 
  * `ActivitySpec.subtitle` already expects for "no subtitle".
  *
  * Parameters are named and placed *inside* the sentence by the message itself
- * (`Retrieving token details for {address} ({chain})`), never appended by this helper — translators
+ * (`Retrieving token details for {address} ({chain})`), never appended by this helper. Translators
  * decide where a value belongs, and never see a punctuation-only string.
  */
 export function activityLabel(
@@ -99,7 +99,7 @@ export function activityLabelOf(
 }
 
 /**
- * Description for a kind that has no distinguishing part — a singleton activity whose group title
+ * Description for a kind that has no distinguishing part: a singleton activity whose group title
  * still does not say what it does (historical balances, latest prices).
  */
 export function activityLabelFor(key: MessageKey, params?: Record<string, unknown>, plural?: number): TranslatableText {

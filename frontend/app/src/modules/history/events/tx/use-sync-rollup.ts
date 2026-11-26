@@ -19,7 +19,7 @@ interface UseSyncRollupReturn {
 }
 
 /**
- * Is this activity a leaf — the unit the aggregate counts?
+ * Is this activity a leaf, the unit the aggregate counts?
  *
  * A parent settles when its children do, so counting both would weight a chain once for itself and
  * once per account, and a chain with ten accounts would move the bar differently from one with two.
@@ -35,11 +35,11 @@ function isLeaf(activity: Activity, parents: ReadonlySet<ActivityId>): boolean {
  * The unit is **settled leaves over declared leaves**. `history-sync.flow.ts` names every chain,
  * exchange and online query before any of them runs, and each chain in turn declares its accounts
  * and its decode, so the denominator is known at submit time rather than growing as work is
- * discovered. That is what makes the number honest: the three alternatives — a mean of per-activity
- * percentages, completed activities over total, or weighting whole phases against each other — all
+ * discovered. That is what makes the number honest: the three alternatives (a mean of per-activity
+ * percentages, completed activities over total, or weighting whole phases against each other) all
  * move the bar when the shape of the work changes rather than when work is done.
  *
- * 🔴🔴 Liveness is `status !== terminal`, never "the model is non-empty". Settled activities stay in
+ * Liveness is `status !== terminal`, never "the model is non-empty". Settled activities stay in
  * the model so the panel can list them, so any predicate shaped like "is anything there" reads true
  * forever after the first completion.
  */

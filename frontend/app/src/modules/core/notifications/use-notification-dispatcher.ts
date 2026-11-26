@@ -63,7 +63,7 @@ export function useNotificationDispatcher(): UseNotificationDispatcherReturn {
       }
     }
 
-    // No strategy matched — add as a plain new notification
+    // No strategy matched: add as a plain new notification
     store.add([createNotification(store.getNextId(), incoming)]);
   }
 

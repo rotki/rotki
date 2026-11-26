@@ -11,7 +11,7 @@ import { useTaskStore } from '@/modules/core/tasks/use-task-store';
  *
  * A task's latency is bounded below by this interval: the backend can finish in milliseconds, but
  * nothing observes it until the next poll. Combined with a capped lane that only releases a slot
- * once the previous task is seen to finish, the interval sets the pace of the whole queue —
+ * once the previous task is seen to finish, the interval sets the pace of the whole queue:
  * measured on a login balance refresh, 26 per-chain calls of ~20ms each took 210 seconds, arriving
  * in pairs exactly one interval apart.
  */
@@ -20,7 +20,7 @@ const ACTIVE_POLLING_MS = 500;
 /**
  * How often to look while nothing is outstanding.
  *
- * Only a safety net for tasks this client did not start — a task submitted here schedules a poll
+ * Only a safety net for tasks this client did not start: a task submitted here schedules a poll
  * itself. Kept at the previous fixed interval so an idle session is no busier than before.
  */
 const IDLE_POLLING_MS = 4_000;
@@ -46,8 +46,8 @@ interface UseTaskPollingSchedulerReturn {
  * has not.
  *
  * Self-rescheduling rather than `setInterval`, for two reasons: the delay has to be chosen from the
- * state at each tick, and the next poll must not be scheduled until the previous one has finished —
- * a fixed interval lets a slow monitor pass overlap the next one and query the same tasks twice.
+ * state at each tick, and the next poll must not be scheduled until the previous one has finished.
+ * A fixed interval lets a slow monitor pass overlap the next one and query the same tasks twice.
  */
 export function useTaskPollingScheduler(): UseTaskPollingSchedulerReturn {
   const { monitor } = useTaskMonitor();

@@ -62,7 +62,7 @@ function selectChoice(suggestion: PendingSuggestion, choice: string): void {
 
 /**
  * The dialog closes without marking the version applied, so it comes back at the next login until
- * the user has actually decided — which is what they are being sent away to make possible.
+ * the user has actually decided, which is what they are being sent away to make possible.
  */
 function runAction(action: SuggestionAction): void {
   set(modelValue, false);

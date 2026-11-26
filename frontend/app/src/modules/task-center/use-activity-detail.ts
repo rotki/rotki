@@ -15,7 +15,7 @@ import { computed, type ComputedRef, shallowRef } from 'vue';
  * @remarks
  * A plain singleton rather than a Pinia store, because its lifetime belongs to the orchestrator: the
  * spine drops an entry when the record it describes is replaced, re-run or pruned, and the spine is
- * framework-agnostic. As a store that edge cost more than it bought — Pinia re-activates the
+ * framework-agnostic. As a store that edge cost more than it bought: Pinia re-activates the
  * instance an action was bound to before running it, so the orchestrator could not hold the actions
  * it needs without pinning the whole process to whichever Pinia was active when it was first
  * constructed. Logout is covered by `orchestrator.reset()`, which is stricter than the global store

@@ -5,7 +5,7 @@ import { shallowRef } from 'vue';
 /**
  * State-only store for the supported chains data. Kept as a store (not composable
  * state) so it is registered with `StoreTrackPlugin` and cleared automatically by
- * `resetState()` on logout — no bespoke teardown watcher needed. The API call and
+ * `resetState()` on logout. No bespoke teardown watcher is needed. The API call and
  * all derived views live in the `useSupportedChains` composable that wraps this.
  */
 export const useSupportedChainsStore = defineStore('core/supported-chains', () => {

@@ -33,7 +33,7 @@ export type LaneFamily =
   | typeof ACCOUNTS_ADD_LANE_PREFIX
   | typeof ACCOUNTS_REMOVE_LANE_PREFIX;
 
-/** A lane minted from a family — the prefix is checked, the entity part is free. */
+/** A lane minted from a family: the prefix is checked, the entity part is free. */
 export type FamilyLane = `${LaneFamily}${string}`;
 
 /** A concurrency lane. Activities in the same lane share a per-lane cap (see {@link LaneCaps}). */
@@ -50,7 +50,7 @@ export const DEFAULT_LANE = 'default';
  * Blockchain-balance refreshes + token detection run here; capped at 2 to mirror the old
  * `BalanceQueueService` `maxConcurrency`.
  *
- * ⛔ Balance *hydration* — reading a chain back out of the user's own database — has no lane here
+ * Balance *hydration* (reading a chain back out of the user's own database) has no lane here
  * and must not be given one. It is not work: no task-centre row, no cancel, no progress. Its bound
  * is `allWithConcurrency` inside `useBalanceHydration`, which is what makes the {@link DECODE_LANE}
  * trap structurally unavailable rather than merely avoided.
@@ -73,7 +73,7 @@ export const BANK_BALANCES_LANE = 'bank-balances';
 export const PRICE_REFRESH_LANE = 'price-refresh';
 
 /**
- * Unlocking a session — login and account creation. On its own lane because session work must
+ * Unlocking a session: login and account creation. On its own lane because session work must
  * never queue behind user data: everything else in the app exists only once a session is up, so
  * sharing a pool with it means a stalled query can keep a user from signing in at all.
  */
@@ -123,7 +123,7 @@ export const DETECT_LANE_PREFIX = 'detect:';
 /**
  * Family prefix for the per-location exchange lanes (`exchange-events:<location>`). Capped at 1 per
  * location so one exchange's accounts query in sequence, with the family's active cap deciding how
- * many locations run at once — the shape the old `awaitGroupedExecution(..., 2)` produced by hand.
+ * many locations run at once, the shape the old `awaitGroupedExecution(..., 2)` produced by hand.
  * A flat lane cap could not express it: two slots would happily go to the same exchange.
  */
 export const EXCHANGE_EVENTS_LANE_PREFIX = 'exchange-events:';
@@ -172,8 +172,8 @@ export const DEFAULT_PRIORITY: Priority = Priority.NORMAL;
 
 /**
  * "Work matching this selector completing makes me stale." `parts` narrows the match to a specific
- * activity — matching is by id prefix on a separator boundary, the same rule
- * {@link cancelByPrefix} uses — so a producer's parameters discriminate the edge without any
+ * activity. Matching is by id prefix on a separator boundary, the same rule
+ * {@link cancelByPrefix} uses, so a producer's parameters discriminate the edge without any
  * predicate: `{ kind: PURGE, parts: ['transactions'] }` fires for `purge:transactions` and not for
  * `purge:module:aave`. Omitting `parts` matches every activity of the kind.
  */
@@ -216,7 +216,7 @@ export interface ActivitySpec<T = unknown> {
   readonly deps?: readonly ActivityId[];
   /**
    * The activity this one is a part of. Lets the whole tree be read off the specs, so a producer
-   * that submits its work up front is inspectable before any of it runs — and gates one thing: a
+   * that submits its work up front is inspectable before any of it runs, and gates one thing: a
    * child never starts before its parent has. Ordering *within* a parent is still {@link deps} and
    * the lane caps; this only stops a queued tree from running bottom-up.
    */
@@ -224,7 +224,7 @@ export interface ActivitySpec<T = unknown> {
   /**
    * Declares what invalidates this activity's data. When any matching activity *completes*, this
    * one's freshness is dropped, so `everCompleted` reads false and the next guarded fetch is
-   * admitted. Nothing is re-run: the orchestrator only marks, the view decides — work nobody is
+   * admitted. Nothing is re-run: the orchestrator only marks, the view decides. Work nobody is
    * watching stays asleep.
    *
    * The dependency is declared by the *consumer*, so a producer never imports the modules that
@@ -234,7 +234,7 @@ export interface ActivitySpec<T = unknown> {
   /** Whether the controller may re-run it once terminal (default false). */
   readonly rerunnable?: boolean;
   /**
-   * Runs the work. Returns a {@link ResultAsync} so failures are values, not throws — the
+   * Runs the work. Returns a {@link ResultAsync} so failures are values, not throws. The
    * producer wraps `runTask` via `fromTaskResult`. `report` pushes optional step progress, and
    * `rerun` says this run repeats an earlier one.
    */
@@ -244,8 +244,9 @@ export interface ActivitySpec<T = unknown> {
   readonly cancel?: () => void;
   /**
    * Tear down side resources the producer set up for this activity (a poll interval, a
-   * subscription). Run once when the activity settles — on completion, failure, cancel-while-running
-   * and* cancel-while-queued (where `run` never executes) — so producers don't need a `try/finally`
+   * subscription). Run once when the activity settles (on completion, failure, and both
+   * cancel-while-running *and* cancel-while-queued, where `run` never executes), so producers don't
+   * need a `try/finally`
    * around `submitTask`. Re-armed on re-run.
    */
   readonly cleanup?: () => void;
@@ -271,7 +272,7 @@ export interface ActivitySpec<T = unknown> {
    * `everCompleted` for a kind must mean "we have data", not "a run happened". A fan-out umbrella
    * settles COMPLETE whenever its children settle (`allSettled`, so a failure belongs to the subject
    * that failed), so an umbrella sharing its children's kind writes a success even when **every**
-   * child FAILED — leaving the dashboard a settled, empty portfolio instead of an error state.
+   * child FAILED, leaving the dashboard a settled, empty portfolio instead of an error state.
    *
    * Opt-in, never blanket: `HISTORY_SYNC`'s umbrella *is* the subject for its kind and its ledger
    * entry is load-bearing, so silencing that one would re-sync history every time.
@@ -279,8 +280,8 @@ export interface ActivitySpec<T = unknown> {
   readonly container?: boolean;
   /**
    * Marks work that deletes data before re-deriving it, so the eligibility rules can keep it from
-   * overlapping work that writes to the same rows. Everything else may overlap harmlessly — the
-   * backend serialises writes, matching holds its own locks and decoding is idempotent — so this
+   * overlapping work that writes to the same rows. Everything else may overlap harmlessly (the
+   * backend serialises writes, matching holds its own locks and decoding is idempotent), so this
    * is the one exclusion worth expressing. Declared by a flow via `HistoryFlow.resets`.
    */
   readonly resets?: boolean;
@@ -290,8 +291,8 @@ export interface ActivitySpec<T = unknown> {
 export type LaneCaps = Partial<Readonly<Record<Lane, number>>>;
 
 /**
- * Caps for *families* of lanes, keyed by id prefix. Producers that mint a lane per entity — one per
- * chain, say — cannot enumerate their lane names up front, so an exact-name cap can never reach
+ * Caps for *families* of lanes, keyed by id prefix. Producers that mint a lane per entity (one per
+ * chain, say) cannot enumerate their lane names up front, so an exact-name cap can never reach
  * them and they would all silently take the default. A family caps every lane whose name starts
  * with the prefix, each lane still holding its own independent slots.
  *

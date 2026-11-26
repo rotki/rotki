@@ -21,7 +21,7 @@ const event = createMock<HistoryEventEntry>({
 /**
  * `provideSelection` mirrors what HistoryEventsView does. The row reads selection through inject
  * rather than a prop, so an embedding that provides nothing must still render, just without
- * checkboxes — that negative case is the point of the pair below.
+ * checkboxes. That negative case is the point of the pair below.
  */
 function mountItem(provideSelection: boolean): VueWrapper {
   return mount({

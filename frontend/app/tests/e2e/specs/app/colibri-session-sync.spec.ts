@@ -6,11 +6,9 @@ import { TEST_TIMEOUT_STANDARD } from '../../helpers/constants';
 import { generateUsername } from '../../helpers/utils';
 import { RotkiApp } from '../../pages/rotki-app';
 
-/* Core and colibri each hold their own view of the logged-in user, and colibri answers 400 to
-   both of its own no-ops: locking while it holds nothing, unlocking while it holds anything.
-   Either used to abort the flow around it and strand the app logged into core with colibri
-   locked, unrecoverable without a backend restart. Nothing in the app can produce those states
-   on demand, so each is set up out of band. */
+/* Colibri answers 400 to its own no-ops: locking while it holds nothing, unlocking while it
+   holds anything. Either used to strand the app logged into core with colibri locked until a
+   backend restart. Nothing in the app produces those states, so each is set up out of band. */
 test.describe.serial('colibri session sync', () => {
   test.setTimeout(TEST_TIMEOUT_STANDARD);
 
@@ -60,10 +58,9 @@ test.describe.serial('colibri session sync', () => {
   });
 
   /* Skipped: fails on CI at the closing `app.logout()`. Logging core out of band leaves the app
-     querying accounts for every chain in `supportedChains`, some twenty even for a new user.
-     Each 401s and raises its own notification, and they stack over the user menu at `z-[10000]`
-     and swallow the click for the full timeout. Reproduced 2/2 on CI and 0/16 locally, so it is
-     timing-dependent on loaded runners rather than deterministic. */
+     querying accounts for every supported chain. Each 401s and raises a notification, and they
+     stack over the user menu at `z-[10000]` and swallow the click. Reproduced 2/2 on CI, 0/16
+     locally. */
   test.skip('logs in when colibri still holds a database from an earlier session', async () => {
     await app.login(username);
 

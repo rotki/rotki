@@ -38,7 +38,7 @@ export function baseDataDir(): string {
  * `globaldb.sqlite`, etc. inside). The outer `<XDG_DATA_HOME>/rotki/` dir also
  * holds electron cache/logs/develop_data which we do NOT want to seed from.
  *
- * `ROTKI_SEED_SOURCE` overrides this — point it at any directory you want to
+ * `ROTKI_SEED_SOURCE` overrides this. Point it at any directory you want to
  * use as the seed (e.g. `<XDG_DATA_HOME>/rotki/develop_data` to clone the
  * existing dev mirror instead of prod data).
  */

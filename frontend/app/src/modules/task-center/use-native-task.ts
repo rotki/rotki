@@ -62,7 +62,7 @@ export interface ActivityContext {
    */
   readonly rerun: boolean;
   /**
-   * True once this activity has been cancelled — **a body with more than one stage must check it
+   * True once this activity has been cancelled. **A body with more than one stage must check it
    * between them**.
    *
    * Cancelling settles the *record*; it cannot interrupt a running async body. A multi-stage
@@ -111,12 +111,12 @@ interface UseNativeTaskReturn {
   readonly supersedeTask: <T = void>(spec: NativeActivitySpec<T>) => Promise<TaskOutcome<T>>;
   /**
    * Settle and drop every in-flight submission. Called when a session ends, so no id survives into
-   * the next one — `submitTask` dedups by id, and a surviving id hands the next session a promise
+   * the next one: `submitTask` dedups by id, and a surviving id hands the next session a promise
    * that can never resolve.
    */
   readonly reset: () => void;
   /**
-   * Cancel one activity by identity — `orchestrator.cancel(makeActivityId(kind, ...parts))`. The
+   * Cancel one activity by identity: `orchestrator.cancel(makeActivityId(kind, ...parts))`. The
    * replacement for the old imperative cancel-by-task-type at producer call sites: it settles the
    * activity terminal *immediately* (so awaiting readers and `useWorkStatus` spinners unblock even
    * when the backend refuses the abort) and fires the spec's own cancel handle for the backend.
@@ -142,18 +142,18 @@ interface UseNativeTaskReturn {
    */
   readonly reportProgress: (id: ActivityId, steps: ActivitySteps) => void;
   /**
-   * Synchronous {@link WorkStatus} snapshot for a kind (or specific id) — the imperative sibling
+   * Synchronous {@link WorkStatus} snapshot for a kind (or specific id), the imperative sibling
    * of `useWorkStatus`. For producer-side guards that need to check liveness *before* submitting
    * (e.g. "is one already running?") rather than reactively. Delegated to the orchestrator.
    */
   readonly statusOf: (kind: ActivityKind, ...parts: (string | number)[]) => WorkStatus;
   /**
-   * Reactive {@link WorkStatus} for a kind (or specific id) — the sibling of {@link statusOf} for
+   * Reactive {@link WorkStatus} for a kind (or specific id), the sibling of {@link statusOf} for
    * producers that also read their own liveness. Delegated to the orchestrator, the same seam
    * `useTaskCenter` exposes; here so a producer needing both stays under the import cap.
    */
   readonly useWorkStatus: (kind: ActivityKind, ...parts: (string | number)[]) => ComputedRef<WorkStatus>;
-  /** Liveness only — the one-field read most spinners want. */
+  /** Liveness only: the one-field read most spinners want. */
   readonly useIsActive: (kind: ActivityKind, ...parts: (string | number)[]) => ComputedRef<boolean>;
 }
 
@@ -169,7 +169,7 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
   const { cancelTaskById, runTask: runBackendTask } = useTaskHandler();
   /**
    * The promise handed back to a re-entrant caller. Its value type is the submitting spec's `T`,
-   * which this map cannot express across heterogeneous ids — the erasure is contained here and
+   * which this map cannot express across heterogeneous ids. The erasure is contained here and
    * re-applied at the one return below, rather than leaking `any` into producer call sites.
    */
   const inflight = new Map<ActivityId, Promise<TaskOutcome<never>>>();
@@ -217,8 +217,8 @@ export const useNativeTask = createSharedComposable((): UseNativeTaskReturn => {
    * Replace the run already in flight for this id, instead of joining it.
    *
    * {@link submitTask} dedups: a second caller for a live id is handed the first run's promise
-   * and the first run's *parameters*. That is right for background work — two periodic ticks should
-   * share one run — and wrong for a user, who asked for fresh data and would silently receive
+   * and the first run's *parameters*. That is right for background work (two periodic ticks should
+   * share one run) and wrong for a user, who asked for fresh data and would silently receive
    * whatever the background run happened to be doing.
    *
    * Cancelling settles the record immediately, so this does not wait on the aborted work itself.

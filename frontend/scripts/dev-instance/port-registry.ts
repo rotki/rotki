@@ -11,7 +11,7 @@ import { readMetadata } from './sidecar';
 /**
  * Note the two distinct proxies: `proxy` is the optional premium dev-proxy
  * (`@rotki/dev-proxy`), `starlingProxy` is the reverse proxy starling itself
- * serves — the single origin the renderer talks to. Both need their own port.
+ * serves, the single origin the renderer talks to. Both need their own port.
  */
 export const DEFAULT_PORTS = {
   restApi: DEFAULT_PORT,
@@ -68,7 +68,7 @@ export interface PortSet {
   proxy: number;
   colibri: number;
   dev: number;
-  /** starling's own reverse proxy — the origin the renderer addresses. */
+  /** starling's own reverse proxy, the origin the renderer addresses. */
   starlingProxy: number;
   /** starling's MCP server. */
   mcp: number;

@@ -39,7 +39,7 @@ describe('buildTree', () => {
 
   /**
    * `clearTerminal` prunes settled records, so a parent can legitimately vanish while its children
-   * still run. Dropping those children would hide live work entirely — the panel would show
+   * still run. Dropping those children would hide live work entirely: the panel would show
    * nothing while the app kept querying.
    */
   it('should treat an activity whose parent is absent as a root', () => {

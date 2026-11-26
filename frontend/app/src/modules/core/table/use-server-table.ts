@@ -52,7 +52,7 @@ interface UseServerTableOptions<
   urlState?: UrlState;
   /**
    * The filter bag. Owned here unless the caller passes one, which it needs to do only when
-   * something has to read the bag before the table exists — the pill-bar fields of a table whose
+   * something has to read the bag before the table exists: the pill-bar fields of a table whose
    * option lists narrow by what is already picked. Everything else reads the returned `filter`.
    */
   filters?: Ref<TFilter>;

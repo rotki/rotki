@@ -70,7 +70,7 @@ function chainNameFor(chainId: string): string {
 }
 
 function entireChainLabel(chainId: string): string {
-  return `${chainNameFor(chainId)} — ${t('general_settings.disabled_chain_queries.scope.entire_chain')}`;
+  return `${chainNameFor(chainId)} \u{2014} ${t('general_settings.disabled_chain_queries.scope.entire_chain')}`;
 }
 
 function onSavePayload(payload: { draft: RuleDraft; id: string | undefined }): void {

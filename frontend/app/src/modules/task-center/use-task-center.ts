@@ -22,18 +22,18 @@ interface UseTaskCenterReturn {
   current: ComputedRef<Activity | undefined>;
   overall: ComputedRef<ActivityOverall>;
   isActive: ComputedRef<boolean>;
-  /** Reactive liveness + freshness for a kind (or specific id) — replaces `useSectionStatus`. */
+  /** Reactive liveness + freshness for a kind (or specific id). Replaces `useSectionStatus`. */
   useWorkStatus: (kind: ActivityKind, ...parts: MaybeRefOrGetter<string | number>[]) => ComputedRef<WorkStatus>;
   /**
-   * Reactive liveness + freshness aggregated over every activity whose id extends `kind:parts` —
+   * Reactive liveness + freshness aggregated over every activity whose id extends `kind:parts`,
    * the coarse read for producers that submit one activity per request.
    */
   useWorkStatusPrefix: (kind: ActivityKind, ...parts: MaybeRefOrGetter<string | number>[]) => ComputedRef<WorkStatus>;
-  /** Liveness only — see `useIsActive` on the orchestrator shell. */
+  /** Liveness only. See `useIsActive` on the orchestrator shell. */
   useIsActive: (kind: ActivityKind, ...parts: (string | number)[]) => ComputedRef<boolean>;
   /** Liveness only, aggregated over a prefix. */
   useIsActivePrefix: (kind: ActivityKind, ...parts: (string | number)[]) => ComputedRef<boolean>;
-  /** Reactive live {@link Activity} for a kind (or specific id) — the native progress channel. */
+  /** Reactive live {@link Activity} for a kind (or specific id), the native progress channel. */
   useActivity: (kind: ActivityKind, ...parts: (string | number)[]) => ComputedRef<Activity | undefined>;
 }
 

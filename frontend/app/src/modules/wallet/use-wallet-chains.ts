@@ -34,7 +34,7 @@ interface UseWalletChainsReturn {
  * `addTransactionHash`.
  *
  * A chain with no matching numeric id is dropped. It must not fall back to
- * ethereum — that would label another chain's balance as an ethereum one.
+ * ethereum. That would label another chain's balance as an ethereum one.
  */
 export function useWalletChains(): UseWalletChainsReturn {
   const { getEvmChainId, txEvmChains } = useSupportedChains();

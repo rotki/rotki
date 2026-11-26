@@ -33,7 +33,7 @@ export interface ActivityModel {
   /** Flat, waiting to start. */
   readonly pending: Activity[];
   /**
-   * The tops of the activity tree — what a user actually started, as opposed to the work it fanned
+   * The tops of the activity tree: what a user actually started, as opposed to the work it fanned
    * out into. See `tree.ts`; `children` holds the rest, keyed by parent id.
    */
   readonly roots: Activity[];
@@ -94,7 +94,7 @@ function dedupeById(activities: Activity[]): Activity[] {
 /**
  * Pure assembly of the flat activity list into the render model: dedup by id, groups (ordered
  * by kind priority), the tree, the active/pending splits, the overall rollup + phase, and the
- * single `current` activity the header bar labels. No Vue, no stores — unit-tested with literal
+ * single `current` activity the header bar labels. No Vue, no stores. Unit-tested with literal
  * inputs.
  */
 export function assembleActivityModel(activities: Activity[], t: TranslateFn): ActivityModel {

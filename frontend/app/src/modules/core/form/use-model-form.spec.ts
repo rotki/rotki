@@ -146,10 +146,9 @@ describe('useModelForm', () => {
     });
 
     /*
-     * A `defineModel` ref reads back the value from before the write until the parent catches up, so
-     * the model still reports the pre-seed payload right after the form seeds it. Asserted on the
-     * spot, with no tick in between: let the ref catch up first and the state converges either way,
-     * which is what made an earlier version of this test unable to fail.
+     * A `defineModel` ref reads back the pre-write value until the parent catches up, so the model
+     * still reports the pre-seed payload right after seeding. Asserted with no tick in between:
+     * after one, the state converges either way and the test cannot fail.
      */
     it('should not let a stale model read undo the seeding', () => {
       const inner = ref<PriceState>(baseModel());
@@ -298,10 +297,9 @@ describe('useModelForm', () => {
     });
 
     /*
-     * Unlike the unmapped case above, this one does pin the equality guard rather than merely
-     * documenting it. `toState` answers with a new array every call, so without the comparison the
-     * mirroring would assign a fresh reference each pass, the write-back would answer with a fresh
-     * payload, and the two would trade writes until the test timed out.
+     * Unlike the unmapped case above, this one pins the equality guard. `toState` answers with a new
+     * array every call, so without the comparison the mirroring and the write-back would trade fresh
+     * references until the test timed out.
      */
     it('should settle even though the mapper answers with a new object each time', async () => {
       const model = ref<PriceModel>({ ...baseMapped(), tags: ['manual'] });

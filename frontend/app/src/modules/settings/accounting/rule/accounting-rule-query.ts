@@ -19,7 +19,7 @@ export function isCustomRuleHandling(value: string): value is CustomRuleHandling
 }
 
 /**
- * The rule a deep link names. Every field is optional on the wire — the link is written by other
+ * The rule a deep link names. Every field is optional on the wire: the link is written by other
  * pages (an event asking for the rule that governs it), so the schema defaults rather than throws
  * and a half-written link still opens the form with what it did carry.
  */

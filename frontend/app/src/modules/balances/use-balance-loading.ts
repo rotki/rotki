@@ -6,7 +6,7 @@ import { ActivityKind } from '@/modules/task-center/core/types';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseBalancesLoadingReturn {
-  /** Blockchain balances only — the narrow read most spinners actually want. */
+  /** Blockchain balances only: the narrow read most spinners actually want. */
   loadingBlockchainBalances: ComputedRef<boolean>;
   loadingBalances: ComputedRef<boolean>;
   loadingBalancesAndDetection: ComputedRef<boolean>;

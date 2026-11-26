@@ -258,7 +258,7 @@ function instanceEnvForElectron(instance: InstanceRuntime | null): Record<string
 
 /**
  * Env for the electron child: the instance's ports when there is one, plus the
- * dev-proxy port when the proxy is on — that one is independent of instance mode,
+ * dev-proxy port when the proxy is on. That one is independent of instance mode,
  * since a plain `pnpm dev` can enable the proxy too.
  */
 function envForElectron(instance: InstanceRuntime | null, useProxy: boolean): Record<string, string> | undefined {

@@ -33,7 +33,7 @@ interface ChangeItem {
   after?: BigNumber;
 }
 
-/** Row height in px — also the virtual-list item height, so it must be exact. */
+/** Row height in px, also the virtual-list item height, so it must be exact. */
 const ITEM_HEIGHT = 52;
 /** Below this many rows we render them all (keeps column alignment + cheap); above
  * it we virtualise so a bulk edit can't mount thousands of nodes and lag the UI. */

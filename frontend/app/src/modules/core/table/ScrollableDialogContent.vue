@@ -4,7 +4,7 @@
  * other long content which must scroll while the surrounding chrome stays put.
  *
  * It establishes a bounded flex column so the body region absorbs the leftover
- * space and scrolls on its own — no per-dialog `max-h-[calc(100vh - …)]` magic
+ * space and scrolls on its own: no per-dialog `max-h-[calc(100vh - …)]` magic
  * numbers, and no fighting a child component's own `overflow` rules.
  *
  * The `min-h-0` on the body is load-bearing: without it a flex child refuses to

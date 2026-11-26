@@ -48,7 +48,7 @@ function credentialOf(endpoint: string): { group: string; id: RpcProviderId; key
  * @remarks
  * One entry per key, not per provider: two keys of the same provider are two separate things to the
  * user, and merging them would let one removal take out both. Matched on the endpoint rather than on
- * a stored provider id, since nothing records where a node came from — a node added by hand years
+ * a stored provider id, since nothing records where a node came from: a node added by hand years
  * ago counts the same as one this dialog wrote.
  *
  * @param nodesByChain - the nodes each chain holds

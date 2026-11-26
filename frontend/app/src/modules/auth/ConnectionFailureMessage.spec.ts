@@ -135,7 +135,7 @@ describe('connectionFailureMessage', () => {
 
   /**
    * This screen is reached *because* something is broken, so the restart it
-   * offers is the likeliest of all to fail — the session may have lapsed, or the
+   * offers is the likeliest of all to fail: the session may have lapsed, or the
    * proxy may not reach core to authorise. It still has to reconnect afterwards:
    * an unhandled rejection here would skip the retry the button is named for.
    */

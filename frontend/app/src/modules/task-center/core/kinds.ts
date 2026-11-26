@@ -2,14 +2,14 @@ import { type Activity, type ActivityKind, ActivityKind as Kind, type TranslateF
 
 interface KindDescriptor {
   kind: ActivityKind;
-  /** Static i18n key only (no dynamic keys — see CLAUDE.md). */
+  /** Static i18n key only (no dynamic keys, see CLAUDE.md). */
   groupTitle: (t: TranslateFn) => string;
 }
 
 /**
  * The single source of truth for kind ordering and group titles. Array order is the display +
  * selection priority (highest first): it drives group ordering and which running activity the
- * header bar labels (`current`). Adding a kind is one entry here (plus the enum) — there is no
+ * header bar labels (`current`). Adding a kind is one entry here (plus the enum). There is no
  * separate priority list to keep in sync.
  *
  * Kinds that never produce an activity (deferred: db-upgrade/data-migration) are intentionally

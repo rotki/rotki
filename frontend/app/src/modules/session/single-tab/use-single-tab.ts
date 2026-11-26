@@ -39,8 +39,8 @@ function createTabId(): string {
 /**
  * Same-browser single-active-tab coordination for the Docker/web deployment (issue #3156).
  *
- * The backend cannot tell two tabs of the same browser apart — they share one session
- * cookie — so ownership is negotiated purely on the frontend over a `BroadcastChannel`.
+ * The backend cannot tell two tabs of the same browser apart (they share one session
+ * cookie), so ownership is negotiated purely on the frontend over a `BroadcastChannel`.
  * The newest tab to `claim()` becomes the active one; every other tab hears the claim and
  * flips `isActiveTab` to `false`, which the guard uses to stop its polling and websocket.
  * When the active tab goes away (close/reload/logout) it broadcasts a `release`, so a paused

@@ -111,16 +111,10 @@ describe('balances/protocols/components/AssetRowDetails.vue', () => {
   });
 
   /*
-   * The discriminating case for the bag. A caller that forwards its own optional value produces a
-   * present key holding `undefined`, and `{ ...DEFAULTS, ...bag }` would take that as the value
-   * instead of the default. Every "default applies" and "explicit value wins" test above passes
-   * either way, so without this one the suite is compatible with that bug.
-   *
-   * `isLiability` is the only field where it is observable, and a negative control proved it: with a
-   * spread in place of the `??` reads, this test fails and the equivalent ones for `all` and `hide`
-   * both still pass. Those two are only ever consumed in a boolean context (`!all` and a `v-if`),
-   * where `undefined` and `false` are indistinguishable, so there is nothing there to catch. This
-   * one is observable because the value is handed on as a prop, where `undefined !== false`.
+   * A forwarded optional value arrives as a present key holding `undefined`, which a
+   * `{ ...DEFAULTS, ...bag }` spread would keep over the default. Only `isLiability` exposes that,
+   * since it is passed on as a prop where `undefined !== false`; `all` and `hide` are only read as
+   * booleans.
    */
   it('should keep the isLiability default when the bag holds an explicit undefined', () => {
     expect(native(createWrapper({ isLiability: undefined })).props('isLiability')).toBe(false);

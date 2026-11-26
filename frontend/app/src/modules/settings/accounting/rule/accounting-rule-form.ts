@@ -60,8 +60,8 @@ export function accountingRuleFormState(rule: AccountingRuleEntry): AccountingRu
 
 /**
  * The inverse. The counterparty goes back verbatim, so a field the user cleared is stored as `''`
- * rather than `null` — what the vuelidate version did, since it only ever wrote what the input
- * emitted. Only a rule that arrived with no counterparty at all keeps its `null`, because this is
+ * rather than `null` (what the vuelidate version did, since it only ever wrote what the input
+ * emitted). Only a rule that arrived with no counterparty at all keeps its `null`, because this is
  * called on change and never on seed.
  */
 export function applyAccountingRuleFormState(

@@ -34,14 +34,14 @@ const EVENT_PRODUCING_KINDS: ReadonlySet<ActivityKind> = new Set([
 
 export interface HistoryEventsAutoFetchHandlers {
   /**
-   * Runs on every progress tick. Reads the events only — the location set cannot change while a
+   * Runs on every progress tick. Reads the events only: the location set cannot change while a
    * decode is mid-flight, so pulling it here multiplied every tick by three requests.
    */
   onProgress: () => Promise<void>;
   /**
    * Runs once when the run ends. The location set CAN change across a flow boundary: a chain whose
    * transactions were pulled but never successfully decoded has no `history_events` rows, so its
-   * first successful decode adds a location (`Location.from_chain_id`, decoding/base.py) — and a
+   * first successful decode adds a location (`Location.from_chain_id`, decoding/base.py), and a
    * decode that fails can leave a location's last event deleted (`delete_location_events`).
    */
   onSettle: () => Promise<void>;

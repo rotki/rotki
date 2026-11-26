@@ -37,7 +37,7 @@ export interface UseDisabledChainQueriesStateOptions {
 }
 
 export interface UseDisabledChainQueriesStateReturn {
-  /** Read-only — mutate via {@link addRule}, {@link updateRule}, {@link removeRule}. */
+  /** Read-only. Mutate via {@link addRule}, {@link updateRule}, {@link removeRule}. */
   rules: Readonly<Ref<readonly Rule[]>>;
   /** Build the backend payload from the current rules. */
   buildPayload: () => DisabledChainQueries;

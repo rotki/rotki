@@ -354,7 +354,7 @@ export interface ActionFieldOption {
 
 /**
  * The event action (verb) as a param-bound pill. An action is one presentation of a single
- * `(eventType, eventSubtype)` pair — the same pairing the event form's action picker uses — so it
+ * `(eventType, eventSubtype)` pair (the same pairing the event form's action picker uses), so it
  * writes no wire filter of its own: the param source expands the verb into those two request keys.
  * The URL carries only the verb, which is what keeps the user's intent across a reload. Rebuilding
  * from raw types would lose whether they picked an action or set the two fields by hand.

@@ -6,7 +6,7 @@ import en from '@/locales/en.json';
  * Every flow declaration, found rather than registered.
  *
  * Declarations are co-located with their producers, so there is no central list to fall out of
- * date — and no dependency hub pulling every producer into whatever imports it. The cost of that
+ * date, and no dependency hub pulling every producer into whatever imports it. The cost of that
  * choice is that nothing enumerates them at runtime, which is exactly what this recovers: the glob
  * finds each `*.flow.ts` at test time, so a flow cannot be missed by forgetting to register it.
  *

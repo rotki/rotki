@@ -33,7 +33,7 @@ export interface EvmTxAutoFillOptions {
 interface UseEvmTxAutoFillReturn {
   loading: Readonly<Ref<boolean>>;
   canRetry: Readonly<Ref<boolean>>;
-  /** True when the tx hash + chain are set but the related address is missing — the user has to pick an account before the lookup can fire. */
+  /** True when the tx hash + chain are set but the related address is missing: the user has to pick an account before the lookup can fire. */
   needsRelatedAddress: Readonly<Ref<boolean>>;
   retry: () => Promise<void>;
   reset: () => void;
@@ -161,7 +161,7 @@ export function useEvmTxAutoFill(options: EvmTxAutoFillOptions): UseEvmTxAutoFil
       title: t('task_center.group.history_events'),
     });
 
-    // Discard stale results — only the latest invocation may touch form state (and own `loading`).
+    // Discard stale results: only the latest invocation may touch form state (and own `loading`).
     if (requestId !== currentRequestId) {
       return;
     }

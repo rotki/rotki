@@ -8,7 +8,7 @@ import mitt from 'mitt';
  */
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- mitt requires a type alias, not an interface
 type SigilBusEvents = {
-  /** Emitted after successful login — stores are populated. */
+  /** Emitted after successful login: stores are populated. */
   'session:ready': void;
   /** Emitted after all balance fetches complete. */
   'balances:loaded': void;

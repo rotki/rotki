@@ -30,7 +30,7 @@ import { holdOf } from './waiting';
  * The execution spine of the Task Center. Owns the queue and lifecycle of every *native*
  * activity: schedules it (lanes + caps + dependency/rule gating via {@link createScheduler}),
  * runs it as a plainfp {@link ResultAsync} (timeout/retry), maps the outcome to a terminal
- * status, and emits on every change. Framework-agnostic — `use-task-orchestrator` wraps it in
+ * status, and emits on every change. Framework-agnostic: `use-task-orchestrator` wraps it in
  * a reactive snapshot, and the floor/bridged activities are merged in the reactive shell, not
  * here.
  */
@@ -41,7 +41,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
   /** Forget one activity's detail, where a channel is wired up at all. */
   const dropDetail = (id: ActivityId): void => detail?.drop(id);
   const records = new Map<ActivityId, ActivityRecord>();
-  /** Durable per-id completion memory — survives `clearTerminal`; the freshness backbone. */
+  /** Durable per-id completion memory. Survives `clearTerminal`; the freshness backbone. */
   const ledger = new Map<ActivityId, CompletionRecord>();
   const listeners = new Set<() => void>();
   /**
@@ -187,7 +187,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
   }
 
   /**
-   * Aggregate {@link WorkStatus} over every activity whose id extends `kind:parts` — the coarse
+   * Aggregate {@link WorkStatus} over every activity whose id extends `kind:parts`, the coarse
    * read for producers that submit one activity per request (see {@link activityIdHasPrefix}).
    * With no parts this is identical to `statusOf(kind)`.
    */
@@ -249,7 +249,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
 
     /**
      * A record beginning a run owns no detail yet. Resubmitting an id is the common way a run is
-     * replaced — every history refresh resubmits the same `TX_SYNC:<chain>:<address>` — so without
+     * replaced (every history refresh resubmits the same `TX_SYNC:<chain>:<address>`), so without
      * this the previous run's period and step caption the new one until its first frame lands.
      */
     dropDetail(spec.id);
@@ -270,7 +270,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     return spec.id;
   }
 
-  /** One node's cancellation. No `pump` — {@link cancel} pumps once for the whole subtree. */
+  /** One node's cancellation. No `pump`: {@link cancel} pumps once for the whole subtree. */
   function cancelOne(record: ActivityRecord): Result<void, ControlError> {
     const id = record.spec.id;
     if (isTerminalStatus(record.status))
@@ -297,7 +297,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
    *
    * Cancelling a parent alone stops nothing: a native spec's handle aborts only that activity's
    * own backend task, which an umbrella never has, so the row goes CANCELLED while its children keep
-   * running. No extra handle is needed though — once the children settle, the parent's `Promise.all`
+   * running. No extra handle is needed though: once the children settle, the parent's `Promise.all`
    * resolves and `cancelRequested` maps that to CANCELLED.
    *
    * The subtree walk lives in {@link settleTerminal}, so this is only the root's own cancellation.

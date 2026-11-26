@@ -88,7 +88,7 @@ export function usePriceApi(): UsePriceApiReturn {
    *
    * @remarks
    * Queued at low priority: this runs at session load, when the rest of the app is competing for the
-   * same slots, and it is prefetching by definition — nothing on screen is waiting for it.
+   * same slots, and it is prefetching by definition: nothing on screen is waiting for it.
    */
   const queryOnlyCacheHistoricalRates = async (payload: Required<HistoricPricesPayload>): Promise<HistoricPrices> => {
     const response = await api.post<HistoricPrices>(

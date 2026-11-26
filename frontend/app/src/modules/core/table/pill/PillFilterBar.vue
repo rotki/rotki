@@ -31,7 +31,7 @@ const { fields, disabled = false, labels } = defineProps<{
 defineSlots<{
   /**
    * Per-table controls that modify how the active filters apply rather than filtering anything
-   * themselves. Rendered inside the bar, and only while at least one filter is active — a
+   * themselves. Rendered inside the bar, and only while at least one filter is active: a
    * modifier with nothing to modify is a control that does nothing.
    *
    * Generic on purpose: the bar knows only that such controls may exist, never what any of them
@@ -152,7 +152,7 @@ function setEditorOpen(field: FieldDef, open: boolean): void {
  * Puts the caret back in the bar's input.
  *
  * `RuiMenu` returns focus to its activator when it closes, but only when `disable-auto-focus` is
- * off — and every editor here sets it, because without it the menu takes focus off the input the
+ * off, and every editor here sets it, because without it the menu takes focus off the input the
  * moment it opens and typing becomes impossible. The one prop governs both directions, so opting
  * out of the first opts out of the second, and focus is left on the document body: the editor that
  * held it has unmounted and the pill it belonged to may be gone too.

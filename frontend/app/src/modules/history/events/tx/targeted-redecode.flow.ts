@@ -26,7 +26,7 @@ export interface TargetedRedecodeScope {
   readonly blocks: readonly number[];
 }
 
-/** What each child is invoked with — one chain's transactions, or the block set. */
+/** What each child is invoked with: one chain's transactions, or the block set. */
 export type TargetedRedecodeWork =
   | { readonly type: 'transactions'; readonly chain: string; readonly txRefs: readonly string[] }
   | { readonly type: 'blocks'; readonly blockNumbers: readonly number[] };
@@ -35,7 +35,7 @@ export type TargetedRedecodeWork =
  * Re-derive a *named* set of transactions and block events, pulling them from the node first.
  *
  * Distinct from {@link redecodeFlow}, which re-reads what is already stored; this pulls from the node
- * first. That verb boundary is why there are two flows and not one per entry point — row-level
+ * first. That verb boundary is why there are two flows and not one per entry point: row-level
  * re-decode, the dialog, block events, the dev-only re-decode page and conflict resolution are all
  * this same work over a different scope.
  *
@@ -47,7 +47,7 @@ export const targetedRedecodeFlow: HistoryFlow<TargetedRedecodeScope, TargetedRe
   /**
    * One decode per chain, plus one for the block set when the request covers any.
    *
-   * Heterogeneous on purpose — a targeted request can name transactions, block events or both, and
+   * Heterogeneous on purpose: a targeted request can name transactions, block events or both, and
    * the two are decoded by different backend calls. The ids come from the same constructors the
    * mechanism submits under, so a declared child cannot drift out of its parent's gate.
    */

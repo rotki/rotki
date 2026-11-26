@@ -221,7 +221,7 @@ const OFF_VALUES = new Set(['', 'false', '0', 'no', 'off']);
 /**
  * Normalises a dev-flag value to `'true'` (on) or `''` (off). The flags are read
  * by their consumers as truthy strings (e.g. `if (import.meta.env.VITE_DEV_LOGS)`),
- * so a literal `false` would otherwise still be on — we map any off-word to an
+ * so a literal `false` would otherwise still be on; we map any off-word to an
  * empty (falsy) value that every consumer style reads as disabled. Absent = on.
  */
 function resolveDevFlag(existing: string | undefined): string {
@@ -253,7 +253,7 @@ export function devFlagUpdates(file: string): Record<string, string> {
  * All managed KEY=VAL pairs currently INSIDE the block (instance keys + dev
  * flags), for propagating into `process.env`. start-dev loads the env files into
  * process.env before the instance block is (re)written, so a stale value from
- * `app/.env` — e.g. the default `VITE_BACKEND_URL=...:4242` — can shadow the
+ * `app/.env` (e.g. the default `VITE_BACKEND_URL=...:4242`) can shadow the
  * instance's real port. Vite gives process.env VITE_* vars priority over .env
  * files, so the block must be pushed onto process.env to win. Dev flags a
  * developer set outside the block are intentionally absent (not in-block), so

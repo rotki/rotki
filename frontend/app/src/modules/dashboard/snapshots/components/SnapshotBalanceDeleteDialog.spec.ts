@@ -150,7 +150,7 @@ describe('modules/dashboard/snapshots/components/SnapshotBalanceDeleteDialog', (
     await wrapper.find('[data-testid=snapshot-balances-delete-split-toggle] input').setValue(true);
     await nextTick();
 
-    // Invalid split — confirm is a no-op.
+    // Invalid split: confirm is a no-op.
     wrapper.findComponent(ConfirmDialog).vm.$emit('confirm');
     expect(wrapper.emitted('confirm')).toBeUndefined();
 

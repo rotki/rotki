@@ -82,7 +82,7 @@ function getFirstAddress(model: AccountManageState | undefined): string | undefi
   return first && 'address' in first ? first.address : undefined;
 }
 
-describe('pages/accounts/evm — add query handling', () => {
+describe('pages/accounts/evm: add query handling', () => {
   let wrapper: VueWrapper<InstanceType<typeof EvmAccountsPage>>;
 
   beforeEach(() => {

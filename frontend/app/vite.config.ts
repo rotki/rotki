@@ -15,10 +15,9 @@ import { sharedHelperModules, vendorGroupEntries } from './scripts/chunk-groups.
 import { backendIconsCachePlugin } from './scripts/extract-backend-icons.ts';
 
 /*
- * The three relative imports above keep their `.ts` extension on purpose: vite 8 loads this config
- * natively instead of bundling it, and warns about every extensionless relative import. The
- * `@rotki/no-dot-ts-imports` autofix would strip them back off, so it is disabled for config files
- * in eslint.config.js, and tsconfig.node.json sets `allowImportingTsExtensions` for vue-tsc.
+ * The relative imports above keep `.ts` on purpose: vite 8 loads this config natively and warns
+ * on extensionless relative imports. `@rotki/no-dot-ts-imports` is off for config files in
+ * eslint.config.js, and tsconfig.node.json sets `allowImportingTsExtensions` for vue-tsc.
  */
 const PACKAGE_ROOT = import.meta.dirname;
 const PROJECT_ROOT = resolve(PACKAGE_ROOT, '../..');
@@ -84,12 +83,9 @@ const previewProxy = e2eShard > 0
     }
   : undefined;
 /*
- * Single source of truth for the accounting-update feature: the backend gates its endpoints
- * behind ROTKI_ACCOUNTING_UPDATE, so the same shell var is mirrored into a VITE_-prefixed entry,
- * which Vite exposes on import.meta.env. Exporting the one var drives both sides with no drift
- * and no separate frontend flag. The check matches the backend's exactly (feature_flags.py uses
- * `== 'True'`): copying the raw value would let `=1` enable the frontend while the backend stays
- * off.
+ * The backend gates its accounting-update endpoints behind ROTKI_ACCOUNTING_UPDATE, so that one
+ * shell var is mirrored into a VITE_ entry for import.meta.env. The check matches the backend's
+ * `== 'True'` (feature_flags.py), so `=1` cannot enable the frontend while the backend stays off.
  */
 if (process.env.ROTKI_ACCOUNTING_UPDATE === 'True')
   process.env.VITE_ACCOUNTING_UPDATE = 'true';

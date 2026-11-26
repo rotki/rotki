@@ -42,8 +42,8 @@ vi.mock('@/modules/calendar/use-calendar-reminder-api', () => ({
   })),
 }));
 
-const PAST = 1_000_000; // seconds — far in the past
-const FUTURE = 9_999_999_999; // seconds — year 2286
+const PAST = 1_000_000; // seconds, far in the past
+const FUTURE = 9_999_999_999; // seconds, year 2286
 
 function event(overrides: Partial<CalendarEventWithReminder> = {}): CalendarEventWithReminder {
   return createMock<CalendarEventWithReminder>({

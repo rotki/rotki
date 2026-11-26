@@ -71,7 +71,7 @@ export const useWalletStore = defineStore(STORE_ID, () => {
   const { prepareERC20Transfer, prepareNativeTransfer } = useTradeApi();
   const { getEvmChainName } = useSupportedChains();
 
-  // Lazy backend instances — loaded on first use
+  // Lazy backend instances, loaded on first use
   let walletConnectInstance: WalletConnectInstance | undefined;
   let injectedWalletInstance: InjectedWalletInstance | undefined;
 

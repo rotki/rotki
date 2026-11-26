@@ -224,7 +224,7 @@ function stopQueue(): void {
   document.removeEventListener('visibilitychange', handleVisibilityChange);
   consecutiveFailures = 0;
 
-  // Clear any remaining events — user opted out or logged out
+  // Clear any remaining events: user opted out or logged out
   startPromise(clearAll());
 }
 

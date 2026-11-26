@@ -83,7 +83,7 @@ export function locationBalanceAfterDelete(params: {
 
 /**
  * Location names that can't absorb an asset operation without their subtotal
- * going negative — i.e. you'd remove more value than the location holds.
+ * going negative (i.e. you'd remove more value than the location holds).
  *
  * Only assets are capped: removing or shrinking a **liability** adds value back
  * to a location (the inverse), and a location may legitimately be net-negative

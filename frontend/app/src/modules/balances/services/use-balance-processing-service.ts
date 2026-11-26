@@ -30,7 +30,7 @@ interface UseBalanceProcessingServiceReturn {
   handleCachedFetch: (payload: FetchBlockchainBalancePayload) => Promise<Result<void, TaskError>>;
   handleRefresh: (runTask: RunBackendTask, payload: FetchBlockchainBalancePayload) => Promise<Result<void, TaskError>>;
   hasAccounts: (blockchain: string) => boolean;
-  /** Whether the chain has anything to query — `hasAccounts`, except eth2. */
+  /** Whether the chain has anything to query: `hasAccounts`, except eth2. */
   shouldQuery: (blockchain: string) => boolean;
 }
 
@@ -63,12 +63,12 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
    *
    * eth2 is the exception, and it is one the backend already makes. Its "accounts" are
    * validators, produced by a backend task rather than an accounts read, so `hasAccounts` reads
-   * false until that task lands — and a balance pass that overtakes it would skip the chain
+   * false until that task lands, and a balance pass that overtakes it would skip the chain
    * entirely. The backend's `ChainsAggregator.query_balances` exempts `ETHEREUM_BEACONCHAIN` from
    * the same account check and routes it to `query_eth2_balances`, so a frontend gate that
    * disagrees only ever loses balances the backend would have returned.
    *
-   * Gated on the module being active, which is the backend's own other precondition — with eth2
+   * Gated on the module being active, which is the backend's own other precondition: with eth2
    * off there is nothing to query and the exemption must not apply.
    *
    * STOPGAP. The real shape is an edge from the validator fetch to the eth2 balance query, once
@@ -82,8 +82,8 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
    *
    * @remarks
    * A chain whose accounts have not been read yet is left alone. Callers arrive through
-   * `!hasAccounts(chain)`, which cannot tell "fetched, genuinely empty" from "not fetched yet" —
-   * both read false — so acting on unknown *erases* balances whenever a refresh races the account
+   * `!hasAccounts(chain)`, which cannot tell "fetched, genuinely empty" from "not fetched yet"
+   * (both read false), so acting on unknown *erases* balances whenever a refresh races the account
    * walk. An unknown chain keeps what it has until its accounts land.
    *
    * The completion is recorded here because a chain with no accounts submits no activity, so
@@ -132,7 +132,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
     if (skipped)
       return skipped;
 
-    // `runTask` types the payload but does not validate it — the schema is only applied here.
+    // `runTask` types the payload but does not validate it. The schema is only applied here.
     return settleChain(
       blockchain,
       flatMapResult(await runTask<unknown>(apiCall), response => mapError(
@@ -144,8 +144,8 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   };
 
   /**
-   * Layer 1's read. A plain cache-only GET, so its outcome is a rejection rather than a task result
-   * — the only difference from {@link executeBalanceQuery}, and it ends at the same bookkeeping.
+   * Layer 1's read. A plain cache-only GET, so its outcome is a rejection rather than a task result,
+   * the only difference from {@link executeBalanceQuery}, and it ends at the same bookkeeping.
    *
    * @remarks
    * Counts the network results applied while the read is in flight, because a read that one of them

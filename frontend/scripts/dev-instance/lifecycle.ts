@@ -167,7 +167,7 @@ function describeCleanAllPlan(parent: string, summaries: InstanceSummary[]): voi
     : `About to remove ${instanceCount} instance(s) under: ${parent}`;
   logger.warn(headline);
   for (const s of summaries) {
-    const label = s.meta ? 'instance' : 'orphan — no sidecar';
+    const label = s.meta ? 'instance' : 'orphan, no sidecar';
     logger.warn(`  - ${s.name} (${label}) at ${s.dir}`);
   }
 }

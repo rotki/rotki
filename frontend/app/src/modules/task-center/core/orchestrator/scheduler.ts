@@ -3,7 +3,7 @@ import type { Lane, LaneCaps, LaneFamily, LaneFamilyActiveCaps, LaneFamilyCaps }
 /**
  * A unit of work for the {@link Scheduler}. `run` resolves when the job is done and MUST NOT
  * reject (the orchestrator wraps execution so outcomes are values). `eligible` is re-checked
- * on every pump — it returns false while the job's dependencies/rules are unmet.
+ * on every pump. It returns false while the job's dependencies/rules are unmet.
  */
 export interface ScheduledJob {
   readonly id: string;
@@ -46,7 +46,7 @@ export interface Scheduler {
  * A long-lived dynamic concurrency scheduler: work arrives over time, each lane has its own
  * cap, and a job only starts when a lane slot is free AND it is eligible. This is the proven
  * shape of `core/common/async/limited-parallelization-queue.ts`, generalized to lanes +
- * eligibility — it is intentionally NOT plainfp's `allWithConcurrency`, which only runs a
+ * eligibility. It is intentionally NOT plainfp's `allWithConcurrency`, which only runs a
  * fixed batch.
  */
 export function createScheduler(
@@ -89,7 +89,7 @@ export function createScheduler(
 
   /**
    * Would starting a job on `lane` exceed its family's active-lane cap? A lane that is already
-   * running is free to take another job — the cap is on how many lanes are live, not on the work
+   * running is free to take another job: the cap is on how many lanes are live, not on the work
    * inside them (that is {@link LaneFamilyCaps}).
    */
   function familyLaneBlocked(lane: Lane): boolean {

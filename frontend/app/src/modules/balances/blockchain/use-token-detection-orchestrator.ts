@@ -16,12 +16,12 @@ interface UseTokenDetectionOrchestratorReturn {
   detectTokens: (chain: string | string[], addresses: string[]) => Promise<void>;
   detectAllTokens: (chains?: string | string[]) => Promise<void>;
   /**
-   * Detection as a stage *inside* a chain job — see {@link useBlockchainBalances}.
+   * Detection as a stage *inside* a chain job (see {@link useBlockchainBalances}).
    *
    * `addrs` narrows the stage to specific addresses; omitted, it covers the whole chain.
    */
   detectForChain: (chain: string, parent: ActivityId, addrs?: string[]) => Promise<void>;
-  /** Synchronous liveness probe — true while a matching detection activity is pending or running. */
+  /** Synchronous liveness probe: true while a matching detection activity is pending or running. */
   isDetecting: (chain: string, address?: string | null) => boolean;
   useIsDetecting: (chain: MaybeRefOrGetter<string | string[]>, address?: MaybeRefOrGetter<string | null>) => ComputedRef<boolean>;
 }
@@ -42,7 +42,7 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
    * the next statement, and it reads the tokens this just found. Hydrating in between would be a
    * second read of the same rows.
    *
-   * A chain with no addresses, or one that cannot hold tokens, is not an error — it simply has no
+   * A chain with no addresses, or one that cannot hold tokens, is not an error. It simply has no
    * detection stage, and the chain job carries straight on to its query.
    *
    * `addrs` narrows the stage. An account addition knows exactly which addresses are new, and
@@ -113,7 +113,7 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
       if (!addrs || addrs.length === 0 || isEqual(addrs, prev[c]))
         continue;
 
-      // Fetch cached detections only — no balance refresh
+      // Fetch cached detections only, no balance refresh
       await fetchCachedDetectedTokens(c);
     }
   });

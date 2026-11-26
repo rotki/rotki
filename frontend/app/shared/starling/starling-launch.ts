@@ -37,7 +37,7 @@ export interface SpawnStarlingOptions {
  * Spawn starling and wire its three stdio streams: stdin carries JSON-RPC
  * requests out, stdout carries responses and `event.*` notifications back, and
  * stderr carries log lines. Shared by the Electron handler and the dev launcher
- * so both drive the supervisor over the same channel — the only difference
+ * so both drive the supervisor over the same channel. The only difference
  * between them is what they do with the lines.
  */
 export function spawnStarling(options: SpawnStarlingOptions): StarlingProcess {
@@ -78,7 +78,7 @@ export function spawnStarling(options: SpawnStarlingOptions): StarlingProcess {
  * Drive the first bring-up. starling boots idle in embedded mode and serves its
  * control channel immediately; this request is what starts the backend tree, and
  * it resolves only once the whole tree is ready. That makes it the readiness
- * gate — there is nothing to poll, and `event.ready` is informational.
+ * gate: there is nothing to poll, and `event.ready` is informational.
  */
 export async function requestStarlingStart(
   rpc: StarlingRpc,
@@ -98,7 +98,7 @@ export interface StopStarlingOptions {
   /** The control client. Its `stop` is the ordered-teardown request. */
   rpc: StarlingRpc;
   child: ChildProcess;
-  /** Settles once the child is gone — `StarlingProcess.exited`, or any promise that tracks it. */
+  /** Settles once the child is gone: `StarlingProcess.exited`, or any promise that tracks it. */
   exited: Promise<unknown>;
   /**
    * How long `stop` may take to answer. starling only replies once the backend tree is down, which
@@ -125,7 +125,7 @@ const DEFAULT_EXIT_MARGIN_MS = 5_000;
 
 /**
  * Local on purpose. `shared/utils.ts` has the same helper, but it is not in the tsconfig project
- * that compiles `shared/starling/` (TS6307), so importing it there does not typecheck — which is
+ * that compiles `shared/starling/` (TS6307), so importing it there does not typecheck. That is
  * why this timer was hand-written in each launcher to begin with.
  */
 async function wait(ms: number): Promise<void> {
@@ -135,14 +135,14 @@ async function wait(ms: number): Promise<void> {
 /**
  * Ask starling to stop, give it its own grace, and only then kill it.
  *
- * ⚠️ The waits are not politeness. starling spawns core and colibri into their own process groups
+ * The waits are not politeness. starling spawns core and colibri into their own process groups
  * precisely so it can reap them, which means **nothing else can**: killing the supervisor before its
  * escalation has run orphans both. That rule is the reason the supervisor exists, and it was
  * hand-written three times (electron, dev, e2e) with three different sets of mistakes before it
  * moved here.
  *
  * Callers keep their own re-entry guard. This function does not own one, because the flag also tells
- * each caller's `exit` handler whether the exit was expected, which is caller state — but it is safe
+ * each caller's `exit` handler whether the exit was expected, which is caller state. It is still safe
  * to call on an already-dead child, which it reports as `alreadyExited`.
  *
  * @remarks

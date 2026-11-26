@@ -23,7 +23,7 @@ export const SHUTDOWN_GRACE_SECS = 10;
  * The backend settings that reach starling on a `start`/`restart`, declared
  * structurally rather than imported from the app's `BackendOptions`. That type is
  * zod-derived and pulls the renderer's module graph in with it, which the dev and
- * e2e launchers — plain node, no bundler aliases — cannot resolve. The app's
+ * e2e launchers (plain node, no bundler aliases) cannot resolve. The app's
  * `Partial<BackendOptions>` satisfies this shape, so callers pass theirs directly.
  */
 export interface StarlingBackendOptions {
@@ -83,7 +83,7 @@ export interface StarlingLaunchInput {
   /**
    * Origin the Vite dev server is serving the renderer from, added to the CORS
    * allowance in dev. Passed in rather than read from `import.meta.env` so this
-   * module stays runnable outside a Vite bundle — the dev launcher imports it
+   * module stays runnable outside a Vite bundle: the dev launcher imports it
    * straight from node and would see no `import.meta.env` at all.
    */
   devServerUrl?: string;
@@ -125,7 +125,7 @@ function corsOrigins(isDev: boolean, devServerUrl: string | undefined): string {
  * The mode-independent supervisor args: launch topology, addressing, dirs and
  * the shutdown grace. The mutable backend tunables (log level,
  * logfromothermodules, log-file limits, sqlite-instructions, sleep-secs) are NOT
- * passed here — the renderer sends them in the `start` control request (see
+ * passed here: the renderer sends them in the `start` control request (see
  * StarlingHandler), so they live in one place (BackendOptions) instead of being
  * mirrored on both CLI and RPC.
  */
@@ -153,11 +153,9 @@ function commonStarlingArgs(input: StarlingLaunchInput): string[] {
   ];
 
   /*
-   * Only forward a data dir when the user explicitly chose one. Otherwise starling computes the
-   * platform default itself (production `data` versus `develop_data`), keyed to its own build via
-   * the same version gate the backends use. Electron's `isDev`, a Vite build-time flag, does not
-   * track the release tag, so deciding here would diverge for packaged nightlies. starling holds
-   * the data-dir lock, so it owns the choice regardless.
+   * Only forward a data dir the user chose. Otherwise starling picks the platform default (`data`
+   * versus `develop_data`) via its own version gate. Electron's `isDev` is a build-time flag that
+   * does not track the release tag, so deciding here would diverge for packaged nightlies.
    */
   if (options.dataDirectory) {
     args.push('--data-dir', options.dataDirectory);
@@ -199,10 +197,9 @@ export function buildStarlingInvocation(input: StarlingLaunchInput): StarlingInv
   const built = devBuiltBinary(path.join(root, 'target'), STARLING_DIRECTORY);
 
   /*
-   * The windows Strawberry Perl shim is needed by any cargo in the tree, and the two launchers
-   * decide independently: starling may be prebuilt while colibri still falls back to `cargo run`
-   * for vendored openssl, and that child inherits this env. Keying the shim off starling's own
-   * branch would leave that case building openssl with the wrong perl.
+   * Any cargo in the tree needs the windows Strawberry Perl shim. starling may be prebuilt while
+   * colibri still falls back to `cargo run` for vendored openssl, inheriting this env, so keying
+   * the shim off starling's own branch would build openssl with the wrong perl.
    */
   const env = built && !colibri.usesCargo ? undefined : buildCargoEnv() ?? undefined;
 

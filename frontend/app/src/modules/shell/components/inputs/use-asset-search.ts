@@ -19,7 +19,7 @@ type Asset = AssetInfoWithId | NftAsset;
  * Which assets a picker may offer: the allow-list, the exclusions, the chain it is scoped to, and
  * how ignored assets and NFTs are treated.
  *
- * One object rather than five arguments because they are one decision — what the user may pick —
+ * One object rather than five arguments because they are one decision (what the user may pick),
  * and because `AssetSelect` passes them straight through, where five separate props pushed it past
  * the lint ceiling on a component that is part of the premium bundle's API.
  */

@@ -4,8 +4,8 @@ import { type Activity, type ActivityId, ActivityKind, type ActivitySteps } from
 /**
  * The activity tree, read off `Activity.parent`.
  *
- * Producers declare their whole subtree in one tick — a history refresh submits the umbrella, a
- * chain per group and an account per chain before any of it runs — so the shape is known from the
+ * Producers declare their whole subtree in one tick (a history refresh submits the umbrella, a
+ * chain per group and an account per chain before any of it runs), so the shape is known from the
  * first snapshot.
  *
  * Pure over a snapshot, like the rest of `core/`: no Vue, no orchestrator.
@@ -19,8 +19,8 @@ export interface ActivityTree {
 
 /**
  * Running work first, then queued, each oldest first. Inside a subtree the kind is nearly always
- * the same (a chain and its accounts are both TX_SYNC), so `kindRank` — which orders the flat
- * list — carries no information here and start order is what a reader can follow.
+ * the same (a chain and its accounts are both TX_SYNC), so `kindRank`, which orders the flat
+ * list, carries no information here and start order is what a reader can follow.
  */
 function compareSiblings(a: Activity, b: Activity): number {
   const byStart = (a.startedAt ?? Number.MAX_SAFE_INTEGER) - (b.startedAt ?? Number.MAX_SAFE_INTEGER);

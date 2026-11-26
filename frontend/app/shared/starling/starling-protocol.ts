@@ -21,8 +21,8 @@ export type StarlingMethod = typeof StarlingMethod[keyof typeof StarlingMethod];
 
 /**
  * Notifications starling pushes without an id. These arrive over the wire, so a
- * received method is a plain string until it is matched against one of these —
- * an unrecognised event is logged and ignored, never trusted.
+ * received method is a plain string until it is matched against one of these.
+ * An unrecognised event is logged and ignored, never trusted.
  */
 export const StarlingEvent = {
   CRASHED: 'event.crashed',

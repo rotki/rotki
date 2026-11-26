@@ -106,7 +106,7 @@ export function useBridgeTransactionActions(
    * ignoring and resolving as external are undone by the same unlink call.
    *
    * Reported in the panel the action came from, so the outcome and its undo sit beside the list they
-   * changed. Holding only the latest resolution costs nothing durable — resolving as external also
+   * changed. Holding only the latest resolution costs nothing durable: resolving as external also
    * writes the leg to `history_event_link_ignores`, which keeps a Restore in the ignored tab.
    */
   function reportResolution(message: string, transaction: UnmatchedBridgeTransaction): void {

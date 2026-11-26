@@ -66,7 +66,7 @@ export interface FormOptions<TState extends object, TPayload, TMessage = string>
  * @remarks
  * Destructure the refs before using them in a template. Vue unwraps a ref bound directly, but not
  * one reached through a property, so `form.valid` renders as the ref object itself and reads as
- * permanently truthy — a disabled button that is never disabled.
+ * permanently truthy: a disabled button that is never disabled.
  */
 export interface FormApi<TState extends object, TPayload, TMessage = string> {
   /** Reactive form state, bound directly with `v-model="form.state.txRef"`. */

@@ -80,7 +80,7 @@ describe('useSnapshotSchedule', () => {
 
   describe('when the snapshot time is not known yet', () => {
     /**
-     * 🔴 Only the `/periodic` poll writes `lastBalanceSave`, and it races the login load: measured
+     * Only the `/periodic` poll writes `lastBalanceSave`, and it races the login load: measured
      * in the app, the poll landed *after* the aggregate query, so reading the unset 0 answered
      * "due" on a login minutes after a snapshot.
      */

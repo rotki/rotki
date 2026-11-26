@@ -10,7 +10,7 @@ type Translate = (key: string) => string;
 /**
  * The pill-bar fields for the internal transaction conflicts table: the chain a conflict is on,
  * drawn as the shared chain pill, plus the two date bounds folded into one `period` pill. The wire
- * form is unchanged — the bounds still serialize to `fromTimestamp`/`toTimestamp`.
+ * form is unchanged: the bounds still serialize to `fromTimestamp`/`toTimestamp`.
  *
  * The chain field is declared here rather than in `filters/shared/`: it is the only filter-bag chain
  * field so far (the address book's rides a param), so there is no second call site to shape a shared

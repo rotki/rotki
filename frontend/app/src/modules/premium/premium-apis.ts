@@ -67,7 +67,7 @@ export function statisticsApi(): StatisticsApi {
     async assetValueDistribution(): Promise<TimedAssetBalances> {
       return queryLatestAssetValueDistribution();
     },
-    // Both stay `async` — they are part of the premium bundle's external StatisticsApi contract.
+    // Both stay `async`: they are part of the premium bundle's external StatisticsApi contract.
     async cancelDailyHistoricPriceTask(): Promise<void> {
       cancelByPrefix(dailyPricesActivity.kind, ...dailyPricesActivity.partsWithin([]));
     },

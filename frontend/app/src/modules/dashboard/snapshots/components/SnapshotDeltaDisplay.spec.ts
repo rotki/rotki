@@ -57,7 +57,7 @@ describe('modules/dashboard/snapshots/components/SnapshotDeltaDisplay', () => {
     setCurrency('USD');
     wrapper = createWrapper({ timestamp: day1, value: bigNumberify(100) });
 
-    expect(wrapper.text()).toContain('—');
+    expect(wrapper.text()).toContain('\u{2014}');
     expect(wrapper.findComponent(FiatDisplay).exists()).toBe(false);
   });
 
@@ -118,7 +118,7 @@ describe('modules/dashboard/snapshots/components/SnapshotDeltaDisplay', () => {
       value: bigNumberify(200),
     });
 
-    expect(wrapper.text()).toContain('—');
+    expect(wrapper.text()).toContain('\u{2014}');
     expect(wrapper.findComponent(FiatDisplay).exists()).toBe(false);
   });
 });

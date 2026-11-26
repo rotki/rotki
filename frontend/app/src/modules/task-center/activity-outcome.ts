@@ -9,7 +9,7 @@ export interface ActivityOutcome {
   readonly color: OutcomeColor;
   readonly key: MessageKey;
   /**
-   * Named here rather than in the template, so the plugin's source scan cannot see it — every
+   * Named here rather than in the template, so the plugin's source scan cannot see it. Every
    * icon below has to be listed in `vite.config.ts` `ruiIconsPlugin.include` or it silently
    * renders as nothing.
    */
@@ -32,7 +32,7 @@ export interface ActivityOutcome {
  * there is a percentage, and the orchestrator reports `-1` unless a producer counted steps.
  *
  * The settled statuses all need saying, including the two the progress rollup counts as done
- * (`projection.ts` `percentageOf`) — a subtree at 100% with two failed chains is otherwise
+ * (`projection.ts` `percentageOf`): a subtree at 100% with two failed chains is otherwise
  * indistinguishable from a clean one.
  *
  * Kept out of the component so the mapping is assertable without mounting, and out of `core/`

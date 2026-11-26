@@ -19,7 +19,7 @@ interface UseAutoLoginReturn {
 }
 
 /**
- * Auto-unlock on backend (re)connection — the single trigger for it. When a saved profile
+ * Auto-unlock on backend (re)connection, the single trigger for it. When a saved profile
  * exists it kicks off `controller.startAuto()`, which resolves the stored credentials and
  * drives the ONE shared flow: the flow probes for a live session and either resumes it or
  * does a fresh login with the saved password. Post-unlock side-effects run in the

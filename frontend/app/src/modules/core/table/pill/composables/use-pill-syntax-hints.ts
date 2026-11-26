@@ -36,7 +36,7 @@ const EXAMPLE_END_TIMESTAMP = new Date(2024, 0, 20).getTime() / 1000;
  * The examples themselves stay literal and untranslated. `after`, `before` and `to` are the words
  * the parser knows, so a translated example is one the user copies and the bar then refuses.
  *
- * Each shape gets its own chip — upper bound, lower bound, span — and `before` earns one even
+ * Each shape gets its own chip (upper bound, lower bound, span), and `before` earns one even
  * though `after` already shows the form. Which words the parser accepts is not guessable (`since`
  * and `until` work, `from` and `to` do not), and a chip for one direction alone reads as though
  * that is the only direction the bar supports.

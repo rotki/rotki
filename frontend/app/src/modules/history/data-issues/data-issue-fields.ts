@@ -32,7 +32,7 @@ const KINDS: string[] = Object.values(IssueKind);
 /**
  * The pill-bar fields for the data issues table: the state, kind, asset and account, plus the two
  * date bounds folded into one `period` pill, the way history and oracle prices do it. The wire form
- * is unchanged — the bounds still serialize to `fromTimestamp`/`toTimestamp`.
+ * is unchanged: the bounds still serialize to `fromTimestamp`/`toTimestamp`.
  */
 export function toDataIssueFields(
   resolvers: SharedFieldResolvers,

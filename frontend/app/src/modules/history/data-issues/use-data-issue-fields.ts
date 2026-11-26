@@ -12,7 +12,7 @@ import { useDataIssueAccountOptions } from '@/modules/history/data-issues/use-da
 import { useDataIssuesFormat } from '@/modules/history/data-issues/use-data-issues-format';
 
 /**
- * The chip colours are `RuiChip` colours, which include `grey` — not a context colour, and the one
+ * The chip colours are `RuiChip` colours, which include `grey`: not a context colour, and the one
  * a value with no colour of its own already gets. Everything else maps across unchanged.
  */
 function toValueIcon(meta: { color: string; icon: RuiIcons }): ValueIcon {

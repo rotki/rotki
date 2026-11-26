@@ -17,7 +17,7 @@ type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
 const openDialog = defineModel<boolean>('open', { default: false });
 
 const { locations, timestamp } = defineProps<{
-  /** Existing location rows (real + total) — used to exclude duplicate names. */
+  /** Existing location rows (real + total), used to exclude duplicate names. */
   locations: LocationDataSnapshot[];
   timestamp: number;
 }>();

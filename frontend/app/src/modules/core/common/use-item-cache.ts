@@ -49,7 +49,7 @@ interface ItemCacheReturn<T> {
   /** Synchronously returns the cached value for `key`, queueing a fetch if missing. */
   resolve: (key: string) => T | null;
   /**
-   * Returns the cached value for `key` WITHOUT queueing a fetch — for reading a value some other code
+   * Returns the cached value for `key` WITHOUT queueing a fetch, for reading a value some other code
    * is responsible for requesting (e.g. an off-page neighbour), so a wide read can't storm the backend.
    */
   peek: (key: string) => T | null;
@@ -100,7 +100,7 @@ export function createItemCache<T>(
   // The stable record behind `cache`: never reassigned, so reads skip the coarse ref.
   const values = get(cache);
   const versions = new Map<string, Ref<number>>();
-  // Transient in-flight state — intentionally factory-local, reset on re-init.
+  // Transient in-flight state: intentionally factory-local, reset on re-init.
   const pendingKeys = new Set<string>();
   const batch = new Set<string>();
   /** Consecutive failed fetches per key, cleared when a fetch succeeds. */
@@ -142,7 +142,7 @@ export function createItemCache<T>(
     logger.warn(
       `[item-cache${label ? `:${label}` : ''}] exceeded hard cap of ${hardSize} entries; `
       + `force-evicted ${forced} live entr${forced === 1 ? 'y' : 'ies'}. A consumer is resolving `
-      + `more keys than the cap holds (likely an unbounded read) — scope the read to the viewport `
+      + `more keys than the cap holds (likely an unbounded read). Scope the read to the viewport `
       + `or raise maxSize for this cache.`,
     );
   };

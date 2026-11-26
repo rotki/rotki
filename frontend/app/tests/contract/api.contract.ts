@@ -23,8 +23,8 @@ function isEvmAccountBalances(value: BlockchainAssetBalances | BtcBalances): val
 /**
  * Contract tests (measurement framework §5.1): the frontend's own api
  * composables against a live backend booted on a golden profile. Each call
- * exercises the full client pipeline — URL construction, parameter
- * serialization, `snake_case` to `camelCase` transforms and zod schema parsing —
+ * exercises the full client pipeline (URL construction, parameter
+ * serialization, `snake_case` to `camelCase` transforms and zod schema parsing),
  * so a passing test means the real frontend understands the real backend.
  * Assertions compare against the profile generator's expected.json, never
  * against hand-written fixtures that could drift.

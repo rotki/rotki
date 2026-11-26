@@ -3,7 +3,7 @@ import { backendUrl } from '../../../playwright.config';
 
 /**
  * Payload for adding an EVM event. Timestamps are milliseconds and addresses must be
- * checksummed — the backend rejects anything else.
+ * checksummed: the backend rejects anything else.
  */
 export interface EvmEventSeed {
   txRef: string;
@@ -27,7 +27,7 @@ export interface EvmEventSeed {
  * filtering: a handful of events with deliberately distinct assets, protocols and addresses
  * would otherwise cost as many slow form round-trips before the first assertion.
  *
- * The referenced transaction must already exist in the user DB — see `seedEvmTransaction`.
+ * The referenced transaction must already exist in the user DB (see `seedEvmTransaction`).
  */
 export async function apiAddEvmEvent(
   request: APIRequestContext,
@@ -76,7 +76,7 @@ export interface OnlineEventSeed {
 
 /**
  * Adds a plain history event. Unlike an EVM event it needs no transaction to exist, and it
- * carries no counterparty — which is what makes it useful for asserting that an entry-type
+ * carries no counterparty, which is what makes it useful for asserting that an entry-type
  * exclusion filter really excludes.
  */
 export async function apiAddOnlineEvent(

@@ -151,8 +151,8 @@ describe('useBalanceFetching', () => {
     });
 
     /**
-     * 🔴 The periodic tick never asked a chain anything. `{ periodic: true }` went to
-     * `refreshAccounts`, whose no-chain branch is a *cached* read — the DB, not the network — so
+     * The periodic tick never asked a chain anything. `{ periodic: true }` went to
+     * `refreshAccounts`, whose no-chain branch is a *cached* read (the DB, not the network), so
      * "Automatic balance refresh" only re-read what the backend had already written, and the
      * `periodic` refresh mode had no caller that could reach it.
      */
@@ -163,7 +163,7 @@ describe('useBalanceFetching', () => {
       await autoRefresh();
 
       expect(refreshBlockchainBalances).toHaveBeenCalledWith({}, 'periodic');
-      // Accounts are re-read too, but as an accounts read — it no longer pretends to do more.
+      // Accounts are re-read too, but as an accounts read. It no longer pretends to do more.
       expect(fetchAccounts).toHaveBeenCalledWith({ refreshEns: true });
     });
   });
@@ -206,7 +206,7 @@ describe('useBalanceFetching', () => {
     });
 
     /**
-     * ⭐ §3/§10. This used to split: fire detection for the EVM chains and separately refresh only
+     * This used to split: fire detection for the EVM chains and separately refresh only
      * the non-EVM ones, because detection ended in its own balance read and refreshing an EVM chain
      * too would have queried it twice. Detection is now a stage inside each chain job that the
      * chain's own query follows, so it is one call for every chain either way.

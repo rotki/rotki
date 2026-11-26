@@ -15,7 +15,7 @@ export const OracleCacheFilterKeys = {
  * The pill-bar fields for the existing oracle caches table: the pair a cache was built for.
  *
  * The same two asset pills the historic prices tab carries, with this table's own labels. The bar
- * also replaces the clear button that sat beside the two selects — removing a pill is what clearing
+ * also replaces the clear button that sat beside the two selects: removing a pill is what clearing
  * one filter means, and `Clear all` is what the button did.
  */
 export function useOracleCacheFields(): FieldDef[] {

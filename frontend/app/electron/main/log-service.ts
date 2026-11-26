@@ -60,7 +60,7 @@ export class LogService {
 
   /**
    * The directory logs are actually written to. Follows `LOGDIR` and so can differ
-   * from {@link defaultLogDirectory} — anything pointing a user at their logs must
+   * from {@link defaultLogDirectory}. Anything pointing a user at their logs must
    * read this, not the platform default.
    */
   get logDirectory(): string {

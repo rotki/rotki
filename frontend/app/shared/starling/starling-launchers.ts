@@ -1,7 +1,7 @@
 /**
  * How each service is actually launched: which binary, from which directory,
  * behind which prefix. Split out of `starling-args.ts`, which owns the
- * supervisor's own arguments — this half answers "what runs", that half answers
+ * supervisor's own arguments. This half answers "what runs", that half answers
  * "how it is configured".
  */
 import { execSync } from 'node:child_process';
@@ -63,9 +63,8 @@ function uvPythonPath(root: string): string | undefined {
       });
       /*
        * Only the last line is ours: anything else uv put on stdout would be spliced into the path
-       * and spawned verbatim. `trimEnd` runs first so the trailing newline does not make the last
-       * line an empty one. `findLast` would read better, but this file is typechecked under the
-       * renderer's DOM config, which pins lib to ES2022 to match vite's target.
+       * and spawned verbatim. `trimEnd` keeps the trailing newline from emptying the last line.
+       * No `findLast`: the renderer's DOM config pins lib to ES2022, vite's target.
        */
       const exe = out.trimEnd().split('\n').pop()?.trim();
       resolvedUvPython = exe && fs.existsSync(exe) ? exe : null;

@@ -21,7 +21,7 @@ import {
  * Every function takes a `Snapshot` and returns a NEW `Snapshot` (no mutation),
  * so the draft model can keep an immutable history for undo. Balance edits
  * reuse the existing location-delta and total-rebuild helpers; location edits
- * touch only the affected location row (the stored `total` row is independent —
+ * touch only the affected location row (the stored `total` row is independent,
  * see `findSumMismatch`). All values are USD.
  *
  * @packageDocumentation
@@ -35,9 +35,9 @@ export interface LocationSplit {
 
 /**
  * Where a balance's value is attributed:
- * - `''` — skip location bookkeeping entirely;
- * - a location name — the whole value goes there (the simple, default path);
- * - a split — the value is distributed across locations (caller guarantees the
+ * - `''`: skip location bookkeeping entirely;
+ * - a location name: the whole value goes there (the simple, default path);
+ * - a split: the value is distributed across locations (caller guarantees the
  *   portions sum to the balance's `usdValue`).
  */
 export type LocationAttribution = string | LocationSplit[];
@@ -61,7 +61,7 @@ function singleEntry(location: string, balance: BalanceSnapshot): LocationSplit[
  * contribution at `editIndex` (single-location add/edit). A **split** is a list
  * of signed per-location USD *deltas* the caller already netted against the old
  * value (an edit distributes `new − old`, an add the full new value), so each
- * location moves by exactly its own share and nothing is removed here — this is
+ * location moves by exactly its own share and nothing is removed here. This is
  * what stops a multi-location edit dumping the whole old value on the first row.
  */
 function applyBalanceAttribution(params: {
@@ -133,7 +133,7 @@ export function applyBalanceEdit(snapshot: Snapshot, index: number, mutation: Ba
 /**
  * Removes the balance at `index`, debiting the location(s) it was attributed to.
  * A single location name (or `''` to skip) takes the original tested path; a
- * split debits each location by its own portion — the inverse of a split add.
+ * split debits each location by its own portion (the inverse of a split add).
  */
 export function applyBalanceDelete(snapshot: Snapshot, index: number, location: LocationAttribution): Snapshot {
   const balancesSnapshot = snapshot.balancesSnapshot.filter((_, i) => i !== index);
@@ -194,7 +194,7 @@ export function applyLocationDelete(snapshot: Snapshot, index: number): Snapshot
  * Sets several location subtotals to absolute USD values in one step, creating
  * rows that don't exist yet. Used to *distribute* a reconciliation across
  * multiple locations (caller decides the per-location values). Leaves the stored
- * `total` row untouched — consistent with `applyLocationEdit`; reconciling the
+ * `total` row untouched, consistent with `applyLocationEdit`; reconciling the
  * total is a separate, explicit step.
  */
 export function distributeToLocations(snapshot: Snapshot, splits: LocationSplit[]): Snapshot {
@@ -215,7 +215,7 @@ export function distributeToLocations(snapshot: Snapshot, splits: LocationSplit[
 /**
  * Sets the stored `total` row to `usdValue` (the value the net-worth chart
  * plots). Creates the row when absent. This is deliberately independent of the
- * two panel sums — the user is the source of truth for the canonical net worth.
+ * two panel sums: the user is the source of truth for the canonical net worth.
  */
 export function applySetTotal(snapshot: Snapshot, usdValue: BigNumber): Snapshot {
   const locationDataSnapshot = [...snapshot.locationDataSnapshot];
@@ -236,7 +236,7 @@ export interface SnapshotSumMismatch {
   balancesSum: BigNumber;
   /** Sum of the real (non-`total`) location rows, USD. */
   locationsSum: BigNumber;
-  /** Value of the stored `total` row — what the chart plots, USD. */
+  /** Value of the stored `total` row: what the chart plots, USD. */
   storedTotal: BigNumber;
 }
 

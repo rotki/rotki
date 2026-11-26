@@ -13,7 +13,7 @@ import consola from 'consola';
  * Builds a golden user profile (tools/scenarios), boots the mock for the
  * backend's external services on the profile's chain state, boots the real
  * backend through the bench launcher (which redirects all external HTTP to
- * the mock — zero egress), points its rpc nodes at the mock, then runs the
+ * the mock, zero egress), points its rpc nodes at the mock, then runs the
  * contract vitest suite (vitest.contract.config.ts) with the backend url
  * and the profile's expected values in the environment.
  */

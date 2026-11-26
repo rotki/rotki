@@ -13,7 +13,7 @@ import { useSetting } from '@/modules/settings/use-setting';
  * in the user's display currency, at each side's own *historic* rate (#12277).
  *
  * The conversion is done here (not in `useSnapshotList`) so it only runs for the
- * rows the table actually renders — the visible page. Eagerly converting the
+ * rows the table actually renders (the visible page). Eagerly converting the
  * whole series was what hammered the forex endpoint. Each mounted cell resolves
  * at most two historic rates (its own + its predecessor's) through the shared,
  * debounced, LRU-backed cache, so the working set stays ~page-size.
@@ -76,7 +76,7 @@ const delta = computed<BigNumber | undefined>(() => {
 });
 
 /** Placeholder for "no change to show" (avoids a raw i18n text node). */
-const placeholder = '—';
+const placeholder = '\u{2014}';
 </script>
 
 <template>

@@ -8,7 +8,7 @@ import { tag } from 'plainfp/tagged';
 /** No activity with the given id is known to the orchestrator. */
 export const NotFound = tag('NotFound');
 
-/** The activity already finished (complete/cancelled/failed) — nothing to cancel. */
+/** The activity already finished (complete/cancelled/failed): nothing to cancel. */
 export const AlreadyTerminal = tag('AlreadyTerminal');
 
 /** The activity is running but exposes no cancel handle, so it cannot be interrupted. */

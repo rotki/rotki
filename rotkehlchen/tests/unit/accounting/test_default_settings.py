@@ -802,7 +802,7 @@ def test_basis_transfer_different_bucket(accounting_pot: AccountingPot):
     # Verify aDAI now has the transferred lot with preserved rate
     # Original: 100 DAI at 1 EUR each → total cost 100 EUR
     # Transferred: 100 aDAI at 1 EUR each (1:1 ratio, rate unchanged)
-    # Total cost preserved: 100 * 1 = 100 EUR ✓
+    # Total cost preserved: 100 * 1 = 100 EUR
     adai_events = accounting_pot.cost_basis.get_events(A_ADAI_V1)
     adai_acquisitions = adai_events.acquisitions_manager.get_acquisitions()
     assert len(adai_acquisitions) == 1

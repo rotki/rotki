@@ -61,7 +61,7 @@ export async function apiGetNetValue(request: APIRequestContext): Promise<Map<nu
 
 /**
  * Reads a snapshot directly from the backend for assertion purposes. Keys are
- * snake_case (the raw backend shape) — the frontend's camelCase is applied by
+ * snake_case (the raw backend shape). The frontend's camelCase is applied by
  * its own API wrapper, which we deliberately bypass here.
  */
 export async function apiGetSnapshot(

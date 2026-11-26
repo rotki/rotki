@@ -1,5 +1,5 @@
 /**
- * Sent once on login — app and user configuration data.
+ * Sent once on login: app and user configuration data.
  */
 export interface SessionConfigPayload {
   premium: boolean;
@@ -16,7 +16,7 @@ export interface SessionConfigPayload {
 }
 
 /**
- * Sent once on login — connected exchange summary.
+ * Sent once on login: connected exchange summary.
  * Per-exchange connection counts are sent as dynamic `exchange_{location}` keys.
  */
 export interface ExchangesSummaryPayload {
@@ -27,7 +27,7 @@ export interface ExchangesSummaryPayload {
 }
 
 /**
- * Sent once after balances finish loading — balance-dependent metrics.
+ * Sent once after balances finish loading: balance-dependent metrics.
  * Per-chain account counts are sent as dynamic `accounts_{chain}` keys.
  */
 export interface BalancesSummaryPayload {
@@ -41,7 +41,7 @@ export interface BalancesSummaryPayload {
 }
 
 /**
- * Sent once after history sync completes — history event metrics.
+ * Sent once after history sync completes: history event metrics.
  */
 export interface HistorySyncPayload {
   premium: boolean;

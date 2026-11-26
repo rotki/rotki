@@ -62,7 +62,7 @@ export function useRememberTableFilter(
     const savedFilter = get<Record<string, LocationQuery>>(persistedFiltersRaw)[tableIdValue];
 
     if (savedFilter && !isEmpty(savedFilter)) {
-      // Strip page and limit — page resets to 1, limit comes from global itemsPerPage setting
+      // Strip page and limit: page resets to 1, limit comes from global itemsPerPage setting
       const filterWithoutPagination = objectOmit(savedFilter, ['page', 'limit']);
 
       // Update query params so applyRouteFilter can pick them up
@@ -88,7 +88,7 @@ export function useRememberTableFilter(
     const current = get<Record<string, LocationQuery>>(persistedFiltersRaw);
     set(persistedFiltersRaw, {
       ...current,
-      // Strip limit — it should always come from global itemsPerPage setting
+      // Strip limit: it should always come from global itemsPerPage setting
       [tableIdValue]: objectOmit(query, ['limit']),
     });
   };

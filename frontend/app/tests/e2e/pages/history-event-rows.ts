@@ -5,7 +5,7 @@ import { confirmInline } from '../helpers/utils';
 /** A regular event row, and the sub-event rows of an expanded swap. */
 export const EVENT_ROW = '[data-testid=history-event-row]';
 
-/** A swap group, collapsed or expanded — the id is on the collapse header too. */
+/** A swap group, collapsed or expanded. The id is on the collapse header too. */
 export const SWAP_ROW = '[data-testid=history-event-swap]';
 
 /** A movement that paired with another one and renders as a single matched row. */
@@ -17,13 +17,13 @@ export const MOVEMENT_ROW = '[data-testid=history-event-movement]';
  * Split out of `HistoryEventsPage` because it is one concern with one rule behind it: **a row is
  * named by the event it stands for, never by its position**. The table sorts timestamp DESC and
  * re-renders on every write, so an index resolved before a mutation names a different event after
- * it. That is not a stylistic preference — it is how the edit action ends up clicking the wrong
+ * it. That is not a stylistic preference. It is how the edit action ends up clicking the wrong
  * row, and how an assertion ends up reading one.
  *
  * The rule has a second half, which `waitForNewRow` exists to enforce: **an id resolved too early
  * names the wrong event, and pinning it does not save you.** A save is followed by a refetch, and
  * for as long as that is in flight the table still holds the previous rows. Waiting for a row
- * count* does not close that window — the specs run serial against a shared page, so any
+ * count* does not close that window: the specs run serial against a shared page, so any
  * `>= n` guard is already satisfied by the rows earlier tests left behind and passes on the first
  * tick. Wait for the event itself.
  */
@@ -68,7 +68,7 @@ export class HistoryEventRows {
     return this.byId(added ?? '');
   }
 
-  /** A row pinned to one event id — the only handle a re-sort cannot invalidate. */
+  /** A row pinned to one event id, the only handle a re-sort cannot invalidate. */
   byId(eventId: string): Locator {
     return this.page.locator(`[data-event-id="${eventId}"]`);
   }
@@ -84,7 +84,7 @@ export class HistoryEventRows {
    * The first row matching `rowSelector`, pinned to the event it stands for right now.
    *
    * Resolve this once, before anything that mutates the list, and address the row through the
-   * result from then on. ⚠️ Only valid where the top row is already the one you mean: after a save
+   * result from then on. Only valid where the top row is already the one you mean: after a save
    * the refetch may still be in flight, and this then pins the *previous* top row. Use
    * `waitForNewRow` there.
    */

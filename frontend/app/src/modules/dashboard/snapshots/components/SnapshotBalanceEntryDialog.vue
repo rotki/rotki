@@ -21,7 +21,7 @@ import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 type EditableBalance = BalanceSnapshot & { index: number };
 
 const { snapshot, timestamp } = defineProps<{
-  /** Current draft, read-only — used for the location preview and conflict check. */
+  /** Current draft, read-only. Used for the location preview and conflict check. */
   snapshot: Snapshot;
   timestamp: number;
 }>();
@@ -59,7 +59,7 @@ const previousUsdValue = computed<BigNumber>(() => {
 const enteredUsdValue = computed<BigNumber>(() => parseNumericInput(get(formModel)?.usdValue ?? '', Zero));
 
 /**
- * Signed change to the balance's USD value (`new − old`) — the amount the split
+ * Signed change to the balance's USD value (`new − old`): the amount the split
  * distributes across locations. On an add this is the whole new value; on an
  * edit it is only the difference, so each location moves by its own share rather
  * than the stale stored value being dumped on one row.
@@ -75,7 +75,7 @@ const splitIsRemoval = computed<boolean>(() => get(valueDelta).isNegative());
 /**
  * Per-location USD subtotal, the most a removal-split row may take from it.
  * Only asset removals are capped (an increase credits, and liabilities may run
- * net-negative) — mirrors the delete dialog and `overdrawnLocationIds`.
+ * net-negative), mirroring the delete dialog and `overdrawnLocationIds`.
  */
 const splitCaps = computed<Record<string, BigNumber>>(() => {
   const formVal = get(formModel);
@@ -94,7 +94,7 @@ const existingLocations = computed<string[]>(() =>
 
 /**
  * Locations that can't absorb the edited value without going negative (asset
- * only) — disabled in the selector and rejected by the form's validation. On an
+ * only): disabled in the selector and rejected by the form's validation. On an
  * add this is always empty (attributing a fresh asset only raises a subtotal).
  */
 const disabledLocations = computed<string[]>(() => {

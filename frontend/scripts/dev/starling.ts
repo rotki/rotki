@@ -71,7 +71,7 @@ export interface StarlingDevPorts {
  * fronts both behind its reverse proxy, so web dev reaches them through one
  * origin exactly as the desktop app does.
  *
- * The `start` request is the readiness gate — it resolves only once the whole
+ * The `start` request is the readiness gate: it resolves only once the whole
  * tree is up, so there is nothing here to poll.
  *
  * Under `strictPorts` a slot has reserved every port already, so each is bound exactly and the

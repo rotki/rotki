@@ -18,7 +18,7 @@ describe('formatElapsed', () => {
     expect(formatElapsed(3_840_000)).toBe('1h 04m');
   });
 
-  /** Clock skew, or a `startedAt` from a snapshot taken a tick ahead — neither should render "-3s". */
+  /** Clock skew, or a `startedAt` from a snapshot taken a tick ahead. Neither should render "-3s". */
   it('should floor a negative elapsed at zero', () => {
     expect(formatElapsed(-3000)).toBe('0s');
   });

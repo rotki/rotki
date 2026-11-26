@@ -85,7 +85,7 @@ export function collectPendingSuggestions(
 ): PendingSuggestion[] {
   const lastApplied = frontendSettings.lastAppliedSettingsVersion;
 
-  // Deduplicate by settingType+key — latest version wins
+  // Deduplicate by settingType+key: latest version wins
   const byKey = new Map<string, PendingSuggestion>();
 
   for (const vs of registry) {
@@ -228,7 +228,7 @@ export function useSettingsSuggestions(
     }
   }
 
-  /** The stored answers plus `ids`, or nothing when they add none — so no pointless write happens. */
+  /** The stored answers plus `ids`, or nothing when they add none, so no pointless write happens. */
   function mergeAnswered(ids: string[]): string[] | undefined {
     const answered = repo.frontend.answeredSuggestions;
     const fresh = [...new Set(ids)].filter(id => !answered.includes(id));

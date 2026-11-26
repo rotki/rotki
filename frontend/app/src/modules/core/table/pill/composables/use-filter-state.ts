@@ -25,7 +25,7 @@ export interface UseFilterStateReturn {
   /**
    * Rebuilds the state from an externally-sourced wire form (route restore, saved view,
    * mount). Skips the echo of a change this model itself just produced so a round-trip does
-   * not reorder or drop filters — the same self-echo property `useFilterModel` carries for
+   * not reorder or drop filters, the same self-echo property `useFilterModel` carries for
    * the old bar (PR #12584), here over `ActiveFilter[]`.
    */
   setFromMatches: (
@@ -52,7 +52,7 @@ export function useFilterState(fields: MaybeRefOrGetter<FieldDef[]>): UseFilterS
 
   /**
    * The one way state is written. Every entry point goes through here so a field's `admits` is
-   * applied to all of them alike — an edit, a removal, and the route/saved-view restore below.
+   * applied to all of them alike: an edit, a removal, and the route/saved-view restore below.
    */
   function commit(next: FilterState): void {
     const pruned = pruneInadmissible(next, toValue(fields));
@@ -80,7 +80,7 @@ export function useFilterState(fields: MaybeRefOrGetter<FieldDef[]>): UseFilterS
 
   /**
    * What the declaring fields currently admit. Reading it *calls* `admits`, so whatever those
-   * lookups depend on — a store-backed mapping, another field's values — is tracked here.
+   * lookups depend on (a store-backed mapping, another field's values) is tracked here.
    * Watching the field list instead would miss a mapping that loads without rebuilding the list.
    */
   const admitted = computed<string[][]>(() => {

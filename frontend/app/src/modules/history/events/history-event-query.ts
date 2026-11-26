@@ -72,7 +72,7 @@ export function buildHistoryEventSources({
    * rather than narrowing them, which is why the two cannot be active beside a verb.
    *
    * A verb regularly names more than one type/subtype pair, so taking the first filters by a
-   * fraction of what the verb means — and which one that is depends on the mapping's key order.
+   * fraction of what the verb means, and which one that is depends on the mapping's key order.
    *
    * The request cannot name pairs, only a list of types and a list of subtypes read as a cross
    * product. That is exact when the pairs form one, and otherwise matches slightly wide. Wide is the

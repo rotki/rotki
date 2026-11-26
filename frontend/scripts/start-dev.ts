@@ -224,8 +224,8 @@ function wantsInstanceMode(option: DevCliOptions['instance']): boolean {
 /**
  * Plain `pnpm dev` / `dev:web`: ignore the managed block entirely. Strip it from
  * `.env.development.local` BEFORE the env files are loaded, so the instance keys
- * (ports, data dir, INSTANCE_NAME) never reach process.env. Otherwise Vite —
- * which gives process.env VITE_* vars priority over .env files — would point the
+ * (ports, data dir, INSTANCE_NAME) never reach process.env. Otherwise Vite
+ * (which gives process.env VITE_* vars priority over .env files) would point the
  * renderer at the instance backend, and resolveInstance would resume the
  * instance. A dev flag a developer set outside the block is left in place.
  */
@@ -239,7 +239,7 @@ function useDefaultDevEnv(): void {
 /**
  * Instance mode: prepareInstance wrote the managed block with this instance's
  * ports, data-dir pointers and dev flags. Push the whole block onto process.env
- * so it OVERRIDES what loadDevEnv seeded from `app/.env` — that load runs before
+ * so it OVERRIDES what loadDevEnv seeded from `app/.env`. That load runs before
  * the block is written, so on a fresh instance run the default `VITE_BACKEND_URL`
  * (:4242) is already in process.env, and Vite prioritises process.env VITE_*
  * over .env files. Without this the renderer would talk to 4242 instead of the

@@ -23,7 +23,7 @@ export type EditKind = (typeof EditKind)[keyof typeof EditKind];
  * edit offers to re-run them (#6825). Decoding and balances are driven by the mutation itself, so
  * only downstream work the user must re-trigger belongs here.
  *
- * NOTE: `PNL_REPORT` is deferred while the behaviour is validated — add `ActivityKind.PNL_REPORT`
+ * NOTE: `PNL_REPORT` is deferred while the behaviour is validated. Add `ActivityKind.PNL_REPORT`
  * here to switch it on.
  */
 const COMPUTED_DOWNSTREAM: readonly ActivityKind[] = [
@@ -32,7 +32,7 @@ const COMPUTED_DOWNSTREAM: readonly ActivityKind[] = [
 
 /**
  * Pure map from an {@link EditKind} to the {@link ActivityKind}s it invalidates. No Vue, no
- * store — unit-tested with literal inputs. Returns an empty list for an unknown edit so the
+ * store. Unit-tested with literal inputs. Returns an empty list for an unknown edit so the
  * caller never has to guard.
  */
 const EDIT_INVALIDATES: Record<EditKind, readonly ActivityKind[]> = {

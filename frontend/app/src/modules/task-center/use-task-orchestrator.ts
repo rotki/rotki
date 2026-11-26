@@ -27,7 +27,7 @@ export interface UseTaskOrchestratorReturn extends TaskOrchestrator {
    */
   readonly useWorkStatusPrefix: (kind: ActivityKind, ...parts: ActivityPartSource[]) => ComputedRef<WorkStatus>;
   /**
-   * Just the liveness of {@link useWorkStatus} — "is this work in flight right now".
+   * Just the liveness of {@link useWorkStatus}: "is this work in flight right now".
    *
    * Most readers want a spinner, not the whole snapshot, and were each wrapping the composite in
    * their own `computed(() => get(status).active)`. Reach for {@link useWorkStatus} when a reader
@@ -35,10 +35,10 @@ export interface UseTaskOrchestratorReturn extends TaskOrchestrator {
    * this returns a second computed rather than the status being split into independent refs.
    */
   readonly useIsActive: (kind: ActivityKind, ...parts: ActivityPartSource[]) => ComputedRef<boolean>;
-  /** Liveness of {@link useWorkStatusPrefix} — "is *any* activity under this prefix in flight". */
+  /** Liveness of {@link useWorkStatusPrefix}: "is *any* activity under this prefix in flight". */
   readonly useIsActivePrefix: (kind: ActivityKind, ...parts: ActivityPartSource[]) => ComputedRef<boolean>;
   /**
-   * Reactive live {@link Activity} for `makeActivityId(kind, ...parts)` — its `steps`/`percentage`
+   * Reactive live {@link Activity} for `makeActivityId(kind, ...parts)`. Its `steps`/`percentage`
    * are the native progress channel for work whose progress is pushed via {@link reportProgress}.
    * Undefined while no such activity is registered.
    */

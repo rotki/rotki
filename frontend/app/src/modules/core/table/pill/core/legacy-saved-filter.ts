@@ -7,7 +7,7 @@ import { z } from 'zod';
  * a flag beside it. An asset was stored as its whole info object rather than its identifier.
  *
  * Read-only, and deliberately the whole of what is left of that model: the bar it belonged to is
- * gone, so nothing needs its behaviour — only enough shape to move a stored filter into a saved
+ * gone, so nothing needs its behaviour, only enough shape to move a stored filter into a saved
  * view (`use-saved-views.ts`). It is one file so that dropping the conversion later is one
  * deletion.
  */

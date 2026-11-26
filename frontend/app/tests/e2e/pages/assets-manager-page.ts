@@ -61,7 +61,7 @@ export class AssetsManagerPage {
    * Drops every pill except the ones named.
    *
    * The ignored handling is a pill of its own now, and a test that says "show ignored assets too"
-   * then filters to one symbol means both at once — clearing the bar wholesale would silently put
+   * then filters to one symbol means both at once: clearing the bar wholesale would silently put
    * ignored assets back out of sight.
    */
   private async clearFiltersExcept(keep: string[]): Promise<void> {

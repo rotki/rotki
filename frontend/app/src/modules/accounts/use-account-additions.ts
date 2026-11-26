@@ -21,7 +21,7 @@ const EVM_SKIP_MESSAGE: Record<EvmSkipReason, MessageKey> = {
 /**
  * `parent` is passed explicitly rather than picked up from ambient state. A module-scoped "current
  * batch" would read more cleanly at the call sites, but it only works while every submit happens in
- * the synchronous prologue of the batch callback — an `await` introduced anywhere above it would
+ * the synchronous prologue of the batch callback. An `await` introduced anywhere above it would
  * silently orphan the child from its umbrella, with nothing to report it.
  */
 export interface AdditionOptions {

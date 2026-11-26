@@ -16,8 +16,8 @@ export type StarlingNotificationHandler = (method: string, params: unknown) => v
 
 /**
  * The only logging this client does: one warning for a line that is not JSON.
- * Narrowed to a single method so both consumers can satisfy it — Electron passes
- * its `LogService`, the dev launcher a console-backed shim — without the shared
+ * Narrowed to a single method so both consumers can satisfy it (Electron passes
+ * its `LogService`, the dev launcher a console-backed shim) without the shared
  * module depending on either.
  */
 export interface StarlingRpcLogger {
@@ -27,7 +27,7 @@ export interface StarlingRpcLogger {
 /**
  * The NDJSON JSON-RPC client half of the starling control channel: it correlates
  * id-tagged responses back to their pending requests and forwards id-less
- * notifications to the handler. It owns nothing about the child's lifecycle — the
+ * notifications to the handler. It owns nothing about the child's lifecycle: the
  * handler `attach`es it to each spawned child's stdin and `detach`es on exit.
  */
 export class StarlingRpc {
@@ -109,7 +109,7 @@ export class StarlingRpc {
       this.onNotification(message.method, message.params);
   }
 
-  /** Reject every in-flight request — the child died before replying. */
+  /** Reject every in-flight request: the child died before replying. */
   rejectAll(error: Error): void {
     for (const { reject } of this.pending.values())
       reject(error);

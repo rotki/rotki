@@ -25,7 +25,7 @@ interface RefreshOptions {
   readonly detect?: boolean;
   /**
    * Narrow the detection stage to these addresses. Ignored without `detect`, and omitted it covers
-   * every address on the chain — an account addition is the one flow that knows a smaller answer.
+   * every address on the chain. An account addition is the one flow that knows a smaller answer.
    */
   readonly detectAddresses?: string[];
   /**
@@ -58,7 +58,7 @@ function refreshPriority(userStarted: boolean): Priority {
 }
 
 /**
- * Layer 2 — the work, as **one chain job per chain**.
+ * Layer 2: the work, as **one chain job per chain**.
  *
  * The chain is the unit of identity, ordering and exclusion, and the job is a *parent*, not a leaf:
  *
@@ -69,14 +69,14 @@ function refreshPriority(userStarted: boolean): Priority {
  *
  * Its body is **statement order, not `deps`**: detect, then query. The query must see what
  * detection found, and that is a sequence inside one activity rather than two activities with an
- * edge between them — which is what let a chain's detection and its balance query drift apart into
+ * edge between them, which is what let a chain's detection and its balance query drift apart into
  * separate top-level rows with nothing tying them together.
  *
  * Detection is the only genuinely per-address stage. The accounts read is one call per chain and
  * so is the balance query, so neither earns children.
  *
  * Reading a chain's balances back out of the user's own database is the *other* layer and lives in
- * {@link useBalanceHydration} — it is not work, so it is not here.
+ * {@link useBalanceHydration}. It is not work, so it is not here.
  */
 export function useBlockchainBalances(): UseBlockchainBalancesReturn {
   const { t } = useI18n({ useScope: 'global' });
@@ -99,7 +99,7 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
    *
    * The umbrella's identity is scope + mode, so two identical runs dedup onto one while a full
    * refresh and a single-chain one coexist. Its scope comes from `/blockchains/supported`, which
-   * lands before the account walk, so the denominator is honest from the first render — it must
+   * lands before the account walk, so the denominator is honest from the first render. It must
    * never read a store that is still filling.
    *
    * @param payload - what to refresh; an empty `addresses` list means every address, the same as

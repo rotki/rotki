@@ -41,7 +41,7 @@ export function useEventRedecodeStatus(
   const { getChain } = useSupportedChains();
   const { statusOf, version } = useTaskOrchestrator();
 
-  /** The event a re-decode would actually act on — the group header, or the first decodable child. */
+  /** The event a re-decode would actually act on: the group header, or the first decodable child. */
   function resolveDecodable(group: HistoryEventEntry, children: HistoryEventEntry[]): DecodableEventType | undefined {
     for (const item of [group, ...children]) {
       if (isEvmEvent(item) || isEvmSwapEvent(item) || isSolanaEvent(item) || isSolanaSwapEvent(item))

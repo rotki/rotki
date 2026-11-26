@@ -32,7 +32,7 @@ export function isUvAvailable(): boolean {
  * interpreter, so uv resolves it against the repo's `uv.lock` instead.
  *
  * Shared so the dev prerequisites check and the starling launcher cannot drift on
- * a decision that has to agree — one refuses to start when it is false, the other
+ * a decision that has to agree: one refuses to start when it is false, the other
  * picks the interpreter it implies.
  */
 export function shouldUseUv(): boolean {

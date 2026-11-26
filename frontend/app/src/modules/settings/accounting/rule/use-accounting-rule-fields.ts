@@ -28,7 +28,7 @@ export function useAccountingRuleFields(filters: MaybeRefOrGetter<Filters>): Fie
   const { counterparties } = useHistoryEventCounterpartyMappings();
 
   /**
-   * Declared twice over — as the option list the subtype field offers, and as what it `admits` — so
+   * Declared twice over (as the option list the subtype field offers, and as what it `admits`), so
    * the narrowing and the pruning of an already-picked subtype cannot disagree.
    */
   const subtypesFor = (eventTypes: readonly string[]): string[] =>

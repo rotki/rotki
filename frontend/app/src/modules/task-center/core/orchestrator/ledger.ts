@@ -76,7 +76,7 @@ function edgesMatch(edges: readonly StaleAfterEdge[], producer: ActivityId): boo
  * Removing the ledger entry outright is what flips `everCompleted` back to false, which is the
  * whole effect: the consumer's next guarded fetch is admitted. Live records are untouched, so an
  * in-flight consumer keeps running and writes a fresh entry when it settles. A consumer never
- * invalidates itself — its own completion is what freshness means.
+ * invalidates itself: its own completion is what freshness means.
  */
 export function markStaleAfter(
   producer: ActivityId,

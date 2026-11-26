@@ -4,10 +4,10 @@ import { TEST_EVENT_TIMESTAMP } from './history-events';
 const A_ETH = 'ETH';
 const A_DAI = 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F';
 
-/** USDC on mainnet — the asset only the `gamma` event holds, used by the asset-filter tests. */
+/** USDC on mainnet, the asset only the `gamma` event holds, used by the asset-filter tests. */
 export const A_USDC = 'eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
 
-/** Checksummed — the backend rejects anything else. */
+/** Checksummed: the backend rejects anything else. */
 export const ADDRESS_ALPHA = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
 export const ADDRESS_BETA = '0x57bF3B0f29E37619623994071C9e12091919675c';
 export const ADDRESS_GAMMA = '0xDeBF20617708857ebe4F679508E7b7863a8A8EeE';
@@ -33,7 +33,7 @@ const base = TEST_EVENT_TIMESTAMP * 1000;
  * | 3 | USDC  | curve      | beta    | 300    | ethereum | evm event     | gamma   | +2m    |
  * | 4 | ETH   | curve      | gamma   | 4000   | ethereum | evm event     | delta   | +3m    |
  * | 5 | ETH   | aave-v3    | beta    | 0.25   | optimism | evm event     | epsilon | +4m    |
- * | 6 | ETH   | —          | —       | 7      | kraken   | history event | zeta    | +5m    |
+ * | 6 | ETH   | (none)     | (none)  | 7      | kraken   | history event | zeta    | +5m    |
  */
 export const pillFilterEvents: EvmEventSeed[] = [
   {
@@ -150,7 +150,7 @@ export const DATE_CUTOFF_TYPED = '15/01/2024 12:02:30';
 /**
  * `DD MM YYYY` alone: the day every seeded event sits on, typed without a time. A bound may be
  * given as a bare date, and the picker completes it from the end of the day that bound stands
- * for — the first second for a From and the last for a To.
+ * for: the first second for a From and the last for a To.
  */
 export const DATE_DAY_DIGITS = '15012024';
 
@@ -162,8 +162,8 @@ export const DAY_END_TS = 1705363199;
  * A bulk set for the pagination tests, seeded into its own user so it cannot disturb the row
  * counts above. Plain history events need no transaction, so they are cheap to generate.
  *
- * 24 events over 3 pages at the default 10 per page, of which only 4 are on kraken — few enough
- * that filtering to them cannot land on a later page, which is what makes the page-reset
+ * 24 events over 3 pages at the default 10 per page, of which only 4 are on kraken. That is few
+ * enough that filtering to them cannot land on a later page, which is what makes the page-reset
  * assertion meaningful.
  */
 export const PAGED_TOTAL = 24;
@@ -184,7 +184,7 @@ export function pagedEvents(): OnlineEventSeed[] {
   }));
 }
 
-/** USDC on Optimism — same symbol as {@link A_USDC}, different chain. */
+/** USDC on Optimism: same symbol as {@link A_USDC}, different chain. */
 export const A_USDC_OPTIMISM = 'eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85';
 
 /**

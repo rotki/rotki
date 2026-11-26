@@ -52,7 +52,7 @@ export function usePriceSeed(): UsePriceSeedReturn {
     const newestPerAsset = collectAssetsByNewestTimestamp();
 
     if (newestPerAsset.size === 0) {
-      logger.debug('[price-seed] skipped — no chain timestamps or balances available');
+      logger.debug('[price-seed] skipped: no chain timestamps or balances available');
       return;
     }
 

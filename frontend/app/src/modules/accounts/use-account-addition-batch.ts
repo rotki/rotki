@@ -41,7 +41,7 @@ interface UseAccountAdditionBatchReturn {
  * ids come from. Building them at the call site is how the parent ends up under a different prefix
  * than the children it claims to parent.
  *
- * Throttling is the lane's, not this function's — each child submits onto `accounts-add:<chain>`,
+ * Throttling is the lane's, not this function's: each child submits onto `accounts-add:<chain>`,
  * capped at 2. Expressing it here as well is the trap documented on `DECODE_LANE`.
  */
 export function useAccountAdditionBatch(): UseAccountAdditionBatchReturn {

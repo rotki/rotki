@@ -108,7 +108,7 @@ function hasBalanceScannerSubCalls(calldata: string): boolean {
  *
  * Balance scanner calls with errors (e.g. "out of gas") are skipped during
  * parsing. At resolve time we always return success with the correct
- * balances — this is more deterministic than replaying transient errors.
+ * balances. This is more deterministic than replaying transient errors.
  */
 interface CassetteEntry {
   method: string;
@@ -294,7 +294,7 @@ export function tryResolveBalanceCall(
     }
   }
 
-  // Multicall aggregate — only intercept if it contains balance scanner sub-calls
+  // Multicall aggregate: only intercept if it contains balance scanner sub-calls
   if (isCallTo(params, MULTICALL)) {
     const calldata = getCalldata(params);
     const selector = getSelector(calldata);

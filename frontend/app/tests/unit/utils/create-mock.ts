@@ -65,7 +65,7 @@ function createProxy(overrides: Record<PropertyKey, unknown>): unknown {
  *
  * Every accessed property resolves to a `vi.fn()` (callable and further
  * proxyable), so class or branded types that cannot be constructed in a unit
- * test — e.g. `LogService` or `Electron.IpcMainInvokeEvent` — can be supplied
+ * test (e.g. `LogService` or `Electron.IpcMainInvokeEvent`) can be supplied
  * where the real type is expected. Pass `overrides` to pin specific
  * properties/implementations.
  *

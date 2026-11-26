@@ -44,13 +44,13 @@ export function resolveText(t: TranslateFn, value: ActivityText | undefined): st
 
 /**
  * Deterministic identity for an activity. Always derived from its source
- * (`${kind}:${...parts}`), never random — see {@link makeActivityId}. A stable id keeps Vue
+ * (`${kind}:${...parts}`), never random (see {@link makeActivityId}). A stable id keeps Vue
  * `:key`s stable, makes deduplication free (same work → same id) and lets the controller
  * target an item.
  */
 export type ActivityId = Brand<string, 'ActivityId'>;
 
-/** Identity of a cancellable group of activities (e.g. a batch of tx queries — issue #10955). */
+/** Identity of a cancellable group of activities (e.g. a batch of tx queries, issue #10955). */
 export type GroupId = Brand<string, 'GroupId'>;
 
 /**
@@ -72,7 +72,7 @@ export const ActivityKind = {
   /** Deleting cached data for one purgeable source; what derives from it declares `staleAfter`. */
   PURGE: 'purge',
   /**
-   * Turning one module on or off. Ephemeral — it exists so what a module feeds can declare a
+   * Turning one module on or off. Ephemeral: it exists so what a module feeds can declare a
    * `staleAfter` edge against it, not to be shown as work.
    */
   MODULE_TOGGLE: 'module-toggle',
@@ -115,7 +115,7 @@ export type ActivityKind = (typeof ActivityKind)[keyof typeof ActivityKind];
 
 /**
  * Model-facing status. The orchestrator's internal queued state projects to {@link PENDING};
- * the model never needs a separate "queued" — pending *is* "waiting to start".
+ * the model never needs a separate "queued": pending *is* "waiting to start".
  */
 export const ActivityStatus = {
   PENDING: 'pending',
@@ -123,7 +123,7 @@ export const ActivityStatus = {
   COMPLETE: 'complete',
   CANCELLED: 'cancelled',
   FAILED: 'failed',
-  /** Deliberately not run — the user configured this work off. Terminal, but not a success. */
+  /** Deliberately not run: the user configured this work off. Terminal, but not a success. */
   SKIPPED: 'skipped',
 } as const;
 
@@ -186,7 +186,7 @@ interface ActivitySource {
   type: typeof ActivitySourceType.NATIVE;
 }
 
-/** Naive, step-based progress — the model already used by PnL and db-upgrade UIs. */
+/** Naive, step-based progress, the model already used by PnL and db-upgrade UIs. */
 export interface ActivitySteps {
   current: number;
   total: number;
@@ -199,7 +199,7 @@ export interface Activity {
   readonly group?: GroupId;
   /**
    * The activity this one is a part of, when a producer submits its work as a tree
-   * (see {@link ActivitySpec.parent}). Descriptive only — scheduling is `deps` plus the lane caps.
+   * (see {@link ActivitySpec.parent}). Descriptive only: scheduling is `deps` plus the lane caps.
    */
   readonly parent?: ActivityId;
   /** i18n, human readable. */
@@ -229,7 +229,7 @@ export interface Activity {
   readonly ephemeral?: boolean;
   /**
    * Whether this activity deletes data before re-deriving it. Read by the eligibility rules to keep
-   * a reset from overlapping work that writes to the same rows — the one overlap that is not merely
+   * a reset from overlapping work that writes to the same rows, the one overlap that is not merely
    * duplicate effort. See {@link HistoryFlow.resets}, which is where a flow declares it.
    */
   readonly resets?: boolean;
@@ -247,7 +247,7 @@ export interface Activity {
 /**
  * What the work-history remembers about one settled activity, keyed by its {@link ActivityId}
  * and overwritten on each settle. Tiny and durable: it survives `clearTerminal` so the
- * orchestrator can answer "did this ever load, and when" — the freshness half of the old
+ * orchestrator can answer "did this ever load, and when", the freshness half of the old
  * status store. `lastSuccessAt` is set only on a successful completion, so a later failure
  * never erases the fact that data was once loaded.
  */
@@ -259,16 +259,16 @@ export interface CompletionRecord {
 }
 
 /**
- * The projected status of a kind (or a specific id) — the single replacement for
+ * The projected status of a kind (or a specific id), the single replacement for
  * `useStatusUpdater`. Liveness (`running`/`pending`/`active`) comes from the live records;
  * freshness (`everCompleted`/`lastCompletedAt`) from the completion ledger.
  */
 export interface WorkStatus {
   readonly running: boolean;
   readonly pending: boolean;
-  /** `running || pending` — the replacement for `loading()`. */
+  /** `running || pending`, the replacement for `loading()`. */
   readonly active: boolean;
-  /** A success has been recorded — the inverse of `isFirstLoad()`. */
+  /** A success has been recorded (the inverse of `isFirstLoad()`). */
   readonly everCompleted: boolean;
   /** Epoch ms of the last success; feeds a TTL refresh-gate. */
   readonly lastCompletedAt?: number;

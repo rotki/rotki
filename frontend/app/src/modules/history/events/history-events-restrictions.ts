@@ -12,7 +12,7 @@ type HistoryEventsPeriod =
  * sources fold it into the payload, and the events fetch narrows to the chains it names. One bag
  * rather than sibling props, so a new restriction cannot reach only some of the three layers.
  *
- * An absent key means unrestricted, and an empty array reads the same — restricting to nothing is
+ * An absent key means unrestricted, and an empty array reads the same: restricting to nothing is
  * not expressible. `externalAccounts` is the one exception, for the reason given on it.
  */
 export interface HistoryEventsRestrictions {
@@ -51,7 +51,7 @@ interface RestrictionGetters {
  * The list-valued axes default to `[]` here, in one place, because the consumers test them with
  * `.length` and treat absent and empty alike. The nullable ones stay nullable: `entryTypes`
  * distinguishes "every type" from a chosen set, `validators`/`location` gate a pill on presence
- * rather than on emptiness, and `externalAccounts` must not be defaulted at all — `[]` is a
+ * rather than on emptiness, and `externalAccounts` must not be defaulted at all: `[]` is a
  * meaningful value there and `undefined` is the off state.
  */
 export function toRestrictionGetters(

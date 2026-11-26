@@ -34,8 +34,8 @@ export function useSessionPurge(): UseSessionPurge {
   const { t } = useI18n({ useScope: 'global' });
 
   /**
-   * Run one purge as an activity. The caller still owns *how* each source is deleted — the
-   * endpoints differ per source — while the orchestrator owns that it happened, under an id that
+   * Run one purge as an activity. The caller still owns *how* each source is deleted (the
+   * endpoints differ per source), while the orchestrator owns that it happened, under an id that
    * names the source (`purge:transactions:eth`). Whatever derives from that data declares a
    * `staleAfter` edge against this kind rather than anyone reaching in to reset its status.
    *

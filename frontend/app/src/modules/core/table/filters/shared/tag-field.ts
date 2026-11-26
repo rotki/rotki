@@ -14,8 +14,8 @@ export interface TagFieldOption {
 /**
  * The tags pill, shared by every table that filters on them.
  *
- * Tags are an external filter rather than a matcher — they ride the `tags` param, which goes to
- * both the request and the URL — so modelling them as a field is what folds a standalone tag
+ * Tags are an external filter rather than a matcher (they ride the `tags` param, which goes to
+ * both the request and the URL), so modelling them as a field is what folds a standalone tag
  * selector into the one bar.
  *
  * A tag carries the two colours the user picked for it, and that pairing is how a tag is
