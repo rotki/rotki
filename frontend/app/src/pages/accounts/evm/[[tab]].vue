@@ -1,24 +1,19 @@
 <script setup lang="ts">
-import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
-import { Blockchain } from '@rotki/common';
 import { RuiTab, RuiTabs } from '@rotki/ui-library';
 import { isDefined, watchImmediate } from '@vueuse/core';
-import { get, set } from '@vueuse/shared';
-import { computed, onMounted, ref, useTemplateRef } from 'vue';
+import { get } from '@vueuse/shared';
+import { computed, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { type RouteLocationRaw, useRoute, useRouter } from 'vue-router';
 import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import AccountBalances from '@/modules/accounts/AccountBalances.vue';
 import AccountsStalenessIndicator from '@/modules/accounts/AccountsStalenessIndicator.vue';
-import { type AddAccountSeed, parseAddAccountLink } from '@/modules/accounts/add-account-link';
-import { createNewAccountForChain } from '@/modules/accounts/blockchain/new-account-state';
 import EthStakingValidators from '@/modules/accounts/EthStakingValidators.vue';
 import EvmAccountPageButtons from '@/modules/accounts/EvmAccountPageButtons.vue';
 import AccountDialog from '@/modules/accounts/management/AccountDialog.vue';
-import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
+import { useEvmAccountAdd } from '@/modules/accounts/use-evm-account-add';
 import { NoteLocation } from '@/modules/core/common/notes';
-import { useAddQuery } from '@/modules/core/common/use-add-query';
 import { Module, useModuleEnabled } from '@/modules/session/use-module-enabled';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { useEthStakingAccess } from '@/modules/staking/eth/use-eth-staking-access';
@@ -40,41 +35,16 @@ const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute('/accounts/evm/[[tab]]');
 
-const account = ref<AccountManageState>();
 const table = useTemplateRef<InstanceType<typeof AccountBalances>>('table');
 
 const category = 'evm';
 const { enabled: isEth2Enabled } = useModuleEnabled(Module.ETH2);
-const { chainIds } = useAccountCategoryHelper(category);
 const { allowed: ethStakingAllowed } = useEthStakingAccess();
 
 const isAccountsTabSelected = computed<boolean>(() => tab === 'accounts');
 const isAddDisabled = computed<boolean>(() => !get(isAccountsTabSelected) && !get(ethStakingAllowed));
 
-const usedChainIds = computed<string[]>(() => {
-  if (get(isAccountsTabSelected)) {
-    return [
-      'all',
-      ...get(chainIds),
-    ];
-  }
-
-  return [Blockchain.ETH2];
-});
-
-/**
- * Opens the add dialog, optionally holding addresses on a chain. A chain the tab does not offer is
- * ignored rather than trusted, so a link cannot open the dialog on something it cannot add to.
- */
-function createNewBlockchainAccount({ addresses, chain }: AddAccountSeed = { addresses: [] }): void {
-  const usable = get(usedChainIds);
-  const state = createNewAccountForChain(chain && usable.includes(chain) ? chain : usable[0]);
-
-  if (addresses.length > 0 && state.type === 'account')
-    state.data = addresses.map(address => ({ address, tags: null }));
-
-  set(account, state);
-}
+const { account, createNewBlockchainAccount, usedChainIds } = useEvmAccountAdd(isAccountsTabSelected);
 
 function refresh(): void {
   if (isDefined(table))
@@ -92,14 +62,6 @@ function getTabLink(category: string): RouteLocationRaw {
     },
   };
 }
-
-const { consumeAddQuery } = useAddQuery((query) => {
-  createNewBlockchainAccount(parseAddAccountLink(query));
-});
-
-onMounted(async () => {
-  await consumeAddQuery();
-});
 
 watchImmediate(route, (route) => {
   const { params } = route;

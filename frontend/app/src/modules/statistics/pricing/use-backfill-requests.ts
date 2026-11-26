@@ -1,28 +1,16 @@
-import { type FailedHistoricalAssetPriceResponse, HistoricalAssetPriceResponse } from '@rotki/common';
+import type { FailedHistoricalAssetPriceResponse, HistoricalAssetPriceResponse } from '@rotki/common';
 import { get, set } from '@vueuse/shared';
 import { pipe } from 'plainfp';
-import { fromZod } from 'plainfp/interop/zod';
-import { flatMap, isErr, mapError, tap, tapError } from 'plainfp/result';
+import { isErr, tap, tapError } from 'plainfp/result';
 import { shallowRef } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { msg } from '@/message-key';
-import { priceBackfillActivity } from '@/modules/assets/prices/prices.activity';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
-import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
-import { SECONDS_PER_DAY } from '@/modules/core/common/constraints';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
-import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useSetting } from '@/modules/settings/use-setting';
-import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
 import { classifyOutcome, type RequestResult } from '@/modules/statistics/pricing/backfill-outcome';
 import { BACKOFF_MAX_MS, BACKOFF_START_MS } from '@/modules/statistics/pricing/backfill-pacing';
 import { type BackfillRequest, dayStart, requestedDays } from '@/modules/statistics/pricing/backfill-plan';
+import { useBackfillTask } from '@/modules/statistics/pricing/use-backfill-task';
 import { usePriceSeriesStore } from '@/modules/statistics/pricing/use-price-series-store';
-import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { useNativeTask } from '@/modules/task-center/use-native-task';
-
-const parseResponse = fromZod(HistoricalAssetPriceResponse);
 
 interface UseBackfillRequestsReturn {
   /** Runs one request and files its prices and its days without one. */
@@ -108,19 +96,14 @@ function isEmpty(entry: FailedHistoricalAssetPriceResponse): boolean {
  * same days in the queue all session. A day given up on is filed with the days that could not be
  * fetched, not the ones without a price: the daily price fetcher still asks for it, and the user
  * can still price it by hand.
- *
- * The response is parsed inside the task, so a malformed one shows as a failed activity.
  */
 export function useBackfillRequests(): UseBackfillRequestsReturn {
-  const { t } = useI18n({ useScope: 'global' });
   const currencySymbol = useSetting('currencySymbol');
   const oraclePenaltyDuration = useSetting('oraclePenaltyDuration');
   const oraclePenaltyThresholdCount = useSetting('oraclePenaltyThresholdCount');
   const store = usePriceSeriesStore();
   const { failedDailyPrices } = useHistoricPriceCache();
-  const { queryHistoricalAssetPrices } = useStatisticsApi();
-  const { cancelByPrefix, submitTask } = useNativeTask();
-  const { getAssetField } = useAssetInfoRetrieval();
+  const { cancelAll, submitBackfill } = useBackfillTask();
 
   /** Per asset, the days (unix seconds) that came back unreachable and are still asked for. */
   const unreachable = new Map<string, Map<number, Unreachable>>();
@@ -238,26 +221,7 @@ export function useBackfillRequests(): UseBackfillRequestsReturn {
 
   async function runRequest(request: BackfillRequest): Promise<RequestResult> {
     const currency = get(currencySymbol);
-    const subject = {
-      asset: request.asset,
-      fromTimestamp: request.fromTimestamp,
-      interval: SECONDS_PER_DAY,
-      toTimestamp: request.toTimestamp,
-    };
-    const outcome = await submitTask<HistoricalAssetPriceResponse>({
-      id: priceBackfillActivity.id(subject),
-      kind: priceBackfillActivity.kind,
-      run: async ({ runTask }) => flatMap(
-        await runTask<unknown>(async () => queryHistoricalAssetPrices({
-          ...subject,
-          excludeTimestamps: request.excludeTimestamps,
-        })),
-        response => mapError(parseResponse(response), (error): TaskError => TaskFailed({ cause: error, message: getErrorMessage(error) })),
-      ),
-      subtitle: activityLabelFor(msg.$t('task_center.activity.prices.backfill'), { asset: getAssetField(request.asset, 'name') }),
-      title: t('task_center.group.prices'),
-    });
-
+    const outcome = await submitBackfill(request);
     if (get(currencySymbol) !== currency)
       return 'stale';
     const result = classifyOutcome(outcome);
@@ -275,10 +239,6 @@ export function useBackfillRequests(): UseBackfillRequestsReturn {
     if (isErr(outcome) && (result === 'failed' || result === 'unreachable'))
       noteFailedRequest(request, result);
     return result;
-  }
-
-  function cancelAll(): void {
-    cancelByPrefix(priceBackfillActivity.kind, ...priceBackfillActivity.partsWithin([]));
   }
 
   return { cancelAll, forgetAttempts, givenUpDays, isUnreachable, nextRetryAt, runRequest, waitingDays };

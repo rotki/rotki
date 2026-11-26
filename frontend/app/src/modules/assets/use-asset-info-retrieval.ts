@@ -46,7 +46,7 @@ const ERC20_DETAILS_TIMEOUT_MS = 15_000;
 /** How long a lookup may wait queued before it starts, after which it is cancelled. */
 const ERC20_QUEUED_TIMEOUT_MS = 2 * ERC20_DETAILS_TIMEOUT_MS;
 
-interface AssetWithResolutionStatus extends AssetInfoWithId {
+export interface AssetWithResolutionStatus extends AssetInfoWithId {
   resolved: boolean;
 }
 

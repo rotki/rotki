@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { RuiButton, RuiIcon } from '@rotki/ui-library';
-import { get } from '@vueuse/shared';
-import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import ManagedAssetIgnoreSwitch from '@/modules/assets/admin/managed/ManagedAssetIgnoreSwitch.vue';
-import AssetExternalLinks from '@/modules/assets/AssetExternalLinks.vue';
+import AssetDetailHeading from '@/modules/assets/AssetDetailHeading.vue';
 import AssetLocations from '@/modules/assets/AssetLocations.vue';
 import AssetValueRow from '@/modules/assets/AssetValueRow.vue';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
@@ -14,11 +12,8 @@ import BalanceViewPicker from '@/modules/balances/components/BalanceViewPicker.v
 import { provideHistoryView } from '@/modules/balances/view/balance-view';
 import { useBalanceView } from '@/modules/balances/view/use-balance-view';
 import { NoteLocation } from '@/modules/core/common/notes';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { AssetAmountAndValueOverTime } from '@/modules/premium/premium';
-import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
-import HashLink from '@/modules/shell/components/HashLink.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import AssetAmountAndValuePlaceholder from '@/modules/statistics/AssetAmountAndValuePlaceholder.vue';
 import { useAssetDetail } from '@/pages/assets/use-asset-detail';
@@ -63,17 +58,6 @@ const {
   toggleSpam,
   toggleWhitelistAsset,
 } = useAssetDetail(() => identifier, isHistory);
-
-const { getChainName } = useSupportedChains();
-
-const title = computed<string | undefined>(() => (get(isCustomAsset) ? get(asset)?.name : get(asset)?.symbol) ?? undefined);
-
-const subtitle = computed<string | undefined>(() => (get(isCustomAsset) ? get(asset)?.customAssetType : get(asset)?.name) ?? undefined);
-
-const chainName = computed<string | undefined>(() => {
-  const location = get(contractInfo)?.location;
-  return location ? getChainName(location) : undefined;
-});
 </script>
 
 <template>
@@ -82,44 +66,13 @@ const chainName = computed<string | undefined>(() => {
     hide-header
   >
     <div class="flex flex-wrap items-center justify-between w-full gap-4">
-      <div class="flex items-center gap-4 min-w-0">
-        <AssetIcon
-          :identifier="identifier"
-          size="48px"
-          :show-chain="!isCollectionParent"
-        />
-
-        <div class="flex flex-col min-w-0">
-          <span class="text-h5 leading-7 font-semibold truncate">{{ title }}</span>
-          <div
-            class="flex flex-wrap items-center gap-x-2 h-6 text-sm text-rui-text-secondary"
-            data-testid="asset-meta"
-          >
-            <span v-if="subtitle">{{ subtitle }}</span>
-            <template v-if="contractInfo">
-              <span
-                v-if="subtitle"
-                class="size-1 rounded-full bg-rui-text-disabled"
-              />
-              <span v-if="chainName">{{ chainName }}</span>
-              <HashLink
-                :location="contractInfo.location"
-                type="token"
-                :text="contractInfo.address"
-                :display-mode="contractInfo.location ? 'default' : 'copy'"
-                size="14"
-              />
-            </template>
-            <template v-if="asset?.coingecko || asset?.cryptocompare">
-              <span class="size-1 rounded-full bg-rui-text-disabled" />
-              <AssetExternalLinks
-                :coingecko="asset.coingecko"
-                :cryptocompare="asset.cryptocompare"
-              />
-            </template>
-          </div>
-        </div>
-      </div>
+      <AssetDetailHeading
+        :identifier="identifier"
+        :asset="asset"
+        :contract-info="contractInfo"
+        :is-custom-asset="isCustomAsset"
+        :is-collection-parent="isCollectionParent"
+      />
       <div class="flex items-center gap-3">
         <BalanceViewPicker
           :asset="identifier"
