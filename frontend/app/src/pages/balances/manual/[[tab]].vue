@@ -1,29 +1,20 @@
 <script setup lang="ts">
-import type { ManualBalance, RawManualBalance } from '@/modules/balances/types/manual-balances';
-import { Zero } from '@rotki/common';
-import { RuiButton, RuiIcon, RuiTab, RuiTabs } from '@rotki/ui-library';
-import { startPromise } from '@shared/utils';
+import { RuiTab, RuiTabs } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
-import { get, set } from '@vueuse/shared';
-import { nextTick, onBeforeMount, ref } from 'vue';
+import { get } from '@vueuse/shared';
+import { onBeforeMount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
 import ManualBalancesDialog from '@/modules/accounts/manual-balances/ManualBalancesDialog.vue';
-import ManualBalancesRefreshButton from '@/modules/accounts/manual-balances/ManualBalancesRefreshButton.vue';
+import ManualBalancesPageButtons from '@/modules/accounts/manual-balances/ManualBalancesPageButtons.vue';
 import ManualBalanceTable from '@/modules/accounts/manual-balances/ManualBalanceTable.vue';
+import { useManualBalanceDraft } from '@/modules/balances/manual/use-manual-balance-draft';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
-import { BalanceType } from '@/modules/balances/types/balances';
-import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
 import { NoteLocation } from '@/modules/core/common/notes';
-import { useAddQuery } from '@/modules/core/common/use-add-query';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
-import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
-import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
-import { ActivityKind } from '@/modules/task-center/core/types';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 definePage({
   meta: {
@@ -37,27 +28,12 @@ const { tab } = defineProps<{
   tab: string;
 }>();
 
-const balance = ref<ManualBalance | RawManualBalance>();
-
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute('/balances/manual/[[tab]]');
 
 const { fetchManualBalances } = useManualBalances();
 const { fetchAssociatedLocations } = useHistoryDataFetching();
-const { useIsActive } = useTaskCenter();
-const loading = useIsActive(ActivityKind.MANUAL_BALANCES);
-
-function add() {
-  set(balance, {
-    amount: Zero,
-    asset: '',
-    balanceType: tab === 'liabilities' ? BalanceType.LIABILITY : BalanceType.ASSET,
-    label: '',
-    location: TRADE_LOCATION_EXTERNAL,
-    tags: null,
-  } satisfies RawManualBalance);
-}
 
 function goToTab(tab: string | number) {
   const currentRoute = get(route);
@@ -73,9 +49,7 @@ watchImmediate(route, (route) => {
     router.replace('/balances/manual/assets');
 }, { deep: true });
 
-const { consumeAddQuery } = useAddQuery(() => {
-  startPromise(nextTick(() => add()));
-});
+const { add, consumeAddQuery, modelBalance } = useManualBalanceDraft(() => tab);
 
 onBeforeMount(async () => {
   await consumeAddQuery();
@@ -92,26 +66,14 @@ onBeforeMount(async () => {
     ]"
   >
     <template #buttons>
-      <ManualBalancesRefreshButton />
-      <RuiButton
-        color="primary"
-        data-testid="manual-balances-add-button"
-        :disabled="loading"
-        @click="add()"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-plus" />
-        </template>
-        {{ t('manual_balances.add_manual_balance') }}
-      </RuiButton>
-      <HideSmallBalances :source="BalanceSource.MANUAL" />
+      <ManualBalancesPageButtons @add="add()" />
     </template>
 
     <ManualBalanceTable
       :key="tab"
       :data-testid="tab === 'liabilities' ? 'manual-liabilities' : 'manual-balances'"
       :type="tab === 'liabilities' ? 'liabilities' : 'balances'"
-      @edit="balance = $event"
+      @edit="modelBalance = $event"
       @add="add()"
     >
       <template #toolbar>
@@ -132,7 +94,7 @@ onBeforeMount(async () => {
     </ManualBalanceTable>
 
     <ManualBalancesDialog
-      v-model="balance"
+      v-model="modelBalance"
       @update-tab="goToTab($event)"
     />
   </TablePageLayout>

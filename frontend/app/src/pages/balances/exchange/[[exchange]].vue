@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type AssetBalanceWithPrice, type BigNumber, Zero } from '@rotki/common';
-import { RuiButton, RuiButtonGroup, RuiIcon } from '@rotki/ui-library';
+import { RuiButton, RuiButtonGroup } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -11,14 +11,12 @@ import BinanceSavingDetail from '@/modules/balances/exchanges/BinanceSavingDetai
 import ExchangeAccountPicker from '@/modules/balances/exchanges/ExchangeAccountPicker.vue';
 import ExchangeBalanceCards from '@/modules/balances/exchanges/ExchangeBalanceCards.vue';
 import ExchangeBalancesEmpty from '@/modules/balances/exchanges/ExchangeBalancesEmpty.vue';
-import ExchangeBalancesRefreshButton from '@/modules/balances/exchanges/ExchangeBalancesRefreshButton.vue';
+import ExchangeBalancesPageButtons from '@/modules/balances/exchanges/ExchangeBalancesPageButtons.vue';
 import { useExchangeAccountSelection } from '@/modules/balances/exchanges/use-exchange-account-selection';
 import { NoteLocation } from '@/modules/core/common/notes';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import TableSearchField from '@/modules/core/table/TableSearchField.vue';
-import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
-import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { isBinance, useExchangeBalancesPage } from '@/pages/balances/exchange/use-exchange-balances-page';
 
@@ -69,25 +67,15 @@ const binance = computed<'binance' | 'binanceus' | undefined>(() => (isBinance(e
 <template>
   <TablePageLayout :title="[t('navigation_menu.balances'), t('navigation_menu.balances_sub.exchange_balances')]">
     <template #buttons>
-      <ExchangeBalancesRefreshButton
+      <ExchangeBalancesPageButtons
         :exchanges="sortedExchanges"
         :selected="exchange"
         :loading="isExchangeLoading"
         @refresh="refreshInView()"
         @refresh-all="refreshExchangeBalances()"
         @refresh-exchange="refreshSelectedExchangeBalances($event)"
+        @add="navigateToExchangeSetup()"
       />
-      <RuiButton
-        color="primary"
-        data-testid="add-exchange"
-        @click="navigateToExchangeSetup()"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-plus" />
-        </template>
-        {{ t('exchange_balances.add_exchange') }}
-      </RuiButton>
-      <HideSmallBalances :source="BalanceSource.EXCHANGES" />
     </template>
 
     <ExchangeBalancesEmpty

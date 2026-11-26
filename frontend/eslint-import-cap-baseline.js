@@ -8,18 +8,12 @@
  * Brackets in page paths are escaped, since flat config reads these as globs.
  */
 export const importCapBaseline = [
-  'app/src/modules/accounts/AccountBalances.vue',
   'app/src/modules/accounts/details/AccountDetailsDrawer.vue',
-  'app/src/modules/accounts/manual-balances/ManualBalanceTable.vue',
   'app/src/modules/accounts/table/AccountBalancesTable.vue',
   'app/src/modules/assets/admin/managed/ManagedAssetForm.vue',
   'app/src/modules/auth/login/LoginForm.vue',
-  'app/src/modules/balances/AssetBalances.vue',
-  'app/src/modules/balances/components/BalanceViewPanel.vue',
-  'app/src/modules/balances/use-aggregated-balances.ts',
   'app/src/modules/core/table/use-server-table.ts',
   'app/src/modules/dashboard/DashboardAssetTable.vue',
-  'app/src/modules/dashboard/OverallBalances.vue',
   'app/src/modules/dashboard/snapshots/components/SnapshotBalancesTable.vue',
   'app/src/modules/history/data-issues/DataIssuesView.vue',
   'app/src/modules/history/data-issues/components/DataIssueDetailContent.vue',
@@ -36,9 +30,6 @@ export const importCapBaseline = [
   'app/src/modules/shell/action-center/use-global-action-center.ts',
   'app/src/modules/shell/action-center/use-integration-rows.ts',
   'app/src/modules/wallet/send/TradeSendCard.vue',
-  'app/src/pages/balances/banks/index.vue',
-  'app/src/pages/balances/exchange/\\[\\[exchange\\]\\].vue',
-  'app/src/pages/balances/manual/\\[\\[tab\\]\\].vue',
   'app/src/pages/statistics/snapshots/\\[timestamp\\].vue',
   'app/src/pages/user/login/index.vue',
 ];

@@ -1,26 +1,20 @@
 <script setup lang="ts">
-import type { NetValueChartData } from '@/modules/dashboard/graph/types';
+import type { BigNumber } from '@rotki/common';
 import type { SourceKind } from '@/modules/dashboard/holdings/core/holdings-types';
-import { assert, type BigNumber, TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSetting, TimeUnit } from '@rotki/common';
 import { RuiButton, RuiCard, RuiIcon, RuiProgress } from '@rotki/ui-library';
-import { get, set } from '@vueuse/shared';
-import dayjs from 'dayjs';
+import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
-import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
+import { computed, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { useBalanceView } from '@/modules/balances/view/use-balance-view';
 import { computeNetValueDelta, type NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import NetWorthChart from '@/modules/dashboard/graph/NetWorthChart.vue';
+import { useNetValueTimeframe } from '@/modules/dashboard/graph/use-net-value-timeframe';
 import AssetsBySource from '@/modules/dashboard/holdings/components/AssetsBySource.vue';
 import NetWorthHeadline from '@/modules/dashboard/NetWorthHeadline.vue';
 import SnapshotActionButton from '@/modules/dashboard/SnapshotActionButton.vue';
 import { useNetWorthLoading } from '@/modules/dashboard/use-net-worth-loading';
-import { usePremium } from '@/modules/premium/use-premium';
-import { useSettingsRepo } from '@/modules/settings/settings-repo';
-import { isPeriodAllowed } from '@/modules/settings/settings-utils';
-import { useSetting } from '@/modules/settings/use-setting';
-import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import TimeframeSelector from '@/modules/statistics/TimeframeSelector.vue';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
@@ -31,15 +25,9 @@ const { t } = useI18n({ useScope: 'global' });
 
 const netWorthChart = useTemplateRef<InstanceType<typeof NetWorthChart>>('netWorthChart');
 
-const settingsRepo = useSettingsRepo();
 const statisticsStore = useStatisticsStore();
-const timeframe = useSetting('timeframe');
 const { netValueError, totalNetWorth } = storeToRefs(statisticsStore);
-const visibleTimeframes = useSetting('visibleTimeframes');
-const { getNetValue } = statisticsStore;
 
-const premium = usePremium();
-const { updateFrontendSetting } = useSettingsOperations();
 const { available: viewAvailable, isHistory } = useBalanceView();
 const { loadingBlockchainBalances: isLoading } = useBalancesLoading();
 
@@ -59,15 +47,9 @@ const { fetchNetValue } = useStatisticsDataFetching();
 
 const zoomRange = ref<NetValueZoomRange>();
 
-const allTimeframes = computed(() =>
-  timeframes((unit, amount) => dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix()),
-);
-
-const timeframeData = computed<NetValueChartData>(() => {
-  const all = get(allTimeframes);
-  const selection = get(timeframe);
-  const startingDate = all[selection].startingDate();
-  return getNetValue(startingDate);
+const { setTimeframe, timeframe, timeframeData, visibleTimeframes } = useNetValueTimeframe({
+  onTimeframeChange: () => get(netWorthChart)?.resetZoom(),
+  zoomRange,
 });
 
 /** Some snapshots are converted at a stand-in rate while their own day's rate is not known yet. */
@@ -84,29 +66,6 @@ const balanceDelta = computed<BigNumber>(() => get(stats).balanceDelta);
 const percentage = computed<string>(() => {
   const bigNumber = get(balanceDelta).div(get(startingValue)).multipliedBy(100);
   return bigNumber.isFinite() ? bigNumber.toFormat(2) : '-';
-});
-
-async function setTimeframe(value: TimeFrameSetting): Promise<void> {
-  assert(value !== TimeFramePersist.REMEMBER);
-  settingsRepo.updateSession({ timeframe: value });
-  get(netWorthChart)?.resetZoom();
-  await updateFrontendSetting({ lastKnownTimeframe: value });
-}
-
-/**
- * Drops the zoom when the timeframe changes, so the header goes back to full-range numbers after
- * the user switches buttons. Watching the timeframe rather than the data leaves an active zoom
- * alone across routine balance refreshes.
- */
-function clearZoomForNewTimeframe(): void {
-  set(zoomRange, undefined);
-}
-
-watch(timeframe, clearZoomForNewTimeframe);
-
-onMounted(() => {
-  if (!get(premium) && !isPeriodAllowed(get(timeframe)))
-    settingsRepo.updateSession({ timeframe: TimeFramePeriod.TWO_WEEKS });
 });
 </script>
 

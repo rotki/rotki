@@ -1,24 +1,17 @@
 <script setup lang="ts">
-import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
+import type { ManualBalance, ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
 import { type DataTableColumn, RuiButton, RuiDataTable, RuiIcon, type RuiIcons } from '@rotki/ui-library';
-import { watchImmediate } from '@vueuse/core';
-import { get, set } from '@vueuse/shared';
-import { isEqual } from 'es-toolkit';
-import { computed, ref } from 'vue';
+import { get } from '@vueuse/shared';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { type Filters, manualBalanceTagsParams } from '@/modules/accounts/manual-balances/manual-balance-filter-keys';
 import ManualBalanceAssetCell from '@/modules/accounts/manual-balances/ManualBalanceAssetCell.vue';
-import { useManualBalanceFields } from '@/modules/accounts/manual-balances/use-manual-balance-fields';
+import { useManualBalanceTable } from '@/modules/accounts/manual-balances/use-manual-balance-table';
 import { useManualBalanceTableActions } from '@/modules/accounts/manual-balances/use-manual-balance-table-actions';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display';
-import { useManualBalancesOrLiabilities } from '@/modules/balances/manual/use-manual-balances-or-liabilities';
-import { watchDebounced } from '@/modules/core/common/async/scoped-timers';
-import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useServerTable, useTableEmptyState } from '@/modules/core/table/use-server-table';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
@@ -41,48 +34,23 @@ defineSlots<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const tags = ref<string[]>([]);
-
-const { pillParams, source: tagsSource } = manualBalanceTagsParams(tags);
-
-const { dataSource, fetch, locations } = useManualBalancesOrLiabilities(() => type);
 const { deleteConfirm, deleteFailure, deleteRow, prepareForEdit, pricesLoading } = useManualBalanceTableActions();
 
-const modelFilters = ref<Filters>({});
-const fields = useManualBalanceFields(locations, modelFilters);
-const pillLabels = usePillBarLabels();
-
 const {
-  collection: state,
+  clearFilters,
+  emptyState,
   error,
-  filter: filters,
-  isLoading: loading,
-  pagination,
-  refetch: fetchData,
-  sort,
-} = useServerTable<
-  ManualBalanceWithPrice,
-  ManualBalanceRequestPayload,
-  Filters
->({
-  fetch,
   fields,
-  filters: modelFilters,
-  params: [tagsSource],
-  sort: {
-    default: [
-      {
-        column: 'value',
-        direction: 'desc',
-      },
-    ],
-  },
-  urlState: { mode: 'route' },
-});
-
-const emptyState = useTableEmptyState({ error });
-
-const filtered = computed<boolean>(() => get(tags).length > 0 || Object.values(get(filters)).some(value => value !== undefined && value !== ''));
+  filterByTag,
+  filtered,
+  loading,
+  modelFilter: filters,
+  modelPillParams: pillParams,
+  pagination,
+  pillLabels,
+  sort,
+  state,
+} = useManualBalanceTable({ pricesLoading, type: () => type });
 
 /** An empty table says whether the filters hid every entry or there are none yet, and offers the way out. */
 const emptyNotice = computed<{ icon: RuiIcons; title: string; description: string }>(() => {
@@ -105,17 +73,6 @@ const emptyNotice = computed<{ icon: RuiIcons; title: string; description: strin
         title: t('manual_balances_table.empty.balances_title'),
       };
 });
-
-function clearFilters(): void {
-  set(filters, {});
-  set(tags, []);
-}
-
-/** A tag in a row narrows the table to that tag, the same as picking it in the filter bar. */
-function filterByTag(tag: string): void {
-  if (!get(tags).includes(tag))
-    set(tags, [...get(tags), tag]);
-}
 
 function edit(balance: ManualBalanceWithPrice): void {
   emit('edit', prepareForEdit(balance));
@@ -160,22 +117,6 @@ const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [{
 }]);
 
 useRememberTableSorting<ManualBalanceWithPrice>(TableId.MANUAL_BALANCES, sort, cols);
-
-watchImmediate(dataSource, async (newBalances, oldBalances) => {
-  if (isEqual(newBalances, oldBalances))
-    return;
-
-  await fetchData();
-});
-
-watchDebounced(
-  pricesLoading,
-  async (isLoading, wasLoading) => {
-    if (!isLoading && wasLoading)
-      await fetchData();
-  },
-  { debounce: 800, maxWait: 1000 },
-);
 </script>
 
 <template>

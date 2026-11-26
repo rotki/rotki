@@ -1,29 +1,22 @@
 <script setup lang="ts">
-import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { AssetBalancesDisplay, AssetBreakdownOptions } from '@/modules/balances/types/balances';
-import { type DataTableSortData, RuiButton, RuiDataTable, RuiTableRowExpander } from '@rotki/ui-library';
+import { RuiButton, RuiDataTable, RuiTableRowExpander } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
-import { storeToRefs } from 'pinia';
 import { computed, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { isEvmNativeToken } from '@/modules/assets/types';
-import { useAssetBalanceSearch } from '@/modules/assets/use-asset-balance-search';
-import { useAssetSelectInfo } from '@/modules/assets/use-asset-select-info';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
-import { useAssetBalancesHeaders } from '@/modules/balances/use-asset-balances-headers';
+import { useAssetBalancesTable } from '@/modules/balances/use-asset-balances-table';
 import { useValuePending } from '@/modules/balances/value-pending';
-import { refDebounced } from '@/modules/core/common/async/scoped-timers';
-import { bigNumberSum, calculatePercentage } from '@/modules/core/common/data/calculation';
-import { hasAwaitingClaim, sortAssetBalances } from '@/modules/core/common/display/balances';
+import { hasAwaitingClaim } from '@/modules/core/common/display/balances';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
-import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useTableRowWindow, useWindowedSelectAll } from '@/modules/core/table/use-table-row-window';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
-import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
 defineOptions({
   name: 'AssetBalances',
@@ -69,17 +62,21 @@ const fillsPanel = computed<boolean>(() => layout === 'panel');
 const { t } = useI18n({ useScope: 'global' });
 const expanded = ref<AssetBalanceWithPrice[]>([]);
 
-const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
-  column: 'value',
-  direction: 'desc' as const,
+const {
+  debouncedSearch,
+  matches,
+  modelSort,
+  percentageOfCurrentGroup,
+  percentageOfTotalNetValue,
+  sorted,
+  tableHeaders,
+  total,
+} = useAssetBalancesTable({
+  balances: () => balances,
+  display: () => display,
+  fillsPanel,
+  search,
 });
-
-const debouncedSearch = refDebounced(search, 200);
-
-const { getAssetInfo } = useAssetSelectInfo();
-const { matches, prioritizeExactMatches } = useAssetBalanceSearch(() => balances, debouncedSearch);
-const statistics = useStatisticsStore();
-const { totalNetWorth } = storeToRefs(statistics);
 const { isTotalPending, isValuePending } = useValuePending();
 
 const isExpanded = (asset: string): boolean => get(expanded).some(row => row.asset === asset);
@@ -95,19 +92,7 @@ function expand(item: AssetBalanceWithPrice) {
   set(expanded, isExpanded(item.asset) ? [] : [item]);
 }
 
-const total = computed<BigNumber>(() => bigNumberSum(get(matches).map(({ value }) => value)));
-
 const totalPending = computed<boolean>(() => isTotalPending(get(matches)));
-
-function percentageOfTotalNetValue(val: BigNumber): string {
-  return calculatePercentage(val, get(totalNetWorth));
-}
-
-function percentageOfCurrentGroup(val: BigNumber): string {
-  return calculatePercentage(val, get(total));
-}
-
-const tableHeaders = useAssetBalancesHeaders(() => display, fillsPanel);
 
 const rowAppendLabelColspan = computed(() => {
   let colspan = 3;
@@ -119,11 +104,6 @@ const rowAppendLabelColspan = computed(() => {
 
   return colspan;
 });
-
-useRememberTableSorting<AssetBalanceWithPrice>(TableId.ASSET_BALANCES, sort, tableHeaders);
-
-const sorted = computed<AssetBalanceWithPrice[]>(() =>
-  prioritizeExactMatches(sortAssetBalances([...get(matches)], get(sort), getAssetInfo)));
 
 const expandedIndex = computed<number>(() => {
   const [row] = get(expanded);
@@ -167,7 +147,7 @@ const panelTableProps = computed<Record<string, unknown>>(() => get(fillsPanel)
   <RuiDataTable
     ref="table"
     v-model="modelSelected"
-    v-model:sort.external="sort"
+    v-model:sort.external="modelSort"
     :cols="tableHeaders"
     :rows="visibleRows"
     :loading="loading"
