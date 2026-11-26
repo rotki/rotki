@@ -2,26 +2,22 @@ import type { AssetPriceInfo } from '@/modules/assets/prices/price-types';
 import type { AssetBalanceEntries } from '@/modules/balances/aggregation/core/aggregation-types';
 import type { EthBalance } from '@/modules/balances/types/blockchain-balances';
 import type { ExchangeData } from '@/modules/balances/types/exchanges';
-import { type AssetBalanceWithPrice, type AssetBalanceWithPriceAndChains, type BigNumber, type ExclusionSource, Zero } from '@rotki/common';
+import { type AssetBalanceWithPrice, type AssetBalanceWithPriceAndChains, type ExclusionSource, Zero } from '@rotki/common';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { groupAddresses } from '@/modules/accounts/core/account-groups';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { heldAssets } from '@/modules/balances/aggregation/core/held-assets';
-import { type BalanceInputs, locationSources } from '@/modules/balances/aggregation/core/location-sources';
-import { blockchainValue, locationMapTotals, totalsByChainLocation, totalsByLocation } from '@/modules/balances/aggregation/core/location-totals';
 import { fromBlockchain, fromExchanges, fromManual } from '@/modules/balances/aggregation/core/sources';
 import { summarizeBalances } from '@/modules/balances/aggregation/core/summarize';
 import { useAggregationContext } from '@/modules/balances/aggregation/use-aggregation-context';
-import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
+import { useLocationBalances, type UseLocationBalancesReturn } from '@/modules/balances/aggregation/use-location-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useHistoricalBalanceSource } from '@/modules/balances/use-historical-balance-source';
 import { bankLocationBalances } from '@/modules/banks/bank-balances';
-import { useLocations } from '@/modules/core/common/use-locations';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
-interface UseAggregatedBalancesReturn {
+interface UseAggregatedBalancesReturn extends UseLocationBalancesReturn {
   useBalances: (hideIgnored?: boolean, groupMultiChain?: boolean, exclude?: ExclusionSource[]) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   getBalances: (hideIgnored?: boolean, groupMultiChain?: boolean, exclude?: ExclusionSource[]) => AssetBalanceWithPriceAndChains[];
   useLiabilities: (hideIgnored?: boolean) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
@@ -32,9 +28,6 @@ interface UseAggregatedBalancesReturn {
   getExchangeBalances: (exchange?: string) => AssetBalanceWithPriceAndChains[];
   getExchangeAccountBalances: (exchange: string, identifier: string) => AssetBalanceWithPriceAndChains[];
   useExchangeBalances: (exchange?: MaybeRefOrGetter<string>) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
-  useLocationBreakdown: (location: MaybeRefOrGetter<string>) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
-  balancesByLocation: ComputedRef<Record<string, BigNumber>>;
-  balancesByChainLocation: ComputedRef<Record<string, BigNumber>>;
 }
 
 const EXCLUDABLE_SOURCES = ['blockchain', 'exchange', 'manual'] as const satisfies readonly ExclusionSource[];
@@ -42,12 +35,8 @@ const EXCLUDABLE_SOURCES = ['blockchain', 'exchange', 'manual'] as const satisfi
 export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const { balances: allBlockchainBalances, bankBalances, exchangeAccountBalances, exchangeBalances, manualBalances, manualLiabilities, visibleBalances: blockchainBalances } = storeToRefs(useBalancesStore());
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
-  const { manualBalanceByLocation } = useManualBalanceData();
-  const { tradeLocations } = useLocations();
-  const { matchChain } = useSupportedChains();
 
   const context = useAggregationContext();
-  const { isAssetIgnored } = context;
   const { unfilteredSource: historicalAssets } = useHistoricalBalanceSource(context);
 
   const blockchainAssets = computed<AssetBalanceEntries>(() => fromBlockchain(get(blockchainBalances)));
@@ -136,17 +125,6 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     return summarizeBalances([fromExchanges({ [exchange]: account }, exchange)], context);
   }
 
-  const useLocationBreakdown = (location: MaybeRefOrGetter<string>): ComputedRef<AssetBalanceWithPriceAndChains[]> =>
-    computed<AssetBalanceWithPriceAndChains[]>(() => {
-      const selected = toValue(location);
-      const inputs: BalanceInputs = {
-        blockchain: get(blockchainBalances),
-        exchanges: get(locationBalances),
-        manual: get(manualBalances),
-      };
-      return summarizeBalances(locationSources(selected, inputs, matchChain(selected)), context);
-    });
-
   const useExchangeBalances = (
     exchange?: MaybeRefOrGetter<string>,
   ): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() =>
@@ -170,31 +148,15 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     get(historicalAssets),
   ]));
 
-  const balancesByLocation = computed<Record<string, BigNumber>>(() => totalsByLocation(
-    blockchainValue(get(blockchainBalances), isAssetIgnored),
-    locationMapTotals(get(locationBalances), isAssetIgnored),
-    get(manualBalanceByLocation),
-  ));
-
-  /**
-   * On-chain totals per chain, keyed by trade-location identifier such as `ethereum`.
-   *
-   * @remarks
-   * What makes a chain discoverable in global search. Kept apart from {@link balancesByLocation} so
-   * that its umbrella `blockchain` aggregate stays authoritative for the premium consumers that
-   * iterate that map.
-   */
-  const balancesByChainLocation = computed<Record<string, BigNumber>>(() => totalsByChainLocation(
-    get(blockchainBalances),
-    get(tradeLocations).map(location => location.identifier),
-    matchChain,
-    isAssetIgnored,
-  ));
+  const locationBalanceMembers = useLocationBalances({
+    blockchainBalances,
+    context,
+    locationBalances,
+    manualBalances,
+  });
 
   return {
     assets,
-    balancesByChainLocation,
-    balancesByLocation,
     getAssetPriceInfo,
     getBalances,
     getExchangeAccountBalances,
@@ -204,6 +166,6 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     useLiabilities,
     useBlockchainBalances,
     useExchangeBalances,
-    useLocationBreakdown,
+    ...locationBalanceMembers,
   };
 }

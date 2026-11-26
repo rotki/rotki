@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { storeToRefs } from 'pinia';
 import { computed, onBeforeMount, ref } from 'vue';
@@ -7,21 +6,16 @@ import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
-import AssetBalances from '@/modules/balances/AssetBalances.vue';
-import { bankAmountFormat } from '@/modules/banks/bank-balances';
-import BankAccountsTable from '@/modules/banks/components/BankAccountsTable.vue';
 import BankBalanceCards from '@/modules/banks/components/BankBalanceCards.vue';
 import BankBalancesEmpty from '@/modules/banks/components/BankBalancesEmpty.vue';
-import BankBalancesRefreshButton from '@/modules/banks/components/BankBalancesRefreshButton.vue';
+import BankBalancesPageButtons from '@/modules/banks/components/BankBalancesPageButtons.vue';
+import BankBalancesTableBody from '@/modules/banks/components/BankBalancesTableBody.vue';
 import BankConnectionItem from '@/modules/banks/components/BankConnectionItem.vue';
+import BankConnectionsFailure from '@/modules/banks/components/BankConnectionsFailure.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanks } from '@/modules/banks/use-banks';
-import { useFailureMessage } from '@/modules/core/api/use-failure-message';
-import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
-import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import TableSearchField from '@/modules/core/table/TableSearchField.vue';
-import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { useBankBalancesPage } from '@/pages/balances/banks/use-bank-balances-page';
 
@@ -39,7 +33,6 @@ const search = ref<string>('');
 
 const { canAddBank, connections, connectionsError } = storeToRefs(useBankConnectionsStore());
 const { refreshBankConnections, refreshSupportedBanks, syncBanks, fetchBankBalances } = useBanks();
-const failureMessage = useFailureMessage();
 
 /** The stable identifier of the connection selected in the route. */
 const selected = computed<string | undefined>(() => {
@@ -78,51 +71,24 @@ onBeforeMount(() => {
 <template>
   <TablePageLayout :title="[t('navigation_menu.balances'), t('navigation_menu.balances_sub.bank_balances')]">
     <template #buttons>
-      <BankBalancesRefreshButton
-        v-if="connections.length > 0"
+      <BankBalancesPageButtons
         :banks="banks"
         :selected="selectedBank?.identifier"
         :loading="loading"
         :is-bank-loading="isBankLoading"
+        :connected="connections.length > 0"
+        :can-add="canAddBank"
         @refresh="startPromise(refreshInView())"
         @refresh-all="startPromise(refreshAll())"
         @refresh-bank="startPromise(refreshBank($event))"
+        @add="connect()"
       />
-      <RuiButton
-        color="primary"
-        data-testid="add-bank-connection"
-        :disabled="!canAddBank"
-        @click="connect()"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-plus" />
-        </template>
-        {{ t('bank_balances.add_bank') }}
-      </RuiButton>
     </template>
 
-    <div
-      v-if="connectionsError && connections.length === 0"
-      class="rounded-rui-card border border-rui-divider bg-rui-surface"
-      data-testid="bank-connections-error"
-    >
-      <TableEmptyNotice
-        icon="lu-landmark"
-        :title="t('bank_balances.connections_failed')"
-      >
-        <TableFailureDescription
-          :message="failureMessage(connectionsError)"
-          :failure="connectionsError"
-          @retry="load(true)"
-        />
-      </TableEmptyNotice>
-    </div>
-    <FailureStrip
-      v-else-if="connectionsError"
-      class="mb-4"
-      :title="t('bank_balances.connections_failed')"
+    <BankConnectionsFailure
+      v-if="connectionsError"
       :failure="connectionsError"
-      data-testid="bank-connections-error"
+      :blocking="connections.length === 0"
       @retry="load(true)"
     />
 
@@ -162,26 +128,12 @@ onBeforeMount(() => {
           />
         </template>
 
-        <BankAccountsTable
-          v-if="selectedBank && (selectedBank.accounts.length > 0 || isBankLoading(selectedBank.identifier))"
-          :accounts="selectedBank.accounts"
-          :search="search"
-          :loading="isBankLoading(selectedBank.identifier) && selectedBank.accounts.length === 0"
-        />
-        <AssetBalances
-          v-else-if="!selectedBank && (balances.length > 0 || loading)"
+        <BankBalancesTableBody
           v-model:search="search"
-          data-testid="bank-asset-balances"
-          :breakdown="{ hide: true }"
-          :loading="loading && balances.length === 0"
+          :selected-bank="selectedBank"
           :balances="balances"
-          :display="{ amountFormat: bankAmountFormat, stickyHeader: true }"
-        />
-        <TableEmptyNotice
-          v-else
-          icon="lu-landmark"
-          :title="t('bank_balances.empty_table.title')"
-          :description="t('bank_balances.empty_table.description')"
+          :loading="loading"
+          :is-bank-loading="isBankLoading"
         />
       </TableFrame>
     </template>
