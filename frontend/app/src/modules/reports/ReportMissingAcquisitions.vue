@@ -58,19 +58,19 @@ const headers = computed<DataTableColumn<GroupedMissingAcquisition>[]>(() => [{
 }, ...(isPinned
   ? []
   : [
-    {
-      cellClass: 'py-2 whitespace-nowrap',
-      key: 'startDate',
-      label: t('common.datetime'),
-      sortable: true,
-    },
-    {
-      align: 'end',
-      key: 'total_missing_acquisition',
-      label: t('profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions'),
-      sortable: true,
-    },
-  ] satisfies DataTableColumn<GroupedMissingAcquisition>[]), {
+      {
+        cellClass: 'py-2 whitespace-nowrap',
+        key: 'startDate',
+        label: t('common.datetime'),
+        sortable: true,
+      },
+      {
+        align: 'end',
+        key: 'total_missing_acquisition',
+        label: t('profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions'),
+        sortable: true,
+      },
+    ] satisfies DataTableColumn<GroupedMissingAcquisition>[]), {
   align: 'end',
   key: 'total_amount_missing',
   label: t('profit_loss_report.actionable.missing_acquisitions.headers.total_missing'),
