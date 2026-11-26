@@ -8,16 +8,14 @@ import { msg } from '@/message-key';
 import { createNewBlockchainAccount } from '@/modules/accounts/blockchain/new-account-state';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
 import BlockchainBalanceFilter from '@/modules/balances/BlockchainBalanceFilter.vue';
-import BlockchainBalancesRefreshButton from '@/modules/balances/BlockchainBalancesRefreshButton.vue';
-import BlockchainBalanceStalenessIndicator from '@/modules/balances/BlockchainBalanceStalenessIndicator.vue';
+import BlockchainBalancesPageButtons from '@/modules/balances/BlockchainBalancesPageButtons.vue';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { useAddQuery } from '@/modules/core/common/use-add-query';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import VisibleColumnsSelector from '@/modules/dashboard/VisibleColumnsSelector.vue';
-import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
-import { BalanceSource, DashboardTableType } from '@/modules/settings/types/frontend-settings';
+import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import { useSetting } from '@/modules/settings/use-setting';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
@@ -63,9 +61,7 @@ onMounted(async () => {
     ]"
   >
     <template #buttons>
-      <BlockchainBalanceStalenessIndicator class="self-center" />
-      <BlockchainBalancesRefreshButton />
-      <HideSmallBalances :source="BalanceSource.BLOCKCHAIN" />
+      <BlockchainBalancesPageButtons />
     </template>
 
     <TableFrame>

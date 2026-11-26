@@ -2,25 +2,21 @@ import type { SupportedAsset } from '@rotki/common';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/modules/core/common/collection';
 import type { PillParams } from '@/modules/core/table/param-refs';
-import type { NamedFailure } from '@/modules/shell/components/named-failure';
-import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import { get, set } from '@vueuse/shared';
 import { keyBy } from 'es-toolkit';
 import { storeToRefs } from 'pinia';
 import { computed, type MaybeRefOrGetter, type Ref, ref, shallowRef, type WritableComputedRef } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { type Filters, managedAssetStatusParams } from '@/modules/assets/admin/managed/asset-filter-keys';
+import { useManagedAssetDeletion, type UseManagedAssetDeletionReturn } from '@/modules/assets/admin/managed/use-managed-asset-deletion';
 import { useManagedAssetFields } from '@/modules/assets/admin/managed/use-managed-asset-fields';
 import { useAssetManagementApi } from '@/modules/assets/api/use-asset-management-api';
 import { type AssetRequestPayload, IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/modules/assets/types';
-import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { fromRequest } from '@/modules/core/api/request-result';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
 import { routeWhen, useServerTable } from '@/modules/core/table/use-server-table';
-import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
 
-interface UseManagedAssetsTableReturn {
+interface UseManagedAssetsTableReturn extends UseManagedAssetDeletionReturn {
   /** The page of assets the table renders. */
   assets: Ref<Collection<SupportedAsset>>;
   /** Rows the user expanded. */
@@ -49,18 +45,6 @@ interface UseManagedAssetsTableReturn {
   modelSelectedRows: WritableComputedRef<string[]>;
   /** Jumps to a page. */
   setPage: (page: number) => void;
-  /**
-   * Deletes an asset the user already confirmed at its row.
-   *
-   * @remarks
-   * A successful delete also drops the asset from the info cache, which otherwise keeps serving the
-   * name and symbol of something that no longer exists.
-   */
-  deleteAsset: (item: SupportedAsset) => Promise<void>;
-  /** What a row's delete button asks before deleting its asset. */
-  deleteConfirm: (item: SupportedAsset) => RowDeleteQuestion;
-  /** Why the last delete failed, named above the table. */
-  deleteFailure: Readonly<Ref<NamedFailure | undefined>>;
   /** The active sort. */
   sort: Ref<DataTableSortData<SupportedAsset>>;
 }
@@ -86,9 +70,7 @@ export function useManagedAssetsTable(
   const onlyShowOwned = shallowRef<boolean>(false);
   const onlyShowWhitelisted = shallowRef<boolean>(false);
 
-  const { t } = useI18n({ useScope: 'global' });
-  const { deleteAsset, queryAllAssets } = useAssetManagementApi();
-  const { deleteCacheKey } = useAssetInfoCache();
+  const { queryAllAssets } = useAssetManagementApi();
   const { ignoredAssets } = storeToRefs(useAssetsStore());
 
   const { pillParams, source: statusSource } = managedAssetStatusParams({
@@ -121,19 +103,7 @@ export function useManagedAssetsTable(
     urlState: routeWhen(mainPage),
   });
 
-  const deleteConfirm = (item: SupportedAsset): RowDeleteQuestion => ({
-    message: t('asset_management.confirm_delete.message', { asset: item?.symbol ?? '' }),
-    title: t('asset_management.confirm_delete.title'),
-  });
-
-  const { deleteRow, failure: deleteFailure } = useTableRowDeletion<SupportedAsset>({
-    deleteItem: async item => deleteAsset(item.identifier),
-    failureTitle: item => t('asset_management.delete_error', { address: item.identifier }),
-    onDeleted: async (item) => {
-      await refetch();
-      deleteCacheKey(item.identifier);
-    },
-  });
+  const { deleteAsset, deleteConfirm, deleteFailure } = useManagedAssetDeletion(refetch);
 
   const assetsMap = computed(() => keyBy(get(assets).data, item => item.identifier));
 
@@ -158,7 +128,7 @@ export function useManagedAssetsTable(
     pagination,
     refetch,
     setPage,
-    deleteAsset: deleteRow,
+    deleteAsset,
     deleteConfirm,
     deleteFailure,
     sort,
