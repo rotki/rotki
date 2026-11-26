@@ -66,9 +66,9 @@ catalog:
   '@noble/hashes': 1.8.0
   '@pinia/testing': 2.0.2
   '@playwright/test': 1.64.1
-  '@rotki/eslint-config': 8.4.1
-  '@rotki/eslint-plugin': 1.10.0
-  '@rotki/ui-library': 3.4.0
+  '@rotki/eslint-config': 8.5.0
+  '@rotki/eslint-plugin': 1.10.1
+  '@rotki/ui-library': 3.4.1
   '@scure/base': 1.2.6
   '@tailwindcss/postcss': 4.3.3
   '@tsconfig/node24': 24.0.5
