@@ -1,43 +1,32 @@
 <script setup lang="ts">
-import { transformCase, Zero } from '@rotki/common';
+import { transformCase } from '@rotki/common';
 import { RuiButton, RuiSwitch, RuiTable, RuiTextField } from '@rotki/ui-library';
-import { useTimeoutFn } from '@vueuse/core';
-import { get, set } from '@vueuse/shared';
+import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
-import { err, ok, type Result } from 'plainfp/result';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import QueriedAddressDialog from '@/modules/accounts/QueriedAddressDialog.vue';
 import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-address-operations';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/modules/core/common/modules';
+import { type Module, SUPPORTED_MODULES, type SupportedModule } from '@/modules/core/common/modules';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
-import { type TaskError, TaskFailed } from '@/modules/core/tasks/task-result';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
-import { moduleToggleActivity } from '@/modules/settings/modules/module-toggle.activity';
 import ModuleAddressesCell from '@/modules/settings/modules/ModuleAddressesCell.vue';
+import { useModuleToggle } from '@/modules/settings/modules/use-module-toggle';
 import { useSetting } from '@/modules/settings/use-setting';
-import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import IconMark from '@/modules/shell/components/IconMark.vue';
-import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 type ModuleEntry = SupportedModule & { enabled: boolean };
 
 const { t } = useI18n({ useScope: 'global' });
 
 const supportedModules = SUPPORTED_MODULES;
-const loading = ref<boolean>(false);
 const search = ref<string>('');
 const manageModule = ref<Module>();
 
 const { queriedAddresses } = storeToRefs(useSessionMetadataStore());
 const { fetchQueriedAddresses } = useQueriedAddressOperations();
 const activeModules = useSetting('activeModules');
-const { update: updateSettings } = useSettingsOperations();
-
-const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
-const { submitTask } = useNativeTask();
+const { disableAll, enableAll, loading, switchModule } = useModuleToggle(activeModules);
 
 const modules = computed<ModuleEntry[]>(() => {
   const active = get(activeModules);
@@ -56,86 +45,6 @@ const modules = computed<ModuleEntry[]>(() => {
 /** Each bulk action is offered only while it would change something. */
 const allEnabled = computed<boolean>(() => supportedModules.every(m => get(activeModules).includes(m.identifier)));
 const noneEnabled = computed<boolean>(() => get(activeModules).length === 0);
-
-const { start: clearNfBalances } = useTimeoutFn(() => {
-  set(nonFungibleTotalValue, Zero);
-}, 800, { immediate: false });
-
-async function update(activeModules: Module[]) {
-  set(loading, true);
-  await updateSettings({ activeModules });
-  set(loading, false);
-}
-
-async function switchModule(module: Module, enabled: boolean) {
-  const active = get(activeModules);
-  let modules: Module[];
-  if (enabled)
-    modules = [...active, module];
-  else modules = active.filter(m => m !== module);
-
-  await submitTask({
-    ephemeral: true,
-    id: moduleToggleActivity.id({ enabled, module }),
-    kind: moduleToggleActivity.kind,
-    run: async (): Promise<Result<void, TaskError>> => {
-      try {
-        await update(modules);
-        return ok(undefined);
-      }
-      catch (error: unknown) {
-        return err(TaskFailed({ cause: error, message: getErrorMessage(error) }));
-      }
-    },
-    title: t('module_selector.tasks.toggle'),
-  });
-
-  if (module === Module.NFTS && !enabled)
-    clearNfBalances();
-}
-
-/**
- * Applies a bulk module change, announcing each module whose state actually flips as its own
- * {@link moduleToggleActivity}.
- *
- * @remarks
- * One settings write, several identities. Consumers subscribe per module and direction
- * (`use-nft-balances.ts` keys on `module-toggle:nfts:enabled`), so a bulk change that announced
- * only itself would leave them stale: "Enable all" would never tell NFT balances they can load.
- */
-async function applyBulk(next: Module[]): Promise<void> {
-  const active = get(activeModules);
-  const changed = supportedModules
-    .map(module => module.identifier)
-    .filter(module => active.includes(module) !== next.includes(module));
-
-  if (changed.length === 0)
-    return;
-
-  const written = update(next).then(
-    (): Result<void, TaskError> => ok(undefined),
-    (error: unknown): Result<void, TaskError> => err(TaskFailed({ cause: error, message: getErrorMessage(error) })),
-  );
-
-  await Promise.all(changed.map(async module => submitTask({
-    ephemeral: true,
-    id: moduleToggleActivity.id({ enabled: next.includes(module), module }),
-    kind: moduleToggleActivity.kind,
-    run: async (): Promise<Result<void, TaskError>> => written,
-    title: t('module_selector.tasks.toggle'),
-  })));
-}
-
-async function enableAll() {
-  await applyBulk(supportedModules.map(x => x.identifier));
-}
-
-async function disableAll() {
-  const active = get(activeModules);
-  await applyBulk([]);
-  if (active.includes(Module.NFTS))
-    clearNfBalances();
-}
 
 /** No queried addresses means the backend queries every tracked Ethereum address for the module. */
 function selected(identifier: Module): string {

@@ -1,5 +1,8 @@
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import type { HistoryEventUnlinkPayload } from '@/modules/history/events/types';
+import type { HistoryEventNoteContext } from '@/modules/history/events/use-history-event-note';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/use-selection-mode';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { type Blockchain, HistoryEventEntryType } from '@rotki/common';
 import { get } from '@vueuse/shared';
 import { computed, type ComputedRef, type Ref } from 'vue';
@@ -7,8 +10,9 @@ import { useI18n } from 'vue-i18n';
 import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { isEventMissingAccountingRule } from '@/modules/history/event-utils';
+import { getMatchedMovementIgnoreIds, isEventMissingAccountingRule } from '@/modules/history/event-utils';
 import { useFeeNotes } from '@/modules/history/events/use-fee-notes';
+import { useUnlinkQuestion } from '@/modules/history/events/use-unlink-question';
 
 export interface UseHistoryMatchedMovementItemProps {
   events: Ref<HistoryEventEntry[]> | ComputedRef<HistoryEventEntry[]>;
@@ -25,6 +29,13 @@ export interface UseHistoryMatchedMovementItemReturn {
   hasMissingRule: ComputedRef<boolean>;
   chain: ComputedRef<Blockchain>;
   canUnlink: ComputedRef<boolean>;
+  /** The question asked before unlinking the matched movement; undefined when it cannot be unlinked. */
+  unlinkConfirm: ComputedRef<ConfirmQuestion | undefined>;
+  /**
+   * The payload that unlinks the matched movement. Built on demand, since the ignore list is
+   * only needed once the user confirms the unlink.
+   */
+  getUnlinkPayload: () => HistoryEventUnlinkPayload;
   showCheckbox: ComputedRef<boolean>;
   isCheckboxDisabled: ComputedRef<boolean>;
   movementEventIds: ComputedRef<number[]>;
@@ -32,6 +43,7 @@ export interface UseHistoryMatchedMovementItemReturn {
   toggleSelected: () => void;
   compactNotes: ComputedRef<string | undefined>;
   eventTypeLabel: ComputedRef<string>;
+  noteContext: ComputedRef<HistoryEventNoteContext>;
 }
 
 const ASSET_RESOLUTION_OPTIONS = NO_COLLECTION_RESOLVE;
@@ -46,6 +58,7 @@ export function useHistoryMatchedMovementItem(
 
   const { getLocationData } = useLocations();
   const { appendFeeNotes } = useFeeNotes(events);
+  const { unlinkQuestion } = useUnlinkQuestion();
 
   const primaryEvent = computed<HistoryEventEntry>(() => {
     const assetMovementEvent = get(events).find(
@@ -105,6 +118,18 @@ export function useHistoryMatchedMovementItem(
     return !!ev.actualGroupIdentifier;
   });
 
+  const unlinkConfirm = computed<ConfirmQuestion | undefined>(() =>
+    get(canUnlink) ? unlinkQuestion({ type: 'asset-movement' }) : undefined,
+  );
+
+  function getUnlinkPayload(): HistoryEventUnlinkPayload {
+    return {
+      identifier: get(primaryEvent).identifier,
+      ignoredIdentifiers: getMatchedMovementIgnoreIds(get(events)),
+      type: 'asset-movement',
+    };
+  }
+
   function resolveEventLabel(event?: HistoryEventEntry): string {
     if (!event)
       return '';
@@ -142,18 +167,26 @@ export function useHistoryMatchedMovementItem(
       : t('backend_mappings.events.history_event_type.withdrawal');
   });
 
+  const noteContext = computed<HistoryEventNoteContext>(() => ({
+    amount: get(primaryEvent).amount,
+    asset: get(primaryEvent).asset,
+  }));
+
   return {
     canUnlink,
     chain,
     compactNotes,
     eventTypeLabel,
+    getUnlinkPayload,
     hasMissingRule,
     isCheckboxDisabled,
     isSelected,
     movementEventIds,
+    noteContext,
     primaryEvent,
     secondaryEvent,
     showCheckbox,
     toggleSelected,
+    unlinkConfirm,
   };
 }

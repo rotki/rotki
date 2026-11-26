@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
-import type { HistoryEventNoteContext } from '@/modules/history/events/use-history-event-note';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
-import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { RuiCheckbox } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
 import CostBasisOverlayCell from '@/modules/history/cost-basis/CostBasisOverlayCell.vue';
-import { getMatchedMovementIgnoreIds } from '@/modules/history/event-utils';
 import { getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
 import HistoryEventsExpandButton from '@/modules/history/events/components/HistoryEventsExpandButton.vue';
 import HistoryEventsGroupToggle from '@/modules/history/events/components/HistoryEventsGroupToggle.vue';
@@ -19,7 +16,6 @@ import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/modules/history/events/HistoryEventsListItemAction.vue';
 import HistoryEventType from '@/modules/history/events/HistoryEventType.vue';
 import { injectHistoryEventsSelection } from '@/modules/history/events/use-history-events-selection-context';
-import { useUnlinkQuestion } from '@/modules/history/events/use-unlink-question';
 import { useHistoryMatchedMovementItem } from '../use-history-matched-movement-item';
 
 const { events: eventsProp, variant = 'row' } = defineProps<{
@@ -52,15 +48,17 @@ const { t } = useI18n({ useScope: 'global' });
 const selection = injectHistoryEventsSelection();
 
 const {
-  canUnlink,
   chain,
   compactNotes,
+  getUnlinkPayload,
   hasMissingRule,
   isCheckboxDisabled,
   isSelected,
+  noteContext,
   primaryEvent,
   showCheckbox,
   toggleSelected,
+  unlinkConfirm,
 } = useHistoryMatchedMovementItem({
   events,
   selection,
@@ -76,24 +74,9 @@ const isSelectedModel = computed<boolean>({
 
 const isCard = computed<boolean>(() => variant === 'card');
 
-const { unlinkQuestion } = useUnlinkQuestion();
-
-const unlinkConfirm = computed<ConfirmQuestion | undefined>(() =>
-  get(canUnlink) ? unlinkQuestion({ type: 'asset-movement' }) : undefined,
-);
-
 function unlink(): void {
-  emit('unlink-event', {
-    identifier: get(primaryEvent).identifier,
-    ignoredIdentifiers: getMatchedMovementIgnoreIds(get(events)),
-    type: 'asset-movement',
-  });
+  emit('unlink-event', getUnlinkPayload());
 }
-
-const noteContext = computed<HistoryEventNoteContext>(() => ({
-  amount: get(primaryEvent).amount,
-  asset: get(primaryEvent).asset,
-}));
 </script>
 
 <template>

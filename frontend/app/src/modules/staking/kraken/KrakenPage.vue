@@ -1,15 +1,11 @@
 <script setup lang="ts">
 import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
-import { watchImmediate } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { type RouteLocationRaw, useRouter } from 'vue-router';
-import { useHistoricCachePriceStore } from '@/modules/assets/prices/use-historic-cache-price-store';
-import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
-import { refDebounced } from '@/modules/core/common/async/scoped-timers';
 import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import { provideHistoryEventsSection } from '@/modules/history/events/use-history-events-section';
 import { usePremium } from '@/modules/premium/use-premium';
@@ -19,24 +15,30 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import StakingLocationTitle from '@/modules/staking/components/StakingLocationTitle.vue';
 import KrakenStaking from '@/modules/staking/kraken/KrakenStaking.vue';
 import KrakenStakingPagePlaceholder from '@/modules/staking/kraken/KrakenStakingPagePlaceholder.vue';
-import { useKrakenStakingOperations } from '@/modules/staking/kraken/use-kraken-staking-operations';
+import { useKrakenStakingRefresh } from '@/modules/staking/kraken/use-kraken-staking-refresh';
 import { useKrakenStakingStore } from '@/modules/staking/use-kraken-staking-store';
 
 const store = useKrakenStakingStore();
-const { dateFilter: filters, dateFilterKey, events, fetchError } = storeToRefs(store);
-const { fetchEvents: load } = useKrakenStakingOperations();
+const { dateFilter: filters, fetchError } = storeToRefs(store);
 const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
-const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
-
-const { refreshPrices } = usePriceRefresh();
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 
 const premium = usePremium();
 
+const isKrakenConnected = computed<boolean>(() => {
+  const exchanges = get(connectedExchanges);
+  return exchanges.some(({ location }) => location === 'kraken');
+});
+
 // The page's Refresh queries the Kraken staking events, so the events section drops its own.
 const { reload: reloadEvents } = provideHistoryEventsSection();
+
+const { refresh, refreshPage } = useKrakenStakingRefresh({
+  connected: isKrakenConnected,
+  reloadEvents,
+});
 
 /** The exchange keys form, opened on Kraken. */
 const connectKrakenLink: RouteLocationRaw = {
@@ -48,39 +50,6 @@ const connectKrakenLink: RouteLocationRaw = {
 };
 
 const { isInitialLoading: loading, loading: refreshing } = storeToRefs(useKrakenStakingStore());
-
-const isKrakenConnected = computed<boolean>(() => {
-  const exchanges = get(connectedExchanges);
-  return exchanges.some(({ location }) => location === 'kraken');
-});
-
-async function refresh(ignoreCache: boolean = false): Promise<void> {
-  resetProtocolStatsPriceQueryStatus('kraken');
-  await load(ignoreCache);
-  const assets = get(events).received.map(item => item.asset);
-  await refreshPrices(ignoreCache, assets);
-}
-
-async function refreshPage(): Promise<void> {
-  await refresh(true);
-  reloadEvents();
-}
-
-/**
- * The date pills write a value per picker emit, and a year typed digit by digit emits once per
- * digit (`2` and `20` and `202` are each a valid date). Every write here is a POST to
- * `/staking/kraken` plus a price refresh, so the trigger is debounced and a burst of intermediate
- * dates settles into one query. The key is watched rather than the bounds themselves: it changes
- * only when a bound does, where the object it comes from is rewritten by any pagination change.
- * The debounced ref starts at the current value, so the first run after mount is not delayed.
- */
-const settledDateFilterKey = refDebounced(dateFilterKey, 400);
-
-watchImmediate([settledDateFilterKey, isKrakenConnected], async ([_, isKrakenConnected]) => {
-  if (isKrakenConnected) {
-    await refresh();
-  }
-});
 
 onUnmounted(() => {
   store.$reset();
