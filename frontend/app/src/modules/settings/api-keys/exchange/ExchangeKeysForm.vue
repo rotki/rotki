@@ -1,13 +1,12 @@
 <script setup lang="ts">
+import type { ExchangeFormData } from '@/modules/balances/types/exchanges';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import { RuiAlert, RuiButton, RuiIcon, RuiMenuSelect, RuiRevealableTextField, RuiTextField, RuiTooltip } from '@rotki/ui-library';
+import { RuiAlert, RuiButton, RuiIcon, RuiRevealableTextField, RuiTextField, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, type Ref, ref, toRef, type WritableComputedRef } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { type MessageKey, msg } from '@/message-key';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
-import { type ExchangeFormData, GateLocation, KrakenAccountType, OkxLocation } from '@/modules/balances/types/exchanges';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useMappedModelForm } from '@/modules/core/form/use-model-form';
@@ -18,21 +17,18 @@ import {
   type ExchangeCapabilities,
   type ExchangeKeysFormState,
   exchangeKeysSchema,
-  isGate as gate,
   isEditing,
   isKraken as kraken,
   requiresApiSecret as needsApiSecret,
   requiresPassphrase as needsPassphrase,
   normalizeApiSecret,
-  isOkx as okx,
   showsBinanceHistoryImport,
   toExchangeKeysFormState,
 } from '@/modules/settings/api-keys/exchange/exchange-keys-form';
 import ExchangeKeysFormStructure from '@/modules/settings/api-keys/exchange/ExchangeKeysFormStructure.vue';
 import ExchangeNotices from '@/modules/settings/api-keys/exchange/ExchangeNotices.vue';
-import GateRegionSelectorItem from '@/modules/settings/api-keys/exchange/GateRegionSelectorItem.vue';
+import ExchangeVariantSelectors from '@/modules/settings/api-keys/exchange/ExchangeVariantSelectors.vue';
 import KrakenFuturesKeys from '@/modules/settings/api-keys/exchange/KrakenFuturesKeys.vue';
-import OkxRegionSelectorItem from '@/modules/settings/api-keys/exchange/OkxRegionSelectorItem.vue';
 import ExchangeInput from '@/modules/shell/components/inputs/ExchangeInput.vue';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
 
@@ -61,9 +57,7 @@ const location = computed<string>(() => get(modelValue).location);
 const requiresApiSecret = computed<boolean>(() => needsApiSecret(get(location), get(capabilities)));
 const requiresPassphrase = computed<boolean>(() => needsPassphrase(get(location), get(capabilities)));
 const isBinance = computed<boolean>(() => binance(get(location)));
-const isGate = computed<boolean>(() => gate(get(location)));
 const isKraken = computed<boolean>(() => kraken(get(location)));
-const isOkx = computed<boolean>(() => okx(get(location)));
 
 const editMode = computed<boolean>(() => isEditing(get(modelValue).mode));
 const showBinanceHistoryImport = computed<boolean>(() => {
@@ -224,44 +218,6 @@ function toggleEdit() {
 }
 
 /**
- * Spelled out per option rather than built by interpolation, so that adding one fails typecheck here
- * instead of silently falling back to the raw identifier, and so the keys stay visible to the i18n
- * lint rules. The same holds for the two records below it.
- */
-const GATE_LOCATION_KEYS: Record<GateLocation, MessageKey> = {
-  europe: msg.$t('backend_mappings.exchanges.gate.location.europe'),
-  global: msg.$t('backend_mappings.exchanges.gate.location.global'),
-  us: msg.$t('backend_mappings.exchanges.gate.location.us'),
-};
-
-const KRAKEN_ACCOUNT_TYPE_KEYS: Record<KrakenAccountType, MessageKey> = {
-  intermediate: msg.$t('backend_mappings.exchanges.kraken.type.intermediate'),
-  pro: msg.$t('backend_mappings.exchanges.kraken.type.pro'),
-  starter: msg.$t('backend_mappings.exchanges.kraken.type.starter'),
-};
-
-const OKX_LOCATION_KEYS: Record<OkxLocation, MessageKey> = {
-  eea: msg.$t('backend_mappings.exchanges.okx.location.eea'),
-  global: msg.$t('backend_mappings.exchanges.okx.location.global'),
-  us: msg.$t('backend_mappings.exchanges.okx.location.us'),
-};
-
-const gateLocations = GateLocation.options.map(item => ({
-  identifier: item,
-  label: t(GATE_LOCATION_KEYS[item]),
-}));
-
-const krakenAccountTypes = KrakenAccountType.options.map(item => ({
-  identifier: item,
-  label: t(KRAKEN_ACCOUNT_TYPE_KEYS[item]),
-}));
-
-const okxLocations = OkxLocation.options.map(item => ({
-  identifier: item,
-  label: t(OKX_LOCATION_KEYS[item]),
-}));
-
-/**
  * The dialog owns the entry, so a write to `modelValue` only comes back on the next tick. Every
  * caller therefore hands the entry it just wrote straight to the baseline instead of reading it
  * back: re-reading `modelValue` here returns the value from before the write, which re-takes the
@@ -352,61 +308,12 @@ defineExpose({
       />
     </div>
 
-    <RuiMenuSelect
-      v-if="isKraken"
-      v-model="form.state.krakenAccountType"
-      data-testid="account-type"
-      :options="krakenAccountTypes"
-      :label="t('exchange_settings.inputs.kraken_account')"
-      key-attr="identifier"
-      text-attr="label"
+    <ExchangeVariantSelectors
+      v-model:kraken-account-type="form.state.krakenAccountType"
+      v-model:gate-location="form.state.gateLocation"
+      v-model:okx-location="form.state.okxLocation"
+      :location="modelValue.location"
     />
-
-    <RuiMenuSelect
-      v-if="isGate"
-      v-model="form.state.gateLocation"
-      data-testid="gate-location"
-      :options="gateLocations"
-      :label="t('exchange_keys_form.region')"
-      key-attr="identifier"
-      text-attr="label"
-    >
-      <template #selection="{ item }">
-        <GateRegionSelectorItem
-          :identifier="item.identifier"
-          :label="item.label"
-        />
-      </template>
-      <template #item="{ item }">
-        <GateRegionSelectorItem
-          :identifier="item.identifier"
-          :label="item.label"
-        />
-      </template>
-    </RuiMenuSelect>
-
-    <RuiMenuSelect
-      v-if="isOkx"
-      v-model="form.state.okxLocation"
-      data-testid="okx-location"
-      :options="okxLocations"
-      :label="t('exchange_keys_form.region')"
-      key-attr="identifier"
-      text-attr="label"
-    >
-      <template #selection="{ item }">
-        <OkxRegionSelectorItem
-          :identifier="item.identifier"
-          :label="item.label"
-        />
-      </template>
-      <template #item="{ item }">
-        <OkxRegionSelectorItem
-          :identifier="item.identifier"
-          :label="item.label"
-        />
-      </template>
-    </RuiMenuSelect>
 
     <div
       v-if="editMode"

@@ -3,24 +3,18 @@ import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { ImportSourceType } from '@/modules/core/common/upload-types';
 import { RuiButton, RuiFileUpload, RuiIcon, RuiSwitch, RuiTextField, RuiTimezoneSelect } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
-import { err, isErr, ok, type Result } from 'plainfp/result';
+import { isErr, type Result } from 'plainfp/result';
 import { computed, ref, useId, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { z, type ZodType } from 'zod';
-import { msg } from '@/message-key';
 import { DateFormat } from '@/modules/core/common/date-format';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { useForm } from '@/modules/core/form/use-form';
-import { Cancelled, isActionable, Skipped, type TaskError } from '@/modules/core/tasks/task-result';
+import { isActionable, type TaskError } from '@/modules/core/tasks/task-result';
 import DateFormatHelp from '@/modules/settings/controls/DateFormatHelp.vue';
-import { useInterop } from '@/modules/shell/app/use-electron-interop';
-import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { useNativeTask } from '@/modules/task-center/use-native-task';
-import { useTaskCenter } from '@/modules/task-center/use-task-center';
-import { csvImportActivity } from '@/modules/user-data/csv-import.activity';
 import ImportLocationMappings from '@/modules/user-data/ImportLocationMappings.vue';
 import ImportNotes from '@/modules/user-data/ImportNotes.vue';
-import { useImportDataApi } from '@/modules/user-data/use-import-data-api';
+import { useCsvImportTask } from '@/modules/user-data/use-csv-import-task';
 import { useImportLocationMapping } from '@/modules/user-data/use-import-location-mapping';
 
 const { source, notes = true } = defineProps<{
@@ -50,7 +44,6 @@ const formatHelp = ref<boolean>(false);
 const file = ref<File>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { getPath } = useInterop();
 
 /**
  * The empty-value rule only ever fires on a pattern that is truthy but blank once trimmed, because
@@ -87,11 +80,6 @@ const dateInputFormatExample = computed<string>(() => {
   return displayDateFormatter.format(new Date(), format);
 });
 
-const { submitTask } = useNativeTask();
-const { useIsActive } = useTaskCenter();
-
-const loading = useIsActive(csvImportActivity.kind, ...csvImportActivity.partsOf({ source }));
-const { importDataFrom, importFile } = useImportDataApi();
 const {
   checkLocations,
   choicesMissing,
@@ -101,6 +89,8 @@ const {
   rememberAliases,
   reset: resetLocations,
 } = useImportLocationMapping();
+
+const { importCsv, loading } = useCsvImportTask({ checkLocations, source: () => source });
 
 /**
  * An import only counts as done when the task both settled and reported a completed import.
@@ -138,46 +128,11 @@ async function uploadFile(): Promise<boolean> {
     return false;
 
   set(errorMessage, '');
-  const path = getPath(fileVal);
-  const payload = {
-    file: path,
+  const outcome = await importCsv({
+    file: fileVal,
     locationMappings: get(locationMappings),
-    source,
     timestampFormat: form.state.dateInputFormat || null,
     timezone: get(timezone) || null,
-  };
-  const formData = new FormData();
-  formData.append('source', source);
-  formData.append('file', fileVal);
-  formData.append('location_mappings', JSON.stringify(get(locationMappings)));
-  if (payload.timestampFormat)
-    formData.append('timestamp_format', payload.timestampFormat);
-  if (payload.timezone)
-    formData.append('timezone', payload.timezone);
-
-  const outcome = await submitTask<boolean>({
-    id: csvImportActivity.id({ source }),
-    kind: csvImportActivity.kind,
-    rerunnable: false,
-    userStarted: true,
-    run: async ({ cancelled, runTask }): Promise<Result<boolean, TaskError>> => {
-      if (source === 'rotki_events' || source === 'rotki_trades') {
-        const check = await checkLocations(source, path ? { path } : { formData });
-        if (check === 'unplaced')
-          return err(Skipped({ message: t('import_data.location_mapping.skipped') }));
-        if (check === 'replaced' || cancelled())
-          return err(Cancelled({ message: 'cancelled' }));
-      }
-
-      formData.append('async_query', 'true');
-      const result = await runTask<unknown>(() => path ? importDataFrom({ ...payload, file: path }) : importFile(formData));
-      if (isErr(result))
-        return result;
-
-      return ok(z.boolean().parse(result.value));
-    },
-    subtitle: activityLabelFor(msg.$t('task_center.activity.csv_import.source'), { source }),
-    title: t('task_center.group.csv_import'),
   });
 
   return applyOutcome(outcome);
