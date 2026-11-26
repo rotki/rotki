@@ -9,7 +9,7 @@ import { AccountKind, type BlockchainAccountGroupWithBalance } from '@/modules/a
 import AccountDetailsDrawer from '@/modules/accounts/details/AccountDetailsDrawer.vue';
 import { DRAWER_SLIDE_MS } from '@/modules/accounts/details/use-drawer-presence';
 
-const { accountId, assetsMounted, close, discard, groups, open, setView, settled, view } = await vi.hoisted(async () => {
+const { accountId, assetsMounted, close, discard, groups, open, setView, settled, tableRefresh, view } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   return {
     accountId: ref<string | undefined>(),
@@ -20,6 +20,7 @@ const { accountId, assetsMounted, close, discard, groups, open, setView, settled
     open: vi.fn<(id: string, mode: AccountDetailsOpenMode) => Promise<void>>(async () => {}),
     setView: vi.fn<(next: AccountDetailsView) => Promise<void>>(async () => {}),
     settled: ref<boolean>(true),
+    tableRefresh: vi.fn<() => Promise<void>>(async () => {}),
     view: ref<AccountDetailsView | undefined>(),
   };
 });
@@ -59,6 +60,11 @@ const stubs = {
     template: '<button data-testid="account-details-close" @click="$emit(\'close\')" />',
   },
   AccountGroupDetailsTable: {
+    methods: {
+      async refresh(): Promise<void> {
+        await tableRefresh();
+      },
+    },
     props: { chains: Array, emptyCount: Number, group: String, groupId: String },
     template: '<div data-testid="table-stub" :data-group="groupId" :data-chains="chains.join(\',\')" :data-kind="group" :data-empty="emptyCount" />',
   },
@@ -332,6 +338,27 @@ describe('modules/accounts/details/AccountDetailsDrawer', () => {
     set(accountId, '0xmulti');
 
     expect((await createSlidIn()).find('[data-testid=assets-stub]').attributes('data-searchable')).toBe('true');
+  });
+
+  it('should refresh the accounts table when asked to refresh', async () => {
+    set(accountId, '0xmulti');
+    set(view, 'accounts');
+    const wrapper = await createSlidIn();
+    expect(wrapper.find('[data-testid=table-stub]').exists()).toBe(true);
+
+    await wrapper.vm.refresh();
+
+    expect(tableRefresh).toHaveBeenCalledOnce();
+  });
+
+  it('should do nothing on refresh while no accounts table is shown', async () => {
+    set(accountId, '0xmulti');
+    const wrapper = await createSlidIn();
+    expect(wrapper.find('[data-testid=table-stub]').exists()).toBe(false);
+
+    await expect(wrapper.vm.refresh()).resolves.toBeUndefined();
+
+    expect(tableRefresh).not.toHaveBeenCalled();
   });
 
   it('should close from the close button and from the scrim', async () => {

@@ -1,16 +1,18 @@
-import type { TransactionParams } from '@/modules/wallet/types';
+import type { TradableAsset, TransactionParams } from '@/modules/wallet/types';
 import { bigNumberify } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { set } from '@vueuse/shared';
+import { get, set } from '@vueuse/shared';
 import flushPromises from 'flush-promises';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ComponentPublicInstance, type ComputedRef, nextTick, ref } from 'vue';
+import { type Component, type ComponentPublicInstance, computed, type ComputedRef, defineComponent, h, type MaybeRefOrGetter, nextTick, ref, toValue } from 'vue';
 import TradeSendCard from '@/modules/wallet/send/TradeSendCard.vue';
+import { useInjectedTradableAsset } from '@/modules/wallet/use-tradable-asset';
 
 const RECIPIENT = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65';
 const CONNECTED = '0x9531C059098e3d194fF87FebB587aB07B30B1306';
+const OTHER_ADDRESS = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12';
 const ETHEREUM_CHAIN_ID = 1;
 const OPTIMISM_CHAIN_ID = 10;
 const UNSUPPORTED_CHAIN_ID = 250;
@@ -42,6 +44,13 @@ const send = vi.fn<(params: TransactionParams) => Promise<boolean>>();
 const clearError = vi.fn();
 const refreshAssetBalance = vi.fn();
 const push = vi.fn();
+
+function owned(asset: string, chain: string, amount: string): TradableAsset {
+  return { amount: bigNumberify(amount), asset, chain };
+}
+
+/** What each address holds, as the tradable asset composable would read it from the balances. */
+const ownedAssets = ref<Record<string, TradableAsset[]>>({});
 
 vi.mock('@/modules/wallet/use-wallet-store', () => ({
   useWalletStore: vi.fn(() => ({
@@ -78,12 +87,16 @@ vi.mock('@/modules/wallet/use-tradable-asset', async () => {
   const mod = await vi.importActual<typeof import('@/modules/wallet/use-tradable-asset')>(
     '@/modules/wallet/use-tradable-asset',
   );
-  const { computed } = await import('vue');
   return {
     ...mod,
-    useTradableAsset: vi.fn(() => ({
-      getAssetDetail: (): ComputedRef<{ symbol: string }> => computed(() => ({ symbol: 'ETH' })),
-    })),
+    useTradableAsset: vi.fn((address: MaybeRefOrGetter<string | undefined>) => {
+      const allOwnedAssets = computed<TradableAsset[]>(() => get(ownedAssets)[toValue(address) ?? ''] ?? []);
+      return {
+        allOwnedAssets,
+        getAssetDetail: (asset: MaybeRefOrGetter<string>, chain: MaybeRefOrGetter<string>): ComputedRef<TradableAsset | undefined> =>
+          computed(() => get(allOwnedAssets).find(item => item.asset === toValue(asset) && item.chain === toValue(chain))),
+      };
+    }),
   };
 });
 
@@ -136,7 +149,7 @@ vi.mock('vue-router', async () => {
 describe('tradeSendCard', () => {
   let wrapper: VueWrapper<InstanceType<typeof TradeSendCard>>;
 
-  function createWrapper(): VueWrapper<InstanceType<typeof TradeSendCard>> {
+  function createWrapper(stubs: Record<string, Component | boolean> = {}): VueWrapper<InstanceType<typeof TradeSendCard>> {
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(TradeSendCard, {
@@ -150,6 +163,7 @@ describe('tradeSendCard', () => {
           TradeHistoryView: true,
           TradeRecipientAddress: true,
           WalletConnectionButton: true,
+          ...stubs,
         },
       },
       provide: libraryDefaults,
@@ -180,6 +194,10 @@ describe('tradeSendCard', () => {
     set(assetBalance, bigNumberify('2'));
     set(max, '2');
     set(errorMessage, '');
+    set(ownedAssets, {
+      [CONNECTED]: [owned('ETH', 'ethereum', '2'), owned('USDC', 'ethereum', '5'), owned('ETH', 'optimism', '1')],
+      [OTHER_ADDRESS]: [owned('USDC', 'ethereum', '7')],
+    });
     send.mockResolvedValue(true);
 
     wrapper = createWrapper();
@@ -406,6 +424,69 @@ describe('tradeSendCard', () => {
       await nextTick();
 
       expect(refreshAssetBalance).toHaveBeenCalledOnce();
+    });
+  });
+  describe('the tradable asset the children inject', () => {
+    /** Stands in for the asset selector: reads the injected tradable asset for the asset and chain it is bound to. */
+    const AssetProbe = defineComponent({
+      emits: ['update:modelValue', 'update:chain'],
+      props: { chain: { default: '', type: String }, modelValue: { default: '', type: String } },
+      setup(props) {
+        const { getAssetDetail } = useInjectedTradableAsset();
+        const detail = getAssetDetail(() => props.modelValue, () => props.chain);
+        return (): ReturnType<typeof h> => {
+          const current = get(detail);
+          return h('div', { 'data-testid': 'asset-probe' }, current ? `${current.asset}@${current.chain}:${current.amount.toString()}` : 'none');
+        };
+      },
+    });
+
+    function probeText(): string {
+      return wrapper.find('[data-testid=asset-probe]').text();
+    }
+
+    async function pick(asset: string, chain?: string): Promise<void> {
+      const probe = wrapper.findComponent(AssetProbe);
+      if (chain)
+        probe.vm.$emit('update:chain', chain);
+      probe.vm.$emit('update:modelValue', asset);
+      await nextTick();
+    }
+
+    beforeEach(async () => {
+      wrapper.unmount();
+      wrapper = createWrapper({ TradeAssetSelector: AssetProbe });
+      await flushPromises();
+    });
+
+    it('should give the selector the details of the asset and chain the card holds', async () => {
+      expect(probeText()).toBe('none');
+
+      await pick('USDC');
+
+      expect(probeText()).toBe('USDC@ethereum:5');
+    });
+
+    it('should follow the card when the asset or the chain changes', async () => {
+      set(supportedChainsForConnectedAccount, ['ethereum', 'optimism']);
+      await pick('ETH');
+      expect(probeText()).toBe('ETH@ethereum:2');
+
+      await pick('ETH', 'optimism');
+      expect(probeText()).toBe('ETH@optimism:1');
+
+      await pick('USDC');
+      expect(probeText()).toBe('none');
+    });
+
+    it('should read the holdings of the connected address', async () => {
+      await pick('USDC');
+      expect(probeText()).toBe('USDC@ethereum:5');
+
+      set(connectedAddress, OTHER_ADDRESS);
+      await nextTick();
+
+      expect(probeText()).toBe('USDC@ethereum:7');
     });
   });
 });

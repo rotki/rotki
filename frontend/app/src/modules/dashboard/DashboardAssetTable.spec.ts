@@ -40,10 +40,11 @@ const RuiDataTableStub = defineComponent({
   props: {
     empty: { default: undefined, type: Object },
     hidePagination: { default: false, type: Boolean },
+    pagination: { default: undefined, type: Object },
     rows: { default: () => [], type: Array },
   },
   setup(props, { slots }): () => VNode {
-    return () => h('div', { 'data-pager': props.hidePagination ? 'hidden' : 'shown' }, [
+    return () => h('div', { 'data-page': props.pagination?.page, 'data-pager': props.hidePagination ? 'hidden' : 'shown' }, [
       ...props.rows.map(row => h('div', slots['item.value']?.({ row }))),
       h('div', slots['body.append']?.({})),
       ...(props.rows.length === 0 ? [h('div', { 'data-testid': 'empty' }, props.empty?.description)] : []),
@@ -63,6 +64,7 @@ function valueStub(testId: string): Component {
         'data-asset': props.asset,
         'data-loading': props.loading ? 'true' : 'false',
         'data-testid': testId,
+        'data-value': props.value?.toFixed(),
       });
     },
   });
@@ -98,7 +100,11 @@ describe('dashboardAssetTable', () => {
           FiatDisplay: valueStub('total-value'),
           RowAppend: { template: '<div><slot /></div>' },
           RuiDataTable: RuiDataTableStub,
-          RuiTextField: { template: '<input data-testid="search" />' },
+          RuiTextField: {
+            emits: ['update:modelValue'],
+            props: { modelValue: { default: '', type: String } },
+            template: '<input data-testid="search" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+          },
           VisibleColumnsSelector: true,
         },
       },
@@ -201,6 +207,56 @@ describe('dashboardAssetTable', () => {
     wrapper.unmount();
     wrapper = createWrapper(createBalances(11));
     expect(wrapper.get('[data-pager]').attributes('data-pager')).toBe('shown');
+  });
+
+  describe('when the balances prop changes after mounting', () => {
+    it('should follow the new rows, offering search and a total once they grow past the threshold', async () => {
+      wrapper = createWrapper([createBalance('ETH')]);
+      expect(wrapper.find('[data-testid=search]').exists()).toBe(false);
+      expect(totalValues()).toHaveLength(0);
+      expect(wrapper.get('[data-pager]').attributes('data-pager')).toBe('hidden');
+
+      await wrapper.setProps({ balances: createBalances(5) });
+      expect(Object.keys(rowValues()).toSorted()).toEqual(['A0', 'A1', 'A2', 'A3', 'A4']);
+      expect(wrapper.find('[data-testid=search]').exists()).toBe(false);
+      expect(wrapper.findAll('[data-testid=total-value]').map(el => el.attributes('data-value'))).toEqual(['30']);
+
+      await wrapper.setProps({ balances: createBalances(12) });
+      expect(Object.keys(rowValues())).toHaveLength(12);
+      expect(wrapper.find('[data-testid=search]').exists()).toBe(true);
+      expect(wrapper.findAll('[data-testid=total-value]').map(el => el.attributes('data-value'))).toEqual(['72']);
+      expect(wrapper.get('[data-pager]').attributes('data-pager')).toBe('shown');
+    });
+
+    it('should follow a value change within the same rows', async () => {
+      wrapper = createWrapper([createBalance('ETH'), createBalance('DAI')]);
+
+      await wrapper.setProps({ balances: [createBalance('ETH', { value: bigNumberify(100) }), createBalance('DAI')] });
+
+      expect(wrapper.findAll('[data-testid=total-value]').map(el => el.attributes('data-value'))).toEqual(['106']);
+    });
+
+    it('should mark a row pending once its new price is not known', async () => {
+      wrapper = createWrapper([createBalance('ETH'), createBalance('DAI')]);
+      expect(rowValues()).toEqual({ DAI: 'false', ETH: 'false' });
+
+      set(pendingAssets, new Set(['ETH']));
+      await wrapper.setProps({ balances: [createBalance('ETH', { price: bigNumberify(-1), value: Zero }), createBalance('DAI')] });
+
+      expect(rowValues()).toEqual({ DAI: 'false', ETH: 'true' });
+    });
+  });
+
+  it('should go back to the first page when the search changes', async () => {
+    wrapper = createWrapper(createBalances(25));
+    wrapper.findComponent(RuiDataTableStub).vm.$emit('update:pagination', { limit: 10, page: 3, total: 25 });
+    await nextTick();
+    expect(wrapper.get('[data-pager]').attributes('data-page')).toBe('3');
+
+    await wrapper.get('[data-testid=search]').setValue('A1');
+
+    expect(wrapper.get('[data-pager]').attributes('data-page')).toBe('1');
+    expect(totalValues()).toHaveLength(0);
   });
 
   it('should keep the pager when rows fit one page only at a raised limit, so the limit can come back down', async () => {

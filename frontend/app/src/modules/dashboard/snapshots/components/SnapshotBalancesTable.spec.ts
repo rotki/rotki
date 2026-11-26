@@ -4,12 +4,16 @@ import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { BalanceType } from '@/modules/balances/types/balances';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';
+import EditBalancesSnapshotForm from '@/modules/dashboard/edit-snapshot/EditBalancesSnapshotForm.vue';
 import { type Snapshot, ZeroValueFilter } from '@/modules/dashboard/snapshots';
 import SnapshotBalanceEntryDialog from '@/modules/dashboard/snapshots/components/SnapshotBalanceEntryDialog.vue';
 import SnapshotBalancesTable from '@/modules/dashboard/snapshots/components/SnapshotBalancesTable.vue';
 import { SnapshotBalanceFilterKeys } from '@/modules/dashboard/snapshots/composables/snapshot-balance-filter';
+import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
+import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 
 let spamIds: string[] = [];
 vi.mock('@/modules/dashboard/snapshots/composables/use-snapshot-asset-filters', () => ({
@@ -189,6 +193,69 @@ describe('modules/dashboard/snapshots/components/SnapshotBalancesTable', () => {
     expect(wrapper.find<HTMLButtonElement>('[data-testid=snapshot-balances-bulk-delete]').element.disabled).toBe(true);
     expect(wrapper.find<HTMLButtonElement>('[data-testid=row-edit]').element.disabled).toBe(true);
     expect(wrapper.find<HTMLButtonElement>('[data-testid=row-delete]').element.disabled).toBe(true);
+  });
+
+  describe('row actions', () => {
+    function mountNarrowedTo(search: string): VueWrapper<InstanceType<typeof SnapshotBalancesTable>> {
+      return mount(SnapshotBalancesTable, {
+        global: { plugins: [pinia], provide: libraryDefaults, stubs },
+        props: {
+          filters: { [SnapshotBalanceFilterKeys.SEARCH]: search },
+          snapshot: createSnapshot(),
+          timestamp: TS,
+        },
+      });
+    }
+
+    it('should keep both dialogs closed until an action is clicked', () => {
+      wrapper = mountNarrowedTo('dai');
+      expect(wrapper.findComponent(BigDialog).props('display')).toBe(false);
+      expect(wrapper.findComponent(ConfirmDialog).props('display')).toBe(false);
+    });
+
+    it('should open the entry dialog on the clicked row (DAI, index 1, not the first) when its edit action is clicked', async () => {
+      wrapper = mountNarrowedTo('dai');
+      expect(wrapper.findAll('[data-testid=row-edit]')).toHaveLength(1);
+
+      await wrapper.get('[data-testid=row-edit]').trigger('click');
+
+      const dialog = wrapper.findComponent(BigDialog);
+      expect(dialog.props('display')).toBe(true);
+      expect(dialog.props('title')).toBe('dashboard.snapshot.edit.dialog.balances.edit_title');
+      expect(wrapper.findComponent(EditBalancesSnapshotForm).props('modelValue')).toMatchObject({
+        amount: '1',
+        assetIdentifier: 'DAI',
+        category: BalanceType.LIABILITY,
+        usdValue: '30',
+      });
+      expect(wrapper.findComponent(ConfirmDialog).props('display')).toBe(false);
+    });
+
+    it('should open the entry dialog empty when the add button is clicked', async () => {
+      wrapper = createWrapper();
+
+      await wrapper.get('[data-testid=snapshot-balances-add]').trigger('click');
+
+      const dialog = wrapper.findComponent(BigDialog);
+      expect(dialog.props('display')).toBe(true);
+      expect(dialog.props('title')).toBe('dashboard.snapshot.edit.dialog.balances.add_title');
+      expect(wrapper.findComponent(EditBalancesSnapshotForm).props('modelValue')).toMatchObject({ assetIdentifier: '' });
+    });
+
+    it('should open the delete confirmation for the clicked row when its delete action is clicked', async () => {
+      wrapper = mountNarrowedTo('dai');
+
+      await wrapper.get('[data-testid=row-delete]').trigger('click');
+
+      const confirm = wrapper.findComponent(ConfirmDialog);
+      expect(confirm.props('display')).toBe(true);
+      expect(wrapper.findComponent(BigDialog).props('display')).toBe(false);
+
+      confirm.vm.$emit('confirm');
+      await nextTick();
+
+      expect(wrapper.emitted('delete')).toEqual([[{ index: 1, location: 'kraken', markSpam: false }]]);
+    });
   });
 
   it('should not flag zero-value rows', () => {
