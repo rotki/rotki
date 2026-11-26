@@ -1,17 +1,13 @@
 <script setup lang="ts">
-import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifier } from '@rotki/common';
+import type { AssetResolutionOptions } from '@/modules/assets/use-asset-info-retrieval';
+import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@rotki/common';
 import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { isDefined, reactify, watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useBlockie } from '@/modules/accounts/use-blockie';
-import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useAssetIconCheck } from '@/modules/assets/use-asset-icon-check';
-import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { isBlockchain } from '@/modules/core/common/chains';
-import { hasAssetMetadata } from '@/modules/core/common/display/assets';
 import { useCopy } from '@/modules/core/common/use-clipboard';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -21,13 +17,13 @@ import {
   type AssetTooltip,
   badgeCutoutMask,
   badgeSize,
-  displayAssetText,
   visibleProtocol,
 } from '@/modules/shell/components/asset-icon-display';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 import EvmChainIcon from '@/modules/shell/components/EvmChainIcon.vue';
 import GeneratedIcon from '@/modules/shell/components/GeneratedIcon.vue';
 import IconMark from '@/modules/shell/components/IconMark.vue';
+import { useAssetIconIdentity } from '@/modules/shell/components/use-asset-icon-identity';
 
 interface AssetIconProps {
   identifier: string;
@@ -71,64 +67,26 @@ const pending = ref<boolean>(true);
 const abortController = ref<AbortController>();
 
 const { getAssetIconUrl } = useAssetsStore();
-const { getBlockie } = useBlockie();
 const { getChainName } = useSupportedChains();
 const { checkIfAssetExists } = useAssetIconCheck();
-const { currencies } = useCurrencies();
-const { useAssetInfo } = useAssetInfoRetrieval();
 const shouldShowAmount = useSetting('shouldShowAmount');
 
-const mappedIdentifier = computed<string>(() => {
-  const id = getIdentifierFromSymbolMap(identifier);
-  return isBlockchain(id) ? id.toUpperCase() : id;
-});
+const {
+  asset,
+  blockie,
+  currency,
+  displayAsset,
+  hasAssetText,
+  isCustomAsset,
+  mappedIdentifier,
+  name,
+  symbol,
+} = useAssetIconIdentity(() => identifier, () => resolutionOptions);
 
-const currency = computed<string | undefined>(() => {
-  const id = get(mappedIdentifier);
-  const fiatCurrencies = get(currencies).filter(({ crypto }) => !crypto);
-  return fiatCurrencies.find(({ tickerSymbol }) => tickerSymbol === id)?.unicodeSymbol;
-});
-
-const asset = useAssetInfo(mappedIdentifier, () => resolutionOptions);
 const url = reactify(getAssetIconUrl)(mappedIdentifier);
 
-const isCustomAsset = computed(() => get(asset)?.isCustomAsset ?? false);
-
 const chain = computed<string | undefined>(() => assetChain(forceChain, get(asset)));
-const symbol = computed(() => get(asset)?.symbol);
-const name = computed(() => get(asset)?.name);
 const protocol = computed<string | undefined>(() => visibleProtocol(get(asset)?.protocol));
-
-const displayAsset = computed<string>(() =>
-  displayAssetText(get(currency), get(symbol), get(name), get(mappedIdentifier)),
-);
-
-/**
- * Whether the asset has anything to call itself by.
- *
- * @remarks
- * An asset with no metadata is still handed a name and a symbol, of the form `EVM Token: 0x…`.
- * Both are non-empty, so a plain `name ?? symbol` check reports "named" for exactly the assets that
- * have no name. Asked once here rather than in every consumer.
- */
-const hasAssetText = computed<boolean>(() => {
-  if (get(currency))
-    return true;
-  return hasAssetMetadata(identifier, get(symbol)) || hasAssetMetadata(identifier, get(name));
-});
-
-/**
- * Blockie for an asset with nothing to call itself by. Its `displayAsset` falls back to the raw
- * identifier, so the generated text mark reads `eip` for every unknown EVM asset alike. A blockie
- * of the contract address at least tells two unknowns apart. Contract addresses are not user
- * identities, so unlike an account blockie this one needs no scrambling.
- */
-const blockie = computed<string | undefined>(() => {
-  if (get(hasAssetText) || !isEvmIdentifier(identifier))
-    return undefined;
-  const address = getAddressFromEvmIdentifier(identifier);
-  return address ? getBlockie(address) : undefined;
-});
 
 /**
  * Gates the tooltip's `[{symbol}] {name}` line, which without any asset text renders as a bare `[]`.

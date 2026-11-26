@@ -3,7 +3,6 @@ import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import type { HistoryEventNoteContext } from '@/modules/history/events/use-history-event-note';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
-import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { RuiCheckbox, RuiIcon } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
@@ -18,7 +17,6 @@ import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/modules/history/events/HistoryEventsListItemAction.vue';
 import HistoryEventType from '@/modules/history/events/HistoryEventType.vue';
 import { injectHistoryEventsSelection } from '@/modules/history/events/use-history-events-selection-context';
-import { useUnlinkQuestion } from '@/modules/history/events/use-unlink-question';
 import { useHistorySwapItem } from '../use-history-swap-item';
 
 const { events: eventsProp, variant = 'row' } = defineProps<{
@@ -69,6 +67,7 @@ const {
   spendEvent,
   spendEvents,
   toggleSelected,
+  unlinkConfirm,
 } = useHistorySwapItem({
   events,
   selection,
@@ -93,13 +92,6 @@ const noteContext = computed<HistoryEventNoteContext>(() => ({
 const typeLabel = computed<string | undefined>(() =>
   get(isBridge) ? t('history_events_list_swap.bridge_label') : undefined,
 );
-
-const { unlinkQuestion } = useUnlinkQuestion();
-
-const unlinkConfirm = computed<ConfirmQuestion | undefined>(() => {
-  const payload = get(bridgeUnlink);
-  return payload ? unlinkQuestion(payload) : undefined;
-});
 
 function unlink(): void {
   const payload = get(bridgeUnlink);

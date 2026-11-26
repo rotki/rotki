@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { BankAuthenticationRequest, BankConnection, BankFormData } from '@/modules/banks/types';
-import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
-import { RuiButton, RuiDataTable, RuiIcon } from '@rotki/ui-library';
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
@@ -10,20 +9,14 @@ import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
-import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { createNewBank, emptyCredentials } from '@/modules/banks/bank-connection-form';
 import BankAuthenticationDialog from '@/modules/banks/components/BankAuthenticationDialog.vue';
 import BankBalancesEmpty from '@/modules/banks/components/BankBalancesEmpty.vue';
-import BankConnectionActions from '@/modules/banks/components/BankConnectionActions.vue';
 import BankConnectionFormDialog from '@/modules/banks/components/BankConnectionFormDialog.vue';
-import BankConnectorIcon from '@/modules/banks/components/BankConnectorIcon.vue';
-import BankSyncStatus from '@/modules/banks/components/BankSyncStatus.vue';
+import BankConnectionsTable from '@/modules/banks/components/BankConnectionsTable.vue';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBankConnectionsTable } from '@/modules/banks/use-bank-connections-table';
 import { useBanks } from '@/modules/banks/use-banks';
-import { useFailureMessage } from '@/modules/core/api/use-failure-message';
-import TableFailureDescription from '@/modules/core/table/TableFailureDescription.vue';
-import TableFrame from '@/modules/core/table/TableFrame.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
@@ -41,7 +34,6 @@ const requestedAuthentication = ref<string>();
 const { canAddBank, connections: rows, connectionsError, manifests, manifestsError } = storeToRefs(useBankConnectionsStore());
 const { manifestFor } = useBankConnectionsStore();
 const { refreshBankConnections, refreshSupportedBanks, removeBank, syncBanks } = useBanks();
-const failureMessage = useFailureMessage();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -95,14 +87,6 @@ function openRequestedAuthentication([requested, connections]: [string | undefin
 
 async function sync(row: BankConnection): Promise<void> {
   await whileSyncing(row, async () => syncBanks({ identifier: row.identifier }));
-}
-
-/** What a row's delete button asks; a failed removal is named above the table. */
-function removeConfirm(row: BankConnection): RowDeleteQuestion {
-  return {
-    message: t('bank_settings.confirmation.message', { bank: row.displayName, name: row.name }),
-    title: t('bank_settings.confirmation.title'),
-  };
 }
 
 onBeforeMount(() => {
@@ -171,87 +155,21 @@ watch([requestedAuthentication, rows], openRequestedAuthentication, { immediate:
       @connect="addBank($event)"
     />
 
-    <TableFrame v-else>
-      <template #toolbar>
-        <p class="text-sm text-rui-text-secondary m-0">
-          {{ t('bank_settings.subtitle') }}
-        </p>
-      </template>
-      <RuiDataTable
-        v-model:sort="sort"
-        row-attr="identifier"
-        data-testid="bank-table"
-        :rows="rows"
-        :cols="cols"
-        :item-class="rowClass"
-        :empty="{ label: t('data_table.fetch_failed') }"
-      >
-        <template
-          v-if="connectionsError"
-          #empty-description
-        >
-          <TableFailureDescription
-            :message="failureMessage(connectionsError)"
-            :failure="connectionsError"
-            @retry="refreshBankConnections()"
-          />
-        </template>
-        <template
-          v-if="connectionsError && rows.length > 0"
-          #body.prepend
-        >
-          <tr>
-            <td :colspan="cols.length">
-              <FailureStrip
-                in-table
-                :title="t('bank_settings.connections_failed')"
-                :failure="connectionsError"
-                data-testid="bank-connections-error"
-                @retry="refreshBankConnections()"
-              />
-            </td>
-          </tr>
-        </template>
-        <template #item.connector="{ row }">
-          <div class="flex items-center gap-2">
-            <BankConnectorIcon
-              :connector="row.connector"
-              :bank-code="row.bankCode"
-            />
-            <span>{{ row.displayName }}</span>
-          </div>
-        </template>
-        <template #item.name="{ row }">
-          <span
-            class="font-medium"
-            data-testid="bank-connection-name"
-          >
-            {{ row.name }}
-          </span>
-        </template>
-        <template #item.syncStatus="{ row }">
-          <BankSyncStatus :status="row.syncStatus" />
-        </template>
-        <template #item.balance="{ row }">
-          <FiatDisplay
-            :value="balanceOf(row)"
-            class="font-medium tabular-nums"
-            data-testid="bank-balance"
-          />
-        </template>
-        <template #item.actions="{ row }">
-          <BankConnectionActions
-            :authentication-required="!!row.syncStatus.authChallenge"
-            :syncing="isSyncing(row)"
-            :delete-confirm="removeConfirm(row)"
-            @authenticate="authenticate(row)"
-            @sync="sync(row)"
-            @edit="editBank(row)"
-            @delete="removeRow(row)"
-          />
-        </template>
-      </RuiDataTable>
-    </TableFrame>
+    <BankConnectionsTable
+      v-else
+      v-model:sort="sort"
+      :rows="rows"
+      :cols="cols"
+      :error="connectionsError"
+      :row-class="rowClass"
+      :balance-of="balanceOf"
+      :is-syncing="isSyncing"
+      @authenticate="authenticate($event)"
+      @sync="sync($event)"
+      @edit="editBank($event)"
+      @delete="removeRow($event)"
+      @retry="refreshBankConnections()"
+    />
 
     <BankConnectionFormDialog
       v-model="bank"

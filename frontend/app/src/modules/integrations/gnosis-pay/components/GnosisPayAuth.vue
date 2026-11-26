@@ -3,7 +3,6 @@ import { RuiProgress } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { logicNot, logicOr } from '@vueuse/math';
 import { get, set } from '@vueuse/shared';
-import { storeToRefs } from 'pinia';
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
@@ -11,14 +10,13 @@ import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import ServiceKeyCard, { type FeatureGate, type ServiceKeyAction } from '@/modules/settings/api-keys/ServiceKeyCard.vue';
 import ServiceKeyDeleteButton from '@/modules/settings/api-keys/ServiceKeyDeleteButton.vue';
-import { useUnifiedProviders } from '@/modules/wallet/providers/use-unified-providers';
 import ProviderSelectionDialog from '@/modules/wallet/ProviderSelectionDialog.vue';
-import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 import { AuthStep, GnosisPayError } from '../types';
 import { useGnosisPayAuthState, useGnosisPayAuthSteps } from '../use-gnosis-pay-auth-state';
 import { useGnosisPaySafeMigration } from '../use-gnosis-pay-safe-migration';
 import { useGnosisPaySigning } from '../use-gnosis-pay-signing';
 import { useGnosisPayWallet } from '../use-gnosis-pay-wallet';
+import { GNOSIS_CHAIN_ID, useGnosisPayWalletStatus } from '../use-gnosis-pay-wallet-status';
 import GnosisPayAddressValidation from './GnosisPayAddressValidation.vue';
 import GnosisPayAuthStep from './GnosisPayAuthStep.vue';
 import GnosisPayConnected from './GnosisPayConnected.vue';
@@ -30,7 +28,6 @@ import GnosisPayWalletConnection from './GnosisPayWalletConnection.vue';
 const { t } = useI18n({ useScope: 'global' });
 
 const name = 'gnosis_pay';
-const GNOSIS_CHAIN_ID = 100;
 const { deleteService, load, loading, useApiKey } = useExternalApiKeys();
 const key = useApiKey(name);
 
@@ -129,15 +126,15 @@ const { currentStep, isStepComplete, isStepCurrent } = useGnosisPayAuthSteps(
   signInSuccess,
 );
 
-const walletStore = useWalletStore();
-const { connectedChainId, isDisconnecting, isWalletConnect, preparing } = storeToRefs(walletStore);
-
-const isOnGnosisChain = computed<boolean>(() => get(connectedChainId) === GNOSIS_CHAIN_ID);
-
-const unifiedProviders = useUnifiedProviders();
-const { availableProviders, isDetecting: detectingProviders, showProviderSelection } = unifiedProviders;
-
-const isConnecting = logicOr(preparing, detectingProviders);
+const {
+  availableProviders,
+  detectingProviders,
+  isConnecting,
+  isDisconnecting,
+  isOnGnosisChain,
+  isWalletConnect,
+  showProviderSelection,
+} = useGnosisPayWalletStatus();
 
 // Separate error messages for different steps
 const connectionErrorMessage = computed<string>(() => {

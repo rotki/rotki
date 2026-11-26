@@ -1,30 +1,23 @@
 <script setup lang="ts">
 import type { Exchange, ExchangeFormData } from '@/modules/balances/types/exchanges';
-import { RuiButton, RuiDataTable, RuiIcon, RuiSwitch } from '@rotki/ui-library';
-import { externalLinks } from '@shared/external-links';
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { useTimeoutFn } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
-import { onBeforeMount, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';
-import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import ExchangeBalancesEmpty from '@/modules/balances/exchanges/ExchangeBalancesEmpty.vue';
+import ExchangeConnectionsTable from '@/modules/balances/exchanges/ExchangeConnectionsTable.vue';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useExchangeConnectionsTable } from '@/modules/balances/exchanges/use-exchange-connections-table';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
-import { useNonSyncingExchanges } from '@/modules/balances/exchanges/use-non-syncing-exchanges';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
-import { useLocations } from '@/modules/core/common/use-locations';
-import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useTableRowDeletion } from '@/modules/core/table/use-table-row-deletion';
-import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import ExchangeKeysFormDialog from '@/modules/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
-import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
-import RowActions from '@/modules/shell/components/RowActions.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
@@ -42,8 +35,6 @@ const { connectedExchanges: rows } = storeToRefs(useConnectedExchangesStore());
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute('/accounts/exchanges/');
-const { getExchangeName } = useLocations();
-const { isNonSyncExchange, resetNonSyncingExchanges, toggleSync } = useNonSyncingExchanges();
 
 const { balanceOf, cols, highlight: highlightExchange, modelSort: sort, rowClass } = useExchangeConnectionsTable();
 
@@ -102,24 +93,9 @@ function editExchange(exchangePayload: Exchange) {
   });
 }
 
-/** What a row's delete button asks; `RowActions` adds the "Delete" label and the error tone. */
-function deleteConfirm(item: Exchange): { message: string; title: string } {
-  return {
-    message: t('exchange_settings.confirmation.message', {
-      location: getExchangeName(item.location),
-      name: item.name,
-    }),
-    title: t('exchange_settings.confirmation.title'),
-  };
-}
-
 const { deleteRow: removeRow, failure: removeFailure } = useTableRowDeletion<Exchange>({
   deleteItem: removeExchange,
   failureTitle: () => t('actions.balances.exchange_removal.title'),
-});
-
-onBeforeMount(() => {
-  resetNonSyncingExchanges();
 });
 
 watch(route, async (route) => {
@@ -177,89 +153,18 @@ watch(route, async (route) => {
       @connect="addExchange($event)"
     />
 
-    <TableFrame v-else>
-      <template #toolbar>
-        <div
-          v-if="showSetupHint"
-          class="flex items-center gap-2 flex-1 min-w-0 text-sm text-rui-text-secondary"
-          data-testid="exchange-setup-hint"
-        >
-          <RuiIcon
-            name="lu-info"
-            size="16"
-            class="text-rui-info shrink-0"
-          />
-          <span class="min-w-0">{{ t('exchange_settings.setup_hint') }}</span>
-          <RuiButton
-            variant="text"
-            icon
-            size="sm"
-            class="shrink-0"
-            :aria-label="t('common.actions.close')"
-            @click="dismissSetupHint()"
-          >
-            <RuiIcon
-              name="lu-x"
-              size="14"
-            />
-          </RuiButton>
-        </div>
-        <i18n-t
-          v-else
-          scope="global"
-          keypath="exchange_settings.subtitle"
-          tag="p"
-          class="flex-1 min-w-0 text-sm text-rui-text-secondary"
-        >
-          <ExternalLink
-            :text="t('exchange_settings.usage_guide')"
-            :url="externalLinks.usageGuideSection.addingAnExchange"
-          />
-        </i18n-t>
-      </template>
-
-      <RuiDataTable
-        v-model:sort="sort"
-        row-attr="identifier"
-        data-testid="exchange-table"
-        :rows="rows"
-        :cols="cols"
-        :item-class="rowClass"
-      >
-        <template #item.location="{ row }">
-          <LocationDisplay
-            :identifier="row.location"
-            horizontal
-            size="24px"
-          />
-        </template>
-        <template #item.syncEnabled="{ row }">
-          <RuiSwitch
-            color="primary"
-            :model-value="!isNonSyncExchange(row)"
-            details="hidden"
-            @update:model-value="toggleSync(row)"
-          />
-        </template>
-        <template #item.balance="{ row }">
-          <FiatDisplay
-            :value="balanceOf(row)"
-            class="font-medium tabular-nums"
-            data-testid="exchange-balance"
-          />
-        </template>
-        <template #item.actions="{ row }">
-          <RowActions
-            align="end"
-            :delete-tooltip="t('exchange_settings.delete.tooltip')"
-            :edit-tooltip="t('exchange_settings.edit.tooltip')"
-            :delete-confirm="deleteConfirm(row)"
-            @delete-click="removeRow(row)"
-            @edit-click="editExchange(row)"
-          />
-        </template>
-      </RuiDataTable>
-    </TableFrame>
+    <ExchangeConnectionsTable
+      v-else
+      v-model:sort="sort"
+      :rows="rows"
+      :cols="cols"
+      :show-setup-hint="showSetupHint"
+      :row-class="rowClass"
+      :balance-of="balanceOf"
+      @dismiss-setup-hint="dismissSetupHint()"
+      @edit="editExchange($event)"
+      @delete="removeRow($event)"
+    />
 
     <ExchangeKeysFormDialog
       v-model="exchange"

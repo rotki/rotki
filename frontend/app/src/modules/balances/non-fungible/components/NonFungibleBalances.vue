@@ -1,15 +1,12 @@
 <script setup lang="ts">
-import { RuiButton, RuiDataTable, RuiSwitch } from '@rotki/ui-library';
-import { get } from '@vueuse/shared';
-import { computed, onMounted, ref, watch } from 'vue';
+import { RuiDataTable, RuiSwitch } from '@rotki/ui-library';
+import { onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import NonFungibleBalancesFilter from '@/modules/accounts/balances/NonFungibleBalancesFilter.vue';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import LatestPriceFormDialog from '@/modules/assets/prices/latest/LatestPriceFormDialog.vue';
-import { IgnoredAssetHandlingType } from '@/modules/assets/types';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
-import TableEmptyNotice from '@/modules/core/table/TableEmptyNotice.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import SuccessDisplay from '@/modules/shell/components/display/SuccessDisplay.vue';
@@ -20,6 +17,7 @@ import { useNftAssetIgnoring } from '../use-nft-asset-ignoring';
 import { useNftData } from '../use-nft-data';
 import { useNftPriceManagement } from '../use-nft-price-management';
 import NonFungibleBalancesActions from './NonFungibleBalancesActions.vue';
+import NonFungibleBalancesEmptyNotice from './NonFungibleBalancesEmptyNotice.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 const { useIsAssetIgnored } = useAssetsStore();
@@ -42,9 +40,6 @@ const {
 const emptyState = useTableEmptyState({ error });
 
 const selectionMode = ref<boolean>(false);
-
-/** Hiding ignored or unignored NFTs can leave an empty table that is only a filter away from rows. */
-const filtered = computed<boolean>(() => get(modelIgnoredAssetsHandling) !== IgnoredAssetHandlingType.NONE);
 
 const {
   customPrice,
@@ -168,22 +163,7 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
           v-if="!error"
           #no-data
         >
-          <TableEmptyNotice
-            :icon="filtered ? 'lu-search-x' : 'lu-image'"
-            :title="filtered ? t('non_fungible_balances.empty.filtered_title') : t('non_fungible_balances.empty.title')"
-            :description="filtered ? t('non_fungible_balances.empty.filtered_description') : t('non_fungible_balances.empty.description')"
-            :data-testid="filtered ? 'nft-balances-empty-filtered' : 'nft-balances-empty'"
-          >
-            <RuiButton
-              v-if="filtered"
-              variant="outlined"
-              color="primary"
-              data-testid="nft-balances-empty-show-all"
-              @click="modelIgnoredAssetsHandling = IgnoredAssetHandlingType.NONE"
-            >
-              {{ t('non_fungible_balances.empty.show_all') }}
-            </RuiButton>
-          </TableEmptyNotice>
+          <NonFungibleBalancesEmptyNotice v-model:ignored-assets-handling="modelIgnoredAssetsHandling" />
         </template>
       </RuiDataTable>
     </TableFrame>
