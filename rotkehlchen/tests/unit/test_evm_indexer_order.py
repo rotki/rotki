@@ -1,10 +1,11 @@
 from contextlib import ExitStack, nullcontext
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
 from unittest.mock import MagicMock, call, patch
 
 import pytest
+import requests
 from web3 import HTTPProvider, Web3
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -793,6 +794,342 @@ def test_query_reverts(
         for node in nodes
         if (state := inquirer.get_runtime_state(node)) is not None
     ) == failures
+
+
+@pytest.mark.parametrize(('archive_nodes', 'outcomes', 'block_identifier', 'expected_cause'), [
+    # No node could serve a past block and the indexers can't either: retrying won't help.
+    ((False, False), [NoAvailableIndexers('none')], 100, FailureCause.UNSUPPORTED),
+    ((False, False), [RemoteError('no past eth_call', cause=FailureCause.UNSUPPORTED)], 100, FailureCause.UNSUPPORTED),  # noqa: E501
+    # An indexer such as Blockscout serves past blocks, so its outage is worth a retry.
+    ((False, False), [RemoteError('down', cause=FailureCause.NETWORK)], 100, FailureCause.NETWORK),
+    ((False, False), [RecoverableRemoteError('slow down', cause=FailureCause.RATE_LIMITED)], 100, FailureCause.RATE_LIMITED),  # noqa: E501
+    # An archive node that could have answered decides it.
+    ((True, False), [ValueError('rate limit exceeded'), NoAvailableIndexers('none')], 100, FailureCause.RATE_LIMITED),  # noqa: E501
+    ((True, False), [ValueError('boom'), NoAvailableIndexers('none')], 100, FailureCause.NETWORK),
+    ((True, False), [RemoteError('bad', cause=FailureCause.BAD_DATA), NoAvailableIndexers('none')], 100, FailureCause.BAD_DATA),  # noqa: E501
+    # Every node can serve the latest block, so an outage stays an outage.
+    ((False, False), [ValueError('boom'), ValueError('boom'), NoAvailableIndexers('none')], 'latest', FailureCause.NETWORK),  # noqa: E501
+])
+def test_query_failure_cause(
+        archive_nodes: tuple[bool, ...],
+        outcomes: list[Exception],
+        block_identifier: int | str,
+        expected_cause: FailureCause,
+) -> None:
+    """The error _query raises when no node answers carries the cause most worth acting on,
+    so that callers can tell an outage from a query no configured provider can serve.
+    The indexers are the last node in the call order, as in the default call order.
+    """
+    inquirer = DummyEvmNodeInquirer()
+    nodes = [
+        NodeName(
+            name=f'node-{idx}',
+            endpoint=f'http://node-{idx}.invalid',
+            owned=False,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ) for idx in range(len(archive_nodes))
+    ]
+    inquirer.rpc_mapping = {
+        node: RPCNode(MagicMock(), is_pruned=False, is_archive=is_archive)
+        for node, is_archive in zip(nodes, archive_nodes, strict=True)
+    }
+    indexers = NodeName(
+        name=EVM_INDEXERS_NODE_NAME,
+        endpoint='',
+        owned=False,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    )
+    remaining = list(outcomes)
+
+    def method(web3: Any, block_identifier: int | str) -> Any:
+        raise remaining.pop(0)
+
+    with pytest.raises(RemoteError) as error:
+        inquirer._query(
+            method=method,
+            call_order=[WeightedNode(node, True, ONE) for node in (*nodes, indexers)],
+            block_identifier=block_identifier,
+        )
+
+    assert type(error.value) is RemoteError
+    assert error.value.cause == expected_cause
+    assert remaining == []  # each node that can serve the block was asked, and no other
+
+
+MULTICALL_ADDRESS: Final = string_to_evm_address('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696')
+
+
+def _multicall_contract() -> EvmContract:
+    return EvmContract(
+        address=MULTICALL_ADDRESS,
+        abi=[{
+            'inputs': [{
+                'components': [
+                    {'name': 'target', 'type': 'address'},
+                    {'name': 'callData', 'type': 'bytes'},
+                ],
+                'name': 'calls',
+                'type': 'tuple[]',
+            }],
+            'name': 'aggregate',
+            'outputs': [
+                {'name': 'blockNumber', 'type': 'uint256'},
+                {'name': 'returnData', 'type': 'bytes[]'},
+            ],
+            'stateMutability': 'nonpayable',
+            'type': 'function',
+        }],
+    )
+
+
+@pytest.mark.parametrize(('node_error', 'indexer_error', 'expected_cause'), [
+    # The nodes are down and the indexers can't serve the call: the nodes may come back.
+    (requests.ConnectionError('down'), NoAvailableIndexers('none'), FailureCause.NETWORK),
+    (requests.ConnectionError('429 Too Many Requests'), NoAvailableIndexers('none'), FailureCause.RATE_LIMITED),  # noqa: E501
+    # Neither side can ever serve it.
+    (None, NoAvailableIndexers('none'), FailureCause.UNSUPPORTED),
+    # The indexers' own transient failure is kept.
+    (None, RemoteError('down', cause=FailureCause.NETWORK), FailureCause.NETWORK),
+])
+def test_multicall_failure_keeps_node_cause(
+        node_error: Exception | None,
+        indexer_error: Exception,
+        expected_cause: FailureCause,
+) -> None:
+    """multicall() falls back to the indexers when the nodes fail. Its error must not drop
+    the nodes' cause, or a node outage would look like a call no provider can serve.
+    A node error of None stands for a node that is not an archive node, so it can't
+    serve the past block at all.
+    """
+    inquirer = DummyEvmNodeInquirer()
+    node = NodeName(
+        name='node-0',
+        endpoint='http://node-0.invalid',
+        owned=False,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    )
+    inquirer.rpc_mapping = {
+        node: RPCNode(MagicMock(), is_pruned=False, is_archive=node_error is not None),
+    }
+    inquirer.contract_multicall = _multicall_contract()
+
+    def _call_contract(web3: Any, **kwargs: Any) -> Any:
+        if web3 is None:
+            raise indexer_error
+        assert node_error is not None, 'a node that is not an archive node must be skipped'
+        raise node_error
+
+    with (
+        patch.object(inquirer, '_call_contract', new=_call_contract),
+        pytest.raises(RemoteError) as error,
+    ):
+        inquirer.multicall(
+            calls=[(MULTICALL_ADDRESS, '0x18160ddd')],
+            call_order=[WeightedNode(node, True, ONE)],
+            block_identifier=100,
+        )
+
+    assert error.value.cause == expected_cause
+
+
+@pytest.mark.parametrize(('cooling_node', 'method_name', 'block_identifier', 'expected_cause'), [
+    # what a node never connected can serve is not known, so it may serve the past block
+    ('unconnected', '_call_contract', 100, FailureCause.RATE_LIMITED),
+    ('archive', '_call_contract', 100, FailureCause.RATE_LIMITED),
+    # a known capability rules the node out however long it cools down
+    ('not_archive', '_call_contract', 100, FailureCause.UNSUPPORTED),
+    ('pruned', '_get_logs', 'latest', FailureCause.UNSUPPORTED),
+    # any node serves the latest block
+    ('not_archive', '_call_contract', 'latest', FailureCause.RATE_LIMITED),
+])
+def test_cooling_node_counts_only_if_it_may_serve(
+        cooling_node: Literal['unconnected', 'archive', 'not_archive', 'pruned'],
+        method_name: str,
+        block_identifier: int | str,
+        expected_cause: FailureCause,
+) -> None:
+    """A node left out of the default call order for its rate limit cooldown makes the
+    failure a rate limit only if the node may serve the query once it is back. Otherwise
+    a query no configured provider can serve would wait on the cooldown forever."""
+    inquirer = DummyEvmNodeInquirer()
+    node = NodeName(
+        name='node-0',
+        endpoint='http://node-0.invalid',
+        owned=False,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    )
+    if cooling_node != 'unconnected':
+        inquirer.rpc_mapping = {node: RPCNode(
+            MagicMock(),
+            is_pruned=cooling_node == 'pruned',
+            is_archive=cooling_node == 'archive',
+        )}
+    inquirer._configured_nodes_cache = [WeightedNode(node, True, ONE)]
+    inquirer.mark_node_rate_limited(node, 'rate limit exceeded')
+
+    def method(web3: Any, block_identifier: int | str) -> Any:
+        assert web3 is None, 'the cooling node is left out'
+        raise NoAvailableIndexers('none')
+
+    method.__name__ = method_name
+    with pytest.raises(RemoteError) as error:
+        inquirer._query(method=method, block_identifier=block_identifier)
+
+    assert error.value.cause == expected_cause
+
+
+@pytest.mark.parametrize(('ready_node', 'cooling_archive', 'expected_cause'), [
+    # the only node, so multicall has no node to ask before the indexers
+    (False, True, FailureCause.RATE_LIMITED),
+    # next to a node that is not an archive node, so the nodes fail as UNSUPPORTED
+    (True, True, FailureCause.RATE_LIMITED),
+    # the cooling node could not serve the past block either
+    (True, False, FailureCause.UNSUPPORTED),
+])
+def test_multicall_failure_counts_cooling_node(
+        ready_node: bool,
+        cooling_archive: bool,
+        expected_cause: FailureCause,
+) -> None:
+    """multicall() builds the default call order itself and hands _query explicit ones, so
+    it must count an archive node left out for its cooldown, or a rate limit on the only
+    archive node would look like a past block no provider can serve."""
+    inquirer = DummyEvmNodeInquirer()
+    cooling, ready = (
+        NodeName(
+            name=f'node-{idx}',
+            endpoint=f'http://node-{idx}.invalid',
+            owned=False,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ) for idx in range(2)
+    )
+    inquirer.rpc_mapping = {
+        cooling: RPCNode(MagicMock(), is_pruned=False, is_archive=cooling_archive),
+        ready: RPCNode(MagicMock(), is_pruned=False, is_archive=False),
+    }
+    inquirer._configured_nodes_cache = [
+        WeightedNode(node, True, ONE) for node in (cooling, ready) if node != ready or ready_node
+    ]
+    inquirer.mark_node_rate_limited(cooling, 'rate limit exceeded')
+    inquirer.contract_multicall = _multicall_contract()
+
+    def _call_contract(web3: Any, **kwargs: Any) -> Any:
+        assert web3 is None, 'no node can be asked for the past block'
+        raise NoAvailableIndexers('none')
+
+    with (
+        patch.object(inquirer, '_call_contract', new=_call_contract),
+        pytest.raises(RemoteError) as error,
+    ):
+        inquirer.multicall(calls=[(MULTICALL_ADDRESS, '0x18160ddd')], block_identifier=100)
+
+    assert error.value.cause == expected_cause
+
+
+@pytest.mark.parametrize(('left_out', 'expected_cause'), [
+    # a timeout puts a node there until the node config changes, but the node may be back
+    ('failed_to_connect', FailureCause.NETWORK),
+    # the default call order leaves out a node until its rate limit cooldown ends
+    ('cooling_down', FailureCause.RATE_LIMITED),
+])
+def test_query_failure_cause_counts_nodes_left_out(
+        left_out: str,
+        expected_cause: FailureCause,
+) -> None:
+    """The only archive node, left out of a query for now, must not let the non-archive
+    nodes and the indexers make a past block look like one no provider can serve."""
+    inquirer = DummyEvmNodeInquirer()
+    archive_node, pruned_node = (
+        NodeName(
+            name=f'node-{idx}',
+            endpoint=f'http://node-{idx}.invalid',
+            owned=False,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ) for idx in range(2)
+    )
+    inquirer.rpc_mapping = {pruned_node: RPCNode(MagicMock(), is_pruned=False, is_archive=False)}
+    inquirer._configured_nodes_cache = [
+        WeightedNode(node, True, ONE) for node in (archive_node, pruned_node)
+    ]
+    if left_out == 'failed_to_connect':
+        inquirer.failed_to_connect_nodes.add(archive_node.name)
+        call_order: list[WeightedNode] | None = [
+            WeightedNode(node, True, ONE) for node in (archive_node, pruned_node, inquirer.indexers_node.node_info)  # noqa: E501
+        ]
+    else:
+        inquirer.rpc_mapping[archive_node] = RPCNode(MagicMock(), is_pruned=False, is_archive=True)
+        inquirer.mark_node_rate_limited(archive_node, 'rate limit exceeded')
+        call_order = None  # the default call order
+
+    def method(web3: Any, block_identifier: int) -> Any:
+        assert web3 is None, 'only the indexers can be asked for the past block'
+        raise NoAvailableIndexers('none')
+
+    with pytest.raises(RemoteError) as error:
+        inquirer._query(method=method, call_order=call_order, block_identifier=100)
+
+    assert error.value.cause == expected_cause
+
+
+def test_indexer_revert_counts_as_one_endpoint() -> None:
+    """An indexer's revert is not flattened into a plain RemoteError. Another indexer may
+    still answer, as Blockscout reverts on some positions other indexers price, so only a
+    revert no indexer overrules reaches _query. It counts the indexers as one endpoint,
+    so a node's revert and theirs confirm each other."""
+    inquirer = DummyEvmNodeInquirer()
+    asked: list[str] = []
+    answering_indexer: str | None = None
+
+    def eth_call(indexer: Any) -> Any:
+        asked.append(indexer.name)
+        if indexer.name == answering_indexer:
+            return '0x2a'
+        raise ContractReverted('execution reverted: Invalid token ID')
+
+    with pytest.raises(ContractReverted):
+        inquirer._try_indexers(func=eth_call)
+    assert len(asked) == 3  # every indexer was asked
+
+    asked.clear()
+    answering_indexer = 'Routescan'  # the last one in the default order
+    assert inquirer._try_indexers(func=eth_call) == '0x2a'
+    assert asked[-1] == 'Routescan'
+
+    answering_indexer = None
+
+    reverting_node, answering_node = (
+        NodeName(
+            name=f'node-{idx}',
+            endpoint=f'http://node-{idx}.invalid',
+            owned=False,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ) for idx in range(2)
+    )
+    inquirer.rpc_mapping = {
+        node: RPCNode(MagicMock(name=label), is_pruned=False, is_archive=True)
+        for node, label in ((reverting_node, 'reverting'), (answering_node, 'answering'))
+    }
+    asked.clear()
+
+    def method(web3: Any, block_identifier: int) -> Any:
+        if web3 is None:
+            return inquirer._try_indexers(func=eth_call)
+        asked.append(label := web3._mock_name)
+        if label == 'reverting':
+            raise ContractReverted('execution reverted: Invalid token ID')
+        return 42  # an unconfirmed revert would let a later node answer
+
+    with pytest.raises(ContractReverted):
+        inquirer._query(
+            method=method,
+            call_order=[
+                WeightedNode(reverting_node, True, ONE),
+                inquirer.indexers_node,
+                WeightedNode(answering_node, True, ONE),
+            ],
+            block_identifier=100,
+        )
+    assert asked == ['reverting', 'Etherscan', 'Blockscout', 'Routescan']  # not 'answering'
 
 
 @pytest.mark.parametrize(('node_error', 'error_kind'), [

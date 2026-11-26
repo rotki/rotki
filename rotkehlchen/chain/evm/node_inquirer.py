@@ -60,7 +60,7 @@ from rotkehlchen.chain.evm.types import (
     RemoteDataQueryStatus,
     WeightedNode,
 )
-from rotkehlchen.chain.mixins.rpc_nodes import EVMRPCMixin, _is_rate_limit_error
+from rotkehlchen.chain.mixins.rpc_nodes import EVMRPCMixin, RPCNode, _is_rate_limit_error
 from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import checkpoint
@@ -69,6 +69,7 @@ from rotkehlchen.constants.timing import TOKEN_QUERY_FAILURE_COOLDOWN
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
+    GAS_LIMIT_ERROR_PATTERNS,
     BlockchainQueryError,
     BlockscoutIncompleteResponse,
     ChainNotSupported,
@@ -129,7 +130,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 MIN_NODES_CONFIRMING_REVERT: Final = 2
-GAS_LIMIT_ERROR_PATTERNS: Final = ('out of gas', 'exceeds block gas limit')
 
 
 def _is_contract_revert(error: ContractLogicError) -> bool:
@@ -640,19 +640,58 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             save_query=False,
         ) == expected_balance
 
+    def _node_cannot_serve(
+            self,
+            rpc_node: RPCNode[Web3],
+            method_name: str,
+            block_identifier: BlockIdentifier,
+    ) -> bool:
+        """Whether the connected node lacks what the query needs: an archive node for a
+        past block, or an unpruned one for past transactions and logs."""
+        return (
+            method_name in self.methods_that_query_past_data and rpc_node.is_pruned is True
+        ) or (block_identifier != 'latest' and rpc_node.is_archive is False)
+
+    def _cooling_node_may_serve(self, method_name: str, block_identifier: BlockIdentifier) -> bool:
+        """Whether the default call order leaves out, for its rate-limit cooldown, a node
+        that may serve the query once the cooldown ends. A node never connected may, since
+        what it can serve is not known yet."""
+        for wnode in self._get_configured_nodes():
+            if not self.is_node_in_cooldown(wnode.node_info):
+                continue
+            if (rpc_node := self.rpc_mapping.get(wnode.node_info)) is None or not self._node_cannot_serve(  # noqa: E501
+                rpc_node=rpc_node,
+                method_name=method_name,
+                block_identifier=block_identifier,
+            ):
+                return True
+        return False
+
     def _query(self, method: Callable, call_order: Sequence[WeightedNode] | None = None, **kwargs: Any) -> Any:  # noqa: E501
         """Queries evm related data by performing a query of the provided method to all given nodes
 
         The first node in the call order that gets a successful response returns.
         May raise:
-        - RemoteError if none of the RPC nodes can get a result
+        - RemoteError if none of the RPC nodes can get a result. Its cause is the one most
+          worth acting on among the nodes that could have served the query, as picked by
+          alternatives_cause: UNSUPPORTED when none could, such as a past block with no
+          archive node and no indexer that serves it.
         - ContractReverted (a RemoteError) if two distinct endpoints report a revert, or if
           one does and no other node gets a result.
         - RequestTooLargeError if we encounter a 414 error from etherscan-like
           indexers or gas limit errors from RPC nodes.
         """
+        # Why each node failed or was passed over. A node left out for now, because it
+        # failed to connect or cools down after a rate limit, may serve a later retry.
+        causes: set[FailureCause] = set()
+        block_identifier = kwargs.get('block_identifier', 'latest')
         if call_order is None:
             call_order = self.default_call_order()
+            if self._cooling_node_may_serve(
+                method_name=method.__name__,
+                block_identifier=block_identifier,
+            ):
+                causes.add(FailureCause.RATE_LIMITED)
         gas_limit_error_seen = False
         transaction_not_found_seen = False
         revert_error: ContractReverted | None = None
@@ -663,11 +702,13 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 continue
             if (rpc_node := self.rpc_mapping.get(node_info, None)) is None:
                 if node_info.name in self.failed_to_connect_nodes:
+                    causes.add(FailureCause.NETWORK)
                     continue
 
                 if node_info.name != EVM_INDEXERS_NODE_NAME:
                     success, _ = self.attempt_connect(node=node_info)
                     if success is False:
+                        causes.add(FailureCause.NETWORK)
                         with self._nodes_lock:
                             if node_info not in self._removed_nodes:
                                 self.failed_to_connect_nodes.add(node_info.name)
@@ -675,17 +716,17 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
                     if (rpc_node := self.rpc_mapping.get(node_info, None)) is None:
                         log.error(f'Unexpected missing node {node_info} at {self.chain_id}')
+                        causes.add(FailureCause.NETWORK)
                         continue
 
-            if rpc_node is not None and ((
-                method.__name__ in self.methods_that_query_past_data and
-                rpc_node.is_pruned is True
-            ) or (
-                kwargs.get('block_identifier', 'latest') != 'latest' and
-                rpc_node.is_archive is False
-            )):
+            if rpc_node is not None and self._node_cannot_serve(
+                rpc_node=rpc_node,
+                method_name=method.__name__,
+                block_identifier=block_identifier,
+            ):
                 # If the block_identifier is different from 'latest'
                 # this query should be routed to an archive node
+                causes.add(FailureCause.UNSUPPORTED)
                 continue
 
             try:
@@ -719,6 +760,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     f'{method.__name__}: {e!s}. Skipping this node in future queries.',
                 )
                 self.mark_node_failure(node_info, str(e))
+                causes.add(FailureCause.NETWORK)
                 with self._nodes_lock:
                     if node_info not in self._removed_nodes:
                         self.failed_to_connect_nodes.add(node_info.name)
@@ -743,8 +785,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     gas_limit_error_seen = True
                 elif _is_rate_limit_error(e):
                     self.mark_node_rate_limited(node_info, str(e))
+                    causes.add(FailureCause.RATE_LIMITED)
                 else:
                     self.mark_node_failure(node_info, str(e))
+                    causes.add(cause_of(e, FailureCause.NETWORK))
                 # Catch all possible errors here and just try next node call
                 continue
 
@@ -768,7 +812,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
         raise RemoteError(
             f'Error querying information from {self.blockchain!s}. Check logs for more information',  # noqa: E501
-            cause=FailureCause.NETWORK,
+            cause=alternatives_cause(causes) if len(causes) != 0 else FailureCause.NETWORK,
         )
 
     def _get_latest_block_number(self, web3: Web3 | None) -> int:
@@ -1577,10 +1621,18 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         Can raise:
         - RemoteError
         """
-        call_order = self.default_call_order() if call_order is None else call_order
+        # _query only knows about the nodes that cool down when it builds the call order
+        cooling_node_may_serve = False
+        if call_order is None:
+            call_order = self.default_call_order()
+            cooling_node_may_serve = self._cooling_node_may_serve(
+                method_name=self._call_contract.__name__,
+                block_identifier=block_identifier,
+            )
         estimated_length = sum(len(call[1]) for call in calls)
 
         # try regular nodes first
+        nodes_error: RemoteError | None = None
         if len(regular_nodes := [n for n in call_order if n.node_info.name != EVM_INDEXERS_NODE_NAME]) != 0:  # noqa: E501
             chunk_size = 3 if (
                 (failed := self._multicall_failed_length.get('nodes')) is not None and
@@ -1595,22 +1647,40 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     estimated_length=estimated_length,
                     cache_key='nodes',
                 )
-            except RemoteError:
-                pass  # fall through to indexers
+            except RemoteError as e:
+                nodes_error = e  # fall through to indexers
 
         # fallback to indexers
         chunk_size = 3 if (
             (failed := self._multicall_failed_length.get('indexers')) is not None and
             estimated_length >= failed
         ) else calls_chunk_size
-        return self._execute_multicall(
-            calls=calls,
-            call_order=[self.indexers_node],
-            block_identifier=block_identifier,
-            calls_chunk_size=chunk_size,
-            estimated_length=estimated_length,
-            cache_key='indexers',
-        )
+        try:
+            return self._execute_multicall(
+                calls=calls,
+                call_order=[self.indexers_node],
+                block_identifier=block_identifier,
+                calls_chunk_size=chunk_size,
+                estimated_length=estimated_length,
+                cache_key='indexers',
+            )
+        except RemoteError as e:
+            # Either side answering would do, so a retry helps if the nodes failed, or a
+            # node was left out, for a reason that may heal even when the indexers can never
+            # serve the call. A revert or a request too large keeps its own type, which
+            # callers act on.
+            if isinstance(e, (ContractReverted, RequestTooLargeError)):
+                raise
+
+            causes = {e.cause}
+            if nodes_error is not None:
+                causes.add(nodes_error.cause)
+            if cooling_node_may_serve:
+                causes.add(FailureCause.RATE_LIMITED)
+            if (cause := alternatives_cause(causes)) == e.cause:
+                raise
+
+            raise RemoteError(str(e), cause=cause, error_code=e.error_code) from e
 
     def _execute_multicall(
             self,
@@ -2553,6 +2623,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         errors: list[tuple[str, Exception]] = []
         failed: set[EvmIndexer] = set()
         blockscout_incomplete_response = False
+        revert_error: ContractReverted | None = None
         for indexer_name, indexer in ordered_indexers:
             if indexer_name not in self.available_indexers:
                 continue  # was removed while looping
@@ -2575,6 +2646,16 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     failed.add(indexer_name)
             except RequestTooLargeError:
                 raise  # Let RequestTooLargeError bubble up for retry logic in callers
+            except ContractReverted as e:
+                # one indexer's revert is not trusted, since another may still answer. If none
+                # does, the revert goes to _query, which weighs the indexers as one endpoint
+                log.warning(
+                    'Indexer reported a revert. Trying next indexer.',
+                    indexer=indexer.name,
+                    error=str(e),
+                )
+                revert_error = e
+                failed.add(indexer_name)
             except (RemoteError, DeserializationError) as e:
                 log.warning(f'Failed to query {indexer.name} due to {e!s}. Trying next indexer.')
                 if isinstance(e, BlockscoutIncompleteResponse):
@@ -2583,6 +2664,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 failed.add(indexer_name)
             else:
                 return result, indexer_name, frozenset(failed)
+
+        if revert_error is not None:
+            raise revert_error
 
         range_not_covered = any(isinstance(e, IndexerRangeNotCovered) for _, e in errors)
         if len(self._get_indexers_in_order()) == 0 or (
