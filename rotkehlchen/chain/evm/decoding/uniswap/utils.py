@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Final, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import asset_normalized_value, get_decimals, get_or_create_evm_token
@@ -230,6 +230,27 @@ def get_position_price_from_underlying(
         ) * asset_usd_price
 
     return Price(position_price)
+
+
+def get_position_price_from_state(
+        evm_inquirer: EvmNodeInquirer,
+        position: Any,
+        slot_0: Any,
+        price_func: Callable[[Asset], Price],
+) -> Price:
+    """Get a Uniswap V3 like position's price from the result of the position manager's
+    `positions` call and the `slot0` state of its pool, as Uniswap V3 and Slipstream
+    both return them."""
+    return get_position_price_from_underlying(
+        evm_inquirer=evm_inquirer,
+        token0_raw_address=position[2],
+        token1_raw_address=position[3],
+        tick_lower=position[5],
+        tick_upper=position[6],
+        liquidity=position[7],
+        tick=slot_0[1],
+        price_func=price_func,
+    )
 
 
 def decode_uniswap_v3_like_position_create_or_exit(

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`13747` Historical prices of fiat currencies, Uniswap V2 pool tokens and Uniswap V3 or Slipstream positions are now asked for again later when the exchange rate sources or the blockchain nodes could not be reached, as other prices already are. Before, such a day was treated as having no price, and an LP token or position could even be valued at zero. A burned position is still worth zero.
 * :bug:`-` When the login form remembers your username, the cursor now starts in the password field. Before, it always started in the username field.
 * :feature:`2291` Premium users can now delete the database backup stored on the rotki server from the cloud backup menu. The confirmation shows which backup will be deleted and offers to turn off the automatic backup on this device, so it does not upload a new one right away.
 * :bug:`-` NFT prices and images now need your own OpenSea API key. Without one, rotki asks for it once and lets you choose not to be asked again, instead of retrying for half a minute and failing.

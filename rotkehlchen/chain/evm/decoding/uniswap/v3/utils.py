@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Final, NamedTuple
+from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
 from eth_abi import encode as encode_abi
 from eth_utils import to_checksum_address, to_hex
@@ -16,10 +16,10 @@ from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.oracles.constants import UNISWAP_FACTORY_ADDRESSES
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecoderContext, EvmDecodingOutput
-from rotkehlchen.chain.evm.decoding.uniswap.utils import get_position_price_from_underlying
+from rotkehlchen.chain.evm.decoding.uniswap.utils import get_position_price_from_state
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import ContractReverted, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -186,21 +186,22 @@ def _compute_pool_address(
     )
 
 
-def get_uniswap_v3_position_price(
+def _query_uniswap_v3_position(
         evm_inquirer: EvmNodeInquirer,
         token: EvmToken,
-        price_func: Callable[[Asset], Price],
-        block_identifier: BlockIdentifier = 'latest',
-) -> Price:
-    """
-    Get the price of a Uniswap V3 LP position identified by the token's collectible ID.
+        block_identifier: BlockIdentifier,
+) -> tuple[Any, Any] | None:
+    """Read a Uniswap V3 position and the `slot0` state of its pool.
 
-    `price_func` is a function to get the price of the asset, allowing this function to be used
-    for both current and historical prices.
+    Returns None if the position can't be read.
+
+    May raise:
+    - ContractReverted if the NFT manager reverts on the position, such as a burned one
+    - RemoteError if a contract call failed, with the cause it failed for
     """
     if (collectible_id := tokenid_to_collectible_id(identifier=token.identifier)) is None:
-        log.error(f'Failed to find Uniswap V3 position price for {token} due to missing token ID.')
-        return ZERO_PRICE
+        log.error('Can not read a Uniswap V3 position without a token ID', token=token)
+        return None
 
     uniswap_v3_nft_manager = evm_inquirer.contracts.contract(UNISWAP_V3_NFT_MANAGER_ADDRESSES[evm_inquirer.chain_id])  # noqa: E501
     uniswap_v3_factory = evm_inquirer.contracts.contract(UNISWAP_FACTORY_ADDRESSES[3][evm_inquirer.chain_id])  # noqa: E501
@@ -216,9 +217,9 @@ def get_uniswap_v3_position_price(
             arguments=[int(collectible_id)],
             block_identifier=block_identifier,
         )
-    except (RemoteError, ValueError) as e:
-        log.error(f'Failed to query Uniswap V3 position information from nft contract for {token} due to {e!s}')  # noqa: E501
-        return ZERO_PRICE
+    except ValueError as e:
+        log.error('Can not read a Uniswap V3 position', token=token, error=str(e))
+        return None
 
     # Generate the LP contract address with CREATE2 opcode replicated in Python using
     # factory_address, token_0, token1 and the fee of the LP all gotten from the position.
@@ -230,8 +231,8 @@ def get_uniswap_v3_position_price(
             fee=position[4],
         )
     except DeserializationError as e:
-        log.error(f'Failed to compute Uniswap V3 pool address for {token} due to {e!s}')
-        return ZERO_PRICE
+        log.error('Failed to compute a Uniswap V3 pool address', token=token, error=str(e))
+        return None
 
     try:  # Get the liquidity pool's state i.e `slot0`
         slot_0 = evm_inquirer.call_contract(
@@ -240,18 +241,75 @@ def get_uniswap_v3_position_price(
             method_name='slot0',
             block_identifier=block_identifier,
         )
+    except ContractReverted as e:  # only a revert on the position itself means it is gone
+        raise RemoteError(str(e), cause=e.cause) from e
+
+    return position, slot_0
+
+
+def get_uniswap_v3_position_price(
+        evm_inquirer: EvmNodeInquirer,
+        token: EvmToken,
+        price_func: Callable[[Asset], Price],
+        block_identifier: BlockIdentifier = 'latest',
+) -> Price:
+    """
+    Get the price of a Uniswap V3 LP position identified by the token's collectible ID.
+
+    `price_func` is a function to get the price of the asset, allowing this function to be used
+    for both current and historical prices. Returns ZERO_PRICE if the position can't be read
+    for any reason. query_uniswap_v3_position_price tells those reasons apart.
+    """
+    try:
+        if (state := _query_uniswap_v3_position(
+            evm_inquirer=evm_inquirer,
+            token=token,
+            block_identifier=block_identifier,
+        )) is None:
+            return ZERO_PRICE
     except RemoteError as e:
-        log.error(f'Failed to query Uniswap V3 pool contract slot0 for {token} due to {e!s}')
+        log.error('Failed to query a Uniswap V3 position', token=token, error=str(e))
         return ZERO_PRICE
 
-    return get_position_price_from_underlying(
+    position, slot_0 = state
+    return get_position_price_from_state(
         evm_inquirer=evm_inquirer,
-        token0_raw_address=position[2],
-        token1_raw_address=position[3],
-        tick_lower=position[5],
-        tick_upper=position[6],
-        liquidity=position[7],
-        tick=slot_0[1],
+        position=position,
+        slot_0=slot_0,
+        price_func=price_func,
+    )
+
+
+def query_uniswap_v3_position_price(
+        evm_inquirer: EvmNodeInquirer,
+        token: EvmToken,
+        price_func: Callable[[Asset], Price],
+        block_identifier: BlockIdentifier,
+) -> Price | None:
+    """Get the price of a Uniswap V3 LP position, telling apart why it has none.
+
+    Returns ZERO_PRICE for a position the NFT manager reverts on, such as a burned one,
+    since it holds nothing, and None for a position that can't be read.
+
+    May raise:
+    - RemoteError if a contract call failed, with the cause it failed for
+    """
+    try:
+        if (state := _query_uniswap_v3_position(
+            evm_inquirer=evm_inquirer,
+            token=token,
+            block_identifier=block_identifier,
+        )) is None:
+            return None
+    except ContractReverted as e:
+        log.debug('Uniswap V3 position reverted, so it holds nothing', token=token, error=str(e))
+        return ZERO_PRICE
+
+    position, slot_0 = state
+    return get_position_price_from_state(
+        evm_inquirer=evm_inquirer,
+        position=position,
+        slot_0=slot_0,
         price_func=price_func,
     )
 

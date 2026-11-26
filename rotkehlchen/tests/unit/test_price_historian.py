@@ -2,7 +2,7 @@ import logging
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,6 +10,11 @@ import pytest
 from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
+from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import UNISWAP_V3_NFT_MANAGER_ADDRESSES
+from rotkehlchen.chain.evm.decoding.velodrome.constants import (
+    CPT_AERODROME,
+    SLIPSTREAM_NFPM_ADDRESSES,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
 from rotkehlchen.constants import HOUR_IN_SECONDS
@@ -20,16 +25,18 @@ from rotkehlchen.constants.assets import (
     A_ETH,
     A_ETH_MATIC,
     A_ETH_POL,
+    A_EUR,
     A_LINK,
     A_POL,
     A_USD,
     A_WETH_ARB,
 )
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE, ZERO
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, YEAR_IN_SECONDS
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import ContractReverted, RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.externalapis.alchemy import Alchemy
 from rotkehlchen.externalapis.birdeye import Birdeye
@@ -51,7 +58,9 @@ from rotkehlchen.history.types import (
 )
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
+    EVM_TOKEN_KINDS_TYPE,
     ChainID,
     Price,
     Timestamp,
@@ -61,6 +70,8 @@ from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.assets.asset import FiatAsset
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.inquirer import Inquirer
@@ -845,6 +856,7 @@ def test_uniswap_v2_position_price_query(price_historian: PriceHistorian):
         timestamp=Timestamp(1742814047),
     )
 
+    assert price is not None
     assert price.is_close('3606838.214124')
 
 
@@ -865,6 +877,7 @@ def test_uniswap_v3_position_price_query(price_historian: PriceHistorian):
         timestamp=Timestamp(1742829743),
     )
 
+    assert price is not None
     assert price.is_close('91.901195')
 
 
@@ -1563,3 +1576,340 @@ def test_historical_price_collection_member_preserves_main_asset_rate_limit(
 
     assert exc_info.value.rate_limited is True
     assert exc_info.value.from_asset == A_ETH_POL
+
+
+def test_historical_price_collection_member_preserves_main_asset_outage(
+        globaldb: GlobalDBHandler,
+        fake_price_historian: PriceHistorian,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+) -> None:
+    """An unreachable main asset must raise, not fall through to the member's own price,
+    which may be the wrong one that pricing it as the main asset avoids."""
+    globaldb.add_single_historical_price(HistoricalPrice(
+        from_asset=A_ETH_MATIC, to_asset=A_USD, price=Price(FVal('0.9659')),
+        timestamp=(query_timestamp := Timestamp(1660584108)),
+        source=HistoricalPriceOracle.MANUAL,
+    ))
+    fake_price_historian.set_oracles_order([HistoricalPriceOracle.DEFILLAMA])
+    with (
+        patch.object(
+            fake_price_historian._defillama,
+            'query_historical_price',
+            side_effect=RemoteError('Unreachable', cause=FailureCause.NETWORK),
+        ),
+        pytest.raises(NoPriceForGivenTimestamp) as exc_info,
+    ):
+        fake_price_historian.query_historical_price(
+            from_asset=A_ETH_MATIC,
+            to_asset=A_USD,
+            timestamp=query_timestamp,
+        )
+
+    assert exc_info.value.remote_error is True
+    assert exc_info.value.rate_limited is False
+    assert exc_info.value.from_asset == A_ETH_POL
+
+
+@pytest.mark.parametrize(('error_code', 'cause'), [
+    (HTTPStatus.TOO_MANY_REQUESTS, FailureCause.RATE_LIMITED),
+    (0, FailureCause.RATE_LIMITED),  # sources like the indexers report no status code
+])
+def test_oracle_rate_limit_known_by_cause(
+        globaldb: GlobalDBHandler,  # pylint: disable=unused-argument
+        fake_price_historian: PriceHistorian,
+        error_code: int,
+        cause: FailureCause,
+) -> None:
+    """An oracle's rate limit is reported as one whether or not it came with a 429."""
+    fake_price_historian.set_oracles_order([HistoricalPriceOracle.DEFILLAMA])
+    with (
+        patch.object(
+            fake_price_historian._defillama,
+            'query_historical_price',
+            side_effect=RemoteError('Slow down', cause=cause, error_code=error_code),
+        ),
+        patch('rotkehlchen.history.price.GlobalDBHandler.get_historical_price', return_value=None),
+        pytest.raises(NoPriceForGivenTimestamp) as exc_info,
+    ):
+        fake_price_historian.query_historical_price(
+            from_asset=A_BTC,
+            to_asset=A_USD,
+            timestamp=Timestamp(1660584108),
+        )
+
+    assert exc_info.value.rate_limited is True
+    assert exc_info.value.remote_error is True
+
+
+OUTAGE_CASES: Final = [
+    # A source that can't be reached now may answer later, so the day is flagged for retry.
+    pytest.param(RemoteError('down', cause=FailureCause.NETWORK), False, True, id='network'),
+    pytest.param(RemoteError('slow down', cause=FailureCause.RATE_LIMITED), True, True, id='rate-limited'),  # noqa: E501
+    # No configured provider can serve this, such as a past block with no archive node:
+    # retrying would fail the same way, so it is a plain miss, not a price of zero.
+    pytest.param(RemoteError('no archive node', cause=FailureCause.UNSUPPORTED), False, False, id='unsupported'),  # noqa: E501
+]
+
+
+def _query_unpriced(
+        price_historian: PriceHistorian,
+        asset: Asset,
+        timestamp: Timestamp,
+) -> NoPriceForGivenTimestamp:
+    """Query a price that no oracle has and return the error it fails with."""
+    price_historian.set_oracles_order([HistoricalPriceOracle.DEFILLAMA])
+    with (
+        patch.object(
+            price_historian._defillama,
+            'query_historical_price',
+            side_effect=NoPriceForGivenTimestamp(from_asset=asset, to_asset=A_USD, time=timestamp),
+        ),
+        pytest.raises(NoPriceForGivenTimestamp) as exc_info,
+    ):
+        price_historian.query_historical_price(
+            from_asset=asset,
+            to_asset=A_USD,
+            timestamp=timestamp,
+        )
+
+    return exc_info.value
+
+
+class PoolTokenCase(NamedTuple):
+    """A pool token or position, the inquirer fixture of its chain and the contract read
+    that queries it."""
+    chain_id: ChainID
+    token_kind: EVM_TOKEN_KINDS_TYPE
+    protocol: str
+    address: str | None  # None for a new random pool address
+    inquirer_fixture: str
+    read_method: str
+
+    def add_token(self, globaldb: GlobalDBHandler, collectible_id: str) -> EvmToken:
+        token = EvmToken.initialize(
+            address=string_to_evm_address(self.address) if self.address is not None else make_evm_address(),  # noqa: E501
+            chain_id=self.chain_id,
+            token_kind=self.token_kind,
+            protocol=self.protocol,
+            decimals=18 if self.token_kind == TokenKind.ERC20 else None,
+            collectible_id=collectible_id if self.token_kind == TokenKind.ERC721 else None,
+        )
+        globaldb.add_asset(token)
+        return token
+
+
+UNISWAP_V2_POOL: Final = PoolTokenCase(
+    ChainID.ETHEREUM, TokenKind.ERC20, CPT_UNISWAP_V2, None, 'ethereum_inquirer', 'multicall',
+)
+UNISWAP_V3_POSITION: Final = PoolTokenCase(
+    ChainID.ETHEREUM, TokenKind.ERC721, CPT_UNISWAP_V3,
+    UNISWAP_V3_NFT_MANAGER_ADDRESSES[ChainID.ETHEREUM], 'ethereum_inquirer', 'call_contract',
+)
+SLIPSTREAM_POSITION: Final = PoolTokenCase(
+    ChainID.BASE, TokenKind.ERC721, CPT_AERODROME,
+    SLIPSTREAM_NFPM_ADDRESSES[ChainID.BASE], 'base_inquirer', 'call_contract',
+)
+
+
+def _query_pool_token_price(
+        request: pytest.FixtureRequest,
+        case: PoolTokenCase,
+        read_error: Exception,
+        query: Callable[[], Any],
+) -> Any:
+    """Run `query` with the contract read of `case` failing with `read_error`, and check
+    that it was the read that failed."""
+    node_inquirer = request.getfixturevalue(case.inquirer_fixture)
+    with (
+        patch(
+            'rotkehlchen.history.price.Inquirer.get_evm_manager',
+            return_value=MagicMock(node_inquirer=node_inquirer),
+        ),
+        patch.object(node_inquirer, 'get_blocknumber_by_time', return_value=20_000_000),
+        patch.object(node_inquirer, case.read_method, side_effect=read_error) as read,
+    ):
+        result = query()
+
+    assert read.call_count == 1
+    return result
+
+
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [()])
+@pytest.mark.parametrize('base_manager_connect_at_start', [()])
+@pytest.mark.parametrize('case', [
+    pytest.param(UNISWAP_V2_POOL, id='uniswap-v2'),
+    pytest.param(UNISWAP_V3_POSITION, id='uniswap-v3'),
+    pytest.param(SLIPSTREAM_POSITION, id='slipstream'),
+])
+@pytest.mark.parametrize(('error', 'rate_limited', 'remote_error'), OUTAGE_CASES)
+def test_pool_token_read_failure_is_not_zero(
+        request: pytest.FixtureRequest,
+        globaldb: GlobalDBHandler,
+        fake_price_historian: PriceHistorian,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+        ethereum_manager_connect_at_start: tuple,  # pylint: disable=unused-argument
+        base_manager_connect_at_start: tuple,  # pylint: disable=unused-argument
+        case: PoolTokenCase,
+        error: RemoteError,
+        rate_limited: bool,
+        remote_error: bool,
+) -> None:
+    """A pool or position whose contract read failed has no price at that time, not a
+    price of zero, and the error says whether a later retry may find it."""
+    token = case.add_token(globaldb, collectible_id='9999999')
+    exception = _query_pool_token_price(
+        request=request,
+        case=case,
+        read_error=error,
+        query=lambda: _query_unpriced(
+            price_historian=fake_price_historian,
+            asset=token,
+            timestamp=Timestamp(1720000000),
+        ),
+    )
+
+    assert exception.rate_limited is rate_limited
+    assert exception.remote_error is remote_error
+
+
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [()])
+@pytest.mark.parametrize('base_manager_connect_at_start', [()])
+@pytest.mark.parametrize('case', [
+    pytest.param(UNISWAP_V3_POSITION, id='uniswap-v3'),
+    pytest.param(SLIPSTREAM_POSITION, id='slipstream'),
+])
+def test_reverted_position_is_worth_zero(
+        request: pytest.FixtureRequest,
+        globaldb: GlobalDBHandler,
+        fake_price_historian: PriceHistorian,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+        ethereum_manager_connect_at_start: tuple,  # pylint: disable=unused-argument
+        base_manager_connect_at_start: tuple,  # pylint: disable=unused-argument
+        case: PoolTokenCase,
+) -> None:
+    """A position the position manager reverts on, such as a burned one, holds nothing,
+    so it is priced at zero instead of being retried or left unpriced."""
+    token = case.add_token(globaldb, collectible_id='9999998')
+    assert _query_pool_token_price(
+        request=request,
+        case=case,
+        read_error=ContractReverted('Invalid token ID'),
+        query=lambda: fake_price_historian.query_historical_price(
+            from_asset=token,
+            to_asset=A_USD,
+            timestamp=Timestamp(1720000000),
+        ),
+    ) == ZERO_PRICE
+
+
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [()])
+@pytest.mark.parametrize('base_manager_connect_at_start', [()])
+@pytest.mark.parametrize('case', [
+    pytest.param(UNISWAP_V3_POSITION, id='uniswap-v3'),
+    pytest.param(SLIPSTREAM_POSITION, id='slipstream'),
+])
+def test_unreadable_position_is_a_miss_without_oracles(
+        request: pytest.FixtureRequest,
+        globaldb: GlobalDBHandler,
+        fake_price_historian: PriceHistorian,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+        ethereum_manager_connect_at_start: tuple,  # pylint: disable=unused-argument
+        base_manager_connect_at_start: tuple,  # pylint: disable=unused-argument
+        case: PoolTokenCase,
+) -> None:
+    """A position that can't be read has no price, not a price of zero, and the oracles,
+    which don't price positions, are not asked for it on every query."""
+    token = case.add_token(globaldb, collectible_id='9999997')
+    fake_price_historian.set_oracles_order([HistoricalPriceOracle.DEFILLAMA])
+    with (
+        patch.object(fake_price_historian._defillama, 'query_historical_price') as oracle,
+        pytest.raises(NoPriceForGivenTimestamp) as exc_info,
+    ):
+        _query_pool_token_price(
+            request=request,
+            case=case,
+            read_error=ValueError('unreadable position'),
+            query=lambda: fake_price_historian.query_historical_price(
+                from_asset=token,
+                to_asset=A_USD,
+                timestamp=Timestamp(1720000000),
+            ),
+        )
+
+    assert oracle.call_count == 0
+    assert exc_info.value.rate_limited is False
+    assert exc_info.value.remote_error is False
+
+
+@pytest.mark.parametrize(('error', 'rate_limited', 'remote_error'), [
+    *OUTAGE_CASES[:2],  # Frankfurter reports a rate limit by its cause, with no status code
+    pytest.param(RemoteError('no such currency', cause=FailureCause.REMOTE_REJECTED), False, False, id='rejected'),  # noqa: E501
+])
+def test_fiat_rate_sources_outage_is_flagged(
+        globaldb: GlobalDBHandler,  # pylint: disable=unused-argument
+        fake_price_historian: PriceHistorian,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+        error: RemoteError,
+        rate_limited: bool,
+        remote_error: bool,
+) -> None:
+    """If every fiat rates source fails and no oracle has the rate, the error says whether
+    a later retry may find it, instead of filing the day as having no rate."""
+    eur = A_EUR.resolve_to_fiat_asset()
+    with (
+        patch('rotkehlchen.inquirer.get_historical_xratescom_exchange_rates', side_effect=error) as xratescom,  # noqa: E501
+        patch('rotkehlchen.inquirer.get_historical_frankfurter_exchange_rates', side_effect=error) as frankfurter,  # noqa: E501
+        # no rate cached by an earlier test, so that the sources are queried
+        patch('rotkehlchen.history.price.GlobalDBHandler.get_historical_price', return_value=None),
+    ):
+        exception = _query_unpriced(
+            price_historian=fake_price_historian,
+            asset=eur,
+            timestamp=Timestamp(1720000000),
+        )
+
+    assert xratescom.call_count == frankfurter.call_count == 1
+    assert exception.rate_limited is rate_limited
+    assert exception.remote_error is remote_error
+
+
+@pytest.mark.parametrize('failing_source', ['xratescom', 'frankfurter'])
+@pytest.mark.parametrize(('error', 'rate_limited', 'remote_error'), [
+    *OUTAGE_CASES[:2],
+    pytest.param(RemoteError('no such currency', cause=FailureCause.REMOTE_REJECTED), False, False, id='rejected'),  # noqa: E501
+])
+def test_fiat_rate_source_outage_is_flagged_when_other_lacks_rate(
+        globaldb: GlobalDBHandler,  # pylint: disable=unused-argument
+        fake_price_historian: PriceHistorian,
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+        failing_source: Literal['xratescom', 'frankfurter'],
+        error: RemoteError,
+        rate_limited: bool,
+        remote_error: bool,
+) -> None:
+    """The fiat rates sources cover different currencies, so one that answers without the
+    rate says nothing about the rate the unreachable one may have. Only a source that
+    refused for good leaves a plain miss."""
+    eur = A_EUR.resolve_to_fiat_asset()
+    with (
+        patch(
+            'rotkehlchen.inquirer.get_historical_xratescom_exchange_rates',
+            side_effect=error if failing_source == 'xratescom' else None,
+            return_value={},
+        ) as xratescom,
+        patch(
+            'rotkehlchen.inquirer.get_historical_frankfurter_exchange_rates',
+            side_effect=error if failing_source == 'frankfurter' else None,
+            return_value={},
+        ) as frankfurter,
+        patch('rotkehlchen.history.price.GlobalDBHandler.get_historical_price', return_value=None),
+    ):
+        exception = _query_unpriced(
+            price_historian=fake_price_historian,
+            asset=eur,
+            timestamp=Timestamp(1720000000),
+        )
+
+    assert xratescom.call_count == frankfurter.call_count == 1
+    assert exception.rate_limited is rate_limited
+    assert exception.remote_error is remote_error

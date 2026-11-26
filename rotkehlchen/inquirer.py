@@ -1,6 +1,7 @@
 import logging
 import operator
 from collections.abc import Callable, Iterable, Sequence
+from contextlib import suppress
 from threading import Event, Lock, local
 from time import monotonic
 from typing import (
@@ -136,12 +137,14 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.errors.cause import TRANSIENT_FAILURE_CAUSES
 from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
     InputError,
     NotERC20Conformant,
     RemoteError,
+    alternatives_cause,
 )
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
@@ -1793,6 +1796,12 @@ class Inquirer:
             to_fiat_currency: FiatAsset,
             timestamp: Timestamp,
     ) -> Price | None:
+        """The exchange rate between two fiat currencies on the day of `timestamp`, or None
+        if no fiat rates source has it.
+
+        May raise:
+        - RemoteError if no fiat rates source could be queried
+        """
         assert from_fiat_currency.is_fiat(), 'fiat currency should have been provided'
         assert to_fiat_currency.is_fiat(), 'fiat currency should have been provided'
 
@@ -1840,8 +1849,18 @@ class Inquirer:
 
         All fiat rates sources are cached under the XRATESCOM source type. It is not
         exposed to the user and stands for any fiat exchange rates source.
+
+        Returns None if no source had the `quote` rate and none failed for a reason a retry
+        may heal.
+
+        May raise:
+        - RemoteError if every source failed, or if one could not be reached for now, since
+        the sources cover different currencies and the one that answered may not have the
+        `quote`. Its cause is the one most worth acting on, so that callers can tell sources
+        that could not be reached from a rate that does not exist.
         """
         daystart = timestamp_to_daystart_timestamp(timestamp)
+        errors: list[RemoteError] = []
         for query, name in queries:
             try:
                 prices_map = query(base, timestamp)
@@ -1852,6 +1871,7 @@ class Inquirer:
                     base=base.identifier,
                     error=str(e),
                 )
+                errors.append(e)
                 continue
 
             GlobalDBHandler.add_historical_prices(entries=[HistoricalPrice(
@@ -1863,6 +1883,15 @@ class Inquirer:
             ) for asset, asset_price in prices_map.items()])
             if (rate := prices_map.get(quote)) is not None:
                 return rate
+
+        if len(errors) == len(queries) or any(
+            e.cause in TRANSIENT_FAILURE_CAUSES for e in errors
+        ):
+            raise RemoteError(
+                f'Failed to query any fiat exchange rates source for {base.identifier}. '
+                f'Errors: {", ".join(str(e) for e in errors)}',
+                cause=alternatives_cause({e.cause for e in errors}),
+            )
 
         return None
 
@@ -1917,16 +1946,17 @@ class Inquirer:
             return price_cache_entry.price, CurrentPriceOracle.FIAT
 
         # Query the fiat rates sources and save all prices in the cache
-        if (price := Inquirer._query_fiat_rates_sources(
-            queries=(
-                (lambda base, _: get_current_xratescom_exchange_rates(base), 'x-rates.com'),
-                (lambda base, _: get_current_frankfurter_exchange_rates(base), 'frankfurter'),
-            ),
-            base=base,
-            quote=quote,
-            timestamp=now,
-        )) is not None:
-            return price, CurrentPriceOracle.FIAT
+        with suppress(RemoteError):  # each failed source is logged, and older rates may do
+            if (price := Inquirer._query_fiat_rates_sources(
+                queries=(
+                    (lambda base, _: get_current_xratescom_exchange_rates(base), 'x-rates.com'),
+                    (lambda base, _: get_current_frankfurter_exchange_rates(base), 'frankfurter'),
+                ),
+                base=base,
+                quote=quote,
+                timestamp=now,
+            )) is not None:
+                return price, CurrentPriceOracle.FIAT
 
         # Check cache
         price_cache_entry = GlobalDBHandler.get_historical_price(

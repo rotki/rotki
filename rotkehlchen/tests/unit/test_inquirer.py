@@ -64,7 +64,7 @@ from rotkehlchen.concurrency.cancellation import (
     TaskCancelledError,
     run_cancellable,
 )
-from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants import DAY_IN_SECONDS, ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_AAVE,
     A_AVAX,
@@ -199,6 +199,32 @@ def test_fiat_pair_caching(inquirer):
 
     # Now outside the mocked response, we should get same value due to caching
     assert inquirer._query_fiat_pair(usd, eur)[0] == FVal('0.9165902841')
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_fiat_pair_uses_older_rate_when_sources_fail(
+        inquirer: Inquirer,
+        globaldb: GlobalDBHandler,
+) -> None:
+    """If no fiat rates source can be reached, the current rate falls back to one cached
+    within the last month, as it does when the sources lack the pair."""
+    usd, eur = A_USD.resolve_to_fiat_asset(), A_EUR.resolve_to_fiat_asset()
+    globaldb.add_single_historical_price(HistoricalPrice(
+        from_asset=usd,
+        to_asset=eur,
+        source=HistoricalPriceOracle.XRATESCOM,
+        timestamp=Timestamp(ts_now() - 10 * DAY_IN_SECONDS),
+        price=(rate := Price(FVal('0.91'))),
+    ))
+    error = RemoteError('down', cause=FailureCause.NETWORK)
+    with (
+        patch('rotkehlchen.inquirer.get_current_xratescom_exchange_rates', side_effect=error) as xratescom,  # noqa: E501
+        patch('rotkehlchen.inquirer.get_current_frankfurter_exchange_rates', side_effect=error) as frankfurter,  # noqa: E501
+    ):
+        assert inquirer._query_fiat_pair(usd, eur) == (rate, CurrentPriceOracle.FIAT)
+
+    assert xratescom.call_count == frankfurter.call_count == 1
 
 
 @pytest.mark.vcr
