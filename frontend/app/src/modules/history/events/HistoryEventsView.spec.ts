@@ -4,7 +4,8 @@ import { createMock } from '@test/utils/create-mock';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed, type DefineComponent, defineComponent, h, nextTick, ref } from 'vue';
+import { computed, type DefineComponent, defineComponent, h, nextTick, type Ref, ref } from 'vue';
+import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 import HistoryEventsView from '@/modules/history/events/HistoryEventsView.vue';
 
 const groups = ref<Collection<HistoryEventRow>>(
@@ -30,6 +31,7 @@ const refreshAll = vi.fn().mockResolvedValue(undefined);
 const dialogHandlers = { onHistoryEventSaved: vi.fn() };
 
 const handleRedecode = vi.fn();
+const useFiltersSpy = vi.fn((_options: unknown, _toggles: unknown, _overlayMode: Ref<OverlayMode>): void => {});
 const handleUpdateEventIds = vi.fn();
 const handleMovementChanged = vi.fn();
 const handleBridgeChanged = vi.fn();
@@ -57,28 +59,31 @@ vi.mock('@/modules/history/events/composables', () => ({
   }),
   useHistoryEventsDeletion: (): unknown => ({}),
   useHistoryEventsDialogRouting: vi.fn(),
-  useHistoryEventsFilters: (): unknown => ({
-    action: ref(),
-    clearFilters,
-    duplicateHandlingStatus,
-    filters: ref({}),
-    groupIdentifiers,
-    groupLoading: ref(false),
-    groups,
-    hasActiveFilters: ref(false),
-    highlightedGroupIdentifier: ref(),
-    highlightedIdentifiers: ref(),
-    highlightTypes: ref(),
-    identifiers: ref(),
-    locationLabels: ref([]),
-    onActionChanged,
-    onLocationLabelsChanged,
-    pagination: ref({ limit: 10, page: 1 }),
-    refetch: vi.fn(),
-    requestPayload: computed(() => ({ limit: 10, offset: 0 })),
-    setPage,
-    sort: ref([]),
-  }),
+  useHistoryEventsFilters: (options: unknown, toggles: unknown, overlayMode: Ref<OverlayMode>): unknown => {
+    useFiltersSpy(options, toggles, overlayMode);
+    return {
+      action: ref(),
+      clearFilters,
+      duplicateHandlingStatus,
+      filters: ref({}),
+      groupIdentifiers,
+      groupLoading: ref(false),
+      groups,
+      hasActiveFilters: ref(false),
+      highlightedGroupIdentifier: ref(),
+      highlightedIdentifiers: ref(),
+      highlightTypes: ref(),
+      identifiers: ref(),
+      locationLabels: ref([]),
+      onActionChanged,
+      onLocationLabelsChanged,
+      pagination: ref({ limit: 10, page: 1 }),
+      refetch: vi.fn(),
+      requestPayload: computed(() => ({ limit: 10, offset: 0 })),
+      setPage,
+      sort: ref([]),
+    };
+  },
   useHistoryEventsOverlay: (): unknown => ({ available: overlayAvailable }),
   useHistoryEventsSelectionActions: (): unknown => ({
     handleAccountingRuleRefresh,
@@ -131,7 +136,7 @@ const FiltersChipsStub = stub('HistoryEventsFiltersChips', ['refresh'], ['duplic
 const VirtualTableStub = stub('HistoryEventsVirtualTable', ['clear-filters', 'refresh', 'refresh:block-event', 'set-page', 'show:dialog', 'update-event-ids'], ['duplicateHandlingStatus', 'hasActiveFilters', 'highlight', 'processing', 'source']);
 const DialogContainerStub = stub('HistoryEventsDialogContainer', ['accounting-rule-refresh', 'bridge-matched', 'movement-matched'], ['eventHandlers', 'loading', 'sectionLoading', 'selectedEventIds']);
 const TablePageLayoutStub = stub('TablePageLayout', [], ['child', 'hideHeader', 'title']);
-const OverlayToggleStub = stub('AccountingOverlayToggle');
+const OverlayToggleStub = stub('AccountingOverlayToggle', ['update:modelValue'], ['modelValue']);
 
 describe('modules/history/events/HistoryEventsView', () => {
   let wrapper: VueWrapper | undefined;
@@ -233,6 +238,29 @@ describe('modules/history/events/HistoryEventsView', () => {
       await nextTick();
 
       expect(view.findComponent(OverlayToggleStub).exists()).toBe(true);
+    });
+
+    it('should carry a mode picked on the toggle into the filters, and back to the toggle', async () => {
+      set(overlayAvailable, true);
+      const view = mountView();
+      const overlayMode = useFiltersSpy.mock.lastCall?.[2];
+      expect(get(overlayMode)).toBe(OverlayMode.NONE);
+
+      const toggle = view.findComponent(OverlayToggleStub);
+      expect(toggle.props('modelValue')).toBe(OverlayMode.NONE);
+
+      toggle.vm.$emit('update:modelValue', OverlayMode.COST_BASIS);
+      await nextTick();
+
+      expect(toggle.emitted('update:modelValue')).toStrictEqual([[OverlayMode.COST_BASIS]]);
+      expect(get(overlayMode)).toBe(OverlayMode.COST_BASIS);
+      expect(toggle.props('modelValue')).toBe(OverlayMode.COST_BASIS);
+
+      toggle.vm.$emit('update:modelValue', OverlayMode.NONE);
+      await nextTick();
+
+      expect(get(overlayMode)).toBe(OverlayMode.NONE);
+      expect(toggle.props('modelValue')).toBe(OverlayMode.NONE);
     });
   });
 

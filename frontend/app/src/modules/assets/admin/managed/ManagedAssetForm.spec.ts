@@ -8,9 +8,13 @@ import { computed } from 'vue';
 import { CUSTOM_ASSET, EVM_TOKEN, HYPERLIQUID_TOKEN, SOLANA_TOKEN } from '@/modules/assets/types';
 import '@test/i18n';
 
+const { fetchTokenDetails } = vi.hoisted(() => ({
+  fetchTokenDetails: vi.fn<(payload: { address: string; evmChain: string }) => Promise<Record<string, unknown>>>(),
+}));
+
 vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({
-    fetchTokenDetails: vi.fn().mockResolvedValue({}),
+    fetchTokenDetails,
   }),
 }));
 
@@ -38,7 +42,7 @@ function inputStub(name: string): Record<string, unknown> {
   return {
     emits: ['update:modelValue', 'blur'],
     name,
-    props: ['modelValue', 'errorMessages', 'disabled', 'options'],
+    props: ['modelValue', 'errorMessages', 'disabled', 'options', 'label'],
     template: '<div />',
   };
 }
@@ -60,6 +64,8 @@ describe('managedAssetForm', () => {
   });
 
   beforeEach(() => {
+    fetchTokenDetails.mockReset();
+    fetchTokenDetails.mockResolvedValue({});
     setActivePinia(createPinia());
     vi.useFakeTimers();
   });
@@ -83,6 +89,7 @@ describe('managedAssetForm', () => {
           DateTimePicker: inputStub('DateTimePicker'),
           HelpLink: true,
           RuiMenuSelect: inputStub('RuiMenuSelect'),
+          RuiSwitch: inputStub('RuiSwitch'),
           RuiTextField: inputStub('RuiTextField'),
           UnderlyingTokenManager: true,
         },
@@ -224,6 +231,82 @@ describe('managedAssetForm', () => {
       return last[0];
     }
 
+    async function openOptional(): Promise<void> {
+      await wrapper.find('[data-accordion-trigger]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+    }
+
+    function labelled(name: string, label: string): VueWrapper<StubInstance> {
+      const found = wrapper
+        .findAllComponents<StubInstance>({ name })
+        .find(component => component.props('label') === label);
+      assert(found);
+      return found;
+    }
+
+    it('should carry a picked swapped-for asset into the model', async () => {
+      wrapper = createWrapper();
+      await vi.advanceTimersToNextTimerAsync();
+
+      await openOptional();
+
+      labelled('AssetSelect', 'asset_form.labels.swapped_for').vm.$emit('update:modelValue', 'ETH');
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(lastModel().swappedFor).toBe('ETH');
+    });
+
+    it('should carry a picked forked asset into the model', async () => {
+      wrapper = createWrapper(evmToken({ address: '', assetType: CUSTOM_ASSET }));
+      await vi.advanceTimersToNextTimerAsync();
+
+      await openOptional();
+
+      labelled('AssetSelect', 'asset_form.labels.forked').vm.$emit('update:modelValue', 'BTC');
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(lastModel().forked).toBe('BTC');
+    });
+
+    it('should carry the rebasing switch into the model', async () => {
+      wrapper = createWrapper();
+      await vi.advanceTimersToNextTimerAsync();
+
+      await openOptional();
+
+      const rebasing = wrapper.findComponent<StubInstance>({ name: 'RuiSwitch' });
+      assert(rebasing.exists());
+      rebasing.vm.$emit('update:modelValue', true);
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(lastModel().isRebasing).toBe(true);
+    });
+
+    it('should carry a picked start date into the model', async () => {
+      wrapper = createWrapper();
+      await vi.advanceTimersToNextTimerAsync();
+
+      await openOptional();
+
+      const started = labelled('DateTimePicker', 'asset_form.labels.started');
+      expect(started.props('modelValue')).toBe(0);
+      started.vm.$emit('update:modelValue', 1_600_000_000);
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(lastModel().started).toBe(1_600_000_000);
+    });
+
+    it('should turn the typed decimals into a number', async () => {
+      wrapper = createWrapper();
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(field('decimal-input').props('modelValue')).toBe('6');
+      field('decimal-input').vm.$emit('update:modelValue', '18');
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(lastModel().decimals).toBe(18);
+    });
+
     it('should carry a typed name into the model', async () => {
       wrapper = createWrapper();
       await vi.advanceTimersToNextTimerAsync();
@@ -285,5 +368,36 @@ describe('managedAssetForm', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.emitted<[ValidationErrors]>('update:errorMessages')?.at(-1)).toEqual([{}]);
+  });
+
+  describe('token lookup', () => {
+    const OTHER_ADDRESS = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
+
+    it('should look a token up when its address is set while adding', async () => {
+      wrapper = createWrapper(evmToken({ address: '' }));
+      await vi.advanceTimersToNextTimerAsync();
+
+      field('address-input').vm.$emit('update:modelValue', OTHER_ADDRESS);
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(fetchTokenDetails).toHaveBeenCalledWith({ address: OTHER_ADDRESS, evmChain: 'ethereum' });
+    });
+
+    it('should not look the token up when the address is set while editing', async () => {
+      wrapper = createWrapper(evmToken(), { editMode: true });
+      await vi.advanceTimersToNextTimerAsync();
+
+      field('address-input').vm.$emit('update:modelValue', OTHER_ADDRESS);
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(lastAddress()).toBe(OTHER_ADDRESS);
+      expect(fetchTokenDetails).not.toHaveBeenCalled();
+    });
+
+    function lastAddress(): string | null | undefined {
+      const last = wrapper.emitted<[SupportedAsset]>('update:modelValue')?.at(-1);
+      assert(last);
+      return last[0].address;
+    }
   });
 });

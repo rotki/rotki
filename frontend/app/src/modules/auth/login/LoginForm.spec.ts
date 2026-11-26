@@ -9,7 +9,8 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed, nextTick, ref } from 'vue';
+import { type Component, computed, nextTick, ref } from 'vue';
+import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import '@test/i18n';
 
 const backendDisplay = ref<boolean>(false);
@@ -17,6 +18,10 @@ const backendUrl = ref<string>('');
 const savedUsernames = ref<string[]>(['saved-user']);
 const storedUsername = ref<string>('');
 const logoutRemoteSession = vi.fn<() => Promise<ActionStatus>>();
+const rememberCredentials = vi.fn<(username: string, password: string) => Promise<void>>();
+const rememberPassword = ref<boolean>(false);
+const rememberUsername = ref<boolean>(false);
+const usernameFocus = vi.fn<() => void>();
 
 type SavedProfilesMock = ReturnType<typeof useSavedProfiles>;
 
@@ -38,9 +43,9 @@ vi.mock('@/modules/auth/use-saved-profiles', () => ({
 vi.mock('@/modules/auth/login/use-login-remember-options', () => ({
   useLoginRememberOptions: (): RememberOptionsMock => ({
     loadRememberSettings: vi.fn(),
-    modelRememberPassword: ref(false),
-    modelRememberUsername: ref(false),
-    rememberCredentials: vi.fn(async () => Promise.resolve()),
+    modelRememberPassword: rememberPassword,
+    modelRememberUsername: rememberUsername,
+    rememberCredentials,
     storedUsername,
   }),
 }));
@@ -90,6 +95,24 @@ const AlertStub = {
   template: '<div><slot name="title" /><slot /></div>',
 };
 
+/** Stands in for both conflict alerts' shared shell, exposing its confirm and cancel buttons. */
+const ActionAlertStub = {
+  emits: ['confirm', 'cancel'],
+  name: 'LoginActionAlert',
+  template: `<div data-testid="action-alert">
+    <slot name="title" />
+    <slot />
+    <button data-testid="action-alert-cancel" @click="$emit('cancel')" />
+    <button data-testid="action-alert-confirm" @click="$emit('confirm')" />
+  </div>`,
+};
+
+/** A password field that renders a real input, so focus can land on it. */
+const PasswordWithInputStub = {
+  ...inputStub('RuiRevealableTextField'),
+  template: '<div><input data-testid="password-native-input" /></div>',
+};
+
 const USERNAME = 'LoginUsernameField';
 const PASSWORD = 'password-input';
 const URL_MAX_LENGTH = 300;
@@ -104,14 +127,22 @@ describe('loginForm', () => {
     set(savedUsernames, ['saved-user']);
     set(storedUsername, '');
     logoutRemoteSession.mockReset().mockResolvedValue({ success: true });
+    rememberCredentials.mockReset().mockResolvedValue(undefined);
+    set(rememberPassword, false);
+    set(rememberUsername, false);
+    usernameFocus.mockReset();
   });
 
   afterEach(() => {
     wrapper?.unmount();
   });
 
-  function createWrapper(props: Record<string, unknown> = {}): VueWrapper<InstanceType<typeof LoginForm>> {
+  function createWrapper(
+    props: Record<string, unknown> = {},
+    options: { stubs?: Record<string, Component | boolean>; attachTo?: HTMLElement } = {},
+  ): VueWrapper<InstanceType<typeof LoginForm>> {
     return mount(LoginForm, {
+      attachTo: options.attachTo,
       global: {
         stubs: {
           ExternalLink: true,
@@ -119,12 +150,13 @@ describe('loginForm', () => {
           LoginBackendToggle: true,
           LoginCustomBackendFields: inputStub('LoginCustomBackendFields'),
           LoginRememberOptions: true,
-          LoginUsernameField: { ...inputStub('LoginUsernameField'), methods: { focus: (): void => {} } },
+          LoginUsernameField: { ...inputStub('LoginUsernameField'), methods: { focus: (): void => usernameFocus() } },
           LoginWelcomeMessageDialog: true,
           PremiumSyncConflictAlert: true,
           RuiAlert: AlertStub,
           RuiButton: ButtonStub,
           RuiRevealableTextField: inputStub('RuiRevealableTextField'),
+          ...options.stubs,
         },
       },
       props: { loading: false, ...props },
@@ -453,6 +485,111 @@ describe('loginForm', () => {
       await logOutOther();
 
       expect(wrapper.find('[data-testid=login-logout-failure]').exists()).toBe(false);
+    });
+  });
+  describe('remembering credentials', () => {
+    it('should hand the submitted username and password to the remember options', async () => {
+      set(rememberUsername, true);
+      set(rememberPassword, true);
+      wrapper = createWrapper();
+      await fill('user', 'password');
+      await submit();
+
+      expect(rememberCredentials).toHaveBeenCalledTimes(1);
+      expect(rememberCredentials).toHaveBeenCalledWith('user', 'password');
+    });
+  });
+
+  describe('conflicts reported by the backend', () => {
+    /** Renders the real conflict alerts, with only their shared shell stubbed. */
+    const conflictStubs: Record<string, Component | boolean> = {
+      IncompleteUpgradeAlert: false,
+      LoginActionAlert: ActionAlertStub,
+      PremiumSyncConflictAlert: false,
+    };
+
+    async function createWithConflict(
+      kind: 'sync' | 'upgrade',
+    ): Promise<ReturnType<typeof useSessionAuthStore>> {
+      const store = useSessionAuthStore();
+      if (kind === 'sync')
+        store.syncConflict = { message: 'sync conflict', payload: null };
+      else
+        store.incompleteUpgradeConflict = { message: 'incomplete upgrade' };
+
+      wrapper = createWrapper({}, { stubs: conflictStubs });
+      await fill('user', 'password');
+      return store;
+    }
+
+    async function click(testId: string): Promise<void> {
+      const alerts = wrapper.findAll('[data-testid=action-alert]');
+      expect(alerts).toHaveLength(1);
+      await wrapper.get(`[data-testid=${testId}]`).trigger('click');
+      await flushPromises();
+    }
+
+    it('should keep submit disabled while a conflict is pending', async () => {
+      await createWithConflict('sync');
+
+      expect(submitDisabled()).toBe(true);
+    });
+
+    it.each([
+      ['action-alert-confirm', 'yes'],
+      ['action-alert-cancel', 'no'],
+    ] as const)('should log in with the sync approval when %s is clicked', async (button, approval) => {
+      await createWithConflict('sync');
+      await click(button);
+
+      expect(loginPayloads()).toStrictEqual([{ password: 'password', syncApproval: approval, username: 'user' }]);
+      expect(rememberCredentials).toHaveBeenCalledWith('user', 'password');
+    });
+
+    it('should log in resuming from the backup when the upgrade is resumed', async () => {
+      await createWithConflict('upgrade');
+      await click('action-alert-confirm');
+
+      expect(loginPayloads()).toStrictEqual([{ password: 'password', resumeFromBackup: true, username: 'user' }]);
+      expect(rememberCredentials).toHaveBeenCalledWith('user', 'password');
+    });
+
+    it('should clear both conflicts without logging in when the upgrade is aborted', async () => {
+      const store = await createWithConflict('upgrade');
+      store.syncConflict = { message: 'sync conflict', payload: null };
+      await nextTick();
+      await wrapper.findComponent({ name: 'IncompleteUpgradeAlert' }).get('[data-testid=action-alert-cancel]').trigger('click');
+      await flushPromises();
+
+      expect(wrapper.emitted('login')).toBeUndefined();
+      expect(store.syncConflict).toBeUndefined();
+      expect(store.incompleteUpgradeConflict).toBeUndefined();
+      expect(wrapper.find('[data-testid=action-alert]').exists()).toBe(false);
+      expect(submitDisabled()).toBe(false);
+    });
+  });
+
+  describe('initial focus', () => {
+    /**
+     * Pins today's timing, not the intent: the focus is picked on mount, a tick before the awaited
+     * profile load restores the username, so the password branch never wins at mount.
+     */
+    it('should focus the username field at mount even when a username is then restored', async () => {
+      set(storedUsername, 'saved-user');
+      wrapper = createWrapper({}, { attachTo: document.body, stubs: { RuiRevealableTextField: PasswordWithInputStub } });
+      await flushPromises();
+
+      expect(usernameField().props('modelValue')).toBe('saved-user');
+      expect(usernameFocus).toHaveBeenCalledTimes(1);
+      expect(document.activeElement).not.toBe(wrapper.get('[data-testid=password-native-input]').element);
+    });
+
+    it('should focus the username field when nothing is restored', async () => {
+      wrapper = createWrapper({}, { attachTo: document.body, stubs: { RuiRevealableTextField: PasswordWithInputStub } });
+      await flushPromises();
+
+      expect(usernameFocus).toHaveBeenCalledTimes(1);
+      expect(document.activeElement).not.toBe(wrapper.get('[data-testid=password-native-input]').element);
     });
   });
 });
