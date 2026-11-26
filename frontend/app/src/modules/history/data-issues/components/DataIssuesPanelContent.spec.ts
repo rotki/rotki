@@ -3,11 +3,12 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { get, set } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
-import { computed, type Ref, ref } from 'vue';
+import { computed, nextTick, type Ref, ref, toValue } from 'vue';
 import { RequestFailed, type RequestFailure } from '@/modules/core/api/request-result';
 import DataIssuePanelCard from '@/modules/history/data-issues/components/DataIssuePanelCard.vue';
 import DataIssuesPanelContent from '@/modules/history/data-issues/components/DataIssuesPanelContent.vue';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
+import { useDataIssuesPanelPolling } from '@/modules/history/data-issues/use-data-issues-panel-polling';
 
 interface MockState {
   error?: RequestFailure;
@@ -25,15 +26,31 @@ const state = vi.hoisted((): MockState => ({
 const clearSelection = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const refreshList = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const reloadAll = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const loadMore = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+
+/** Filled in when the component mounts, so a test can flip the list's remediating signal. */
+const list = vi.hoisted((): { hasRemediatingRows?: Ref<boolean> } => ({}));
+
+/** The scroll position the list reads, so a test can put the user at the bottom of it. */
+const scroll = vi.hoisted((): { arrivedState?: { bottom: boolean; left: boolean; right: boolean; top: boolean } } => ({}));
+
+vi.mock('@vueuse/core', async (importOriginal) => {
+  const { reactive } = await import('vue');
+  scroll.arrivedState = reactive({ bottom: false, left: false, right: false, top: true });
+  return {
+    ...await importOriginal<typeof import('@vueuse/core')>(),
+    useScroll: (): Record<string, unknown> => ({ arrivedState: scroll.arrivedState }),
+  };
+});
 
 vi.mock('@/modules/history/data-issues/use-data-issues-panel-list', () => ({
   useDataIssuesPanelList: (): Record<string, unknown> => ({
     error: computed(() => state.error),
-    hasRemediatingRows: computed(() => false),
+    hasRemediatingRows: (list.hasRemediatingRows = ref<boolean>(false)),
     isEmpty: computed(() => state.issues.length === 0),
     loading: computed(() => state.loading),
     loadingMore: computed(() => false),
-    loadMore: vi.fn().mockResolvedValue(undefined),
+    loadMore,
     refreshList,
     reloadAll,
     rows: computed(() => state.issues.map(issue => ({
@@ -144,6 +161,8 @@ describe('dataIssuesPanelContent', () => {
     state.hasActiveSelection = false;
     state.issues = [];
     state.loading = false;
+    if (scroll.arrivedState)
+      scroll.arrivedState.bottom = false;
   });
 
   describe('when the issues could not be loaded', () => {
@@ -299,6 +318,36 @@ describe('dataIssuesPanelContent', () => {
     await vi.waitFor(() => {
       expect(refreshList).toHaveBeenCalledOnce();
     });
+  });
+
+  it('should poll with the remediating-rows signal and the full reload', async () => {
+    await createWrapper();
+
+    const polling = vi.mocked(useDataIssuesPanelPolling);
+    expect(polling).toHaveBeenCalledOnce();
+    const [remediating, reload] = polling.mock.calls[0];
+    expect(toValue(remediating)).toBe(false);
+
+    set(mounted(list.hasRemediatingRows), true);
+    expect(toValue(remediating)).toBe(true);
+
+    reloadAll.mockClear();
+    await reload();
+    expect(reloadAll).toHaveBeenCalledOnce();
+  });
+
+  it('should load the next page once the user scrolls to the bottom of the list', async () => {
+    state.issues = [createIssue(1), createIssue(2), createIssue(3)];
+    await createWrapper();
+    expect(loadMore).not.toHaveBeenCalled();
+
+    mounted(scroll.arrivedState).bottom = true;
+    await nextTick();
+    expect(loadMore).toHaveBeenCalledOnce();
+
+    mounted(scroll.arrivedState).bottom = false;
+    await nextTick();
+    expect(loadMore).toHaveBeenCalledOnce();
   });
 
   it('should emit close when the view-all link is used', async () => {

@@ -4,11 +4,12 @@ import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { err } from 'plainfp/result';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ref, shallowRef } from 'vue';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { nextTick, type Ref, ref, shallowRef } from 'vue';
 import { RequestFailed, type RequestFailure } from '@/modules/core/api/request-result';
 import DataIssueDetailDrawer from '@/modules/history/data-issues/components/DataIssueDetailDrawer.vue';
 import DataIssuesTable from '@/modules/history/data-issues/components/DataIssuesTable.vue';
+import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 import DataIssuesView from '@/modules/history/data-issues/DataIssuesView.vue';
 import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
 
@@ -37,17 +38,49 @@ const state = vi.hoisted((): MockState => ({
   summaryFailed: false,
 }));
 
+interface Collection {
+  data: DataIssue[];
+  found: number;
+  limit: number;
+  total: number;
+}
+
+interface Table {
+  collection?: Ref<Collection>;
+  dismissInlinePanels?: Mock;
+  isLoading?: Ref<boolean>;
+  refetch?: Mock;
+}
+
+/** Filled in when the view mounts, so a test can drive the table and observe its reloads. */
+const table = vi.hoisted((): Table => ({}));
+
+function mounted<T>(value: T | undefined): T {
+  if (value === undefined)
+    throw new Error('the view has not been mounted yet');
+  return value;
+}
+
+function collectionOf(rows: DataIssue[]): Collection {
+  return { data: rows, found: rows.length, limit: 10, total: rows.length };
+}
+
 vi.mock('@/modules/core/table/use-server-table', () => ({
   routeWhen: (): { mode: 'route' } => ({ mode: 'route' }),
-  useServerTable: (): Record<string, unknown> => ({
-    collection: ref({ data: state.rows, found: state.rows.length, limit: 10, total: state.rows.length }),
-    error: shallowRef(state.error),
-    filter: ref(state.filters),
-    isLoading: ref(state.isLoading),
-    pagination: ref({}),
-    refetch: vi.fn().mockResolvedValue(undefined),
-    setFilter: vi.fn(),
-  }),
+  useServerTable: (): Record<string, unknown> => {
+    table.collection = ref(collectionOf(state.rows));
+    table.isLoading = ref(state.isLoading);
+    table.refetch = vi.fn().mockResolvedValue(undefined);
+    return {
+      collection: table.collection,
+      error: shallowRef(state.error),
+      filter: ref(state.filters),
+      isLoading: table.isLoading,
+      pagination: ref({}),
+      refetch: table.refetch,
+      setFilter: vi.fn(),
+    };
+  },
 }));
 
 /* The account pill's options are fetched from the backend when the bar is built, which this spec
@@ -83,17 +116,40 @@ vi.mock('@/modules/history/data-issues/use-data-issues-detection', () => ({
 }));
 
 vi.mock('@/modules/history/data-issues/use-data-issues-summary', () => ({
-  useDataIssuesSummary: (): Record<string, unknown> => ({
-    actionableCount: ref(0),
-    baselineTotal: ref(state.baselineTotal),
-    counts: ref({}),
-    dismissInlinePanels: vi.fn(),
-    refreshSummary: vi.fn().mockResolvedValue(undefined),
-    summaryFailed: ref(state.summaryFailed),
-  }),
+  useDataIssuesSummary: (): Record<string, unknown> => {
+    table.dismissInlinePanels = vi.fn();
+    return {
+      actionableCount: ref(0),
+      baselineTotal: ref(state.baselineTotal),
+      counts: ref({}),
+      dismissInlinePanels: table.dismissInlinePanels,
+      refreshSummary: vi.fn().mockResolvedValue(undefined),
+      summaryFailed: ref(state.summaryFailed),
+    };
+  },
 }));
 
-async function createWrapper(): Promise<VueWrapper<InstanceType<typeof DataIssuesView>>> {
+function createIssue(id: number, issueState: IssueState): DataIssue {
+  return {
+    asset: 'ETH',
+    autoRemediationAttempts: [],
+    createdAt: 1710000100,
+    groupIdentifier: null,
+    id,
+    kind: IssueKind.NEGATIVE_BALANCE,
+    location: 'ethereum',
+    locationLabel: '0x0000000000000000000000000000000000000001',
+    payload: {},
+    protocol: null,
+    resolvedAt: null,
+    severity: IssueSeverity.WARNING,
+    state: issueState,
+    tsEnd: 1710000000,
+    tsStart: 1710000000,
+  };
+}
+
+async function createWrapper(mainPage = true): Promise<VueWrapper<InstanceType<typeof DataIssuesView>>> {
   const wrapper = mount(DataIssuesView, {
     global: {
       plugins: [createPinia()],
@@ -109,7 +165,7 @@ async function createWrapper(): Promise<VueWrapper<InstanceType<typeof DataIssue
       },
     },
     props: {
-      mainPage: true,
+      mainPage,
     },
   });
   await flushPromises();
@@ -239,5 +295,82 @@ describe('data-issues view failures', () => {
     expect(strip.text()).toContain('nope');
     expect(strip.find('[data-testid="failure-strip-retry"]').exists()).toBe(false);
     expect(wrapper.findComponent(DataIssueDetailDrawer).props('failure')).toBeUndefined();
+  });
+});
+
+describe('data-issues view loading and polling', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setActivePinia(createPinia());
+    // `flushPromises` waits on `setImmediate`, so only the timers the view schedules are faked.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+    state.baselineTotal = 4;
+    state.detectFailure = undefined;
+    state.error = undefined;
+    state.filters = {};
+    state.isLoading = false;
+    state.rows = [createIssue(1, IssueState.OPEN)];
+    state.summaryFailed = false;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should keep the loading indicator up for 500 ms when a load finishes sooner', async () => {
+    const wrapper = await createWrapper();
+    const isLoading = mounted(table.isLoading);
+    const loadingShown = (): boolean => wrapper.findComponent(DataIssuesTable).props('loading');
+    expect(loadingShown()).toBe(false);
+
+    isLoading.value = true;
+    await nextTick();
+    expect(loadingShown()).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(100);
+    isLoading.value = false;
+    await nextTick();
+    expect(loadingShown()).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(399);
+    expect(loadingShown()).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(loadingShown()).toBe(false);
+  });
+
+  it('should refetch every 10 s while rows remediate, and stop once none do', async () => {
+    await createWrapper();
+    const refetch = mounted(table.refetch);
+    const collection = mounted(table.collection);
+    expect(refetch).toHaveBeenCalledOnce();
+    refetch.mockClear();
+
+    collection.value = collectionOf([createIssue(1, IssueState.AUTO_REMEDIATING)]);
+    await nextTick();
+
+    await vi.advanceTimersByTimeAsync(9_999);
+    expect(refetch).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(refetch).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(refetch).toHaveBeenCalledTimes(2);
+
+    collection.value = collectionOf([createIssue(1, IssueState.OPEN)]);
+    await nextTick();
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(refetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('should dismiss the inline panels when shown as the main page', async () => {
+    await createWrapper();
+
+    expect(mounted(table.dismissInlinePanels)).toHaveBeenCalledOnce();
+  });
+
+  it('should leave the inline panels alone when embedded', async () => {
+    await createWrapper(false);
+
+    expect(mounted(table.dismissInlinePanels)).not.toHaveBeenCalled();
   });
 });
