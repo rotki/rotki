@@ -28,7 +28,9 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.unit.decoders.test_paraswap import A_POLYGON_POS_USDC, A_PSP
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
-from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.ethereum import (
+    get_decoded_events_of_transaction,
+)
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
@@ -40,6 +42,92 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.types import ChecksumEvmAddress
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x034E8229ffb73b828F710500e0B761FF1C09e9c7']])
+def test_swap_from_delegated_account_via_executor(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """A delegated account calls Augustus, which pulls DAI directly into its executor."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf5feace520b81e2a50d27b2c4d01bf2bdef3033aeb762ab455c0425d28ba8f2f')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1795619375000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00105116860966226'),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRANSACTION_TO_SELF,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ZERO,
+        location_label=user_address,
+        notes='Transaction to self of 0 ETH',
+        address=user_address,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=411,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=A_DAI,
+        amount=FVal(spend_amount := '3000'),
+        location_label=user_address,
+        notes=f'Set DAI spending approval of {user_address} by {PARASWAP_AUGUSTUS_V6_ROUTER} to {spend_amount}',  # noqa: E501
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=412,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_DAI,
+        amount=FVal(spend_amount),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} DAI in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=413,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDT,
+        amount=FVal(receive_amount := '3004.079938'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} USDT as the result of a swap in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=414,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USDT,
+        amount=FVal(fee_amount := '0.030023'),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} USDT as a paraswap fee',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    )]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

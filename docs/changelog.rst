@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Velora (ParaSwap) swaps from delegated wallets are now decoded when the wallet sends the input token directly to the swap executor.
 * :bug:`-` NFT balances no longer spend half a minute retrying and then fail when no OpenSea API key is set. OpenSea now needs your own key, which can be added in the API keys settings.
 * :bug:`-` The ETH staking page no longer takes minutes to load while querying block productions.
 * :bug:`-` In the desktop app, a website open in your browser can no longer make rotki delete files from the system temp directory, or write a balance snapshot or PnL report export into a folder of its choosing.
