@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { Blockchain, type ProtocolBalance, toSentenceCase, transformCase } from '@rotki/common';
+import { RuiTooltip } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { EIP1193Provider, EIP6963ProviderDetail } from '@/types';
+import { RuiAlert, RuiButton, RuiMenu, RuiSkeletonLoader } from '@rotki/ui-library';
 import { set } from '@vueuse/shared';
 import { onBeforeMount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

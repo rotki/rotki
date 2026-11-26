@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiProgress } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
 import { storeToRefs } from 'pinia';

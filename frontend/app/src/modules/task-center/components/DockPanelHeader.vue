@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { StatusTally } from '@/modules/task-center/core/status';
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ActivityStatus } from '@/modules/task-center/core/types';

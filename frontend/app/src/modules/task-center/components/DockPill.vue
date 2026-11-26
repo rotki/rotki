@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Activity, ActivityId } from '@/modules/task-center/core/types';
 import type { PendingJob } from '@/modules/task-center/use-pending-jobs';
+import { RuiIcon, RuiProgress } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

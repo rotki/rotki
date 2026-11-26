@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LegendJump, SourceKind, SourceTotal } from '@/modules/dashboard/holdings/core/holdings-types';
+import { RuiSkeletonLoader } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

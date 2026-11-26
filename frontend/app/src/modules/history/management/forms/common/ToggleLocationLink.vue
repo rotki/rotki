@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { isDefined, watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type Nullable, transformCase } from '@rotki/common';
+import { RuiButton, RuiDivider, RuiIcon, RuiMenu, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref } from 'vue';

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiCheckbox, RuiMenuSelect } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { get, set } from '@vueuse/shared';
 import { onMounted, ref, watch } from 'vue';

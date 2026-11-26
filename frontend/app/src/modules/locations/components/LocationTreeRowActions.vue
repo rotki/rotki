@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { LocationNode } from '@/modules/locations/use-location-tree-api';
-import { type RuiIcons, useBreakpoint } from '@rotki/ui-library';
+import { RuiButton, RuiIcon, type RuiIcons, RuiMenu, useBreakpoint } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

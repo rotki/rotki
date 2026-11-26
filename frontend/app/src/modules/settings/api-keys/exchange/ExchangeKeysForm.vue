@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
-import { RuiRevealableTextField, RuiTextField } from '@rotki/ui-library';
+import { RuiAlert, RuiButton, RuiIcon, RuiMenuSelect, RuiRevealableTextField, RuiTextField, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, type Ref, ref, toRef, type WritableComputedRef } from 'vue';

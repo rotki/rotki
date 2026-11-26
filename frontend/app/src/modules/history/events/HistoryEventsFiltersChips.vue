@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
+import { RuiButton, RuiChip, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';

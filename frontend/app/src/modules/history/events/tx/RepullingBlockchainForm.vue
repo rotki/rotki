@@ -3,6 +3,7 @@ import type { ZodType } from 'zod';
 import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
+import { RuiAlert, RuiButton } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, onBeforeUnmount } from 'vue';

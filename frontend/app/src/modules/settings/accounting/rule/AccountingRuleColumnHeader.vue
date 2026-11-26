@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { RuiIcon, RuiTooltip } from '@rotki/ui-library';
+
 /**
  * A rule-table column header that wraps onto a second line instead of widening its column, with its
  * hint, when it has one, behind a small info icon. Shared by the rules and conflicts tables.

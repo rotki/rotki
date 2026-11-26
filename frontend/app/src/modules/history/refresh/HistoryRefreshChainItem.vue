@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ChainData } from '@/modules/history/refresh/types';
+import { RuiCheckbox, RuiIcon } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 

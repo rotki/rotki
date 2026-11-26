@@ -2,6 +2,7 @@
 import type { SupportedAsset, UnderlyingToken } from '@rotki/common';
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { RuiAccordion, RuiAccordions, RuiAutoComplete, RuiButton, RuiCard, RuiIcon, RuiMenuSelect, RuiSwitch, RuiTextField } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { ok, type Result } from 'plainfp/result';

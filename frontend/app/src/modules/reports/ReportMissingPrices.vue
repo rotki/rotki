@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { EditableMissingPrice, MissingPrice } from '@/modules/reports/report-types';
+import { type DataTableColumn, type DataTableSortData, RuiDataTable, RuiIcon } from '@rotki/ui-library';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiProgress, RuiTextField, RuiTooltip } from '@rotki/ui-library';
+import { useI18n } from 'vue-i18n';
+
 /**
  * The transaction reference of an event: an EVM hash, a Solana signature or a Bitcoin id.
  *
@@ -6,8 +9,6 @@
  * When the form looks the transaction up as it is typed (EVM), it passes the lookup's state: the
  * field then shows a spinner while it runs, and a retry button once it failed.
  */
-import { useI18n } from 'vue-i18n';
-
 const txRef = defineModel<string>({ required: true });
 
 const { canRetry = false, disabled = false, errorMessages, hint = '', label, loading = false } = defineProps<{

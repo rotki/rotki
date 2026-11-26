@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiIcon } from '@rotki/ui-library';
 import { computed, type HTMLAttributes } from 'vue';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useSetting } from '@/modules/settings/use-setting';

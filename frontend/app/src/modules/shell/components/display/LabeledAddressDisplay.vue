@@ -4,6 +4,7 @@ import type {
   BlockchainAccountBalance,
 } from '@/modules/accounts/blockchain-accounts';
 import { consistOfNumbers } from '@rotki/common';
+import { RuiTooltip } from '@rotki/ui-library';
 import { useElementSize } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { computed, useTemplateRef } from 'vue';

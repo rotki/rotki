@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LocationRow } from '@/modules/locations/location-rows';
+import { RuiButton, RuiChip, RuiIcon } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { type HighlightSegment, splitHighlight } from '@/modules/core/common/highlight-match';

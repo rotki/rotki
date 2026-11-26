@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="TRow extends UnmatchedRow<unknown>">
 import type { UnmatchedPresentationEmits, UnmatchedPresentationProps, UnmatchedRow } from '@/modules/history/events/unmatched-row';
+import { RuiChip, RuiIcon } from '@rotki/ui-library';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import { UNMATCHED_LAYOUTS } from '@/modules/history/events/unmatched-actions';

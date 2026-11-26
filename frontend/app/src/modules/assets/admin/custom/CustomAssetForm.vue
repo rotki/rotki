@@ -2,6 +2,7 @@
 import type { ZodType } from 'zod';
 import type { CustomAsset } from '@/modules/assets/types';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { RuiTextArea, RuiTextField } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { ok, type Result } from 'plainfp/result';
 import { computed, useTemplateRef } from 'vue';

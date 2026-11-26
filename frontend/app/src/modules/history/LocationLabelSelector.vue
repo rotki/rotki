@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { RuiAutoComplete } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { LocationLabel } from '@/modules/core/common/location';
+import { RuiAutoComplete } from '@rotki/ui-library';
 import { createReusableTemplate } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
 import { truncateAddress } from '@/modules/core/common/display/truncate';

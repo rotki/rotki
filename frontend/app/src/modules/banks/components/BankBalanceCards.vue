@@ -2,6 +2,7 @@
 import type { BigNumber } from '@rotki/common';
 import type { RouteLocationRaw } from 'vue-router';
 import type { BankBalanceData } from '@/modules/banks/use-bank-data';
+import { RuiIcon } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';

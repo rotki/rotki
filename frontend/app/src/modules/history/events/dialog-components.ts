@@ -10,12 +10,7 @@ import { type AsyncComponentLoader, type Component, defineAsyncComponent, h, typ
  * @packageDocumentation
  */
 
-/**
- * Shown in a dialog's place while its chunk is still loading.
- *
- * `RuiProgress` must be imported, not named: the Rui resolver only auto-imports into `.vue`, so
- * `h('RuiProgress')` here builds a literal `<ruiprogress>` and the placeholder renders empty.
- */
+/** Shown in a dialog's place while its chunk is still loading. */
 function DialogLoadingComponent(): ReturnType<typeof h> {
   return h('div', { class: 'flex items-center justify-center p-4' }, h(RuiProgress, { circular: true, size: 40, variant: 'indeterminate' }));
 }

@@ -2,6 +2,7 @@
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert } from '@rotki/common';
+import { RuiAlert, RuiButton, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get } from '@vueuse/shared';
 import { computed, useTemplateRef } from 'vue';

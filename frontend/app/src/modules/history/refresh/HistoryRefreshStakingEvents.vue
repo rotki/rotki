@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { getTextToken, toHumanReadable } from '@rotki/common';
+import { RuiCheckbox } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
 import { computed } from 'vue';

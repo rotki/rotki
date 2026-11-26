@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SnapshotDraftChange } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { RuiButton, RuiChip, RuiIcon, RuiMenu, RuiTooltip } from '@rotki/ui-library';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import SnapshotChangesList from '@/modules/dashboard/snapshots/components/SnapshotChangesList.vue';

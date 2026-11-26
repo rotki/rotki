@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 import ProfitLossEventLocation from '@/modules/reports/ProfitLossEventLocation.vue';
 

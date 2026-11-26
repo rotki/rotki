@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiSkeletonLoader } from '@rotki/ui-library';
 import WrappedCard from './WrappedCard.vue';
 import WrappedHighlight from './WrappedHighlight.vue';
 

@@ -2,6 +2,7 @@
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import type { NarrowSuggestion } from '@/modules/core/table/pill/core/narrowing';
 import type { ActiveFilter, FieldDef, PillBarLabels } from '@/modules/core/table/pill/core/types';
+import { RuiButton, RuiIcon, RuiMenu } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue';

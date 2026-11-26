@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ActivityId } from '@/modules/task-center/core/types';
 import { Blockchain } from '@rotki/common';
+import { RuiButton } from '@rotki/ui-library';
 import { set } from '@vueuse/shared';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';

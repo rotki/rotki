@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { FormDetails, RuiAutoComplete } from '@rotki/ui-library';
 import type { AddressAccount, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import { type Account, Blockchain } from '@rotki/common';
+import { type FormDetails, RuiAutoComplete } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { omit } from 'es-toolkit';
 import { storeToRefs } from 'pinia';

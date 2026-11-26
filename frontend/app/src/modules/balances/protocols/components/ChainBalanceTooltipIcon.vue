@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { Balance } from '@rotki/common';
+import { RuiTooltip } from '@rotki/ui-library';
 import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useSetting } from '@/modules/settings/use-setting';

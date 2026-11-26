@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NarrowSuggestion } from '@/modules/core/table/pill/core/narrowing';
+import { RuiIcon, RuiProgress } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { useTemplateRef, watch } from 'vue';
 import { narrowExampleId, narrowRowId } from '@/modules/core/table/pill/core/narrow-ids';

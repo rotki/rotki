@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 const { enabled, identifier, label } = defineProps<{
   /** A disabled module queries nothing, so its addresses show but cannot be changed. */

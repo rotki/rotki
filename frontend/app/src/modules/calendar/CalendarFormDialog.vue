@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { CalendarEvent } from '@/modules/calendar/types';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { RuiButton } from '@rotki/ui-library';
 import { isDefined } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { omit } from 'es-toolkit';

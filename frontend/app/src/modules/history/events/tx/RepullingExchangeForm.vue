@@ -3,6 +3,7 @@ import type { ZodType } from 'zod';
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
+import { RuiAlert, RuiAutoComplete, RuiButton } from '@rotki/ui-library';
 import { syncRefs, watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, onBeforeUnmount, watch } from 'vue';

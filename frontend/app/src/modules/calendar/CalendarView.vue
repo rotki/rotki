@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import dayjs from 'dayjs';
 import { onMounted, ref } from 'vue';

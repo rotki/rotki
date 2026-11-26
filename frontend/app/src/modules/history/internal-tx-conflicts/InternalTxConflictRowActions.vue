@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { type InternalTxConflict, InternalTxConflictActions } from './types';
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
+import { RuiButton, RuiButtonGroup, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import HistoryRefreshSelection from '@/modules/history/refresh/HistoryRefreshSelection.vue';
 

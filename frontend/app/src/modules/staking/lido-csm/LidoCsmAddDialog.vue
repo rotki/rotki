@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
+import { RuiMenuSelect, RuiTextField } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, shallowRef } from 'vue';
 import { useI18n } from 'vue-i18n';

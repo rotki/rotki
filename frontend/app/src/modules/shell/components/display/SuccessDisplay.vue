@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { RuiIcon } from '@rotki/ui-library';
+
 const { success = false, size = 20 } = defineProps<{
   success?: boolean;
   size?: string | number;

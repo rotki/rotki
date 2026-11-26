@@ -2,6 +2,7 @@
 import type { ZodType } from 'zod';
 import type { Tag } from '@/modules/tags/tags';
 import { invertColor, randomColor } from '@rotki/common';
+import { RuiButton, RuiColorPicker, RuiIcon, RuiTextField } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useModelForm } from '@/modules/core/form/use-model-form';

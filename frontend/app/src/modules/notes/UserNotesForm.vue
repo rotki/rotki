@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { UserNoteDraft } from '@/modules/core/common/notes';
+import { RuiTextArea, RuiTextField } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useModelForm } from '@/modules/core/form/use-model-form';

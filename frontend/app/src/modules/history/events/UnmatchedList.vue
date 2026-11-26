@@ -3,6 +3,7 @@ import type { MatchingKind } from '@/modules/history/events/matching/matching-ki
 import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { UnmatchedActionPayload } from '@/modules/history/events/unmatched-actions';
 import type { UnmatchedRow } from '@/modules/history/events/unmatched-row';
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

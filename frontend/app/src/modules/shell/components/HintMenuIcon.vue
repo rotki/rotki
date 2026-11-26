@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { RuiMenu } from '@rotki/ui-library';
-
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+
+import { RuiButton, RuiIcon, RuiMenu } from '@rotki/ui-library';
 
 interface Props {
   /** A short heading over the explanation; most hints are a sentence or two and go without. */

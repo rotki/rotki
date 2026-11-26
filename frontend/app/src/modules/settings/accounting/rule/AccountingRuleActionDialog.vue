@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AccountingRuleAction } from '@/modules/settings/types/accounting';
+import { RuiButton, RuiCard, RuiDialog } from '@rotki/ui-library';
 import { set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

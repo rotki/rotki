@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiSkeletonLoader, RuiTooltip } from '@rotki/ui-library';
 import { createReusableTemplate } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { computed, type StyleValue } from 'vue';

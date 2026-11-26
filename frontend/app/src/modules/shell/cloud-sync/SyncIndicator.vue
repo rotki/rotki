@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiBadge, RuiIcon, RuiMenu, RuiProgress } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiIcon } from '@rotki/ui-library';
 import { computed, type HTMLAttributes } from 'vue';
 
 interface Props { hideHeader?: boolean; child?: boolean; title?: string[] }

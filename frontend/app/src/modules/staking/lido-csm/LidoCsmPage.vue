@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LidoCsmNodeOperator } from '@/modules/staking/staking-types';
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { isDefined } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { onMounted, ref, shallowRef } from 'vue';

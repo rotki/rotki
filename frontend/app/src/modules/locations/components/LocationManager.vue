@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { LocationFormData } from '@/modules/locations/location-form';
 import type { LocationNode } from '@/modules/locations/use-location-tree-api';
+import { type DataTableColumn, RuiButton, RuiDataTable, RuiIcon, RuiSwitch, RuiTab, RuiTabs, type TablePaginationData } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { computed, nextTick, onMounted, ref, shallowRef } from 'vue';

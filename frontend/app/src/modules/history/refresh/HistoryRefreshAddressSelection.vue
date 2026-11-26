@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiCheckbox } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed } from 'vue';
 import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';

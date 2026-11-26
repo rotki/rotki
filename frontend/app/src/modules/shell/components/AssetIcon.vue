@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifier } from '@rotki/common';
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { isDefined, reactify, watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, ref } from 'vue';

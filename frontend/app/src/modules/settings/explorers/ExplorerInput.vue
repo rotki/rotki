@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { RuiTextField } from '@rotki/ui-library';
 import type { ZodType } from 'zod';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+import { RuiButton, RuiTextField } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

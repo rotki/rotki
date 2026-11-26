@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiMenu } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { type RouteLocationRaw, useRouter } from 'vue-router';
 import { useAddSourceOptions } from '@/modules/dashboard/holdings/use-add-source-options';

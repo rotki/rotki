@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HistoryEventState } from '@/modules/history/events/schemas';
+import { RuiChip, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useHistoryEventStateMapping } from '@/modules/history/events/mapping/use-history-event-state-mapping';
 

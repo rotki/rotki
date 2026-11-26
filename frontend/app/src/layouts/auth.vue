@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiDialog } from '@rotki/ui-library';
 import { storeToRefs } from 'pinia';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import AppHost from '@/modules/shell/app/AppHost.vue';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { WelcomeMessage } from '@/modules/core/messaging/dynamic-messages';
+import { RuiButton, RuiFooterStepper } from '@rotki/ui-library';
 import { checkIfDevelopment } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { ofetch } from 'ofetch';

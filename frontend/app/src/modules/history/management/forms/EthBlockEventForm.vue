@@ -2,6 +2,7 @@
 import type { EthBlockEvent } from '@/modules/history/events/schemas';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import { Blockchain } from '@rotki/common';
+import { RuiCheckbox, RuiDivider, RuiTextField } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

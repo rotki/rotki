@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
+import { RuiDataTable, RuiIcon, RuiTableRowExpander, RuiTooltip } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, type HTMLAttributes, watch } from 'vue';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
+import { RuiChip, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import { useEthValidatorUtils } from '@/modules/staking/eth/use-eth-validator-utils';

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DataTableColumn, RuiIcons } from '@rotki/ui-library';
 import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
+import { type DataTableColumn, RuiButton, RuiDataTable, RuiIcon, type RuiIcons } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { RuiSwitch } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
+import { RuiCheckbox, RuiSwitch } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed } from 'vue';
 

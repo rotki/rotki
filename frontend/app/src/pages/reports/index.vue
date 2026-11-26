@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 import type { Activity } from '@/modules/task-center/core/types';
+import { RuiButton, RuiCard, RuiDialog, RuiFileUpload, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

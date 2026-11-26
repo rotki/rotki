@@ -9,6 +9,7 @@ import type {
   StandaloneEditableEvents,
 } from '@/modules/history/events/schemas';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { RuiButton, RuiDivider, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { computed, ref } from 'vue';

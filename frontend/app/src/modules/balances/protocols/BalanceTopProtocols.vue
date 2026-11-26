@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { ProtocolBalance } from '@rotki/common';
+import { RuiMenu } from '@rotki/ui-library';
 import { computed } from 'vue';
 import ClaimAwaitingBadge from '@/modules/balances/protocols/components/ClaimAwaitingBadge.vue';
 import ProtocolMenuItem from '@/modules/balances/protocols/ProtocolMenuItem.vue';

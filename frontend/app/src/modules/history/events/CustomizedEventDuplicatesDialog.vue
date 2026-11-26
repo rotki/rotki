@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiCard, RuiChip, RuiDialog, RuiIcon, RuiTab, RuiTabItem, RuiTabItems, RuiTabs } from '@rotki/ui-library';
 import { set } from '@vueuse/shared';
 import { onBeforeMount } from 'vue';
 import { useI18n } from 'vue-i18n';

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiIcon, RuiTab, RuiTabs } from '@rotki/ui-library';
 import { ref } from 'vue';
 import { type RouteLocationRaw, useRouter } from 'vue-router';
 import { type TabContent, tabKey } from '@/modules/core/common/tabs';

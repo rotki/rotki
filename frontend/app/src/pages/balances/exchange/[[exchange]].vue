@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type AssetBalanceWithPrice, type BigNumber, Zero } from '@rotki/common';
+import { RuiButton, RuiButtonGroup, RuiIcon } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

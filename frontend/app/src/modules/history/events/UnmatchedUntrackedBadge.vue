@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { RuiIcon, RuiTooltip } from '@rotki/ui-library';
+
 defineProps<{
   label: string;
   tooltip: string;

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { GalleryNft } from '@/modules/assets/nfts';
+import { RuiButton, RuiCard, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, type StyleValue } from 'vue';
 import { useI18n } from 'vue-i18n';

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { PremiumSetup } from '@/modules/auth/login';
+import { RuiRevealableTextField } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';

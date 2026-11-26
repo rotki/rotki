@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { Filters } from '@/modules/settings/accounting/rule/accounting-rule-filter-keys';
+import { RuiButton, RuiIcon, RuiTab, RuiTabs, RuiTooltip } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { usePillBarLabels } from '@/modules/core/table/pill/composables/use-pill-bar-labels';
 import PillFilterBar from '@/modules/core/table/pill/PillFilterBar.vue';

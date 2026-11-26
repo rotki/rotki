@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAlert, RuiButton, RuiCard } from '@rotki/ui-library';
 import { LogLevel } from '@shared/log-level';
 import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';

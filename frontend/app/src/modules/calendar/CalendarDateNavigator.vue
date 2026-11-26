@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiMenu } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import dayjs, { type Dayjs } from 'dayjs';
 import { computed, ref, watch } from 'vue';

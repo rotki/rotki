@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAutoComplete, RuiIcon } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';

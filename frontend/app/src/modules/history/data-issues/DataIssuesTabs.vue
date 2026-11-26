@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiTab, RuiTabs } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get } from '@vueuse/shared';
 import { computed, onMounted } from 'vue';

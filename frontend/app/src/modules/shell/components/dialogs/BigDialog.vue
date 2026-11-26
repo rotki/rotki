@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { RuiCardClassNames } from '@rotki/ui-library';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { RuiBottomSheet, RuiButton, RuiCard, type RuiCardClassNames, RuiDivider, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

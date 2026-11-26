@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ChainActivity, SharedDeposit } from './address-interaction-graph';
+import { RuiButton, RuiChip, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';

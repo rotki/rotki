@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmits, HistoryEventsTableHighlight, HistoryEventsTableSource } from '@/modules/history/events/types';
+import { type DataTableSortData, RuiButton, RuiIcon, RuiProgress, RuiTableEmptyState, type TablePaginationData } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, defineAsyncComponent } from 'vue';
 import { useI18n } from 'vue-i18n';

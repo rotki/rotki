@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiTextArea } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';

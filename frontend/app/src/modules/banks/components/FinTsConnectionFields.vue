@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { FintsBank } from '@/modules/banks/fints-bank-directory';
 import type { BankConnection, BankManifest } from '@/modules/banks/types';
+import { RuiAccordion, RuiAccordions, RuiChip, RuiMenuSelect, RuiRevealableTextField, RuiTextField } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, ref, watch } from 'vue';

@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { RuiButton, RuiChip, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

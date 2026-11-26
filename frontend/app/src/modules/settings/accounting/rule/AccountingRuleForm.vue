@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { toSentenceCase } from '@rotki/common';
+import { RuiAutoComplete } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Activity } from '@/modules/task-center/core/types';
+import { RuiIcon } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 import type { ProfitLossReportPeriod } from '@/modules/reports/report-types';
+import { RuiAlert, RuiButton, RuiCard, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

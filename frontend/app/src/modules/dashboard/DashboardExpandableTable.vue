@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { type HTMLAttributes, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 
 interface Props {

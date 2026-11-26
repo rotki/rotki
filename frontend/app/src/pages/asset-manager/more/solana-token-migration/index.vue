@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library';
 import type { MergeSuggestion } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-dialog';
 import { SolanaTokenKind } from '@rotki/common';
+import { type DataTableColumn, RuiButton, RuiDataTable, RuiIcon } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, ref } from 'vue';

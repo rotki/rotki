@@ -404,9 +404,6 @@ catalogs:
     typescript:
       specifier: 6.0.3
       version: 6.0.3
-    unplugin-vue-components:
-      specifier: 32.1.0
-      version: 32.1.0
     utf-8-validate:
       specifier: 6.0.6
       version: 6.0.6
@@ -758,9 +755,6 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
-      unplugin-vue-components:
-        specifier: 'catalog:'
-        version: 32.1.0(esbuild@0.28.1)(rolldown@1.2.6)(vite@8.3.5(@types/node@24.19.1)(esbuild@0.28.1)(jiti@1.21.7)(tsx@4.23.15)(yaml@2.9.0))(vue@3.5.44(typescript@6.0.3))
       vite:
         specifier: 'catalog:'
         version: 8.3.5(@types/node@24.19.1)(esbuild@0.28.1)(jiti@1.21.7)(tsx@4.23.15)(yaml@2.9.0)
@@ -6345,52 +6339,9 @@ packages:
     resolution: {integrity: sha512-xVToRh2CTmLk2HnEG7ac4rl1MJTT3RFkpS8B++/SnB0kXvuaavD+n3m/vrzyWQOdJNSZQACnbz01pnppbwV5BA==}
     engines: {node: '>=20.19.0'}
 
-  unplugin-vue-components@32.1.0:
-    resolution: {integrity: sha512-YiUkSxuRjab18XFOrX5VsIxXzccrfmHVGsGeJgSgklb829DQmCy9E4vvDUE4tuvZZdxyFJZX0Oc4TPnnxiiMyg==}
-    engines: {node: '>=20.19.0'}
-    peerDependencies:
-      '@nuxt/kit': ^3.2.2 || ^4.0.0
-      vue: ^3.0.0
-    peerDependenciesMeta:
-      '@nuxt/kit':
-        optional: true
-
   unplugin@2.3.11:
     resolution: {integrity: sha512-5uKD0nqiYVzlmCRs01Fhs2BdkEgBS3SAVP6ndrBsuK42iC2+JHyxM05Rm9G8+5mkmRtzMZGY8Ct5+mliZxU/Ww==}
     engines: {node: '>=18.12.0'}
-
-  unplugin@3.3.0:
-    resolution: {integrity: sha512-qa66K+crbfyE6JK10GjvbJeRrOsuC/JpbnHctfyp/i4oBTxWOzJfRZyDiOk1PtErMFRu8JhsU/wPvOdBNWe5Rg==}
-    engines: {node: ^20.19.0 || >=22.12.0}
-    peerDependencies:
-      '@farmfe/core': '*'
-      '@rspack/core': '*'
-      bun-types-no-globals: '*'
-      esbuild: '*'
-      rolldown: '*'
-      rollup: '*'
-      unloader: '*'
-      vite: '*'
-      webpack: '*'
-    peerDependenciesMeta:
-      '@farmfe/core':
-        optional: true
-      '@rspack/core':
-        optional: true
-      bun-types-no-globals:
-        optional: true
-      esbuild:
-        optional: true
-      rolldown:
-        optional: true
-      rollup:
-        optional: true
-      unloader:
-        optional: true
-      vite:
-        optional: true
-      webpack:
-        optional: true
 
   unplugin@3.4.0:
     resolution: {integrity: sha512-9skdIFlCsPdFV7wUfZxNsFInlW+7nJmGu2gkTu0OUhF56aXGsHab9x52/QhdJ4lC7ZDPWTxbiC4ANqVlsuaW3w==}
@@ -12875,45 +12826,12 @@ snapshots:
       pathe: 2.0.3
       picomatch: 4.0.7
 
-  unplugin-vue-components@32.1.0(esbuild@0.28.1)(rolldown@1.2.6)(vite@8.3.5(@types/node@24.19.1)(esbuild@0.28.1)(jiti@1.21.7)(tsx@4.23.15)(yaml@2.9.0))(vue@3.5.44(typescript@6.0.3)):
-    dependencies:
-      chokidar: 5.0.0
-      local-pkg: 1.2.1
-      magic-string: 0.30.21
-      mlly: 1.8.2
-      obug: 2.1.4
-      picomatch: 4.0.7
-      tinyglobby: 0.2.17
-      unplugin: 3.3.0(esbuild@0.28.1)(rolldown@1.2.6)(vite@8.3.5(@types/node@24.19.1)(esbuild@0.28.1)(jiti@1.21.7)(tsx@4.23.15)(yaml@2.9.0))
-      unplugin-utils: 0.3.2
-      vue: 3.5.44(typescript@6.0.3)
-    transitivePeerDependencies:
-      - '@farmfe/core'
-      - '@rspack/core'
-      - bun-types-no-globals
-      - esbuild
-      - rolldown
-      - rollup
-      - unloader
-      - vite
-      - webpack
-
   unplugin@2.3.11:
     dependencies:
       '@jridgewell/remapping': 2.3.5
       acorn: 8.18.0
       picomatch: 4.0.7
       webpack-virtual-modules: 0.6.2
-
-  unplugin@3.3.0(esbuild@0.28.1)(rolldown@1.2.6)(vite@8.3.5(@types/node@24.19.1)(esbuild@0.28.1)(jiti@1.21.7)(tsx@4.23.15)(yaml@2.9.0)):
-    dependencies:
-      '@jridgewell/remapping': 2.3.5
-      picomatch: 4.0.7
-      webpack-virtual-modules: 0.6.2
-    optionalDependencies:
-      esbuild: 0.28.1
-      rolldown: 1.2.6
-      vite: 8.3.5(@types/node@24.19.1)(esbuild@0.28.1)(jiti@1.21.7)(tsx@4.23.15)(yaml@2.9.0)
 
   unplugin@3.4.0(esbuild@0.28.1)(rolldown@1.2.6)(vite@8.3.5(@types/node@24.19.1)(esbuild@0.28.1)(jiti@1.21.7)(tsx@4.23.15)(yaml@2.9.0)):
     dependencies:

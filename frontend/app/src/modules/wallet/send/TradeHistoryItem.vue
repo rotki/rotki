@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RecentTransaction } from '@/modules/wallet/types';
+import { RuiChip } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';

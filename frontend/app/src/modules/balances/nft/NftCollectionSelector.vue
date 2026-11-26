@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAutoComplete, RuiChip } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 
 const model = defineModel<string | undefined>({ required: true });

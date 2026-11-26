@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
+import { RuiButton, RuiChip, RuiMenuSelect } from '@rotki/ui-library';
 import { createReusableTemplate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, onMounted, ref } from 'vue';

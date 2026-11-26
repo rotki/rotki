@@ -4,6 +4,7 @@ import type {
   BlockchainAccountWithBalance,
 } from '@/modules/accounts/blockchain-accounts';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
+import { RuiButton } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

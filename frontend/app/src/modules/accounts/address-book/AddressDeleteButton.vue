@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AddressBookEntry, AddressBookLocation } from '@/modules/accounts/address-book/eth-names';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

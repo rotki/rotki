@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution } from '@/modules/assets/types';
+import { RuiProgress } from '@rotki/ui-library';
 import { useLocalStorage } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

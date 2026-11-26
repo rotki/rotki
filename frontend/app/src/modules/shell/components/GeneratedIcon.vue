@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiIcon } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 

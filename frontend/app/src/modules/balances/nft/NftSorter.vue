@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NftSortKey } from '@/modules/balances/nft/use-nft-gallery-filters';
+import { RuiButton, RuiIcon, RuiMenuSelect, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { useI18n } from 'vue-i18n';
 

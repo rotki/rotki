@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { RuiTooltip } from '@rotki/ui-library';
 import { Blockchain, consistOfNumbers } from '@rotki/common';
+import { RuiTooltip } from '@rotki/ui-library';
 import { isDefined } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { computed, useTemplateRef } from 'vue';

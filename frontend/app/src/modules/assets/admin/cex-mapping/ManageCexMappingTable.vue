@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { TablePaginationData } from '@rotki/ui-library';
 import type { Filters } from '@/modules/assets/admin/cex-mapping/cex-mapping-filter-keys';
 import type { CexMapping } from '@/modules/assets/types';
 import type { Collection } from '@/modules/core/common/collection';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { RuiIcon, type TablePaginationData } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import MappingAdminTable from '@/modules/assets/admin/MappingAdminTable.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';

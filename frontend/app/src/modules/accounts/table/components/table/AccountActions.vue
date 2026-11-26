@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T extends BlockchainAccountBalance">
 import type { AccountDataRow } from '../../types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
+import { RuiButton, RuiDivider, RuiIcon, RuiMenu } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

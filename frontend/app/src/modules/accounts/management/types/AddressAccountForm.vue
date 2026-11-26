@@ -3,6 +3,7 @@ import type { AccountManage } from '@/modules/accounts/blockchain/use-account-ma
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { Module } from '@/modules/core/common/modules';
 import { assert, Blockchain } from '@rotki/common';
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { isDefined } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, useTemplateRef } from 'vue';

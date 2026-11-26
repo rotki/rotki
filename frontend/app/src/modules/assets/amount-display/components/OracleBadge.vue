@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { RuiChip, RuiIcon } from '@rotki/ui-library';
+
 defineProps<{
   oracle: string;
 }>();

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HistoryEventEntryType } from '@rotki/common';
+import { RuiCategoryPicker, RuiIcon } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { checkIfDevelopment } from '@shared/utils';
 import { get, set } from '@vueuse/shared';

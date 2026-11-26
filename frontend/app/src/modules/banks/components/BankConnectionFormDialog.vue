@@ -3,6 +3,7 @@ import type { ResultAsync } from 'plainfp/result-async';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert } from '@rotki/common';
+import { RuiAlert, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { isDefined } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';

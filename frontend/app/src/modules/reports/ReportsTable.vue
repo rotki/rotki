@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import type { Report } from '@/modules/reports/report-types';
+import { type DataTableColumn, type DataTableSortColumn, RuiDataTable } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, onBeforeMount, ref } from 'vue';

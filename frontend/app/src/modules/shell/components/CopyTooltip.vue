@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiTooltip } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { useI18n } from 'vue-i18n';
 import { useCopy } from '@/modules/core/common/use-clipboard';

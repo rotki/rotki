@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
+import { RuiButton, RuiCheckbox, RuiIcon, RuiMenu, RuiSwitch, RuiTextField, RuiTooltip } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';

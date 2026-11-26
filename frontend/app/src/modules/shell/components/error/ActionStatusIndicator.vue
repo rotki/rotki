@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BaseMessage } from '@/modules/core/messaging/base-message';
+import { RuiAlert } from '@rotki/ui-library';
 
 defineProps<{
   status: BaseMessage | null;

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiCard, RuiDialog, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { useClipboard } from '@vueuse/core';
 import { get } from '@vueuse/shared';

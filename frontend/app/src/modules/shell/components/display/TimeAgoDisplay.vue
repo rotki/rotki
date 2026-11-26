@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiTooltip } from '@rotki/ui-library';
 import { useTimeAgo } from '@vueuse/core';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 

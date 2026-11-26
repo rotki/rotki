@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type NotificationData, Severity } from '@rotki/common';
+import { RuiButton, RuiCard, RuiIcon } from '@rotki/ui-library';
 import { useElementSize } from '@vueuse/core';
 import { useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';

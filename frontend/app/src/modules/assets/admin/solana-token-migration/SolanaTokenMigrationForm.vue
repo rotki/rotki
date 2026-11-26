@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { RuiMenuSelect, RuiTextField } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, toRef } from 'vue';
 import { useI18n } from 'vue-i18n';

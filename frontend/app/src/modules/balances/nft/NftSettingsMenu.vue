@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { transformCase } from '@rotki/common';
+import { RuiButton, RuiDivider, RuiIcon, RuiMenu, RuiTooltip } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

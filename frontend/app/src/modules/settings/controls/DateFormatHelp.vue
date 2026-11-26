@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiCard, RuiDialog } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 

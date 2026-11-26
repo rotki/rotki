@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
+import { RuiButton } from '@rotki/ui-library';
 import { createReusableTemplate } from '@vueuse/core';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

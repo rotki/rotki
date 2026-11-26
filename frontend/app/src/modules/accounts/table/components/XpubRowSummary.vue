@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiChip } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { XpubAddressType, type XpubGroupWithBalance } from '@/modules/accounts/blockchain-accounts';

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiCard } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 
 interface LogEntry {

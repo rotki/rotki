@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiIcon } from '@rotki/ui-library';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 

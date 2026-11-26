@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiProgress } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { exchangeBalancesActivity } from '@/modules/balances/balances.activity';
 import { useLocations } from '@/modules/core/common/use-locations';

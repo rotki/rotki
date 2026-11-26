@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAlert, RuiButton } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

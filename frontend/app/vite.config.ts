@@ -1,4 +1,3 @@
-import type { ComponentResolver } from 'unplugin-vue-components';
 import { readFileSync } from 'node:fs';
 import { builtinModules } from 'node:module';
 import { join, resolve } from 'node:path';
@@ -6,7 +5,6 @@ import process from 'node:process';
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
 import { ruiIconsPlugin } from '@rotki/ui-library/vite-plugin';
 import vue from '@vitejs/plugin-vue';
-import Components from 'unplugin-vue-components/vite';
 import { createLogger, type Logger, type LogOptions, type Plugin } from 'vite';
 import checker from 'vite-plugin-checker';
 import vueDevTools from 'vite-plugin-vue-devtools';
@@ -128,21 +126,6 @@ function hmrLocaleMessages(): Plugin {
   };
 }
 
-function RuiComponentResolver(): ComponentResolver {
-  return {
-    type: 'component',
-    resolve: (name: string) => {
-      const prefix = 'Rui';
-      if (name.startsWith(prefix)) {
-        return {
-          name,
-          from: '@rotki/ui-library/components',
-        };
-      }
-    },
-  };
-}
-
 if (isTest)
   console.log('Running in test mode. Enabling Coverage');
 
@@ -227,18 +210,6 @@ export default defineConfig({
           },
         })]
       : []),
-    Components({
-      dts: true,
-      include: [],
-      dirs: [],
-      resolvers: [RuiComponentResolver()],
-      types: [
-        {
-          from: 'vue-router',
-          names: ['RouterLink', 'RouterView'],
-        },
-      ],
-    }),
     ruiIconsPlugin({
       include: [
         ...backendIcons,

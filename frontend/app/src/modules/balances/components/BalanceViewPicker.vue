@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiIcon, RuiMenu } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

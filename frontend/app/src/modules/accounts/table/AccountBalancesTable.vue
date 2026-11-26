@@ -1,9 +1,9 @@
 <script setup lang="ts" generic="T extends BlockchainAccountBalance">
-import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { AccountDataRow } from './types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/modules/core/common/collection';
+import { type DataTableSortData, RuiButton, RuiDataTable, RuiIcon, RuiTableRowExpander, type TablePaginationData } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

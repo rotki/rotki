@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LiquityStakingDetailEntry } from '@rotki/common';
+import { RuiCard, RuiDivider } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
 import StakingHeadlineBalance from '@/modules/staking/components/StakingHeadlineBalance.vue';

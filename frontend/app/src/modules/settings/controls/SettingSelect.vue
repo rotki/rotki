@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="TOption = string">
-import type { RuiMenuSelect, RuiRadioGroup } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
+import { RuiMenuSelect, RuiRadio, RuiRadioGroup } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useSettingOptions } from '@/modules/settings/controls/use-setting-options';

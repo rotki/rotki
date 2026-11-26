@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { UnderlyingToken } from '@rotki/common';
-import type { DataTableColumn } from '@rotki/ui-library';
+import { type DataTableColumn, RuiCard, RuiDataTable } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import HashLink from '@/modules/shell/components/HashLink.vue';

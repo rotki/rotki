@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiMenu } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { computed, onBeforeUnmount } from 'vue';

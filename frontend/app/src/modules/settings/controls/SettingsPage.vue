@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useBreakpoint } from '@rotki/ui-library';
+import { RuiMenuSelect, RuiTab, RuiTabs, useBreakpoint } from '@rotki/ui-library';
 import { computed, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSettingsPageHighlight } from '@/modules/settings/use-settings-page-highlight';

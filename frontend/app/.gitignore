@@ -38,7 +38,6 @@ tests/e2e/.unit-structure
 
 rotki_config.json
 package-lock.json
-components.d.ts
 .e2e
 .contract
 traces

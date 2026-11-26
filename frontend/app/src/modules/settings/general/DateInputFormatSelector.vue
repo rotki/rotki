@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiMenuSelect } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { DateFormat } from '@/modules/core/common/date-format';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';

@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { RuiAlert } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

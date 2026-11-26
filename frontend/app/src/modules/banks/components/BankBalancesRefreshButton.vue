@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BankConnectionIdentity } from '@/modules/banks/types';
+import { RuiButton, RuiDivider, RuiIcon } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BankLabel from '@/modules/banks/components/BankLabel.vue';

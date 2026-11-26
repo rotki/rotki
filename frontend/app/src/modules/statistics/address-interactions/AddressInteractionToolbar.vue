@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { InteractionFilterMode } from './interaction-filter-mode';
 import type { LocationLabel } from '@/modules/core/common/location';
+import { RuiButton, RuiSlider } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, type HTMLAttributes } from 'vue';
 import { useI18n } from 'vue-i18n';

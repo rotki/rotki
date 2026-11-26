@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { assert, toSentenceCase } from '@rotki/common';
+import { RuiAutoComplete, RuiButton, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { isDefined } from '@vueuse/core';
 import { logicOr } from '@vueuse/math';

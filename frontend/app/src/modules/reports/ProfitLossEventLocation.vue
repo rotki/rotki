@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiTooltip } from '@rotki/ui-library';
 import { useLocations } from '@/modules/core/common/use-locations';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 

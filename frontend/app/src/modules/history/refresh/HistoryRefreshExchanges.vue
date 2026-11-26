@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import { getTextToken } from '@rotki/common';
+import { RuiCheckbox } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { isEqual, sortBy } from 'es-toolkit';
 import { computed } from 'vue';

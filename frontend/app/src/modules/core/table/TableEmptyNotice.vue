@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RuiIcons } from '@rotki/ui-library';
+import { RuiIcon, type RuiIcons } from '@rotki/ui-library';
 
 defineProps<{
   icon: RuiIcons;

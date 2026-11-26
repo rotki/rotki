@@ -1,3 +1,7 @@
+<script setup lang="ts">
+import { RuiProgress } from '@rotki/ui-library';
+</script>
+
 <template>
   <div class="flex items-center justify-center h-full w-full min-h-50">
     <RuiProgress

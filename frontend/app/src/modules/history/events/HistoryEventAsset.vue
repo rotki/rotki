@@ -2,6 +2,7 @@
 import type { AssetDisplay } from '@/modules/assets/types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { type AssetInfoWithId, Zero } from '@rotki/common';
+import { RuiButton, RuiIcon, RuiMenu } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import { AssetAmountDisplay, AssetValueDisplay } from '@/modules/assets/amount-display/components';

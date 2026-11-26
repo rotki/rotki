@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { useAddressBookForm } from '@/modules/accounts/address-book/use-address-book-form';
 

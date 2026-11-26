@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { useUpdateMessage } from '@/modules/core/messaging/use-update-message';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';

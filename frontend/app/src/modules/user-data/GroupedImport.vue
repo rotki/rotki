@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { RuiIcons } from '@rotki/ui-library';
 import type { ImportSource } from '@/modules/core/common/upload-types';
+import { RuiAutoComplete, RuiIcon, type RuiIcons } from '@rotki/ui-library';
 import { createReusableTemplate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, defineAsyncComponent, markRaw, ref, watch } from 'vue';

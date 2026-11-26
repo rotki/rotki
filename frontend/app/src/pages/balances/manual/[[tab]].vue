@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ManualBalance, RawManualBalance } from '@/modules/balances/types/manual-balances';
 import { Zero } from '@rotki/common';
+import { RuiButton, RuiIcon, RuiTab, RuiTabs } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';

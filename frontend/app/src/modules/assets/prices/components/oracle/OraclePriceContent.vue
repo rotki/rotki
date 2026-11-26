@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library';
 import type { Filters } from '@/modules/assets/prices/oracle-price-filter-keys';
 import type { OraclePriceEntry, OraclePricesQuery } from '@/modules/assets/prices/price-types';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { type DataTableColumn, RuiChip, RuiDataTable } from '@rotki/ui-library';
 import { set } from '@vueuse/shared';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

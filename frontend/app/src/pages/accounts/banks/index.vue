@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { BankAuthenticationRequest, BankConnection, BankFormData } from '@/modules/banks/types';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { RuiButton, RuiDataTable, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

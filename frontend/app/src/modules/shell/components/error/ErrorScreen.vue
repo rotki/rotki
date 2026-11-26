@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiCard, RuiDivider, RuiIcon } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';

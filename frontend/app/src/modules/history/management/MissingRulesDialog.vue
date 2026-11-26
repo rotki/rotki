@@ -2,6 +2,7 @@
 import type { LocationAndTxRef } from '@/modules/history/events/event-payloads';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { AccountingRuleIdentifier } from '@/modules/settings/types/accounting';
+import { RuiButton, RuiCard, RuiDialog, RuiIcon } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

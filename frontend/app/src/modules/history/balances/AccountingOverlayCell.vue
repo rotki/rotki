@@ -2,6 +2,7 @@
 import type { BigNumber } from '@rotki/common';
 import type { HistoricalBalanceStop } from '@/modules/history/balances/types';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import { RuiButton, RuiIcon, RuiMenu, RuiSkeletonLoader, RuiTooltip } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, onWatcherCleanup, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

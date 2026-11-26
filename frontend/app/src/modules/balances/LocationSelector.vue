@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { RuiAutoComplete } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { TradeLocationData } from '@/modules/core/common/location';
+import { RuiAutoComplete } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, watch } from 'vue';

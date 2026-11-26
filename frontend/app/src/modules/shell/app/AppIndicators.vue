@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useBreakpoint, useRotkiTheme } from '@rotki/ui-library';
+import { RuiButton, RuiIcon, useBreakpoint, useRotkiTheme } from '@rotki/ui-library';
 import { checkIfDevelopment } from '@shared/utils';
 import { storeToRefs } from 'pinia';
 import CurrencyDropdown from '@/modules/assets/amount-display/CurrencyDropdown.vue';

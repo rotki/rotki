@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { isDefined } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { onMounted, ref, useTemplateRef } from 'vue';

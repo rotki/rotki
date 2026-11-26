@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { RuiButton, RuiIcon, RuiTable, RuiTableEmptyState, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';

@@ -3,6 +3,7 @@ import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventNoteContext } from '@/modules/history/events/use-history-event-note';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
+import { RuiCheckbox } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, shallowRef } from 'vue';
 import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';

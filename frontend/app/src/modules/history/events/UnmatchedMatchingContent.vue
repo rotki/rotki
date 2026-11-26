@@ -3,6 +3,7 @@ import type { MatchingKind } from '@/modules/history/events/matching/matching-ki
 import type { UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { UnmatchedRow } from '@/modules/history/events/unmatched-row';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { RuiButton, RuiButtonGroup, RuiChip, RuiTab, RuiTabItem, RuiTabItems, RuiTabs, RuiTooltip } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get } from '@vueuse/shared';
 import { computed, onBeforeMount, ref } from 'vue';

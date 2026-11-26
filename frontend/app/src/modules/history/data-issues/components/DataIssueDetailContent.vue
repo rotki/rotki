@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { IssueDescription, RemediationTimelineItem } from '@/modules/history/data-issues/types';
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

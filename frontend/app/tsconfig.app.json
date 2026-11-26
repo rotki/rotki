@@ -27,7 +27,6 @@
   },
   "include": [
     "env.d.ts",
-    "components.d.ts",
     "src/**/*",
     "src/**/*.vue",
     "shared/**/*",

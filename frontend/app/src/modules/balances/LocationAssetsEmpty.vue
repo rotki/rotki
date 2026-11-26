@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { RuiIcons } from '@rotki/ui-library';
 import type { RouteLocationRaw } from 'vue-router';
+import { RuiButton, RuiIcon, type RuiIcons } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';

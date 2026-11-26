@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 

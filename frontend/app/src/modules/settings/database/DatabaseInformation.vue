@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DatabaseInfo } from '@/modules/session/backup';
 import { NotificationKind, Severity } from '@rotki/common';
+import { RuiCard } from '@rotki/ui-library';
 import { createReusableTemplate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, onMounted, ref } from 'vue';

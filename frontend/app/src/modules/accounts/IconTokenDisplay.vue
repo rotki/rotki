@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { AssetBalance } from '@rotki/common';
 import type { AssetResolutionOptions } from '@/modules/assets/use-asset-info-retrieval';
+import { RuiTooltip } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';

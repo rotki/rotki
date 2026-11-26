@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAlert, RuiButton, RuiCard, RuiIcon, RuiProgress } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { watchImmediate } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';

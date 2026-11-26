@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import { bigNumberify } from '@rotki/common';
+import { RuiButton, RuiIcon, RuiMenu, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

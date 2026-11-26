@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiIcon, RuiMenu, RuiTextField } from '@rotki/ui-library';
 import { useTimeoutFn } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';

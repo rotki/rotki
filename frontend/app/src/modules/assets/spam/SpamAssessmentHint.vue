@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { ContextColorsType } from '@rotki/ui-library';
 import type { SpamAssessment } from './use-spam-assessments';
 import type { SpamPrediction } from '@/modules/assets/api/use-asset-spam-prediction-api';
+import { type ContextColorsType, RuiChip, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

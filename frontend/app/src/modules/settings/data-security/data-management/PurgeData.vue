@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAutoComplete, RuiButton, RuiIcon } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';

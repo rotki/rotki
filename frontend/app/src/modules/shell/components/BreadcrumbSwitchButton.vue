@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { RuiIcon } from '@rotki/ui-library';
 
 defineProps<
   /* @vue-ignore */ HTMLAttributes

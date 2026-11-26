@@ -206,9 +206,6 @@ jobs:
       # vue-tsc error reports as "Typecheck", not as a generic lint failure. The condition
       # keeps later checks running after an earlier one fails, so a single run reports every
       # problem, while still skipping them all if the install itself never succeeded.
-      # The build writes components.d.ts, the gitignored declaration of the Rui components, which
-      # strictTemplates needs to type their props. Without it the typecheck reports every Rui
-      # component as unknown, so it runs only after a successful build.
       - name: Build
         id: build
         if: ${{ steps.install.outcome == 'success' && github.event_name != 'push' }}
@@ -216,7 +213,7 @@ jobs:
         run: pnpm run --filter rotki build:app
 
       - name: Typecheck
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && github.event_name != 'push' }}
         working-directory: ./frontend
         run: pnpm run typecheck
 

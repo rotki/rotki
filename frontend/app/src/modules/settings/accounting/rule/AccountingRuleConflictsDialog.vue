@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import type { DataTableColumn } from '@rotki/ui-library';
 import type { ConflictResolutionStrategy } from '@/modules/core/common/common-types';
 import type { AccountingRuleConflict } from '@/modules/settings/types/accounting';
+import { type DataTableColumn, RuiButton, RuiButtonGroup, RuiDataTable } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';

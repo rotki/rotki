@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAlert, RuiButton, RuiCard, RuiDialog, RuiTextArea } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

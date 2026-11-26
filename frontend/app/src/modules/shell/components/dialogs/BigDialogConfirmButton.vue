@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { RuiButton, RuiChip } from '@rotki/ui-library';
+
 const { primary, hasErrors = false, actionDisabled = false, loading = false, errorCount = 0 } = defineProps<{
   primary: string;
   hasErrors?: boolean;

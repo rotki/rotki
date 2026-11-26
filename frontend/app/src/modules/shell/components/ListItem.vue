@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiSkeletonLoader } from '@rotki/ui-library';
 import { computed, type HTMLAttributes } from 'vue';
 
 interface Props {

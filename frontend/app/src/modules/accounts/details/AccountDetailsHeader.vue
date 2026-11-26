@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BlockchainAccountGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';

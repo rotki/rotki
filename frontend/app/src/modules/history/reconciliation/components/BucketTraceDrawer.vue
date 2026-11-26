@@ -2,6 +2,7 @@
 import type { RouteLocationRaw } from 'vue-router';
 import type { BucketTraceRow, InspectedBucket } from '@/modules/history/reconciliation/schemas';
 import { type BigNumber, toHumanReadable } from '@rotki/common';
+import { RuiAlert, RuiButton, RuiIcon, RuiNavigationDrawer, RuiProgress } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

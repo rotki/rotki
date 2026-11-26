@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { InternalTxConflict } from './types';
+import { RuiButton, RuiCard, RuiDialog } from '@rotki/ui-library';
 import { set } from '@vueuse/shared';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';

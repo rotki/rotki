@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiFileUpload, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { map as mapResult, ok, type Result } from 'plainfp/result';
 import { fromPromise } from 'plainfp/result-async';

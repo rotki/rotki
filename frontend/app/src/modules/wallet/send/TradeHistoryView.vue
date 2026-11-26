@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RecentTransaction } from '@/modules/wallet/types';
+import { RuiButton, RuiCard, RuiDialog, RuiIcon, RuiProgress, RuiTab, RuiTabItem, RuiTabItems, RuiTabs, RuiTooltip } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, ref } from 'vue';

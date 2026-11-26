@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import { Blockchain } from '@rotki/common';
+import { RuiTab, RuiTabs } from '@rotki/ui-library';
 import { isDefined, watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, onMounted, ref, useTemplateRef } from 'vue';

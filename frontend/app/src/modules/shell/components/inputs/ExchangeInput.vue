@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import type { RuiAutoComplete } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+import { RuiAutoComplete } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';

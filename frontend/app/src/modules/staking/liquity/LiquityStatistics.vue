@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LiquityPoolDetailEntry, LiquityStatisticDetails } from '@rotki/common';
+import { RuiButton, RuiButtonGroup, RuiCard, RuiIcon } from '@rotki/ui-library';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';

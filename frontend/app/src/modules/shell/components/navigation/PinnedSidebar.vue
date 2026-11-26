@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Pinned } from '@/modules/session/types';
-import { useBreakpoint } from '@rotki/ui-library';
+import { RuiButton, RuiIcon, RuiNavigationDrawer, RuiTooltip, useBreakpoint } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { type Component, computed } from 'vue';

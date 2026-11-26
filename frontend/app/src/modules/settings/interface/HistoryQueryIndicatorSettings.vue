@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton } from '@rotki/ui-library';
 import { set } from '@vueuse/shared';
 import { onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import PlanLimitMessage from '@/modules/premium/PlanLimitMessage.vue';

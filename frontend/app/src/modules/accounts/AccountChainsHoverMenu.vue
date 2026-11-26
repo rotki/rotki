@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AccountChainState } from '@/modules/accounts/AccountChainsOverflow.vue';
+import { RuiDivider, RuiMenu } from '@rotki/ui-library';
 import { useTimeoutFn } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, shallowRef } from 'vue';

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiIcon } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 import { useLinks } from '@/modules/shell/layout/use-links';

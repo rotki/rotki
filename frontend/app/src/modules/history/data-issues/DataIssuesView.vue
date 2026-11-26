@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Filters } from '@/modules/history/data-issues/data-issue-filter-keys';
 import type { DataIssue, DataIssuesRequestPayload } from '@/modules/history/data-issues/schemas';
+import { RuiAlert, RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { useIntervalFn, useTimeoutFn } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, onMounted, ref, watch } from 'vue';

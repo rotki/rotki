@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AccountingRuleWithLinkedProperty } from '@/modules/settings/types/accounting';
+import { RuiCheckbox, RuiMenuSelect, RuiSwitch } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';

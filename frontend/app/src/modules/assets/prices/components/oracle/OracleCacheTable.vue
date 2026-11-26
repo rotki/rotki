@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library';
 import type { OracleCacheMeta } from '@/modules/assets/prices/price-types';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { type DataTableColumn, RuiDataTable } from '@rotki/ui-library';
 import { computed, toRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';

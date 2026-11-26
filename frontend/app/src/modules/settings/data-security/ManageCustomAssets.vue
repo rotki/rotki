@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import { assert, NotificationKind, Severity } from '@rotki/common';
-import { RuiFileUpload } from '@rotki/ui-library';
+import { RuiButton, RuiFileUpload, RuiIcon } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, shallowRef, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';

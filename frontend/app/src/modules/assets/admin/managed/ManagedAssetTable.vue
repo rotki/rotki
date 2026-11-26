@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { SupportedAsset } from '@rotki/common';
-import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Filters } from '@/modules/assets/admin/managed/asset-filter-keys';
 import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import type { Collection } from '@/modules/core/common/collection';
 import type { PillParams } from '@/modules/core/table/param-refs';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { type DataTableSortData, RuiDataTable, RuiTableRowExpander, type TablePaginationData } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, shallowRef } from 'vue';
 import AssetUnderlyingTokens from '@/modules/assets/admin/AssetUnderlyingTokens.vue';

@@ -2,6 +2,7 @@
 import type { BigNumber } from '@rotki/common';
 import type { EChartsOption, LineSeriesOption } from 'echarts';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import { RuiSkeletonLoader } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import VChart from 'vue-echarts';

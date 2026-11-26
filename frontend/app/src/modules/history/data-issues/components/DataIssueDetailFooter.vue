@@ -2,6 +2,7 @@
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import type { NamedFailure } from '@/modules/shell/components/named-failure';
+import { RuiButton } from '@rotki/ui-library';
 import { set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

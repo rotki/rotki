@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import BankConnectorIcon from '@/modules/banks/components/BankConnectorIcon.vue';

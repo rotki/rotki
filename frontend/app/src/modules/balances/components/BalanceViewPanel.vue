@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
+import { RuiButton, RuiButtonGroup, RuiIcon, RuiProgress } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ManualPriceFormPayload } from '@/modules/assets/prices/price-types';
+import { RuiButton, RuiCard, RuiDialog, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { isDefined } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';

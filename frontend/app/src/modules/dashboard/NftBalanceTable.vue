@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
+import { RuiButton, RuiDataTable, RuiIcon } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, type HTMLAttributes, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

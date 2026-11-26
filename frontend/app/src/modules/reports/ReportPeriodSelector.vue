@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PeriodChangedEvent, SelectionChangedEvent } from '@/modules/reports/report-types';
+import { RuiButton, RuiButtonGroup, RuiIcon, RuiMenu } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import dayjs from 'dayjs';
 import { computed, onMounted, watch } from 'vue';

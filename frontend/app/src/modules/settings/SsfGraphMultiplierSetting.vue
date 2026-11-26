@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
+import { RuiTextField } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

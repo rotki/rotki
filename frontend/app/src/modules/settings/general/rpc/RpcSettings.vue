@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type BlockchainRpcNodeManager from '@/modules/settings/general/rpc/BlockchainRpcNodeManager.vue';
 import type SimpleRpcNodeManager from '@/modules/settings/general/rpc/simple/SimpleRpcNodeManager.vue';
-import { useBreakpoint } from '@rotki/ui-library';
+import { RuiButton, RuiDivider, RuiIcon, RuiMenuSelect, RuiTab, RuiTabs, useBreakpoint } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get } from '@vueuse/shared';
 import { defineAsyncComponent, nextTick, onMounted, useTemplateRef, watch } from 'vue';

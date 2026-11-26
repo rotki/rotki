@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAutoComplete, RuiButton, RuiIcon } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';

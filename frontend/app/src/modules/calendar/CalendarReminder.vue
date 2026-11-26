@@ -3,6 +3,7 @@ import type { ZodType } from 'zod';
 import type { CalendarReminderEntry as StoredEntry } from '@/modules/calendar/reminder';
 import type { CalendarEvent } from '@/modules/calendar/types';
 import { NotificationKind, Severity } from '@rotki/common';
+import { RuiAccordion, RuiAccordions, RuiButton, RuiIcon, RuiSwitch } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { computed, onBeforeMount, ref } from 'vue';

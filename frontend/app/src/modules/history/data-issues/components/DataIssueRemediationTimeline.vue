@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RemediationTimelineItem } from '@/modules/history/data-issues/types';
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { humanizeStrategy, strategyMessageKey } from '@/modules/history/data-issues/transforms';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ActiveFilter, FieldDef, FilterOp } from '@/modules/core/table/pill/core/types';
+import { RuiDateTimePicker } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiSkeletonLoader } from '@rotki/ui-library';
 import { set } from '@vueuse/shared';
 import { computed, ref } from 'vue';
 import { toRem } from '@/modules/core/common/data/data';

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { RuiIcons } from '@rotki/ui-library';
 import { NotificationKind, Severity } from '@rotki/common';
+import { RuiButton, RuiIcon, type RuiIcons, RuiNavigationDrawer } from '@rotki/ui-library';
 import { externalLinks, TWITTER_URL } from '@shared/external-links';
 import { createReusableTemplate } from '@vueuse/core';
 import { set } from '@vueuse/shared';

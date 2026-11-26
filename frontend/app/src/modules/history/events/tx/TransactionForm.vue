@@ -4,6 +4,7 @@ import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { AddTransactionHashPayload } from '@/modules/history/events/event-payloads';
 import { Blockchain } from '@rotki/common';
+import { RuiTextField } from '@rotki/ui-library';
 import { useArrayMap, useLocalStorage } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

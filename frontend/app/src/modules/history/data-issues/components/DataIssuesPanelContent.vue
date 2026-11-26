@@ -2,6 +2,7 @@
 import type { Filters } from '@/modules/history/data-issues/data-issue-filter-keys';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { RemediationTimelineItem } from '@/modules/history/data-issues/types';
+import { RuiAlert, RuiButton, RuiIcon, RuiProgress } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { useScroll, useVirtualList } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';

@@ -2,6 +2,7 @@
 import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import type { StakingValidatorManage } from '@/modules/accounts/blockchain/use-account-manage';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { RuiDataTable } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, shallowRef } from 'vue';
 import { useI18n } from 'vue-i18n';

@@ -3,6 +3,7 @@ import type { ChainInfo } from '@/modules/core/api/types/chains';
 import type { DecodeScope } from '@/modules/history/events/event-payloads';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { getTextToken } from '@rotki/common';
+import { RuiButton, RuiCheckbox, RuiIcon, RuiMenu, RuiTextField } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

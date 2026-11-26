@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RuiRevealableTextField, RuiTextField } from '@rotki/ui-library';
+import { RuiButton, RuiIcon, RuiRevealableTextField, RuiTextField, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, type Ref, type WritableComputedRef } from 'vue';
 import { useI18n } from 'vue-i18n';

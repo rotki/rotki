@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LocationNode } from '@/modules/locations/use-location-tree-api';
+import { RuiAlert, RuiTextField } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, ref, shallowRef, watch } from 'vue';

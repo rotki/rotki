@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
+import { RuiCard } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import StakingHeadlineBalance from '@/modules/staking/components/StakingHeadlineBalance.vue';
 import StakingPageLayout from '@/modules/staking/components/StakingPageLayout.vue';

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TradeLocationData } from '@/modules/core/common/location';
 import type { LocationBalancePreview } from '@/modules/dashboard/snapshots/utils/snapshot-location-balance';
+import { RuiIcon, RuiSwitch } from '@rotki/ui-library';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';

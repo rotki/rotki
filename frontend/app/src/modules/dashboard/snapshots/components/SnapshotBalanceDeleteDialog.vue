@@ -3,6 +3,7 @@ import type { Snapshot } from '@/modules/dashboard/snapshots';
 import type { BalanceDeletion } from '@/modules/dashboard/snapshots/composables/use-snapshot-draft';
 import type { LocationSplit } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { type BigNumber, Zero } from '@rotki/common';
+import { RuiAlert, RuiSwitch } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

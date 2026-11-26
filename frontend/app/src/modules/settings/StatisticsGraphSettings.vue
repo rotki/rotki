@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiIcon, RuiMenu } from '@rotki/ui-library';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AssetBalanceSourceOptions from '@/modules/settings/AssetBalanceSourceOptions.vue';

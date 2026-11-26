@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AssetInfoWithId } from '@rotki/common';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { RuiAlert, RuiButton, RuiCard, RuiDialog, RuiIcon, RuiTextField } from '@rotki/ui-library';
 import { useTimeoutFn } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';

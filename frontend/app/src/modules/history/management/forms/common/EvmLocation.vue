@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiTextField } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import EventLocationLabel from '@/modules/history/management/forms/common/EventLocationLabel.vue';
 

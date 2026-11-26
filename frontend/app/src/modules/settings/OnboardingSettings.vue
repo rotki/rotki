@@ -2,6 +2,7 @@
 import type { BackendOptions } from '@shared/ipc';
 import type { BackendConfiguration } from '@/modules/shell/app/backend';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { RuiAccordion, RuiAccordions, RuiButton, RuiCardHeader, RuiIcon, RuiTextField } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, ref, watch } from 'vue';

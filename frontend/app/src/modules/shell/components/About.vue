@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SystemVersion } from '@shared/ipc';
 import type { WebVersion } from '@/types';
+import { RuiButton, RuiCard, RuiIcon } from '@rotki/ui-library';
 import { asyncComputed, useClipboard } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { computed, toRefs } from 'vue';

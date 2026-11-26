@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAlert, RuiButton, RuiButtonGroup, RuiIcon } from '@rotki/ui-library';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import HashLink from '@/modules/shell/components/HashLink.vue';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { InteractionConnection } from './address-interaction-graph';
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import HashLink from '@/modules/shell/components/HashLink.vue';

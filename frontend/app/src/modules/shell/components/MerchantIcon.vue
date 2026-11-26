@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RuiIcons } from '@rotki/ui-library';
+import { RuiIcon, type RuiIcons, RuiTooltip } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 

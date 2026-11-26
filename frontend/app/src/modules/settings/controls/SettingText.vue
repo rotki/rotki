@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { RuiTextField } from '@rotki/ui-library';
 import type { ZodType } from 'zod';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
+import { RuiTextField } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

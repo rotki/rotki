@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AddressAccount, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { assert, Blockchain, transformCase } from '@rotki/common';
+import { RuiButton, RuiCard, RuiDialog, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { tap } from 'plainfp/result';

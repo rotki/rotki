@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import { type BigNumber, Blockchain } from '@rotki/common';
+import { type DataTableColumn, type DataTableSortData, RuiDataTable, type TablePaginationData } from '@rotki/ui-library';
 import { isDefined } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';

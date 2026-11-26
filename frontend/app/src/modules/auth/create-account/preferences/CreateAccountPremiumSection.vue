@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { PremiumSetup } from '@/modules/auth/login';
+import { RuiCheckbox, RuiIcon } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { get } from '@vueuse/shared';
 import { computed, useTemplateRef } from 'vue';

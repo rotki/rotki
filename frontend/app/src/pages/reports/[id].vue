@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAlert, RuiButton, RuiIcon, RuiSkeletonLoader } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { definePage } from 'vue-router/experimental';
 import { msg } from '@/message-key';

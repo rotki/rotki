@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiDialog } from '@rotki/ui-library';
 import { storeToRefs } from 'pinia';
 import { onMounted } from 'vue';
 import { useDataLoader } from '@/modules/auth/use-session-load';

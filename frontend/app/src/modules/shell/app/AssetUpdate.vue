@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiDialog } from '@rotki/ui-library';
 import AssetConflictDialog from '@/modules/shell/app/AssetConflictDialog.vue';
 import AssetUpdateInlineConfirm from '@/modules/shell/app/AssetUpdateInlineConfirm.vue';
 import AssetUpdateMessage from '@/modules/shell/app/AssetUpdateMessage.vue';

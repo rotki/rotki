@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { InteractionNode } from './address-interaction-graph';
 import type { InteractionPath } from './interaction-clusters';
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AddressInteractionAddress from './AddressInteractionAddress.vue';

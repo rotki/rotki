@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
 import type { HistoryEventCategoryDetailWithId, HistoryEventCategoryDirection } from '@/modules/history/events/event-type';
+import { type ContextColorsType, RuiIcon, type RuiIcons, RuiTooltip } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { type MessageKey, msg } from '@/message-key';

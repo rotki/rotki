@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { CreateAccountMode, CreateAccountStepId } from '@/modules/auth/create-account/types';
 import type { CreateAccountPayload } from '@/modules/auth/login';
+import { RuiButton } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { get } from '@vueuse/shared';
 import { computed, onBeforeMount, useTemplateRef } from 'vue';

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AssetMovementEvent } from '@/modules/history/events/schemas';
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
+import { RuiAutoComplete, RuiDivider, RuiTextArea, RuiTextField } from '@rotki/ui-library';
 import { generateUUID } from '@shared/utils';
 import { useLocalStorage, watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';

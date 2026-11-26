@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ExchangeAccountOption } from '@/modules/balances/exchanges/use-exchange-account-selection';
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';

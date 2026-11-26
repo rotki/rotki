@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { ButtonProps, RuiButton } from '@rotki/ui-library';
-
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+
+import { type ButtonProps, RuiButton, RuiTooltip } from '@rotki/ui-library';
 
 interface Props {
   tooltip: string;

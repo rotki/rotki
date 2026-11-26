@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ExternalApiKeyService } from '@/modules/settings/api-keys/external/external-api-key-services';
+import { RuiIcon } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

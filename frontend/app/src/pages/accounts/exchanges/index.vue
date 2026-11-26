@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Exchange, ExchangeFormData } from '@/modules/balances/types/exchanges';
+import { RuiButton, RuiDataTable, RuiIcon, RuiSwitch } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { useTimeoutFn } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
