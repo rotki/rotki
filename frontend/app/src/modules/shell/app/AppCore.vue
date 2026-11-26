@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { RuiButton, RuiIcon, RuiProgress, useBreakpoint } from '@rotki/ui-library';
-import { watchImmediate } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, onBeforeMount, ref, watch } from 'vue';
@@ -10,17 +9,14 @@ import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import NotificationPopup from '@/modules/core/notifications/NotificationPopup.vue';
-import SettingsSuggestionsDialog from '@/modules/settings/suggestions/SettingsSuggestionsDialog.vue';
-import { useSettingsSuggestions } from '@/modules/settings/suggestions/use-settings-suggestions';
-import { useSuggestionsStore } from '@/modules/settings/suggestions/use-suggestions-store';
 import AppDrawer from '@/modules/shell/app/AppDrawer.vue';
+import AppFloatingDock from '@/modules/shell/app/AppFloatingDock.vue';
 import AppIndicators from '@/modules/shell/app/AppIndicators.vue';
+import AppSettingsSuggestions from '@/modules/shell/app/AppSettingsSuggestions.vue';
 import AppSidebars from '@/modules/shell/app/AppSidebars.vue';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
-import { useCoreScroll } from '@/modules/shell/layout/use-core-scroll';
 import { initGraph } from '@/modules/statistics/init-graph';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
-import TaskDock from '@/modules/task-center/components/TaskDock.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -60,11 +56,8 @@ const route = useRoute();
 /** The height of the dock's pill; the expanded panel overlays the page and reserves no room. */
 const dockHeight = ref<number>(0);
 const { updateTray } = useInterop();
-const { scrollToTop, shouldShowScrollToTopButton } = useCoreScroll();
 
 const { isXlAndDown } = useBreakpoint();
-const { applySelected, dismissAll } = useSettingsSuggestions();
-const suggestionsStore = useSuggestionsStore();
 
 const pinnedPadding = computed<string | undefined>(() => {
   if (get(showPinned) && !get(isXlAndDown))
@@ -85,18 +78,6 @@ const dockPadding = computed<string | undefined>(() => {
   return height > 0 ? `calc(${height}px + 2rem)` : undefined;
 });
 
-/**
- * The same room for panels docked on the right, such as the pinned rail, whose bottom the dock
- * covers: its height, its 1rem offset and a gap, plus however far it rises above a stuck table bar.
- */
-watchImmediate(dockHeight, (height) => {
-  const style = document.documentElement.style;
-  if (height > 0)
-    style.setProperty('--rotki-dock-inset', `calc(${height}px + 1.5rem + var(--rui-sticky-bottom, 0px))`);
-  else
-    style.removeProperty('--rotki-dock-inset');
-});
-
 watch(overall, (overall) => {
   if (overall.percentage === '-')
     return;
@@ -112,12 +93,7 @@ onBeforeMount(() => {
 <template>
   <div>
     <NotificationPopup />
-    <SettingsSuggestionsDialog
-      v-model="suggestionsStore.showSuggestionsDialog"
-      :suggestions="suggestionsStore.pendingSuggestions"
-      @apply="applySelected($event)"
-      @dismiss="dismissAll()"
-    />
+    <AppSettingsSuggestions />
     <AppDrawer />
 
     <header
@@ -183,31 +159,7 @@ onBeforeMount(() => {
         </RouterView>
       </main>
 
-      <div class="fixed right-4 bottom-[calc(1rem+var(--rui-sticky-bottom))] z-rui-floating flex flex-col items-end gap-3 max-w-[calc(100vw-2rem)] transition-[bottom]">
-        <Transition
-          enter-from-class="opacity-0"
-          enter-to-class="opacity-1"
-          enter-active-class="transition duration-300"
-          leave-from-class="opacity-1"
-          leave-to-class="opacity-0"
-          leave-active-class="transition duration-100"
-        >
-          <RuiButton
-            v-if="shouldShowScrollToTopButton"
-            color="primary"
-            variant="fab"
-            size="lg"
-            icon
-            class="max-sm:fixed max-sm:left-4 max-sm:bottom-[calc(1rem+var(--rui-sticky-bottom))]"
-            @click="scrollToTop()"
-          >
-            <RuiIcon name="lu-arrow-up" />
-          </RuiButton>
-        </Transition>
-        <div class="flex flex-col items-end max-w-full empty:hidden">
-          <TaskDock v-model:bar-height="dockHeight" />
-        </div>
-      </div>
+      <AppFloatingDock v-model:dock-height="dockHeight" />
     </div>
   </div>
 </template>

@@ -11,16 +11,10 @@ import { useWrappedDateRange } from '../use-wrapped-date-range';
 import { useWrappedGnosisPay } from '../use-wrapped-gnosis-pay';
 import { useWrappedHistoryEvents } from '../use-wrapped-history-events';
 import { useWrappedStatistics } from '../use-wrapped-statistics';
-import WrappedExchangeCard from './cards/WrappedExchangeCard.vue';
-import WrappedGasCard from './cards/WrappedGasCard.vue';
-import WrappedGnosisPayCard from './cards/WrappedGnosisPayCard.vue';
-import WrappedProtocolCard from './cards/WrappedProtocolCard.vue';
-import WrappedTopDaysCard from './cards/WrappedTopDaysCard.vue';
-import WrappedTransactionsCard from './cards/WrappedTransactionsCard.vue';
 import WrappedAlerts from './WrappedAlerts.vue';
 import WrappedDateFilter from './WrappedDateFilter.vue';
-import WrappedHighlights from './WrappedHighlights.vue';
 import WrappedSkeletonCards from './WrappedSkeletonCards.vue';
+import WrappedSummary from './WrappedSummary.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();
@@ -106,24 +100,11 @@ watch(loading, (isLoading) => {
       :class="{ 'opacity-60': slowFetch }"
       :aria-busy="loading"
     >
-      <WrappedHighlights
-        :eth-on-gas="summary.ethOnGas"
-        :transactions="summary.transactionsPerChain"
-        :trades="summary.tradesByExchange"
-        :top-days="summary.topDaysByNumberOfTransactions"
+      <WrappedSummary
+        :summary="summary"
+        :gnosis-pay-result="gnosisPayResult"
+        :show-gnosis-data="showGnosisData"
       />
-
-      <div class="grid gap-4 lg:grid-cols-2">
-        <WrappedTransactionsCard :transactions-per-chain="summary.transactionsPerChain" />
-        <WrappedProtocolCard :transactions-per-protocol="summary.transactionsPerProtocol" />
-        <WrappedGasCard :eth-on-gas-per-address="summary.ethOnGasPerAddress" />
-        <WrappedTopDaysCard :top-days-by-number-of-transactions="summary.topDaysByNumberOfTransactions" />
-        <WrappedExchangeCard :trades-by-exchange="summary.tradesByExchange" />
-        <WrappedGnosisPayCard
-          :gnosis-pay-result="gnosisPayResult"
-          :show-gnosis-data="showGnosisData"
-        />
-      </div>
     </div>
   </div>
 </template>

@@ -1,26 +1,17 @@
 import { Blockchain } from '@rotki/common';
 import { createSharedComposable } from '@vueuse/core';
-import { get, set } from '@vueuse/shared';
+import { get } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
 import { storeToRefs } from 'pinia';
-import { map as mapResult, type Result } from 'plainfp/result';
-import { computed, type Ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { msg } from '@/message-key';
+import { computed, watch } from 'vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { logger } from '@/modules/core/common/logging/logging';
 import { Module } from '@/modules/core/common/modules';
-import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
 import { usePremium } from '@/modules/premium/use-premium';
-import { useSetting } from '@/modules/settings/use-setting';
-import { activityLabelFor } from '@/modules/task-center/activity-labels';
 import { ActivityPart } from '@/modules/task-center/core/types';
-import { useNativeTask } from '@/modules/task-center/use-native-task';
-import { liquidityPoolsActivity, type LiquidityPoolsPart } from './liquidity-pools.activity';
-import { PoolBalances } from './types';
 import { usePoolApi } from './use-pool-api';
 import { usePoolBalancesStore } from './use-pool-balances-store';
+import { type PoolProtocol, usePoolProtocolQuery } from './use-pool-protocol-query';
 
 interface UsePoolDataFetchingReturn {
   fetch: (refresh?: boolean) => Promise<void>;
@@ -36,56 +27,13 @@ export const usePoolDataFetching = createSharedComposable((): UsePoolDataFetchin
 
   const { sushiswapPoolBalances, uniswapPoolBalances } = storeToRefs(usePoolBalancesStore());
   const { recentlyAddedAddresses } = storeToRefs(useBlockchainAccountsStore());
-  const activeModules = useSetting('activeModules');
 
   const premium = usePremium();
-  const { t } = useI18n({ useScope: 'global' });
 
   const { getSushiswapBalances, getUniswapV2Balances } = usePoolApi();
-  const { statusOf, submitTask } = useNativeTask();
+  const { retrievePoolBalances } = usePoolProtocolQuery();
 
-  /**
-   * The two protocols differ only in module gate, task type, endpoint and target ref, so they
-   * share one native submission. Each is a singleton activity (`liquidity-pools:<protocol>`);
-   * the old `isTaskRunning || (LOADED && !refresh)` gate becomes the orchestrator's `active` and
-   * `everCompleted`.
-   */
-  interface Protocol {
-    readonly module: Module;
-    readonly part: LiquidityPoolsPart;
-    readonly label: string;
-    readonly query: () => Promise<{ taskId: number }>;
-    readonly target: Ref<PoolBalances>;
-  }
-
-  async function retrievePoolBalances(protocol: Protocol, refresh: boolean): Promise<void> {
-    if (!get(activeModules).includes(protocol.module))
-      return;
-
-    const status = statusOf(liquidityPoolsActivity.kind, ...liquidityPoolsActivity.partsOf({ part: protocol.part }));
-    if (status.active || (status.everCompleted && !refresh))
-      return;
-
-    const outcome = await submitTask({
-      id: liquidityPoolsActivity.id({ part: protocol.part }),
-      kind: liquidityPoolsActivity.kind,
-      rerunnable: true,
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<PoolBalances>(
-          async () => protocol.query(),
-        ),
-        (result) => {
-          set(protocol.target, PoolBalances.parse(result));
-        },
-      ),
-      subtitle: activityLabelFor(msg.$t('task_center.activity.liquidity_pools.protocol'), { protocol: protocol.label }),
-      title: t('task_center.group.liquidity_pools'),
-    });
-
-    onActionableError(outcome, error => logger.error(`action failure for ${protocol.label}:`, error.message));
-  }
-
-  const uniswapV2: Protocol = {
+  const uniswapV2: PoolProtocol = {
     label: 'Uniswap V2',
     module: Module.UNISWAP,
     part: ActivityPart.UNISWAP_V2,
@@ -93,7 +41,7 @@ export const usePoolDataFetching = createSharedComposable((): UsePoolDataFetchin
     target: uniswapPoolBalances,
   };
 
-  const sushiswap: Protocol = {
+  const sushiswap: PoolProtocol = {
     label: 'Sushiswap',
     module: Module.SUSHISWAP,
     part: ActivityPart.SUSHISWAP,

@@ -1,25 +1,17 @@
+import type { DeepReadonly, Ref } from 'vue';
 import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/modules/reports/report-types';
 import { NotificationKind, Severity } from '@rotki/common';
-import { isDefined } from '@vueuse/core';
-import { get, set } from '@vueuse/shared';
-import { isErr, type Result } from 'plainfp/result';
-import { type DeepReadonly, readonly, type Ref, shallowRef } from 'vue';
+import { get } from '@vueuse/shared';
 import { useI18n } from 'vue-i18n';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { downloadFileByTextContent } from '@/modules/core/common/file/download';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { isCancellation, type TaskError } from '@/modules/core/tasks/task-result';
-import { pnlReportImportActivity } from '@/modules/reports/reports.activity';
+import { useReportDebugImport } from '@/modules/reports/use-report-debug-import';
 import { useReportGeneration } from '@/modules/reports/use-report-generation';
-import { useReportOperations } from '@/modules/reports/use-report-operations';
-import { useReportsApi } from '@/modules/reports/use-reports-api';
 import { PinnedNames } from '@/modules/session/types';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
-import { activityLabel } from '@/modules/task-center/activity-labels';
-import { ActivityKind, ActivityPart } from '@/modules/task-center/core/types';
-import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseReportsPageActionsOptions {
   /** Resolves a local file path from a File object (Electron only) */
@@ -42,16 +34,12 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const { submitTask } = useNativeTask();
   const { exportReportData, generateReport } = useReportGeneration();
-  const { fetchReports } = useReportOperations();
   const { unpin: unpinReportCard } = usePinnedPanel(PinnedNames.REPORT_ACTIONABLE_CARD);
   const { notify, notifyError } = useNotifications();
   const dateDisplayFormat = useSetting('dateDisplayFormat');
   const { appSession, openDirectory } = useInterop();
-  const { importReportData, uploadReportData } = useReportsApi();
-
-  const importDataLoading = shallowRef<boolean>(false);
+  const { importData, importDataLoading } = useReportDebugImport({ getPath, reportDebugData });
 
   /**
    * Generates a report for the period and navigates to it.
@@ -113,36 +101,10 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
     }
   }
 
-  async function importData(): Promise<void> {
-    if (!isDefined(reportDebugData))
-      return;
-
-    set(importDataLoading, true);
-
-    const file = get(reportDebugData);
-    const path = getPath(file);
-
-    const outcome = await submitTask<boolean>({
-      id: pnlReportImportActivity.id(),
-      kind: pnlReportImportActivity.kind,
-      rerunnable: false,
-      run: async ({ runTask }): Promise<Result<boolean, TaskError>> => runTask<boolean>(
-        async () => path ? importReportData(path) : uploadReportData(file),
-      ),
-      subtitle: activityLabel(ActivityKind.PNL_REPORT, ActivityPart.IMPORT),
-      title: t('profit_loss_reports.debug.import_message.title'),
-    });
-
-    if (!isErr(outcome) || isCancellation(outcome.error))
-      await fetchReports();
-
-    set(importDataLoading, false);
-  }
-
   return {
     exportData,
     generate,
     importData,
-    importDataLoading: readonly(importDataLoading),
+    importDataLoading,
   };
 }

@@ -1,17 +1,13 @@
 <script lang="ts" setup>
 import type { ZodType } from 'zod';
-import type { ValidatorAccount } from '@/modules/accounts/blockchain-accounts';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { RepullingEthStakingPayload } from '@/modules/history/events/event-payloads';
 import { Blockchain, toHumanReadable } from '@rotki/common';
 import { RuiAlert, RuiAutoComplete } from '@rotki/ui-library';
 import { syncRefs, watchDeep, watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
-import { storeToRefs } from 'pinia';
 import { computed, onBeforeUnmount, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { isValidatorAccount } from '@/modules/accounts/account-utils';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { toServerErrors } from '@/modules/core/form/server-errors';
 import { type FormApi, noSubmit, useForm } from '@/modules/core/form/use-form';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
@@ -21,11 +17,11 @@ import {
   type RepullingFilterMode,
   toEthStakingPayload,
 } from '@/modules/history/events/tx/repulling-forms';
+import { useEthStakingValidatorOptions } from '@/modules/history/events/tx/use-eth-staking-validator-options';
 import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
 import EnsAvatar from '@/modules/shell/components/display/EnsAvatar.vue';
 import DateTimeRangePicker from '@/modules/shell/components/inputs/DateTimeRangePicker.vue';
 import ValidatorFilterInput from '@/modules/staking/eth2/ValidatorFilterInput.vue';
-import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 
 const modelValue = defineModel<RepullingEthStakingPayload>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
@@ -55,8 +51,7 @@ const form: FormApi<RepullingEthStakingFormState, RepullingEthStakingPayload> = 
   transform: toEthStakingPayload,
 });
 
-const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
-const { ethStakingValidators } = storeToRefs(useBlockchainValidatorsStore());
+const { ethStakingValidators, hasNoValidators, withdrawalAddressOptions } = useEthStakingValidatorOptions();
 
 const entryTypeOptions: { id: string; label: string }[] = [
   {
@@ -79,23 +74,6 @@ const filterModeOptions = computed<{ id: RepullingFilterMode; label: string }[]>
     label: t('transactions.repulling.eth_staking.filter_mode.addresses'),
   },
 ]);
-
-const eth2Accounts = computed(() => get(accountsPerChain)[Blockchain.ETH2] ?? []);
-
-const validatorAccounts = computed<ValidatorAccount[]>(() =>
-  get(eth2Accounts).filter(isValidatorAccount),
-);
-
-const withdrawalAddressOptions = computed<string[]>(() => {
-  const addresses = new Set<string>();
-  for (const account of get(validatorAccounts)) {
-    if (account.withdrawalAddress)
-      addresses.add(account.withdrawalAddress);
-  }
-  return [...addresses];
-});
-
-const hasNoValidators = computed<boolean>(() => get(eth2Accounts).length === 0);
 
 const isBlockProductions = computed<boolean>(() => form.state.entryType === OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS);
 

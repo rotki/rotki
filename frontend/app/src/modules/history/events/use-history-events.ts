@@ -1,24 +1,19 @@
 import type { MaybeRef } from 'vue';
-import type { AddressBookSimplePayload } from '@/modules/accounts/address-book/eth-names';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { Collection } from '@/modules/core/common/collection';
 import type { AddHistoryEventPayload, HistoryEventRequestPayload, ModifyHistoryEventPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventCollectionRow, HistoryEventRow, HistoryEventsCollectionResponse } from '@/modules/history/events/schemas';
-import { startPromise } from '@shared/utils';
 import { get } from '@vueuse/shared';
 import { err, fromPromise, map, ok, type ResultAsync } from 'plainfp/result-async';
 import { useI18n } from 'vue-i18n';
-import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
 import { fromRequest, isRequestFailure, type RequestError } from '@/modules/core/api/request-result';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
-import { arrayify } from '@/modules/core/common/data/array';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { millisecondsToSeconds } from '@/modules/core/common/data/date';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
-import { getEthAddressesFromText } from '@/modules/history/history-utils';
+import { useHistoryEventsAddressBook } from '@/modules/history/events/use-history-events-address-book';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 
 interface UseHistoryEventsReturn {
@@ -40,44 +35,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
   } = useHistoryEventsApi();
 
   const { signalEventsModified } = useHistoryStore();
-  const { fetchEnsNames } = useEnsOperations();
-
-  const { getChain } = useSupportedChains();
-
-  function extractAddresses(
-    notes: string | undefined,
-    addressesNamesPayload: AddressBookSimplePayload[],
-    location: string,
-  ): void {
-    if (!notes) {
-      return;
-    }
-    addressesNamesPayload.push(
-      ...getEthAddressesFromText(notes).map(address => ({
-        address,
-        blockchain: getChain(location),
-      })),
-    );
-  }
-
-  function populateAddressBook(collection: Collection<HistoryEventCollectionRow>): void {
-    const addressesNamesPayload: AddressBookSimplePayload[] = [];
-
-    for (const row of collection.data) {
-      const events = arrayify(row);
-      for (const { entry } of events) {
-        extractAddresses(entry.userNotes, addressesNamesPayload, entry.location);
-        extractAddresses(entry.autoNotes, addressesNamesPayload, entry.location);
-
-        if ('address' in entry && entry.address) {
-          extractAddresses(entry.address, addressesNamesPayload, entry.location);
-        }
-      }
-    }
-
-    if (addressesNamesPayload.length > 0)
-      startPromise(fetchEnsNames(addressesNamesPayload));
-  }
+  const { populateAddressBook } = useHistoryEventsAddressBook();
 
   /** Flattens each row's `entry` into the row, keeping grouped rows as arrays. */
   function toEventRows(collection: Collection<HistoryEventCollectionRow>): Collection<HistoryEventRow> {

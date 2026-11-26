@@ -1,18 +1,14 @@
 import type { ResultAsync } from 'plainfp/result-async';
 import type { ConnectionRef } from '@/modules/core/common/connection';
-import type { TaskError } from '@/modules/core/tasks/task-result';
 import { assert } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
-import { isOk, map as mapResult, type Result } from 'plainfp/result';
+import { isOk, map as mapResult } from 'plainfp/result';
 import { useI18n } from 'vue-i18n';
-import { msg } from '@/message-key';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { isSameConnection, mergeConnectionBalances } from '@/modules/banks/bank-balances';
-import { bankBalancesActivity, bankConnectionBalancesActivity } from '@/modules/banks/banks.activity';
+import { isSameConnection } from '@/modules/banks/bank-balances';
 import {
-  BankBalancesResponse,
   type BankConnection,
   type BankConnectionIdentity,
   type BankFormData,
@@ -21,6 +17,7 @@ import {
   type BankSyncPayload,
   isBankSetupComplete,
 } from '@/modules/banks/types';
+import { useBankBalancesQuery } from '@/modules/banks/use-bank-balances-query';
 import { useBankConnectionsStore } from '@/modules/banks/use-bank-connections-store';
 import { useBanksApi } from '@/modules/banks/use-banks-api';
 import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
@@ -28,8 +25,6 @@ import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useBankEventsRefresh } from '@/modules/history/events/tx/use-bank-events-refresh';
-import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { useNativeTask } from '@/modules/task-center/use-native-task';
 
 interface UseBanksReturn {
   /** Loads the supported banks; a failure is kept in the store for the bank pages to show, not notified. */
@@ -92,7 +87,7 @@ export function useBanks(): UseBanksReturn {
   const store = useBankConnectionsStore();
   const { bankBalances } = storeToRefs(useBalancesStore());
   const { notifyError } = useNotifications();
-  const { submitTask } = useNativeTask();
+  const { queryBankBalances } = useBankBalancesQuery();
   const { queryAllBankEvents } = useBankEventsRefresh();
 
   const refreshSupportedBanks = async (): Promise<void> => {
@@ -116,29 +111,8 @@ export function useBanks(): UseBanksReturn {
   };
 
   const fetchBankBalances = async (ignoreCache = false, connection?: ConnectionRef): Promise<void> => {
-    if (get(store.connections).length === 0) {
-      set(bankBalances, []);
-      return;
-    }
-
-    const activity = connection
-      ? { id: bankConnectionBalancesActivity.id(connection), kind: bankConnectionBalancesActivity.kind, lane: bankConnectionBalancesActivity.laneOf?.(connection) }
-      : { id: bankBalancesActivity.id(), kind: bankBalancesActivity.kind, lane: bankBalancesActivity.laneOf?.() };
-
-    await submitTask({
-      ...activity,
-      rerunnable: true,
-      run: async ({ rerun, runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<BankBalancesResponse>(async () => api.queryBankBalances(ignoreCache || rerun, connection)),
-        (result) => {
-          const fresh = BankBalancesResponse.parse(result).connections;
-          set(bankBalances, mergeConnectionBalances(get(bankBalances), fresh));
-        },
-      ),
-      subtitle: activityLabelFor(msg.$t('task_center.activity.bank_balances.query')),
-      title: t('task_center.group.bank_balances'),
-    });
-    await refreshBankConnections();
+    if (await queryBankBalances(ignoreCache, connection))
+      await refreshBankConnections();
   };
 
   const resolveSyncTargets = ({ connector, identifier }: BankSyncPayload): BankConnection[] =>
