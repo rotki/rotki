@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { RuiProgress } from '@rotki/ui-library';
-import { watchImmediate } from '@vueuse/core';
-import { logicNot, logicOr } from '@vueuse/math';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -11,12 +9,9 @@ import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-ext
 import ServiceKeyCard, { type FeatureGate, type ServiceKeyAction } from '@/modules/settings/api-keys/ServiceKeyCard.vue';
 import ServiceKeyDeleteButton from '@/modules/settings/api-keys/ServiceKeyDeleteButton.vue';
 import ProviderSelectionDialog from '@/modules/wallet/ProviderSelectionDialog.vue';
-import { AuthStep, GnosisPayError } from '../types';
-import { useGnosisPayAuthState, useGnosisPayAuthSteps } from '../use-gnosis-pay-auth-state';
+import { AuthStep } from '../types';
 import { useGnosisPaySafeMigration } from '../use-gnosis-pay-safe-migration';
-import { useGnosisPaySigning } from '../use-gnosis-pay-signing';
-import { useGnosisPayWallet } from '../use-gnosis-pay-wallet';
-import { GNOSIS_CHAIN_ID, useGnosisPayWalletStatus } from '../use-gnosis-pay-wallet-status';
+import { useGnosisPaySignIn } from '../use-gnosis-pay-sign-in';
 import GnosisPayAddressValidation from './GnosisPayAddressValidation.vue';
 import GnosisPayAuthStep from './GnosisPayAuthStep.vue';
 import GnosisPayConnected from './GnosisPayConnected.vue';
@@ -55,159 +50,51 @@ const serviceKeyCard = useTemplateRef<InstanceType<typeof ServiceKeyCard>>('serv
 /** With a session already in place the dialog shows it; this runs the steps again on request. */
 const signingInAgain = ref<boolean>(false);
 
-const authState = useGnosisPayAuthState();
 const {
+  availableProviders,
+  cancelSigning,
   checkingRegisteredAccounts,
+  checkRegisteredAccounts,
   clearError,
   clearValidation,
+  connectedAddress,
+  connectedSafes,
+  connectionErrorMessage,
   controlledSafeAddresses,
+  detectingProviders,
+  disconnect,
   errorCloseable,
   errorContext,
   errorType,
-  gnosisPayAdminsMapping,
+  goToStep,
+  handleProviderSelection,
   hasRegisteredAccounts,
   isAddressValid,
-  setError,
+  isConnecting,
+  isDisconnecting,
+  isOnGnosisChain,
+  isStepComplete,
+  isStepCurrent,
+  isWalletConnect,
+  isWalletConnected,
+  modelShowProviderSelection: showProviderSelection,
+  onConnectClicked,
+  primaryActionDisabled,
   showNoRegisteredAccountsError,
   signingInProgress,
   signInSuccess,
-  validatingAddress,
-} = authState;
-
-/** The Safes the session covers: those the signing wallet controls, else every tracked one. */
-const connectedSafes = computed<string[]>(() => {
-  const controlled = get(controlledSafeAddresses);
-  return controlled.length > 0 ? controlled : Object.keys(get(gnosisPayAdminsMapping));
-});
-
-const wallet = useGnosisPayWallet({
-  checkingRegisteredAccounts,
-  clearError,
-  clearValidation,
-  controlledSafeAddresses,
-  gnosisPayAdminsMapping,
-  hasRegisteredAccounts,
-  isAddressValid,
-  setError,
-  validatingAddress,
-});
-
-const {
-  checkRegisteredAccounts,
-  connect,
-  connectedAddress,
-  disconnect,
-  handleProviderSelection,
-  isWalletConnected,
+  signInWithEthereum,
   switchingNetwork,
-  switchToChain,
+  switchToGnosis,
   validateAddress,
-} = wallet;
-
-const signing = useGnosisPaySigning({
-  clearError,
-  connectedAddress,
-  errorType,
+  validatingAddress,
+  validationErrorMessage,
+} = useGnosisPaySignIn({
   onSignInComplete: async () => {
     await load();
     await checkMigration();
   },
-  setError,
-  signingInProgress,
-  signInSuccess,
 });
-
-const { signInWithEthereum } = signing;
-
-const { currentStep, isStepComplete, isStepCurrent } = useGnosisPayAuthSteps(
-  hasRegisteredAccounts,
-  isWalletConnected,
-  validatingAddress,
-  signInSuccess,
-);
-
-const {
-  availableProviders,
-  detectingProviders,
-  isConnecting,
-  isDisconnecting,
-  isOnGnosisChain,
-  isWalletConnect,
-  showProviderSelection,
-} = useGnosisPayWalletStatus();
-
-// Separate error messages for different steps
-const connectionErrorMessage = computed<string>(() => {
-  const type = get(errorType);
-  if (!type)
-    return '';
-
-  const context = get(errorContext);
-
-  switch (type) {
-    case GnosisPayError.NO_WALLET_CONNECTED:
-      return t('external_services.gnosispay.errors.no_wallet_connected');
-    case GnosisPayError.CONNECTION_FAILED:
-      return context.message || t('external_services.gnosispay.errors.connection_failed');
-    default:
-      return '';
-  }
-});
-
-const validationErrorMessage = computed<string>(() => {
-  const type = get(errorType);
-  if (!type)
-    return '';
-
-  const context = get(errorContext);
-
-  switch (type) {
-    case GnosisPayError.INVALID_ADDRESS:
-      return t('external_services.gnosispay.errors.invalid_address');
-    case GnosisPayError.SIGNATURE_REJECTED:
-      return t('external_services.gnosispay.errors.signature_rejected');
-    case GnosisPayError.OTHER:
-      return context.message || t('external_services.gnosispay.errors.unknown');
-    default:
-      return '';
-  }
-});
-
-const primaryActionDisabled = logicOr(signingInProgress, logicNot(connectedAddress), logicNot(isOnGnosisChain));
-
-async function switchToGnosis(): Promise<void> {
-  await switchToChain(GNOSIS_CHAIN_ID);
-}
-
-function cancelSigning(): void {
-  set(signingInProgress, false);
-}
-
-async function onConnectClicked(): Promise<void> {
-  if (get(isWalletConnected))
-    await disconnect();
-  else
-    await connect();
-}
-
-async function goToStep(step: number): Promise<void> {
-  const current = get(currentStep);
-
-  if (step >= current)
-    return;
-
-  // Navigate to the requested step by clearing state
-  if (step === AuthStep.CONNECT_WALLET) {
-    // Go back to Step 1: disconnect wallet
-    if (get(isWalletConnected))
-      await disconnect();
-  }
-  else if (step === AuthStep.VALIDATE_ADDRESS) {
-    // Go back to Step 2: clear validation
-    clearValidation();
-    clearError();
-  }
-}
 
 // Check for registered accounts when dialog opens
 watch(() => get(serviceKeyCard)?.openDialog, async (isOpen) => {
@@ -235,12 +122,12 @@ watch(connectedAddress, async (address) => {
 });
 
 // Check for a Safe left untracked by the Gnosis Pay migration whenever the token changes.
-watchImmediate(key, async (apiKey) => {
+watch(key, async (apiKey) => {
   if (apiKey)
     await checkMigration();
   else
     set(untrackedSafe, undefined);
-});
+}, { immediate: true });
 
 // A completed sign-in goes back to the connected state, which names the Safe, instead of closing.
 watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {

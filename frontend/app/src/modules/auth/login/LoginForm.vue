@@ -1,30 +1,22 @@
 <script setup lang="ts">
-import type { ZodType } from 'zod';
 import type { LoginCredentials, SyncApproval } from '@/modules/auth/login';
 import { RuiAlert, RuiButton, RuiRevealableTextField } from '@rotki/ui-library';
-import { externalLinks } from '@shared/external-links';
-import { useArraySome, watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
-import { storeToRefs } from 'pinia';
-import { computed, nextTick, onBeforeMount, onMounted, ref, useTemplateRef, watch } from 'vue';
+import { nextTick, onBeforeMount, onMounted, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { focusInput } from '@/modules/auth/login/focus-input';
-import IncompleteUpgradeAlert from '@/modules/auth/login/IncompleteUpgradeAlert.vue';
-import { classifyLoginErrors, type LoginFormState, loginSchema } from '@/modules/auth/login/login-form';
 import LoginBackendToggle from '@/modules/auth/login/LoginBackendToggle.vue';
+import LoginConflictAlerts from '@/modules/auth/login/LoginConflictAlerts.vue';
 import LoginCustomBackendFields from '@/modules/auth/login/LoginCustomBackendFields.vue';
-import LoginNotices from '@/modules/auth/login/LoginNotices.vue';
+import LoginIntro from '@/modules/auth/login/LoginIntro.vue';
 import LoginRememberOptions from '@/modules/auth/login/LoginRememberOptions.vue';
 import LoginUsernameField from '@/modules/auth/login/LoginUsernameField.vue';
 import LoginWelcomeMessageDialog from '@/modules/auth/login/LoginWelcomeMessageDialog.vue';
-import PremiumSyncConflictAlert from '@/modules/auth/login/PremiumSyncConflictAlert.vue';
 import { useCustomBackend } from '@/modules/auth/login/use-custom-backend';
+import { useLoginFormValidation } from '@/modules/auth/login/use-login-form-validation';
 import { useLoginRememberOptions } from '@/modules/auth/login/use-login-remember-options';
 import { useLogout } from '@/modules/auth/use-logout';
 import { useSavedProfiles } from '@/modules/auth/use-saved-profiles';
-import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { noSubmit, useForm } from '@/modules/core/form/use-form';
-import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const {
   errors = [],
@@ -46,9 +38,6 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { loadProfiles, resolveStoredUsername, savedUsernames } = useSavedProfiles();
-const authStore = useSessionAuthStore();
-const { conflictExist } = storeToRefs(authStore);
-const { resetIncompleteUpgradeConflict, resetSyncConflict } = authStore;
 
 const touched = () => emit('touched');
 const newAccount = () => emit('new-account');
@@ -81,37 +70,24 @@ const {
   storedUsername,
 } = useLoginRememberOptions({ isDocker: () => !!isDocker });
 
-const schema = computed<ZodType>(() => loginSchema({
-  emptyPassword: t('login.validation.non_empty_password'),
-  emptyUrl: t('login.custom_backend.validation.non_empty'),
-  invalidUrl: t('login.custom_backend.validation.url'),
-  invalidUsername: t('login.validation.valid_username'),
-  requiredUsername: t('login.validation.non_empty_username'),
-}, get(customBackendDisplay)));
-
 const {
-  errors: fieldErrors,
+  conflictExist,
+  fieldErrors,
+  hasServerError,
+  isLoggedInError,
+  modelState: state,
+  serverErrors,
   setServerErrors,
-  state,
+  submitDisabled,
   touch,
-  valid: parses,
-} = useForm<LoginFormState, LoginFormState>({
-  initial: (): LoginFormState => ({ customBackendUrl: '', password: '', username: '' }),
-  schema,
-  submit: noSubmit,
-  transform: (current): LoginFormState => ({ ...current }),
+} = useLoginFormValidation({
+  customBackendDisplay,
+  customBackendUrl,
+  errors: () => errors,
+  loading: () => loading,
+  onTouched: touched,
+  storedUsername,
 });
-
-const serverErrors = computed<Record<string, string[]>>(() => classifyLoginErrors(errors));
-
-/** Whether the rejection is about the credentials, which is what picks the actionable alert. */
-const hasServerError = computed<boolean>(() => Object.keys(get(serverErrors)).length > 0);
-
-const isLoggedInError = useArraySome(() => errors, error => error.includes('is already logged in'));
-
-const submitDisabled = computed<boolean>(() =>
-  !get(parses) || loading || get(conflictExist) || get(customBackendDisplay),
-);
 
 /** Why logging out the other session failed, named in the alert that offered it. */
 const logoutFailure = ref<string>();
@@ -161,44 +137,6 @@ async function login(actions?: { syncApproval?: SyncApproval; resumeFromBackup?:
   await rememberCredentials(state.username, state.password);
 }
 
-function abortLogin() {
-  resetSyncConflict();
-  resetIncompleteUpgradeConflict();
-}
-
-watch(() => [state.username, state.password], ([username, password], [oldUsername, oldPassword]) => {
-  const restoredFromLocalStorage = !oldUsername && username === get(storedUsername);
-  if (restoredFromLocalStorage)
-    return;
-
-  if (username !== oldUsername || password !== oldPassword)
-    touched();
-});
-
-/**
- * Copies the url the backend panel's composable owns into the form state, so it is validated
- * alongside the credentials.
- *
- * @remarks
- * Touch is deliberately left out of this: an untouched empty url has to stay silent until the user
- * has actually been in the field.
- *
- * @param url - the url the panel currently holds
- */
-function mirrorBackendUrl(url: string): void {
-  state.customBackendUrl = url;
-}
-
-watchImmediate(customBackendUrl, mirrorBackendUrl);
-
-watch(customBackendUrl, () => {
-  touch('customBackendUrl');
-});
-
-watchImmediate(serverErrors, (value) => {
-  setServerErrors(value);
-}, { deep: true });
-
 onBeforeMount(async () => {
   await loadProfiles();
   if (get(savedUsernames).length === 0) {
@@ -223,26 +161,7 @@ onMounted(() => {
   >
     <div>
       <div class="max-w-120 mx-auto">
-        <h1 class="text-h4 mb-2">
-          {{ t('login.title') }}
-        </h1>
-
-        <div class="text-body-1 text-rui-text-secondary mb-8">
-          <i18n-t
-            scope="global"
-            keypath="login.description.intro"
-            tag="p"
-          >
-            <template #documentation>
-              <ExternalLink
-                :text="t('login.description.learn_more')"
-                :url="externalLinks.usageGuide"
-              />
-            </template>
-          </i18n-t>
-        </div>
-
-        <LoginNotices />
+        <LoginIntro />
 
         <div>
           <form
@@ -302,12 +221,7 @@ onMounted(() => {
               @clear="clearBackend()"
             />
 
-            <PremiumSyncConflictAlert @proceed="login({ syncApproval: $event })" />
-
-            <IncompleteUpgradeAlert
-              @confirm="login({ resumeFromBackup: true })"
-              @cancel="abortLogin()"
-            />
+            <LoginConflictAlerts @login="login($event)" />
 
             <div class="flex flex-col justify-stretch space-y-8 pt-6">
               <RuiButton

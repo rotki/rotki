@@ -5,7 +5,6 @@ import { translationKeys } from '@rotki/ui-library';
 
 import { backendMappingKeys } from './app/backend-strings.generated.js';
 import { premiumComponentKeys } from './app/premium-keys.generated.js';
-import { importCapBaseline } from './eslint-import-cap-baseline.js';
 import { localRules } from './eslint-local-rules.js';
 
 const src = path.join('app', 'src');
@@ -91,12 +90,6 @@ export default rotki({
   files: ['**/vite.config.ts', '**/vite.config.*.ts', '**/vitest.config.ts', '**/vitest.*.config.ts'],
   rules: {
     '@rotki/no-dot-ts-imports': 'off',
-  },
-}, {
-  // See `eslint-import-cap-baseline.js` for why these files get a higher cap.
-  files: importCapBaseline,
-  rules: {
-    '@rotki/max-dependencies': ['error', { max: 26 }],
   },
 }, {
   files: ['**/src/**/*.ts'],

@@ -2,13 +2,9 @@
 import type { HistoryEventsToggles } from '@/modules/history/events/dialog-types';
 import type { Filters } from '@/modules/history/events/history-event-filter-keys';
 import type { HistoryEventsRestrictions } from '@/modules/history/events/history-events-restrictions';
-import type { HistoryEventsTableHighlight, HistoryEventsTableSource } from '@/modules/history/events/types';
-import { logicOr } from '@vueuse/math';
 import { get, set } from '@vueuse/shared';
 import { type ComponentPublicInstance, computed, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import AccountingOverlayToggle from '@/modules/history/balances/AccountingOverlayToggle.vue';
-import BalanceDivergenceToggle from '@/modules/history/balances/BalanceDivergenceToggle.vue';
 import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import {
@@ -27,8 +23,8 @@ import {
   useUnmatchedAssetMovements,
   useUnmatchedBridgeTransactions,
 } from '@/modules/history/events/composables';
+import HistoryEventsContextStrip from '@/modules/history/events/HistoryEventsContextStrip.vue';
 import HistoryEventsDialogContainer from '@/modules/history/events/HistoryEventsDialogContainer.vue';
-import HistoryEventsFiltersChips from '@/modules/history/events/HistoryEventsFiltersChips.vue';
 import HistoryEventsTableActions from '@/modules/history/events/HistoryEventsTableActions.vue';
 import HistoryEventsViewButtons from '@/modules/history/events/HistoryEventsViewButtons.vue';
 import {
@@ -39,7 +35,7 @@ import {
 import { useHistoryEventsSection } from '@/modules/history/events/use-history-events-section';
 import { provideHistoryEventsSelection } from '@/modules/history/events/use-history-events-selection-context';
 import { useHistoryEventsViewActions } from '@/modules/history/events/use-history-events-view-actions';
-import { toTableSource } from '@/modules/history/events/view-projections';
+import { useHistoryEventsTableProjection } from '@/modules/history/events/view-projections';
 import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
@@ -69,7 +65,7 @@ const dialogContainer = useTemplateRef<InstanceType<typeof HistoryEventsDialogCo
 
 const tableHeightOffset = useHistoryEventsTableHeight(
   useTemplateRef<ComponentPublicInstance>('tableActions'),
-  useTemplateRef<HTMLDivElement>('contextStrip'),
+  useTemplateRef<ComponentPublicInstance>('contextStrip'),
 );
 
 const {
@@ -129,23 +125,20 @@ const selectionMode = useHistoryEventsSelectionMode();
 // Read at the leaves (the row checkboxes) rather than threaded through the table and row switch.
 provideHistoryEventsSelection(selectionMode);
 
-const tableSource = computed<HistoryEventsTableSource>(() => toTableSource({
-  groupLoading: get(groupLoading),
-  groups: get(groups),
-  identifiers: get(identifiers),
-  requestPayload: get(requestPayload),
-  toggles: get(toggles),
-}));
-
-const tableHighlight = computed<HistoryEventsTableHighlight>(() => ({
-  groupIdentifier: get(highlightedGroupIdentifier),
-  identifiers: get(highlightedIdentifiers),
-  types: get(highlightTypes),
-}));
+const { tableHighlight, tableSource } = useHistoryEventsTableProjection({
+  groupLoading,
+  groups,
+  highlightedGroupIdentifier,
+  highlightedIdentifiers,
+  highlightTypes,
+  identifiers,
+  requestPayload,
+  toggles,
+});
 
 const { autoMatchLoading, autoMatchMovement, refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
 const { autoMatchLoading: bridgeAutoMatchLoading, refreshUnmatchedBridgeTransactions } = useUnmatchedBridgeTransactions();
-const autoMatching = logicOr(autoMatchLoading, bridgeAutoMatchLoading);
+const autoMatching = computed<boolean>(() => get(autoMatchLoading) || get(bridgeAutoMatchLoading));
 
 const {
   groupedEventsByTxRef,
@@ -265,23 +258,14 @@ if (section)
                 @selection:action="handleSelectionAction($event)"
               />
 
-              <div
+              <HistoryEventsContextStrip
                 ref="contextStrip"
-                class="flex flex-wrap items-start gap-2 px-3 py-2 empty:hidden"
-              >
-                <HistoryEventsFiltersChips
-                  class="mr-auto"
-                  :group-identifiers="groupIdentifiers"
-                  :duplicate-handling-status="duplicateHandlingStatus"
-                  @refresh="actions.fetch.dataAndLocations()"
-                />
-                <AccountingOverlayToggle
-                  v-if="overlayAvailable"
-                  v-model="overlayMode"
-                  class="ml-auto"
-                />
-                <BalanceDivergenceToggle v-if="overlayAvailable" />
-              </div>
+                v-model:overlay-mode="overlayMode"
+                :group-identifiers="groupIdentifiers"
+                :duplicate-handling-status="duplicateHandlingStatus"
+                :overlay-available="overlayAvailable"
+                @refresh="actions.fetch.dataAndLocations()"
+              />
 
               <HistoryEventsVirtualTable
                 v-model:sort="sort"

@@ -1,24 +1,16 @@
 <script setup lang="ts">
-import type { ConflictResolution } from '@/modules/assets/types';
 import type { LoginCredentials } from '@/modules/auth/login';
-import { startPromise } from '@shared/utils';
-import { get } from '@vueuse/shared';
-import { computed, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { onMounted } from 'vue';
 import { definePage } from 'vue-router/experimental';
-import AccountManagementAside from '@/modules/auth/AccountManagementAside.vue';
 import AccountManagementFooterText from '@/modules/auth/AccountManagementFooterText.vue';
 import AdaptiveFooterButton from '@/modules/auth/AdaptiveFooterButton.vue';
+import LoginAside from '@/modules/auth/login/LoginAside.vue';
 import LoginForm from '@/modules/auth/login/LoginForm.vue';
-import NewReleaseChangelog from '@/modules/auth/login/NewReleaseChangelog.vue';
-import WelcomeMessageDisplay from '@/modules/auth/login/WelcomeMessageDisplay.vue';
+import { useLoginStage } from '@/modules/auth/login/use-login-stage';
 import LoginUnlockStage from '@/modules/auth/unlock-flow/LoginUnlockStage.vue';
-import { UnlockPhase } from '@/modules/auth/unlock-flow/use-unlock-flow';
-import { useUnlockFlowController } from '@/modules/auth/unlock-flow/use-unlock-flow-controller';
 import { useAccountManagement } from '@/modules/auth/use-account-management';
 import UserHost from '@/modules/auth/UserHost.vue';
 import { useDynamicMessages } from '@/modules/core/messaging/use-dynamic-messages';
-import { useUpdateMessage } from '@/modules/core/messaging/use-update-message';
 import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
 import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
 import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
@@ -30,58 +22,18 @@ definePage({
   },
 });
 
-const { t } = useI18n({ useScope: 'global' });
 const { navigateToUserCreation } = useAppNavigation();
 const { backendChanged } = useBackendManagement();
 const { clearErrors, errors, loading, userLogin } = useAccountManagement();
-const { applyUpdate, reset, skipUpdate, state, upgradeVisible } = useUnlockFlowController();
+const { onConfirmUpdate, onResolveConflicts, onSkipUpdate, reset, showStage, state } = useLoginStage();
 const { performInitialChecks } = useLoginInitialChecks();
-const { activeWelcomeMessages, fetchMessages, welcomeHeader, welcomeMessage } = useDynamicMessages();
-const { showReleaseNotes } = useUpdateMessage();
+const { fetchMessages } = useDynamicMessages();
 
 const isDocker = import.meta.env.VITE_DOCKER === 'true';
-
-/**
- * Whether the stage takes over from the login form.
- *
- * @remarks
- * Only for the phases needing their own UI, being an asset update and a DB upgrade during unlock.
- * The form stays mounted through the transient authenticate, connect and unlock phases, showing its
- * own loading state, so that a wrong-password error and the typed password both survive rather than
- * the form remounting empty on the way back.
- */
-const showStage = computed<boolean>(() => {
-  const kind = get(state).kind;
-  return kind === UnlockPhase.updatePrompt
-    || kind === UnlockPhase.conflicts
-    || kind === UnlockPhase.applyingUpdate
-    || kind === UnlockPhase.restarting
-    || (kind === UnlockPhase.unlocking && get(upgradeVisible));
-});
-
-const header = computed<{ header: string; text: string }>(() => {
-  const header = get(welcomeHeader);
-  return {
-    header: header?.header || t('login.welcome_title'),
-    text: header?.text || t('login.welcome_description'),
-  };
-});
 
 async function handleLogin(credentials: LoginCredentials): Promise<void> {
   clearErrors();
   await userLogin(credentials);
-}
-
-function onConfirmUpdate(upToVersion: number): void {
-  startPromise(applyUpdate(undefined, upToVersion));
-}
-
-function onResolveConflicts(resolution: ConflictResolution): void {
-  startPromise(applyUpdate(resolution));
-}
-
-function onSkipUpdate(): void {
-  startPromise(skipUpdate());
 }
 
 /**
@@ -141,27 +93,5 @@ onMounted(startLoginScreen);
       </footer>
     </div>
   </section>
-  <AccountManagementAside>
-    <RotkiLogo
-      class="mb-10"
-      size="2"
-      unique-key="0"
-      text
-    />
-    <h2 class="text-h5 mb-3">
-      {{ header.header }}
-    </h2>
-    <p class="text-body-1 text-rui-text-secondary">
-      {{ header.text }}
-    </p>
-    <NewReleaseChangelog
-      v-if="showReleaseNotes"
-      class="mt-4"
-    />
-    <WelcomeMessageDisplay
-      v-else-if="welcomeMessage"
-      class="mt-6"
-      :messages="activeWelcomeMessages"
-    />
-  </AccountManagementAside>
+  <LoginAside />
 </template>
