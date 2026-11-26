@@ -2,13 +2,10 @@ import type { LinkedMovementMatch } from '@/modules/history/events/event-payload
 import type { MatchingFlow, UnmatchedEventGroup } from '@/modules/history/events/matching/types';
 import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
 import { createSharedComposable } from '@vueuse/core';
-import { logicOr } from '@vueuse/math';
-import { get, set } from '@vueuse/shared';
-import { isErr, map as mapResult } from 'plainfp/result';
-import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, ref, shallowReadonly, shallowRef, toValue } from 'vue';
+import { get } from '@vueuse/shared';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, ref, shallowReadonly, toValue } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
-import { isRequestCancellation } from '@/modules/core/api/request-queue/is-request-cancellation';
 import { type ActionStatus, actionStatusOf } from '@/modules/core/common/action';
 import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -18,9 +15,8 @@ import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useBridgeMatchSettings } from '@/modules/settings/use-bridge-match-settings';
-import { activityLabelOf } from '@/modules/task-center/activity-labels';
-import { isActionable, type TaskOutcome, useNativeTask } from '@/modules/task-center/use-native-task';
 import { bridgeMatchActivity } from './history-events.activity';
+import { createUnmatchedLists, useAutoMatchingTask } from './use-unmatched-matching';
 
 /** The bridge leg metadata the decoders record in the event's extra data. */
 const BridgeExtraData = z.object({
@@ -113,17 +109,19 @@ interface UseUnmatchedBridgeTransactionsReturn {
   triggerBridgeAutoMatching: () => Promise<void>;
 }
 
-const rawUnmatchedTransactions = ref<UnmatchedBridgeTransaction[]>([]);
-const rawIgnoredTransactions = ref<UnmatchedBridgeTransaction[]>([]);
-const loading = ref<boolean>(false);
-const ignoredLoading = ref<boolean>(false);
-const unmatchedError = shallowRef<unknown>();
-const ignoredError = shallowRef<unknown>();
+const {
+  ignored: rawIgnoredTransactions,
+  ignoredError,
+  ignoredLoading,
+  load,
+  loading,
+  unmatched: rawUnmatchedTransactions,
+  unmatchedError,
+} = createUnmatchedLists<UnmatchedBridgeTransaction>();
 const triggerAutoMatchLoading = ref<boolean>(false);
 
 export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnmatchedBridgeTransactionsReturn => {
   const { t } = useI18n({ useScope: 'global' });
-  const { statusOf, submitTask, useIsActive } = useNativeTask();
 
   const { fetchHistoryEvents } = useHistoryEventsApi();
   const {
@@ -134,8 +132,6 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
   } = useBridgeMatchingApi();
   const { signalEventsModified } = useHistoryStore();
   const { allowed: isBridgeMatchingAllowed, minimumTier: bridgeMatchingMinimumTier } = useFeatureAccess(PremiumFeature.ASSET_MOVEMENT_MATCHING);
-
-  const autoMatchLoading = logicOr(triggerAutoMatchLoading, useIsActive(bridgeMatchActivity.kind, ...bridgeMatchActivity.partsOf()));
 
   const unmatchedTransactions = computed<UnmatchedBridgeTransaction[]>(() => get(rawUnmatchedTransactions));
   const ignoredTransactions = computed<UnmatchedBridgeTransaction[]>(() => get(rawIgnoredTransactions));
@@ -151,67 +147,46 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
    * to show rather than interrupting the user with a dialog. The rows of the last good load stay,
    * since the action center counts them, and the failure is kept until a load succeeds.
    */
-  const fetchUnmatchedBridgeTransactions = async (onlyIgnored?: boolean): Promise<void> => {
-    const isIgnored = onlyIgnored === true;
-    const loadingRef = isIgnored ? ignoredLoading : loading;
-    const transactionsRef = isIgnored ? rawIgnoredTransactions : rawUnmatchedTransactions;
-    const errorRef = isIgnored ? ignoredError : unmatchedError;
+  const fetchUnmatchedBridgeTransactions = async (onlyIgnored?: boolean): Promise<void> => load(onlyIgnored, async (): Promise<UnmatchedBridgeTransaction[]> => {
+    const legs = await getUnmatchedBridgeTransactions(onlyIgnored);
 
-    set(loadingRef, true);
-    try {
-      const legs = await getUnmatchedBridgeTransactions(onlyIgnored);
+    if (legs.length === 0)
+      return [];
 
-      if (legs.length === 0) {
-        set(transactionsRef, []);
-        set(errorRef, undefined);
-        return;
+    const response = await fetchHistoryEvents({
+      aggregateByGroupIds: false,
+      groupIdentifiers: [...new Set(legs.map(leg => leg.groupIdentifier))],
+      limit: -1,
+      offset: 0,
+      orderByAttributes: ['timestamp'],
+      ascending: [false],
+    });
+
+    const transactions: UnmatchedBridgeTransaction[] = [];
+
+    for (const leg of legs) {
+      const bridgeMatch = findBridgeEntry(response.entries, leg.identifier);
+
+      if (!bridgeMatch) {
+        logger.warn(`No event found for bridge leg ${leg.identifier} in group ${leg.groupIdentifier}, skipping it`);
+        continue;
       }
 
-      const response = await fetchHistoryEvents({
-        aggregateByGroupIds: false,
-        groupIdentifiers: [...new Set(legs.map(leg => leg.groupIdentifier))],
-        limit: -1,
-        offset: 0,
-        orderByAttributes: ['timestamp'],
-        ascending: [false],
+      const entry = bridgeMatch.event.entry;
+      const extraData = 'extraData' in entry ? entry.extraData : undefined;
+
+      transactions.push({
+        asset: entry.asset,
+        bridge: getBridgeExtraData(extraData),
+        direction: deriveBridgeDirection(extraData, entry.eventType),
+        events: bridgeMatch.row,
+        groupIdentifier: leg.groupIdentifier,
+        identifier: leg.identifier,
       });
-
-      const transactions: UnmatchedBridgeTransaction[] = [];
-
-      for (const leg of legs) {
-        const bridgeMatch = findBridgeEntry(response.entries, leg.identifier);
-
-        if (!bridgeMatch) {
-          logger.warn(`No event found for bridge leg ${leg.identifier} in group ${leg.groupIdentifier}, skipping it`);
-          continue;
-        }
-
-        const entry = bridgeMatch.event.entry;
-        const extraData = 'extraData' in entry ? entry.extraData : undefined;
-
-        transactions.push({
-          asset: entry.asset,
-          bridge: getBridgeExtraData(extraData),
-          direction: deriveBridgeDirection(extraData, entry.eventType),
-          events: bridgeMatch.row,
-          groupIdentifier: leg.groupIdentifier,
-          identifier: leg.identifier,
-        });
-      }
-
-      set(transactionsRef, transactions);
-      set(errorRef, undefined);
     }
-    catch (error: unknown) {
-      if (isRequestCancellation(error))
-        return;
-      logger.error('Failed to fetch unmatched bridge transactions:', error);
-      set(errorRef, error);
-    }
-    finally {
-      set(loadingRef, false);
-    }
-  };
+
+    return transactions;
+  }, 'Failed to fetch unmatched bridge transactions:');
 
   const matchBridgeTransaction = async (
     bridgeEventId: number,
@@ -270,36 +245,14 @@ export const useUnmatchedBridgeTransactions = createSharedComposable((): UseUnma
     }
   };
 
-  const triggerBridgeAutoMatching = async (): Promise<void> => {
-    if (!get(isBridgeMatchingAllowed) || statusOf(bridgeMatchActivity.kind, ...bridgeMatchActivity.partsOf()).active)
-      return;
-
-    set(triggerAutoMatchLoading, true);
-
-    const outcome = await submitTask({
-      id: bridgeMatchActivity.id(),
-      kind: bridgeMatchActivity.kind,
-      rerunnable: true,
-      run: async ({ runTask }): Promise<TaskOutcome> => mapResult(
-        await runTask<boolean>(
-          async () => triggerBridgeMatching(),
-        ),
-        () => {},
-      ),
-      subtitle: activityLabelOf(bridgeMatchActivity),
-      title: t('task_center.group.history_events'),
-    });
-
-    if (!isErr(outcome)) {
-      await refreshUnmatchedBridgeTransactions(true);
-      signalEventsModified();
-    }
-    else if (isActionable(outcome.error)) {
-      logger.error('Failed to trigger bridge auto match:', outcome.error);
-    }
-
-    set(triggerAutoMatchLoading, false);
-  };
+  const { autoMatchLoading, triggerAutoMatching: triggerBridgeAutoMatching } = useAutoMatchingTask({
+    activity: bridgeMatchActivity,
+    allowed: isBridgeMatchingAllowed,
+    failureLog: 'Failed to trigger bridge auto match:',
+    loading: triggerAutoMatchLoading,
+    onMatched: async (): Promise<void> => refreshUnmatchedBridgeTransactions(true),
+    trigger: triggerBridgeMatching,
+  });
 
   async function autoMatchBridgeTransaction(linkedTransaction: LinkedMovementMatch): Promise<boolean> {
     const { identifier, timeRange, tolerance } = linkedTransaction;

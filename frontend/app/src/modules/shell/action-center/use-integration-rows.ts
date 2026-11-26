@@ -1,76 +1,20 @@
-import type { RouteLocationRaw } from 'vue-router';
+import type { ExternalServiceName } from '@/modules/integrations/types';
 import { toHumanReadable } from '@rotki/common';
-import { externalLinks } from '@shared/external-links';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { none, type Option, some } from 'plainfp/option';
-import { getOr } from 'plainfp/records';
 import { computed, type ComputedRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { type MessageKey, msg } from '@/message-key';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useExchangeKeyConditions } from '@/modules/balances/exchanges/use-exchange-key-conditions';
-import { type ActionItem, type ActionItemOption, type ActionTarget, ActionUrgency, applicable, createActionItem } from '@/modules/core/action-center/types';
-import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
+import { type ActionItem, type ActionTarget, ActionUrgency, applicable, createActionItem } from '@/modules/core/action-center/types';
 import { useMoneriumOAuth } from '@/modules/integrations/monerium/use-monerium-auth';
-import { ExternalServiceKeys, type ExternalServiceName } from '@/modules/integrations/types';
-import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
-import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/modules/settings/types/user-settings';
-import { useSetting } from '@/modules/settings/use-setting';
-import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { INDEXER_SETTINGS, ORACLE_SETTINGS, useSuppressOption } from '@/modules/shell/action-center/row-options';
+import { ORACLE_SETTINGS } from '@/modules/shell/action-center/row-options';
 import { useBankRows } from '@/modules/shell/action-center/use-bank-rows';
+import { serviceSettings, useMissingKeyRows } from '@/modules/shell/action-center/use-missing-key-rows';
 import { conditionRowId, type RaisedCondition, RaisedConditionKind, type RaisedConditionOf, SessionCause, useRaisedConditionsStore } from '@/modules/shell/action-center/use-raised-conditions-store';
 
-type MissingApiKeyCondition = RaisedConditionOf<typeof RaisedConditionKind.MISSING_API_KEY>;
-
 type SessionCondition = RaisedConditionOf<typeof RaisedConditionKind.MONERIUM_SESSION | typeof RaisedConditionKind.GNOSIS_PAY_SESSION>;
-
-/** Services whose key only adds data: the queries work without one, so the row is a to-do, not a warning. */
-const OPTIONAL_KEY_SERVICES: ReadonlySet<string> = new Set([SuppressibleMissingKeyService.BEACONCHAIN]);
-
-/** Services that are transaction indexers, so reordering the indexers is an alternative to a key. */
-const INDEXER_SERVICES: ReadonlySet<string> = new Set([
-  SuppressibleMissingKeyService.BLOCKSCOUT,
-  SuppressibleMissingKeyService.ETHERSCAN,
-]);
-
-/**
- * What a missing key costs, per service; any other service gets the generic description.
- *
- * @remarks
- * Etherscan ships with a packaged fallback key, so only it is slowed rather than skipped.
- */
-const MISSING_KEY_DESCRIPTIONS: Readonly<Record<string, MessageKey>> = {
-  [SuppressibleMissingKeyService.BEACONCHAIN]: msg.$t('action_center.rows.integrations.missing_api_key.description_beaconchain'),
-  [SuppressibleMissingKeyService.BLOCKSCOUT]: msg.$t('action_center.rows.integrations.missing_api_key.description_blockscout'),
-  [SuppressibleMissingKeyService.ETHERSCAN]: msg.$t('action_center.rows.integrations.missing_api_key.description_etherscan'),
-  [SuppressibleMissingKeyService.HELIUS]: msg.$t('action_center.rows.integrations.missing_api_key.description_helius'),
-  [SuppressibleMissingKeyService.OPENSEA]: msg.$t('action_center.rows.integrations.missing_api_key.description_opensea'),
-  [SuppressibleMissingKeyService.THEGRAPH]: msg.$t('action_center.rows.integrations.missing_api_key.description_thegraph'),
-};
-
-const DEFAULT_MISSING_KEY_DESCRIPTION = msg.$t('action_center.rows.integrations.missing_api_key.description');
-
-/** What a refused key costs, per service that reports one. */
-const REJECTED_KEY_DESCRIPTIONS: Readonly<Record<string, MessageKey>> = {
-  [SuppressibleMissingKeyService.BLOCKSCOUT]: msg.$t('action_center.rows.integrations.missing_api_key.description_blockscout_rejected'),
-  [SuppressibleMissingKeyService.OPENSEA]: msg.$t('action_center.rows.integrations.missing_api_key.description_opensea_rejected'),
-  sochain: msg.$t('action_center.rows.integrations.missing_api_key.description_sochain_rejected'),
-};
-
-function isExternalServiceName(service: string): service is ExternalServiceName {
-  return service in ExternalServiceKeys.shape;
-}
-
-function isSuppressibleService(service: string): service is SuppressibleMissingKeyService {
-  return Array.prototype.includes.call(SUPPRESSIBLE_SERVICES, service);
-}
-
-/** The external services page, opened on the service the row is about. */
-function serviceSettings(service: string): RouteLocationRaw {
-  return { name: '/api-keys/external/', query: { service } };
-}
 
 /**
  * The integration rows: bank connections waiting on a TAN (see {@link useBankRows}), services a
@@ -88,101 +32,11 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
   const { t } = useI18n({ useScope: 'global' });
 
   const { conditions } = storeToRefs(useRaisedConditionsStore());
-  const suppressedServices = useSetting('suppressMissingKeyMsgServices');
-  const { getApiKey } = useExternalApiKeys();
+  const { missingKeyRowFor } = useMissingKeyRows();
   const { authenticated: moneriumAuthenticated } = useMoneriumOAuth();
-  const { update } = useSettingsOperations();
-  const { suppressOption } = useSuppressOption();
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const { settleDisconnected } = useExchangeKeyConditions();
   const bankRows = useBankRows();
-
-  function hasKey(service: string): boolean {
-    return isExternalServiceName(service) && getApiKey(service) !== '';
-  }
-
-  function isSuppressed(service: string): boolean {
-    return isSuppressibleService(service) && get(suppressedServices).includes(service);
-  }
-
-  async function suppress(service: SuppressibleMissingKeyService): Promise<void> {
-    const current = get(suppressedServices);
-    if (!current.includes(service))
-      await update({ suppressMissingKeyMsgServices: [...current, service] });
-  }
-
-  /**
-   * The alternatives to entering a key: another indexer order, where to get a key, the guide, and
-   * silencing the service.
-   *
-   * @remarks
-   * Etherscan is never offered a "get a key" link, since it keeps working on its packaged key.
-   */
-  function missingKeyOptions(service: string, serviceName: string): ActionItemOption[] {
-    const external = getServiceRegisterUrl(service)?.external;
-    return applicable<ActionItemOption>([
-      INDEXER_SERVICES.has(service)
-        ? some({ icon: 'lu-list-ordered', id: 'change-indexer-order', label: t('action_center.rows.integrations.missing_api_key.change_indexer_order'), target: INDEXER_SETTINGS })
-        : none,
-      external && service !== SuppressibleMissingKeyService.ETHERSCAN
-        ? some({ icon: 'lu-external-link', id: 'get-key', label: t('action_center.rows.integrations.missing_api_key.get_key'), target: { kind: 'external', url: external } })
-        : none,
-      service === SuppressibleMissingKeyService.THEGRAPH
-        ? some({ icon: 'lu-book-open', id: 'guide', label: t('action_center.rows.integrations.missing_api_key.guide'), target: { kind: 'external', url: externalLinks.usageGuideSection.theGraphApiKey } })
-        : none,
-      isSuppressibleService(service)
-        ? some(suppressOption({
-            confirmMessage: t('action_center.rows.integrations.missing_api_key.suppress_confirm.message', { service: serviceName }),
-            confirmTitle: t('action_center.rows.integrations.missing_api_key.suppress_confirm.title'),
-            label: t('action_center.rows.integrations.missing_api_key.do_not_show_again'),
-            suppress: async () => suppress(service),
-          }))
-        : none,
-    ]);
-  }
-
-  /** The title of a row: a refused key names where it was refused, a missing one where it was needed. */
-  function missingKeyTitle({ keyRejected, location }: MissingApiKeyCondition, params: Record<string, string>): string {
-    if (keyRejected && location)
-      return t('action_center.rows.integrations.missing_api_key.title_rejected', params);
-    return location
-      ? t('action_center.rows.integrations.missing_api_key.title_location', params)
-      : t('action_center.rows.integrations.missing_api_key.title', params);
-  }
-
-  function missingKeyRow(condition: MissingApiKeyCondition): ActionItem {
-    const { keyRejected, location, service } = condition;
-    const serviceName = toHumanReadable(service, 'capitalize');
-    const params: Record<string, string> = location
-      ? { location: toHumanReadable(location, 'capitalize'), service: serviceName }
-      : { service: serviceName };
-    const description = keyRejected
-      ? getOr(REJECTED_KEY_DESCRIPTIONS, service, DEFAULT_MISSING_KEY_DESCRIPTION)
-      : getOr(MISSING_KEY_DESCRIPTIONS, service, DEFAULT_MISSING_KEY_DESCRIPTION);
-
-    return createActionItem<ActionTarget, string>({
-      actionLabel: t('action_center.rows.integrations.missing_api_key.action'),
-      count: 1,
-      description: t(description, params),
-      icon: 'lu-key-round',
-      id: conditionRowId(condition),
-      options: missingKeyOptions(service, serviceName),
-      urgency: OPTIONAL_KEY_SERVICES.has(service) ? ActionUrgency.TODO : ActionUrgency.DECISION,
-      target: { kind: 'route', to: getServiceRegisterUrl(service)?.route ?? serviceSettings(service) },
-      title: missingKeyTitle(condition, params),
-    });
-  }
-
-  /**
-   * Whether a missing key's row is still open.
-   *
-   * @remarks
-   * A refused key is saved by definition, so having a key does not close its row; saving a new key
-   * clears the condition instead.
-   */
-  function isMissingKeyOpen({ keyRejected, service }: MissingApiKeyCondition): boolean {
-    return !isSuppressed(service) && (keyRejected === true || !hasKey(service));
-  }
 
   function exchangeKeyRow(condition: RaisedConditionOf<typeof RaisedConditionKind.EXCHANGE_KEY_REJECTED>): ActionItem {
     const { location, name } = condition;
@@ -267,7 +121,7 @@ export function useIntegrationRows(): ComputedRef<ActionItem[]> {
   function rowFor(condition: RaisedCondition): Option<ActionItem> {
     switch (condition.kind) {
       case RaisedConditionKind.MISSING_API_KEY:
-        return isMissingKeyOpen(condition) ? some(missingKeyRow(condition)) : none;
+        return missingKeyRowFor(condition);
       case RaisedConditionKind.EXCHANGE_KEY_REJECTED:
         return some(exchangeKeyRow(condition));
       case RaisedConditionKind.ORACLE_PENALIZED:

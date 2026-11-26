@@ -6,23 +6,17 @@ import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { type RouteLocationRaw, useRouter } from 'vue-router';
-import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import DataIssueBalanceDivergence from '@/modules/history/data-issues/components/DataIssueBalanceDivergence.vue';
 import DataIssueBalanceMismatchSummary from '@/modules/history/data-issues/components/DataIssueBalanceMismatchSummary.vue';
 import DataIssueDescription from '@/modules/history/data-issues/components/DataIssueDescription.vue';
 import DataIssueDetailFooter from '@/modules/history/data-issues/components/DataIssueDetailFooter.vue';
-import DataIssueKindChip from '@/modules/history/data-issues/components/DataIssueKindChip.vue';
+import DataIssueDetailHeader from '@/modules/history/data-issues/components/DataIssueDetailHeader.vue';
 import DataIssueNegativeBalanceSummary from '@/modules/history/data-issues/components/DataIssueNegativeBalanceSummary.vue';
 import DataIssueRemediationTimeline from '@/modules/history/data-issues/components/DataIssueRemediationTimeline.vue';
-import DataIssueStateChip from '@/modules/history/data-issues/components/DataIssueStateChip.vue';
 import { IssueKind } from '@/modules/history/data-issues/constants';
 import { describeIssue, type NegativeBalanceValues, negativeBalanceValues, relatedEventRoute, toTimelineItems } from '@/modules/history/data-issues/transforms';
 import { dataIssueDivergenceKey } from '@/modules/history/data-issues/use-data-issue-divergence-store';
-import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
-import LocationDisplay from '@/modules/history/LocationDisplay.vue';
-import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
-import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 
 /**
  * One issue's detail body, shared by both of its containers: the drawer on the data-issues page and
@@ -96,75 +90,10 @@ const resolutionNote = computed<string | undefined>(() => {
     v-if="issue"
     class="flex flex-col h-full"
   >
-    <div class="flex flex-col gap-2 py-2 pl-4 pr-2 border-b border-rui-divider">
-      <div class="flex items-center justify-between gap-2">
-        <h2 class="text-base font-semibold text-rui-text">
-          {{ t('data_issues.detail.title') }}
-        </h2>
-        <RuiButton
-          variant="text"
-          icon
-          class="text-rui-text-secondary!"
-          :aria-label="t('common.actions.close')"
-          @click="emit('close')"
-        >
-          <RuiIcon name="lu-x" />
-        </RuiButton>
-      </div>
-      <div class="flex flex-wrap items-center gap-2 text-xs text-rui-text-secondary">
-        <DataIssueKindChip :kind="issue.kind" />
-        <DataIssueStateChip :state="issue.state" />
-        <span class="ml-1">
-          {{ t('data_issues.detail.detected') }}
-          <TimeAgoDisplay :timestamp="issue.createdAt" />
-        </span>
-      </div>
-      <div
-        class="flex flex-wrap items-center gap-x-5 gap-y-2 pb-2 text-sm"
-        data-testid="data-issue-subject"
-      >
-        <span class="inline-flex items-center">
-          <span class="sr-only">{{ t('common.account') }}</span>
-          <HistoryEventAccount
-            v-if="issue.locationLabel"
-            :location="issue.location"
-            :location-label="issue.locationLabel"
-          />
-          <span
-            v-else
-            class="text-rui-text-secondary"
-          >
-            -
-          </span>
-        </span>
-        <span class="inline-flex items-center">
-          <span class="sr-only">{{ t('common.location') }}</span>
-          <LocationDisplay
-            :identifier="issue.location"
-            horizontal
-            size="20px"
-            class="w-fit"
-          />
-        </span>
-        <span
-          v-if="issue.asset"
-          class="inline-flex items-center"
-        >
-          <span class="sr-only">{{ t('common.asset') }}</span>
-          <AssetDetails
-            :asset="issue.asset"
-            :display="{ dense: true, inline: true, size: '20px' }"
-          />
-        </span>
-        <span
-          v-if="issue.protocol"
-          class="inline-flex items-center"
-        >
-          <span class="sr-only">{{ t('common.protocol') }}</span>
-          <CounterpartyDisplay :counterparty="issue.protocol" />
-        </span>
-      </div>
-    </div>
+    <DataIssueDetailHeader
+      :issue="issue"
+      @close="emit('close')"
+    />
 
     <div class="flex flex-col p-4 overflow-y-auto grow between:border-t between:border-rui-divider between:mt-4 between:pt-4">
       <section class="flex flex-col gap-2">
