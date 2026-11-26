@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RuiIcons } from '@rotki/ui-library';
+import { RuiIcon, type RuiIcons, RuiTooltip } from '@rotki/ui-library';
 import { createReusableTemplate, useElementSize, useTimeoutFn } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { type Component, computed, onMounted, ref, useTemplateRef } from 'vue';

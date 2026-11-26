@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { RuiSkeletonLoader } from '@rotki/ui-library';
+
 /** Stands in for an asset table on its first load, shaped like its rows so nothing jumps when they arrive. */
 const { rows = 5 } = defineProps<{
   rows?: number;

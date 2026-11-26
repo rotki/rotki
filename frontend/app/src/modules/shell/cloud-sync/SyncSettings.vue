@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useBreakpoint } from '@rotki/ui-library';
+import { RuiButton, RuiIcon, RuiMenu, useBreakpoint } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import AskUserUponSizeDiscrepancySetting from '@/modules/settings/general/AskUserUponSizeDiscrepancySetting.vue';
 import AutomaticSyncSetting from '@/modules/shell/cloud-sync/AutomaticSyncSetting.vue';

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 
 const { isPinned, step, totalSteps, isMissingAcquisitions } = defineProps<{

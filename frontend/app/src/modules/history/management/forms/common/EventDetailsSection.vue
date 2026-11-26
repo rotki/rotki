@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { RuiAccordion, RuiAccordions, RuiChip } from '@rotki/ui-library';
+import { set } from '@vueuse/shared';
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+
 /**
  * The collapsed "advanced" section of an event form, for the fields most users never change.
  *
@@ -7,10 +12,6 @@
  * So the section opens by itself as soon as one of its fields shows an error, and its header counts
  * them while it is closed.
  */
-import { set } from '@vueuse/shared';
-import { computed, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
-
 defineOptions({
   inheritAttrs: false,
 });

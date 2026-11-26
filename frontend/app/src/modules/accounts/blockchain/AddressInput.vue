@@ -2,6 +2,7 @@
 import type { ZodType } from 'zod';
 import type { AddressCheck } from '@/modules/accounts/blockchain/address-check';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { RuiCheckbox, RuiTextArea, RuiTextField } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';

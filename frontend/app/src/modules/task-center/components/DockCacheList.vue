@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiIcon } from '@rotki/ui-library';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DockCacheRow from '@/modules/task-center/components/DockCacheRow.vue';

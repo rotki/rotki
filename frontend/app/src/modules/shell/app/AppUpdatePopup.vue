@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiCard, RuiIcon, RuiNotification, RuiProgress } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { useTimeoutFn } from '@vueuse/core';
 import { set } from '@vueuse/shared';

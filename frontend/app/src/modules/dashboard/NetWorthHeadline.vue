@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
+import { RuiIcon, RuiSkeletonLoader } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';

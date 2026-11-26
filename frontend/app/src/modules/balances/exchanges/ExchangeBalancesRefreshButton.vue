@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiDivider, RuiIcon } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ExchangeRefreshMenuItem from '@/modules/balances/exchanges/ExchangeRefreshMenuItem.vue';

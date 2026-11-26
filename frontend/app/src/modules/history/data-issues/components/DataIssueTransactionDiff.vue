@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DecodingComparisonEvent, TransactionDecodingComparison } from '@/modules/history/data-issues/schemas';
+import { RuiButton } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

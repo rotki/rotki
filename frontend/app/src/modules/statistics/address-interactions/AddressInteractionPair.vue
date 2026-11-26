@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { InteractionNode } from './address-interaction-graph';
+import { RuiIcon } from '@rotki/ui-library';
 import AddressInteractionAddress from './AddressInteractionAddress.vue';
 import { PAIR_CHARS } from './use-interaction-labels';
 

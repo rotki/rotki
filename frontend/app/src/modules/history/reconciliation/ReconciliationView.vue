@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiProgress, RuiTab, RuiTabs, RuiTextField } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { addAccountLink } from '@/modules/accounts/add-account-link';
 import DataIssuesTabs from '@/modules/history/data-issues/DataIssuesTabs.vue';

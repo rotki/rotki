@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAlert } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { useAutoLogoutNotice } from '@/modules/auth/auto-logout/use-auto-logout-notice';
 

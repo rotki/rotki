@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
+import { RuiTab, RuiTabItem, RuiTabItems, RuiTabs } from '@rotki/ui-library';
 import { logicAnd } from '@vueuse/math';
 import { get } from '@vueuse/shared';
 import { computed, ref } from 'vue';

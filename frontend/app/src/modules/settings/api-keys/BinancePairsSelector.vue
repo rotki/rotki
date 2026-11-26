@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAlert, RuiAutoComplete, RuiButton, RuiChip, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { backoff } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { computed, onMounted, ref, shallowRef } from 'vue';

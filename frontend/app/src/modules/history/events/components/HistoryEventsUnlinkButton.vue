@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
-import { useBreakpoint } from '@rotki/ui-library';
+import { RuiButton, RuiIcon, RuiTooltip, useBreakpoint } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import ConfirmPopover from '@/modules/shell/components/ConfirmPopover.vue';
 

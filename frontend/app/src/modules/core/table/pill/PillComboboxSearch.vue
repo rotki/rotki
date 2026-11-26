@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { RuiIcon } from '@rotki/ui-library';
+import { get } from '@vueuse/shared';
+import { nextTick, onMounted, useTemplateRef } from 'vue';
+
 /**
  * The search row of a pill popover list: a combobox input that filters the list below it.
  *
@@ -7,9 +11,6 @@
  * to type, and `autofocus` alone is ignored for an input inserted into an already-loaded document.
  * Arrow and Enter keys are re-emitted for the parent, which owns the highlighted row.
  */
-import { get } from '@vueuse/shared';
-import { nextTick, onMounted, useTemplateRef } from 'vue';
-
 const search = defineModel<string>({ required: true });
 
 const { placeholder, listId, activeRowId, testId } = defineProps<{

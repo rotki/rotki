@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiProgress } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n({ useScope: 'global' });

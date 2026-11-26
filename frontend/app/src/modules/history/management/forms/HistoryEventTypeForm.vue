@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventEntryType } from '@rotki/common';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { RuiAlert, RuiButton, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { computed } from 'vue';

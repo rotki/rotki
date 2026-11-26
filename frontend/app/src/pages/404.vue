@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';

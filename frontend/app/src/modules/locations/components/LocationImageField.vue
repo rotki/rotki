@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LocationIcon } from '@/modules/locations/location-icons';
+import { RuiButton, RuiFileUpload, RuiIcon } from '@rotki/ui-library';
 import { useObjectUrl } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';

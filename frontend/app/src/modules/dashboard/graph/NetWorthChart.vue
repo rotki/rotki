@@ -2,7 +2,7 @@
 import type { BigNumber } from '@rotki/common';
 import type { NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
-import { useRotkiTheme } from '@rotki/ui-library';
+import { RuiIcon, useRotkiTheme } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { EIP1193Provider } from '@/types';
+import { RuiAlert, RuiButton, RuiCard, RuiProgress } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, onBeforeUnmount, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';

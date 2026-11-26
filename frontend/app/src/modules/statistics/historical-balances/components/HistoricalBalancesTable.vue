@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library';
 import type { AssetIdentifierResolution } from '@/modules/assets/types';
+import { type DataTableColumn, RuiDataTable, RuiIcon, RuiTableRowExpander, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

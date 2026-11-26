@@ -4,6 +4,7 @@ import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import type { Filters } from '@/modules/staking/eth/eth-validator-filter-keys';
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

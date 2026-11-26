@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Theme } from '@rotki/common';
+import { RuiButton, RuiIcon, RuiMenu, RuiSlider } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

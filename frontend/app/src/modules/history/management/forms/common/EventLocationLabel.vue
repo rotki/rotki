@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { RuiAutoComplete } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import { isValidEthAddress } from '@rotki/common';
+import { RuiAutoComplete } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

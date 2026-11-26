@@ -4,6 +4,7 @@ import type { ValidatorAccount } from '@/modules/accounts/blockchain-accounts';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { RepullingEthStakingPayload } from '@/modules/history/events/event-payloads';
 import { Blockchain, toHumanReadable } from '@rotki/common';
+import { RuiAlert, RuiAutoComplete } from '@rotki/ui-library';
 import { syncRefs, watchDeep, watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

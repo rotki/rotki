@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AddressBookEntry, AddressBookLocation } from '@/modules/accounts/address-book/eth-names';
 import type { Collection } from '@/modules/core/common/collection';
-import { type DataTableColumn, type DataTableSortData, type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
+import { type DataTableColumn, type DataTableSortData, RuiDataTable, type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
 import { computed, toRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAddressBookDeletion } from '@/modules/accounts/address-book/use-address-book-deletion';

@@ -1,9 +1,9 @@
 <script setup lang="ts" generic="TClear = undefined, TClearable extends boolean = false">
-import type { ClearedValue, RuiAutoComplete } from '@rotki/ui-library';
 import type { NftAsset } from '@/modules/assets/nfts';
 import type { AssetActions, AssetDisplay } from '@/modules/assets/types';
 import type { ForwardedProps, UnexportedAutoCompleteProps } from '@/modules/core/common/forwarded-props';
 import { type AssetInfoWithId, getValidSelectorFromEvmAddress } from '@rotki/common';
+import { type ClearedValue, RuiAutoComplete } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

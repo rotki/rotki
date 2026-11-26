@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TradableAsset } from '@/modules/wallet/types';
 import { type BigNumber, Blockchain } from '@rotki/common';
+import { RuiButton, RuiCard, RuiDialog, RuiIcon, RuiProgress } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { useVirtualList, watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';

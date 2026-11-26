@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { ImportSourceType } from '@/modules/core/common/upload-types';
-import { RuiFileUpload } from '@rotki/ui-library';
+import { RuiButton, RuiFileUpload, RuiIcon, RuiSwitch, RuiTextField, RuiTimezoneSelect } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { err, isErr, ok, type Result } from 'plainfp/result';
 import { computed, ref, useId, useTemplateRef } from 'vue';

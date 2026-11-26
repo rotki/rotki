@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RuiIcons } from '@rotki/ui-library';
+import { RuiButton, RuiCheckbox, RuiIcon, type RuiIcons, RuiSkeletonLoader } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

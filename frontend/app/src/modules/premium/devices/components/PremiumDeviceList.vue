@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library';
 import type { PremiumDevice } from '@/modules/premium/devices/premium';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { type DataTableColumn, RuiButton, RuiChip, RuiDataTable, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref, shallowRef } from 'vue';

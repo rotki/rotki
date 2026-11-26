@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { OkxLocation } from '@/modules/balances/types/exchanges';
+import { RuiIcon } from '@rotki/ui-library';
 import Flag from '@/modules/shell/components/Flag.vue';
 
 defineProps<{

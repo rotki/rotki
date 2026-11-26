@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiDivider } from '@rotki/ui-library';
 import NavigationMenuGroup from '@/modules/shell/components/navigation/NavigationMenuGroup.vue';
 import NavigationMenuLink from '@/modules/shell/components/navigation/NavigationMenuLink.vue';
 import { useNavigationMenu } from '@/modules/shell/layout/use-navigation-menu';

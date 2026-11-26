@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiCard, RuiDialog, RuiTextField } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { set } from '@vueuse/shared';
 import { computed, ref } from 'vue';

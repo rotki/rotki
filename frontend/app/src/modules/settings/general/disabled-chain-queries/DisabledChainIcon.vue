@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 

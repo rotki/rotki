@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { EvmChainInfo } from '@/modules/core/api/types/chains';
+import { RuiButton, RuiCheckbox, RuiIcon } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';

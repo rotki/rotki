@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="T extends object">
+import { RuiButton, RuiCard } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

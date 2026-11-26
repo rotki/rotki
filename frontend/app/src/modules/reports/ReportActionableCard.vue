@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Report } from '@/modules/reports/report-types';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { RuiButton, RuiCard, RuiIcon, RuiStepper, RuiTooltip } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, defineAsyncComponent, watch } from 'vue';

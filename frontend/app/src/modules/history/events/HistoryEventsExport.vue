@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { useHistoryEventsExport } from '@/modules/history/events/use-history-events-export';
 

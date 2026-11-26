@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Rule, RuleDraft } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chain-queries-state';
+import { RuiAutoComplete, RuiButton, RuiButtonGroup, RuiCard, RuiDialog } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, watch } from 'vue';

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AssetPriceInfo, ManualPriceFormPayload } from '@/modules/assets/prices/price-types';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { RuiButton, RuiCard, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

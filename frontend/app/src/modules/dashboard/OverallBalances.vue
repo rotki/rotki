@@ -2,6 +2,7 @@
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import type { SourceKind } from '@/modules/dashboard/holdings/core/holdings-types';
 import { assert, type BigNumber, TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSetting, TimeUnit } from '@rotki/common';
+import { RuiButton, RuiCard, RuiIcon, RuiProgress } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import dayjs from 'dayjs';
 import { storeToRefs } from 'pinia';

@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { RouteLocationRaw } from 'vue-router';
+import { RuiButton } from '@rotki/ui-library';
 
 defineOptions({
   inheritAttrs: false,

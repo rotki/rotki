@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ContextColorsType } from '@rotki/ui-library';
+import { type ContextColorsType, RuiButton } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 
 interface Props {

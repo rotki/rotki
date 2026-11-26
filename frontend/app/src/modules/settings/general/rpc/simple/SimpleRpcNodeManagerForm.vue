@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { RuiTextField } from '@rotki/ui-library';
 import { syncRefs } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, watch } from 'vue';

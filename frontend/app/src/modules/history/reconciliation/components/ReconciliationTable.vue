@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { InspectedBucket, ReconciliationAccount, ReconciliationBucket } from '@/modules/history/reconciliation/schemas';
 import type { AccountDetailState } from '@/modules/history/reconciliation/use-bucket-reconciliation-store';
 import { toHumanReadable } from '@rotki/common';
+import { type DataTableColumn, RuiButton, RuiDataTable, RuiIcon, type TablePaginationData } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

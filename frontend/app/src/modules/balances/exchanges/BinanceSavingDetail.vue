@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AssetBalance } from '@rotki/common';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/modules/balances/types/exchanges';
+import { type DataTableColumn, type DataTableSortData, RuiDataTable } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { set } from '@vueuse/shared';
 import { pipe } from 'plainfp';

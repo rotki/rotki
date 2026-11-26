@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { CostBasis, MatchedAcquisitions, MatchedAcquisitionsEvent } from '@/modules/reports/report-types';
+import { type DataTableColumn, type DataTableSortData, RuiChip, RuiDataTable } from '@rotki/ui-library';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';

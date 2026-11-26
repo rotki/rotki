@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

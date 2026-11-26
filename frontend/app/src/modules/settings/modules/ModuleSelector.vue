@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { transformCase, Zero } from '@rotki/common';
+import { RuiButton, RuiSwitch, RuiTable, RuiTextField } from '@rotki/ui-library';
 import { useTimeoutFn } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

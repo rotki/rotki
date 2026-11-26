@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiDataTable, RuiIcon } from '@rotki/ui-library';
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AssetManagerMoreTitle from '@/modules/assets/admin/AssetManagerMoreTitle.vue';

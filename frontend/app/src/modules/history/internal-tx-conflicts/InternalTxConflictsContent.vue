@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library';
+import { type DataTableColumn, RuiButton, RuiCheckbox, RuiChip, RuiDataTable, RuiProgress, RuiTab, RuiTabs, RuiTooltip } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get } from '@vueuse/shared';
 import { computed, onBeforeMount, ref, watch } from 'vue';

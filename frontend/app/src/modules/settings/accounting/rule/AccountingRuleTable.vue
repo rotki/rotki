@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/modules/core/common/collection';
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { type DataTableColumn, RuiButton, RuiDataTable, RuiIcon, type TablePaginationData } from '@rotki/ui-library';
 import { set } from '@vueuse/shared';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

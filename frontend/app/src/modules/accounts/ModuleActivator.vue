@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { transformCase } from '@rotki/common';
+import { RuiButton, RuiButtonGroup, RuiTooltip } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted } from 'vue';

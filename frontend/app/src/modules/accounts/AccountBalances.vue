@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { RuiIcons } from '@rotki/ui-library';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { BlockchainAccountGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
+import { RuiButton, RuiIcon, type RuiIcons } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { createReusableTemplate, isDefined, watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';

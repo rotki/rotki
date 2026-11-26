@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiMenuSelect } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

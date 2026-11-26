@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AccountChainState } from '@/modules/accounts/AccountChainsOverflow.vue';
+import { RuiIcon } from '@rotki/ui-library';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 

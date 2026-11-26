@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventEntryType } from '@rotki/common';
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
+import { RuiMenuSelect } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { canPickEntryType, entryTypeOptions } from '@/modules/history/management/forms/entry-type-options';

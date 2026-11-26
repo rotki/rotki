@@ -3,6 +3,7 @@ import type { Filters } from '@/modules/history/events/history-event-filter-keys
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableSource } from '@/modules/history/events/types';
+import { RuiButton, RuiCard, RuiDialog } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

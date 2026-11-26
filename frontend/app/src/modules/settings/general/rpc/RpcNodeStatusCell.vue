@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiTooltip } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { NODE_STATUS, type NodeStatus } from '@/modules/settings/general/rpc/rpc-node-status';

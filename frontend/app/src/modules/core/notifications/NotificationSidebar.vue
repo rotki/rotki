@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { RuiButton, RuiIcon, RuiNavigationDrawer, RuiTooltip } from '@rotki/ui-library';
 import { createReusableTemplate, useScroll } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { computed, useTemplateRef } from 'vue';

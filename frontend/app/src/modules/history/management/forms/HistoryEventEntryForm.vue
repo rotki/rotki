@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EventEntryKind } from '@/modules/history/management/forms/event-entry-form';
 import { HistoryEventEntryType } from '@rotki/common';
+import { RuiDivider, RuiTextArea, RuiTextField } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';

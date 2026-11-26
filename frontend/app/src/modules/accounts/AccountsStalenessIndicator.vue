@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { formatTimeAgo, useIntervalFn, useNow } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';

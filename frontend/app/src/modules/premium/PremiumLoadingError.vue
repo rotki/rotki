@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FieldDef, FilterOp } from '@/modules/core/table/pill/core/types';
+import { RuiButton, RuiButtonGroup } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useOperatorLabels } from '@/modules/core/table/pill/composables/use-operator-labels';
 import { hasOperatorChoice, operatorsFor } from '@/modules/core/table/pill/core/operators';

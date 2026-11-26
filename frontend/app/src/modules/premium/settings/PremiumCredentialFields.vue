@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiRevealableTextField } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 
 const apiKey = defineModel<string>('apiKey', { required: true });

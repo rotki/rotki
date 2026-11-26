@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { NotificationKind, Severity } from '@rotki/common';
+import { RuiButton, RuiCard, RuiDialog, RuiFileUpload, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { isDefined } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';

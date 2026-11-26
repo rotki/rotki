@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useBreakpoint } from '@rotki/ui-library';
+import { RuiButton, RuiIcon, RuiProgress, useBreakpoint } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

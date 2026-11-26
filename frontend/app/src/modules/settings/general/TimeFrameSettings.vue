@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting } from '@rotki/common';
+import { RuiCard, RuiChip, RuiDivider } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

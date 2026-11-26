@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ButtonProps } from '@rotki/ui-library';
 import type { DashboardTableType, FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
+import { type ButtonProps, RuiCheckbox, RuiIcon, RuiMenu } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

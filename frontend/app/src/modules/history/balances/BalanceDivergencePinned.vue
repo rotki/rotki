@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import BalanceDivergenceView from '@/modules/history/balances/BalanceDivergenceView.vue';

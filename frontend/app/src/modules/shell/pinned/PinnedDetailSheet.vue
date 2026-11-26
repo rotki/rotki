@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiCard } from '@rotki/ui-library';
 import { onKeyStroke } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { type ComponentPublicInstance, computed, nextTick, useTemplateRef, watch } from 'vue';

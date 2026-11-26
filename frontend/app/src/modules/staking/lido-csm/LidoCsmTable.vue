@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import type { DataTableColumn } from '@rotki/ui-library';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
 import type { LidoCsmNodeOperator } from '@/modules/staking/staking-types';
+import { type DataTableColumn, RuiButton, RuiDataTable, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { set } from '@vueuse/shared';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

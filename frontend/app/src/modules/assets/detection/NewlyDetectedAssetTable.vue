@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library';
 import type { SpamPredictionToken } from '@/modules/assets/api/use-asset-spam-prediction-api';
 import type { Filters } from '@/modules/assets/detection/newly-detected-filter-keys';
+import { type DataTableColumn, RuiDataTable } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

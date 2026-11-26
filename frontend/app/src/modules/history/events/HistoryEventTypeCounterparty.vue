@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useRotkiTheme } from '@rotki/ui-library';
+import { RuiBadge, RuiIcon, RuiTooltip, useRotkiTheme } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';

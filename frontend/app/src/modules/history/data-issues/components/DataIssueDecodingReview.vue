@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RemediationTimelineItem } from '@/modules/history/data-issues/types';
+import { RuiAlert, RuiButton, RuiCard, RuiDialog } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

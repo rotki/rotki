@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiBadge, RuiTooltip } from '@rotki/ui-library';
 import { useLocations } from '@/modules/core/common/use-locations';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 

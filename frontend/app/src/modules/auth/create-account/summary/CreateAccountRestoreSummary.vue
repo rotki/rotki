@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { CreateAccountStepId } from '@/modules/auth/create-account/types';
+import { RuiButton } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

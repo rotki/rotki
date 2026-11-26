@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiProgress } from '@rotki/ui-library';
 import { logicAnd, logicNot } from '@vueuse/math';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { BankFormData, BankManifest } from '@/modules/banks/types';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { RuiAlert, RuiRevealableTextField, RuiTextField } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, ref, watch } from 'vue';

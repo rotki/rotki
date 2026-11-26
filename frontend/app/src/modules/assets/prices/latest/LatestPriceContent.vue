@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/modules/assets/prices/price-types';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { type DataTableColumn, type DataTableSortData, RuiButton, RuiDataTable, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { omit } from 'es-toolkit';
 import { computed, onMounted, ref } from 'vue';

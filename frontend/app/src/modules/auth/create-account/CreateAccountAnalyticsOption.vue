@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { RuiCheckbox } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 
 const submitUsageAnalytics = defineModel<boolean>({ required: true });

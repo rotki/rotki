@@ -2,6 +2,7 @@
 import type { BaseMessage } from '@/modules/core/messaging/base-message';
 import type { PrioritizedListData, PrioritizedListItemData } from '@/modules/settings/types/prioritized-list-data';
 import { assert, type Nullable, pluralize } from '@rotki/common';
+import { RuiAutoComplete, RuiButton, RuiCard, RuiIcon, RuiTable } from '@rotki/ui-library';
 import { createReusableTemplate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';

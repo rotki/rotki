@@ -4,6 +4,7 @@ import type { AddressBookLocation, AddressBookPayload } from '@/modules/accounts
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { SelectOptions } from '@/modules/core/common/common-types';
 import { Blockchain } from '@rotki/common';
+import { RuiMenuSelect, RuiTextField } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

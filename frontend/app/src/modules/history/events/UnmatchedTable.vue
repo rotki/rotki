@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="TRow extends UnmatchedRow<unknown>">
-import type { DataTableColumn } from '@rotki/ui-library';
+import { type DataTableColumn, RuiChip, RuiDataTable } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

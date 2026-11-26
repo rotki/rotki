@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { Snapshot } from '@/modules/dashboard/snapshots';
 import type { BalanceDeletion } from '@/modules/dashboard/snapshots/composables/use-snapshot-draft';
 import type { BalanceMutation } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { toSentenceCase } from '@rotki/common';
+import { type DataTableColumn, type DataTableSortData, RuiAlert, RuiButton, RuiChip, RuiDataTable, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';

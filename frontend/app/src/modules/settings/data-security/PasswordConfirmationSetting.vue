@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
+import { RuiSwitch, RuiTextField } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';

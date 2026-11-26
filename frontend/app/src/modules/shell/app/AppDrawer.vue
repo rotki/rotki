@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useBreakpoint, useDismissableOverlay } from '@rotki/ui-library';
+import { RuiNavigationDrawer, useBreakpoint, useDismissableOverlay } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

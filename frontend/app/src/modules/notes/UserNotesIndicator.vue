@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiBadge, RuiIcon } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { useI18n } from 'vue-i18n';
 import { useNotesCount } from '@/modules/notes/use-notes-count';

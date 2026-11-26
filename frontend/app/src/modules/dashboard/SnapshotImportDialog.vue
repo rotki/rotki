@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { RuiButton, RuiCard, RuiDialog, RuiFileUpload, RuiIcon } from '@rotki/ui-library';
 import { logicAnd } from '@vueuse/math';
 import { set } from '@vueuse/shared';
 import { watch } from 'vue';

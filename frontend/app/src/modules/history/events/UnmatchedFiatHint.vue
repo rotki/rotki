@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiChip, RuiTooltip } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 
 const { dense = false } = defineProps<{

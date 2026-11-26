@@ -19,7 +19,6 @@
   ],
   "include": [
     "env.d.ts",
-    "components.d.ts",
     "typed-router.d.ts",
     "src/**/*.d.ts",
     "src/**/*.spec.ts",

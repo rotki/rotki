@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BackendProblem, ProblemItem } from '@/modules/core/notifications/problems/backend-problem-tree';
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { useClipboard } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';

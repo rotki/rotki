@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { FailedHistoricalAssetPriceResponse } from '@rotki/common';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { EditableMissingPrice, MissingPrice } from '@/modules/reports/report-types';
+import { type DataTableColumn, type DataTableSortData, RuiButton, RuiCard, RuiDataTable, RuiTab, RuiTabItem, RuiTabItems, RuiTabs } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

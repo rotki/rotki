@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { RuiMenuSelect } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { CostBasisMethod } from '@/modules/settings/types/user-settings';
+import { RuiMenuSelect } from '@rotki/ui-library';
 
 import { useCostBasisMethod } from '@/modules/reports/use-reports';
 import ListItem from '@/modules/shell/components/ListItem.vue';

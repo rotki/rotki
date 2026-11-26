@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiCheckbox, RuiRadio, RuiRadioGroup } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import SettingsMenuSection from '@/modules/settings/SettingsMenuSection.vue';
 

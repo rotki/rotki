@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PullEventPayload } from '@/modules/history/events/event-payloads';
 import { HistoryEventEntryType } from '@rotki/common';
+import { RuiAlert, RuiButton, RuiCard, RuiDialog } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, ref } from 'vue';

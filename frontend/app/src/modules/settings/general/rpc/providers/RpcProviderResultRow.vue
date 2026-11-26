@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiIcon, RuiProgress } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';

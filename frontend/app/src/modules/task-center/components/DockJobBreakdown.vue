@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { RuiIcons } from '@rotki/ui-library';
 import type { JobBreakdownEntry } from '@/modules/task-center/use-job-breakdown';
+import { RuiIcon, type RuiIcons } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { type ActivityOutcome, activityOutcome } from '@/modules/task-center/activity-outcome';
 import { ActivityStatus } from '@/modules/task-center/core/types';

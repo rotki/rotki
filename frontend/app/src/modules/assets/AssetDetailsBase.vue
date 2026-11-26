@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/modules/assets/nfts';
 import type { AssetActions, AssetDisplay, AssetResolution } from '@/modules/assets/types';
+import { RuiButton, RuiIcon, RuiMenu } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { createReusableTemplate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';

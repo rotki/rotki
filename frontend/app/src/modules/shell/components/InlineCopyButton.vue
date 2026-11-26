@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import CopyTooltip from '@/modules/shell/components/CopyTooltip.vue';
 

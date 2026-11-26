@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { useSharedClipboard } from '@/modules/core/common/use-clipboard';
 
 const { value, tooltip, size } = defineProps<{

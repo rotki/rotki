@@ -2,6 +2,7 @@
 import type { XpubPayload } from '@/modules/accounts/blockchain-accounts';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { BtcChains } from '@/modules/core/common/chains';
+import { RuiButton, RuiIcon, RuiTextField, RuiTooltip } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { computed, ref } from 'vue';

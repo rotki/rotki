@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventsRestrictions } from '@/modules/history/events/history-events-restrictions';
 import type { StakingLocation } from '@/pages/staking/staking-pages';
+import { RuiAlert } from '@rotki/ui-library';
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';

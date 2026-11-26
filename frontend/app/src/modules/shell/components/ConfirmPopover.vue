@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { RuiMenu } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { nextTick, ref, useTemplateRef } from 'vue';
 import { focusFirstControl } from '@/modules/shell/components/focus-first-control';

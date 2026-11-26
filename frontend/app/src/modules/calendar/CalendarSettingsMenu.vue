@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiMenu, RuiTooltip } from '@rotki/ui-library';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import GoogleCalendarIntegration from '@/modules/calendar/GoogleCalendarIntegration.vue';

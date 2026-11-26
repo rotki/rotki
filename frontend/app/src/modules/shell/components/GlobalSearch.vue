@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAutoComplete, RuiButton, RuiCard, RuiDialog, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { isDefined, useTimeoutFn } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';

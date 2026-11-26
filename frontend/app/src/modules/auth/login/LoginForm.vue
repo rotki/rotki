@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { LoginCredentials, SyncApproval } from '@/modules/auth/login';
+import { RuiAlert, RuiButton, RuiRevealableTextField } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { useArraySome, watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';

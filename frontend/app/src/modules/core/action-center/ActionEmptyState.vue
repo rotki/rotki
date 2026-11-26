@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ActionItem } from '@/modules/core/action-center/types';
+import { RuiIcon } from '@rotki/ui-library';
 import ActionCenterRowAction from '@/modules/core/action-center/ActionCenterRowAction.vue';
 import { useOpenActionTarget } from '@/modules/core/action-center/use-open-action-target';
 

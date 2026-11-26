@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { invertColor, randomColor } from '@rotki/common';
+import { RuiAutoComplete, RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

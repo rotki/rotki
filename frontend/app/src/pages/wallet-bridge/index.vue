@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAlert } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { set } from '@vueuse/shared';
 import { onBeforeMount, onBeforeUnmount, ref, watch } from 'vue';

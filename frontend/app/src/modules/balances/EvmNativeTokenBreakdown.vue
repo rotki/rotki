@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { AssetBreakdown } from '@/modules/accounts/blockchain-accounts';
 import { type AssetBalance, type BigNumber, Blockchain } from '@rotki/common';
+import { type DataTableColumn, type DataTableSortData, RuiDataTable } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

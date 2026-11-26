@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
+import { RuiSkeletonLoader } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import GetPremiumPlaceholder from '@/modules/shell/components/GetPremiumPlaceholder.vue';

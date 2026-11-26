@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAlert, RuiButton, RuiChip, RuiIcon, RuiRadio, RuiRadioGroup, RuiSwitch } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { StarlingServiceStatus } from '@shared/ipc';
 import { StarlingService } from '@shared/starling/starling-protocol';

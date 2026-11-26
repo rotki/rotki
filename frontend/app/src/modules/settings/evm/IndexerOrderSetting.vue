@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PrioritizedListItemData } from '@/modules/settings/types/prioritized-list-data';
 import type { PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
+import { RuiAlert, RuiButton, RuiCard, RuiDialog, RuiIcon, RuiMenu, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

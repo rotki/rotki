@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RoundingMode } from '@/modules/settings/types/frontend-settings';
 import { BigNumber } from '@rotki/common';
+import { RuiIcon, RuiMenuSelect } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import ListItem from '@/modules/shell/components/ListItem.vue';
 

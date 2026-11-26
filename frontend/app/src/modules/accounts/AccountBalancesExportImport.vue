@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiCard, RuiDialog, RuiFileUpload, RuiIcon, RuiMenu } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { isDefined } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';

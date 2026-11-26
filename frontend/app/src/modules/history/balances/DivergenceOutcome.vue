@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HistoricalBalanceDivergenceResponse } from '@/modules/history/balances/types';
+import { RuiAlert } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 

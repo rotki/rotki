@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
+
 const { tooltip, disabled = false } = defineProps<{
   tooltip: string;
   disabled?: boolean;

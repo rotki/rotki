@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { RepullingEthStakingPayload, RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
+import { RuiTab, RuiTabs } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, useTemplateRef } from 'vue';

@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { PremiumSetup } from '@/modules/auth/login';
+import { RuiMenuSelect } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';

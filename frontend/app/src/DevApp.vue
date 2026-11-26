@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
+
 function reset() {
   sessionStorage.removeItem('vuex');
   window.location.reload();

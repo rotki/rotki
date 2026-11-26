@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import type { SnapshotDraftChange } from '@/modules/dashboard/snapshots/utils/snapshot-math';
+import { RuiIcon } from '@rotki/ui-library';
 import { createReusableTemplate, useVirtualList } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';

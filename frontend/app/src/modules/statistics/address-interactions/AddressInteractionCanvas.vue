@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ECElementEvent, EChartsOption } from 'echarts';
 import type { InteractionIds, InteractionScene } from './interaction-scene';
-import { useRotkiTheme } from '@rotki/ui-library';
+import { RuiButton, RuiIcon, useRotkiTheme } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, markRaw, ref, watch } from 'vue';
 import VChart from 'vue-echarts';

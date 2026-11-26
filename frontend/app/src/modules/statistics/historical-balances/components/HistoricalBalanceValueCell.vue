@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
+import { RuiChip, RuiTooltip } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { PriceStatus } from '@/modules/statistics/historical-balances/use-historical-balance-values';

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { RuiDivider } from '@rotki/ui-library';
+
 const { label = '' } = defineProps<{
   label?: string;
 }>();

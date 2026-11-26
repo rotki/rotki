@@ -2,6 +2,7 @@
 import type { ZodType } from 'zod';
 import type { BalanceSnapshotPayload } from '@/modules/dashboard/snapshots';
 import type { LocationBalancePreview } from '@/modules/dashboard/snapshots/utils/snapshot-location-balance';
+import { RuiRadio, RuiRadioGroup } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, useTemplateRef, watch } from 'vue';

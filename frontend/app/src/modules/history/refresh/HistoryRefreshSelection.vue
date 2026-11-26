@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
+import { RuiButton, RuiCheckbox, RuiIcon, RuiMenu, RuiTab, RuiTabItem, RuiTabItems, RuiTabs, RuiTextField } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';

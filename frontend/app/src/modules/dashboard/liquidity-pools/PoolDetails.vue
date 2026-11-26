@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { PoolAsset } from './types';
 import { type AssetBalanceWithPrice, Zero } from '@rotki/common';
+import { type DataTableColumn, type DataTableSortData, RuiCard, RuiDataTable } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

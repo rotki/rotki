@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { BankConnectionIdentity } from '@/modules/banks/types';
 import { getTextToken } from '@rotki/common';
+import { RuiCheckbox } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { isEqual, sortBy } from 'es-toolkit';
 import { storeToRefs } from 'pinia';

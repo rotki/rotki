@@ -2,6 +2,7 @@
 import type { ZodType } from 'zod';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { BlockchainRpcNodeManageState } from '@/modules/settings/types/rpc';
+import { RuiSlider, RuiSwitch, RuiTextField } from '@rotki/ui-library';
 import { syncRefs } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, shallowRef, watch } from 'vue';

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AccountingOverlayBucket } from '@/modules/history/balances/use-accounting-overlay';
 import { type BigNumber, Zero } from '@rotki/common';
+import { RuiDivider, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

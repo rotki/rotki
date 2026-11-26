@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { StakingLocation } from '@/pages/staking/staking-pages';
+import { RuiIcon, RuiMenu, RuiTextField } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

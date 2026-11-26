@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiDivider, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { computed, ref } from 'vue';

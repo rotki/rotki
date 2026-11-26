@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import type { DataTableSortData } from '@rotki/ui-library';
 import type { AssetBalancesDisplay, AssetBreakdownOptions } from '@/modules/balances/types/balances';
+import { type DataTableSortData, RuiButton, RuiDataTable, RuiTableRowExpander } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, ref, useTemplateRef } from 'vue';

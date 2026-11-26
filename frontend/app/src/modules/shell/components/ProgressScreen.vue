@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiDivider, RuiProgress } from '@rotki/ui-library';
 import { useToNumber } from '@vueuse/core';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

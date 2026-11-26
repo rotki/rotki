@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAlert, RuiButton, RuiCard, RuiIcon, RuiSkeletonLoader, RuiTextField } from '@rotki/ui-library';
 import { useScroll } from '@vueuse/core';
 import { onMounted, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';

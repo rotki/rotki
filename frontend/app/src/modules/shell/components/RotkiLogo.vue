@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LogoProps } from '@rotki/ui-library';
+import { type LogoProps, RuiLogo } from '@rotki/ui-library';
 
 defineOptions({
   inheritAttrs: false,

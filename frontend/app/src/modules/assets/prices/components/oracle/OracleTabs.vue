@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiTab, RuiTabs } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 
 const modelValue = defineModel<'prices' | 'caches'>({ required: true });

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { toSentenceCase } from '@rotki/common';
+import { RuiChip } from '@rotki/ui-library';
 
 /** How a rule processes its event, as a one-line chip; a rule with no treatment shows a dash. */
 defineProps<{

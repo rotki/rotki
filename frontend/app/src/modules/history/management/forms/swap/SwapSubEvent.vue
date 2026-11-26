@@ -4,6 +4,7 @@ import type {
   SwapSubEventField,
   SwapSubEventState,
 } from '@/modules/history/management/forms/swap/swap-sub-event';
+import { RuiButton, RuiIcon, RuiTextArea } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import EventDetailsSection from '@/modules/history/management/forms/common/EventDetailsSection.vue';

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { logicOr } from '@vueuse/math';
 import { useI18n } from 'vue-i18n';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';

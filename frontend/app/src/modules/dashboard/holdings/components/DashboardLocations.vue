@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SourceKind } from '@/modules/dashboard/holdings/core/holdings-types';
 import { Blockchain, toCapitalCase, toSentenceCase } from '@rotki/common';
+import { RuiButton, RuiCard, RuiChip, RuiSkeletonLoader } from '@rotki/ui-library';
 import { useElementSize, useSessionStorage } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { computed, useTemplateRef } from 'vue';

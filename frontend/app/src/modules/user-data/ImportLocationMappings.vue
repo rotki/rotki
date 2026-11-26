@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ImportLocationResolution } from './import-location-types';
 import type { LocationFormData } from '@/modules/locations/location-form';
+import { RuiButton, RuiCheckbox, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, type DeepReadonly, ref, shallowRef } from 'vue';
 import { useI18n } from 'vue-i18n';

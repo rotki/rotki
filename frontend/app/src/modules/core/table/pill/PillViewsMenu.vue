@@ -2,6 +2,7 @@
 import type { SavedFilterLocation } from '@/modules/core/table/filtering';
 import type { SavedView } from '@/modules/core/table/pill/core/saved-view';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
+import { RuiButton, RuiIcon, RuiMenu, RuiTooltip } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, useTemplateRef, watch } from 'vue';

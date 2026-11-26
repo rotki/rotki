@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiMenu } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';

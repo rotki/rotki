@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { getTextToken } from '@rotki/common';
+import { RuiChip, RuiSwitch, RuiTextField } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { type Component, computed, type ComputedRef, defineAsyncComponent, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

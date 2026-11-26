@@ -1,9 +1,9 @@
 <script setup lang="ts" generic="T extends { asset: string }">
-import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/modules/core/common/collection';
 import type { MatchedKeywordWithBehaviour } from '@/modules/core/table/filtering';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import type { RowDeleteQuestion } from '@/modules/shell/components/row-delete-question';
+import { type DataTableColumn, RuiDataTable, type TablePaginationData } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

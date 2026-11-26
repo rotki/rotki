@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiCard } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import SuccessDisplay from '@/modules/shell/components/display/SuccessDisplay.vue';
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { RuiDateTimePicker } from '@rotki/ui-library';
 import type { RuiDateTimePickerProps } from '@rotki/ui-library/components';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+import { RuiButton, RuiDateTimePicker } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import dayjs, { type ManipulateType } from 'dayjs';
 import { computed } from 'vue';

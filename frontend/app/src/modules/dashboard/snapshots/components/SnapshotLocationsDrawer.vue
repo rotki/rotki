@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { LocationDataSnapshot, Snapshot } from '@/modules/dashboard/snapshots';
+import { type DataTableColumn, type DataTableSortData, RuiAlert, RuiButton, RuiDataTable, RuiIcon, RuiNavigationDrawer } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';

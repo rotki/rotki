@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { toHumanReadable } from '@rotki/common';
-import { useRotkiTheme } from '@rotki/ui-library';
+import { RuiIcon, useRotkiTheme } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';

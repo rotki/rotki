@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { RuiMenu } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
+import { RuiMenu } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { nextTick, shallowRef, useTemplateRef, watch } from 'vue';

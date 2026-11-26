@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T">
-import type { TablePaginationData } from '@rotki/ui-library';
 import type { UnmatchedFailure } from '@/modules/history/events/unmatched-actions';
+import { RuiCheckbox, RuiProgress, RuiTableEmptyState, RuiTablePagination, type TablePaginationData } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

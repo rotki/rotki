@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiProgress } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { useTokenDetectionUi } from '@/modules/balances/blockchain/use-token-detection-ui';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';

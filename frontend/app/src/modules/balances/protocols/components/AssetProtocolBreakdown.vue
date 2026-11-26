@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import { type ProtocolBalanceWithChains, transformCase } from '@rotki/common';
+import { type DataTableColumn, type DataTableSortData, RuiDataTable } from '@rotki/ui-library';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';

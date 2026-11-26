@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ProfitLossReportPeriod } from '@/modules/reports/report-types';
+import { RuiIcon } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BankConnection } from '@/modules/banks/types';
+import { RuiChip, RuiTooltip } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 

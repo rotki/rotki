@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Snapshot } from '@/modules/dashboard/snapshots';
 import { type BigNumber, Zero } from '@rotki/common';
+import { RuiAlert } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { onKeyStroke, useEventListener } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';

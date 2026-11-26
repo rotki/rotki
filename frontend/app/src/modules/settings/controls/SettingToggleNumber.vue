@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 import type { WritableSettingKeyOf } from '@/modules/settings/settings-writer';
+import { RuiSwitch, RuiTextField } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';
 import { useForm } from '@/modules/core/form/use-form';

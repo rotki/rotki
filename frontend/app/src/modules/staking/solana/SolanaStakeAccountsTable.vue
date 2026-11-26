@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library';
 import type { SolanaStakeAccountRow } from '@/modules/staking/solana/use-solana-stake-accounts';
+import { type DataTableColumn, RuiDataTable } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';

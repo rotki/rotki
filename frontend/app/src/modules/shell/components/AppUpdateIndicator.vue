@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { useIntervalFn } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { assert } from '@rotki/common';
+import { RuiAlert } from '@rotki/ui-library';
 import { isDefined } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, useTemplateRef, watch } from 'vue';

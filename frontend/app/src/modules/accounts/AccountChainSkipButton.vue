@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
+
 defineProps<{
   chain: string;
   /** What a click would do, or why nothing can be done. */

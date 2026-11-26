@@ -5,6 +5,7 @@ import type {
   AddressBookPayload,
   AddressBookRequestPayload,
 } from '@/modules/accounts/address-book/eth-names';
+import { RuiButton, RuiIcon, RuiTab, RuiTabs } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, ref } from 'vue';

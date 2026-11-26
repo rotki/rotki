@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiTextField } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
 import { useI18n } from 'vue-i18n';
 import HelpLink from '@/modules/shell/components/HelpLink.vue';

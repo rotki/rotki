@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { LocationAliases } from '@/modules/locations/use-location-tree-api';
+import { type DataTableColumn, RuiButton, RuiDataTable, RuiIcon, type TablePaginationData } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, onMounted, ref, shallowRef } from 'vue';
 import { useI18n } from 'vue-i18n';

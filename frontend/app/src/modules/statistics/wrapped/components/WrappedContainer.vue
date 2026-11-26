@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiCard } from '@rotki/ui-library';
 import { useTimeoutFn } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { onBeforeMount, ref, watch } from 'vue';

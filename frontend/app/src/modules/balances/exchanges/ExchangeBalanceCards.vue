@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import type { RouteLocationRaw } from 'vue-router';
+import { RuiIcon } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { calculatePercentage } from '@/modules/core/common/data/calculation';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DecodingComparisonEvent } from '@/modules/history/data-issues/schemas';
+import { RuiChip } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ValueDisplay from '@/modules/assets/amount-display/components/ValueDisplay.vue';

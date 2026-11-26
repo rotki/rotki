@@ -3,6 +3,7 @@ import type { RouteLocationRaw } from 'vue-router';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { IssueDescription } from '@/modules/history/data-issues/types';
 import { toHumanReadable } from '@rotki/common';
+import { RuiCard, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { useMutationObserver, useResizeObserver } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { nextTick, onMounted, ref, useTemplateRef } from 'vue';

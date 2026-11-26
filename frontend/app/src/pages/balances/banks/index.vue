@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { storeToRefs } from 'pinia';
 import { computed, onBeforeMount, ref } from 'vue';

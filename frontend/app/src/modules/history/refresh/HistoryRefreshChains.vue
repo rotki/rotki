@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { ChainAddress } from '@/modules/history/events/event-payloads';
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import HistoryRefreshAddressSelection from '@/modules/history/refresh/HistoryRefreshAddressSelection.vue';
 import HistoryRefreshChainItem from '@/modules/history/refresh/HistoryRefreshChainItem.vue';

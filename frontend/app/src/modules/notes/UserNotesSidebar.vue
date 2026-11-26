@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiIcon, RuiNavigationDrawer, RuiTab, RuiTabs, RuiTooltip } from '@rotki/ui-library';
 import { createReusableTemplate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';

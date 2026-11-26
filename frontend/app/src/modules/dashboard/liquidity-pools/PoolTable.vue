@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { PoolAsset, PoolLiquidityBalance } from './types';
+import { type DataTableColumn, type DataTableSortData, RuiDataTable } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, onBeforeMount, ref, watch } from 'vue';

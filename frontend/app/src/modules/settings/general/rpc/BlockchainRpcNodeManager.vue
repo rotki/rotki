@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Blockchain } from '@rotki/common';
+import { RuiIcon, RuiSwitch, RuiTable, RuiTooltip } from '@rotki/ui-library';
 import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import BlockchainRpcNodeFormDialog from '@/modules/settings/general/rpc/BlockchainRpcNodeFormDialog.vue';

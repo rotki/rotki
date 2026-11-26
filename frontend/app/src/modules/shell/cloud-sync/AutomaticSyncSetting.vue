@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { RuiSwitch } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
+import { RuiSwitch } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';

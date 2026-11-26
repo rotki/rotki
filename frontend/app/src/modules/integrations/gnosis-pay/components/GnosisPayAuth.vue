@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiProgress } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { logicNot, logicOr } from '@vueuse/math';
 import { get, set } from '@vueuse/shared';

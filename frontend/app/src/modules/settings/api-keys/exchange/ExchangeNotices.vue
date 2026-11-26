@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiAlert } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useLocationStore } from '@/modules/core/common/use-location-store';

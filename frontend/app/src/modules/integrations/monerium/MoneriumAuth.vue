@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { OAuthResult } from '@shared/ipc';
 import { type Notification, NotificationGroup, NotificationKind, Severity } from '@rotki/common';
+import { RuiButton, RuiIcon, RuiProgress, RuiTextField } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue';
 import { useI18n } from 'vue-i18n';

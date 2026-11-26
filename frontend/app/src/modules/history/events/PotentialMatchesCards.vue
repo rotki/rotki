@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PotentialMatchRow } from '@/modules/history/events/matching/types';
+import { RuiButton, RuiIcon, RuiProgress } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';

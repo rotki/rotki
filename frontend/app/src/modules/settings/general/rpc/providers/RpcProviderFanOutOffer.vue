@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RpcProviderCandidate } from '@/modules/settings/general/rpc/providers/rpc-provider-plan';
+import { RuiAccordion, RuiAccordions, RuiAlert, RuiCheckbox, RuiProgress } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import RpcProviderCandidateRow from '@/modules/settings/general/rpc/providers/RpcProviderCandidateRow.vue';

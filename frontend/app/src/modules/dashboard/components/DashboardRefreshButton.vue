@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiButton, RuiButtonGroup, RuiDivider, RuiIcon, RuiMenu, RuiTooltip } from '@rotki/ui-library';
 import { set } from '@vueuse/shared';
 import { computed, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';

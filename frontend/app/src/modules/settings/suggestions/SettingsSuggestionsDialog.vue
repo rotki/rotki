@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SuggestionSelection } from './use-settings-suggestions';
+import { RuiButton, RuiCard, RuiDialog, RuiIcon } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { groupBy } from 'es-toolkit';
 import { computed, ref, watch } from 'vue';

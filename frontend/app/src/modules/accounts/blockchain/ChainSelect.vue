@@ -1,8 +1,8 @@
 <script setup lang="ts" generic="TClear = undefined, TClearable extends boolean = false">
-import type { ClearedValue, RuiAutoComplete } from '@rotki/ui-library';
 import type { ChainInfo } from '@/modules/core/api/types/chains';
 import type { ForwardedProps, UnexportedAutoCompleteProps } from '@/modules/core/common/forwarded-props';
 import { Blockchain } from '@rotki/common';
+import { type ClearedValue, RuiAutoComplete } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

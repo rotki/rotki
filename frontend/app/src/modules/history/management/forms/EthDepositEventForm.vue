@@ -2,6 +2,7 @@
 import type { EthDepositEvent } from '@/modules/history/events/schemas';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import { Blockchain } from '@rotki/common';
+import { RuiDivider, RuiTextField } from '@rotki/ui-library';
 import { watchImmediate } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { computed, ref } from 'vue';

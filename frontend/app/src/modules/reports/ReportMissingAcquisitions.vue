@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { MissingAcquisition } from '@/modules/reports/report-types';
+import { type DataTableColumn, type DataTableSortData, RuiButton, RuiDataTable, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { createReusableTemplate } from '@vueuse/core';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';

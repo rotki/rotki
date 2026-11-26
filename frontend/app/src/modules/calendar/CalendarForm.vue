@@ -3,6 +3,7 @@ import type { ZodType } from 'zod';
 import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
 import type { CalendarEvent } from '@/modules/calendar/types';
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { RuiCheckbox, RuiTextArea, RuiTextField } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, useTemplateRef } from 'vue';

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiIcon, RuiProgress, RuiSkeletonLoader } from '@rotki/ui-library';
 import { useVirtualList } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, useId } from 'vue';

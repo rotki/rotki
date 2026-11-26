@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { RuiChip } from '@rotki/ui-library';
 import type { ForwardedProps } from '@/modules/core/common/forwarded-props';
 import type { Tag } from '@/modules/tags/tags';
+import { RuiChip } from '@rotki/ui-library';
 import { useSetting } from '@/modules/settings/use-setting';
 
 interface Props {

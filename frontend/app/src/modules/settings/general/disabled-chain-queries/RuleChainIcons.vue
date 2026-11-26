@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiTooltip } from '@rotki/ui-library';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 
 defineProps<{
