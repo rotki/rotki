@@ -6,19 +6,17 @@ import type { Collection } from '@/modules/core/common/collection';
 import type { PillParams } from '@/modules/core/table/param-refs';
 import type { FieldDef } from '@/modules/core/table/pill/core/types';
 import { type DataTableSortData, RuiDataTable, RuiTableRowExpander, type TablePaginationData } from '@rotki/ui-library';
-import { get, set } from '@vueuse/shared';
-import { computed, shallowRef } from 'vue';
 import AssetUnderlyingTokens from '@/modules/assets/admin/AssetUnderlyingTokens.vue';
 import ManagedAssetActions from '@/modules/assets/admin/managed/ManagedAssetActions.vue';
 import ManagedAssetIgnoreSwitch from '@/modules/assets/admin/managed/ManagedAssetIgnoreSwitch.vue';
 import ManagedAssetName from '@/modules/assets/admin/managed/ManagedAssetName.vue';
 import ManagedAssetRowActions from '@/modules/assets/admin/managed/ManagedAssetRowActions.vue';
+import { useManagedAssetSelectionMode } from '@/modules/assets/admin/managed/use-managed-asset-selection-mode';
 import { useAssetDisplayHelpers } from '@/modules/assets/admin/use-asset-display-helpers';
 import { useManagedAssetOperations } from '@/modules/assets/admin/use-managed-asset-operations';
 import { useManagedAssetTable } from '@/modules/assets/admin/use-managed-asset-table';
 import SpamAssessmentHint from '@/modules/assets/spam/SpamAssessmentHint.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
-import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 
@@ -55,13 +53,7 @@ const emit = defineEmits<{
   'delete-asset': [asset: SupportedAsset];
 }>();
 
-const selectionMode = shallowRef<boolean>(false);
-
-/** `undefined` outside selection mode, which is what makes the table drop its checkbox column. */
-const tableSelection = computed<string[] | undefined>({
-  get: () => (get(selectionMode) ? get(selected) : undefined),
-  set: (value?: string[]) => set(selected, value ?? []),
-});
+const { modelSelectionMode, tableSelection } = useManagedAssetSelectionMode(selected);
 
 const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
@@ -88,14 +80,9 @@ const {
   getSpamAssessment,
   isExpanded,
   spamDisabled,
-} = useManagedAssetTable(paginationModel, expanded, () => collection, selected);
+} = useManagedAssetTable(paginationModel, expanded, () => collection, selected, sortModel);
 
-useRememberTableSorting<SupportedAsset>(TableId.SUPPORTED_ASSET, sortModel, cols);
-
-const { canBeEdited, canBeIgnored, disabledRows, formatType, getAsset } = useAssetDisplayHelpers(
-  () => collection,
-  isAssetWhitelisted,
-);
+const { canBeEdited, canBeIgnored, disabledRows, formatType, getAsset } = useAssetDisplayHelpers(() => collection, isAssetWhitelisted);
 </script>
 
 <template>
@@ -104,7 +91,7 @@ const { canBeEdited, canBeIgnored, disabledRows, formatType, getAsset } = useAss
       <ManagedAssetActions
         v-model:pill-params="pillParams"
         v-model:selected="selected"
-        v-model:selection-mode="selectionMode"
+        v-model:selection-mode="modelSelectionMode"
         v-model:matches="filtersModel"
         :ignored-handling="ignoredHandling"
         :fields="fields"

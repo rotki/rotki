@@ -1,25 +1,16 @@
-import type { Result } from 'plainfp/result';
-import type { TaskError } from '@/modules/core/tasks/task-result';
-import { assert } from '@rotki/common';
+import type { ActivityId } from '@/modules/task-center/core/types';
 import { createSharedComposable } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
-import { computed, type ComputedRef, type MaybeRefOrGetter, toValue, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { msg } from '@/message-key';
-import { tokenDetectionActivity } from '@/modules/balances/balances.activity';
+import { computed, type ComputedRef, type MaybeRefOrGetter, watch } from 'vue';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import { useTokenDetectionActivity } from '@/modules/balances/blockchain/use-token-detection-activity';
 import { useTokenDetectionApi } from '@/modules/balances/blockchain/use-token-detection-api';
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
+import { useTokenDetectionTasks } from '@/modules/balances/blockchain/use-token-detection-tasks';
 import { useBalanceHydration } from '@/modules/balances/use-balance-hydration';
 import { arrayify } from '@/modules/core/common/data/array';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useDisabledChains } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chains';
-import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { isTerminalStatus } from '@/modules/task-center/core/status';
-import { type ActivityId, activityParts } from '@/modules/task-center/core/types';
-import { useNativeTask } from '@/modules/task-center/use-native-task';
-import { useTaskOrchestrator } from '@/modules/task-center/use-task-orchestrator';
 
 interface UseTokenDetectionOrchestratorReturn {
   detectTokens: (chain: string | string[], addresses: string[]) => Promise<void>;
@@ -36,61 +27,13 @@ interface UseTokenDetectionOrchestratorReturn {
 }
 
 export const useTokenDetectionOrchestrator = createSharedComposable((): UseTokenDetectionOrchestratorReturn => {
-  const { t } = useI18n({ useScope: 'global' });
-  const { detectTokensForAddress, fetchCachedDetectedTokens } = useTokenDetectionApi();
+  const { fetchCachedDetectedTokens } = useTokenDetectionApi();
   const { setMassDetecting } = useTokenDetectionStore();
   const { addresses } = useAccountAddresses();
-  const { getChainName, supportsTransactions, txEvmChains } = useSupportedChains();
+  const { supportsTransactions, txEvmChains } = useSupportedChains();
   const { hydrate } = useBalanceHydration();
-  const { isAddressExcluded } = useDisabledChains();
-  const { submitTask } = useNativeTask();
-  const { activities } = useTaskOrchestrator();
-
-  /**
-   * Whether detection is live for a chain, or for one address on it when `address` is given.
-   *
-   * @remarks
-   * Callers need not filter out addresses already detecting: the deterministic activity id dedups
-   * a concurrent re-submit.
-   */
-  function isDetectingTokens(blockchain: string, address: string | null): boolean {
-    return get(activities).some((activity) => {
-      if (activity.kind !== tokenDetectionActivity.kind || isTerminalStatus(activity.status))
-        return false;
-      const [chain, addr] = activityParts(activity.id);
-      return chain === blockchain && (address === null || addr === address);
-    });
-  }
-
-  /**
-   * One detection activity per address, resolving when they have all settled.
-   *
-   * Per-address rather than one activity for the chain, and that is deliberate: `ActivitySteps`
-   * is `{ current, total }` and nothing else, so progress can say "3/9" but never *which* address;
-   * and `cancel` targets an activity id, so per-account cancel needs per-account activities.
-   * Folding them into the chain would delete both capabilities, not defer them.
-   *
-   * On the per-chain `detect:` family, never {@link BALANCES_LANE}. The chain job that awaits
-   * this holds a balances slot for its whole body, so sharing that lane would deadlock it against
-   * its own children.
-   */
-  const queueDetectionForChain = async (chain: string, addrs: string[], parent?: ActivityId): Promise<void> => {
-    assert(supportsTransactions(chain));
-    const detectable = addrs.filter(addr => !isAddressExcluded(chain, addr));
-    if (detectable.length === 0)
-      return;
-
-    await Promise.all(detectable.map(async addr => submitTask({
-      id: tokenDetectionActivity.id({ address: addr, chain }),
-      kind: tokenDetectionActivity.kind,
-      lane: tokenDetectionActivity.laneOf?.({ address: addr, chain }),
-      parent,
-      rerunnable: true,
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => detectTokensForAddress(runTask, chain, addr),
-      subtitle: activityLabelFor(msg.$t('task_center.activity.token_detection.detect'), { address: addr, chain: getChainName(chain) }),
-      title: t('task_center.group.token_detection'),
-    })));
-  };
+  const { isDetectingTokens, useIsDetecting } = useTokenDetectionActivity();
+  const { queueDetectionForChain } = useTokenDetectionTasks();
 
   /**
    * Detection for one chain, as children of the chain job that awaits it.
@@ -157,14 +100,6 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
       setMassDetecting(undefined);
     }
   };
-
-  const useIsDetecting = (
-    chain: MaybeRefOrGetter<string | string[]>,
-    address: MaybeRefOrGetter<string | null> = null,
-  ): ComputedRef<boolean> => computed<boolean>(() => {
-    const addr = toValue(address);
-    return arrayify(toValue(chain)).some(blockchain => isDetectingTokens(blockchain, addr));
-  });
 
   // Watcher: sync cached detection data when monitored addresses change
   const monitoredAddresses = computed<Record<string, string[]>>(() => {

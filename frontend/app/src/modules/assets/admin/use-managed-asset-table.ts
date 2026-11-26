@@ -1,13 +1,14 @@
 import type { SupportedAsset } from '@rotki/common';
-import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { SpamPredictionToken } from '@/modules/assets/api/use-asset-spam-prediction-api';
 import type { Collection } from '@/modules/core/common/collection';
 import { get, set } from '@vueuse/shared';
 import { some } from 'es-toolkit/compat';
-import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, toValue, watch } from 'vue';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, toValue, watch, type WritableComputedRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { type SpamAssessment, useSpamAssessments } from '@/modules/assets/spam/use-spam-assessments';
 import { EVM_TOKEN, isSpammableAssetType, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
+import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { type TableEmptyState, useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import { useSetting } from '@/modules/settings/use-setting';
 
@@ -49,6 +50,7 @@ export function useManagedAssetTable(
   expanded: Ref<SupportedAsset[]>,
   collection: MaybeRefOrGetter<Collection<SupportedAsset>>,
   selected: MaybeRefOrGetter<string[]>,
+  sortModel?: WritableComputedRef<DataTableSortData<SupportedAsset>> | Ref<DataTableSortData<SupportedAsset>>,
 ): UseManagedAssetTableReturn {
   const { t } = useI18n({ useScope: 'global' });
   const itemsPerPage = useSetting('itemsPerPage');
@@ -90,6 +92,9 @@ export function useManagedAssetTable(
     key: 'actions',
     label: '',
   }]);
+
+  if (sortModel)
+    useRememberTableSorting<SupportedAsset>(TableId.SUPPORTED_ASSET, sortModel, cols);
 
   const data = computed<SupportedAsset[]>(() => toValue(collection).data ?? []);
   const found = computed<number>(() => toValue(collection).found ?? 0);

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { SpamPredictionToken } from '@/modules/assets/api/use-asset-spam-prediction-api';
+import type { NewDetectedToken, NewDetectedTokensRequestPayload } from './types';
 import type { Filters } from '@/modules/assets/detection/newly-detected-filter-keys';
-import { type DataTableColumn, RuiDataTable } from '@rotki/ui-library';
+import { RuiDataTable } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -10,16 +10,14 @@ import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useNewlyDetectedFields } from '@/modules/assets/detection/use-newly-detected-fields';
 import { useNewlyDetectedSelection } from '@/modules/assets/detection/use-newly-detected-selection';
 import SpamAssessmentHint from '@/modules/assets/spam/SpamAssessmentHint.vue';
-import { useSpamAssessments } from '@/modules/assets/spam/use-spam-assessments';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
-import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useServerTable, useTableEmptyState } from '@/modules/core/table/use-server-table';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import NewlyDetectedAssetRowActions from './NewlyDetectedAssetRowActions.vue';
 import NewlyDetectedAssetToolbar from './NewlyDetectedAssetToolbar.vue';
-import { type NewDetectedToken, NewDetectedTokenKind, type NewDetectedTokensRequestPayload } from './types';
-import { type NewlyDetectedTokenRow, useNewlyDetectedTokenRows } from './use-newly-detected-token-rows';
+import { useNewlyDetectedColumns } from './use-newly-detected-columns';
+import { useNewlyDetectedPageRows } from './use-newly-detected-page-rows';
 import { useNewlyDetectedTokens } from './use-newly-detected-tokens';
 
 defineOptions({
@@ -54,66 +52,9 @@ const {
 const emptyState = useTableEmptyState({ error });
 
 const pageTokens = computed<NewDetectedToken[]>(() => get(collection).data);
-const spamTokens = computed<SpamPredictionToken[]>(() => get(pageTokens)
-  .filter(token => token.tokenKind === NewDetectedTokenKind.EVM)
-  .map(token => ({ identifier: token.tokenIdentifier, txReference: token.seenTxReference })));
-const { assessments, status: spamStatus } = useSpamAssessments(spamTokens);
+const { rows, spamStatus } = useNewlyDetectedPageRows(pageTokens);
 
-const cols = computed<DataTableColumn<NewlyDetectedTokenRow>[]>(() => [
-  {
-    // `max-w-0`: the asset takes the room left and truncates, keeping the actions on screen
-    cellClass: 'py-0 max-w-0',
-    class: 'py-0 w-full',
-    key: 'tokenIdentifier',
-    label: t('common.asset'),
-    sortable: true,
-  },
-  {
-    cellClass: 'py-0',
-    class: 'py-0',
-    key: 'address',
-    label: t('common.address'),
-    sortable: false,
-  },
-  {
-    cellClass: 'py-0',
-    class: 'py-0',
-    key: 'price',
-    label: t('common.price'),
-    sortable: false,
-  },
-  {
-    cellClass: 'py-0',
-    class: 'py-0',
-    key: 'spam',
-    label: t('spam_estimate.label'),
-    sortable: false,
-  },
-  {
-    cellClass: 'py-0',
-    class: 'py-0',
-    key: 'detectedAt',
-    label: t('asset_table.newly_detected.detected_at'),
-    sortable: true,
-  },
-  {
-    cellClass: 'py-0',
-    class: 'py-0',
-    key: 'description',
-    label: t('asset_table.newly_detected.seen_during'),
-  },
-  {
-    align: 'end',
-    cellClass: 'py-0 w-px',
-    class: 'py-0',
-    key: 'actions',
-    label: t('common.actions_text'),
-  },
-]);
-
-useRememberTableSorting<NewlyDetectedTokenRow>(TableId.NEWLY_DETECTED_ASSETS, sort, cols);
-
-const rows = useNewlyDetectedTokenRows(pageTokens, assessments);
+const cols = useNewlyDetectedColumns(sort);
 
 const {
   allSelected,

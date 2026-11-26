@@ -1,26 +1,18 @@
 import type { MaybeRef } from 'vue';
-import type {
-  NonFungibleBalance,
-  NonFungibleBalancesCollectionResponse,
-  NonFungibleBalancesRequestPayload,
-} from '@/modules/balances/types/nfbalances';
+import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/modules/balances/types/nfbalances';
 import type { Collection } from '@/modules/core/common/collection';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { pipe } from 'plainfp';
-import { map as mapResult, type Result } from 'plainfp/result';
 import { map, type ResultAsync } from 'plainfp/result-async';
-import { useI18n } from 'vue-i18n';
-import { manualPriceAddActivity } from '@/modules/assets/prices/prices.activity';
 import { useNftBalancesApi } from '@/modules/balances/api/use-nft-balances-api';
 import { nftBalancesActivity } from '@/modules/balances/balances.activity';
+import { useNftBalancesSync } from '@/modules/balances/nft/use-nft-balances-sync';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { fromRequest, type RequestError } from '@/modules/core/api/request-result';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { logger } from '@/modules/core/common/logging/logging';
 import { Module } from '@/modules/core/common/modules';
-import { onActionableError, type TaskError } from '@/modules/core/tasks/task-result';
-import { moduleToggleActivity } from '@/modules/settings/modules/module-toggle.activity';
 import { useSetting } from '@/modules/settings/use-setting';
 import { shouldSkipFetch } from '@/modules/task-center/core/status';
 import { useNativeTask } from '@/modules/task-center/use-native-task';
@@ -33,9 +25,9 @@ interface NftBalancesReturn {
 export function useNftBalances(): NftBalancesReturn {
   const activeModules = useSetting('activeModules');
   const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
-  const { statusOf, submitTask } = useNativeTask();
-  const { t } = useI18n({ useScope: 'global' });
-  const { fetchNfBalances, fetchNfBalancesTask } = useNftBalancesApi();
+  const { statusOf } = useNativeTask();
+  const { fetchNfBalances } = useNftBalancesApi();
+  const { syncNonFungibleBalances } = useNftBalancesSync();
 
   const fetchNonFungibleBalances = async (
     payload: MaybeRef<NonFungibleBalancesRequestPayload>,
@@ -57,9 +49,8 @@ export function useNftBalances(): NftBalancesReturn {
    * Refreshes the non-fungible balances, an expensive query.
    *
    * @remarks
-   * Only two things make it stale: a hand-edited price, since that changes what an NFT is worth, and
-   * enabling the module, which makes these fetchable where they were not before. The price trigger
-   * is scoped to manual edits alone, so the automatic sweeps do not keep re-running this.
+   * Skipped while the NFT module is off, while a run is in flight, and, unless the user asked,
+   * once it has loaded. See {@link useNftBalancesSync} for what makes it stale.
    */
   const refreshNonFungibleBalances = async (userInitiated = false): Promise<void> => {
     if (!get(activeModules).includes(Module.NFTS))
@@ -71,32 +62,7 @@ export function useNftBalances(): NftBalancesReturn {
       return;
     }
 
-    const defaults: NonFungibleBalancesRequestPayload = {
-      ascending: [true],
-      ignoreCache: true,
-      limit: 0,
-      offset: 0,
-      orderByAttributes: ['name'],
-    };
-
-    const outcome = await submitTask({
-      id: nftBalancesActivity.id(),
-      kind: nftBalancesActivity.kind,
-      rerunnable: true,
-      staleAfter: [
-        { kind: manualPriceAddActivity.kind, parts: manualPriceAddActivity.partsWithin([]) },
-        { kind: moduleToggleActivity.kind, parts: moduleToggleActivity.partsOf({ enabled: true, module: Module.NFTS }) },
-      ],
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<NonFungibleBalancesCollectionResponse>(
-          async () => fetchNfBalancesTask(defaults),
-        ),
-        () => {},
-      ),
-      title: t('task_center.group.nft_balances'),
-    });
-
-    onActionableError(outcome, error => logger.error(error.message));
+    await syncNonFungibleBalances();
   };
 
   return {

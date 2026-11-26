@@ -1,4 +1,5 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { SettingsUpdate, UserAccount } from '@/modules/settings/types/user-settings';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { err, none, ok, type OptionType as Option, type ResultType as Result } from 'plainfp';
@@ -6,17 +7,13 @@ import { lastLogin } from '@/modules/auth/account-management';
 import { type CreateAccountPayload, IncompleteUpgradeError, SyncConflictError } from '@/modules/auth/login';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useUsersApi } from '@/modules/auth/use-users-api';
-import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { logger } from '@/modules/core/common/logging/logging';
 import { sigilBus } from '@/modules/core/sigil/event-bus';
 import { useSessionSettings } from '@/modules/session/use-session-settings';
-import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
-import { completeStoredSettings } from '@/modules/settings/types/frontend-settings-migrations';
-import { type SettingsUpdate, UserAccount, UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { useMonitorService } from '@/modules/shell/app/use-monitor-service';
 import { isActionable, useNativeTask } from '@/modules/task-center/use-native-task';
 import { sessionCreateActivity, sessionLoginActivity } from './unlock.activity';
+import { type LoadedAccount, useAccountLoader } from './use-account-loader';
 import { useAssetUpdateSteps } from './use-asset-update-steps';
 import { useStoredCredentials } from './use-stored-credentials';
 import {
@@ -26,15 +23,6 @@ import {
   UnlockErrorKind,
   type UnlockSteps,
 } from './use-unlock-flow';
-
-interface LoadedAccount {
-  settings: UserSettingsModel;
-  exchanges: Exchange[];
-  fetchData: boolean;
-  username: string;
-  /** Set by `createUnlock`. Suppresses the settings-suggestions dialog for a fresh account. */
-  newAccount?: boolean;
-}
 
 export interface UseUnlockStepsReturn {
   loginSteps: UnlockSteps;
@@ -54,32 +42,12 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
   const { submitTask } = useNativeTask();
   const { initialize } = useSessionSettings();
   const { authenticate: sessionAuthenticate, checkIfLogged, colibriLogin, createAccount: callCreateAccount, login: callLogin } = useUsersApi();
-  const { getFrontendSettings, getRawSettings, patchFrontendSettings } = useSettingsApi();
-  const { getExchanges } = useExchangeApi();
   const { resolveStoredCredentials } = useStoredCredentials();
+  const { parseAccount, resumeSession } = useAccountLoader();
   const assetSteps = useAssetUpdateSteps();
 
   /** The account `unlock` produced and `loadSession` consumes. One flow runs at a time. */
   let loaded: LoadedAccount | undefined;
-
-  /**
-   * Reads the frontend settings and persists what {@link completeStoredSettings} says is missing.
-   *
-   * @remarks
-   * Only logs on a failed write: parsing migrates in memory, so a login must not hinge on it.
-   */
-  async function loadFrontendSettings(): Promise<Record<string, unknown>> {
-    const { settings, write } = completeStoredSettings(await getFrontendSettings());
-    if (write !== undefined) {
-      try {
-        await patchFrontendSettings(write.patch, write.remove);
-      }
-      catch (error: unknown) {
-        logger.error('failed to write back the frontend settings', error);
-      }
-    }
-    return settings;
-  }
 
   /** Maps a thrown failure to a typed error, and onto the store refs the conflict dialogs read. */
   function toUnlockError(error: unknown): UnlockError {
@@ -112,20 +80,6 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
     }
   }
 
-  async function resumeSession(name: string): Promise<Result<LoadedAccount, UnlockError>> {
-    const [rawSettings, frontendSettings, exchanges] = await Promise.all([
-      getRawSettings(),
-      loadFrontendSettings(),
-      getExchanges(),
-    ]);
-    return ok({
-      exchanges,
-      fetchData: true,
-      settings: UserSettingsModel.parse({ ...rawSettings, frontendSettings }),
-      username: name,
-    });
-  }
-
   /**
    * Logs in through the orchestrator, flagged `ephemeral` so it leaves no task-center entry: it
    * settles before the shell mounts. A conflict cause rides out on `TaskFailed.cause`.
@@ -156,20 +110,6 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
     await colibriLogin({ password: credentials.password, username: credentials.username });
     const account = await parseAccount(outcome.value);
     return ok({ exchanges: account.exchanges, fetchData: true, settings: account.settings, username: name });
-  }
-
-  /**
-   * Parses a login or account-creation response, splicing in the frontend settings it lacks.
-   *
-   * @remarks
-   * Without them `initialize` skips the whole frontend hydration.
-   */
-  async function parseAccount(response: { exchanges: Exchange[]; settings: object }): Promise<UserAccount> {
-    const frontendSettings = await loadFrontendSettings();
-    return UserAccount.parse({
-      ...response,
-      settings: { ...response.settings, frontendSettings },
-    });
   }
 
   /**
@@ -252,10 +192,7 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
   const resumeUnlock = async (credentials: UnlockCredentials): Promise<Result<void, UnlockError>> =>
     guarded(async () => {
       const name = credentials.username || get<string>(lastLogin);
-      const account = await resumeSession(name);
-      if (!account.ok)
-        return account;
-      loaded = account.value;
+      loaded = await resumeSession(name);
       return ok(undefined);
     });
 

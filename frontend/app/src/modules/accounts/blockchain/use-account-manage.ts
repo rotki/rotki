@@ -12,21 +12,19 @@ import type { Module } from '@/modules/core/common/modules';
 import { assert, bigNumberify, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { set } from '@vueuse/shared';
-import { readonly, type Ref, ref, shallowRef } from 'vue';
+import { readonly, type Ref, shallowRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { getAccountAddress, getChain, matchKind } from '@/modules/accounts/account-utils';
 import { ALL_EVM_CHAINS, EVM_PSEUDO_CHAIN } from '@/modules/accounts/accounts.activity';
 import { additionError, awaitsAddition, isNothingButCancelled } from '@/modules/accounts/blockchain/addition-outcome';
+import { useAccountSaveErrors, type UseAccountSaveErrorsReturn } from '@/modules/accounts/blockchain/use-account-save-errors';
 import { useAddressCheck } from '@/modules/accounts/blockchain/use-address-check';
 import { useAccountEdits } from '@/modules/accounts/use-account-edits';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { getKeyType, guessPrefix } from '@/modules/accounts/xpub';
-import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { isBtcChain } from '@/modules/core/common/chains';
-import { logger } from '@/modules/core/common/logging/logging';
-import { getErrorMessage } from '@/modules/core/notifications/use-notifications';
 
 interface AccountManageMode {
   readonly mode: 'edit' | 'add';
@@ -149,7 +147,7 @@ export function editBlockchainAccount(account: BlockchainAccountBalance): Accoun
 
 interface UseAccountManageReturn {
   pending: Readonly<Ref<boolean>>;
-  modelErrorMessages: Ref<ValidationErrors>;
+  modelErrorMessages: UseAccountSaveErrorsReturn['modelErrorMessages'];
   saveError: Readonly<Ref<string>>;
   saveErrorIsPremium: Readonly<Ref<boolean>>;
   save: (state: AccountManageState) => Promise<boolean>;
@@ -158,9 +156,6 @@ interface UseAccountManageReturn {
 
 export function useAccountManage(): UseAccountManageReturn {
   const pending = shallowRef<boolean>(false);
-  const modelErrorMessages = ref<ValidationErrors>({});
-  const saveError = shallowRef<string>('');
-  const saveErrorIsPremium = shallowRef<boolean>(false);
 
   const { t } = useI18n({ useScope: 'global' });
 
@@ -169,25 +164,15 @@ export function useAccountManage(): UseAccountManageReturn {
   const { addEth2Validator, editEth2Validator, updateEthStakingOwnership } = useEthStaking();
   const { editAccount, editAgnosticAccount } = useAccountEdits();
   const { addressCheck } = useAddressCheck();
-
-  function handleErrors(error: unknown, props: Record<string, any> = {}): void {
-    logger.error(error);
-    let errors: ValidationErrors | string = getErrorMessage(error);
-
-    if (!(error instanceof ApiValidationError)) {
-      const parsed = new ApiValidationError(errors);
-      if (Object.keys(parsed.errors).length > 0)
-        error = parsed;
-    }
-
-    if (error instanceof ApiValidationError)
-      errors = error.getValidationErrors(props);
-
-    if (typeof errors === 'string')
-      set(saveError, errors);
-    else
-      set(modelErrorMessages, errors);
-  }
+  const {
+    handleErrors,
+    handleValidatorError,
+    modelErrorMessages,
+    resetSaveError,
+    saveError,
+    saveErrorIsPremium,
+    showValidatorRefusal,
+  } = useAccountSaveErrors();
 
   const additionFallback = (count: number): string =>
     t('account_form.error.addition_failed', { count }, count);
@@ -301,22 +286,9 @@ export function useAccountManage(): UseAccountManageReturn {
     startPromise(fetchAccounts({ blockchain: Blockchain.ETH2 }));
   }
 
-  /** Field errors go to the form; a message goes above it, with a hint when credentials are missing. */
-  function showValidatorRefusal(message: ValidationErrors | string): void {
-    if (typeof message !== 'string') {
-      set(modelErrorMessages, message);
-      return;
-    }
-    set(saveErrorIsPremium, message.includes('limit exceeded'));
-    set(saveError, message.includes('failed due to missing API key')
-      ? t('account_form.error.validator_needs_credentials')
-      : message);
-  }
-
   async function saveValidator(state: StakingValidatorManage): Promise<boolean> {
     set(pending, true);
-    set(saveError, '');
-    set(saveErrorIsPremium, false);
+    resetSaveError();
 
     try {
       const payload = state.data;
@@ -332,31 +304,12 @@ export function useAccountManage(): UseAccountManageReturn {
       return true;
     }
     catch (error: unknown) {
-      logger.error(error);
-      if (error instanceof ApiValidationError) {
-        const validation = error.getValidationErrors({
-          ownershipPercentage: '',
-          publicKey: '',
-          validatorIndex: '',
-        });
-        if (typeof validation === 'string')
-          set(saveError, validation);
-        else
-          set(modelErrorMessages, validation);
-      }
-      else {
-        set(saveError, getErrorMessage(error));
-      }
+      handleValidatorError(error);
       return false;
     }
     finally {
       set(pending, false);
     }
-  }
-
-  function resetSaveError(): void {
-    set(saveError, '');
-    set(saveErrorIsPremium, false);
   }
 
   const save = async (state: AccountManageState): Promise<boolean> => {
@@ -377,7 +330,7 @@ export function useAccountManage(): UseAccountManageReturn {
     pending: readonly(pending),
     resetSaveError,
     save,
-    saveError: readonly(saveError),
-    saveErrorIsPremium: readonly(saveErrorIsPremium),
+    saveError,
+    saveErrorIsPremium,
   };
 }

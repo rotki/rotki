@@ -1,28 +1,18 @@
 import type { ResultAsync } from 'plainfp/result-async';
 import type { MaybeRef } from 'vue';
-import type {
-  ExchangeSavingsCollection,
-  ExchangeSavingsCollectionResponse,
-  ExchangeSavingsRequestPayload,
-} from '@/modules/balances/types/exchanges';
-import type { TaskError } from '@/modules/core/tasks/task-result';
+import type { ExchangeSavingsCollection, ExchangeSavingsRequestPayload } from '@/modules/balances/types/exchanges';
 import type { WorkStatus } from '@/modules/task-center/core/types';
-import { toSentenceCase } from '@rotki/common';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { pipe } from 'plainfp';
 import { filter, unique } from 'plainfp/arrays';
-import { map as mapResult, type Result } from 'plainfp/result';
-import { useI18n } from 'vue-i18n';
-import { msg } from '@/message-key';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { exchangeSavingsActivity } from '@/modules/balances/balances.activity';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
+import { useExchangeSavingsSync } from '@/modules/balances/exchanges/use-exchange-savings-sync';
 import { fromRequest, type RequestError } from '@/modules/core/api/request-result';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { logger } from '@/modules/core/common/logging/logging';
-import { activityLabelFor } from '@/modules/task-center/activity-labels';
-import { useNativeTask } from '@/modules/task-center/use-native-task';
 import { useTaskCenter } from '@/modules/task-center/use-task-center';
 
 interface UseBinanceSavingsReturn {
@@ -44,10 +34,9 @@ function shouldRefresh(status: WorkStatus, userInitiated: boolean): boolean {
 
 export function useBinanceSavings(): UseBinanceSavingsReturn {
   const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
-  const { submitTask } = useNativeTask();
   const { useWorkStatus } = useTaskCenter();
-  const { getExchangeSavings, getExchangeSavingsTask } = useExchangeApi();
-  const { t } = useI18n({ useScope: 'global' });
+  const { getExchangeSavings } = useExchangeApi();
+  const { syncExchangeSavings } = useExchangeSavingsSync();
 
   const savingsStatus = useWorkStatus(exchangeSavingsActivity.kind);
 
@@ -59,40 +48,6 @@ export function useBinanceSavings(): UseBinanceSavingsReturn {
       onlyCache: true,
     }),
   ));
-
-  /**
-   * Asks the backend to refresh one location's savings interest, as a task center activity.
-   *
-   * @remarks
-   * Nothing is returned to the caller: the task only refills the backend cache, which the detail
-   * view re-reads through `fetchExchangeSavings` once the activity settles. The activity id is
-   * keyed by location, so each connected exchange gets its own row and its own rerun.
-   * @param location - a connected exchange location, which must be one of `SAVINGS_LOCATIONS`
-   */
-  const syncExchangeSavings = async (location: string): Promise<void> => {
-    const defaults: ExchangeSavingsRequestPayload = {
-      ascending: [false],
-      limit: 0,
-      location,
-      offset: 0,
-      orderByAttributes: ['timestamp'],
-    };
-
-    await submitTask({
-      id: exchangeSavingsActivity.id({ location }),
-      kind: exchangeSavingsActivity.kind,
-      lane: exchangeSavingsActivity.laneOf?.({ location }),
-      rerunnable: true,
-      run: async ({ runTask }): Promise<Result<void, TaskError>> => mapResult(
-        await runTask<ExchangeSavingsCollectionResponse>(
-          async () => getExchangeSavingsTask(defaults),
-        ),
-        () => {},
-      ),
-      subtitle: activityLabelFor(msg.$t('task_center.activity.exchange_savings.interest'), { location: toSentenceCase(location) }),
-      title: t('task_center.group.exchange_savings'),
-    });
-  };
 
   const savingsLocations = (): string[] => pipe(
     get(connectedExchanges).map(({ location }) => location),
