@@ -6,11 +6,9 @@ import { generateUUID } from '@shared/utils';
 import { useLocalStorage, watchImmediate } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
-import { storeToRefs } from 'pinia';
-import { computed, watch } from 'vue';
+import { watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
-import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
 import {
@@ -23,9 +21,9 @@ import {
 } from '@/modules/history/management/forms/asset-movement-event-form';
 import AssetMovementFeeEntry from '@/modules/history/management/forms/common/AssetMovementFeeEntry.vue';
 import EventDetailsSection from '@/modules/history/management/forms/common/EventDetailsSection.vue';
+import ExchangeLocationLabel from '@/modules/history/management/forms/common/ExchangeLocationLabel.vue';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import { useHistoryEventForm } from '@/modules/history/management/forms/use-history-event-form';
-import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
 
 interface AssetMovementEventFormProps {
@@ -48,8 +46,6 @@ const historyEventTypesData = [{
 
 const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);
 
-const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
-
 const { form, save, seed } = useHistoryEventForm({
   initial: () => emptyAssetMovementForm(get(lastLocation) ?? TRADE_LOCATION_EXTERNAL),
   priceIntentKeys: ASSET_MOVEMENT_PRICE_INTENT_KEYS,
@@ -64,18 +60,6 @@ const { form, save, seed } = useHistoryEventForm({
 });
 
 const { state } = form;
-
-const locationLabelSuggestions = computed<string[]>(() => {
-  const suggestions: string[] = [];
-
-  for (const { location, name } of get(connectedExchanges)) {
-    if (location !== state.location || !name) {
-      continue;
-    }
-    suggestions.push(name);
-  }
-  return suggestions;
-});
 
 watchImmediate(() => data, (newData, oldData) => {
   if (isEqual(newData, oldData)) {
@@ -136,14 +120,10 @@ defineExpose({
         :error-messages="form.errors('location')"
         @blur="form.touch('location')"
       />
-      <AutoCompleteWithSearchSync
+      <ExchangeLocationLabel
         v-model="state.locationLabel"
-        :items="locationLabelSuggestions"
-        clearable
-        data-testid="location-label"
-        :label="t('transactions.events.form.location_label.label')"
+        :location="state.location"
         :error-messages="form.errors('locationLabel')"
-        auto-select-first
         @blur="form.touch('locationLabel')"
       />
       <RuiAutoComplete

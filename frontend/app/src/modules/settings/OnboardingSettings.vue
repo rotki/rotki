@@ -2,7 +2,7 @@
 import type { BackendOptions } from '@shared/ipc';
 import type { BackendConfiguration } from '@/modules/shell/app/backend';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
-import { RuiAccordion, RuiAccordions, RuiButton, RuiCardHeader, RuiIcon, RuiTextField } from '@rotki/ui-library';
+import { RuiAccordion, RuiAccordions, RuiButton, RuiCardHeader } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, ref, watch } from 'vue';
@@ -23,11 +23,10 @@ import {
   hasBackendOptionChanges,
   stringifyValue,
 } from '@/modules/settings/backend/backend-options-form';
-import LogLevelInput from '@/modules/settings/backend/LogLevelInput.vue';
+import BasicBackendSettings from '@/modules/settings/backend/BasicBackendSettings.vue';
 import { useLogLevelUpdate } from '@/modules/settings/backend/use-log-level-update';
 import LanguageSetting from '@/modules/settings/general/language/LanguageSetting.vue';
 import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
-import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 
@@ -46,7 +45,6 @@ const logFromOtherModules = ref<boolean>(false);
 const { backendSettings } = useSettingsApi();
 const { applyLogLevelChange } = useLogLevelUpdate();
 
-const selecting = ref<boolean>(false);
 /** Asking, in the footer, whether to reset the backend settings to their defaults. */
 const confirmingReset = ref<boolean>(false);
 const configuration = ref<BackendConfiguration>();
@@ -146,8 +144,6 @@ const newUserOptions = computed<Partial<BackendOptions>>(() => diffBackendOption
 
 const anyValueChanged = computed<boolean>(() => hasBackendOptionChanges(get(formFields), get(initialOptions)));
 
-const { openDirectory } = useInterop();
-
 const resetQuestion = computed<ConfirmQuestion>(() => ({
   confirmLabel: t('backend_settings.actions.reset'),
   message: t('backend_settings.confirm.message'),
@@ -157,22 +153,6 @@ const resetQuestion = computed<ConfirmQuestion>(() => ({
 async function reset() {
   dismiss();
   await resetOptions();
-}
-
-async function selectDataDirectory() {
-  if (get(selecting))
-    return;
-
-  set(selecting, true);
-  try {
-    const title = t('backend_settings.data_directory.select');
-    const directory = await openDirectory(title);
-    if (directory)
-      set(userDataDirectory, directory);
-  }
-  finally {
-    set(selecting, false);
-  }
 }
 
 async function save() {
@@ -188,21 +168,6 @@ async function save() {
   }
   else {
     await saveOptions(newUserOptionsVal);
-  }
-}
-
-async function selectLogsDirectory() {
-  if (get(selecting))
-    return;
-
-  set(selecting, true);
-  try {
-    const directory = await openDirectory(t('backend_settings.log_directory.select'));
-    if (directory)
-      set(userLogDirectory, directory);
-  }
-  finally {
-    set(selecting, false);
   }
 }
 
@@ -236,60 +201,12 @@ watch(dataDirectory, (directory) => {
       </RuiCardHeader>
     </div>
 
-    <div class="flex flex-col gap-4">
-      <RuiTextField
-        v-model="userDataDirectory"
-        data-testid="user-data-directory-input"
-        class="pt-2"
-        color="primary"
-        :disabled="!!fileConfig.dataDirectory || !userDataDirectory"
-        :hint="
-          !!fileConfig.dataDirectory
-            ? t('backend_settings.config_file_disabled')
-            : t('backend_settings.settings.data_directory.hint')
-        "
-        :label="t('backend_settings.settings.data_directory.label')"
-        readonly
-        @click="selectDataDirectory()"
-      >
-        <template #append>
-          <RuiButton
-            variant="text"
-            icon
-            :disabled="!userDataDirectory"
-            @click="selectDataDirectory()"
-          >
-            <RuiIcon name="lu-folder" />
-          </RuiButton>
-        </template>
-      </RuiTextField>
-      <RuiTextField
-        v-model="userLogDirectory"
-        data-testid="user-log-directory-input"
-        :disabled="!!fileConfig.logDirectory"
-        :hint="!!fileConfig.logDirectory ? t('backend_settings.config_file_disabled') : undefined"
-        color="primary"
-        :label="t('backend_settings.settings.log_directory.label')"
-        readonly
-        @click="selectLogsDirectory()"
-      >
-        <template #append>
-          <RuiButton
-            variant="text"
-            icon
-            @click="selectLogsDirectory()"
-          >
-            <RuiIcon name="lu-folder" />
-          </RuiButton>
-        </template>
-      </RuiTextField>
-
-      <LogLevelInput
-        v-model="modelLogLevel"
-        :disabled="!!fileConfig.loglevel"
-        :error-messages="!!fileConfig.loglevel ? t('backend_settings.config_file_disabled') : undefined"
-      />
-    </div>
+    <BasicBackendSettings
+      v-model:user-data-directory="userDataDirectory"
+      v-model:user-log-directory="userLogDirectory"
+      v-model:log-level="modelLogLevel"
+      :file-config="fileConfig"
+    />
 
     <RuiAccordions>
       <RuiAccordion

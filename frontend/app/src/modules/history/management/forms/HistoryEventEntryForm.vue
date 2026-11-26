@@ -3,21 +3,19 @@ import type { EventEntryKind } from '@/modules/history/management/forms/event-en
 import { HistoryEventEntryType } from '@rotki/common';
 import { RuiDivider, RuiTextArea, RuiTextField } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
-import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
 import EventDetailsSection from '@/modules/history/management/forms/common/EventDetailsSection.vue';
 import EventLocationLabel from '@/modules/history/management/forms/common/EventLocationLabel.vue';
 import EvmLocation from '@/modules/history/management/forms/common/EvmLocation.vue';
+import ExchangeLocationLabel from '@/modules/history/management/forms/common/ExchangeLocationLabel.vue';
 import TxRefField from '@/modules/history/management/forms/common/TxRefField.vue';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 import { type EventEntryFormData, useEventEntryForm } from '@/modules/history/management/forms/use-event-entry-form';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
-import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
 import JsonInput from '@/modules/shell/components/inputs/JsonInput.vue';
 
@@ -31,8 +29,6 @@ const { data, entryType } = defineProps<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 
 const {
   bitcoinAsset,
@@ -59,12 +55,6 @@ const txRefLabel = computed<string>(() => {
     return t('transactions.events.form.tx_id.label');
   return t('common.signature');
 });
-
-const locationLabelSuggestions = computed<string[]>(() =>
-  get(connectedExchanges)
-    .map(item => item.name)
-    .filter(item => !!item),
-);
 
 function touchEventType(): void {
   form.touch('eventType');
@@ -190,15 +180,10 @@ defineExpose({
       :error-messages="form.errors('locationLabel')"
       @blur="form.touch('locationLabel')"
     />
-    <AutoCompleteWithSearchSync
+    <ExchangeLocationLabel
       v-else
       v-model="state.locationLabel"
-      :items="locationLabelSuggestions"
-      clearable
-      data-testid="location-label"
-      :label="t('transactions.events.form.location_label.label')"
       :error-messages="form.errors('locationLabel')"
-      auto-select-first
       @blur="form.touch('locationLabel')"
     />
 

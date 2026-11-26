@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { AddressAccount } from '@/modules/accounts/blockchain-accounts';
-import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import dayjs from 'dayjs';
 import { onMounted, ref } from 'vue';
@@ -12,8 +11,8 @@ import CalendarFormDialog from '@/modules/calendar/CalendarFormDialog.vue';
 import CalendarGrid from '@/modules/calendar/CalendarGrid.vue';
 import CalendarMonthNavigator from '@/modules/calendar/CalendarMonthNavigator.vue';
 import CalendarSelectedEventsPanel from '@/modules/calendar/CalendarSelectedEventsPanel.vue';
-import CalendarSettingsMenu from '@/modules/calendar/CalendarSettingsMenu.vue';
 import CalendarUpcomingEventsPanel from '@/modules/calendar/CalendarUpcomingEventsPanel.vue';
+import CalendarViewActions from '@/modules/calendar/CalendarViewActions.vue';
 import { useCalendarData } from '@/modules/calendar/use-calendar-data';
 import { useCalendarDateManagement } from '@/modules/calendar/use-calendar-date-management';
 import { useCalendarOperations } from '@/modules/calendar/use-calendar-operations';
@@ -68,17 +67,7 @@ onMounted(async () => {
 <template>
   <TablePageLayout :title="[t('navigation_menu.calendar')]">
     <template #buttons>
-      <RuiButton
-        color="primary"
-        data-testid="calendar-add-event"
-        @click="add()"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-plus" />
-        </template>
-        {{ t('calendar.add_event') }}
-      </RuiButton>
-      <CalendarSettingsMenu />
+      <CalendarViewActions @add="add()" />
     </template>
 
     <div class="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_16rem]">

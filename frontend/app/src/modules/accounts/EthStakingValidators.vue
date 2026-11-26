@@ -8,17 +8,16 @@ import { computed, shallowRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Eth2ValidatorLimitRow from '@/modules/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
 import EthStakingValidatorsToolbar from '@/modules/accounts/EthStakingValidatorsToolbar.vue';
+import EthStakingValidatorsTotalRow from '@/modules/accounts/EthStakingValidatorsTotalRow.vue';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
-import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
-import RowAppend from '@/modules/shell/components/RowAppend.vue';
 import { useEthValidatorData } from '@/modules/staking/eth/use-eth-validator-data';
 import { useEthValidatorOperations } from '@/modules/staking/eth/use-eth-validator-operations';
-import { useEthValidatorUtils } from '@/modules/staking/eth/use-eth-validator-utils';
+import ValidatorOwnership from '@/modules/staking/eth/ValidatorOwnership.vue';
 import ValidatorStatus from '@/modules/staking/eth/ValidatorStatus.vue';
 
 const emit = defineEmits<{
@@ -51,10 +50,6 @@ const {
   edit: editValidator,
   refresh,
 } = useEthValidatorOperations();
-
-const { getOwnershipPercentage, useTotal, useTotalAmount } = useEthValidatorUtils();
-const totalValue = useTotal(rows);
-const totalAmount = useTotalAmount(rows);
 
 const selectionMode = shallowRef<boolean>(false);
 
@@ -144,10 +139,7 @@ defineExpose({
         <FiatDisplay :value="row.value" />
       </template>
       <template #item.ownershipPercentage="{ row }">
-        <PercentageDisplay
-          :value="getOwnershipPercentage(row)"
-          :asset-padding="0.1"
-        />
+        <ValidatorOwnership :validator="row" />
       </template>
       <template #item.actions="{ row }">
         <div class="flex justify-end mr-2">
@@ -167,22 +159,10 @@ defineExpose({
         v-if="ethStakingValidators.length > 0"
         #body.append
       >
-        <RowAppend
-          label-colspan="4"
-          :label="t('common.total')"
-          :right-patch-colspan="cols.length - 2"
-          variant="fixed"
-        >
-          <template #custom-columns>
-            <td class="text-end">
-              <AssetAmountDisplay
-                asset="ETH"
-                :amount="totalAmount"
-              />
-            </td>
-          </template>
-          <FiatDisplay :value="totalValue" />
-        </RowAppend>
+        <EthStakingValidatorsTotalRow
+          :rows="rows"
+          :columns="cols.length"
+        />
       </template>
     </RuiDataTable>
   </TableFrame>

@@ -2,6 +2,7 @@ import type { Blockchain } from '@rotki/common';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventBridgeUnlinkPayload } from '@/modules/history/events/types';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/use-selection-mode';
+import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import { get } from '@vueuse/shared';
 import { computed, type ComputedRef, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -10,6 +11,7 @@ import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { getMatchedBridgeUnlink, isEventMissingAccountingRule } from '@/modules/history/event-utils';
 import { useFeeNotes } from '@/modules/history/events/use-fee-notes';
+import { useUnlinkQuestion } from '@/modules/history/events/use-unlink-question';
 
 export interface UseHistorySwapItemProps {
   events: Ref<HistoryEventEntry[]> | ComputedRef<HistoryEventEntry[]>;
@@ -29,6 +31,8 @@ export interface UseHistorySwapItemReturn {
   isBridge: ComputedRef<boolean>;
   /** How a matched bridge transfer is unlinked; undefined for swaps, which cannot be unlinked. */
   bridgeUnlink: ComputedRef<HistoryEventBridgeUnlinkPayload | undefined>;
+  /** The question asked before unlinking a matched bridge transfer; undefined when there is none. */
+  unlinkConfirm: ComputedRef<ConfirmQuestion | undefined>;
   spendEvents: ComputedRef<HistoryEventEntry[]>;
   receiveEvents: ComputedRef<HistoryEventEntry[]>;
   spendEvent: ComputedRef<HistoryEventEntry | undefined>;
@@ -52,6 +56,7 @@ export function useHistorySwapItem(
   const { getAssetField, useAssetInfo } = useAssetInfoRetrieval();
   const { isAssetIgnored } = useAssetsStore();
   const { appendFeeNotes } = useFeeNotes(events);
+  const { unlinkQuestion } = useUnlinkQuestion();
 
   const primaryEvent = computed<HistoryEventEntry>(() => get(events)[0]);
 
@@ -87,6 +92,11 @@ export function useHistorySwapItem(
   const isBridge = computed<boolean>(() => get(events).some(e => e.eventSubtype === 'bridge'));
 
   const bridgeUnlink = computed<HistoryEventBridgeUnlinkPayload | undefined>(() => getMatchedBridgeUnlink(get(events)));
+
+  const unlinkConfirm = computed<ConfirmQuestion | undefined>(() => {
+    const payload = get(bridgeUnlink);
+    return payload ? unlinkQuestion(payload) : undefined;
+  });
 
   const spendEvents = computed<HistoryEventEntry[]>(() =>
     get(events).filter(e => e.eventSubtype === 'spend' || (e.eventSubtype === 'bridge' && e.eventType === 'deposit')),
@@ -189,5 +199,6 @@ export function useHistorySwapItem(
     spendEvents,
     swapEventIds,
     toggleSelected,
+    unlinkConfirm,
   };
 }

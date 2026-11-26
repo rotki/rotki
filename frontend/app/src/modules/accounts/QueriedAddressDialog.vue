@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AddressAccount, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { assert, Blockchain, transformCase } from '@rotki/common';
-import { RuiButton, RuiCard, RuiDialog, RuiIcon, RuiTooltip } from '@rotki/ui-library';
+import { RuiButton, RuiCard, RuiDialog, RuiIcon } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { tap } from 'plainfp/result';
@@ -9,17 +9,15 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
+import QueriedAddressItem from '@/modules/accounts/QueriedAddressItem.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-address-operations';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { type Module, SUPPORTED_MODULES } from '@/modules/core/common/modules';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
-import LabeledAddressDisplay from '@/modules/shell/components/display/LabeledAddressDisplay.vue';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
-import HashLink from '@/modules/shell/components/HashLink.vue';
 import IconMark from '@/modules/shell/components/IconMark.vue';
 import { useFailureSlot } from '@/modules/shell/components/named-failure';
-import TagDisplay from '@/modules/tags/TagDisplay.vue';
 
 interface QueriedAddressRow {
   address: string;
@@ -165,53 +163,13 @@ function close() {
         v-if="rows.length > 0"
         class="overflow-y-auto mt-2 max-h-72 rounded-rui-control border border-rui-divider between:border-t between:border-rui-divider"
       >
-        <div
+        <QueriedAddressItem
           v-for="row in rows"
           :key="row.address"
-          class="flex items-center gap-3 px-3 py-2"
-          data-testid="queried-address-row"
-        >
-          <div class="flex-1 min-w-0">
-            <template v-if="row.account">
-              <LabeledAddressDisplay :account="row.account" />
-              <TagDisplay
-                :tags="row.account.tags"
-                small
-              />
-            </template>
-            <template v-else>
-              <HashLink
-                :text="row.address"
-                location="ethereum"
-              />
-              <div class="text-xs text-rui-text-secondary">
-                {{ t('queried_address_dialog.untracked') }}
-              </div>
-            </template>
-          </div>
-          <RuiTooltip
-            :options="{ placement: 'top' }"
-            :open-delay="400"
-          >
-            <template #activator>
-              <RuiButton
-                variant="text"
-                icon
-                size="sm"
-                color="error"
-                data-testid="queried-address-remove"
-                @click="removeAddress(row.address)"
-              >
-                <RuiIcon
-                  size="16"
-                  name="lu-trash-2"
-                />
-              </RuiButton>
-            </template>
-
-            {{ t('queried_address_dialog.remove_tooltip') }}
-          </RuiTooltip>
-        </div>
+          :address="row.address"
+          :account="row.account"
+          @remove="removeAddress(row.address)"
+        />
       </div>
       <div
         v-else
