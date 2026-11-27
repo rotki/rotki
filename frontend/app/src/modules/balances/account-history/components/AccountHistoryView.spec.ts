@@ -16,7 +16,7 @@ const state = await vi.hoisted(async () => {
     premium: ref<boolean>(true),
     processingRequired: ref<boolean>(false),
     refresh: vi.fn<() => Promise<void>>(),
-    selection: ref<AccountHistorySelection>({ account: undefined, asset: undefined, location: undefined, range: 'all' }),
+    selection: ref<AccountHistorySelection>({ account: undefined, asset: undefined, range: 'all' }),
   };
 });
 
@@ -34,10 +34,8 @@ vi.mock('@/modules/balances/account-history/use-account-history', async () => {
       eventsRange: state.eventsRange,
       loadedRange: state.eventsRange,
       loading: ref(false),
-      locations: computed(() => ['ethereum']),
       modelAccount: ref(),
       modelAsset: ref(),
-      modelLocation: ref(),
       modelRange: ref('all'),
       picked: computed(() => !!state.selection.value.account && !!state.selection.value.asset),
       premium: state.premium,
@@ -58,9 +56,9 @@ function createWrapper(): VueWrapper<InstanceType<typeof AccountHistoryView>> {
         AccountBalanceChart: {
           name: 'AccountBalanceChart',
           props: ['buckets', 'total', 'loading'],
-          template: '<div data-testid="chart-stub"><slot name="placeholder" /></div>',
+          template: '<div data-testid="chart-stub"><slot name="placeholder" /></div><div data-testid="chart-actions"><slot name="actions" /></div>',
         },
-        AccountHistoryEvents: { name: 'AccountHistoryEvents', props: ['account', 'asset', 'location', 'range'], template: '<div data-testid="events-stub" />' },
+        AccountHistoryEvents: { name: 'AccountHistoryEvents', props: ['account', 'asset', 'range'], template: '<div data-testid="events-stub" />' },
         AccountHistorySelectors: { name: 'AccountHistorySelectors', props: ['restrictAssets'], template: '<div />' },
         AccountHistorySummary: { name: 'AccountHistorySummary', props: ['asset', 'summary', 'processingRequired'], template: '<div data-testid="summary-stub" />' },
         GetPremiumPlaceholder: { name: 'GetPremiumPlaceholder', template: '<div />' },
@@ -81,12 +79,12 @@ describe('account history view', () => {
     set(state.eventsRange, { from: 100, to: 200 });
     set(state.premium, true);
     set(state.processingRequired, false);
-    set(state.selection, { account: '0xA', asset: 'ETH', location: 'ethereum', range: 'all' });
+    set(state.selection, { account: '0xA', asset: 'ETH', range: 'all' });
     state.refresh.mockReset().mockResolvedValue();
   });
 
   it('should keep the summary and chart in place, with a pick prompt in the chart, until both are picked', () => {
-    set(state.selection, { account: '0xA', asset: undefined, location: undefined, range: 'all' });
+    set(state.selection, { account: '0xA', asset: undefined, range: 'all' });
     const wrapper = createWrapper();
 
     expect(wrapper.findComponent({ name: 'AccountHistorySummary' }).props('asset')).toBeUndefined();
@@ -95,7 +93,7 @@ describe('account history view', () => {
     expect(wrapper.find('[data-testid=account-history-refresh]').attributes('disabled')).toBeDefined();
   });
 
-  it('should draw the chart and the events pinned to the picked account, asset, location and range', () => {
+  it('should draw the chart and the events pinned to the picked account, asset and range', () => {
     const wrapper = createWrapper();
 
     expect(placeholderOf(wrapper)).toBeUndefined();
@@ -103,14 +101,13 @@ describe('account history view', () => {
     expect(wrapper.findComponent({ name: 'AccountHistoryEvents' }).props()).toEqual({
       account: '0xA',
       asset: 'ETH',
-      location: 'ethereum',
       range: { from: 100, to: 200 },
     });
   });
 
   it('should hold the events back for a bounded range until its window is known', async () => {
     set(state.eventsRange, undefined);
-    set(state.selection, { account: '0xA', asset: 'ETH', location: undefined, range: '1m' });
+    set(state.selection, { account: '0xA', asset: 'ETH', range: '1m' });
     const wrapper = createWrapper();
     expect(wrapper.find('[data-testid=events-stub]').exists()).toBe(false);
 
@@ -172,5 +169,12 @@ describe('account history view', () => {
     await wrapper.find('[data-testid=account-history-refresh]').trigger('click');
 
     expect(state.refresh).toHaveBeenCalledOnce();
+  });
+
+  it('should put the range in the chart header, where it stays usable over any placeholder', () => {
+    set(state.premium, false);
+    const wrapper = createWrapper();
+
+    expect(wrapper.find('[data-testid=chart-actions]').findComponent({ name: 'AccountHistoryRangeSelector' }).exists()).toBe(true);
   });
 });

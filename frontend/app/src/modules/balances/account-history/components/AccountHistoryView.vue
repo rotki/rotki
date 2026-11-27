@@ -5,6 +5,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { AccountHistoryRange } from '@/modules/balances/account-history/account-history-selection';
 import AccountHistoryEvents from '@/modules/balances/account-history/components/AccountHistoryEvents.vue';
+import AccountHistoryRangeSelector from '@/modules/balances/account-history/components/AccountHistoryRangeSelector.vue';
 import AccountHistorySelectors from '@/modules/balances/account-history/components/AccountHistorySelectors.vue';
 import AccountHistorySummary from '@/modules/balances/account-history/components/AccountHistorySummary.vue';
 import AccountBalanceChart from '@/modules/balances/account-history/components/chart/AccountBalanceChart.vue';
@@ -16,17 +17,14 @@ const { t } = useI18n({ useScope: 'global' });
 
 const {
   assets,
-  assetsLoading,
   assetsProcessingRequired,
   buckets,
   empty,
   error,
   eventsRange,
   loading,
-  locations,
   modelAccount,
   modelAsset,
-  modelLocation,
   modelRange,
   picked,
   premium,
@@ -79,13 +77,9 @@ const showEvents = computed<boolean>(() =>
       <AccountHistorySelectors
         v-model:account="modelAccount"
         v-model:asset="modelAsset"
-        v-model:location="modelLocation"
-        v-model:range="modelRange"
         :assets="assets"
-        :assets-loading="assetsLoading"
         :assets-processing-required="assetsProcessingRequired"
         :restrict-assets="premium"
-        :locations="locations"
       />
 
       <AccountHistorySummary
@@ -100,6 +94,9 @@ const showEvents = computed<boolean>(() =>
         :total="total"
         :loading="loading"
       >
+        <template #actions>
+          <AccountHistoryRangeSelector v-model="modelRange" />
+        </template>
         <template
           v-if="placeholder"
           #placeholder
@@ -138,7 +135,6 @@ const showEvents = computed<boolean>(() =>
         v-if="showEvents && selection.account && selection.asset"
         :account="selection.account"
         :asset="selection.asset"
-        :location="selection.location"
         :range="eventsRange"
       />
     </div>

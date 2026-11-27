@@ -38,11 +38,11 @@ describe('useAccountHistorySelection', () => {
     route.query = { account: '0xA', asset: 'ETH', range: '1y' };
     const { selection } = create();
 
-    expect(get(selection)).toEqual({ account: '0xA', asset: 'ETH', location: undefined, range: AccountHistoryRange.YEAR });
+    expect(get(selection)).toEqual({ account: '0xA', asset: 'ETH', range: AccountHistoryRange.YEAR });
   });
 
-  it('should clear the asset and location when another account is picked', () => {
-    route.query = { account: '0xA', asset: 'ETH', location: 'optimism', range: '3m' };
+  it('should clear the asset when another account is picked', () => {
+    route.query = { account: '0xA', asset: 'ETH', range: '3m' };
     const { modelAccount } = create();
 
     set(modelAccount, '0xB');
@@ -50,32 +50,22 @@ describe('useAccountHistorySelection', () => {
     expect(router.replace).toHaveBeenCalledExactlyOnceWith({ query: { account: '0xB', range: '3m' } });
   });
 
-  it('should clear the location when another asset is picked', () => {
-    route.query = { account: '0xA', asset: 'ETH', location: 'optimism' };
-    const { modelAsset } = create();
+  it('should keep the account when another asset is picked, and both when the range changes', () => {
+    route.query = { account: '0xA', asset: 'ETH' };
+    const { modelAsset, modelRange, selection } = create();
 
     set(modelAsset, 'DAI');
-
-    expect(router.replace).toHaveBeenCalledExactlyOnceWith({ query: { account: '0xA', asset: 'DAI' } });
-  });
-
-  it('should keep the account and asset when the location or range changes', () => {
-    route.query = { account: '0xA', asset: 'ETH' };
-    const { modelLocation, modelRange, selection } = create();
-
-    set(modelLocation, 'ethereum');
     set(modelRange, AccountHistoryRange.MONTH);
 
-    expect(get(selection)).toEqual({ account: '0xA', asset: 'ETH', location: 'ethereum', range: AccountHistoryRange.MONTH });
+    expect(get(selection)).toEqual({ account: '0xA', asset: 'DAI', range: AccountHistoryRange.MONTH });
   });
 
   it('should change nothing when a picker writes back the value it already holds', () => {
-    route.query = { account: '0xA', asset: 'ETH', location: 'optimism', range: '3m' };
-    const { modelAccount, modelAsset, modelLocation, modelRange } = create();
+    route.query = { account: '0xA', asset: 'ETH', range: '3m' };
+    const { modelAccount, modelAsset, modelRange } = create();
 
     set(modelAccount, '0xA');
     set(modelAsset, 'ETH');
-    set(modelLocation, 'optimism');
     set(modelRange, AccountHistoryRange.QUARTER);
 
     expect(router.replace).not.toHaveBeenCalled();

@@ -21,7 +21,11 @@ const { buckets, loading = false, total } = defineProps<{
  * Shown in place of the chart, at the chart's size, so swapping between a message and the chart
  * does not move the page.
  */
-defineSlots<{ placeholder?: () => unknown }>();
+defineSlots<{
+  /** Controls shown in the header beside the mode switch, available even over a placeholder. */
+  actions?: () => unknown;
+  placeholder?: () => unknown;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -57,23 +61,26 @@ const modes = computed<{ value: BalanceChartMode; label: string }[]>(() => [
     <template #custom-header>
       <div class="flex flex-wrap items-center justify-between gap-2 p-4 pb-0">
         <span class="text-h6">{{ t('account_history.chart.title') }}</span>
-        <RuiButtonGroup
-          v-model="mode"
-          variant="segmented"
-          required
-          size="sm"
-          data-testid="account-balance-chart-mode"
-        >
-          <RuiButton
-            v-for="item in modes"
-            :key="item.value"
-            :model-value="item.value"
-            :disabled="!!$slots.placeholder"
-            :data-testid="`account-balance-chart-mode-${item.value}`"
+        <div class="flex flex-wrap items-center gap-2">
+          <slot name="actions" />
+          <RuiButtonGroup
+            v-model="mode"
+            variant="segmented"
+            required
+            size="sm"
+            data-testid="account-balance-chart-mode"
           >
-            {{ item.label }}
-          </RuiButton>
-        </RuiButtonGroup>
+            <RuiButton
+              v-for="item in modes"
+              :key="item.value"
+              :model-value="item.value"
+              :disabled="!!$slots.placeholder"
+              :data-testid="`account-balance-chart-mode-${item.value}`"
+            >
+              {{ item.label }}
+            </RuiButton>
+          </RuiButtonGroup>
+        </div>
       </div>
     </template>
     <div

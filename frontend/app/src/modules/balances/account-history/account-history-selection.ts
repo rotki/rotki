@@ -24,7 +24,6 @@ const RANGE_MONTHS = {
 export const AccountHistoryQueryKeys = {
   ACCOUNT: 'account',
   ASSET: 'asset',
-  LOCATION: 'location',
   RANGE: 'range',
 } as const;
 
@@ -32,8 +31,6 @@ export interface AccountHistorySelection {
   /** The account's `location_label`: an address, or an exchange account's name. */
   readonly account: string | undefined;
   readonly asset: string | undefined;
-  /** Narrows the account's buckets to one location; absent shows every location. */
-  readonly location: string | undefined;
   readonly range: AccountHistoryRange;
 }
 
@@ -49,7 +46,6 @@ export function parseSelection(query: LocationQuery): AccountHistorySelection {
   return {
     account: single(query[AccountHistoryQueryKeys.ACCOUNT]),
     asset: single(query[AccountHistoryQueryKeys.ASSET]),
-    location: single(query[AccountHistoryQueryKeys.LOCATION]),
     range: isRange(range) ? range : AccountHistoryRange.ALL,
   };
 }
@@ -64,18 +60,16 @@ export function toSelectionQuery(selection: AccountHistorySelection): Record<str
     query[AccountHistoryQueryKeys.ACCOUNT] = selection.account;
   if (selection.asset)
     query[AccountHistoryQueryKeys.ASSET] = selection.asset;
-  if (selection.location)
-    query[AccountHistoryQueryKeys.LOCATION] = selection.location;
   if (selection.range !== AccountHistoryRange.ALL)
     query[AccountHistoryQueryKeys.RANGE] = selection.range;
   return query;
 }
 
 /** A link to the account history page with an account and asset already picked. */
-export function accountHistoryLink(account: string, asset: string, location?: string): RouteLocationRaw {
+export function accountHistoryLink(account: string, asset: string): RouteLocationRaw {
   return {
     name: '/balances/history/',
-    query: toSelectionQuery({ account, asset, location, range: AccountHistoryRange.ALL }),
+    query: toSelectionQuery({ account, asset, range: AccountHistoryRange.ALL }),
   };
 }
 

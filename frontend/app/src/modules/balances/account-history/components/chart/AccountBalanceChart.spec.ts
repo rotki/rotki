@@ -78,4 +78,13 @@ describe('account balance chart', () => {
     expect(wrapper.findComponent({ name: 'VChart' }).exists()).toBe(false);
     expect(wrapper.find('[data-testid=account-balance-chart-mode-total]').attributes('disabled')).toBeDefined();
   });
+
+  it('should keep the header actions usable over a placeholder', () => {
+    const wrapper = createWrapper({
+      actions: '<button data-testid="action">range</button>',
+      placeholder: '<span>nothing</span>',
+    });
+
+    expect(wrapper.find('[data-testid=action]').attributes('disabled')).toBeUndefined();
+  });
 });
