@@ -274,6 +274,26 @@ satisfy lint. `pnpm run audit:comments` lists candidates for review.
     swallows the failure. Give the mock the real response shape.
   - `Avoid app logic that relies on enumerating keys on a component instance`: a matcher got
     `wrapper.vm`. Compare an element or a value instead.
+
+  ```typescript
+  const table = useTable();                                  // ❌ its hooks never run
+  const { result: table } = withSetup(() => useTable());     // ✅
+
+  const TooltipStub = defineComponent({                      // ❌ fragment root, takes no props
+    name: 'RuiTooltip',
+    setup: (_, { slots }) => () => [slots.activator?.(), slots.default?.()],
+  });
+  const TooltipStub = defineComponent({ name: 'RuiTooltip', inheritAttrs: false, /* ... */ }); // ✅
+
+  server.use(http.get(`${backendUrl}/api/1/exchanges/supported`, // ✅ answer the request the
+    () => HttpResponse.json({ result: [], message: '' })));      //    code makes on load
+
+  mount(NftGalleryItem, { props: { item: createMock<GalleryNft>() } }); // ❌ a vi.fn proxy
+  mount(NftGalleryItem, { props: { item: { ...galleryNft } } });        // ✅ a real object
+
+  expect(after.vm).not.toBe(before.vm);                      // ❌ enumerates the instance
+  expect(after.element).not.toBe(before.element);            // ✅
+  ```
 - Use `createMock<T>()` from `@test/utils/create-mock` for large or branded types. Its proxy returns
   truthy stubs for omitted properties: set every boolean the code reads and use a real object for
   deep equality. `useI18n()` is already mocked with the `@test/i18n` echo translator.
