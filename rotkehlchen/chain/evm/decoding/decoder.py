@@ -89,6 +89,8 @@ from rotkehlchen.chain.evm.decoding.stakedao.constants import (
 from rotkehlchen.chain.evm.decoding.stakedao.decoder import StakedaoCommonDecoder
 from rotkehlchen.chain.evm.decoding.superfluid.constants import CFA_V1_ADDRESSES
 from rotkehlchen.chain.evm.decoding.superfluid.decoder import SuperfluidCommonDecoder
+from rotkehlchen.chain.evm.decoding.symbiosis.constants import SYMBIOSIS_DEPLOYMENTS
+from rotkehlchen.chain.evm.decoding.symbiosis.decoder import SymbiosisDecoder
 from rotkehlchen.chain.evm.decoding.weth.constants import (
     CHAINS_WITH_SPECIAL_WETH,
     CHAINS_WITHOUT_NATIVE_ETH,
@@ -324,6 +326,13 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 decoder_class=ConnextDecoder,
                 rules=rules,
                 decoder_args=(connext_managers,),
+            )
+        if (symbiosis_deployment := SYMBIOSIS_DEPLOYMENTS.get(self.evm_inquirer.chain_id)) is not None:  # noqa: E501
+            self._add_single_decoder(
+                class_name='Symbiosis',
+                decoder_class=SymbiosisDecoder,
+                rules=rules,
+                decoder_args=(symbiosis_deployment,),
             )
         if (relay_solvers := RELAY_SOLVERS.get(self.evm_inquirer.chain_id)) is not None:
             self._add_single_decoder(
