@@ -66,7 +66,6 @@ from rotkehlchen.globaldb.cache import (
     globaldb_general_cache_exists,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
@@ -137,9 +136,9 @@ def _add_spam_asset(
         globaldb: GlobalDBHandler,
         user_db: DBHandler,
         user_db_cursor: DBCursor,
-) -> None:
+) -> int:
     """Updates the protocol to SPAM_PROTOCOL for the list of assets
-    provided and also ignores it
+    provided and also ignores it, returning the number of deleted data issues.
     """
     with globaldb.conn.write_ctx() as write_cursor:
         query = 'UPDATE evm_tokens SET protocol=? WHERE identifier=?'
@@ -148,13 +147,9 @@ def _add_spam_asset(
             [(SPAM_PROTOCOL, identifier) for identifier in detected_spam_assets],
         )
 
-    user_db.ignore_multiple_assets(
+    return user_db.ignore_multiple_assets(
         write_cursor=user_db_cursor,
         assets=detected_spam_assets,
-    )
-    DataIssuesManager(user_db).delete_issues_for_assets(
-        assets=detected_spam_assets,
-        write_cursor=user_db_cursor,
     )
 
 
@@ -203,7 +198,7 @@ def autodetect_spam_assets_in_db(user_db: DBHandler) -> None:
 
     # update the user list of ignored assets
     with user_db.conn.write_ctx() as write_cursor:
-        _add_spam_asset(
+        deleted_issues = _add_spam_asset(
             detected_spam_assets=detected_spam_assets,
             globaldb=globaldb,
             user_db=user_db,
@@ -212,6 +207,12 @@ def autodetect_spam_assets_in_db(user_db: DBHandler) -> None:
         write_cursor.execute(  # remember last time spam detection ran
             'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
             (DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY.value, str(ts_now())),
+        )
+
+    if deleted_issues > 0:
+        user_db.msg_aggregator.add_message(
+            message_type=WSMessageType.DATA_ISSUES_REMOVED,
+            data={'assets': detected_spam_assets},
         )
 
     for chain in chains_to_refresh:

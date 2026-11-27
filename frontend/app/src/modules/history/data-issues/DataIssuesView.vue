@@ -145,7 +145,7 @@ const assessedIssues = computed<ListedDataIssue[]>(() => {
   return [...rows, selected];
 });
 
-const { assessments: spamAssessments, getSpamAssessment } = useDataIssuesSpamAssessments(assessedIssues);
+const { assessments: spamAssessments, getSpamAssessment, status: spamStatus } = useDataIssuesSpamAssessments(assessedIssues);
 
 const emptyDescription = computed<string>(() =>
   get(hasActiveFilters)
@@ -283,6 +283,7 @@ onMounted(async () => {
         v-model:pagination="pagination"
         :rows="state.data"
         :spam-assessments="spamAssessments"
+        :spam-unavailable="spamStatus === 'unavailable'"
         :loading="showLoading"
         :empty-description="emptyDescription"
         :show-clear-filters="isEmpty && hasActiveFilters"

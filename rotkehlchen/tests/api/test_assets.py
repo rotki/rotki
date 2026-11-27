@@ -1605,6 +1605,34 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
             key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
         )
 
+    # Marking an already-ignored token as spam still deletes any leftover data issues for it.
+    with db.user_write() as write_cursor:
+        db.add_to_ignored_assets(write_cursor=write_cursor, asset=A_GNO)
+    issues_manager.write_issue(
+        kind=IssueKind.CURRENT_BALANCE_MISMATCH,
+        location=LOCATION_ETHEREUM,
+        location_label=eth_address,
+        protocol=None,
+        asset=A_GNO.identifier,
+        ts_start=TimestampMS(2_000),
+        ts_end=TimestampMS(2_000),
+        payload={
+            'delta': '2',
+            'derived_balance': '0',
+            'latest_event_identifier': None,
+            'observed_balance': '2',
+            'queried_at_ts': 2,
+        },
+    )
+    assert_proper_response(requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'spamtokenresource',
+        ), json={'tokens': [A_GNO.identifier]},
+    ))
+    assert A_GNO.resolve_to_evm_token().protocol == SPAM_PROTOCOL
+    assert [issue.id for issue in issues_manager.list_issues()] == [kept_issue_id]
+
     # check that it fails if we try to add any other asset type
     response = requests.post(
         api_url_for(

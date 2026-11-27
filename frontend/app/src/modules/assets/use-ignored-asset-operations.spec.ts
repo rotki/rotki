@@ -1,12 +1,14 @@
 import { mockUseNotifications } from '@test/utils/mocks/notifications';
-import { set } from '@vueuse/shared';
+import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia } from 'pinia';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
+import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
 
 const mockGetIgnoredAssets = vi.fn();
 const mockAddIgnoredAssets = vi.fn();
 const mockRemoveIgnoredAssets = vi.fn();
+const mockRefreshSummary = vi.fn<() => Promise<void>>();
 
 vi.mock('@/modules/assets/api/use-asset-ignore-api', () => ({
   useAssetIgnoreApi: vi.fn(() => ({
@@ -40,11 +42,16 @@ const { mockNotifyError, mockNotifyFailure, mockNotifyWarning } = vi.hoisted(() 
 vi.mock('@/modules/core/notifications/use-notifications', () =>
   mockUseNotifications({ notifyError: mockNotifyError, notifyFailure: mockNotifyFailure, notifyWarning: mockNotifyWarning }));
 
+vi.mock('@/modules/history/data-issues/use-data-issues-summary', () => ({
+  useDataIssuesSummary: vi.fn(() => ({ refreshSummary: mockRefreshSummary })),
+}));
+
 describe('useIgnoredAssetOperations', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     set(manualBalancesAssets, []);
+    mockRefreshSummary.mockResolvedValue(undefined);
   });
 
   describe('fetchIgnoredAssets', () => {
@@ -70,7 +77,8 @@ describe('useIgnoredAssetOperations', () => {
   });
 
   describe('ignoreAsset', () => {
-    it('should ignore assets successfully', async () => {
+    it('should ignore assets successfully and notify the data issues inbox', async () => {
+      const store = useDataIssuesInboxStore();
       mockAddIgnoredAssets.mockResolvedValue({ successful: ['DAI'], noAction: [] });
 
       const { ignoreAsset } = useIgnoredAssetOperations();
@@ -78,6 +86,33 @@ describe('useIgnoredAssetOperations', () => {
 
       expect(result.success).toBe(true);
       expect(mockAddIgnoredAssets).toHaveBeenCalledWith(['DAI']);
+      expect(get(store.issuesInvalidated)).toBe(1);
+      expect(get(store.lastRemovedAssets)).toStrictEqual(['DAI']);
+      expect(mockRefreshSummary).toHaveBeenCalledOnce();
+    });
+
+    it('should skip refreshing the summary directly when an active reload listener exists', async () => {
+      const store = useDataIssuesInboxStore();
+      store.incrementReloadListeners();
+      mockAddIgnoredAssets.mockResolvedValue({ successful: ['DAI'], noAction: [] });
+
+      const { ignoreAsset } = useIgnoredAssetOperations();
+      await ignoreAsset('DAI');
+
+      expect(get(store.issuesInvalidated)).toBe(1);
+      expect(get(store.lastRemovedAssets)).toStrictEqual(['DAI']);
+      expect(mockRefreshSummary).not.toHaveBeenCalled();
+    });
+
+    it('should leave data issues untouched when no assets were newly ignored', async () => {
+      const store = useDataIssuesInboxStore();
+      mockAddIgnoredAssets.mockResolvedValue({ successful: [], noAction: ['DAI'] });
+
+      const { ignoreAsset } = useIgnoredAssetOperations();
+      await ignoreAsset('DAI');
+
+      expect(get(store.issuesInvalidated)).toBe(0);
+      expect(mockRefreshSummary).not.toHaveBeenCalled();
     });
 
     it('should toast a warning for assets held in manual balances and ignore only the rest', async () => {

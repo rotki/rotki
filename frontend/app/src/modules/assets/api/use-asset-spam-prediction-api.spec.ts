@@ -1,7 +1,9 @@
 import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
-import { useAssetSpamPredictionApi } from './use-asset-spam-prediction-api';
+import { describe, expect, it, vi } from 'vitest';
+import { RequestTarget } from '@/modules/core/api/constants';
+import { api } from '@/modules/core/api/rotki-api';
+import { SPAM_PREDICTION_TIMEOUT_MS, useAssetSpamPredictionApi } from './use-asset-spam-prediction-api';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 const colibriUrl = `${backendUrl}/colibri`;
@@ -73,5 +75,28 @@ describe('useAssetSpamPredictionApi', () => {
     await expect(predictSpam([{ identifier: 'eip155:1/erc20:0xToken' }]))
       .rejects
       .toThrow('Batch too large');
+  });
+
+  it('should enforce the short Colibri timeout on prediction requests', async () => {
+    const postSpy = vi.spyOn(api, 'post').mockResolvedValueOnce({});
+
+    try {
+      const { predictSpam } = useAssetSpamPredictionApi();
+      await predictSpam([{ identifier: 'eip155:1/erc20:0xToken' }]);
+
+      expect(SPAM_PREDICTION_TIMEOUT_MS).toBe(5_000);
+      expect(postSpy).toHaveBeenCalledWith(
+        '/assets/spam/predict',
+        { tokens: [{ identifier: 'eip155:1/erc20:0xToken' }] },
+        {
+          skipRootCamelCase: true,
+          target: RequestTarget.COLIBRI,
+          timeout: SPAM_PREDICTION_TIMEOUT_MS,
+        },
+      );
+    }
+    finally {
+      postSpy.mockRestore();
+    }
   });
 });

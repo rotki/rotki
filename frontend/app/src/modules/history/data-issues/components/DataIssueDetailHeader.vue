@@ -2,6 +2,7 @@
 import type { SpamAssessment } from '@/modules/assets/spam/use-spam-assessments';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { RuiButton, RuiIcon } from '@rotki/ui-library';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import SpamAssessmentHint from '@/modules/assets/spam/SpamAssessmentHint.vue';
@@ -23,6 +24,10 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const showSpamEstimate = computed<boolean>(() =>
+  Boolean(issue.asset && spamAssessment && (spamAssessment.status === 'ready' || spamAssessment.status === 'unsupported')),
+);
 </script>
 
 <template>
@@ -87,12 +92,15 @@ const { t } = useI18n({ useScope: 'global' });
         />
       </span>
       <span
-        v-if="issue.asset && spamAssessment"
+        v-if="showSpamEstimate"
         class="inline-flex items-center gap-1.5 text-xs text-rui-text-secondary"
         data-testid="data-issue-spam-estimate"
       >
         <span>{{ t('spam_estimate.label') }}</span>
-        <SpamAssessmentHint :assessment="spamAssessment" />
+        <SpamAssessmentHint
+          :assessment="spamAssessment"
+          quiet
+        />
       </span>
       <span
         v-if="issue.protocol"

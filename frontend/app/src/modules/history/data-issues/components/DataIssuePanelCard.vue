@@ -72,11 +72,6 @@ useMutationObserver(descriptionRef, checkTruncation, { characterData: true, chil
         <div class="flex items-center gap-2">
           <DataIssueKindChip :kind="issue.kind" />
           <DataIssueStateChip :state="issue.state" />
-          <SpamAssessmentHint
-            v-if="potentialSpam"
-            :assessment="spamAssessment"
-            standalone
-          />
           <TimeAgoDisplay
             class="ml-auto shrink-0 text-caption text-rui-text-secondary"
             :timestamp="issue.createdAt"
@@ -116,6 +111,13 @@ useMutationObserver(descriptionRef, checkTruncation, { characterData: true, chil
             :identifier="issue.asset"
             size="22px"
             :show-chain="false"
+            class="shrink-0"
+          />
+          <SpamAssessmentHint
+            v-if="potentialSpam"
+            :assessment="spamAssessment"
+            standalone
+            quiet
             class="shrink-0"
           />
           <RuiTooltip

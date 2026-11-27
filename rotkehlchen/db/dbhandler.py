@@ -1979,9 +1979,10 @@ class DBHandler:
         if (min_ts := min((ts for ts in timestamps if ts is not None), default=None)) is not None:
             mark_stale_from_ts(write_cursor=write_cursor, from_ts=min_ts, include_balances=False)
 
-    def add_to_ignored_assets(self, write_cursor: DBCursor, asset: Asset) -> None:
+    def add_to_ignored_assets(self, write_cursor: DBCursor, asset: Asset) -> int:
         """Add a new asset to the set of ignored assets. If the asset was already marked as
-        ignored then we don't do anything. Also ignore history events with this asset.
+        ignored then we don't do anything. Also ignore history events with this asset and delete
+        any persisted data issues for it, returning the number of deleted data issues.
         """
         write_cursor.execute(
             'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)',
@@ -2000,10 +2001,16 @@ class DBHandler:
                 group_identifiers=list(changed_groups),
             )
         self.invalidate_ignored_assets_cache()
+        from rotkehlchen.history.data_issues.manager import DataIssuesManager
+        return DataIssuesManager(self).delete_issues_for_assets(
+            assets=[asset.identifier],
+            write_cursor=write_cursor,
+        )
 
-    def ignore_multiple_assets(self, write_cursor: DBCursor, assets: list[str]) -> None:
+    def ignore_multiple_assets(self, write_cursor: DBCursor, assets: list[str]) -> int:
         """Add the provided identifiers to the list of ignored assets. If any asset was already
-        marked as ignored then we don't do anything. Also ignore history events with these assets.
+        marked as ignored then we don't do anything. Also ignore history events with these assets
+        and delete any persisted data issues for them, returning the number of deleted data issues.
         """
         changed_groups: set[str] = set()
         for chunk, placeholders in get_query_chunks(data=assets):
@@ -2023,6 +2030,11 @@ class DBHandler:
                 group_identifiers=list(changed_groups),
             )
         self.invalidate_ignored_assets_cache()
+        from rotkehlchen.history.data_issues.manager import DataIssuesManager
+        return DataIssuesManager(self).delete_issues_for_assets(
+            assets=assets,
+            write_cursor=write_cursor,
+        )
 
     def remove_from_ignored_assets(self, write_cursor: DBCursor, asset: Asset) -> None:
         """Remove an asset from the ignored assets and un-ignore history events with this asset."""

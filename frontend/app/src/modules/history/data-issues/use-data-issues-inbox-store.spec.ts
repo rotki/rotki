@@ -78,4 +78,23 @@ describe('useDataIssuesInboxStore', () => {
     expect(get(store.issuesInvalidated)).toBe(1);
     expect(get(store.lastRemovedAssets)).toStrictEqual(['eip155:1/erc20:0x1111']);
   });
+
+  it('should track active reload listeners and clamp decrements at zero', () => {
+    const store = useDataIssuesInboxStore();
+
+    expect(get(store.hasActiveReloadListeners)).toBe(false);
+
+    store.decrementReloadListeners();
+    expect(get(store.hasActiveReloadListeners)).toBe(false);
+
+    store.incrementReloadListeners();
+    store.incrementReloadListeners();
+    expect(get(store.hasActiveReloadListeners)).toBe(true);
+
+    store.decrementReloadListeners();
+    expect(get(store.hasActiveReloadListeners)).toBe(true);
+
+    store.decrementReloadListeners();
+    expect(get(store.hasActiveReloadListeners)).toBe(false);
+  });
 });

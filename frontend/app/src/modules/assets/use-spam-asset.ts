@@ -66,7 +66,8 @@ export function useSpamAsset(): UseSpamAssetReturn {
         await fetchWhitelistedAssets();
         await fetchIgnoredAssets();
         dataIssuesInboxStore.notifyIssuesChanged(notIncludedInManualBalances);
-        startPromise(refreshDataIssuesSummary());
+        if (!dataIssuesInboxStore.hasActiveReloadListeners)
+          startPromise(refreshDataIssuesSummary());
       }
 
       return { success: true };

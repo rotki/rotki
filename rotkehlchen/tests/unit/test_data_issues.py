@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors.misc import InputError, NotFoundError
 from rotkehlchen.history.data_issues.constants import (
     IssueKind,
@@ -645,3 +646,39 @@ def test_delete_issues_for_assets(database: DBHandler) -> None:
         deleted = manager.delete_issues_for_assets([kept_asset], write_cursor=write_cursor)
     assert deleted == 1
     assert manager.list_issues() == []
+
+
+def test_add_to_ignored_assets_deletes_data_issues(database: DBHandler) -> None:
+    """Plainly ignoring an asset deletes its persisted data issues while keeping others."""
+    manager = DataIssuesManager(database)
+    ignored_asset = 'eip155:1/erc20:0x1111111111111111111111111111111111111111'
+    kept_asset = 'ETH'
+
+    _write_negative_balance_issue(
+        manager=manager,
+        event_identifier=10,
+        asset=ignored_asset,
+        ts=1_000,
+    )
+    dismissed_id = _write_current_balance_mismatch_issue(
+        manager=manager,
+        asset=ignored_asset,
+    )
+    manager.dismiss(dismissed_id)
+    kept_id = _write_negative_balance_issue(
+        manager=manager,
+        event_identifier=11,
+        asset=kept_asset,
+        ts=3_000,
+    )
+
+    with database.user_write() as write_cursor:
+        deleted = database.add_to_ignored_assets(
+            write_cursor=write_cursor,
+            asset=Asset(ignored_asset),
+        )
+
+    assert deleted == 2
+    assert [issue.id for issue in manager.list_issues()] == [kept_id]
+    with database.conn.read_ctx() as cursor:
+        assert ignored_asset in database.get_ignored_asset_ids(cursor)

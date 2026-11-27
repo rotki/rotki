@@ -1087,10 +1087,11 @@ class AssetsService:
                         self.rotkehlchen.chains_aggregator.balances.recalculate_totals()
                     )
 
-        self.rotkehlchen.data.add_ignored_assets(assets=tokens)
-        DataIssuesManager(self.rotkehlchen.data.db).delete_issues_for_assets(
-            assets=[token.identifier for token in tokens],
-        )
+        _, already_ignored = self.rotkehlchen.data.add_ignored_assets(assets=tokens)
+        if len(already_ignored) > 0:
+            DataIssuesManager(self.rotkehlchen.data.db).delete_issues_for_assets(
+                assets=[token.identifier for token in already_ignored],
+            )
         return OkResult(True)
 
     def remove_token_from_spam(self, token: EvmToken | SolanaToken) -> ApiResult:

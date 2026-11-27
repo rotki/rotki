@@ -3,6 +3,7 @@ import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { get } from '@vueuse/shared';
 import { computed, type MaybeRefOrGetter, type Ref, toValue } from 'vue';
 import { isErc20TokenIdentifier, type SpamAssessment, useSpamAssessments } from '@/modules/assets/spam/use-spam-assessments';
+import { useSpamTokenTrust } from '@/modules/assets/spam/use-spam-token-trust';
 
 /** Matches an EVM transaction hash, either bare or prefixed with its chain ID in a group identifier. */
 const EVM_GROUP_TX_HASH = /^(?:\d+)?(0x[0-9a-f]{64})$/i;
@@ -57,6 +58,7 @@ export function toDataIssueSpamTokens(issues: readonly DataIssue[]): SpamPredict
 interface UseDataIssuesSpamAssessmentsReturn {
   readonly assessments: Readonly<Ref<Record<string, SpamAssessment>>>;
   readonly getSpamAssessment: (asset?: string | null) => SpamAssessment | undefined;
+  readonly status: ReturnType<typeof useSpamAssessments>['status'];
 }
 
 /**
@@ -65,15 +67,27 @@ interface UseDataIssuesSpamAssessmentsReturn {
 export function useDataIssuesSpamAssessments(
   issues: MaybeRefOrGetter<readonly DataIssue[]>,
 ): UseDataIssuesSpamAssessmentsReturn {
-  const spamTokens = computed<SpamPredictionToken[]>(() => toDataIssueSpamTokens(toValue(issues)));
-  const { assessments } = useSpamAssessments(spamTokens);
+  const { isTrustedForSpamDisplay } = useSpamTokenTrust();
+  const spamTokens = computed<SpamPredictionToken[]>(() =>
+    toDataIssueSpamTokens(toValue(issues)).filter(token => !isTrustedForSpamDisplay(token.identifier)),
+  );
+  const { assessments: rawAssessments, status } = useSpamAssessments(spamTokens);
+
+  const assessments = computed<Record<string, SpamAssessment>>(() =>
+    Object.fromEntries(
+      Object.entries(get(rawAssessments)).filter(([asset]) => !isTrustedForSpamDisplay(asset)),
+    ),
+  );
 
   function getSpamAssessment(asset?: string | null): SpamAssessment | undefined {
-    return asset ? get(assessments)[asset] : undefined;
+    if (!asset || isTrustedForSpamDisplay(asset))
+      return undefined;
+    return get(assessments)[asset];
   }
 
   return {
     assessments,
     getSpamAssessment,
+    status,
   };
 }

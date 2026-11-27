@@ -2,7 +2,7 @@ import { startPromise } from '@shared/utils';
 import { useIntervalFn } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
-import { type MaybeRefOrGetter, onActivated, onDeactivated, shallowRef, toValue, watch } from 'vue';
+import { type MaybeRefOrGetter, onActivated, onDeactivated, onScopeDispose, shallowRef, toValue, watch } from 'vue';
 import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 import { useDataIssueRemediationStore } from '@/modules/history/data-issues/use-data-issue-remediation-store';
 import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
@@ -31,10 +31,14 @@ export function useDataIssuesPanelPolling(
   const { syncCompleted } = useSyncCompleted();
   const { currentBalanceDetectionCompleted, historicalBalanceProcessingCompleted } = storeToRefs(useHistoricalBalanceProcessingStore());
   const { remediationCompleted } = storeToRefs(useDataIssueRemediationStore());
-  const { issuesInvalidated } = storeToRefs(useDataIssuesInboxStore());
+  const inboxStore = useDataIssuesInboxStore();
+  const { issuesInvalidated } = storeToRefs(inboxStore);
   const { pause, resume } = useIntervalFn(() => {
     startPromise(reload());
   }, POLL_INTERVAL, { immediate: false });
+
+  let listening = true;
+  inboxStore.incrementReloadListeners();
 
   const active = shallowRef<boolean>(true);
   const pendingRefresh = shallowRef<boolean>(false);
@@ -64,6 +68,10 @@ export function useDataIssuesPanelPolling(
 
   onActivated(() => {
     set(active, true);
+    if (!listening) {
+      listening = true;
+      inboxStore.incrementReloadListeners();
+    }
     syncPolling();
     if (get(pendingRefresh)) {
       set(pendingRefresh, false);
@@ -73,6 +81,17 @@ export function useDataIssuesPanelPolling(
 
   onDeactivated(() => {
     set(active, false);
+    if (listening) {
+      listening = false;
+      inboxStore.decrementReloadListeners();
+    }
     pause();
+  });
+
+  onScopeDispose(() => {
+    if (listening) {
+      listening = false;
+      inboxStore.decrementReloadListeners();
+    }
   });
 }

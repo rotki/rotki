@@ -4,6 +4,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import { msg } from '@/message-key';
 import SpamAssessmentHint from '@/modules/assets/spam/SpamAssessmentHint.vue';
+import DataIssueKindChip from '@/modules/history/data-issues/components/DataIssueKindChip.vue';
 import DataIssuePanelCard from '@/modules/history/data-issues/components/DataIssuePanelCard.vue';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 
@@ -60,7 +61,7 @@ function createWrapper(spamAssessment?: SpamAssessment): VueWrapper<InstanceType
 }
 
 describe('dataIssuePanelCard', () => {
-  it('should show a standalone potential-spam badge when the asset is flagged', () => {
+  it('should show a standalone quiet potential-spam badge in the bottom metadata row when the asset is flagged', () => {
     const flagged: SpamAssessment = {
       prediction: {
         flagged: true,
@@ -77,6 +78,12 @@ describe('dataIssuePanelCard', () => {
     expect(hint.exists()).toBe(true);
     expect(hint.props('assessment')).toStrictEqual(flagged);
     expect(hint.props('standalone')).toBe(true);
+    expect(hint.props('quiet')).toBe(true);
+
+    const headerRow = wrapper.findComponent(DataIssueKindChip).element.parentElement;
+    const footerRow = wrapper.findComponent({ name: 'AssetIcon' }).element.parentElement;
+    expect(headerRow?.contains(hint.element)).toBe(false);
+    expect(footerRow?.contains(hint.element)).toBe(true);
   });
 
   it.each<{ label: string; assessment?: SpamAssessment }>([

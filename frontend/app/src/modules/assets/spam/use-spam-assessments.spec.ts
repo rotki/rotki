@@ -133,7 +133,7 @@ describe('useSpamAssessments', () => {
     expect(get(assessments)['eip155:1/erc20:0xOld']).toBeUndefined();
   });
 
-  it('should clear scores when the session ends and refetch for the next session', async () => {
+  it('should clear scores and cache when the session ends and refetch for the next session', async () => {
     const page = ref([token('eip155:1/erc20:0x1')]);
     const { assessments, status } = assess(page);
     await flushPromises();
@@ -151,15 +151,131 @@ describe('useSpamAssessments', () => {
     expect(get(assessments)['eip155:1/erc20:0x1']?.status).toBe('ready');
   });
 
-  it('should reassess a replaced page even when its identifiers are unchanged', async () => {
-    const page = ref([token('eip155:1/erc20:0x1')]);
-    assess(page);
+  it('should skip refetching and keep ready scores when the page array is replaced with identical entries', async () => {
+    const firstPrediction = prediction(0.8, 0.5);
+    predictSpam.mockResolvedValueOnce({ 'eip155:1/erc20:0x1': firstPrediction });
+    const page = ref([token('eip155:1/erc20:0x1', '0xtx1')]);
+    const { assessments, status } = assess(page);
     await flushPromises();
 
-    set(page, [token('eip155:1/erc20:0x1')]);
+    set(page, [token('eip155:1/erc20:0x1', '0xtx1')]);
+
+    expect(get(assessments)['eip155:1/erc20:0x1']).toStrictEqual({ prediction: firstPrediction, status: 'ready' });
+    expect(get(status)).toBe('ready');
+    await flushPromises();
+
+    expect(predictSpam).toHaveBeenCalledTimes(1);
+  });
+
+  it('should keep existing tokens ready and request only newly appended tokens on load more', async () => {
+    const existingPrediction = prediction(0.2, 0.5);
+    const addedPrediction = prediction(0.9, 0.5);
+    predictSpam
+      .mockResolvedValueOnce({ 'eip155:1/erc20:0x1': existingPrediction })
+      .mockImplementationOnce(async () => ({ 'eip155:1/erc20:0x2': addedPrediction }));
+
+    const page = ref([token('eip155:1/erc20:0x1')]);
+    const { assessments, status } = assess(page);
+    await flushPromises();
+
+    set(page, [token('eip155:1/erc20:0x1'), token('eip155:1/erc20:0x2')]);
+
+    expect(get(assessments)['eip155:1/erc20:0x1']).toStrictEqual({ prediction: existingPrediction, status: 'ready' });
+    expect(get(assessments)['eip155:1/erc20:0x2']).toStrictEqual({ status: 'loading' });
+    expect(get(status)).toBe('loading');
+
     await flushPromises();
 
     expect(predictSpam).toHaveBeenCalledTimes(2);
+    expect(predictSpam.mock.calls[1][0]).toStrictEqual([{ identifier: 'eip155:1/erc20:0x2' }]);
+    expect(get(assessments)['eip155:1/erc20:0x1']).toStrictEqual({ prediction: existingPrediction, status: 'ready' });
+    expect(get(assessments)['eip155:1/erc20:0x2']).toStrictEqual({ prediction: addedPrediction, status: 'ready' });
+    expect(get(status)).toBe('ready');
+  });
+
+  it('should re-request only tokens whose txReference changed while keeping unchanged tokens cached', async () => {
+    const stablePrediction = prediction(0.1, 0.5);
+    const updatedPrediction = prediction(0.85, 0.5);
+    predictSpam
+      .mockResolvedValueOnce({
+        'eip155:1/erc20:0x1': stablePrediction,
+        'eip155:1/erc20:0x2': prediction(0.3, 0.5),
+      })
+      .mockResolvedValueOnce({ 'eip155:1/erc20:0x2': updatedPrediction });
+
+    const page = ref([
+      token('eip155:1/erc20:0x1', '0xtx1'),
+      token('eip155:1/erc20:0x2', '0xtx2'),
+    ]);
+    const { assessments } = assess(page);
+    await flushPromises();
+
+    set(page, [
+      token('eip155:1/erc20:0x1', '0xtx1'),
+      token('eip155:1/erc20:0x2', '0xtx2-updated'),
+    ]);
+
+    expect(get(assessments)['eip155:1/erc20:0x1']).toStrictEqual({ prediction: stablePrediction, status: 'ready' });
+    expect(get(assessments)['eip155:1/erc20:0x2']).toStrictEqual({ status: 'loading' });
+
+    await flushPromises();
+
+    expect(predictSpam).toHaveBeenCalledTimes(2);
+    expect(predictSpam.mock.calls[1][0]).toStrictEqual([{ identifier: 'eip155:1/erc20:0x2', txReference: '0xtx2-updated' }]);
+    expect(get(assessments)['eip155:1/erc20:0x1']).toStrictEqual({ prediction: stablePrediction, status: 'ready' });
+    expect(get(assessments)['eip155:1/erc20:0x2']).toStrictEqual({ prediction: updatedPrediction, status: 'ready' });
+  });
+
+  it('should drop removed tokens from assessments with zero network requests', async () => {
+    const keptPrediction = prediction(0.4, 0.5);
+    predictSpam.mockResolvedValueOnce({
+      'eip155:1/erc20:0x1': keptPrediction,
+      'eip155:1/erc20:0x2': prediction(0.9, 0.5),
+    });
+
+    const page = ref([
+      token('eip155:1/erc20:0x1'),
+      token('eip155:1/erc20:0x2'),
+    ]);
+    const { assessments, status } = assess(page);
+    await flushPromises();
+
+    set(page, [token('eip155:1/erc20:0x1')]);
+
+    expect(predictSpam).toHaveBeenCalledTimes(1);
+    expect(get(assessments)).toStrictEqual({
+      'eip155:1/erc20:0x1': { prediction: keptPrediction, status: 'ready' },
+    });
+    expect(get(status)).toBe('ready');
+  });
+
+  it('should cache unsupported outcomes but retry unavailable tokens on subsequent changes', async () => {
+    predictSpam
+      .mockRejectedValueOnce(new Error('temporary failure'))
+      .mockResolvedValueOnce({
+        'eip155:1/erc20:0x1': prediction(0.7, 0.5),
+        'eip155:1/erc20:0x2': null,
+      });
+
+    const page = ref([token('eip155:1/erc20:0x1')]);
+    const { assessments, status } = assess(page);
+    await flushPromises();
+    expect(get(assessments)['eip155:1/erc20:0x1']).toStrictEqual({ status: 'unavailable' });
+
+    set(page, [token('eip155:1/erc20:0x1'), token('eip155:1/erc20:0x2')]);
+    await flushPromises();
+
+    expect(predictSpam).toHaveBeenCalledTimes(2);
+    expect(predictSpam.mock.calls[1][0]).toStrictEqual([
+      { identifier: 'eip155:1/erc20:0x1' },
+      { identifier: 'eip155:1/erc20:0x2' },
+    ]);
+    expect(get(assessments)['eip155:1/erc20:0x2']).toStrictEqual({ status: 'unsupported' });
+
+    set(page, [token('eip155:1/erc20:0x2')]);
+    expect(predictSpam).toHaveBeenCalledTimes(2);
+    expect(get(assessments)).toStrictEqual({ 'eip155:1/erc20:0x2': { status: 'unsupported' } });
+    expect(get(status)).toBe('ready');
   });
 
   it('should not request anything for an empty page', async () => {

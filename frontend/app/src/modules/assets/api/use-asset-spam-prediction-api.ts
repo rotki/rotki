@@ -5,6 +5,9 @@ import { api } from '@/modules/core/api/rotki-api';
 /** The backend rejects a larger batch, so a page is split into requests of this size. */
 export const SPAM_PREDICTION_BATCH_SIZE = 100;
 
+/** Short timeout so an unresponsive Colibri instance does not keep rows checking for 30s. */
+export const SPAM_PREDICTION_TIMEOUT_MS = 5_000;
+
 const SpamPredictionReason = z.object({
   feature: z.string(),
   probabilityDelta: z.number(),
@@ -88,6 +91,7 @@ export function useAssetSpamPredictionApi(): UseAssetSpamPredictionApiReturn {
       {
         skipRootCamelCase: true,
         target: RequestTarget.COLIBRI,
+        timeout: SPAM_PREDICTION_TIMEOUT_MS,
       },
     );
     return SpamPredictionResponse.parse(response);

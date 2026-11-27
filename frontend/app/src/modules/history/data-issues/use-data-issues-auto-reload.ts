@@ -1,6 +1,6 @@
 import { startPromise } from '@shared/utils';
 import { storeToRefs } from 'pinia';
-import { watch } from 'vue';
+import { onScopeDispose, watch } from 'vue';
 import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 import { useDataIssueRemediationStore } from '@/modules/history/data-issues/use-data-issue-remediation-store';
 import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
@@ -19,8 +19,12 @@ import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-complet
 export function useDataIssuesAutoReload(reload: () => Promise<void>): void {
   const { currentBalanceDetectionCompleted, historicalBalanceProcessingCompleted } = storeToRefs(useHistoricalBalanceProcessingStore());
   const { remediationCompleted } = storeToRefs(useDataIssueRemediationStore());
-  const { issuesInvalidated } = storeToRefs(useDataIssuesInboxStore());
+  const inboxStore = useDataIssuesInboxStore();
+  const { issuesInvalidated } = storeToRefs(inboxStore);
   const { syncCompleted } = useSyncCompleted();
+
+  inboxStore.incrementReloadListeners();
+  onScopeDispose(() => inboxStore.decrementReloadListeners());
 
   watch([syncCompleted, historicalBalanceProcessingCompleted, currentBalanceDetectionCompleted, remediationCompleted, issuesInvalidated], () => {
     startPromise(reload());

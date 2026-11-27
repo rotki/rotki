@@ -6,6 +6,7 @@ import { createNewTokenDetectedHandler } from '@/modules/assets/detection/new-to
 import { createAccountingRuleConflictHandler } from '../handlers/accounting-rule-conflict';
 import { createCalendarReminderHandler } from '../handlers/calendar-reminder';
 import { createCurrentBalanceDetectionCompletedHandler } from '../handlers/current-balance-detection-completed';
+import { createDataIssuesRemovedHandler } from '../handlers/data-issues-removed';
 import { createDbUploadProgressHandler, createDbUploadResultHandler } from '../handlers/database-upload';
 import { createHistoricalBalanceProcessingCompletedHandler } from '../handlers/historical-balance-processing-completed';
 import { createRefreshBalancesHandler } from '../handlers/refresh-balances';
@@ -19,6 +20,7 @@ export function createBusinessRegistry(
   | typeof SocketMessageType.ACCOUNTING_RULE_CONFLICT
   | typeof SocketMessageType.CALENDAR_REMINDER
   | typeof SocketMessageType.CURRENT_BALANCE_DETECTION_COMPLETED
+  | typeof SocketMessageType.DATA_ISSUES_REMOVED
   | typeof SocketMessageType.DATABASE_UPLOAD_PROGRESS
   | typeof SocketMessageType.DB_UPLOAD_RESULT
   | typeof SocketMessageType.EXCHANGE_UNKNOWN_ASSET
@@ -35,6 +37,7 @@ export function createBusinessRegistry(
     [SocketMessageType.ACCOUNTING_RULE_CONFLICT]: accountingRuleConflictHandler,
     [SocketMessageType.CALENDAR_REMINDER]: calendarReminderHandler,
     [SocketMessageType.CURRENT_BALANCE_DETECTION_COMPLETED]: createCurrentBalanceDetectionCompletedHandler(),
+    [SocketMessageType.DATA_ISSUES_REMOVED]: createDataIssuesRemovedHandler(),
     [SocketMessageType.DATABASE_UPLOAD_PROGRESS]: createDbUploadProgressHandler(),
     [SocketMessageType.DB_UPLOAD_RESULT]: createDbUploadResultHandler(),
     [SocketMessageType.EXCHANGE_UNKNOWN_ASSET]: exchangeUnknownAssetHandler,

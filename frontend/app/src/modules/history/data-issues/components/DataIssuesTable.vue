@@ -26,12 +26,14 @@ const {
   rows,
   showClearFilters = false,
   spamAssessments,
+  spamUnavailable = false,
 } = defineProps<{
   rows: DataIssue[];
   loading?: boolean;
   emptyDescription: string;
   showClearFilters?: boolean;
   spamAssessments?: Readonly<Record<string, SpamAssessment>>;
+  spamUnavailable?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -57,10 +59,14 @@ function eventRouteFor(issue: DataIssue): RouteLocationRaw | undefined {
   return relatedEventRoute(issue.kind, describeIssue(issue).eventIdentifier, issue.groupIdentifier, issue.asset);
 }
 
+function isPotentialSpam(asset?: string | null): boolean {
+  const assessment = asset ? spamAssessments?.[asset] : undefined;
+  return assessment?.status === 'ready' && assessment.prediction.flagged;
+}
+
 const headers = computed<DataTableColumn<DataIssue>[]>(() => [
   { key: 'kind', label: t('data_issues.headers.kind') },
   { key: 'asset', label: t('common.asset') },
-  { cellClass: 'whitespace-nowrap', key: 'spam', label: t('spam_estimate.label') },
   { key: 'account', label: t('common.account') },
   { key: 'protocol', label: t('data_issues.headers.protocol') },
   { key: 'state', label: t('data_issues.headers.state') },
@@ -77,6 +83,13 @@ const headers = computed<DataTableColumn<DataIssue>[]>(() => [
     >
       <slot name="toolbar" />
     </template>
+    <div
+      v-if="spamUnavailable"
+      class="px-4 pt-2 text-caption text-rui-text-secondary"
+      data-testid="data-issues-spam-unavailable"
+    >
+      {{ t('spam_estimate.unavailable_notice') }}
+    </div>
     <RuiDataTable
       v-model:pagination.external="pagination"
       dense
@@ -91,19 +104,24 @@ const headers = computed<DataTableColumn<DataIssue>[]>(() => [
         <DataIssueKindChip :kind="row.kind" />
       </template>
       <template #item.asset="{ row }">
-        <AssetDetails
+        <div
           v-if="row.asset"
-          :asset="row.asset"
-        />
+          class="flex flex-wrap items-center gap-1.5"
+        >
+          <AssetDetails :asset="row.asset" />
+          <SpamAssessmentHint
+            v-if="isPotentialSpam(row.asset)"
+            :assessment="spamAssessments?.[row.asset]"
+            standalone
+            quiet
+          />
+        </div>
         <span
           v-else
           class="text-rui-text-secondary"
         >
           -
         </span>
-      </template>
-      <template #item.spam="{ row }">
-        <SpamAssessmentHint :assessment="row.asset ? spamAssessments?.[row.asset] : undefined" />
       </template>
       <template #item.account="{ row }">
         <HistoryEventAccount

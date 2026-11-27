@@ -7,13 +7,23 @@ import { beginSession, endSession } from '@/modules/core/session/session-lifecyc
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 import { toDataIssueSpamTokens, useDataIssuesSpamAssessments } from '@/modules/history/data-issues/use-data-issues-spam-assessments';
 
-const { predictSpam } = vi.hoisted(() => ({
-  predictSpam: vi.fn<(tokens: SpamPredictionToken[]) => Promise<SpamPredictionResponse>>(),
-}));
+const { predictSpam, trustedAssets } = await vi.hoisted(async () => {
+  const { ref: vueRef } = await import('vue');
+  return {
+    predictSpam: vi.fn<(tokens: SpamPredictionToken[]) => Promise<SpamPredictionResponse>>(),
+    trustedAssets: vueRef<Set<string>>(new Set()),
+  };
+});
 
 vi.mock(import('@/modules/assets/api/use-asset-spam-prediction-api'), async importOriginal => ({
   ...await importOriginal(),
   useAssetSpamPredictionApi: (): { predictSpam: typeof predictSpam } => ({ predictSpam }),
+}));
+
+vi.mock('@/modules/assets/spam/use-spam-token-trust', () => ({
+  useSpamTokenTrust: (): { isTrustedForSpamDisplay: (asset?: string | null) => boolean } => ({
+    isTrustedForSpamDisplay: (asset?: string | null): boolean => Boolean(asset && trustedAssets.value.has(asset)),
+  }),
 }));
 
 const TOKEN_A = 'eip155:1/erc20:0x1111111111111111111111111111111111111111';
@@ -83,6 +93,7 @@ describe('useDataIssuesSpamAssessments', () => {
   beforeEach(() => {
     beginSession();
     predictSpam.mockReset();
+    trustedAssets.value = new Set();
   });
 
   afterEach(() => {
@@ -101,12 +112,38 @@ describe('useDataIssuesSpamAssessments', () => {
 
     const scope = effectScope();
     scopes.push(scope);
-    const { getSpamAssessment } = scope.run(() => useDataIssuesSpamAssessments(issues))!;
+    const { getSpamAssessment, status } = scope.run(() => useDataIssuesSpamAssessments(issues))!;
     await flushPromises();
 
     expect(predictSpam).toHaveBeenCalledExactlyOnceWith([{ identifier: TOKEN_A, txReference: TX_HASH }]);
+    expect(status.value).toBe('ready');
     expect(getSpamAssessment(TOKEN_A)).toStrictEqual({ prediction: FLAGGED_PREDICTION, status: 'ready' });
     expect(getSpamAssessment('ETH')).toBeUndefined();
     expect(getSpamAssessment(null)).toBeUndefined();
+  });
+
+  it('should skip trusted tokens, hide assessments if trust arrives later, and expose unavailable status', async () => {
+    trustedAssets.value = new Set([TOKEN_A]);
+    predictSpam.mockRejectedValueOnce(new Error('colibri offline'));
+    const issues = ref<DataIssue[]>([
+      createIssue({ asset: TOKEN_A, id: 1 }),
+      createIssue({ asset: TOKEN_B, id: 2 }),
+    ]);
+
+    const scope = effectScope();
+    scopes.push(scope);
+    const { assessments, getSpamAssessment, status } = scope.run(() => useDataIssuesSpamAssessments(issues))!;
+    await flushPromises();
+
+    expect(predictSpam).toHaveBeenCalledExactlyOnceWith([{ identifier: TOKEN_B }]);
+    expect(status.value).toBe('unavailable');
+    expect(getSpamAssessment(TOKEN_A)).toBeUndefined();
+    expect(getSpamAssessment(TOKEN_B)).toStrictEqual({ status: 'unavailable' });
+
+    trustedAssets.value = new Set([TOKEN_A, TOKEN_B]);
+    await flushPromises();
+
+    expect(assessments.value).toStrictEqual({});
+    expect(getSpamAssessment(TOKEN_B)).toBeUndefined();
   });
 });

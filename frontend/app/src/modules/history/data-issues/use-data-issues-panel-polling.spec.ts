@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { set } from '@vueuse/core';
+import { get, set } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, KeepAlive, type Ref, ref, shallowRef } from 'vue';
@@ -247,5 +247,22 @@ describe('useDataIssuesPanelPolling', () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(reload).toHaveBeenCalledOnce();
     panel.unmount();
+  });
+
+  it('should track active reload listeners across KeepAlive deactivation, reactivation, and unmount', async () => {
+    const store = useDataIssuesInboxStore();
+    expect(get(store.hasActiveReloadListeners)).toBe(false);
+
+    const panel = mountPanel(ref(false), vi.fn().mockResolvedValue(undefined));
+    expect(get(store.hasActiveReloadListeners)).toBe(true);
+
+    await panel.show(false);
+    expect(get(store.hasActiveReloadListeners)).toBe(false);
+
+    await panel.show(true);
+    expect(get(store.hasActiveReloadListeners)).toBe(true);
+
+    panel.unmount();
+    expect(get(store.hasActiveReloadListeners)).toBe(false);
   });
 });

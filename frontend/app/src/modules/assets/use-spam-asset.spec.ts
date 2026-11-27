@@ -72,6 +72,19 @@ describe('useSpamAsset', () => {
       expect(mockRefreshSummary).toHaveBeenCalledOnce();
     });
 
+    it('should skip refreshing the summary directly when an active reload listener exists', async () => {
+      const store = useDataIssuesInboxStore();
+      store.incrementReloadListeners();
+      const { markAssetsAsSpam } = useSpamAsset();
+
+      const result = await markAssetsAsSpam(['SPAM1']);
+
+      expect(result.success).toBe(true);
+      expect(get(store.issuesInvalidated)).toBe(1);
+      expect(get(store.lastRemovedAssets)).toStrictEqual(['SPAM1']);
+      expect(mockRefreshSummary).not.toHaveBeenCalled();
+    });
+
     it('should skip the assets held in manual balances and mark only the rest', async () => {
       const store = useDataIssuesInboxStore();
       manualBalancesAssets.value = ['MANUAL'];

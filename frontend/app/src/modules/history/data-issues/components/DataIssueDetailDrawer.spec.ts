@@ -315,7 +315,7 @@ describe('dataIssueDetailDrawer', () => {
     expect(retry.attributes('disabled')).toBeDefined();
   });
 
-  it('should show the spam estimate in the subject bar when an assessment is provided', () => {
+  it('should show the spam estimate in the subject bar in quiet mode for ready or unsupported assessments', () => {
     const assessment: SpamAssessment = {
       prediction: {
         flagged: true,
@@ -330,6 +330,19 @@ describe('dataIssueDetailDrawer', () => {
 
     expect(wrapper.find('[data-testid="data-issue-spam-estimate"]').text()).toContain('spam_estimate.label');
     expect(wrapper.findComponent(SpamAssessmentHint).props('assessment')).toStrictEqual(assessment);
+    expect(wrapper.findComponent(SpamAssessmentHint).props('quiet')).toBe(true);
+
+    const unsupportedWrapper = createWrapper(createIssue({ asset: 'eip155:1/erc20:0x1111' }), { status: 'unsupported' });
+    expect(unsupportedWrapper.find('[data-testid="data-issue-spam-estimate"]').exists()).toBe(true);
+  });
+
+  it.each<SpamAssessment>([
+    { status: 'loading' },
+    { status: 'unavailable' },
+  ])('should hide the spam estimate label when assessment status is $status', (assessment) => {
+    const wrapper = createWrapper(createIssue({ asset: 'eip155:1/erc20:0x1111' }), assessment);
+
+    expect(wrapper.find('[data-testid="data-issue-spam-estimate"]').exists()).toBe(false);
   });
 
   it('should omit the spam estimate in the subject bar when no assessment is provided', () => {

@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import { set } from '@vueuse/core';
+import { get, set } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, nextTick, ref } from 'vue';
@@ -14,8 +14,8 @@ vi.mock('@/modules/shell/sync-progress/use-sync-completed', () => ({
   useSyncCompleted: (): Record<string, unknown> => ({ syncCompleted }),
 }));
 
-function mountView(reload: () => Promise<void>): void {
-  mount(defineComponent({
+function mountView(reload: () => Promise<void>): ReturnType<typeof mount> {
+  return mount(defineComponent({
     setup() {
       useDataIssuesAutoReload(reload);
       return (): unknown => h('div');
@@ -77,5 +77,16 @@ describe('useDataIssuesAutoReload', () => {
     await nextTick();
 
     expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it('should register as an active reload listener while mounted and unregister on unmount', () => {
+    const store = useDataIssuesInboxStore();
+    expect(get(store.hasActiveReloadListeners)).toBe(false);
+
+    const wrapper = mountView(vi.fn<() => Promise<void>>().mockResolvedValue(undefined));
+    expect(get(store.hasActiveReloadListeners)).toBe(true);
+
+    wrapper.unmount();
+    expect(get(store.hasActiveReloadListeners)).toBe(false);
   });
 });

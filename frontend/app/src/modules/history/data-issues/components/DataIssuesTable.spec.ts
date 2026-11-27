@@ -44,6 +44,7 @@ const RuiMenu = defineComponent({
 function createWrapper(
   rows: DataIssue[],
   spamAssessments?: Record<string, SpamAssessment>,
+  spamUnavailable = false,
 ): VueWrapper<InstanceType<typeof DataIssuesTable>> {
   return mount(DataIssuesTable, {
     global: {
@@ -65,6 +66,7 @@ function createWrapper(
       pagination: { limit: 10, page: 1, total: rows.length },
       rows,
       spamAssessments,
+      spamUnavailable,
     },
   });
 }
@@ -118,18 +120,16 @@ describe('data-issues table', () => {
     expect(wrapper.emitted('dismiss')?.[0]?.[0]).toStrictEqual(issue);
   });
 
-  it('should render the spam estimate column between asset and account', () => {
+  it('should not render a separate spam estimate column', () => {
     const headers = createWrapper([]).findAll('thead th').map(th => th.text());
-    const asset = headers.indexOf('common.asset');
-    const spam = headers.indexOf('spam_estimate.label');
-    const account = headers.indexOf('common.account');
 
-    expect(spam).toBeGreaterThan(asset);
-    expect(account).toBeGreaterThan(spam);
+    expect(headers).not.toContain('spam_estimate.label');
   });
 
-  it('should pass each row its asset spam assessment and leave unassessed rows empty', () => {
-    const token = 'eip155:1/erc20:0x1111111111111111111111111111111111111111';
+  it('should render an inline standalone quiet spam badge only for flagged ready assessments', () => {
+    const flaggedToken = 'eip155:1/erc20:0x1111111111111111111111111111111111111111';
+    const cleanToken = 'eip155:1/erc20:0x2222222222222222222222222222222222222222';
+    const loadingToken = 'eip155:1/erc20:0x3333333333333333333333333333333333333333';
     const flagged: SpamAssessment = {
       prediction: {
         flagged: true,
@@ -140,13 +140,44 @@ describe('data-issues table', () => {
       },
       status: 'ready',
     };
+    const clean: SpamAssessment = {
+      prediction: {
+        flagged: false,
+        modelReasons: [],
+        observedSignals: [],
+        spamProbability: 0.1,
+        threshold: 0.5,
+      },
+      status: 'ready',
+    };
     const wrapper = createWrapper(
-      [createIssue({ asset: token, id: 1 }), createIssue({ asset: 'ETH', id: 2 }), createIssue({ asset: null, id: 3 })],
-      { [token]: flagged },
+      [
+        createIssue({ asset: flaggedToken, id: 1 }),
+        createIssue({ asset: cleanToken, id: 2 }),
+        createIssue({ asset: loadingToken, id: 3 }),
+        createIssue({ asset: 'ETH', id: 4 }),
+        createIssue({ asset: null, id: 5 }),
+      ],
+      {
+        [cleanToken]: clean,
+        [flaggedToken]: flagged,
+        [loadingToken]: { status: 'loading' },
+      },
     );
 
     const hints = wrapper.findAllComponents(SpamAssessmentHint);
-    expect(hints.map(hint => hint.props('assessment'))).toStrictEqual([flagged, undefined, undefined]);
+    expect(hints).toHaveLength(1);
+    expect(hints[0].props('assessment')).toStrictEqual(flagged);
+    expect(hints[0].props('standalone')).toBe(true);
+    expect(hints[0].props('quiet')).toBe(true);
+  });
+
+  it('should show a calm unavailable notice when spam prediction is unavailable', () => {
+    const hidden = createWrapper([], undefined, false);
+    expect(hidden.find('[data-testid="data-issues-spam-unavailable"]').exists()).toBe(false);
+
+    const shown = createWrapper([], undefined, true);
+    expect(shown.get('[data-testid="data-issues-spam-unavailable"]').text()).toBe('spam_estimate.unavailable_notice');
   });
 
   it('should emit open when the row action button is clicked', async () => {

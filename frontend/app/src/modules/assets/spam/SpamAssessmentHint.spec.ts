@@ -17,7 +17,10 @@ const prediction: SpamPrediction = {
   threshold: 0.5,
 };
 
-function mountHint(assessment?: SpamAssessment, standalone = false): VueWrapper<InstanceType<typeof SpamAssessmentHint>> {
+function mountHint(
+  assessment?: SpamAssessment,
+  options: { quiet?: boolean; standalone?: boolean } = {},
+): VueWrapper<InstanceType<typeof SpamAssessmentHint>> {
   return mount(SpamAssessmentHint, {
     global: {
       stubs: {
@@ -26,7 +29,7 @@ function mountHint(assessment?: SpamAssessment, standalone = false): VueWrapper<
         RuiTooltip: { template: '<div><slot name="activator" /><div data-testid="tooltip"><slot /></div></div>' },
       },
     },
-    props: { assessment, standalone },
+    props: { assessment, ...options },
   });
 }
 
@@ -44,12 +47,13 @@ describe('spamAssessmentHint', () => {
     expect(wrapper.get('[data-testid=spam-advisory]').text()).toBe(mockT('spam_estimate.advisory'));
   });
 
-  it('should follow the backend flag rather than comparing the score to the threshold', () => {
+  it('should follow the backend flag without showing a chip score when unflagged while keeping the tooltip score', () => {
     const wrapper = mountHint(ready({ flagged: false, spamProbability: 0.9, threshold: 0.5 }));
 
-    expect(wrapper.get('[data-testid=spam-state]').text()).toBe(mockT('spam_estimate.low'));
+    expect(wrapper.get('[data-testid=spam-state]').text()).toBe(mockT('spam_estimate.not_flagged'));
     expect(wrapper.get('[data-testid=spam-chip]').attributes('data-color')).toBe('secondary');
-    expect(wrapper.get('[data-testid=spam-score]').text()).toBe(mockT('spam_estimate.score', { percentage: 90 }));
+    expect(wrapper.find('[data-testid=spam-score]').exists()).toBe(false);
+    expect(wrapper.get('[data-testid=tooltip]').text()).toContain(mockT('spam_estimate.heading', { percentage: 90 }));
   });
 
   it('should explain token traits with distinct icons instead of model jargon', () => {
@@ -94,11 +98,26 @@ describe('spamAssessmentHint', () => {
   });
 
   it('should name potential spam on the chip when standalone is enabled', () => {
-    const wrapper = mountHint(ready({ spamProbability: 0.92, threshold: 0.5 }), true);
+    const wrapper = mountHint(ready({ spamProbability: 0.92, threshold: 0.5 }), { standalone: true });
 
     expect(wrapper.get('[data-testid=spam-state]').text()).toBe(mockT('spam_estimate.potential_spam'));
     expect(wrapper.get('[data-testid=spam-chip]').attributes('data-color')).toBe('warning');
     expect(wrapper.get('[data-testid=spam-score]').text()).toBe(mockT('spam_estimate.score', { percentage: 92 }));
+  });
+
+  it.each(['loading', 'unavailable'] as const)('should hide %s chips when quiet is enabled', (status) => {
+    const wrapper = mountHint({ status }, { quiet: true });
+
+    expect(wrapper.find('[data-testid=spam-chip]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=tooltip]').exists()).toBe(false);
+  });
+
+  it('should still show ready and unsupported chips when quiet is enabled', () => {
+    const flaggedWrapper = mountHint(ready({ spamProbability: 0.9, threshold: 0.5 }), { quiet: true });
+    expect(flaggedWrapper.get('[data-testid=spam-state]').text()).toBe(mockT('spam_estimate.high'));
+
+    const unsupportedWrapper = mountHint({ status: 'unsupported' }, { quiet: true });
+    expect(unsupportedWrapper.get('[data-testid=spam-state]').text()).toBe(mockT('spam_estimate.unsupported'));
   });
 
   it('should render nothing for an asset without an assessment', () => {

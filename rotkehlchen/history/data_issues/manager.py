@@ -495,6 +495,12 @@ class DataIssuesManager:
     ) -> int:
         """Delete all persisted data issues for the given asset identifiers.
 
+        All persisted rows for the asset—including dismissed and resolved rows—are
+        intentionally deleted when an asset is ignored or marked as spam so ignored/spam
+        tokens do not linger in filtered views or keep ``baselineTotal`` non-zero
+        (preventing the all-clear state). Un-ignoring the asset later re-evaluates it
+        cleanly from scratch.
+
         Returns the number of deleted rows.
         """
         asset_ids = list(dict.fromkeys(asset for asset in assets if asset))

@@ -4,6 +4,7 @@ import type { Filters } from '@/modules/history/data-issues/data-issue-filter-ke
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { flushPromises } from '@vue/test-utils';
 import { get, set } from '@vueuse/core';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok, type Result } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
@@ -68,6 +69,7 @@ function page(count: number, found: number, startId = 1): Result<Collection<Data
 
 describe('useDataIssuesPanelList', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     predictSpam.mockResolvedValue({});
     refreshSummary.mockResolvedValue(undefined);

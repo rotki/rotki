@@ -32,11 +32,23 @@ export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', 
   const issuesInvalidated = ref<number>(0);
   /** Assets whose issues were removed in the latest invalidation, so open drawers can close. */
   const lastRemovedAssets = ref<readonly string[]>([]);
+  /** Number of mounted, active data-issues views currently listening to invalidations. */
+  const activeReloadListeners = ref<number>(0);
 
   /** Issues awaiting the user: open + needs-attention. Auto-remediating issues
    * are in progress and need no action, so they are intentionally excluded. */
   const actionableCount = computed<number>(() =>
     get(counts)[IssueState.OPEN] + get(counts)[IssueState.UNRESOLVED]);
+
+  const hasActiveReloadListeners = computed<boolean>(() => get(activeReloadListeners) > 0);
+
+  function incrementReloadListeners(): void {
+    set(activeReloadListeners, get(activeReloadListeners) + 1);
+  }
+
+  function decrementReloadListeners(): void {
+    set(activeReloadListeners, Math.max(0, get(activeReloadListeners) - 1));
+  }
 
   function setSummary(newCounts: StateCounts, baseline: number): void {
     set(counts, newCounts);
@@ -68,9 +80,13 @@ export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', 
 
   return {
     actionableCount,
+    activeReloadListeners,
     baselineTotal,
     counts,
+    decrementReloadListeners,
     dismissInlinePanels,
+    hasActiveReloadListeners,
+    incrementReloadListeners,
     issuesInvalidated,
     lastRemovedAssets,
     markSummaryFailed,

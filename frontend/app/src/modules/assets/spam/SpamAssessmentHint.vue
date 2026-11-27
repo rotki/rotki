@@ -7,12 +7,16 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSpamSignal } from './use-spam-signal';
 
-const { assessment, standalone = false } = defineProps<{
+const { assessment, quiet = false, standalone = false } = defineProps<{
   /**
    * The model's state for this token; nothing is rendered without one. The component never infers
    * a score from the token itself.
    */
   assessment?: SpamAssessment;
+  /**
+   * Hides transient loading and unavailable chips so optional surfaces stay calm.
+   */
+  quiet?: boolean;
   /**
    * Names spam directly on the chip when rendered outside a "Spam estimate" table column.
    */
@@ -32,13 +36,13 @@ const chip = computed<{ color: ContextColorsType; label: string } | undefined>((
     case 'ready':
       return get(flagged)
         ? { color: 'warning', label: standalone ? t('spam_estimate.potential_spam') : t('spam_estimate.high') }
-        : { color: 'secondary', label: t('spam_estimate.low') };
+        : { color: 'secondary', label: t('spam_estimate.not_flagged') };
     case 'unavailable':
-      return { color: 'error', label: t('spam_estimate.unavailable') };
+      return quiet ? undefined : { color: 'error', label: t('spam_estimate.unavailable') };
     case 'unsupported':
       return { color: 'secondary', label: t('spam_estimate.unsupported') };
     case 'loading':
-      return { color: 'secondary', label: t('spam_estimate.checking') };
+      return quiet ? undefined : { color: 'secondary', label: t('spam_estimate.checking') };
     default:
       return undefined;
   }
@@ -79,7 +83,7 @@ const signals = computed<(ReturnType<typeof describeSignal> & { id: string })[]>
       >
         <span data-testid="spam-state">{{ chip.label }}</span>
         <span
-          v-if="prediction"
+          v-if="prediction && flagged"
           class="ms-1"
           data-testid="spam-score"
         >

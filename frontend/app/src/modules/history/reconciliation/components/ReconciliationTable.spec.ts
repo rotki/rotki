@@ -16,13 +16,23 @@ import ReconciliationTable from '@/modules/history/reconciliation/components/Rec
 import { accountKeyOf } from '@/modules/history/reconciliation/use-reconciliation-rows';
 import { createRuiPlugin } from '@/plugins/rui';
 
-const { predictSpam } = vi.hoisted(() => ({
-  predictSpam: vi.fn<(tokens: SpamPredictionToken[]) => Promise<SpamPredictionResponse>>(),
-}));
+const { predictSpam, trustedAssets } = await vi.hoisted(async () => {
+  const { ref } = await import('vue');
+  return {
+    predictSpam: vi.fn<(tokens: SpamPredictionToken[]) => Promise<SpamPredictionResponse>>(),
+    trustedAssets: ref<Set<string>>(new Set()),
+  };
+});
 
 vi.mock(import('@/modules/assets/api/use-asset-spam-prediction-api'), async importOriginal => ({
   ...await importOriginal(),
   useAssetSpamPredictionApi: (): { predictSpam: typeof predictSpam } => ({ predictSpam }),
+}));
+
+vi.mock('@/modules/assets/spam/use-spam-token-trust', () => ({
+  useSpamTokenTrust: (): { isTrustedForSpamDisplay: (asset?: string | null) => boolean } => ({
+    isTrustedForSpamDisplay: (asset?: string | null): boolean => Boolean(asset && trustedAssets.value.has(asset)),
+  }),
 }));
 
 vi.mock('@/modules/history/events/mapping/use-history-event-counterparty-mappings', () => ({
@@ -95,6 +105,7 @@ describe('reconciliationTable', () => {
     setActivePinia(createPinia());
     predictSpam.mockReset();
     predictSpam.mockResolvedValue({});
+    trustedAssets.value = new Set();
   });
 
   afterEach(() => {
@@ -223,9 +234,11 @@ describe('reconciliationTable', () => {
     expect(wrapper.emitted('expand')?.[1]).toStrictEqual([account]);
   });
 
-  it('should assess expanded ERC-20 buckets and leave native assets without a spam estimate', async () => {
+  it('should assess expanded ERC-20 buckets in quiet mode and render a dash for native or trusted assets', async () => {
     beginSession();
     const token = 'eip155:1/erc20:0x6df1';
+    const trustedToken = 'eip155:1/erc20:0xaaaa';
+    trustedAssets.value = new Set([trustedToken]);
     const prediction: SpamPrediction = {
       flagged: true,
       modelReasons: [],
@@ -237,10 +250,10 @@ describe('reconciliationTable', () => {
 
     const account = makeAccount(1);
     const detail: AccountDetailState = {
-      buckets: [makeBucket(token), makeBucket('ETH')],
+      buckets: [makeBucket(token), makeBucket(trustedToken), makeBucket('ETH')],
       loaded: true,
       loading: false,
-      pagination: { limit: 50, offset: 0, total: 2 },
+      pagination: { limit: 50, offset: 0, total: 3 },
       statusKey: 'all',
     };
 
@@ -267,8 +280,73 @@ describe('reconciliationTable', () => {
     await flushPromises();
 
     expect(predictSpam).toHaveBeenCalledExactlyOnceWith([{ identifier: token }]);
-    const assessments = wrapper.findAllComponents(SpamAssessmentHint).map(hint => hint.props('assessment'));
-    expect(assessments).toContainEqual({ prediction, status: 'ready' });
-    expect(assessments).toContain(undefined);
+    const hints = wrapper.findAllComponents(SpamAssessmentHint);
+    expect(hints).toHaveLength(1);
+    expect(hints[0].props('assessment')).toStrictEqual({ prediction, status: 'ready' });
+    expect(hints[0].props('quiet')).toBe(true);
+    expect(wrapper.text()).toContain('data_issues.reconciliation.no_value');
+  });
+
+  it('should show an unavailable notice and dashes when spam predictions fail, and keep unsupported hints visible', async () => {
+    beginSession();
+    const unsupportedToken = 'eip155:1/erc20:0x6df2';
+    const unavailableToken = 'eip155:1/erc20:0x6df3';
+    predictSpam
+      .mockResolvedValueOnce({ [unsupportedToken]: null })
+      .mockRejectedValueOnce(new Error('colibri offline'));
+
+    const account1 = makeAccount(1);
+    const account2 = makeAccount(2);
+    const detail1: AccountDetailState = {
+      buckets: [makeBucket(unsupportedToken)],
+      loaded: true,
+      loading: false,
+      pagination: { limit: 50, offset: 0, total: 1 },
+      statusKey: 'all',
+    };
+    const detail2: AccountDetailState = {
+      buckets: [makeBucket(unavailableToken)],
+      loaded: true,
+      loading: false,
+      pagination: { limit: 50, offset: 0, total: 1 },
+      statusKey: 'all',
+    };
+
+    const wrapper = mount(ReconciliationTable, {
+      global: {
+        plugins: [createPinia(), createRuiPlugin({})],
+        stubs: {
+          AssetDetails: true,
+          CounterpartyDisplay: true,
+          HashLink: true,
+          ReconciliationAmount: true,
+          RouterLink: RouterLinkStub,
+          SpamAssessmentHint: true,
+          TimeAgoDisplay: true,
+        },
+      },
+      props: {
+        accounts: [account1],
+        autoExpand: true,
+        details: { [accountKeyOf(account1)]: detail1 },
+        view: 'all',
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="reconciliation-spam-unavailable"]').exists()).toBe(false);
+    expect(wrapper.findComponent(SpamAssessmentHint).props('assessment')).toStrictEqual({ status: 'unsupported' });
+    expect(wrapper.findComponent(SpamAssessmentHint).props('quiet')).toBe(true);
+
+    await wrapper.setProps({
+      accounts: [account2],
+      autoExpand: true,
+      details: { [accountKeyOf(account2)]: detail2 },
+    });
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="reconciliation-spam-unavailable"]').text()).toBe('spam_estimate.unavailable_notice');
+    expect(wrapper.findAllComponents(SpamAssessmentHint)).toHaveLength(0);
+    expect(wrapper.text()).toContain('data_issues.reconciliation.no_value');
   });
 });

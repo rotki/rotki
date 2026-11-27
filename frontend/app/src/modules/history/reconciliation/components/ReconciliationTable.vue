@@ -9,7 +9,8 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import SpamAssessmentHint from '@/modules/assets/spam/SpamAssessmentHint.vue';
-import { isErc20TokenIdentifier, useSpamAssessments } from '@/modules/assets/spam/use-spam-assessments';
+import { isErc20TokenIdentifier, type SpamAssessment, useSpamAssessments } from '@/modules/assets/spam/use-spam-assessments';
+import { useSpamTokenTrust } from '@/modules/assets/spam/use-spam-token-trust';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
 import { MAX_ACCOUNT_BUCKETS } from '@/modules/history/reconciliation/api/use-bucket-reconciliation-api';
 import ReconciliationAccountRow from '@/modules/history/reconciliation/components/ReconciliationAccountRow.vue';
@@ -77,6 +78,7 @@ const { t } = useI18n({ useScope: 'global' });
 const expandedKeys = ref<string[]>([]);
 
 const { getBaseCounterpartyData } = useHistoryEventCounterpartyMappings();
+const { isTrustedForSpamDisplay } = useSpamTokenTrust();
 
 const expandedSet = computed<Set<string>>(() => new Set(get(expandedKeys)));
 const accountByKey = computed<Record<string, ReconciliationAccount>>(() =>
@@ -88,15 +90,21 @@ const spamTokens = computed<SpamPredictionToken[]>(() => {
   const seen = new Set<string>();
   const tokens: SpamPredictionToken[] = [];
   for (const row of get(rows)) {
-    if (row.kind !== 'bucket' || !isErc20TokenIdentifier(row.bucket.asset) || seen.has(row.bucket.asset))
+    if (
+      row.kind !== 'bucket'
+      || !isErc20TokenIdentifier(row.bucket.asset)
+      || isTrustedForSpamDisplay(row.bucket.asset)
+      || seen.has(row.bucket.asset)
+    ) {
       continue;
+    }
     seen.add(row.bucket.asset);
     tokens.push({ identifier: row.bucket.asset });
   }
   return tokens;
 });
 
-const { assessments: spamAssessments } = useSpamAssessments(spamTokens);
+const { assessments: spamAssessments, status: spamStatus } = useSpamAssessments(spamTokens);
 
 /** Single page covering every rendered row so RuiDataTable does not clip past 10 rows. */
 const wholeTable = computed<TablePaginationData>(() => ({
@@ -235,6 +243,13 @@ function amountsOf(row: BucketRow): ReturnType<typeof amountsFor> {
   return amountsFor(row.bucket);
 }
 
+function visibleSpamAssessment(asset: string): SpamAssessment | undefined {
+  if (isTrustedForSpamDisplay(asset))
+    return undefined;
+  const assessment = get(spamAssessments)[asset];
+  return assessment?.status === 'ready' || assessment?.status === 'unsupported' ? assessment : undefined;
+}
+
 watch(
   [() => autoExpand, () => accounts.map(accountKeyOf).join('\n')],
   () => syncExpandedAccounts(),
@@ -243,141 +258,159 @@ watch(
 </script>
 
 <template>
-  <RuiDataTable
-    :cols="cols"
-    :rows="rows"
-    :loading="loading"
-    group="accountKey"
-    :collapsed="collapsedRows"
-    :pagination="wholeTable"
-    :global-items-per-page="false"
-    row-attr="key"
-    item-class="bg-rui-grey-50 dark:bg-white/[0.03]"
-    outlined
-    dense
-    hide-pagination
-    data-testid="reconciliation-table"
-    @update:collapsed="onCollapsedUpdate($event ?? [])"
-  >
-    <template #group.header="{ header, isOpen: open, toggle: toggleGroup, colspan }">
-      <ReconciliationAccountRow
-        v-if="accountByKey[header.identifier]"
-        :account="accountByKey[header.identifier]"
-        :view="view"
-        :is-open="open"
-        :loading="details[header.identifier]?.loading"
-        :error="details[header.identifier]?.error"
-        :colspan="colspan"
-        @toggle="toggleGroup()"
-        @retry="emit('retry', accountByKey[header.identifier])"
-      />
-    </template>
-
-    <template #item.asset="{ row }">
-      <div
-        v-if="row.kind === 'bucket'"
-        class="flex flex-col gap-1 min-w-0 py-1"
-      >
-        <AssetDetails :asset="row.bucket.asset" />
-        <div
-          v-if="row.bucket.protocol"
-          class="flex items-center gap-1.5 pl-13 -mt-1 text-xs text-rui-text-secondary whitespace-nowrap"
-          data-testid="reconciliation-bucket-protocol"
-        >
-          <CounterpartyDisplay
-            :counterparty="row.bucket.protocol"
-            size="14px"
-            icon
-          />
-          <span>{{ t('data_issues.reconciliation.table.protocol_position', { protocol: protocolLabel(row.bucket.protocol) }) }}</span>
-        </div>
-      </div>
-      <template v-else-if="row.kind === 'more'">
-        <RuiButton
-          size="sm"
-          variant="text"
-          color="primary"
-          data-testid="reconciliation-load-more"
-          @click="emit('load-more', row.account)"
-        >
-          {{ t('data_issues.reconciliation.table.load_more', { shown: row.shown, total: row.total }) }}
-        </RuiButton>
-      </template>
-      <div
-        v-else
-        class="flex items-center gap-2 text-rui-text-secondary text-sm"
-      >
-        <RuiIcon
-          v-if="row.state === 'loading'"
-          name="lu-loader-circle"
-          size="14"
-          class="animate-spin"
+  <div>
+    <div
+      v-if="spamStatus === 'unavailable'"
+      class="px-4 pt-2 text-caption text-rui-text-secondary"
+      data-testid="reconciliation-spam-unavailable"
+    >
+      {{ t('spam_estimate.unavailable_notice') }}
+    </div>
+    <RuiDataTable
+      :cols="cols"
+      :rows="rows"
+      :loading="loading"
+      group="accountKey"
+      :collapsed="collapsedRows"
+      :pagination="wholeTable"
+      :global-items-per-page="false"
+      row-attr="key"
+      item-class="bg-rui-grey-50 dark:bg-white/[0.03]"
+      outlined
+      dense
+      hide-pagination
+      data-testid="reconciliation-table"
+      @update:collapsed="onCollapsedUpdate($event ?? [])"
+    >
+      <template #group.header="{ header, isOpen: open, toggle: toggleGroup, colspan }">
+        <ReconciliationAccountRow
+          v-if="accountByKey[header.identifier]"
+          :account="accountByKey[header.identifier]"
+          :view="view"
+          :is-open="open"
+          :loading="details[header.identifier]?.loading"
+          :error="details[header.identifier]?.error"
+          :colspan="colspan"
+          @toggle="toggleGroup()"
+          @retry="emit('retry', accountByKey[header.identifier])"
         />
-        <span>
-          {{ row.state === 'loading'
-            ? t('data_issues.reconciliation.table.loading')
-            : row.state === 'error'
-              ? t('data_issues.reconciliation.table.error')
-              : t('data_issues.reconciliation.table.empty_placeholder') }}
+      </template>
+
+      <template #item.asset="{ row }">
+        <div
+          v-if="row.kind === 'bucket'"
+          class="flex flex-col gap-1 min-w-0 py-1"
+        >
+          <AssetDetails :asset="row.bucket.asset" />
+          <div
+            v-if="row.bucket.protocol"
+            class="flex items-center gap-1.5 pl-13 -mt-1 text-xs text-rui-text-secondary whitespace-nowrap"
+            data-testid="reconciliation-bucket-protocol"
+          >
+            <CounterpartyDisplay
+              :counterparty="row.bucket.protocol"
+              size="14px"
+              icon
+            />
+            <span>{{ t('data_issues.reconciliation.table.protocol_position', { protocol: protocolLabel(row.bucket.protocol) }) }}</span>
+          </div>
+        </div>
+        <template v-else-if="row.kind === 'more'">
+          <RuiButton
+            size="sm"
+            variant="text"
+            color="primary"
+            data-testid="reconciliation-load-more"
+            @click="emit('load-more', row.account)"
+          >
+            {{ t('data_issues.reconciliation.table.load_more', { shown: row.shown, total: row.total }) }}
+          </RuiButton>
+        </template>
+        <div
+          v-else
+          class="flex items-center gap-2 text-rui-text-secondary text-sm"
+        >
+          <RuiIcon
+            v-if="row.state === 'loading'"
+            name="lu-loader-circle"
+            size="14"
+            class="animate-spin"
+          />
+          <span>
+            {{ row.state === 'loading'
+              ? t('data_issues.reconciliation.table.loading')
+              : row.state === 'error'
+                ? t('data_issues.reconciliation.table.error')
+                : t('data_issues.reconciliation.table.empty_placeholder') }}
+          </span>
+        </div>
+      </template>
+
+      <template #item.spam="{ row }">
+        <template v-if="row.kind === 'bucket'">
+          <SpamAssessmentHint
+            v-if="visibleSpamAssessment(row.bucket.asset)"
+            :assessment="visibleSpamAssessment(row.bucket.asset)"
+            quiet
+          />
+          <span
+            v-else
+            class="text-rui-text-disabled"
+          >
+            {{ t('data_issues.reconciliation.no_value') }}
+          </span>
+        </template>
+      </template>
+
+      <template #item.fromHistory="{ row }">
+        <ReconciliationAmount
+          v-if="row.kind === 'bucket'"
+          :amount="amountsOf(row).derived"
+          :asset="row.bucket.asset"
+        />
+      </template>
+
+      <template #item.onChain="{ row }">
+        <ReconciliationAmount
+          v-if="row.kind === 'bucket'"
+          :amount="amountsOf(row).observed"
+          :asset="row.bucket.asset"
+        />
+      </template>
+
+      <template #item.difference="{ row }">
+        <ReconciliationAmount
+          v-if="row.kind === 'bucket' && row.bucket.status === 'mismatch'"
+          :amount="amountsOf(row).delta"
+          :asset="row.bucket.asset"
+          class="font-medium text-rui-error"
+          signed
+        />
+        <span
+          v-else-if="row.kind === 'bucket'"
+          class="text-rui-text-disabled"
+        >
+          {{ t('data_issues.reconciliation.no_value') }}
         </span>
-      </div>
-    </template>
+      </template>
 
-    <template #item.spam="{ row }">
-      <SpamAssessmentHint
-        v-if="row.kind === 'bucket'"
-        :assessment="spamAssessments[row.bucket.asset]"
-      />
-    </template>
+      <template #item.status="{ row }">
+        <ReconciliationStatusCell
+          v-if="row.kind === 'bucket'"
+          :bucket="row.bucket"
+          :location="row.account.location"
+          :location-label="row.account.locationLabel"
+          @open-issue="emit('open-issue', $event)"
+          @mark-spam="emit('mark-spam', $event)"
+          @inspect-trace="emit('inspect-trace', { account: row.account, bucket: $event })"
+        />
+      </template>
 
-    <template #item.fromHistory="{ row }">
-      <ReconciliationAmount
-        v-if="row.kind === 'bucket'"
-        :amount="amountsOf(row).derived"
-        :asset="row.bucket.asset"
-      />
-    </template>
-
-    <template #item.onChain="{ row }">
-      <ReconciliationAmount
-        v-if="row.kind === 'bucket'"
-        :amount="amountsOf(row).observed"
-        :asset="row.bucket.asset"
-      />
-    </template>
-
-    <template #item.difference="{ row }">
-      <ReconciliationAmount
-        v-if="row.kind === 'bucket' && row.bucket.status === 'mismatch'"
-        :amount="amountsOf(row).delta"
-        :asset="row.bucket.asset"
-        class="font-medium text-rui-error"
-        signed
-      />
-      <span
-        v-else-if="row.kind === 'bucket'"
-        class="text-rui-text-disabled"
-      >
-        {{ t('data_issues.reconciliation.no_value') }}
-      </span>
-    </template>
-
-    <template #item.status="{ row }">
-      <ReconciliationStatusCell
-        v-if="row.kind === 'bucket'"
-        :bucket="row.bucket"
-        :location="row.account.location"
-        :location-label="row.account.locationLabel"
-        @open-issue="emit('open-issue', $event)"
-        @mark-spam="emit('mark-spam', $event)"
-        @inspect-trace="emit('inspect-trace', { account: row.account, bucket: $event })"
-      />
-    </template>
-
-    <template #no-data>
-      <div class="py-4 text-rui-text-secondary text-sm">
-        {{ emptyDescription }}
-      </div>
-    </template>
-  </RuiDataTable>
+      <template #no-data>
+        <div class="py-4 text-rui-text-secondary text-sm">
+          {{ emptyDescription }}
+        </div>
+      </template>
+    </RuiDataTable>
+  </div>
 </template>

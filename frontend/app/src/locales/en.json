@@ -6947,9 +6947,9 @@
     "high": "High",
     "high_hint": "This token looks like spam. Review the details below before interacting with it.",
     "label": "Spam estimate",
-    "low": "Low",
     "low_hint": "This token is less likely to be spam, but you should still check it before interacting.",
     "no_signals": "No additional details are available for this estimate.",
+    "not_flagged": "Not flagged",
     "observed_signals": "What we noticed",
     "potential_spam": "Potential spam",
     "score": "{percentage}%",
@@ -6974,6 +6974,7 @@
     },
     "unavailable": "Unavailable",
     "unavailable_hint": "Some spam estimates are unavailable. The detected token rows are unchanged; retry later.",
+    "unavailable_notice": "Spam estimates are currently unavailable.",
     "unavailable_reason": "The estimate could not be loaded. The detected token rows are unchanged; retry later.",
     "unsupported": "Not assessed",
     "unsupported_hint": "No estimate was produced: this asset does not have enough metadata or is not supported by the local spam model."

@@ -441,5 +441,13 @@ describe('data-issues view spam estimates', () => {
 
     expect(spies.predictSpam).toHaveBeenCalledOnce();
     expect(wrapper.findComponent(DataIssueDetailDrawer).props('spamAssessment')).toStrictEqual(expected);
+    expect(wrapper.findComponent(DataIssuesTable).props('spamUnavailable')).toBe(false);
+  });
+
+  it('should mark spam predictions unavailable on the table when prediction fails', async () => {
+    spies.predictSpam.mockRejectedValueOnce(new Error('colibri unavailable'));
+    const wrapper = await createWrapper();
+
+    expect(wrapper.findComponent(DataIssuesTable).props('spamUnavailable')).toBe(true);
   });
 });
