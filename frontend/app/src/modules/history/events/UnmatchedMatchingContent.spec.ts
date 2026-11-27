@@ -132,6 +132,7 @@ const ListStub = defineComponent({
 });
 
 const TooltipStub = defineComponent({
+  inheritAttrs: false,
   name: 'RuiTooltip',
   setup: (_, { slots }) => (): VNode[] => [...(slots.activator?.() ?? []), h('span', { 'data-testid': 'tooltip' }, slots.default?.())],
 });
