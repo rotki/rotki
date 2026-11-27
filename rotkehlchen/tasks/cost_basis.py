@@ -36,7 +36,6 @@ from rotkehlchen.api.websockets.typedefs import (
     ProgressUpdateSubType,
     WSMessageType,
 )
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.chain.ethereum.modules.eth2.constants import UNKNOWN_VALIDATOR_INDEX
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorType
@@ -49,16 +48,14 @@ from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HistoryEventLinkType
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.cause import TRANSIENT_FAILURE_CAUSES
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.base import get_event_direction
 from rotkehlchen.history.events.structures.eth2 import (
     EthBlockEvent,
     EthDepositEvent,
@@ -72,7 +69,6 @@ from rotkehlchen.history.events.structures.types import (
 )
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.locations.constants import LOCATION_KRAKEN
-from rotkehlchen.locations.types import LocationIdentifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.historical_balances import (
     MIN_EVENTS_PROCESSED_TO_SLEEP,
@@ -88,6 +84,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from rotkehlchen.accounting.cost_basis.lots import ConsumedLot, SpendResult
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
@@ -148,6 +145,7 @@ class _AssetMovementMatch(NamedTuple):
     total_in_amount: FVal
     min_ts: TimestampMS
     max_ts: TimestampMS
+    endpoint_buckets: tuple[tuple[int, tuple[Bucket, ...]], ...]
 
     @property
     def transit_bucket(self) -> Bucket:
@@ -161,11 +159,18 @@ class _AssetMovementMatch(NamedTuple):
 
     @property
     def signature(self) -> str:
-        """Everything the rows of the legs depend on: membership, split, and time span."""
+        """Everything the rows of the legs depend on: membership, buckets, split, and time span."""
         in_amounts = ','.join(f'{ev_id}:{amount}' for ev_id, amount in self.in_move_amounts)
+        buckets = json.dumps(
+            [
+                [ev_id, [list(bucket) for bucket in ev_buckets]]
+                for ev_id, ev_buckets in self.endpoint_buckets
+            ],
+            separators=(',', ':'),
+        )
         return (
             f'{self.match_key}|{self.total_out_amount}|{self.total_in_amount}|{in_amounts}|'
-            f'{self.min_ts}-{self.max_ts}'
+            f'{self.min_ts}-{self.max_ts}|{buckets}'
         )
 
 
@@ -178,9 +183,19 @@ class _DeferredMatchIn(NamedTuple):
     rule: BaseEventSettings | None
 
 
+class _DeferredEvent(NamedTuple):
+    """An event touching a bucket whose reverse-timestamp matched IN is still waiting."""
+    event: HistoryBaseEntry
+    next_event: HistoryBaseEntry | None
+    swap_fee_events: tuple[HistoryBaseEntry, ...]
+    blocking_match_keys: set[str]
+
+
 def _load_asset_movement_matches(
+        database: DBHandler,
         cursor: DBCursor,
         ignored_asset_ids: set[str],
+        treat_eth2_as_eth: bool,
 ) -> dict[int, _AssetMovementMatch]:
     """Load validated ASSET_MOVEMENT_MATCH links grouped by connected component.
 
@@ -189,31 +204,31 @@ def _load_asset_movement_matches(
     fiat assets, non-positive amounts, or missing opposite directions are skipped.
     """
     adj: defaultdict[int, set[int]] = defaultdict(set)
-    endpoints: dict[int, tuple[int, str, str, str, str, str, str, int]] = {}
-    for row in cursor.execute(
-        'SELECT hel.left_event_id, hel.right_event_id, '
-        'le.timestamp, le.location, le.asset, le.amount, le.type, le.subtype, '
-        'le.group_identifier, le.sequence_index, '
-        're.timestamp, re.location, re.asset, re.amount, re.type, re.subtype, '
-        're.group_identifier, re.sequence_index '
-        'FROM history_event_links hel '
-        'JOIN history_events le ON le.identifier = hel.left_event_id '
-        'JOIN history_events re ON re.identifier = hel.right_event_id '
-        'WHERE hel.link_type = ?',
+    for left_id, right_id in cursor.execute(
+        'SELECT left_event_id, right_event_id FROM history_event_links WHERE link_type = ?',
         (HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),),
     ):
-        left_id, right_id = int(row[0]), int(row[1])
-        adj[left_id].add(right_id)
-        adj[right_id].add(left_id)
-        endpoints[left_id] = (
-            row[2], row[3], row[4], row[5], row[6], row[7], row[8], int(row[9]),
-        )
-        endpoints[right_id] = (
-            row[10], row[11], row[12], row[13], row[14], row[15], row[16], int(row[17]),
-        )
+        l_id, r_id = int(left_id), int(right_id)
+        adj[l_id].add(r_id)
+        adj[r_id].add(l_id)
 
-    if len(endpoints) == 0:
+    if len(adj) == 0:
         return {}
+
+    dbevents = DBHistoryEvents(database)
+    endpoints: dict[int, HistoryBaseEntry] = {}
+    for chunk, _ in get_query_chunks(list(adj)):
+        for ev in dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                identifiers=list(chunk),
+                exclude_ignored_assets=False,
+                exclude_ignored_actions=False,
+                exclude_untracked_withdrawals=False,
+            ),
+        ):
+            if ev.identifier is not None:
+                endpoints[ev.identifier] = ev
 
     ignored_actions = {
         row[0] for row in cursor.execute('SELECT identifier FROM ignored_actions')
@@ -236,44 +251,56 @@ def _load_asset_movement_matches(
 
         out_ids: list[int] = []
         in_entries: list[tuple[tuple[int, str, int, int], int, FVal]] = []
+        endpoint_buckets: list[tuple[int, tuple[Bucket, ...]]] = []
         total_out_amount, total_in_amount = ZERO, ZERO
-        min_ts = TimestampMS(min(int(endpoints[ev_id][0]) for ev_id in component))
-        max_ts = TimestampMS(max(int(endpoints[ev_id][0]) for ev_id in component))
+        min_ts: TimestampMS | None = None
+        max_ts: TimestampMS | None = None
         valid = True
         for ev_id in sorted(component):
-            (
-                ev_ts, ev_loc, ev_asset_id, ev_amount_str,
-                ev_type, ev_subtype, ev_group, ev_seq,
-            ) = endpoints[ev_id]
-            if ev_asset_id in ignored_asset_ids or ev_group in ignored_actions:
+            if (endpoint := endpoints.get(ev_id)) is None:
                 valid = False
                 break
-            try:
-                ev_amount = FVal(ev_amount_str)
-                if ev_amount <= ZERO or Asset(ev_asset_id).is_fiat():
-                    valid = False
-                    break
-                direction = get_event_direction(
-                    event_type=HistoryEventType.deserialize(ev_type),
-                    event_subtype=HistoryEventSubType.deserialize(ev_subtype),
-                    location=LocationIdentifier(ev_loc),
-                    for_balance_tracking=True,
-                )
-            except (DeserializationError, UnknownAsset, ValueError):
+            if (
+                endpoint.asset.identifier in ignored_asset_ids or
+                endpoint.group_identifier in ignored_actions
+            ):
+                valid = False
+                break
+            if endpoint.amount <= ZERO or endpoint.asset.is_fiat():
                 valid = False
                 break
 
+            direction = endpoint.maybe_get_direction(for_balance_tracking=True)
             if direction == EventDirection.OUT:
                 out_ids.append(ev_id)
-                total_out_amount += ev_amount
+                total_out_amount += endpoint.amount
             elif direction == EventDirection.IN:
-                in_entries.append(((int(ev_ts), ev_group, ev_seq, ev_id), ev_id, ev_amount))
-                total_in_amount += ev_amount
+                in_entries.append((
+                    (
+                        int(endpoint.timestamp),
+                        endpoint.group_identifier,
+                        endpoint.sequence_index,
+                        ev_id,
+                    ),
+                    ev_id,
+                    endpoint.amount,
+                ))
+                total_in_amount += endpoint.amount
             else:
                 valid = False
                 break
 
-        if not valid or len(out_ids) == 0 or len(in_entries) == 0:
+            ev_buckets = tuple(
+                bucket for bucket, _dir in Bucket.from_event(
+                    event=endpoint,
+                    treat_eth2_as_eth=treat_eth2_as_eth,
+                )
+            )
+            endpoint_buckets.append((ev_id, ev_buckets))
+            min_ts = endpoint.timestamp if min_ts is None or endpoint.timestamp < min_ts else min_ts  # noqa: E501
+            max_ts = endpoint.timestamp if max_ts is None or endpoint.timestamp > max_ts else max_ts  # noqa: E501
+
+        if not valid or len(out_ids) == 0 or len(in_entries) == 0 or min_ts is None or max_ts is None:  # noqa: E501
             continue
 
         # Order IN legs identically to the event query so cumulative telescoping shares sum
@@ -311,6 +338,7 @@ def _load_asset_movement_matches(
             total_in_amount=total_in_amount,
             min_ts=min_ts,
             max_ts=max_ts,
+            endpoint_buckets=tuple(endpoint_buckets),
         )
         for ev_id in component:
             matches[ev_id] = match
@@ -358,6 +386,37 @@ def _swap_leg_direction(
         return event.maybe_get_direction()
 
     return bucket_directions[0][1] if len(bucket_directions) == 1 else None
+
+
+def _is_matching_pair_receive_role(
+        out_event: HistoryBaseEntry,
+        candidate: HistoryBaseEntry,
+) -> bool:
+    """Whether `candidate` has the event type/subtype of `out_event`'s receiving leg."""
+    if (
+        out_event.event_type in (
+            HistoryEventType.TRADE,
+            HistoryEventType.MULTI_TRADE,
+            HistoryEventType.MIGRATE,
+        ) and
+        out_event.event_subtype == HistoryEventSubType.SPEND
+    ):
+        return (
+            candidate.event_type == out_event.event_type and
+            candidate.event_subtype == HistoryEventSubType.RECEIVE
+        )
+    if out_event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED:
+        return candidate.event_subtype == HistoryEventSubType.RECEIVE_WRAPPED
+    if out_event.event_subtype == HistoryEventSubType.RETURN_WRAPPED:
+        return candidate.event_subtype == HistoryEventSubType.REDEEM_WRAPPED
+    if out_event.event_subtype == HistoryEventSubType.BRIDGE:
+        return candidate.event_subtype == HistoryEventSubType.BRIDGE
+    return candidate.event_subtype not in (
+        HistoryEventSubType.AIRDROP,
+        HistoryEventSubType.APPROVE,
+        HistoryEventSubType.FEE,
+        HistoryEventSubType.REWARD,
+    )
 
 
 class _CostBasisPass:
@@ -415,6 +474,14 @@ class _CostBasisPass:
         # OUT legs that an IN leg recorded before them waits for, see `_apply_matched_in`.
         self._pending_match_out_ids: dict[int, _AssetMovementMatch] = {}
         self._deferred_match_ins: dict[str, list[_DeferredMatchIn]] = {}
+        # Buckets with a waiting reverse-timestamp IN (or transitively affected by one), and the
+        # intervening events deferred behind them so destination-bucket order is preserved too.
+        self._deferred_buckets: defaultdict[Bucket, set[str]] = defaultdict(set)
+        self._deferred_events: list[_DeferredEvent] = []
+        self._deferred_group_ids: dict[int, set[str]] = {}
+        self._visited_match_out_ids: set[int] = set()
+        self._match_waits_on: defaultdict[str, set[str]] = defaultdict(set)
+        self._replaying_deferred_min_ts: TimestampMS | None = None
         self.eth2 = Eth2StakingCostBasis(host=self, validator_types=validator_types)
 
     def get_price(self, asset: Asset, timestamp: Timestamp) -> Price | None:
@@ -995,8 +1062,22 @@ class _CostBasisPass:
             len(self._swap_proceeds) != 0 or
             len(self._basis_transfer_receives) != 0 or
             len(self._skipped_event_ids) != 0 or
-            len(self._pending_match_out_ids) != 0
+            len(self._pending_match_out_ids) != 0 or
+            len(self._deferred_events) != 0
         )
+
+    @property
+    def earliest_deferred_ts(self) -> TimestampMS | None:
+        """Earliest timestamp of any deferred reverse-timestamp receipt or waiting event."""
+        timestamps = [
+            deferred.event.timestamp
+            for deferred_list in self._deferred_match_ins.values()
+            for deferred in deferred_list
+        ]
+        timestamps.extend(deferred.event.timestamp for deferred in self._deferred_events)
+        if self._replaying_deferred_min_ts is not None:
+            timestamps.append(self._replaying_deferred_min_ts)
+        return min(timestamps) if len(timestamps) != 0 else None
 
     def _should_skip_ignored_group(
             self,
@@ -1008,7 +1089,7 @@ class _CostBasisPass:
             treat_eth2_as_eth: bool,
     ) -> bool:
         """Skip the whole swap or basis-transfer group when any leg uses an ignored asset."""
-        if len(self.ignored_asset_ids) == 0:
+        if len(self.ignored_asset_ids) == 0 or not _is_matching_pair_receive_role(event, next_event):  # noqa: E501
             return False
 
         assert next_event.identifier is not None
@@ -1094,6 +1175,7 @@ class _CostBasisPass:
         `_spend` so withdrawn lots do not remain in the healthy bucket.
         """
         assert event.identifier is not None
+        self._visited_match_out_ids.add(event.identifier)
         self._pending_match_out_ids.pop(event.identifier, None)
         transit = match.transit_bucket
         if source in self.blocked_buckets:
@@ -1146,14 +1228,16 @@ class _CostBasisPass:
 
         A leg recorded before an OUT leg of its match waits until that OUT is applied at its own
         position, so the source bucket gives the lots it holds at the withdrawal and its events in
-        between consume theirs in order. The trade-off is that a spend from `destination` in
-        between does not find the lots yet.
+        between consume theirs in order. Subsequent events touching `destination` are also
+        deferred behind this match and replayed once the lots arrive, preserving destination-bucket
+        order as well.
         """
         assert event.identifier is not None
         if (in_pos := self.match_event_positions.get(event.identifier)) is not None and len(
             pending_out_ids := [
                 out_id for out_id in match.out_ids
                 if (
+                    out_id not in self._visited_match_out_ids and
                     (out_pos := self.match_event_positions.get(out_id)) is not None and
                     out_pos > in_pos
                 )
@@ -1167,6 +1251,7 @@ class _CostBasisPass:
                 is_stale=is_stale,
                 rule=rule,
             ))
+            self._deferred_buckets[destination].add(match.match_key)
             return
 
         self._complete_matched_in(
@@ -1178,18 +1263,152 @@ class _CostBasisPass:
             rule=rule,
         )
 
-    def _resume_deferred_match_ins(self, match: _AssetMovementMatch) -> None:
+    def _match_depends_on(self, start_key: str, target_key: str) -> bool:
+        """Whether `start_key` transitively waits on `target_key` in the deferral graph."""
+        visited: set[str] = {start_key}
+        queue: deque[str] = deque([start_key])
+        while len(queue) > 0:
+            curr = queue.popleft()
+            for nxt in self._match_waits_on.get(curr, ()):
+                if nxt == target_key:
+                    return True
+                if nxt not in visited:
+                    visited.add(nxt)
+                    queue.append(nxt)
+        return False
+
+    def _maybe_defer_event(
+            self,
+            event: HistoryBaseEntry,
+            next_event: HistoryBaseEntry | None,
+            treat_eth2_as_eth: bool,
+            swap_fee_events: Sequence[HistoryBaseEntry],
+    ) -> bool:
+        """Defer an event that depends on a bucket with a waiting reverse-timestamp matched IN."""
+        if (
+            event.identifier is None or
+            (len(self._deferred_buckets) == 0 and len(self._deferred_group_ids) == 0)
+        ):
+            return False
+
+        if (
+            event.identifier in self._skipped_event_ids or
+            event.identifier in self._basis_transfer_receives
+        ):
+            return False
+
+        bucket_directions = (
+            [] if event.asset.is_fiat()
+            else Bucket.from_event(event=event, treat_eth2_as_eth=treat_eth2_as_eth)
+        )
+        touched_buckets: set[Bucket] = {bucket for bucket, _dir in bucket_directions}
+        if (
+            isinstance(event, EthDepositEvent | EthWithdrawalEvent) and
+            event.validator_index != UNKNOWN_VALIDATOR_INDEX
+        ):
+            touched_buckets.add(validator_eth2_bucket(event.validator_index))
+
+        event_match = self.asset_movement_matches.get(event.identifier)
+        if (
+            event_match is not None and
+            len(bucket_directions) == 1 and
+            bucket_directions[0][1] == EventDirection.IN
+        ):
+            touched_buckets.add(event_match.transit_bucket)
+
+        rule = self.rules.get(event)
+        next_buckets = (
+            [] if next_event is None or next_event.asset.is_fiat()
+            else Bucket.from_event(event=next_event, treat_eth2_as_eth=treat_eth2_as_eth)
+        )
+        is_paired = (
+            event.amount > ZERO and
+            rule is not None and
+            rule.accounting_treatment is not None and
+            next_event is not None and
+            next_event.identifier is not None and
+            next_event.group_identifier == event.group_identifier and
+            next_event.amount > ZERO and
+            _is_matching_pair_receive_role(event, next_event) and
+            _swap_leg_direction(event, bucket_directions) == EventDirection.OUT and
+            _swap_leg_direction(next_event, next_buckets) == EventDirection.IN
+        )
+        if is_paired:
+            touched_buckets.update(bucket for bucket, _dir in next_buckets)
+            for fee in swap_fee_events:
+                if not fee.asset.is_fiat():
+                    touched_buckets.update(
+                        bucket for bucket, _dir in Bucket.from_event(
+                            event=fee,
+                            treat_eth2_as_eth=treat_eth2_as_eth,
+                        )
+                    )
+
+        blocking_keys = set(self._deferred_group_ids.pop(event.identifier, ()))
+        for bucket in touched_buckets:
+            if (keys := self._deferred_buckets.get(bucket)) is not None:
+                blocking_keys.update(keys)
+        if len(blocking_keys) == 0:
+            return False
+
+        if (out_match := self._pending_match_out_ids.get(event.identifier)) is not None:
+            if (
+                out_match.match_key in blocking_keys or
+                any(self._match_depends_on(key, out_match.match_key) for key in blocking_keys)
+            ):
+                return False  # break circular timestamp dependency
+            self._match_waits_on[out_match.match_key].update(blocking_keys)
+            touched_buckets.add(out_match.transit_bucket)
+        elif (
+            event_match is not None and
+            len(bucket_directions) == 1 and
+            bucket_directions[0][1] == EventDirection.OUT
+        ):
+            touched_buckets.add(event_match.transit_bucket)
+
+        for bucket in touched_buckets:
+            self._deferred_buckets[bucket].update(blocking_keys)
+        if is_paired:
+            assert next_event is not None and next_event.identifier is not None
+            self._deferred_group_ids.setdefault(next_event.identifier, set()).update(blocking_keys)
+            for fee in swap_fee_events:
+                assert fee.identifier is not None
+                self._deferred_group_ids.setdefault(fee.identifier, set()).update(blocking_keys)
+
+        self._deferred_events.append(_DeferredEvent(
+            event=event,
+            next_event=next_event,
+            swap_fee_events=tuple(swap_fee_events),
+            blocking_match_keys=blocking_keys,
+        ))
+        return True
+
+    def _resume_deferred_match_ins(
+            self,
+            match: _AssetMovementMatch,
+            treat_eth2_as_eth: bool,
+    ) -> None:
         """Complete the IN legs of the match that waited, once none of its OUT legs is pending.
 
-        An OUT leg visited without reaching `_apply_matched_out` moved nothing into transit, so
-        the caller blocks transit and the waiting legs fall back to standalone receives.
+        After the IN legs move lots into their destination buckets, any intervening events that
+        depended on those buckets and are no longer blocked by another match are replayed in
+        their original order. An OUT leg visited without reaching `_apply_matched_out` moved
+        nothing into transit, so the caller blocks transit and the waiting legs fall back to
+        standalone receives.
         """
         if match.match_key not in self._deferred_match_ins or any(
             out_id in self._pending_match_out_ids for out_id in match.out_ids
         ):
             return
 
-        for deferred in self._deferred_match_ins.pop(match.match_key):
+        deferred_ins = self._deferred_match_ins.pop(match.match_key)
+        prev_replaying_min_ts = self._replaying_deferred_min_ts
+        batch_min_ts = min(deferred.event.timestamp for deferred in deferred_ins)
+        self._replaying_deferred_min_ts = (
+            batch_min_ts if prev_replaying_min_ts is None
+            else min(prev_replaying_min_ts, batch_min_ts)
+        )
+        for deferred in deferred_ins:
             self._complete_matched_in(
                 event=deferred.event,
                 destination=deferred.destination,
@@ -1198,6 +1417,43 @@ class _CostBasisPass:
                 is_stale=deferred.is_stale,
                 rule=deferred.rule,
             )
+
+        self._match_waits_on.pop(match.match_key, None)
+        for waits in self._match_waits_on.values():
+            waits.discard(match.match_key)
+
+        for bucket in list(self._deferred_buckets):
+            keys = self._deferred_buckets[bucket]
+            keys.discard(match.match_key)
+            if len(keys) == 0:
+                del self._deferred_buckets[bucket]
+
+        for ev_id in list(self._deferred_group_ids):
+            keys = self._deferred_group_ids[ev_id]
+            keys.discard(match.match_key)
+            if len(keys) == 0:
+                del self._deferred_group_ids[ev_id]
+
+        ready: list[_DeferredEvent] = []
+        still_waiting: list[_DeferredEvent] = []
+        for deferred_ev in self._deferred_events:
+            deferred_ev.blocking_match_keys.discard(match.match_key)
+            if len(deferred_ev.blocking_match_keys) == 0:
+                ready.append(deferred_ev)
+            else:
+                still_waiting.append(deferred_ev)
+        self._deferred_events = still_waiting
+
+        for deferred_ev in ready:
+            self.apply(
+                event=deferred_ev.event,
+                next_event=deferred_ev.next_event,
+                treat_eth2_as_eth=treat_eth2_as_eth,
+                swap_fee_events=deferred_ev.swap_fee_events,
+            )
+        # Only restored on clean completion so an interrupting price error keeps `batch_min_ts`
+        # visible in `earliest_deferred_ts`.
+        self._replaying_deferred_min_ts = prev_replaying_min_ts
 
     def _complete_matched_in(
             self,
@@ -1299,6 +1555,14 @@ class _CostBasisPass:
         NoPriceForGivenTimestamp or RemoteError if the price oracles are rate limited or fail
         transiently.
         """
+        if self._maybe_defer_event(
+            event=event,
+            next_event=next_event,
+            treat_eth2_as_eth=treat_eth2_as_eth,
+            swap_fee_events=swap_fee_events,
+        ):
+            return
+
         self._apply(
             event=event,
             next_event=next_event,
@@ -1310,9 +1574,15 @@ class _CostBasisPass:
 
         self._swap_basis.pop(event.identifier, None)  # left by a side that was not applied
         self._swap_proceeds.pop(event.identifier, None)
-        if (match := self._pending_match_out_ids.pop(event.identifier, None)) is not None:
+        if (
+            (match := self.asset_movement_matches.get(event.identifier)) is not None and
+            event.identifier in match.out_ids and
+            event.identifier not in self._visited_match_out_ids
+        ):
+            self._visited_match_out_ids.add(event.identifier)
+            self._pending_match_out_ids.pop(event.identifier, None)
             self.blocked_buckets.add(match.transit_bucket)  # it moved nothing into transit
-            self._resume_deferred_match_ins(match)
+            self._resume_deferred_match_ins(match, treat_eth2_as_eth=treat_eth2_as_eth)
 
     def _apply(
             self,
@@ -1449,7 +1719,7 @@ class _CostBasisPass:
                         rule=rule,
                         treat_eth2_as_eth=treat_eth2_as_eth,
                     )
-                    self._resume_deferred_match_ins(match)
+                    self._resume_deferred_match_ins(match, treat_eth2_as_eth=treat_eth2_as_eth)
                 else:
                     self._apply_matched_in(
                         event=event,
@@ -1551,6 +1821,12 @@ def _write_rows(
                 'DELETE FROM cost_basis_checkpoints WHERE timestamp > ?',
                 (from_ts,),
             )
+        stale_floor = 0 if from_ts is None else from_ts
+        write_cursor.execute(
+            'UPDATE key_value_cache SET value = ? '
+            'WHERE name = ? AND CAST(value AS INTEGER) > ?',
+            (str(stale_floor), DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, stale_floor),
+        )
         write_cursor.execute(
             'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
             (DBCacheStatic.COST_BASIS_MATCH_SNAPSHOT.value, match_snapshot),
@@ -1574,24 +1850,36 @@ def _pair_candidate_idx(
 ) -> int:
     """Index of the event that the event at `idx` may pair with as a swap or basis transfer.
 
-    Events of ignored assets in the same group that can not be the receiving side (such as an
-    approval) are skipped, so they do not split the two sides apart. Ignored receiving sides are
-    kept, so that `_should_skip_ignored_group` skips the whole group.
+    Unrelated events of ignored assets in the same group (such as an approval or an ignored
+    airdrop) are skipped, so they do not split the two sides apart or trigger a false whole-group
+    skip. Ignored receiving legs with the matching role are kept, so `_should_skip_ignored_group`
+    skips the whole group.
     """
-    group_identifier = events[idx].group_identifier
+    out_event = events[idx]
+    group_identifier = out_event.group_identifier
     pair_idx = idx + 1
     while (
         pair_idx < len(events) and
-        (candidate := events[pair_idx]).asset.identifier in ignored_asset_ids and
-        candidate.group_identifier == group_identifier and
-        _swap_leg_direction(
-            candidate,
-            [] if candidate.asset.is_fiat() else Bucket.from_event(
-                event=candidate,
-                treat_eth2_as_eth=treat_eth2_as_eth,
-            ),
-        ) != EventDirection.IN
+        (candidate := events[pair_idx]).group_identifier == group_identifier and
+        candidate.asset.identifier in ignored_asset_ids
     ):
+        if (
+            candidate.event_type == out_event.event_type and
+            candidate.event_subtype == HistoryEventSubType.SPEND
+        ):
+            break
+        if (
+            candidate.amount > ZERO and
+            _is_matching_pair_receive_role(out_event, candidate) and
+            _swap_leg_direction(
+                candidate,
+                [] if candidate.asset.is_fiat() else Bucket.from_event(
+                    event=candidate,
+                    treat_eth2_as_eth=treat_eth2_as_eth,
+                ),
+            ) == EventDirection.IN
+        ):
+            break
         pair_idx += 1
     return pair_idx
 
@@ -1600,21 +1888,38 @@ def _collect_swap_fee_events(
         events: Sequence[HistoryBaseEntry],
         out_idx: int,
         fee_idx: int,
+        ignored_asset_ids: set[str],
 ) -> list[HistoryBaseEntry]:
-    """Collect fee events from `fee_idx` on, right after the (out, in) pair of a swap group."""
+    """Collect fee events from `fee_idx` on, right after the (out, in) pair of a swap group.
+
+    Unrelated events of ignored assets in the same group (such as an approval before or between
+    fee legs) are skipped, while ignored fee legs themselves are kept so
+    `_should_skip_ignored_group` can skip the whole swap group.
+    """
     out_event = events[out_idx]
     fee_events: list[HistoryBaseEntry] = []
     while fee_idx < len(events):
         candidate = events[fee_idx]
-        if (
-            candidate.group_identifier != out_event.group_identifier or
-            candidate.event_type != out_event.event_type or
-            candidate.event_subtype != HistoryEventSubType.FEE
-        ):
+        if candidate.group_identifier != out_event.group_identifier:
             break
-        if candidate.identifier is not None and candidate.amount > ZERO:
-            fee_events.append(candidate)
-        fee_idx += 1
+        if (
+            candidate.event_type == out_event.event_type and
+            candidate.event_subtype == HistoryEventSubType.FEE
+        ):
+            if candidate.identifier is not None and candidate.amount > ZERO:
+                fee_events.append(candidate)
+            fee_idx += 1
+            continue
+        if (
+            candidate.asset.identifier in ignored_asset_ids and
+            not (
+                candidate.event_type == out_event.event_type and
+                candidate.event_subtype in (HistoryEventSubType.SPEND, HistoryEventSubType.RECEIVE)
+            )
+        ):
+            fee_idx += 1
+            continue
+        break
     return fee_events
 
 
@@ -1835,8 +2140,10 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
         tracked_eth_accounts: set[str] = set(database.get_blockchain_accounts(cursor).eth)
         ignored_asset_ids = database.get_ignored_asset_ids(cursor=cursor)
         asset_movement_matches = _load_asset_movement_matches(
+            database=database,
             cursor=cursor,
             ignored_asset_ids=ignored_asset_ids,
+            treat_eth2_as_eth=settings.treat_eth2_as_eth,
         )
         unique_matches = tuple(dict.fromkeys(asset_movement_matches.values()))
         match_snapshot = {match.signature: int(match.min_ts) for match in unique_matches}
@@ -2049,12 +2356,20 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             )
             pair_event = events[pair_idx] if pair_idx < total_events else None
             swap_fee_events: Sequence[HistoryBaseEntry] = (
-                _collect_swap_fee_events(events, out_idx=idx, fee_idx=pair_idx + 1)
+                _collect_swap_fee_events(
+                    events=events,
+                    out_idx=idx,
+                    fee_idx=pair_idx + 1,
+                    ignored_asset_ids=ignored_asset_ids,
+                )
                 if (
                     pair_idx + 1 < total_events and
-                    events[pair_idx + 1].group_identifier == event.group_identifier and
-                    events[pair_idx + 1].event_type == event.event_type and
-                    events[pair_idx + 1].event_subtype == HistoryEventSubType.FEE
+                    events[pair_idx + 1].group_identifier == event.group_identifier and (
+                        len(ignored_asset_ids) != 0 or (
+                            events[pair_idx + 1].event_type == event.event_type and
+                            events[pair_idx + 1].event_subtype == HistoryEventSubType.FEE
+                        )
+                    )
                 )
                 else ()
             )
@@ -2068,6 +2383,8 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             except (NoPriceForGivenTimestamp, RemoteError) as e:
                 log.warning('Stopping cost basis processing at event %s: %s', event.identifier, e)
                 interrupted_at = event.timestamp
+                if (earliest_deferred_ts := cost_basis_pass.earliest_deferred_ts) is not None:
+                    interrupted_at = min(interrupted_at, earliest_deferred_ts)
                 break
 
             events_since_interval += 1
@@ -2121,9 +2438,12 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                         else idx + 1
                     )
                     if next_idx < total_events:
+                        processed_ts = events[next_idx].timestamp
+                        if (earliest_deferred_ts := cost_basis_pass.earliest_deferred_ts) is not None:  # noqa: E501
+                            processed_ts = min(processed_ts, earliest_deferred_ts)
                         _record_progress(
                             write_cursor=write_cursor,
-                            processed_ts=events[next_idx].timestamp,
+                            processed_ts=processed_ts,
                             modification_ts_at_start=modification_ts_at_start,
                         )
                 first_batch_written, cost_basis_pass.rows = True, []

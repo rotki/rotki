@@ -17,7 +17,11 @@ from rotkehlchen.constants.assets import A_DAI, A_GLM, A_MKR, A_REP, A_SAI
 from rotkehlchen.constants.location_details import get_formatted_location_name
 from rotkehlchen.constants.resolver import SOLANA_CHAIN_DIRECTIVE, identifier_to_evm_chain
 from rotkehlchen.constants.timing import SAI_DAI_MIGRATION_TS
-from rotkehlchen.db.cache import IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX, DBCacheStatic
+from rotkehlchen.db.cache import (
+    IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX,
+    DBCacheStatic,
+    mark_stale_from_ts,
+)
 from rotkehlchen.db.constants import (
     CHAIN_EVENT_FIELDS,
     HISTORY_BASE_ENTRY_FIELDS,
@@ -30,6 +34,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -1169,6 +1174,32 @@ def update_asset_movement_matched_event(
                     asset_movement.identifier,
                     HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),
                 ),
+            )
+        if is_accounting_update_enabled():
+            link_type = HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()
+            min_ts_row = write_cursor.execute(
+                'WITH RECURSIVE comp(event_id) AS ('
+                'VALUES (?), (?) '
+                'UNION '
+                'SELECT CASE WHEN hel.left_event_id = comp.event_id '
+                'THEN hel.right_event_id ELSE hel.left_event_id END '
+                'FROM history_event_links hel '
+                'JOIN comp ON hel.left_event_id = comp.event_id '
+                'OR hel.right_event_id = comp.event_id '
+                'WHERE hel.link_type = ?'
+                ') '
+                'SELECT MIN(timestamp) FROM history_events '
+                'WHERE identifier IN (SELECT event_id FROM comp)',
+                (asset_movement.identifier, matched_event.identifier, link_type),
+            ).fetchone()
+            min_ts = (
+                min_ts_row[0] if min_ts_row is not None and min_ts_row[0] is not None
+                else min(asset_movement.timestamp, matched_event.timestamp)
+            )
+            mark_stale_from_ts(
+                write_cursor=write_cursor,
+                from_ts=min_ts,
+                include_balances=False,
             )
 
 

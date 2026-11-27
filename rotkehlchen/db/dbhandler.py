@@ -801,6 +801,7 @@ class DBHandler:
                 f'Permission error when reopening the DB. {e!s}. Should never happen here',
             ) from e
         self._run_actions_after_first_connection()
+        self.invalidate_outdated_cost_basis()
         # all went okay, remove the original temp backup
         (self.user_data_dir / 'rotkehlchen_temp_backup.db').unlink()
 
@@ -853,14 +854,16 @@ class DBHandler:
     def invalidate_outdated_cost_basis(self) -> None:
         """Drop cost basis materialized by an older `COST_BASIS_CALCULATION_VERSION`.
 
-        Runs at login, since a pass only runs once something is stale and would otherwise keep
-        the rows an older calculation got wrong. Without the accounting update nothing is
-        materialized, and the version is left unrecorded so the first login with it checks.
+        Runs at login and after restoring a backup via `import_unencrypted`, since a pass only
+        runs once something is stale and would otherwise keep the rows an older calculation got
+        wrong. Without the accounting update nothing is materialized, and the version is left
+        unrecorded so the first login or restore with it checks. Uses `write_ctx` directly so
+        restoring a backup does not bump `last_write_ts`.
         """
         if is_accounting_update_enabled() is False:
             return
 
-        with self.user_write() as write_cursor:
+        with self.conn.write_ctx() as write_cursor:
             if self.get_static_cache(
                 cursor=write_cursor,
                 name=DBCacheStatic.COST_BASIS_CALCULATION_VERSION,
