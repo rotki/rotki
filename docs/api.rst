@@ -8838,6 +8838,7 @@ Querying periodic data
    :resjson object connected_nodes: A dictionary containing the chain and a list of connected nodes.
    :resjson object failed_to_connect [Optional]: A dictionary containing the chain and the nodes that rotki couldn't connect with. If nothing failed for a chain we don't include it in the mapping.
    :resjson list running_tasks: The tasks currently running in the background task manager, each with its ``id``, ``kind``, ``name``, ``subject`` and the unix timestamp ``started_at`` at which it was spawned. Tasks started by an API request and upkeep tasks of kind ``other`` are not included. The fields and the same tasks are described in the ``background_task_status`` websocket message.
+   :resjson object cost_basis_stalled [Optional]: Present when cost basis processing is paused waiting for an automatic retry after a transient price-oracle failure. Contains ``reason`` (``"rate_limited"`` or ``"network"``) and ``since`` (the unix timestamp when the current stall began).
    :statuscode 200: Data were queried successfully.
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.

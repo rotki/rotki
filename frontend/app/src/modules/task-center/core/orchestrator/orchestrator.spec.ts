@@ -1558,6 +1558,7 @@ describe('createTaskOrchestrator', () => {
     it.each([
       ['completes', ok(undefined)],
       ['is cancelled by the backend', err(BackendCancelled({ message: 'stopped' }))],
+      ['skips without asking for attention', err(Skipped({ message: 'nothing to do' }))],
     ] as const)('should forget a forgetUnlessFailed activity that %s', async (_case, outcome) => {
       const orchestrator = createTaskOrchestrator();
       const work = controllable('mirror', { forgetUnlessFailed: true });
@@ -1577,6 +1578,16 @@ describe('createTaskOrchestrator', () => {
       await flush();
 
       expect(byId(orchestrator, id)?.status).toBe(Status.FAILED);
+    });
+
+    it('should keep a forgetUnlessFailed activity that skips asking for attention, for the user to see', async () => {
+      const orchestrator = createTaskOrchestrator();
+      const work = controllable('mirror', { forgetUnlessFailed: true });
+      const id = orchestrator.submit(work.spec);
+      work.settle(err(Skipped({ attention: true, message: 'stalled' })));
+      await flush();
+
+      expect(byId(orchestrator, id)).toMatchObject({ attention: true, status: Status.SKIPPED });
     });
   });
 });

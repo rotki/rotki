@@ -226,26 +226,54 @@ describe('useBackgroundTasks', () => {
     expect(submitTask).toHaveBeenCalledOnce();
     expect(specs[0]).toMatchObject({
       forgetUnlessFailed: true,
-      id: 'background-task:historical_balances:1700000000',
+      id: 'background-task:cost_basis_stalled:1700000000',
       kind: ActivityKind.BACKGROUND_TASK,
+      subtitle: { key: 'task_center.activity.background_task.historical_balances' },
       title: 'task_center.background_task.historical_balances',
     });
     const outcome = await outcomeOf(0);
     assert(outcome && !outcome.ok);
-    expect(hasTag(outcome.error, 'TaskFailed')).toBe(true);
-    expect(outcome.error.message).toBe('task_center.cost_basis_stalled.rate_limited');
+    expect(hasTag(outcome.error, 'Skipped')).toBe(true);
+    expect(outcome.error).toMatchObject({
+      attention: true,
+      message: 'task_center.cost_basis_stalled.rate_limited',
+    });
 
-    // A later retry stalling again forgets the previous row and submits the new one.
+    // A later retry stalling again submits the new row without calling forget (dock supersession forgets the old one).
     syncCostBasisStalled({ reason: 'network', since: 1_700_003_600 });
-    expect(forget).toHaveBeenCalledWith('background-task:historical_balances:1700000000');
+    expect(forget).not.toHaveBeenCalled();
     expect(submitTask).toHaveBeenCalledTimes(2);
     const second = await outcomeOf(1);
     assert(second && !second.ok);
-    expect(second.error.message).toBe('task_center.cost_basis_stalled.network');
+    expect(hasTag(second.error, 'Skipped')).toBe(true);
+    expect(second.error).toMatchObject({
+      attention: true,
+      message: 'task_center.cost_basis_stalled.network',
+    });
 
     // Clearing removes the stalled row from the dock.
     syncCostBasisStalled(undefined);
-    expect(forget).toHaveBeenCalledWith('background-task:historical_balances:1700003600');
+    expect(forget).toHaveBeenCalledWith('background-task:cost_basis_stalled:1700003600');
+  });
+
+  it('should forget a cost-basis stall after submitTask settles when cleared on the same tick', async () => {
+    let resolveSubmit!: (outcome: TaskOutcome) => void;
+    submitTask.mockImplementationOnce(async (spec: NativeActivitySpec): Promise<TaskOutcome> => {
+      specs.push(spec);
+      return new Promise<TaskOutcome>((resolve) => {
+        resolveSubmit = resolve;
+      });
+    });
+
+    const { syncCostBasisStalled } = await setup();
+    syncCostBasisStalled({ reason: 'rate_limited', since: 1_700_000_000 });
+    syncCostBasisStalled(undefined);
+    forget.mockClear();
+
+    resolveSubmit(createMock<TaskOutcome>());
+    await flushPromises();
+
+    expect(forget).toHaveBeenCalledWith('background-task:cost_basis_stalled:1700000000');
   });
 
   it('should fall back to the unknown message for an unrecognized stall reason', async () => {
@@ -255,6 +283,10 @@ describe('useBackgroundTasks', () => {
 
     const outcome = await outcomeOf(0);
     assert(outcome && !outcome.ok);
-    expect(outcome.error.message).toBe('task_center.cost_basis_stalled.unknown');
+    expect(hasTag(outcome.error, 'Skipped')).toBe(true);
+    expect(outcome.error).toMatchObject({
+      attention: true,
+      message: 'task_center.cost_basis_stalled.unknown',
+    });
   });
 });

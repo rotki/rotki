@@ -1,6 +1,6 @@
 import type { OrchestratorOptions, TaskOrchestrator } from './api';
 import { err, ok, type Result } from 'plainfp/result';
-import { isTerminalStatus } from '../status';
+import { isTerminalStatus, needsAttention } from '../status';
 import {
   type Activity,
   type ActivityId,
@@ -92,7 +92,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     if (status !== Status.COMPLETE)
       cancelDescendantsOf(record.spec.id);
 
-    if (record.spec.forgetUnlessFailed && status !== Status.FAILED)
+    if (record.spec.forgetUnlessFailed && !needsAttention(record))
       forget(record.spec.id);
   }
 

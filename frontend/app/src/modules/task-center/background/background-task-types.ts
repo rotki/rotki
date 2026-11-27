@@ -82,7 +82,8 @@ export type BackgroundTaskStatusData = z.infer<typeof BackgroundTaskStatusData>;
  *
  * @remarks
  * `reason` is a backend `FailureCause` string (`rate_limited` or `network`); `since` is the
- * timestamp (unix seconds) of the interrupted pass, which identifies one stall across polls.
+ * timestamp (unix seconds) when the current stall began, persisted once across retries so
+ * dismissing the row stays dismissed until recovery or a new stall.
  */
 export const CostBasisStalled = z.object({
   reason: z.string(),

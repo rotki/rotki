@@ -260,9 +260,10 @@ export interface ActivitySpec<T = unknown> {
    */
   readonly ephemeral?: boolean;
   /**
-   * Forget the activity (see `TaskOrchestrator.forget`) once it settles without failing. For a
-   * mirror of work the frontend does not own, whose clean end nobody reads, so a session of such
-   * runs does not pile up settled records. A failure stays, for the user to see.
+   * Forget the activity (see `TaskOrchestrator.forget`) once it settles without needing attention.
+   * For a mirror of work the frontend does not own, whose clean end nobody reads, so a session of
+   * such runs does not pile up settled records. Failures and skips asking for attention stay, for
+   * the user to see.
    */
   readonly forgetUnlessFailed?: boolean;
   /**

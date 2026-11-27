@@ -16,7 +16,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import SupportedBlockchain
+from rotkehlchen.types import SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -84,11 +84,13 @@ def test_query_periodic(rotkehlchen_api_server_with_exchanges: APIServer) -> Non
     assert len(result['cooling_down_nodes']['eth']) == 1
     assert 'cost_basis_stalled' not in result
 
+    stalled_since = Timestamp(start_ts - 600)
     with rotki.data.db.user_write() as write_cursor:
         rotki.data.db.set_static_cache(write_cursor, DBCacheStatic.STALE_COST_BASIS_FROM_TS, '1000')  # noqa: E501
         rotki.data.db.set_static_cache(write_cursor, DBCacheStatic.COST_BASIS_STALLED_REASON, 'rate_limited')  # noqa: E501
+        rotki.data.db.set_static_cache(write_cursor, DBCacheStatic.COST_BASIS_STALLED_SINCE, stalled_since)  # noqa: E501
         rotki.data.db.set_static_cache(write_cursor, DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS, start_ts)  # noqa: E501
 
     response = requests.get(periodic_url)
     result = assert_proper_sync_response_with_result(response)
-    assert result['cost_basis_stalled'] == {'reason': 'rate_limited', 'since': start_ts}
+    assert result['cost_basis_stalled'] == {'reason': 'rate_limited', 'since': stalled_since}
