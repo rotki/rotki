@@ -141,6 +141,18 @@ const linkedAddress = computed<boolean>(() => get(nested) && get(subject)?.addre
  */
 const rowSteps = computed<ActivitySteps | undefined>(() => steps ?? (activity.kind === ActivityKind.TX_SYNC ? undefined : activity.steps));
 
+/**
+ * The tally line a row without a bar prints. A settled row that got through every step leaves it
+ * out, since its check already says so and "2 of 2" under it only adds a line; one that stopped
+ * short keeps it, where "2 of 3" says how far it got.
+ */
+const tallyLine = computed<ActivitySteps | undefined>(() => {
+  const tally = get(rowSteps);
+  if (!tally || tally.total <= 0)
+    return undefined;
+  return isTerminalStatus(activity.status) && tally.current >= tally.total ? undefined : tally;
+});
+
 const status = computed<ActivityStatus>(() => outcomeStatus ?? activity.status);
 
 const isRunning = computed<boolean>(() => activity.status === ActivityStatus.RUNNING);
@@ -234,7 +246,7 @@ const hasButtons = computed<boolean>(() => get(cancellable) || get(retryable) ||
 const holdsButtonPlace = computed<boolean>(() => !!get(elapsed) && !get(hasButtons));
 
 /** A settled child with nothing but its name is one line, so it takes less room than a row that has more to say. */
-const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity.status) && !get(reasonLine) && !get(rowSteps));
+const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity.status) && !get(reasonLine) && !get(tallyLine));
 
 function stop(): void {
   set(confirmingStop, false);
@@ -249,7 +261,7 @@ watch(cancellable, (canCancel) => {
 
 <template>
   <div
-    class="relative flex items-start gap-2.5 px-1 rounded-sm"
+    class="group/dock-row relative flex items-start gap-2.5 px-1 rounded-sm"
     :class="[compact ? 'py-0.5' : 'py-1.5', { 'bg-rui-error/5': isFailed && !steps && !hideReason }]"
     :data-status="status"
     data-testid="dock-activity-row"
@@ -389,10 +401,11 @@ watch(cancellable, (canCancel) => {
           name="summary"
         >
           <div
-            v-if="rowSteps && rowSteps.total > 0"
+            v-if="tallyLine"
             class="text-xs leading-4 text-rui-text-secondary tabular-nums"
+            data-testid="activity-tally"
           >
-            {{ t('pending_task.steps', { current: rowSteps.current, total: rowSteps.total }) }}
+            {{ t('pending_task.steps', { current: tallyLine.current, total: tallyLine.total }) }}
           </div>
         </slot>
         <slot name="details" />
@@ -485,7 +498,9 @@ watch(cancellable, (canCancel) => {
         :open-delay="400"
       >
         <template #activator>
+          <!-- Shown on hover or focus: a settled panel of 25 rows otherwise carries 25 of them beside Dismiss all. Touch screens have no hover, so they keep it. -->
           <RuiButton
+            class="opacity-0 transition-opacity group-hover/dock-row:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
             variant="text"
             color="primary"
             size="sm"

@@ -338,15 +338,24 @@ describe('dockActivityRow', () => {
       expect(row({ status: ActivityStatus.RUNNING })).toContain('py-1.5');
     });
 
-    it('should keep a settled parent\'s tally as text, with no bar', () => {
+    it('should keep a settled tally that stopped short as text, with no bar', () => {
       const wrapper = createWrapper({
-        activity: activity({ status: ActivityStatus.COMPLETE }),
-        percentage: 100,
-        steps: { current: 4, total: 4 },
+        activity: activity({ status: ActivityStatus.CANCELLED }),
+        percentage: 50,
+        steps: { current: 2, total: 4 },
       });
 
       expect(wrapper.find('[data-testid=activity-meter]').exists()).toBe(false);
-      expect(wrapper.text()).toContain('pending_task.steps::4, 4');
+      expect(wrapper.text()).toContain('pending_task.steps::2, 4');
+    });
+
+    it('should drop the tally of settled work that got through every step', () => {
+      const wrapper = createWrapper({
+        activity: activity({ status: ActivityStatus.COMPLETE, steps: { current: 2, total: 2 } }),
+        percentage: 100,
+      });
+
+      expect(wrapper.find('[data-testid=activity-tally]').exists()).toBe(false);
     });
   });
 
