@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from eth_typing.abi import ABI
 
 V4_SWAP_TOPIC: Final = b'@\xe9\xce\xcb\x9f_\x1f\x1c[\x9c\x97\xde\xc2\x91{~\xe9.W\xbaUcp\x8d\xac\xa9M\xd8J\xd7\x11/'  # noqa: E501
+V4_HOOK_SWAP_TOPIC: Final = b'aP\xbbS\xcdv\xc5p-`t#\x9f\xc7\xb6\xc2\xa5I]3\x9e\xb1"\xfd\xc0bR\xf3\xef\xdb\xbc\x1b'  # 0x6150bb53cd76c5702d6074239fc7b6c2a5495d339eb122fdc06252f3efdbbc1b  # noqa: E501
 MODIFY_LIQUIDITY: Final = b"\xf2\x08\xf4\x91'\x82\xfd%\xc7\xf1\x14\xca7#\xa2\xd5\xddo;\xcc:\xc8\xdbZ\xf6;\xaa\x85\xf7\x11\xd5\xec"  # noqa: E501
 
 POSITION_MANAGER_ABI: Final[ABI] = [{'inputs': [{'name': 'poolId', 'type': 'bytes25'}], 'name': 'poolKeys', 'outputs': [{'name': 'currency0', 'type': 'address'}, {'name': 'currency1', 'type': 'address'}, {'name': 'fee', 'type': 'uint24'}, {'name': 'tickSpacing', 'type': 'int24'}, {'name': 'hooks', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [{'name': 'tokenId', 'type': 'uint256'}], 'name': 'getPoolAndPositionInfo', 'outputs': [{'components': [{'name': 'currency0', 'type': 'address'}, {'name': 'currency1', 'type': 'address'}, {'name': 'fee', 'type': 'uint24'}, {'name': 'tickSpacing', 'type': 'int24'}, {'name': 'hooks', 'type': 'address'}], 'name': 'poolKey', 'type': 'tuple'}, {'name': 'info', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [{'name': 'tokenId', 'type': 'uint256'}], 'name': 'getPositionLiquidity', 'outputs': [{'name': 'liquidity', 'type': 'uint128'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501

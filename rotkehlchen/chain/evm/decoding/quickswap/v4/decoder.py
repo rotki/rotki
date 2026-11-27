@@ -64,7 +64,7 @@ class Quickswapv4CommonDecoder(Quickswapv3LikeLPDecoder):
             base_tools=self.base,
             swap_topics=(QUICKSWAP_SWAP_TOPIC,),
             counterparty=CPT_QUICKSWAP_V4,
-            router_address=self.swap_router,
+            router_addresses={self.swap_router},
         )
 
     # -- DecoderInterface methods

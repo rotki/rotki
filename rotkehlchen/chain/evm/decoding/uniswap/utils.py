@@ -130,10 +130,12 @@ def get_uniswap_swap_amounts(tx_log: EvmTxReceiptLog) -> tuple[int, int]:
     """Get the amount received and amount sent in a swap from the swap tx_log.
 
     Uniswap represents the delta of tokens in the pool with a signed integer.
-    In V3 the negative delta indicates the amount leaving the pool (the user receives them),
-    and positive indicates the amount entering the pool (the user sends them to the pool).
-    In V4 this is reversed - negative indicates the amount entering the pool (sent by the user),
-    and positive indicates the amount leaving the pool (received by the user).
+    In V3 (and V4 aggregator HookSwap logs) the negative delta indicates the amount leaving
+    the pool (the user receives them), and positive indicates the amount entering the pool
+    (the user sends them to the pool).
+    In V4 PoolManager Swap logs this is reversed - negative indicates the amount entering
+    the pool (sent by the user), and positive indicates the amount leaving the pool
+    (received by the user).
 
     The caller is responsible for only calling this function with a swap tx_log.
     Returns a tuple of (amount_received, amount_sent).

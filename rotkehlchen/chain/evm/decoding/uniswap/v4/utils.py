@@ -30,7 +30,7 @@ def decode_uniswap_v4_like_swaps(
         base_tools: BaseEvmDecoderTools,
         swap_topics: tuple[bytes, ...],
         counterparty: str,
-        router_address: ChecksumEvmAddress,
+        router_addresses: set[ChecksumEvmAddress],
 ) -> list[EvmEvent]:
     """Decode Uniswap V4 like swaps."""
     amounts_received, amounts_sent, pools_used, possible_fees = set(), set(), set(), defaultdict(set)  # noqa: E501
@@ -39,12 +39,14 @@ def decode_uniswap_v4_like_swaps(
     for tx_log in all_logs:
         if tx_log.topics[0] in swap_topics:
             amount_received, amount_sent = get_uniswap_swap_amounts(tx_log=tx_log)
-            amounts_received.add(amount_received)
-            amounts_sent.add(amount_sent)
+            if amount_received != 0:
+                amounts_received.add(amount_received)
+            if amount_sent != 0:
+                amounts_sent.add(amount_sent)
             pools_used.add(tx_log.address)
         elif (
             tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-            ((from_addr := bytes_to_address(tx_log.topics[1])) == router_address or
+            ((from_addr := bytes_to_address(tx_log.topics[1])) in router_addresses or
             from_addr in pools_used) and
             not base_tools.is_tracked(bytes_to_address(tx_log.topics[2]))
         ):
@@ -58,7 +60,7 @@ def decode_uniswap_v4_like_swaps(
         for internal_tx in internal_txs:
             if (
                     (internal_tx.to_address is not None and not base_tools.is_tracked(internal_tx.to_address)) and  # noqa: E501
-                    internal_tx.from_address == router_address
+                    internal_tx.from_address in router_addresses
             ):
                 possible_fees[base_tools.evm_inquirer.wrapped_native_token.evm_address].add(internal_tx.value)
 
@@ -69,7 +71,7 @@ def decode_uniswap_v4_like_swaps(
     spend_event, receive_event, fee_event = None, None, None
     display_name = get_versioned_counterparty_label(counterparty)
     for event in decoded_events:
-        if not (event.address == router_address or event.address in pools_used):
+        if not (event.address in router_addresses or event.address in pools_used):
             continue
 
         if (
