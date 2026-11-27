@@ -50,6 +50,8 @@ function table(): ReturnType<typeof useManagedAssetTable> {
 
 describe('modules/assets/admin/useManagedAssetTable', () => {
   beforeEach(() => {
+    predictSpam.mockReset();
+    predictSpam.mockResolvedValue({});
     itemsPerPage = ref<number>(10);
     pagination = ref<TablePaginationData>({ limit: 10, page: 1, total: 0 });
     expanded = ref<SupportedAsset[]>([]);
@@ -72,7 +74,6 @@ describe('modules/assets/admin/useManagedAssetTable', () => {
     };
 
     beforeEach(() => {
-      predictSpam.mockReset();
       beginSession();
     });
 
