@@ -2728,11 +2728,6 @@
     "label_password": "Пароль",
     "label_username": "Имя профиля",
     "logout": "Выйти",
-    "migrating_data": {
-      "current": "Применяется шаг {currentStep} из {totalSteps} миграции данных {currentVersion}.",
-      "title": "Миграция данных",
-      "warning": "Выполняется миграция данных {currentVersion}. Пожалуйста, не закрывайте приложение до завершения."
-    },
     "no_profiles_found": "На этом компьютере не найдено профилей.",
     "no_profiles_found_action": "{refresh_profiles} или {create_account} ",
     "remember_password": "Запомнить пароль",
@@ -2745,11 +2740,6 @@
       "title": "Требуется действие пользователя для синхронизации БД"
     },
     "title": "Разблокировать аккаунт",
-    "upgrading_db": {
-      "current": "Применяется шаг {currentStep} из {totalSteps} обновления базы данных v{currentVersion}.",
-      "title": "Обновление базы данных",
-      "warning": "База данных обновляется с версии {fromVersion} до {toVersion}. Пожалуйста, не закрывайте приложение до завершения."
-    },
     "validation": {
       "non_empty_password": "Пожалуйста, укажите пароль",
       "non_empty_username": "Пожалуйста, укажите имя профиля",

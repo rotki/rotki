@@ -4345,11 +4345,6 @@
     "label_password": "密码",
     "label_username": "用户名",
     "logout": "退出登录",
-    "migrating_data": {
-      "current": "正在执行数据迁移 {currentVersion} 的第 {currentStep}/{totalSteps} 步。",
-      "title": "数据迁移",
-      "warning": "数据迁移 {currentVersion} 正在进行，完成前请不要关闭应用。"
-    },
     "no_profiles_found": "在此设备上未找到任何用户。",
     "no_profiles_found_action": "{refresh_profiles}或{create_account} ",
     "remember_password": "记住密码",
@@ -4362,11 +4357,6 @@
       "title": "数据库同步需要你进行操作"
     },
     "title": "解锁账户",
-    "upgrading_db": {
-      "current": "正在执行数据库升级 v{currentVersion} 的第 {currentStep}/{totalSteps} 步。",
-      "title": "数据库升级",
-      "warning": "数据库正在从版本 {fromVersion} 升级到 {toVersion}，完成前请不要关闭应用。"
-    },
     "validation": {
       "non_empty_password": "请输入密码",
       "non_empty_username": "请输入用户名",

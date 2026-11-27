@@ -31,14 +31,24 @@ export function useSessionReady(): UseSessionReadyReturn {
   const { showReleaseNotes } = useUpdateMessage();
   const { refreshSupportedChains } = useSupportedChains();
 
+  /**
+   * @remarks
+   * The upgrade state is cleared only once the app has navigated away: clearing it first takes the
+   * finished upgrade screen down while the session data still loads, and the login form flashes back
+   * in its place.
+   */
   async function handleSessionReady(): Promise<void> {
-    clearUpgradeMessages();
     set(canRequestData, true);
     set(lastLogin, get(username));
     showGetPremiumButton();
-    await refreshSupportedChains();
-    await fetchTransactionStatusSummary();
-    await navigateAfterUnlock();
+    try {
+      await refreshSupportedChains();
+      await fetchTransactionStatusSummary();
+      await navigateAfterUnlock();
+    }
+    finally {
+      clearUpgradeMessages();
+    }
     set(showReleaseNotes, false);
   }
 

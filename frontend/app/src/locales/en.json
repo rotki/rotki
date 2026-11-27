@@ -5454,6 +5454,60 @@
         "url": "The entry inserted is not in a valid url format"
       }
     },
+    "db_upgrade": {
+      "done": {
+        "opening": "Opening rotki…",
+        "took": "Took {time}"
+      },
+      "elapsed": "Elapsed time",
+      "failed": {
+        "actions": {
+          "back": "Back to login",
+          "copied": "Copied",
+          "copy": "Copy error",
+          "open_folder": "Open profile folder",
+          "open_logs": "Open logs folder",
+          "report": "Report a bug"
+        },
+        "backups": "Each backup is kept in the profile folder, named after the version it was taken at:",
+        "backups_kept": "rotki saves a copy of the database before each version it applies, in the profile folder:",
+        "logs_web": "The backend log, rotki-core.log, is in the logs directory you started rotki with.",
+        "next_steps": "You can try again. If it fails the same way, report it with the error and the logs so it can be fixed.",
+        "restored": "rotki put back the copy it saved before v{version}, so the database is at v{previous} and nothing from the failed step was kept."
+      },
+      "progress": {
+        "migration": "Migration {index} of {count}",
+        "preparing": "Preparing…",
+        "step": "step {current} of {total}",
+        "version": "Version {index} of {count}"
+      },
+      "range": {
+        "migration": "data migrations {from} to {to}",
+        "version": "v{from} to v{to}"
+      },
+      "reassurance": {
+        "backup": "rotki saved a copy of the database before applying each version. If a step fails, it puts that copy back on its own.",
+        "keep_open": "Keep rotki open until this finishes. Closing it part-way stops the upgrade, and rotki will offer to restore the backup the next time you unlock this profile.",
+        "migration": "Keep rotki open until this finishes. Migrations update your records in place and are applied again on the next unlock if interrupted.",
+        "slow": "Large databases can take several minutes, most of it in the final clean-up."
+      },
+      "rows": {
+        "earlier": "{count} applied earlier | {count} applied earlier",
+        "label": "Versions in this upgrade",
+        "migration": "Migration {version}",
+        "migration_label": "Migrations in this run",
+        "more": "{count} more to apply | {count} more to apply",
+        "version": "v{version}"
+      },
+      "subtitle": "Profile {profile} · {range}",
+      "title": {
+        "done": "Database upgraded to v{version}",
+        "failed": "The upgrade did not finish",
+        "migrated": "Your data is up to date",
+        "migrating": "Updating your data",
+        "running": "Upgrading your database"
+      }
+    },
     "description": {
       "intro": "Sign in to your local rotki profile. {documentation}",
       "learn_more": "How profiles work"
@@ -5467,11 +5521,6 @@
     "label_password": "Password",
     "label_username": "Profile name",
     "logout": "Logout",
-    "migrating_data": {
-      "current": "Step {currentStep} of {totalSteps} of data migration {currentVersion} is being applied.",
-      "title": "Data Migration",
-      "warning": "Data migration {currentVersion} is running. Please don't close the app until it's finished."
-    },
     "no_profiles_found": "No profiles were found on this machine.",
     "no_profiles_found_action": "{refresh_profiles} or {create_account} ",
     "remember_password": "Remember Password",
@@ -5484,11 +5533,6 @@
       "title": "User action required for DB sync"
     },
     "title": "Unlock profile",
-    "upgrading_db": {
-      "current": "Step {currentStep} of {totalSteps} of database upgrade v{currentVersion} is being applied.",
-      "title": "Database Upgrade",
-      "warning": "The database is being upgraded from version {fromVersion} to {toVersion}. Please don't close the app until it's finished."
-    },
     "validation": {
       "non_empty_password": "Please provide a password",
       "non_empty_username": "Please provide a profile name",

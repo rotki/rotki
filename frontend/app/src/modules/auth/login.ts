@@ -68,14 +68,3 @@ export interface CreateAccountPayload {
   readonly initialSettings: InitialSettings;
   premiumSetup?: PremiumSetup;
 }
-
-export interface CurrentDbUpgradeProgress {
-  percentage: number;
-  totalPercentage: number;
-  currentStep: number;
-  totalSteps: number;
-  currentVersion: number;
-  fromVersion: number;
-  toVersion: number;
-  description?: string;
-}
