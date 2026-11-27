@@ -31,7 +31,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
+        uses: rotki/action-env@45dbd98dd8cfb0213b1a6dbefe37710bddf78679  # v4.0.2
         with:
           env_file: .github/.env.ci
 
@@ -124,7 +124,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
+        uses: rotki/action-env@45dbd98dd8cfb0213b1a6dbefe37710bddf78679  # v4.0.2
         with:
           env_file: .github/.env.ci
 
@@ -197,7 +197,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
+        uses: rotki/action-env@45dbd98dd8cfb0213b1a6dbefe37710bddf78679  # v4.0.2
         with:
           env_file: .github/.env.ci
 

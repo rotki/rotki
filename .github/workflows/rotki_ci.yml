@@ -42,7 +42,7 @@ jobs:
           persist-credentials: false
 
       - name: Run check action
-        uses: rotki/action-job-checker@06547b531456e382853879a65f964996527fdd70  # v6.1.1
+        uses: rotki/action-job-checker@74c55ed03e34baf33ae08e815eb0412e5301230a  # v6.1.2
         id: checker
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -181,7 +181,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
+        uses: rotki/action-env@45dbd98dd8cfb0213b1a6dbefe37710bddf78679  # v4.0.2
         with:
           env_file: .github/.env.ci
 
@@ -313,7 +313,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
+        uses: rotki/action-env@45dbd98dd8cfb0213b1a6dbefe37710bddf78679  # v4.0.2
         with:
           env_file: .github/.env.ci
 
@@ -425,7 +425,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
+        uses: rotki/action-env@45dbd98dd8cfb0213b1a6dbefe37710bddf78679  # v4.0.2
         with:
           env_file: .github/.env.ci
 
@@ -576,7 +576,7 @@ jobs:
           fetch-depth: 0  # full history so the diff-scoped logging lint can reach the PR base
 
       - name: Load env
-        uses: rotki/action-env@39fabde543b2b2f163b8ecce6570473bccc4e2c1  # v4.0.1
+        uses: rotki/action-env@45dbd98dd8cfb0213b1a6dbefe37710bddf78679  # v4.0.2
         with:
           env_file: .github/.env.ci
 
