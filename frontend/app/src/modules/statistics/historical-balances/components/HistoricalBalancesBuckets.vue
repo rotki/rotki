@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { HistoricalBucketRow } from '@/modules/statistics/historical-balances/historical-balances-view';
-import { type DataTableColumn, RuiDataTable } from '@rotki/ui-library';
+import { type DataTableColumn, RuiButton, RuiDataTable, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import { accountHistoryLink } from '@/modules/balances/account-history/account-history-selection';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { fitsEveryLimit } from '@/modules/session/use-items-per-page';
@@ -35,6 +36,7 @@ const cols = computed<DataTableColumn<BucketRow>[]>(() => [
   { cellClass: 'py-1', key: 'protocol', label: t('common.protocol') },
   { align: 'end', cellClass: 'py-1', key: 'amount', label: t('common.amount') },
   { align: 'end', cellClass: 'py-1 font-medium', key: 'value', label: t('common.value') },
+  { align: 'end', cellClass: 'py-1', key: 'actions', label: '' },
 ]);
 
 const hidePagination = computed<boolean>(() => fitsEveryLimit(buckets.length));
@@ -96,6 +98,32 @@ const hidePagination = computed<boolean>(() => fitsEveryLimit(buckets.length));
           :value="row.value"
           :status="row.priceStatus"
         />
+      </template>
+      <template #item.actions="{ row }">
+        <RuiTooltip
+          v-if="row.locationLabel"
+          :open-delay="400"
+        >
+          <template #activator>
+            <RouterLink
+              :to="accountHistoryLink(row.locationLabel, row.asset, row.location)"
+              :aria-label="t('account_history.view_history')"
+              data-testid="historical-balances-bucket-history"
+            >
+              <RuiButton
+                variant="text"
+                icon
+                size="sm"
+              >
+                <RuiIcon
+                  name="lu-chart-line"
+                  size="16"
+                />
+              </RuiButton>
+            </RouterLink>
+          </template>
+          {{ t('account_history.view_history') }}
+        </RuiTooltip>
       </template>
     </RuiDataTable>
   </div>

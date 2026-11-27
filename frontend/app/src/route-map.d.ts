@@ -246,6 +246,13 @@ declare module 'vue-router/auto-routes' {
       { exchange?: ParamValueZeroOrOne<false> },
       | never
     >,
+    '/balances/history/': RouteRecordInfo<
+      '/balances/history/',
+      '/balances/history',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/balances/manual/[[tab]]': RouteRecordInfo<
       '/balances/manual/[[tab]]',
       '/balances/manual/:tab?',
@@ -828,6 +835,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'exchange'
+    }
+    'src/pages/balances/history/index.vue': {
+      routes:
+        | '/balances/history/'
+      views:
+        | never
+      pathParamNames:
+        | never
     }
     'src/pages/balances/manual/[[tab]].vue': {
       routes:

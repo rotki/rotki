@@ -65,6 +65,73 @@ describe('composables/api/balances/historical-balances', () => {
 
       await expect(fetchHistoricalBalances(1)).rejects.toThrow();
     });
+
+    it('should narrow the buckets to the given account and asset', async () => {
+      let capturedBody: DefaultBodyType = null;
+      server.use(
+        http.post(`${backendUrl}/api/1/balances/historical`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({ message: '', result: { entries: [], processing_required: false } });
+        }),
+      );
+
+      const { fetchHistoricalBalances } = await getApi();
+      await fetchHistoricalBalances(99, { asset: 'ETH', locationLabel: '0xA' });
+
+      expect(capturedBody).toEqual({ asset: 'ETH', group_by_account: true, location_label: '0xA', timestamp: 99 });
+    });
+  });
+
+  describe('fetchBalanceSeries', () => {
+    it('should request the series synchronously and parse each bucket', async () => {
+      let capturedBody: DefaultBodyType = null;
+      server.use(
+        http.post(`${backendUrl}/api/1/balances/historical/asset/series`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({
+            message: '',
+            result: {
+              entries: [{ asset: 'ETH', location: 'ethereum', location_label: '0xA', protocol: null, times: [1, 2], values: ['1', '0'] }],
+              processing_required: false,
+            },
+          });
+        }),
+      );
+
+      const { fetchBalanceSeries } = await getApi();
+      const result = await fetchBalanceSeries({ asset: 'ETH', fromTimestamp: 0, locationLabel: '0xA', toTimestamp: 5 });
+
+      expect(capturedBody).toEqual({ asset: 'ETH', from_timestamp: 0, location_label: '0xA', to_timestamp: 5 });
+      expect(result.entries[0]?.values.map(value => value.toString())).toEqual(['1', '0']);
+    });
+
+    it('should read a 404 as a range in which nothing was held', async () => {
+      server.use(
+        http.post(`${backendUrl}/api/1/balances/historical/asset/series`, () =>
+          HttpResponse.json({ message: 'No historical data found', result: null }, { status: 404 })),
+      );
+
+      const { fetchBalanceSeries } = await getApi();
+
+      await expect(fetchBalanceSeries({ asset: 'ETH', locationLabel: '0xA' })).resolves.toEqual({ entries: [], processingRequired: false });
+    });
+  });
+
+  describe('fetchHistoricalBalanceAssets', () => {
+    it('should list the assets an account has held', async () => {
+      let capturedBody: DefaultBodyType = null;
+      server.use(
+        http.post(`${backendUrl}/api/1/balances/historical/assets`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({ message: '', result: { entries: ['DAI', 'ETH'], processing_required: true } });
+        }),
+      );
+
+      const { fetchHistoricalBalanceAssets } = await getApi();
+
+      await expect(fetchHistoricalBalanceAssets({ locationLabel: '0xA' })).resolves.toEqual({ entries: ['DAI', 'ETH'], processingRequired: true });
+      expect(capturedBody).toEqual({ location_label: '0xA' });
+    });
   });
 
   describe('fetchCurrentHistoricalBalances', () => {

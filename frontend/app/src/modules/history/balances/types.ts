@@ -69,6 +69,26 @@ export const HistoricalBalanceSeriesResponse = z.object({
 
 export type HistoricalBalanceSeriesResponse = z.infer<typeof HistoricalBalanceSeriesResponse>;
 
+/** Narrows a balance-at-timestamp query to one account, asset or location. */
+export interface HistoricalBalanceFilters {
+  asset?: string;
+  location?: string;
+  locationLabel?: string;
+}
+
+/** Every asset an account has held at any time, as identifiers. */
+export const HistoricalBalanceAssetsResponse = z.object({
+  processingRequired: z.boolean(),
+  entries: z.array(z.string()).default([]),
+});
+
+export type HistoricalBalanceAssetsResponse = z.infer<typeof HistoricalBalanceAssetsResponse>;
+
+export interface HistoricalBalanceAssetsPayload {
+  locationLabel: string;
+  location?: string;
+}
+
 export interface HistoricalBalanceSeriesPayload {
   asset: string;
   locationLabel: string;
