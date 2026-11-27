@@ -1789,11 +1789,6 @@
     "label_password": "Mot de passe",
     "label_username": "Nom de profil",
     "logout": "Déconnexion",
-    "migrating_data": {
-      "current": "L'étape {currentStep} de {totalSteps} de la migration de données {currentVersion} est en cours d'application.",
-      "title": "Migration des données",
-      "warning": "La migration des données {currentVersion} est en cours. Veuillez ne pas fermer l'application jusqu'à ce qu'elle soit terminée."
-    },
     "no_profiles_found": "Aucun profil n'a été trouvé sur cette machine.",
     "no_profiles_found_action": "{refresh_profiles} {create_account} ",
     "remember_password": "Se souvenir du mot de passe",
@@ -1806,11 +1801,6 @@
       "title": "Action utilisateur requise pour la synchronisation de la base de données"
     },
     "title": "Déverrouiller le compte",
-    "upgrading_db": {
-      "current": "L'étape {currentStep} de {totalSteps} de la mise à niveau de la base de données v{currentVersion} est en cours d'application.",
-      "title": "Mise à niveau de la base de données",
-      "warning": "La base de données est en cours de mise à niveau depuis la version {fromVersion} vers {toVersion}. Veuillez ne pas fermer l'application jusqu'à ce qu'elle soit terminée."
-    },
     "validation": {
       "non_empty_password": "Veuillez entrer un mot de passe",
       "non_empty_username": "Veuillez entrer un nom de profil",

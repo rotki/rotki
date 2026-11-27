@@ -4424,11 +4424,6 @@
     "label_password": "Parola",
     "label_username": "Profil adı",
     "logout": "Çıkış yap",
-    "migrating_data": {
-      "current": "{currentVersion} numaralı veri taşıma için {totalSteps} adımdan {currentStep}. adım uygulanıyor.",
-      "title": "Veri taşıma",
-      "warning": "{currentVersion} numaralı veri taşıma çalışıyor. Lütfen tamamlanana kadar uygulamayı kapatmayın."
-    },
     "no_profiles_found": "Bu bilgisayarda hiç profil bulunamadı.",
     "no_profiles_found_action": "{refresh_profiles} veya {create_account} ",
     "remember_password": "Parolayı hatırla",
@@ -4441,11 +4436,6 @@
       "title": "Veritabanı senkronizasyonu için kullanıcı müdahalesi gerekli"
     },
     "title": "Hesap kilidini aç",
-    "upgrading_db": {
-      "current": "v{currentVersion} veritabanı yükseltmesi için {totalSteps} adımdan {currentStep}. adım uygulanıyor.",
-      "title": "Veritabanı yükseltmesi",
-      "warning": "Veritabanı {fromVersion} sürümünden {toVersion} sürümüne yükseltiliyor. Lütfen yükseltme tamamlanana kadar uygulamayı kapatmayın."
-    },
     "validation": {
       "non_empty_password": "Lütfen bir parola girin",
       "non_empty_username": "Lütfen bir profil adı girin",

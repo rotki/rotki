@@ -29,6 +29,9 @@ import { useUnlockSteps } from './use-unlock-steps';
 
 type UnlockMode = 'login' | 'create' | 'auto';
 
+/** How long a login that upgraded the database shows its "upgraded" state before the app opens. */
+const UPGRADE_HANDOFF_MS = 1500;
+
 /** The phases that mean work is in progress; the phases that wait on the user are absent. */
 const IN_FLIGHT: ReadonlySet<string> = new Set([
   UnlockPhase.resolving,
@@ -141,15 +144,21 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
   });
 
   /**
-   * Keeps the upgrade progress of an account creation on screen for a moment.
+   * Keeps a finished upgrade on screen for a moment before the app opens.
    *
    * @remarks
-   * Only a create that ran an upgrade and was fast is padded, so the progress bar is seen at all;
-   * a slow upgrade was on screen long enough already.
+   * A create that ran an upgrade and was fast is padded, so the progress bar is seen at all; a slow
+   * one was on screen long enough already. A manual login that upgraded always holds its "upgraded"
+   * state briefly, as the handoff into the app. An auto-unlock shows no upgrade screen to hold, and a
+   * resumed session ran no upgrade of its own.
    */
-  async function padFastCreateUpgrade(current: UnlockMode): Promise<void> {
-    if (current === 'create' && get(upgradeVisible) && (dayjs().valueOf() - createStartedAt) / 1000 < 10)
+  async function padUpgradeHandoff(current: UnlockMode, resumed: boolean): Promise<void> {
+    if (resumed || !get(upgradeVisible))
+      return;
+    if (current === 'create' && (dayjs().valueOf() - createStartedAt) / 1000 < 10)
       await wait(3000);
+    else if (current === 'login')
+      await wait(UPGRADE_HANDOFF_MS);
   }
 
   /**
@@ -169,7 +178,7 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
     const resumed = state.kind === UnlockPhase.ready && state.resumed;
     const sameSession = captureSession();
 
-    await padFastCreateUpgrade(current);
+    await padUpgradeHandoff(current, resumed);
     if (!resumed && current !== 'create')
       await updateFrontendSetting({ lastPasswordConfirmed: dayjs().unix() });
     if (!sameSession())

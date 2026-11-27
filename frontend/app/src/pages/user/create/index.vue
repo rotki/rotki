@@ -22,7 +22,9 @@ definePage({
   },
 });
 
-const { upgradeVisible } = storeToRefs(useSessionAuthStore());
+const authStore = useSessionAuthStore();
+const { upgradeVisible } = storeToRefs(authStore);
+const { clearUpgradeMessages } = authStore;
 const { navigateToUserLogin } = useAppNavigation();
 const { clearErrors, createNewAccount, error, loading } = useAccountManagement();
 
@@ -47,7 +49,10 @@ onMounted(() => clearErrors());
           class="grow flex flex-col"
         >
           <UserHost>
-            <UpgradeProgressDisplay v-if="upgradeVisible" />
+            <UpgradeProgressDisplay
+              v-if="upgradeVisible"
+              @back="clearUpgradeMessages()"
+            />
             <CreateAccountWizard
               v-else
               v-model:step="step"

@@ -4,7 +4,7 @@ import { set } from '@vueuse/shared';
 import { type Pinia, setActivePinia, storeToRefs } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
-import { UnlockPhase, type UnlockState } from '@/modules/auth/unlock-flow/use-unlock-flow';
+import { UnlockErrorKind, UnlockPhase, type UnlockState } from '@/modules/auth/unlock-flow/use-unlock-flow';
 import UpgradeProgressDisplay from '@/modules/auth/upgrade/UpgradeProgressDisplay.vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import AssetConflictDialog from '@/modules/shell/app/AssetConflictDialog.vue';
@@ -92,6 +92,36 @@ describe('modules/auth/unlock-flow/LoginUnlockStage', () => {
     set(storeToRefs(useSessionAuthStore()).dbUpgradeStatus, { currentUpgrade: { currentStep: 1, description: '', totalSteps: 2, toVersion: 2 }, startVersion: 1, targetVersion: 2 });
     const wrapper = mountStage({ kind: UnlockPhase.unlocking }, pinia);
     expect(wrapper.findComponent(UpgradeProgressDisplay).exists()).toBe(true);
+  });
+
+  it('should keep the finished upgrade on screen while the session loads', () => {
+    set(storeToRefs(useSessionAuthStore()).dbUpgradeStatus, { currentUpgrade: { currentStep: 2, description: '', totalSteps: 2, toVersion: 2 }, startVersion: 1, targetVersion: 2 });
+    const wrapper = mountStage({ kind: UnlockPhase.loadingSession }, pinia);
+    const display = wrapper.findComponent(UpgradeProgressDisplay);
+
+    expect(display.exists()).toBe(true);
+    expect(display.props('completed')).toBe(true);
+  });
+
+  it('should show a failed upgrade in the error phase and pass its back request on', async () => {
+    const store = useSessionAuthStore();
+    store.updateDbUpgradeStatus({ currentUpgrade: { currentStep: 1, description: '', totalSteps: 2, toVersion: 2 }, startVersion: 1, targetVersion: 2 });
+    store.failUpgrade('Failed at database upgrade from version 1 to 2: boom');
+    const wrapper = mountStage({ error: { kind: UnlockErrorKind.unknown, message: 'boom' }, kind: UnlockPhase.error }, pinia);
+    const display = wrapper.findComponent(UpgradeProgressDisplay);
+
+    expect(display.exists()).toBe(true);
+    display.vm.$emit('back');
+    await nextTick();
+
+    expect(wrapper.emitted('leave-upgrade')).toHaveLength(1);
+  });
+
+  it('should leave an error without an upgrade failure to the login form', () => {
+    set(storeToRefs(useSessionAuthStore()).dbUpgradeStatus, { currentUpgrade: { currentStep: 1, description: '', totalSteps: 2, toVersion: 2 }, startVersion: 1, targetVersion: 2 });
+    const wrapper = mountStage({ error: { kind: UnlockErrorKind.wrongPassword }, kind: UnlockPhase.error }, pinia);
+
+    expect(wrapper.findComponent(UpgradeProgressDisplay).exists()).toBe(false);
   });
 
   it('should fall back to a spinner for plain in-flight phases', () => {
