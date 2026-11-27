@@ -7494,6 +7494,7 @@
         "running": "{count} running"
       },
       "dismiss_all": "Dismiss all",
+      "finished_group": "{count} finished | {count} finished",
       "keep_running": "Keep running",
       "outcome": {
         "attention": "{count} needs attention | {count} need attention",
@@ -7503,6 +7504,7 @@
         "skipped": "{count} skipped"
       },
       "retry_failed": "Retry {count} failed | Retry {count} failed",
+      "section_jobs": "{count} job | {count} jobs",
       "settled": "{settled} of {total} finished",
       "show_all": "Show {count} more | Show {count} more",
       "skipped_count": "{count} skipped | {count} skipped",

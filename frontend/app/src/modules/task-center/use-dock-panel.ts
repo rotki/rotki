@@ -12,12 +12,25 @@ import { useTaskController } from '@/modules/task-center/use-task-controller';
 import { useTaskDock } from '@/modules/task-center/use-task-dock';
 
 /** A run of panel rows, under a kind heading when more than one job of that kind is listed. */
-interface DockSection {
+export interface DockSection {
   readonly key: string;
   /** Present only when the kind repeats; a single job's own title already names it. */
   readonly title?: string;
   readonly roots: Activity[];
+  /** Whether the section starts folded to its heading: every job in it ended cleanly, and there are enough to crowd the panel. */
+  readonly folded?: boolean;
+  /** Whether the heading names the rows as the jobs of one kind, so each row can be named by its subtitle instead. */
+  readonly kindHeading?: boolean;
 }
+
+/** The section key of the finished jobs folded above the work still running. */
+export const FINISHED_SECTION_KEY = 'finished';
+
+/** How many finished jobs it takes, leading the list while work runs, before they fold into one row. */
+const FINISHED_FOLD_MIN = 2;
+
+/** How many settled jobs of one kind it takes before their section folds to its heading. */
+const SECTION_FOLD_MIN = 4;
 
 interface UseDockPanelReturn {
   /** The jobs the panel lists: in flight while working, otherwise the ones whose outcome it reports. */
@@ -27,6 +40,8 @@ interface UseDockPanelReturn {
   tally: ComputedRef<StatusTally>;
   /** Leaves in {@link tally}. */
   total: ComputedRef<number>;
+  /** Skipped leaves in {@link tally} that asked for attention. */
+  attention: ComputedRef<number>;
   title: ComputedRef<string>;
   /** Whether the header summarises; a single job's row already shows its own progress. */
   summary: ComputedRef<boolean>;
@@ -155,17 +170,47 @@ export function useDockPanel(
 
   watch(roots, rememberShown, { immediate: true });
 
-  /** While work runs every job is its own untitled section, so a second job of a kind appends below instead of joining the first. */
+  /** Ended with nothing anyone has to look at: complete, with no failure or held skip beneath it. */
+  const endedClean = (root: Activity): boolean => root.status === ActivityStatus.COMPLETE
+    && !someInSubtree(toValue(children), root, node => isFailed(node) || needsAttention(node));
+
+  /**
+   * While work runs every job is its own untitled section, so a second job of a kind appends below
+   * instead of joining the first.
+   *
+   * The finished jobs leading the list fold into one row, so the work still running is what the
+   * panel opens on rather than sitting below the fold under jobs that are done. Only the leading
+   * run folds: a job that finishes between two running ones stays where it is, and the rows below a
+   * fold only ever move up, toward the reader.
+   */
+  function workingSections(): DockSection[] {
+    const list = get(roots);
+    const lead = list.findIndex(root => !endedClean(root));
+    const finished = lead === -1 ? list.length : lead;
+    const rest = list.slice(finished).map(root => ({ key: root.id, roots: [root] }));
+    if (finished < FINISHED_FOLD_MIN)
+      return [...list.slice(0, finished).map(root => ({ key: root.id, roots: [root] })), ...rest];
+
+    return [{
+      folded: true,
+      key: FINISHED_SECTION_KEY,
+      roots: list.slice(0, finished),
+      title: t('task_dock.panel.finished_group', { count: finished }, finished),
+    }, ...rest];
+  }
+
   const sections = computed<DockSection[]>(() => {
     if (get(state) === DockState.WORKING)
-      return get(roots).map(root => ({ key: root.id, roots: [root] }));
+      return workingSections();
 
     const byKind = new Map<ActivityKind, Activity[]>();
     for (const root of get(roots))
       byKind.set(root.kind, [...(byKind.get(root.kind) ?? []), root]);
 
     return Array.from(byKind.entries(), ([kind, list]) => ({
+      folded: list.length >= SECTION_FOLD_MIN && list.every(endedClean),
       key: kind,
+      kindHeading: list.length > 1,
       roots: list,
       title: list.length > 1 ? groupTitle(kind, list, t) : undefined,
     }));
@@ -176,6 +221,9 @@ export function useDockPanel(
   const tally = computed<StatusTally>(() => tallyStatuses(get(leaves).map(leaf => leaf.status)));
 
   const total = computed<number>(() => get(leaves).length);
+
+  /** The skipped leaves that asked for attention, which the header names apart from routine skips. */
+  const attention = computed<number>(() => get(leaves).filter(leaf => leaf.status === ActivityStatus.SKIPPED && needsAttention(leaf)).length);
 
   const reportsFailure = computed<boolean>(() => get(state) === DockState.FAILED
     || (get(state) === DockState.DISMISSED && get(dismissedFailure)));
@@ -231,5 +279,5 @@ export function useDockPanel(
 
   const unstoppable = computed<Activity[]>(() => get(running).filter(root => !isStoppable(root)));
 
-  return { canDismissAll, canRetryAll, retryable, retryFailed, roots, sections, stoppable, summary, tally, title, total, unstoppable };
+  return { attention, canDismissAll, canRetryAll, retryable, retryFailed, roots, sections, stoppable, summary, tally, title, total, unstoppable };
 }

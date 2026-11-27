@@ -4,9 +4,9 @@ import { syncRefs, useElementSize, useIntervalFn, useTimestamp } from '@vueuse/c
 import { get, set } from '@vueuse/shared';
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import DockJobNode from '@/modules/task-center/components/DockJobNode.vue';
 import DockPanelHeader from '@/modules/task-center/components/DockPanelHeader.vue';
 import DockPill from '@/modules/task-center/components/DockPill.vue';
+import DockSection from '@/modules/task-center/components/DockSection.vue';
 import { DockState } from '@/modules/task-center/dock-state';
 import { useDockPanel } from '@/modules/task-center/use-dock-panel';
 import { usePendingJobs } from '@/modules/task-center/use-pending-jobs';
@@ -28,13 +28,12 @@ const confirmingStopAll = ref<boolean>(false);
 
 const { acknowledge, acknowledgeFinished, holdInteraction, modelExpanded, state, visible } = useTaskDock();
 const { children, jobs } = usePendingJobs();
-const { canDismissAll, canRetryAll, retryable, retryFailed, roots, sections, stoppable, summary, tally, title, total, unstoppable } = useDockPanel(jobs, children);
+const { attention, canDismissAll, canRetryAll, retryable, retryFailed, roots, sections, stoppable, summary, tally, title, total, unstoppable } = useDockPanel(jobs, children);
 const { cancel, rerun } = useTaskController();
 
 const now = useTimestamp({ scheduler: tick => useIntervalFn(tick, 1000) });
 
 const { height: pillHeight } = useElementSize(pill, undefined, { box: 'border-box' });
-
 /** The panel needs a row to list; queued-only work keeps the pill but has nothing to expand into. */
 const showPanel = computed<boolean>(() => get(modelExpanded) && get(roots).length > 0);
 
@@ -94,38 +93,24 @@ syncRefs(pillHeight, barHeight);
         :summary="summary"
         :tally="tally"
         :total="total"
+        :attention="attention"
         @collapse="modelExpanded = false"
       />
       <div
         class="flex flex-col max-h-[50vh] overflow-y-auto -mx-1 px-1 divide-y divide-rui-grey-200 dark:divide-rui-grey-800"
         data-testid="dock-sections"
       >
-        <div
+        <DockSection
           v-for="section in sections"
           :key="section.key"
-          class="flex flex-col"
-        >
-          <div
-            v-if="section.title"
-            class="pt-2 pb-1 text-xs font-medium uppercase tracking-wide text-rui-text-secondary"
-            data-testid="dock-section-title"
-          >
-            {{ section.title }}
-          </div>
-          <div class="flex flex-col divide-y divide-rui-grey-200 dark:divide-rui-grey-800">
-            <DockJobNode
-              v-for="root in section.roots"
-              :key="root.id"
-              :activity="root"
-              :children="children"
-              :now="now"
-              :dismissible="isReporting"
-              @cancel="cancel($event)"
-              @dismiss="acknowledge($event.id)"
-              @retry="rerun($event)"
-            />
-          </div>
-        </div>
+          :section="section"
+          :children="children"
+          :now="now"
+          :dismissible="isReporting"
+          @cancel="cancel($event)"
+          @dismiss="acknowledge($event.id)"
+          @retry="rerun($event)"
+        />
       </div>
       <div
         v-if="canRetryAll || canDismissAll"
