@@ -976,6 +976,74 @@ def test_get_historical_balance_assets(rotkehlchen_api_server: APIServer) -> Non
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
+def test_historical_balance_series_keeps_emptied_points(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """An emptied bucket keeps its zero point, so the series does not hold the last positive
+    balance until the bucket is refilled. A range holding only the emptying event still returns
+    that zero point, which ends a line started from the balance before the range."""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    address = make_evm_address()
+    with db.user_write() as write_cursor:
+        DBHistoryEvents(database=db).add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(Timestamp(START_TS + offset)),
+                location=LOCATION_ETHEREUM,
+                event_type=event_type,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal(amount),
+                location_label=address,
+                address=address,
+            ) for offset, event_type, amount in (
+                (0, HistoryEventType.RECEIVE, 2),
+                (DAY_IN_SECONDS, HistoryEventType.SPEND, 2),  # emptied
+                (3 * DAY_IN_SECONDS, HistoryEventType.RECEIVE, 1),  # refilled
+            )],
+        )
+    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
+
+    def query_series(from_ts: int, to_ts: int) -> requests.Response:
+        return requests.post(
+            api_url_for(rotkehlchen_api_server, 'historicalbalanceseriesresource'),
+            json={
+                'asset': 'ETH',
+                'location_label': address,
+                'from_timestamp': from_ts,
+                'to_timestamp': to_ts,
+            },
+        )
+
+    assert assert_proper_sync_response_with_result(
+        query_series(START_TS, START_TS + 3 * DAY_IN_SECONDS),
+    ) == {
+        'processing_required': False,
+        'entries': [{
+            'location': 'ethereum',
+            'location_label': address,
+            'protocol': None,
+            'asset': 'ETH',
+            'times': [START_TS, START_TS + DAY_IN_SECONDS, START_TS + 3 * DAY_IN_SECONDS],
+            'values': ['2', '0', '1'],
+        }],
+    }
+    assert assert_proper_sync_response_with_result(
+        query_series(START_TS + DAY_IN_SECONDS, START_TS + 2 * DAY_IN_SECONDS),
+    )['entries'] == [{
+        'location': 'ethereum',
+        'location_label': address,
+        'protocol': None,
+        'asset': 'ETH',
+        'times': [START_TS + DAY_IN_SECONDS],
+        'values': ['0'],
+    }]
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('have_decoders', [True])
 def test_find_onchain_historical_balance_divergence(
         rotkehlchen_api_server: APIServer,
 ) -> None:
