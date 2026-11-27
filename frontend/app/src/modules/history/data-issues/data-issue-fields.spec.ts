@@ -49,8 +49,9 @@ function fieldOf(key: string): FieldDef {
 }
 
 describe('toDataIssueFields', () => {
-  it('should send the two date bounds as one period field', () => {
-    expect(fields().map(field => field.key)).toStrictEqual(['state', 'kind', 'asset', 'locationLabel', 'period']);
+  it('should send the two date bounds as one period field and include the confirmed boolean pill', () => {
+    expect(fields().map(field => field.key)).toStrictEqual(['state', 'kind', 'asset', 'locationLabel', 'period', 'manualOnly']);
+    expect(fieldOf('manualOnly').valueType).toBe('boolean');
   });
 
   it('should keep the wire keys the table already sends for the period bounds', () => {

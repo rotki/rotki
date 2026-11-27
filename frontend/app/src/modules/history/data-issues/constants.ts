@@ -6,10 +6,14 @@ import type { RuiIcons } from '@rotki/ui-library';
  */
 export enum IssueKind {
   CURRENT_BALANCE_MISMATCH = 'current_balance_mismatch',
+  INCOMPLETE_SWAP = 'incomplete_swap',
   INVALID_EVENT_AMOUNT = 'invalid_event_amount',
+  MISSING_COST_BASIS = 'missing_cost_basis',
+  MISSING_PRICE = 'missing_price',
   NEGATIVE_BALANCE = 'negative_balance',
   REBASING_TOKEN = 'rebasing_token',
   UNMATCHED_BRIDGE = 'unmatched_bridge',
+  UNMATCHED_EXCHANGE_TRANSFER = 'unmatched_exchange_transfer',
 }
 
 /**
@@ -75,6 +79,10 @@ export const KIND_META: Record<IssueKind, KindMeta> = {
   [IssueKind.CURRENT_BALANCE_MISMATCH]: { color: 'warning', icon: 'lu-scale' },
   [IssueKind.REBASING_TOKEN]: { color: 'warning', icon: 'lu-refresh-cw' },
   [IssueKind.UNMATCHED_BRIDGE]: { color: 'warning', icon: 'lu-git-compare-arrows' },
+  [IssueKind.MISSING_PRICE]: { color: 'warning', icon: 'lu-circle-dollar-sign' },
+  [IssueKind.MISSING_COST_BASIS]: { color: 'error', icon: 'lu-receipt' },
+  [IssueKind.INCOMPLETE_SWAP]: { color: 'warning', icon: 'lu-repeat' },
+  [IssueKind.UNMATCHED_EXCHANGE_TRANSFER]: { color: 'warning', icon: 'lu-arrow-left-right' },
 };
 
 /**
@@ -82,7 +90,8 @@ export const KIND_META: Record<IssueKind, KindMeta> = {
  * transition rules (rotkehlchen/history/data_issues/manager.py):
  *  - dismiss: any non-terminal state (terminal states are already closed).
  *  - resolveManually: blocked once resolved or dismissed.
- *  - retry: available for rebasing issues that are open or previously unresolved.
+ *  - reopen: allowed for terminal states (`resolved` or `dismissed`).
+ *  - retry: available for rebasing and unmatched-exchange-transfer issues that are open or unresolved.
  */
 export function canDismiss(state: IssueState): boolean {
   return state !== IssueState.RESOLVED && state !== IssueState.DISMISSED;
@@ -92,7 +101,11 @@ export function canResolveManually(state: IssueState): boolean {
   return state !== IssueState.RESOLVED && state !== IssueState.DISMISSED;
 }
 
+export function canReopen(state: IssueState): boolean {
+  return state === IssueState.RESOLVED || state === IssueState.DISMISSED;
+}
+
 export function canRetry(kind: IssueKind, state: IssueState): boolean {
-  return kind === IssueKind.REBASING_TOKEN
+  return (kind === IssueKind.REBASING_TOKEN || kind === IssueKind.UNMATCHED_EXCHANGE_TRANSFER)
     && (state === IssueState.OPEN || state === IssueState.UNRESOLVED);
 }

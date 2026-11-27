@@ -103,12 +103,28 @@ vi.mock('@/modules/history/data-issues/use-data-issue-detail-actions', () => ({
       modelResolveOpen: ref(false),
       modelSelectedIssue: actions.modelSelectedIssue,
       onDismiss: vi.fn(),
+      onReopen: vi.fn(),
       onResolveConfirm: vi.fn(),
       onResolveRequest: actions.onResolveRequest,
       onRetry: vi.fn(),
       openDetail: vi.fn(),
     };
   },
+}));
+
+vi.mock('@/modules/history/data-issues/use-data-issue-remediation-actions', () => ({
+  useDataIssueRemediationActions: (): Record<string, unknown> => ({
+    actionFailure: ref(undefined),
+    busy: ref(false),
+    clearFailure: vi.fn(),
+    hasModalOpen: ref(false),
+    modelEventForm: ref(undefined),
+    modelMatchingOpen: ref(false),
+    modelPriceUpdate: ref(undefined),
+    modelSubModalOpen: ref(false),
+    onModalSaved: vi.fn(),
+    runRemediation: vi.fn(),
+  }),
 }));
 
 vi.mock('@/modules/history/data-issues/use-data-issue-fields', () => ({
@@ -120,6 +136,7 @@ function createIssue(id: number): DataIssue {
     asset: 'ETH',
     autoRemediationAttempts: [],
     createdAt: 1710000100,
+    eventIdentifier: null,
     groupIdentifier: null,
     id,
     kind: IssueKind.NEGATIVE_BALANCE,
@@ -130,6 +147,7 @@ function createIssue(id: number): DataIssue {
     resolvedAt: null,
     severity: IssueSeverity.WARNING,
     state: IssueState.OPEN,
+    suggestedActions: [],
     tsEnd: 1710000000,
     tsStart: 1710000000,
   };
@@ -142,6 +160,7 @@ async function createWrapper(): Promise<VueWrapper<InstanceType<typeof DataIssue
       stubs: {
         DataIssueDetailContent: true,
         DataIssuePanelCard: true,
+        DataIssueRemediationModals: true,
         PillFilterBar: true,
         PinnedDetailSheet: true,
         ResolveManuallyDialog: true,

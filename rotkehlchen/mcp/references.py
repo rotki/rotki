@@ -49,7 +49,15 @@ ACCOUNT_KEYS: Final = frozenset({
 TRANSACTION_KEYS: Final = frozenset({'group_identifier', 'tx_hash', 'tx_ref', 'transfer_id'})
 # Values passed through untouched: asset identifiers embed public token contract addresses
 # that the scrubber would otherwise mistake for an account.
-PASSTHROUGH_KEYS: Final = frozenset({'asset', 'assets_considered', 'event_asset'})
+PASSTHROUGH_KEYS: Final = frozenset({
+    'asset',
+    'assets',
+    'assets_considered',
+    'event_asset',
+    'excluded_assets',
+    'from_asset',
+    'to_asset',
+})
 BUCKET_KEYS: Final = frozenset({'location', 'location_label', 'protocol', 'asset'})
 # The rotki app route listing a transaction's events. It names the transaction, so it is only
 # handed out in raw mode.
@@ -149,16 +157,29 @@ def sanitize(value: Any, privacy_mode: PrivacyMode, key: str | None = None) -> A
     naming a transaction also gets the ``ui_route`` that opens it in rotki.
     """
     if isinstance(value, dict):
+        is_ignore_action = value.get('action') in ('ignore_action', 'ignore_group')
         sanitized = {
-            child_key: sanitize(child, privacy_mode=privacy_mode, key=child_key)
+            child_key: (
+                {
+                    param_key: sanitize(
+                        param_val,
+                        privacy_mode=privacy_mode,
+                        key='group_identifier' if param_key == 'data' else param_key,
+                    )
+                    for param_key, param_val in child.items()
+                }
+                if is_ignore_action and child_key == 'params' and isinstance(child, dict)
+                else sanitize(child, privacy_mode=privacy_mode, key=child_key)
+            )
             for child_key, child in value.items()
         }
         if value.keys() >= BUCKET_KEYS:
             sanitized['bucket_ref'] = _registry.bucket_reference(value)
-        if privacy_mode == 'raw' and isinstance(group := value.get('group_identifier'), str):
-            sanitized['ui_route'] = HISTORY_EVENTS_ROUTE + quote(group, safe='')
-        if isinstance(issue_id := _issue_id(value), int):
-            sanitized['issue_ui_route'] = f'{DATA_ISSUE_ROUTE}{issue_id}'
+        if key != 'params':
+            if privacy_mode == 'raw' and isinstance(group := value.get('group_identifier'), str):
+                sanitized['ui_route'] = HISTORY_EVENTS_ROUTE + quote(group, safe='')
+            if isinstance(issue_id := _issue_id(value), int):
+                sanitized['issue_ui_route'] = f'{DATA_ISSUE_ROUTE}{issue_id}'
         return sanitized
     if isinstance(value, list):
         return [sanitize(item, privacy_mode=privacy_mode, key=key) for item in value]

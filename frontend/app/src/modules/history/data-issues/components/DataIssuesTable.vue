@@ -29,6 +29,7 @@ const emit = defineEmits<{
   'open': [issue: DataIssue];
   'goto': [route: RouteLocationRaw];
   'dismiss': [issue: DataIssue];
+  'reopen': [issue: DataIssue];
   'retry': [issue: DataIssue];
   'resolve': [issue: DataIssue];
   'clear-filters': [];
@@ -129,6 +130,7 @@ const headers = computed<DataTableColumn<DataIssue>[]>(() => [
             :event-route="eventRouteFor(row)"
             @goto="emit('goto', $event)"
             @dismiss="emit('dismiss', $event)"
+            @reopen="emit('reopen', $event)"
             @retry="emit('retry', $event)"
             @resolve="emit('resolve', $event)"
           />

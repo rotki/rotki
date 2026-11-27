@@ -15,6 +15,7 @@ function isCounted(count: Count): count is number {
 interface UseDataIssuesSummaryReturn {
   counts: Ref<StateCounts>;
   baselineTotal: Ref<number>;
+  confirmedCount: Ref<number>;
   /** The last refresh failed, so `counts` are stale and a 0 does not mean all clear. */
   summaryFailed: Ref<boolean>;
   actionableCount: Ref<number>;
@@ -30,10 +31,10 @@ interface UseDataIssuesSummaryReturn {
 export function useDataIssuesSummary(): UseDataIssuesSummaryReturn {
   const { listIssues } = useDataIssuesApi();
   const store = useDataIssuesInboxStore();
-  const { actionableCount, baselineTotal, counts, summaryFailed } = storeToRefs(store);
+  const { actionableCount, baselineTotal, confirmedCount, counts, summaryFailed } = storeToRefs(store);
 
-  async function countForStates(states: IssueState[]): Promise<Count> {
-    const result = await listIssues({ limit: 1, offset: 0, state: states });
+  async function countForQuery(query: { manualOnly?: boolean; state?: IssueState[] }): Promise<Count> {
+    const result = await listIssues({ limit: 1, offset: 0, ...query });
     if (result.ok)
       return result.value.found;
 
@@ -50,14 +51,15 @@ export function useDataIssuesSummary(): UseDataIssuesSummaryReturn {
    */
   const refreshSummary = async (): Promise<void> => {
     const results = await Promise.all([
-      countForStates([IssueState.OPEN]),
-      countForStates([IssueState.AUTO_REMEDIATING]),
-      countForStates([IssueState.UNRESOLVED]),
-      countForStates(Object.values(IssueState)),
+      countForQuery({ state: [IssueState.OPEN] }),
+      countForQuery({ state: [IssueState.AUTO_REMEDIATING] }),
+      countForQuery({ state: [IssueState.UNRESOLVED] }),
+      countForQuery({ state: Object.values(IssueState) }),
+      countForQuery({ manualOnly: true }),
     ]);
 
-    const [open, remediating, unresolved, baseline] = results;
-    if (!isCounted(open) || !isCounted(remediating) || !isCounted(unresolved) || !isCounted(baseline)) {
+    const [open, remediating, unresolved, baseline, confirmed] = results;
+    if (!isCounted(open) || !isCounted(remediating) || !isCounted(unresolved) || !isCounted(baseline) || !isCounted(confirmed)) {
       if (results.includes('failed'))
         store.markSummaryFailed();
       return;
@@ -68,12 +70,13 @@ export function useDataIssuesSummary(): UseDataIssuesSummaryReturn {
       [IssueState.OPEN]: open,
       [IssueState.AUTO_REMEDIATING]: remediating,
       [IssueState.UNRESOLVED]: unresolved,
-    }, baseline);
+    }, baseline, confirmed);
   };
 
   return {
     actionableCount,
     baselineTotal,
+    confirmedCount,
     counts,
     dismissInlinePanels: store.dismissInlinePanels,
     refreshSummary,

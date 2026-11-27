@@ -2,11 +2,11 @@
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { ConfirmQuestion } from '@/modules/shell/components/confirm-question';
 import type { NamedFailure } from '@/modules/shell/components/named-failure';
-import { RuiButton } from '@rotki/ui-library';
+import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { canDismiss, canResolveManually, canRetry, IssueState } from '@/modules/history/data-issues/constants';
+import { canDismiss, canReopen, canResolveManually, canRetry, IssueState } from '@/modules/history/data-issues/constants';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import InlineConfirm from '@/modules/shell/components/InlineConfirm.vue';
 
@@ -25,6 +25,7 @@ const { issue, busy = false, failure } = defineProps<{
 
 const emit = defineEmits<{
   dismiss: [id: number];
+  reopen: [id: number];
   retry: [id: number];
   resolve: [id: number];
 }>();
@@ -67,6 +68,22 @@ watch(() => issue.id, () => {
       v-else
       class="flex items-center justify-end gap-2"
     >
+      <RuiButton
+        v-if="canReopen(issue.state)"
+        variant="outlined"
+        color="primary"
+        :disabled="busy"
+        data-testid="data-issue-detail-reopen"
+        @click="emit('reopen', issue.id)"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-rotate-ccw"
+            size="16"
+          />
+        </template>
+        {{ t('data_issues.action.reopen.label') }}
+      </RuiButton>
       <RuiButton
         variant="outlined"
         :disabled="busy || !canDismiss(issue.state)"

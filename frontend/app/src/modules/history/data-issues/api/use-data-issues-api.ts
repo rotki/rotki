@@ -42,7 +42,8 @@ interface UseDataIssuesApiReturn {
   listIssues: (payload: DataIssuesRequestPayload) => ResultAsync<Collection<DataIssue>, DataIssueError>;
   getIssue: (id: number) => ResultAsync<DataIssue, DataIssueError>;
   dismissIssue: (id: number) => ResultAsync<DataIssue, DataIssueError>;
-  resolveIssueManually: (id: number, note?: string) => ResultAsync<DataIssue, DataIssueError>;
+  reopenIssue: (id: number) => ResultAsync<DataIssue, DataIssueError>;
+  resolveIssueManually: (id: number, note?: string, disposition?: string) => ResultAsync<DataIssue, DataIssueError>;
   retryAutoRemediation: (id: number) => ResultAsync<DataIssue, DataIssueError>;
 }
 
@@ -72,9 +73,28 @@ export function useDataIssuesApi(): UseDataIssuesApiReturn {
       return DataIssueSchema.parse(response);
     }, toDataIssueError);
 
-  const resolveIssueManually = async (id: number, note?: string): ResultAsync<DataIssue, DataIssueError> =>
+  const reopenIssue = async (id: number): ResultAsync<DataIssue, DataIssueError> =>
     fromAsync(async () => {
-      const response = await api.patch<unknown>(`${BASE}/${id}/resolve_manually`, note ? { note } : null, VALID_STATUSES);
+      const response = await api.patch<unknown>(`${BASE}/${id}/reopen`, null, VALID_STATUSES);
+      return DataIssueSchema.parse(response);
+    }, toDataIssueError);
+
+  const resolveIssueManually = async (
+    id: number,
+    note?: string,
+    disposition?: string,
+  ): ResultAsync<DataIssue, DataIssueError> =>
+    fromAsync(async () => {
+      const body: { disposition?: string; note?: string } = {};
+      if (note)
+        body.note = note;
+      if (disposition)
+        body.disposition = disposition;
+      const response = await api.patch<unknown>(
+        `${BASE}/${id}/resolve_manually`,
+        Object.keys(body).length > 0 ? body : null,
+        VALID_STATUSES,
+      );
       return DataIssueSchema.parse(response);
     }, toDataIssueError);
 
@@ -88,6 +108,7 @@ export function useDataIssuesApi(): UseDataIssuesApiReturn {
     dismissIssue,
     getIssue,
     listIssues,
+    reopenIssue,
     resolveIssueManually,
     retryAutoRemediation,
   };

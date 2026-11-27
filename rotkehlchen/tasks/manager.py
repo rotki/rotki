@@ -44,6 +44,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
 from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.constants import IssueKind
 from rotkehlchen.history.data_issues.detectors.current_balance import (
     run_current_balance_detection,
 )
@@ -65,7 +66,10 @@ from rotkehlchen.tasks.calendar import (
     notify_reminders,
 )
 from rotkehlchen.tasks.cost_basis import process_balances_and_cost_basis
-from rotkehlchen.tasks.data_issues import run_data_issue_remediation
+from rotkehlchen.tasks.data_issues import (
+    retry_unmatched_exchange_transfer_issue,
+    run_data_issue_remediation,
+)
 from rotkehlchen.tasks.historical_balances import retry_rebasing_token_issue
 from rotkehlchen.tasks.internal_tx_conflicts import (
     repull_internal_tx_conflicts,
@@ -724,18 +728,25 @@ class TaskManager:
             self,
             issue_id: int,
             from_ts: TimestampMS,
+            kind: IssueKind | str = IssueKind.REBASING_TOKEN,
     ) -> bool:
-        """Reprocess the balances of a data issue. Returns False if processing is running.
+        """Reprocess or auto-remediate a data issue. Returns False if processing is running.
 
         A running current balance detection is cancelled to let the reprocessing start.
         """
         return self._preempting_current_balance_detection(lambda: self._admit_issue_reprocessing(
             issue_id=issue_id,
             from_ts=from_ts,
+            kind=kind,
         ))
 
     @_admitting_balance_work
-    def _admit_issue_reprocessing(self, issue_id: int, from_ts: TimestampMS) -> bool | None:
+    def _admit_issue_reprocessing(
+            self,
+            issue_id: int,
+            from_ts: TimestampMS,
+            kind: IssueKind | str = IssueKind.REBASING_TOKEN,
+    ) -> bool | None:
         if (
             self.history_processing_coordinator.is_history_fetching() or
             self.task_supervisor.has_task(HISTORICAL_BALANCE_PROCESSING_TASK_NAME)
@@ -743,6 +754,19 @@ class TaskManager:
             return False
         if self.task_supervisor.has_task(CURRENT_BALANCE_DETECTION_TASK_NAME):
             return None
+
+        if kind == IssueKind.UNMATCHED_EXCHANGE_TRANSFER:
+            self.task_supervisor.spawn_and_track(
+                after_seconds=None,
+                task_name=f'{HISTORICAL_BALANCE_PROCESSING_TASK_NAME} for data issue {issue_id}',
+                exception_is_error=True,
+                kind=BackgroundTaskKind.HISTORICAL_BALANCES,
+                method=retry_unmatched_exchange_transfer_issue,
+                database=self.database,
+                chains_aggregator=self.chains_aggregator,
+                issue_id=issue_id,
+            )
+            return True
 
         self.task_supervisor.spawn_and_track(
             after_seconds=None,

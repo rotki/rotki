@@ -37,14 +37,15 @@ describe('useDataIssuesInboxStore', () => {
     expect(get(store.actionableCount)).toBe(5);
   });
 
-  it('should store the counts and baseline handed to setSummary', () => {
+  it('should store the counts, baseline, and confirmed count handed to setSummary', () => {
     const store = useDataIssuesInboxStore();
     const newCounts = counts({ [IssueState.OPEN]: 1 });
 
-    store.setSummary(newCounts, 42);
+    store.setSummary(newCounts, 42, 6);
 
     expect(get(store.counts)).toStrictEqual(newCounts);
     expect(get(store.baselineTotal)).toBe(42);
+    expect(get(store.confirmedCount)).toBe(6);
   });
 
   it('should remove the data-issues tab when dismissing inline panels', () => {

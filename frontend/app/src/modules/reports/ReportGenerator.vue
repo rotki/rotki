@@ -5,7 +5,7 @@ import { RuiAlert, RuiButton, RuiCard, RuiIcon } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';
@@ -20,6 +20,7 @@ const emit = defineEmits<{
   'generate': [data: ProfitLossReportPeriod];
   'export-data': [data: ProfitLossReportPeriod];
   'import-data': [];
+  'update:range': [range: { start: number | undefined; end: number | undefined }];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -37,6 +38,10 @@ const {
 
 const range = ref<{ start: number | undefined; end: number | undefined }>({ end: 0, start: undefined });
 const valid = ref<boolean>(false);
+
+watch(range, (value) => {
+  emit('update:range', { ...value });
+}, { deep: true, immediate: true });
 
 const canGenerate = computed<boolean>(() => get(valid) && !get(processing) && !get(isOutOfSync) && !get(hasBinanceWithoutMarkets));
 

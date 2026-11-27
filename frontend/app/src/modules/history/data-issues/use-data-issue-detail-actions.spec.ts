@@ -7,6 +7,7 @@ import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-iss
 import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-data-issue-detail-actions';
 
 const dismiss = vi.fn();
+const reopen = vi.fn();
 const retry = vi.fn();
 const resolveManually = vi.fn();
 
@@ -14,6 +15,7 @@ vi.mock('@/modules/history/data-issues/use-data-issues', () => ({
   useDataIssues: (): Record<string, unknown> => ({
     dismiss,
     fetchData: vi.fn(),
+    reopen,
     resolveManually,
     retry,
   }),
@@ -28,6 +30,7 @@ function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
     asset: 'ETH',
     autoRemediationAttempts: [],
     createdAt: 1710000100,
+    eventIdentifier: null,
     groupIdentifier: null,
     id: 1,
     kind: IssueKind.NEGATIVE_BALANCE,
@@ -38,6 +41,7 @@ function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
     resolvedAt: null,
     severity: IssueSeverity.WARNING,
     state: IssueState.OPEN,
+    suggestedActions: [],
     tsEnd: 1710000000,
     tsStart: 1710000000,
     ...overrides,
@@ -218,5 +222,30 @@ describe('useDataIssueDetailActions', () => {
     onResolveRequest();
 
     expect(get(resolveFailure)).toBeUndefined();
+  });
+
+  it('should reopen an issue, update the selected issue, and reload', async () => {
+    const reload = vi.fn().mockResolvedValue(undefined);
+    const reopened = createIssue({ id: 9, state: IssueState.OPEN });
+    reopen.mockResolvedValue(ok(reopened));
+    const { actionFailure, modelSelectedIssue, onReopen } = useDataIssueDetailActions(reload);
+
+    await onReopen(9);
+
+    expect(reopen).toHaveBeenCalledWith(9);
+    expect(get(modelSelectedIssue)).toStrictEqual(reopened);
+    expect(reload).toHaveBeenCalledOnce();
+    expect(get(actionFailure)).toBeUndefined();
+  });
+
+  it('should keep a failed reopen under its error title and skip reload', async () => {
+    const reload = vi.fn().mockResolvedValue(undefined);
+    reopen.mockResolvedValue(err(failure('conflict')));
+    const { actionFailure, onReopen } = useDataIssueDetailActions(reload);
+
+    await onReopen(9);
+
+    expect(get(actionFailure)).toStrictEqual({ failure: failure('conflict'), title: 'data_issues.action.reopen.error' });
+    expect(reload).not.toHaveBeenCalled();
   });
 });

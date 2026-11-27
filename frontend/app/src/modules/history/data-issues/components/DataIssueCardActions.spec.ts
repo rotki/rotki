@@ -11,6 +11,7 @@ function createIssue(state: IssueState): DataIssue {
     asset: 'ETH',
     autoRemediationAttempts: [],
     createdAt: 1710000100,
+    eventIdentifier: null,
     groupIdentifier: null,
     id: 1,
     kind: IssueKind.REBASING_TOKEN,
@@ -21,6 +22,7 @@ function createIssue(state: IssueState): DataIssue {
     resolvedAt: null,
     severity: IssueSeverity.WARNING,
     state,
+    suggestedActions: [],
     tsEnd: 1710000000,
     tsStart: 1710000000,
   };
@@ -79,5 +81,16 @@ describe('dataIssueCardActions', () => {
     const retry = wrapper.find('[data-testid=data-issues-panel-retry]');
     expect(retry.exists()).toBe(true);
     expect(retry.attributes('disabled')).toBeDefined();
+  });
+
+  it('should show reopen only for terminal issues and emit reopen on click', async () => {
+    const openWrapper = mount(DataIssueCardActions, { props: { issue: createIssue(IssueState.OPEN) } });
+    expect(openWrapper.find('[data-testid=data-issues-panel-reopen]').exists()).toBe(false);
+
+    const resolvedIssue = createIssue(IssueState.RESOLVED);
+    const resolvedWrapper = mount(DataIssueCardActions, { props: { issue: resolvedIssue } });
+    await resolvedWrapper.find('[data-testid=data-issues-panel-reopen]').trigger('click');
+
+    expect(resolvedWrapper.emitted('reopen')).toStrictEqual([[resolvedIssue]]);
   });
 });

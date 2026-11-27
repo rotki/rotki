@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   canDismiss,
+  canReopen,
   canResolveManually,
   canRetry,
   DEFAULT_LIST_STATES,
@@ -57,13 +58,27 @@ describe('data-issues constants', () => {
     });
 
     it.each([
+      [IssueState.OPEN, false],
+      [IssueState.AUTO_REMEDIATING, false],
+      [IssueState.UNRESOLVED, false],
+      [IssueState.RESOLVED, true],
+      [IssueState.DISMISSED, true],
+    ])('canReopen(%s) === %s', (state, expected) => {
+      expect(canReopen(state)).toBe(expected);
+    });
+
+    it.each([
       [IssueKind.REBASING_TOKEN, IssueState.OPEN, true],
       [IssueKind.REBASING_TOKEN, IssueState.AUTO_REMEDIATING, false],
       [IssueKind.REBASING_TOKEN, IssueState.UNRESOLVED, true],
       [IssueKind.REBASING_TOKEN, IssueState.RESOLVED, false],
       [IssueKind.REBASING_TOKEN, IssueState.DISMISSED, false],
+      [IssueKind.UNMATCHED_EXCHANGE_TRANSFER, IssueState.OPEN, true],
+      [IssueKind.UNMATCHED_EXCHANGE_TRANSFER, IssueState.UNRESOLVED, true],
+      [IssueKind.UNMATCHED_EXCHANGE_TRANSFER, IssueState.RESOLVED, false],
       [IssueKind.INVALID_EVENT_AMOUNT, IssueState.OPEN, false],
       [IssueKind.NEGATIVE_BALANCE, IssueState.OPEN, false],
+      [IssueKind.MISSING_PRICE, IssueState.OPEN, false],
     ])('canRetry(%s, %s) === %s', (kind, state, expected) => {
       expect(canRetry(kind, state)).toBe(expected);
     });

@@ -163,7 +163,7 @@ def _add_rule(
 
 def _process(
         database: DBHandler,
-        events: list[EvmEvent | HistoryEvent],
+        events: Sequence[HistoryBaseEntry],
         method: CostBasisMethod,
         **settings: Any,
 ) -> list[str]:
@@ -371,6 +371,8 @@ def test_swap_writes_both_directions(
 def test_swap_does_not_pair_a_spend_with_a_fee_when_the_receive_is_ignored(
         database: DBHandler,
 ) -> None:
+    """Option 2 legacy parity: an ignored receive leg skips the entire swap group and emits
+    an INCOMPLETE_SWAP issue; confirming `dismiss_as_standalone` processes surviving legs."""
     with database.user_write() as write_cursor:
         database.add_to_ignored_assets(write_cursor, A_DAI)
 
@@ -404,10 +406,21 @@ def test_swap_does_not_pair_a_spend_with_a_fee_when_the_receive_is_ignored(
             ),
         ],
     )
+    assert _rows(database, 'event_identifier, realized_pnl') == [(int(acquired), None)]
+    manager = DataIssuesManager(database)
+    issues = manager.list_issues(DataIssueFilters(kind=IssueKind.INCOMPLETE_SWAP))
+    assert len(issues) == 1
+    assert issues[0].payload['missing_or_excluded_reason'] == 'ignored_asset'
+    assert issues[0].payload['excluded_assets'] == [A_DAI.identifier]
+
+    # Confirming dismiss_as_standalone marks cost basis stale and processes surviving legs.
+    manager.resolve_manually(issues[0].id, disposition='dismiss_as_standalone')
+    assert process_cost_basis(database, database.msg_aggregator) is True
     assert _spend_row(database, spent) == (
         [(acquired, FVal(1))], FVal(500), FVal(1000), FVal(1000),
     )
     assert _spend_row(database, fee) == ([(acquired, FVal('0.1'))], FVal(0), FVal(100), FVal(900))
+    assert manager.get_issue(issues[0].id).state == IssueState.RESOLVED
 
 
 @pytest.mark.parametrize('method', list(CostBasisMethod))
@@ -1911,7 +1924,8 @@ def test_ignored_assets_invalidate_cost_basis_and_swap_pairing(
         (int(swap_in), None),
     ]
 
-    # Ignoring DAI marks cost basis stale from t=2, removes the DAI row, and unpairs the ETH leg.
+    # Ignoring DAI marks cost basis stale from t=2, skips the full swap group (Option 2 legacy
+    # parity), and emits an INCOMPLETE_SWAP issue.
     with database.user_write() as write_cursor:
         database.add_to_ignored_assets(write_cursor, A_DAI)
     with database.conn.read_ctx() as cursor:
@@ -1922,10 +1936,15 @@ def test_ignored_assets_invalidate_cost_basis_and_swap_pairing(
     assert process_cost_basis(database, database.msg_aggregator) is True
     assert _rows(database, 'event_identifier, realized_pnl') == [
         (int(acquired), None),
-        (int(swap_out), '2000'),
     ]
+    manager = DataIssuesManager(database)
+    swap_issues = manager.list_issues(DataIssueFilters(kind=IssueKind.INCOMPLETE_SWAP))
+    assert len(swap_issues) == 1
+    assert swap_issues[0].state == IssueState.OPEN
+    assert swap_issues[0].payload['excluded_assets'] == [A_DAI.identifier]
 
-    # Un-ignoring DAI marks cost basis stale from t=2 and restores the swap pairing.
+    # Un-ignoring DAI marks cost basis stale from t=2, restores the swap pairing, and auto-resolves
+    # the INCOMPLETE_SWAP issue.
     with database.user_write() as write_cursor:
         database.remove_from_ignored_assets(write_cursor, A_DAI)
     with database.conn.read_ctx() as cursor:
@@ -1939,8 +1958,9 @@ def test_ignored_assets_invalidate_cost_basis_and_swap_pairing(
         (int(swap_out), '0'),
         (int(swap_in), None),
     ]
+    assert manager.get_issue(swap_issues[0].id).state == IssueState.RESOLVED
 
-    # Bulk-ignoring DAI via ignore_multiple_assets also marks cost basis stale and drops the row.
+    # Bulk-ignoring DAI via ignore_multiple_assets also marks cost basis stale and skips the group.
     with database.user_write() as write_cursor:
         database.ignore_multiple_assets(write_cursor, [A_DAI.identifier])
     with database.conn.read_ctx() as cursor:
@@ -1951,8 +1971,8 @@ def test_ignored_assets_invalidate_cost_basis_and_swap_pairing(
     assert process_cost_basis(database, database.msg_aggregator) is True
     assert _rows(database, 'event_identifier, realized_pnl') == [
         (int(acquired), None),
-        (int(swap_out), '2000'),
     ]
+    assert manager.get_issue(swap_issues[0].id).state == IssueState.OPEN
 
 
 def test_process_balances_and_cost_basis_completion_message_on_skip_balances(
@@ -2522,3 +2542,500 @@ def test_unpriced_swap_leaves_pnl_null_while_consuming_lots(
             '4000', '3000', '0', '1000', '0',
         ),
     }
+
+
+def test_missing_price_issue_lifecycle_and_incremental_preservation(database: DBHandler) -> None:
+    """MISSING_PRICE is emitted for unpriced spends/receives, preserved before `from_ts` on
+    incremental passes, and auto-resolved once prices become available."""
+    available: set[Timestamp] = {_ts(1), _ts(4)}
+
+    def price_fn(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        if from_asset == A_ETH and timestamp in available:
+            return Price(FVal(ETH_PRICES[timestamp]))
+        raise NoPriceForGivenTimestamp(from_asset=from_asset, to_asset=to_asset, time=timestamp)
+
+    with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
+        historian.return_value.query_historical_price = price_fn
+        _acquired, unpriced_spend, priced_spend = _process(
+            database=database,
+            method=CostBasisMethod.FIFO,
+            events=[
+                _event(at=1, amount='3', event_type=HistoryEventType.RECEIVE),
+                _event(at=2, amount='1', event_type=HistoryEventType.SPEND),
+                _event(at=4, amount='1', event_type=HistoryEventType.SPEND),
+            ],
+        )
+
+    manager = DataIssuesManager(database)
+    issues = manager.list_issues(DataIssueFilters(kind=IssueKind.MISSING_PRICE))
+    assert len(issues) == 1
+    assert issues[0].event_identifier == int(unpriced_spend)
+    assert issues[0].payload['direction'] == 'spend'
+    assert issues[0].payload['amount'] == '1'
+    assert issues[0].state == IssueState.OPEN
+
+    # Incremental pass starting at t=4 must NOT falsely resolve the earlier t=2 issue.
+    with database.user_write() as write_cursor:
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            value=str(_ts_ms(4)),
+        )
+    with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
+        historian.return_value.query_historical_price = price_fn
+        assert process_cost_basis(database, database.msg_aggregator) is True
+    assert manager.get_issue(issues[0].id).state == IssueState.OPEN
+
+    # Once t=2 becomes priced and cost basis reruns from t=2, the issue auto-resolves.
+    available.add(_ts(2))
+    with database.user_write() as write_cursor:
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            value=str(_ts_ms(2)),
+        )
+    with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
+        historian.return_value.query_historical_price = price_fn
+        assert process_cost_basis(database, database.msg_aggregator) is True
+    assert manager.get_issue(issues[0].id).state == IssueState.RESOLVED
+    assert int(priced_spend) > 0
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_missing_cost_basis_confirm_zero_basis_and_reopen_on_change(database: DBHandler) -> None:
+    """MISSING_COST_BASIS persists manual `confirm_zero_basis` across reruns when unchanged,
+    reopens if the uncovered amount changes, and auto-resolves once full coverage exists."""
+    acquired, spend = _process(
+        database=database,
+        method=CostBasisMethod.FIFO,
+        events=[
+            _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+            _event(at=2, amount='3', event_type=HistoryEventType.SPEND),
+        ],
+    )
+    assert int(acquired) > 0
+    manager = DataIssuesManager(database)
+    issues = manager.list_issues(DataIssueFilters(kind=IssueKind.MISSING_COST_BASIS))
+    assert len(issues) == 1
+    issue = issues[0]
+    assert issue.event_identifier == int(spend)
+    assert issue.payload['requested_amount'] == '3'
+    assert issue.payload['covered_amount'] == '1'
+    assert issue.payload['uncovered_amount'] == '2'
+    assert issue.payload['fallback_basis'] == '0'
+
+    # Confirm zero basis manually: rerun with unchanged uncovered amount keeps RESOLVED.
+    manager.resolve_manually(issue.id, note='airdrop', disposition='confirm_zero_basis')
+    with database.user_write() as write_cursor:
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            value='0',
+        )
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert manager.get_issue(issue.id).state == IssueState.RESOLVED
+
+    # Adding partial coverage (1 more ETH) changes uncovered_amount from 2 -> 1 and reopens it.
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[_event(at=1, amount='1', event_type=HistoryEventType.RECEIVE)],
+        )
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    reopened = manager.get_issue(issue.id)
+    assert reopened.state == IssueState.OPEN
+    assert reopened.payload['uncovered_amount'] == '1'
+
+    # Adding the final missing 1 ETH auto-resolves the issue.
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[_event(at=1, amount='1', event_type=HistoryEventType.RECEIVE)],
+        )
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert manager.get_issue(issue.id).state == IssueState.RESOLVED
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_incomplete_swap_missing_counterpart_leg(database: DBHandler) -> None:
+    """A TRADE spend with no receive leg in its group emits INCOMPLETE_SWAP."""
+    _acquired, orphan_spend = _process(
+        database=database,
+        method=CostBasisMethod.FIFO,
+        events=[
+            _event(at=1, amount='2', event_type=HistoryEventType.RECEIVE),
+            _event(
+                at=2,
+                amount='1',
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.SPEND,
+            ),
+        ],
+    )
+    manager = DataIssuesManager(database)
+    issues = manager.list_issues(DataIssueFilters(kind=IssueKind.INCOMPLETE_SWAP))
+    assert len(issues) == 1
+    assert issues[0].event_identifier == int(orphan_spend)
+    assert issues[0].payload['missing_or_excluded_reason'] == 'missing_counterpart_leg'
+    assert issues[0].payload['excluded_assets'] == []
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_matched_asset_movement_carryover_clock_skew_checkpoint_and_unmatched_issue(
+        database: DBHandler,
+) -> None:
+    """Matched exchange transfers carry original lots & basis across CEX<->wallet and CEX<->CEX
+    (including clock skew and checkpoint resume), while unmatched movements emit and auto-resolve
+    UNMATCHED_EXCHANGE_TRANSFER."""
+    from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+    from rotkehlchen.locations.constants import LOCATION_BINANCE
+    from rotkehlchen.tasks.events import update_asset_movement_matched_event
+
+    # 1) Buy 2 ETH on Kraken at t=1 ($1000/ETH), withdraw 2 ETH at t=2, deposit to wallet at t=3
+    #    (price $3000), spend 1 ETH from wallet at t=4 ($4000).
+    #    Unmatched initially -> emits UNMATCHED_EXCHANGE_TRANSFER.
+    kraken_buy = HistoryEvent(
+        group_identifier='kraken-buy',
+        sequence_index=0,
+        timestamp=_ts_ms(1),
+        location=LOCATION_KRAKEN,
+        location_label='Kraken',
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal(2),
+    )
+    kraken_wd = AssetMovement(
+        unique_id='kraken-wd-1',
+        timestamp=_ts_ms(2),
+        location=LOCATION_KRAKEN,
+        location_label='Kraken',
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        amount=FVal(2),
+        extra_data={'transaction_id': '0xabc', 'address': TEST_ADDR1},
+    )
+    wallet_dep = _event(
+        at=3,
+        amount='2',
+        event_type=HistoryEventType.RECEIVE,
+        location_label=TEST_ADDR1,
+    )
+    wallet_spend = _event(
+        at=4,
+        amount='1',
+        event_type=HistoryEventType.SPEND,
+        location_label=TEST_ADDR1,
+    )
+    # 2) Clock-skewed CEX<->CEX transfer: Binance receive at t=5 BEFORE Kraken spend at t=6!
+    binance_dep = AssetMovement(
+        unique_id='binance-dep-1',
+        timestamp=_ts_ms(5),
+        location=LOCATION_BINANCE,
+        location_label='Binance',
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal(1),
+    )
+    wallet_to_binance_wd = _event(
+        at=6,
+        amount='1',
+        event_type=HistoryEventType.SPEND,
+        location_label=TEST_ADDR1,
+    )
+    binance_spend = HistoryEvent(
+        group_identifier='binance-spend',
+        sequence_index=0,
+        timestamp=_ts_ms(7),
+        location=LOCATION_BINANCE,
+        location_label='Binance',
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal(1),
+    )
+    _buy_id, wd_id, dep_id, spend_id, binance_dep_id, skewed_wd_id, binance_spend_id = _process(
+        database=database,
+        method=CostBasisMethod.FIFO,
+        events=[
+            kraken_buy,
+            kraken_wd,
+            wallet_dep,
+            wallet_spend,
+            binance_dep,
+            wallet_to_binance_wd,
+            binance_spend,
+        ],
+    )
+
+    manager = DataIssuesManager(database)
+    unmatched = manager.list_issues(DataIssueFilters(kind=IssueKind.UNMATCHED_EXCHANGE_TRANSFER))
+    assert {issue.event_identifier for issue in unmatched} == {int(wd_id), int(binance_dep_id)}
+    wd_issue = next(i for i in unmatched if i.event_identifier == int(wd_id))
+    assert wd_issue.payload['subtype'] == 'spend'
+    assert wd_issue.payload['tx_ref'] == '0xabc'
+    assert wd_issue.payload['address'] == TEST_ADDR1
+
+    # Match both movements via update_asset_movement_matched_event (this also marks stale from
+    # min(spend, receive) via DBHistoryEvents.edit_history_event).
+    from rotkehlchen.db.filtering import HistoryEventFilterQuery
+
+    events_db = DBHistoryEvents(database)
+    with database.conn.read_ctx() as cursor:
+        loaded = {
+            ev.identifier: ev
+            for ev in events_db.get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(),
+            )
+        }
+    update_asset_movement_matched_event(
+        events_db=events_db,
+        asset_movement=loaded[int(wd_id)],  # type: ignore[arg-type]
+        fee_event=None,
+        matched_event=loaded[int(dep_id)],
+        is_deposit=False,
+    )
+    update_asset_movement_matched_event(
+        events_db=events_db,
+        asset_movement=loaded[int(binance_dep_id)],  # type: ignore[arg-type]
+        fee_event=None,
+        matched_event=loaded[int(skewed_wd_id)],
+        is_deposit=True,
+    )
+
+    with database.conn.read_ctx() as cursor:
+        stale_ts = database.get_static_cache(cursor, DBCacheStatic.STALE_COST_BASIS_FROM_TS)
+        assert stale_ts == str(_ts_ms(2))
+
+    assert process_cost_basis(database, database.msg_aggregator) is True
+
+    # Both UNMATCHED_EXCHANGE_TRANSFER issues auto-resolved!
+    for issue in unmatched:
+        assert manager.get_issue(issue.id).state == IssueState.RESOLVED
+
+    # Original $1000 basis from kraken_buy carried to wallet_spend ($4000 - $1000 = $3000)
+    # AND across the clock-skewed wallet->Binance transfer to binance_spend ($1500 - $1000 = $500).
+    assert _spend_row(database, spend_id)[1] == FVal(3000)
+    assert _spend_row(database, binance_spend_id)[1] == FVal(500)
+
+    # Checkpoint resume between spend (t=2) and receive (t=3) preserves pending_matched_transfers.
+    with (
+        patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', 1),
+        database.user_write() as write_cursor,
+    ):
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            value='0',
+        )
+    with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', 1):
+        assert process_cost_basis(database, database.msg_aggregator) is True
+    with database.user_write() as write_cursor:
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+            value=str(_ts_ms(3)),
+        )
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _spend_row(database, spend_id)[1] == FVal(3000)
+    assert _spend_row(database, binance_spend_id)[1] == FVal(500)
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_query_realized_pnl_readiness_gate_and_unruled_events(database: DBHandler) -> None:
+    """query_realized_pnl reports readiness over open issues with ts_start <= end_ts, treats
+    manual: true confirmations as non-blocking, and counts unruled lot-affecting events."""
+    from rotkehlchen.accounting.cost_basis.pnl import query_realized_pnl
+    from rotkehlchen.db.filtering import HistoryEventFilterQuery
+
+    # Only SPEND/NONE has a rule; RECEIVE/NONE and SPEND/REWARD are unruled!
+    DBAccountingRules(database).add_accounting_rule(
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        counterparty=None,
+        rule=BaseEventSettings(
+            taxable=True,
+            count_entire_amount_spend=False,
+            count_cost_basis_pnl=True,
+        ),
+        links={},
+    )
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[
+                _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+                _event(at=2, amount='2', event_type=HistoryEventType.SPEND),  # uncovered=1
+                _event(
+                    at=3,
+                    amount='1',
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.REWARD,
+                ),
+            ],
+        )
+    assert process_cost_basis(database, database.msg_aggregator) is True
+
+    # Window [t=3, t=4] still blocked by pre-window MISSING_COST_BASIS at t=2 (ts_start <= end_ts).
+    res = query_realized_pnl(
+        database=database,
+        filter_query=HistoryEventFilterQuery.make(from_ts=_ts(3), to_ts=_ts(4)),
+        group_by=None,
+    )
+    assert res['num_unruled_events'] == 1  # RECEIVE/REWARD at t=3 has no rule
+    readiness = res['report_readiness']
+    assert readiness['ready'] is False
+    assert readiness['stale'] is False
+    assert readiness['open_issues_count'] == 1
+    assert readiness['open_issues_by_kind'] == {IssueKind.MISSING_COST_BASIS.value: 1}
+    assert readiness['evaluated_through_ts'] == _ts_ms(4)
+
+    # Window ending at t=1 (before the t=2 issue) is ready!
+    early = query_realized_pnl(
+        database=database,
+        filter_query=HistoryEventFilterQuery.make(from_ts=_ts(0), to_ts=_ts(1)),
+        group_by=None,
+    )
+    assert early['report_readiness']['ready'] is True
+    assert early['report_readiness']['open_issues_count'] == 0
+
+    # Confirming the t=2 issue manually makes [t=3, t=4] ready even with num_unruled_events=1.
+    manager = DataIssuesManager(database)
+    issue = manager.list_issues(DataIssueFilters(kind=IssueKind.MISSING_COST_BASIS))[0]
+    manager.resolve_manually(issue.id, disposition='confirm_zero_basis')
+    after = query_realized_pnl(
+        database=database,
+        filter_query=HistoryEventFilterQuery.make(from_ts=_ts(3), to_ts=_ts(4)),
+        group_by=None,
+    )
+    assert after['num_unruled_events'] == 1
+    assert after['report_readiness']['ready'] is True
+    assert after['report_readiness']['open_issues_count'] == 0
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_clock_skewed_match_checkpoints_and_incremental_replay(database: DBHandler) -> None:
+    """Clock-skewed matched transfers (`receive` at t=4, `spend` at t=6, plus another event at
+    t=5) must only write checkpoints at strict chronological cuts, store terminal checkpoint at
+    `max_seen_ts + 1`, and never replay the moved spend twice on incremental passes."""
+    from rotkehlchen.db.filtering import HistoryEventFilterQuery
+    from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+    from rotkehlchen.locations.constants import LOCATION_BINANCE
+    from rotkehlchen.tasks.events import update_asset_movement_matched_event
+
+    # Order in DB: buy(1), binance_in(4), other_spend(5), wallet_out(6) [matched to binance_in(4)].
+    # After skew reordering: buy(1), wallet_out(6), binance_in(4), other_spend(5).
+    # Notice events[-1] is other_spend(5), while max_seen_ts is 6!
+    _buy, binance_in, other_spend, wallet_out = _process(
+        database=database,
+        method=CostBasisMethod.FIFO,
+        events=[
+            _event(at=1, amount='3', event_type=HistoryEventType.RECEIVE),
+            AssetMovement(
+                unique_id='binance-skew-in',
+                timestamp=_ts_ms(4),
+                location=LOCATION_BINANCE,
+                location_label='Binance',
+                event_subtype=HistoryEventSubType.RECEIVE,
+                asset=A_ETH,
+                amount=FVal(1),
+            ),
+            _event(at=5, amount='1', event_type=HistoryEventType.SPEND),
+            _event(at=6, amount='1', event_type=HistoryEventType.SPEND),
+        ],
+    )
+    events_db = DBHistoryEvents(database)
+    with database.conn.read_ctx() as cursor:
+        loaded = {
+            ev.identifier: ev
+            for ev in events_db.get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(),
+            )
+        }
+    update_asset_movement_matched_event(
+        events_db=events_db,
+        asset_movement=loaded[int(binance_in)],  # type: ignore[arg-type]
+        fee_event=None,
+        matched_event=loaded[int(wallet_out)],
+        is_deposit=True,
+    )
+
+    with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', 1):
+        assert process_cost_basis(database, database.msg_aggregator) is True
+
+    with database.conn.read_ctx() as cursor:
+        checkpoint_timestamps = [
+            row[0] for row in cursor.execute(
+                'SELECT timestamp FROM cost_basis_checkpoints ORDER BY timestamp',
+            )
+        ]
+    # Must NOT have written a broken checkpoint at t=6 or t=5 between the skewed pair,
+    # and terminal checkpoint must be max_seen_ts + 1 = _ts_ms(6) + 1 (not _ts_ms(5) + 1).
+    assert _ts_ms(5) not in checkpoint_timestamps
+    assert _ts_ms(6) not in checkpoint_timestamps
+    assert checkpoint_timestamps[-1] == _ts_ms(6) + 1
+
+    # Appending a new spend at t=7 resumes incrementally from terminal checkpoint without
+    # re-replaying wallet_out(6) or corrupting Binance's carried-over lot.
+    with database.user_write() as write_cursor:
+        binance_sell_id = events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                group_identifier='binance-skew-sell',
+                sequence_index=0,
+                timestamp=_ts_ms(7),
+                location=LOCATION_BINANCE,
+                location_label='Binance',
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal(1),
+            ),
+        )
+    assert binance_sell_id is not None
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _spend_row(database, str(other_spend))[1] == FVal(4000)
+    assert _spend_row(database, str(binance_sell_id))[1] == FVal(500)
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_query_realized_pnl_filtered_swap_receive_not_counted_unruled(database: DBHandler) -> None:
+    """Filtering query_realized_pnl by the received asset of a ruled swap must not count
+    TRADE/RECEIVE as unruled when the SWAP rule is attached to TRADE/SPEND."""
+    from rotkehlchen.accounting.cost_basis.pnl import query_realized_pnl
+    from rotkehlchen.db.filtering import HistoryEventFilterQuery
+
+    tx_ref = make_evm_tx_hash()
+    _process(
+        database=database,
+        method=CostBasisMethod.FIFO,
+        events=[
+            _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+            _event(
+                at=2,
+                amount='1',
+                asset=A_ETH,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.SPEND,
+                tx_ref=tx_ref,
+                sequence_index=0,
+            ),
+            _event(
+                at=2,
+                amount='2000',
+                asset=A_DAI,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                tx_ref=tx_ref,
+                sequence_index=1,
+            ),
+        ],
+    )
+    filtered = query_realized_pnl(
+        database=database,
+        filter_query=HistoryEventFilterQuery.make(assets=(A_DAI,)),
+        group_by=None,
+    )
+    assert filtered['num_unruled_events'] == 0

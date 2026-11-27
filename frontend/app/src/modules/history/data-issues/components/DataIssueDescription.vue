@@ -21,6 +21,7 @@ const { useAssetField } = useAssetInfoRetrieval();
 // Empty until resolved, so the template falls back to the raw `eip155:...` identifier.
 const symbol = useAssetField(() => description.asset, 'symbol');
 const name = useAssetField(() => description.asset, 'name');
+const toAssetSymbol = useAssetField(() => description.toAsset, 'symbol');
 
 // A native `title` rather than a tooltip component, so a long list of cards stays cheap.
 const assetTitle = computed<string>(() => {
@@ -95,6 +96,38 @@ function exact(amount: BigNumber): FormatOptions {
         :format="exact(description.amounts.delta)"
         class="font-medium"
       />
+    </template>
+    <template #covered>
+      <ValueDisplay
+        v-if="description.amounts.covered"
+        :value="description.amounts.covered"
+        :format="exact(description.amounts.covered)"
+        class="font-medium"
+      />
+    </template>
+    <template #requested>
+      <ValueDisplay
+        v-if="description.amounts.requested"
+        :value="description.amounts.requested"
+        :format="exact(description.amounts.requested)"
+        class="font-medium"
+      />
+    </template>
+    <template #uncovered>
+      <ValueDisplay
+        v-if="description.amounts.uncovered"
+        :value="description.amounts.uncovered"
+        :format="exact(description.amounts.uncovered)"
+        class="font-medium"
+      />
+    </template>
+    <template #toAsset>
+      <span
+        v-if="description.toAsset"
+        class="font-medium"
+      >
+        {{ toAssetSymbol || description.toAsset }}
+      </span>
     </template>
   </i18n-t>
 </template>

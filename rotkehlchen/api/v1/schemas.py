@@ -5030,6 +5030,7 @@ class DataIssuesFilterSchema(DBPaginationSchema):
     location_scope = StrEnumField(enum_class=LocationScope, load_default=LocationScope.EXACT)
     location_label = EmptyAsNoneStringField(load_default=None)
     asset = AssetField(expected_type=Asset, load_default=None)
+    manual_only = fields.Boolean(load_default=False)
 
     @validates_schema
     def validate_schema(
@@ -5064,11 +5065,13 @@ class DataIssuesFilterSchema(DBPaginationSchema):
             location_scope=data['location_scope'],
             location_label=data['location_label'],
             asset=data['asset'],
+            manual_only=data['manual_only'],
         )}
 
 
 class DataIssueManualResolveSchema(Schema):
     note = EmptyAsNoneStringField(load_default=None)
+    disposition = EmptyAsNoneStringField(load_default=None)
 
 
 class BucketTraceSchema(Schema):

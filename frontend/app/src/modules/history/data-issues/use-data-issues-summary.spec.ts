@@ -19,21 +19,26 @@ const FOUND_PER_STATE: Record<string, number> = {
   [IssueState.UNRESOLVED]: 5,
 };
 const BASELINE = 20;
+const CONFIRMED = 4;
 
 describe('useDataIssuesSummary', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    listIssues.mockImplementation(async ({ state }: { state: IssueState[] }) => {
-      const found = state.length === Object.values(IssueState).length
-        ? BASELINE
-        : FOUND_PER_STATE[state[0]] ?? 0;
+    listIssues.mockImplementation(async ({ manualOnly, state }: { manualOnly?: boolean; state?: IssueState[] }) => {
+      if (manualOnly)
+        return { ok: true, value: { found: CONFIRMED } };
+      let found = 0;
+      if (state?.length === Object.values(IssueState).length)
+        found = BASELINE;
+      else if (state)
+        found = FOUND_PER_STATE[state[0]] ?? 0;
       return { ok: true, value: { found } };
     });
   });
 
-  it('should aggregate per-state counts and the baseline total into the store', async () => {
-    const { baselineTotal, counts, refreshSummary } = useDataIssuesSummary();
+  it('should aggregate per-state counts, confirmed count, and the baseline total into the store', async () => {
+    const { baselineTotal, confirmedCount, counts, refreshSummary } = useDataIssuesSummary();
 
     await refreshSummary();
 
@@ -43,6 +48,7 @@ describe('useDataIssuesSummary', () => {
     expect(get(counts)[IssueState.RESOLVED]).toBe(0);
     expect(get(counts)[IssueState.DISMISSED]).toBe(0);
     expect(get(baselineTotal)).toBe(BASELINE);
+    expect(get(confirmedCount)).toBe(CONFIRMED);
   });
 
   it('should expose actionableCount as open + unresolved only', async () => {

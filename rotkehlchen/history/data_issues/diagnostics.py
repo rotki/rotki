@@ -29,6 +29,7 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.actions import build_suggested_actions
 from rotkehlchen.history.data_issues.bucket_checks import BucketStatus
 from rotkehlchen.history.data_issues.bucket_state import (
     BucketStop,
@@ -623,6 +624,11 @@ def trace_bucket(
 
 
 def serialize_issue(issue: DataIssue) -> dict[str, Any]:
+    event_identifier = (
+        issue.event_identifier
+        if issue.event_identifier is not None
+        else issue.payload.get('event_identifier')
+    )
     return {
         'id': issue.id,
         'kind': issue.kind,
@@ -635,12 +641,13 @@ def serialize_issue(issue: DataIssue) -> dict[str, Any]:
             asset=issue.asset,
         )),
         'group_identifier': issue.group_identifier,
-        'event_identifier': issue.payload.get('event_identifier'),
+        'event_identifier': event_identifier,
         'ts_start_ms': issue.ts_start,
         'ts_end_ms': issue.ts_end,
         'created_at_ts_s': issue.created_at,
         'resolved_at_ts_s': issue.resolved_at,
         'auto_remediation_attempts': len(issue.auto_remediation_attempts),
+        'suggested_actions': build_suggested_actions(issue),
     }
 
 
@@ -1066,6 +1073,39 @@ def explain_data_issue(database: DBHandler, issue_id: int) -> dict[str, Any]:
                 'See every candidate counterpart and why it was rejected',
                 event_identifier=event_identifier,
             ))
+    elif issue.kind == IssueKind.MISSING_PRICE:
+        payload = issue.payload
+        explanation['facts'] |= {
+            'to_asset': payload.get('to_asset'),
+            'amount': payload.get('amount'),
+            'direction': payload.get('direction'),
+        }
+    elif issue.kind == IssueKind.MISSING_COST_BASIS:
+        payload = issue.payload
+        explanation['facts'] |= {
+            'requested_amount': payload.get('requested_amount'),
+            'covered_amount': payload.get('covered_amount'),
+            'uncovered_amount': payload.get('uncovered_amount'),
+            'fallback_basis': payload.get('fallback_basis'),
+        }
+    elif issue.kind == IssueKind.INCOMPLETE_SWAP:
+        payload = issue.payload
+        explanation['facts'] |= {
+            'event_identifiers': payload.get('event_identifiers'),
+            'present_legs': payload.get('present_legs'),
+            'missing_or_excluded_reason': payload.get('missing_or_excluded_reason'),
+            'excluded_assets': payload.get('excluded_assets'),
+        }
+    elif issue.kind == IssueKind.UNMATCHED_EXCHANGE_TRANSFER:
+        payload = issue.payload
+        explanation['facts'] |= {
+            'subtype': payload.get('subtype'),
+            'amount': payload.get('amount'),
+            'tx_ref': payload.get('tx_ref'),
+            'address': payload.get('address'),
+        }
+
+    explanation['suggested_actions'] = build_suggested_actions(issue)
 
     if issue.state in (IssueState.DISMISSED, IssueState.RESOLVED) and issue.payload.get(
         'resolution',

@@ -1,6 +1,7 @@
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { createDecodingComparison } from '@test/fixtures/decoding-comparison';
 import { mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, nextTick, type VNode } from 'vue';
 import DataIssueDetailDrawer from '@/modules/history/data-issues/components/DataIssueDetailDrawer.vue';
@@ -25,6 +26,7 @@ function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
     asset: 'ETH',
     autoRemediationAttempts: [],
     createdAt: 1710000100,
+    eventIdentifier: 123,
     groupIdentifier: 'grp-1',
     id: 1,
     kind: IssueKind.NEGATIVE_BALANCE,
@@ -39,6 +41,7 @@ function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
     resolvedAt: null,
     severity: IssueSeverity.WARNING,
     state: IssueState.OPEN,
+    suggestedActions: [],
     tsEnd: 1710000000,
     tsStart: 1710000000,
     ...overrides,
@@ -48,7 +51,7 @@ function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
 function createWrapper(issue?: DataIssue): VueWrapper<InstanceType<typeof DataIssueDetailDrawer>> {
   return mount(DataIssueDetailDrawer, {
     global: {
-      plugins: [createRuiPlugin({})],
+      plugins: [createPinia(), createRuiPlugin({})],
       stubs: {
         AssetDetails: true,
         CounterpartyDisplay: true,
@@ -75,6 +78,7 @@ function createWrapper(issue?: DataIssue): VueWrapper<InstanceType<typeof DataIs
 
 describe('dataIssueDetailDrawer', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
   });
 
@@ -306,5 +310,36 @@ describe('dataIssueDetailDrawer', () => {
 
     expect(retry.exists()).toBe(true);
     expect(retry.attributes('disabled')).toBeDefined();
+  });
+
+  it('should render the manual confirmation audit section and emit reopen for confirmed issues', async () => {
+    const wrapper = createWrapper(createIssue({
+      id: 9,
+      kind: IssueKind.MISSING_COST_BASIS,
+      payload: {
+        coveredAmount: '0',
+        eventIdentifier: 123,
+        fallbackBasis: '0',
+        groupIdentifier: 'grp-1',
+        requestedAmount: '2',
+        resolution: { disposition: 'confirm_zero_basis', manual: true, note: 'airdropped' },
+        uncoveredAmount: '2',
+      },
+      resolvedAt: 1710000500,
+      state: IssueState.RESOLVED,
+    }));
+
+    expect(wrapper.find('[data-testid="data-issue-confirmed-audit"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="data-issue-confirmed-disposition"]').text()).toBe('data_issues.disposition.confirm_zero_basis');
+    expect(wrapper.find('[data-testid="data-issue-confirmed-audit"]').text()).toContain('airdropped');
+
+    await wrapper.find('[data-testid="data-issue-detail-reopen"]').trigger('click');
+    expect(wrapper.emitted('reopen')?.[0]).toStrictEqual([9]);
+  });
+
+  it('should not show the reopen button while an issue is still open', () => {
+    const wrapper = createWrapper(createIssue({ state: IssueState.OPEN }));
+
+    expect(wrapper.find('[data-testid="data-issue-detail-reopen"]').exists()).toBe(false);
   });
 });

@@ -89,12 +89,72 @@ class UnmatchedBridgeIssuePayload(EventIssuePayload):
     bridge: NotRequired[dict[str, Any]]
 
 
+type MissingPriceDirection = Literal['receive', 'spend', 'fee', 'swap']
+type IncompleteSwapReason = Literal['ignored_asset', 'ignored_action', 'missing_counterpart_leg']
+type ExchangeTransferSubtype = Literal['spend', 'receive']
+
+
+class MissingPriceIssuePayload(EventIssuePayload):
+    """Payload for a priced cost-basis event whose asset lacked a historical price."""
+    group_identifier: str
+    to_asset: str
+    amount: str
+    direction: MissingPriceDirection
+
+
+class MissingCostBasisIssuePayload(EventIssuePayload):
+    """Payload for a spend or transfer whose quantity exceeded available lots."""
+    group_identifier: str
+    requested_amount: str
+    covered_amount: str
+    uncovered_amount: str
+    fallback_basis: Literal['0']
+
+
+class SwapLegSummary(TypedDict):
+    """Compact factual summary of one leg present in an incomplete swap group."""
+    event_identifier: int
+    subtype: str
+    asset: str
+    amount: str
+
+
+class IncompleteSwapIssuePayload(EventIssuePayload):
+    """Payload for a swap group missing a valid counterpart leg or containing an excluded leg."""
+    group_identifier: str
+    event_identifiers: list[int]
+    present_legs: list[SwapLegSummary]
+    missing_or_excluded_reason: IncompleteSwapReason
+    excluded_assets: list[str]
+
+
+class UnmatchedExchangeTransferIssuePayload(EventIssuePayload):
+    """Payload for an exchange transfer movement with no matched counterpart link."""
+    group_identifier: str
+    subtype: ExchangeTransferSubtype
+    amount: str
+    tx_ref: NotRequired[str]
+    address: NotRequired[str]
+
+
+class SuggestedAction(TypedDict):
+    """Machine-readable remediation action surfaced alongside a data issue."""
+    action: str
+    params: dict[str, Any]
+    endpoint: str
+    requires_input: list[str]
+
+
 type DataIssuePayload = (
     InvalidEventAmountIssuePayload |
     NegativeBalanceIssuePayload |
     CurrentBalanceMismatchIssuePayload |
     RebasingTokenIssuePayload |
-    UnmatchedBridgeIssuePayload
+    UnmatchedBridgeIssuePayload |
+    MissingPriceIssuePayload |
+    MissingCostBasisIssuePayload |
+    IncompleteSwapIssuePayload |
+    UnmatchedExchangeTransferIssuePayload
 )
 """Typed payload variants accepted when writing data issues."""
 
@@ -117,6 +177,7 @@ class DataIssue:
     payload: dict[str, Any]
     created_at: int
     resolved_at: int | None
+    event_identifier: int | None = None
 
 
 @dataclass(frozen=True)

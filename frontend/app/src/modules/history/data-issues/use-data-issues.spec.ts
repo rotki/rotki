@@ -11,6 +11,7 @@ import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
 const listIssues = vi.fn();
 const getIssue = vi.fn();
 const dismissIssue = vi.fn();
+const reopenIssue = vi.fn();
 const resolveIssueManually = vi.fn();
 const retryAutoRemediation = vi.fn();
 
@@ -18,9 +19,10 @@ vi.mock('@/modules/history/data-issues/api/use-data-issues-api', () => ({
   useDataIssuesApi: (): Record<string, unknown> => ({
     dismissIssue,
     getIssue,
+    listIssues,
+    reopenIssue,
     resolveIssueManually,
     retryAutoRemediation,
-    listIssues,
   }),
 }));
 
@@ -29,6 +31,7 @@ function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
     asset: 'ETH',
     autoRemediationAttempts: [],
     createdAt: 1710000100,
+    eventIdentifier: null,
     groupIdentifier: null,
     id: 1,
     kind: IssueKind.NEGATIVE_BALANCE,
@@ -39,6 +42,7 @@ function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
     resolvedAt: null,
     severity: IssueSeverity.WARNING,
     state: IssueState.OPEN,
+    suggestedActions: [],
     tsEnd: 1710000000,
     tsStart: 1710000000,
     ...overrides,

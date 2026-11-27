@@ -52,20 +52,26 @@ async def list_data_issues(
         account: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        manual_only: bool = False,
 ) -> dict[str, Any]:
     """List the data issues of rotki's accounting inbox, with issues of one transaction grouped.
 
     - ``kinds``: any of ``negative_balance``, ``invalid_event_amount``,
-      ``current_balance_mismatch``, ``rebasing_token``, ``unmatched_bridge``. All by default.
+      ``current_balance_mismatch``, ``rebasing_token``, ``unmatched_bridge``,
+      ``missing_price``, ``missing_cost_basis``, ``incomplete_swap``,
+      ``unmatched_exchange_transfer``. All by default.
     - ``states``: any of ``open``, ``auto_remediating``, ``unresolved``, ``resolved``,
       ``dismissed``. Defaults to the actionable ones (open, auto_remediating, unresolved).
     - ``account``: an account reference (``anon_…``) from another tool.
+    - ``manual_only``: when true, returns only manually confirmed (``manual: true``) resolved
+      issues so past sign-offs can be audited.
 
-    ``groups`` lists transactions with several issues. That they share a cause is a
-    hypothesis to check with ``inspect_transaction``, not an established fact. A
-    ``current_balance_mismatch`` says whether it is ``observed_only`` (a holding with no
-    history at all), to be weighed with the ``asset_signals`` of its asset. Call
-    ``explain_data_issue`` with an issue ``id`` for its evidence.
+    Each entry includes ``suggested_actions`` describing the available remediations. ``groups``
+    lists transactions with several issues. That they share a cause is a hypothesis to check
+    with ``inspect_transaction``, not an established fact. A ``current_balance_mismatch`` says
+    whether it is ``observed_only`` (a holding with no history at all), to be weighed with the
+    ``asset_signals`` of its asset. Call ``explain_data_issue`` with an issue ``id`` for its
+    evidence.
     """
     return await asyncio.to_thread(
         accounting.list_data_issues,
@@ -76,6 +82,42 @@ async def list_data_issues(
         account=account,
         limit=limit,
         offset=offset,
+        manual_only=manual_only,
+    )
+
+
+@register_tool(name='get_realized_pnl')
+async def get_realized_pnl(
+        from_timestamp: int | None = None,
+        to_timestamp: int | None = None,
+        asset: str | None = None,
+        location: str | None = None,
+        account: str | None = None,
+        group_by: Literal[
+            'asset', 'location', 'location_label', 'protocol', 'day', 'week', 'month', 'year',
+        ] | None = None,
+) -> dict[str, Any]:
+    """Query materialized realized PnL and report readiness for a filter or tax window.
+
+    Returns totals (``total_realized_pnl``, ``total_taxfree_pnl``), optional ``breakdown``,
+    ``num_unpriced_events``, ``num_unruled_events`` (non-blocking), and ``report_readiness``:
+    - ``ready``: true iff ``stale`` is false and zero open/unresolved/auto-remediating
+      ``data_issues`` exist with ``ts_start <= evaluated_through_ts`` (including pre-window
+      issues that could corrupt carried-over lot basis).
+    - ``open_issues_by_kind``: counts of blocking issues by ``IssueKind``; inspect them with
+      ``list_data_issues`` and ``explain_data_issue``.
+
+    Timestamps are Unix seconds. ``account`` is an account reference (``anon_…``) from another
+    tool. Read-only: nothing is refreshed or reprocessed.
+    """
+    return await asyncio.to_thread(
+        accounting.get_realized_pnl,
+        from_timestamp=from_timestamp,
+        to_timestamp=to_timestamp,
+        asset=asset,
+        location=location,
+        account=account,
+        group_by=group_by,
     )
 
 

@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.db.settings import DBSettings
+    from rotkehlchen.history.data_issues.types import MissingPriceDirection
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.history.events.structures.eth2 import EthDepositEvent, EthWithdrawalEvent
     from rotkehlchen.types import Price, Timestamp
@@ -36,6 +37,22 @@ if TYPE_CHECKING:
         blocked_buckets: set[Bucket]
 
         def get_price(self, asset: Asset, timestamp: Timestamp) -> Price | None: ...
+
+        def record_missing_price(
+                self,
+                event: HistoryBaseEntry,
+                bucket: Bucket,
+                direction: MissingPriceDirection,
+                amount: FVal | None = None,
+        ) -> None: ...
+
+        def record_missing_cost_basis(
+                self,
+                event: HistoryBaseEntry,
+                bucket: Bucket,
+                requested_amount: FVal,
+                covered_amount: FVal,
+        ) -> None: ...
 
         def add_row(
                 self,
@@ -62,6 +79,8 @@ if TYPE_CHECKING:
                 move_amount: FVal,
                 dest_amount: FVal,
                 received: HistoryBaseEntry,
+                is_stale: bool = False,
+                issue_bucket: Bucket | None = None,
         ) -> tuple[list[ConsumedLot], list[str], FVal]: ...
 
         def transfer(
@@ -360,6 +379,8 @@ class Eth2StakingCostBasis:
                 move_amount=move_amount,
                 dest_amount=move_amount,
                 received=event,
+                is_stale=is_stale,
+                issue_bucket=eth2_row_bucket,
             )
         else:
             moved, lot_ids, transferred_basis = [], [], ZERO
@@ -417,11 +438,25 @@ class Eth2StakingCostBasis:
                 (drained.basis_removed if drained is not None else ZERO)
             )
             if loss_result is not None:
+                if loss_result.uncovered_amount > ZERO:
+                    self._host.record_missing_cost_basis(
+                        event=event,
+                        bucket=eth2_row_bucket,
+                        requested_amount=loss_eth,
+                        covered_amount=loss_eth - loss_result.uncovered_amount,
+                    )
                 taxable_loss = self._host.settings.eth_staking_taxable_after_withdrawal_enabled
                 rate = (
                     self._host.get_price(asset=event.asset, timestamp=timestamp)
                     if taxable_loss else None
                 )
+                if taxable_loss and rate is None:
+                    self._host.record_missing_price(
+                        event=event,
+                        bucket=eth2_row_bucket,
+                        direction='spend',
+                        amount=loss_eth,
+                    )
                 proceeds, spend_realized_pnl, spend_taxfree_pnl = self._host.compute_spend_pnl(
                     amount=loss_eth,
                     rate=rate,
@@ -449,6 +484,13 @@ class Eth2StakingCostBasis:
         if event.amount > ZERO:
             if excess_eth > ZERO:
                 is_taxable = self._host.settings.eth_staking_taxable_after_withdrawal_enabled
+                if excess_basis_source == BasisSource.ZERO_COST:
+                    self._host.record_missing_price(
+                        event=event,
+                        bucket=wallet_bucket,
+                        direction='receive',
+                        amount=excess_eth,
+                    )
                 recv_realized_pnl, recv_taxfree_pnl = self._host.compute_receive_pnl(
                     amount=excess_eth,
                     basis=excess_basis,

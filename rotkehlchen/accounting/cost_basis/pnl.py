@@ -3,18 +3,182 @@ import json
 from enum import StrEnum, auto
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.accounting.cost_basis.lots import CostBasisDirection
+from rotkehlchen.accounting.cost_basis.lots import BasisSource, CostBasisDirection
+from rotkehlchen.accounting.cost_basis.rules import CostBasisRules
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import ALL_EVENTS_DATA_JOIN
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.data_issues.constants import IssueState
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
+from rotkehlchen.history.events.structures.types import (
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.types import TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.db.filtering import HistoryBaseEntryFilterQuery
+
+OPEN_ISSUE_STATES: Final = (
+    IssueState.OPEN.value,
+    IssueState.AUTO_REMEDIATING.value,
+    IssueState.UNRESOLVED.value,
+)
+SPECIAL_ENTRY_TYPES_WITHOUT_RULES: Final = frozenset({
+    HistoryBaseEntryType.ASSET_MOVEMENT_EVENT.serialize_for_db(),
+    HistoryBaseEntryType.ETH_BLOCK_EVENT.serialize_for_db(),
+    HistoryBaseEntryType.ETH_DEPOSIT_EVENT.serialize_for_db(),
+    HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT.serialize_for_db(),
+})
+
+
+def _evaluated_through_ts_ms(filter_query: HistoryBaseEntryFilterQuery) -> int | None:
+    """Return the upper timestamp bound of `filter_query` in milliseconds, or None if unbounded."""
+    ts_filter = filter_query.timestamp_filter
+    if ts_filter.to_ts is None:
+        return None
+    if ts_filter.scaling_factor is not None:
+        return (ts_filter.to_ts * ts_filter.scaling_factor).to_int(exact=False)
+    return int(ts_filter.to_ts)
+
+
+def _query_open_issues_by_kind(
+        cursor: DBCursor,
+        evaluated_through_ts: int | None,
+) -> dict[str, int]:
+    """Count open/unresolved/auto-remediating issues with `ts_start <= evaluated_through_ts`."""
+    query = 'SELECT kind, COUNT(*) FROM data_issues WHERE state IN (?, ?, ?)'
+    bindings: list[Any] = [*OPEN_ISSUE_STATES]
+    if evaluated_through_ts is not None:
+        query += ' AND ts_start <= ?'
+        bindings.append(evaluated_through_ts)
+    query += ' GROUP BY kind ORDER BY kind'
+    return {
+        kind: count
+        for kind, count in cursor.execute(query, bindings)
+        if count > 0
+    }
+
+
+def _count_unruled_events(
+        cursor: DBCursor,
+        database: DBHandler,
+        filters: str,
+        bindings: list[Any],
+) -> int:
+    """Count distinct lot-affecting events matching `filters` that have no accounting rule.
+
+    Excludes internal transfers (both `TRANSFER` events and dual-bucket / `transfer_in`
+    carryover rows), asset movements, ETH2 staking events, and swap/basis-transfer companion
+    legs whose group already carries a treatment rule on its spend leg.
+    """
+    rules = CostBasisRules(database=database, cursor=cursor)
+    event_rows: dict[int, tuple[str, str, str, int, str | None, set[str], set[str | None]]] = {}
+    for (
+        event_id,
+        group_id,
+        event_type_raw,
+        event_subtype_raw,
+        entry_type_raw,
+        counterparty,
+        direction,
+        basis_source,
+    ) in cursor.execute(
+        'SELECT cost_basis.event_identifier, he.group_identifier, he.type, he.subtype, '
+        'he.entry_type, cei.counterparty, cost_basis.direction, cost_basis.basis_source '
+        'FROM event_cost_basis AS cost_basis '
+        'JOIN history_events AS he ON he.identifier = cost_basis.event_identifier '
+        'LEFT JOIN chain_events_info AS cei ON cei.identifier = he.identifier '
+        'WHERE cost_basis.event_identifier IN '
+        '(SELECT history_events.identifier AS history_events_identifier '
+        f'{ALL_EVENTS_DATA_JOIN} {filters})',
+        bindings,
+    ):
+        entry = event_rows.get(event_id)
+        if entry is None:
+            event_rows[event_id] = (
+                group_id,
+                event_type_raw,
+                event_subtype_raw,
+                entry_type_raw,
+                counterparty,
+                {direction},
+                {basis_source},
+            )
+        else:
+            entry[5].add(direction)
+            entry[6].add(basis_source)
+
+    if len(event_rows) == 0:
+        return 0
+
+    ruled_groups: set[str] = set()
+    candidate_unruled: list[tuple[int, str]] = []
+    for (
+        event_id,
+        (group_id, event_type_raw, event_subtype_raw, entry_type_raw, counterparty, dirs, sources),
+    ) in event_rows.items():
+        try:
+            event_type = HistoryEventType.deserialize(event_type_raw)
+            event_subtype = HistoryEventSubType.deserialize(event_subtype_raw)
+        except ValueError:
+            continue
+        rule = rules.get_for_fields(
+            event_identifier=event_id,
+            event_type=event_type,
+            event_subtype=event_subtype,
+            counterparty=counterparty,
+        )
+        if rule is not None and rule.accounting_treatment is not None:
+            ruled_groups.add(group_id)
+        if (
+            rule is not None or
+            entry_type_raw in SPECIAL_ENTRY_TYPES_WITHOUT_RULES or
+            event_type in {HistoryEventType.TRANSFER, HistoryEventType.EXCHANGE_TRANSFER} or
+            len(dirs) > 1 or
+            BasisSource.TRANSFER_IN.value in sources
+        ):
+            continue
+        candidate_unruled.append((event_id, group_id))
+
+    if len(candidate_unruled) == 0:
+        return 0
+
+    # A filter (e.g. by asset) can exclude a swap/basis-transfer's spend leg whose rule governs
+    # the group. Inspect sibling events of candidate groups so ruled companion legs aren't
+    # falsely counted as unruled.
+    unresolved_groups = sorted({
+        group_id for _event_id, group_id in candidate_unruled if group_id not in ruled_groups
+    })
+    for chunk, placeholders in get_query_chunks(data=unresolved_groups):
+        for sib_id, sib_group, sib_type_raw, sib_subtype_raw, sib_cpt in cursor.execute(
+            'SELECT he.identifier, he.group_identifier, he.type, he.subtype, cei.counterparty '
+            'FROM history_events AS he '
+            'LEFT JOIN chain_events_info AS cei ON cei.identifier = he.identifier '
+            f'WHERE he.group_identifier IN ({placeholders})',
+            chunk,
+        ):
+            if sib_group in ruled_groups:
+                continue
+            try:
+                sib_type = HistoryEventType.deserialize(sib_type_raw)
+                sib_subtype = HistoryEventSubType.deserialize(sib_subtype_raw)
+            except ValueError:
+                continue
+            sib_rule = rules.get_for_fields(
+                event_identifier=sib_id,
+                event_type=sib_type,
+                event_subtype=sib_subtype,
+                counterparty=sib_cpt,
+            )
+            if sib_rule is not None and sib_rule.accounting_treatment is not None:
+                ruled_groups.add(sib_group)
+
+    return sum(1 for _event_id, group_id in candidate_unruled if group_id not in ruled_groups)
 
 
 class RealizedPnlGroupBy(StrEnum):
@@ -59,6 +223,7 @@ def query_realized_pnl(
     The amounts are summed here and not in SQLite, where they would be summed as floats.
     """
     filters, bindings = filter_query.prepare(with_pagination=False, with_order=False)
+    evaluated_through_ts = _evaluated_through_ts_ms(filter_query)
     groups: dict[str | None, tuple[FVal, FVal, FVal, set[int], set[int]]] = {}
     all_unpriced_events: set[int] = set()
     with database.conn.read_ctx() as cursor:
@@ -102,10 +267,25 @@ def query_realized_pnl(
                 unpriced_events,
             )
 
+        open_issues_by_kind = _query_open_issues_by_kind(
+            cursor=cursor,
+            evaluated_through_ts=evaluated_through_ts,
+        )
+        num_unruled_events = _count_unruled_events(
+            cursor=cursor,
+            database=database,
+            filters=filters,
+            bindings=bindings,
+        )
+
+    stale = stale_from_ts is not None or last_processing_ts is None
+    open_issues_count = sum(open_issues_by_kind.values())
+    num_unpriced_events = len(all_unpriced_events)
     return {
         'total_realized_pnl': str(sum((pnl for pnl, _, _, _, _ in groups.values()), start=ZERO)),
         'total_taxfree_pnl': str(sum((taxfree for _, taxfree, _, _, _ in groups.values()), start=ZERO)),  # noqa: E501
-        'num_unpriced_events': len(all_unpriced_events),
+        'num_unpriced_events': num_unpriced_events,
+        'num_unruled_events': num_unruled_events,
         'breakdown': [{
             'group_key': group_key,
             'realized_pnl': str(pnl),
@@ -117,8 +297,17 @@ def query_realized_pnl(
             groups.items(),
             key=lambda item: item[0] or '',
         )],
-        'stale': stale_from_ts is not None or last_processing_ts is None,
+        'stale': stale,
         'method': method,
+        'report_readiness': {
+            'ready': (not stale) and open_issues_count == 0,
+            'stale': stale,
+            'open_issues_count': open_issues_count,
+            'open_issues_by_kind': open_issues_by_kind,
+            'num_unpriced_events': num_unpriced_events,
+            'num_unruled_events': num_unruled_events,
+            'evaluated_through_ts': evaluated_through_ts,
+        },
     }
 
 

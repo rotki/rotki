@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING, Any
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 import pytest
 import requests
@@ -11,6 +11,8 @@ from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.data_issues.constants import IssueKind
+from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -131,6 +133,27 @@ def _group(
     }
 
 
+def _readiness(
+        *,
+        stale: bool = False,
+        open_issues_by_kind: dict[str, int] | None = None,
+        num_unpriced_events: int = 0,
+        num_unruled_events: int = 0,
+        evaluated_through_ts: Any = ANY,
+) -> dict[str, Any]:
+    by_kind = {} if open_issues_by_kind is None else open_issues_by_kind
+    open_count = sum(by_kind.values())
+    return {
+        'ready': (not stale) and open_count == 0,
+        'stale': stale,
+        'open_issues_count': open_count,
+        'open_issues_by_kind': by_kind,
+        'num_unpriced_events': num_unpriced_events,
+        'num_unruled_events': num_unruled_events,
+        'evaluated_through_ts': evaluated_through_ts,
+    }
+
+
 @pytest.mark.parametrize(('group_by', 'breakdown'), [
     (None, [_group(None, 5700, 3)]),
     ('asset', [_group('BTC', 1900), _group('ETH', 3800, 2)]),
@@ -152,9 +175,11 @@ def test_realized_pnl_is_broken_down_by_group(
         'total_realized_pnl': '5700',
         'total_taxfree_pnl': '0',
         'num_unpriced_events': 0,
+        'num_unruled_events': 3,
         'breakdown': sorted(breakdown, key=lambda group: group['group_key'] or ''),
         'stale': False,
         'method': 'fifo',
+        'report_readiness': _readiness(num_unruled_events=3),
     }
 
 
@@ -197,9 +222,11 @@ def test_realized_pnl_filters_by_identifiers(
         'total_realized_pnl': '2900',
         'total_taxfree_pnl': '0',
         'num_unpriced_events': 0,
+        'num_unruled_events': 0,
         'breakdown': [_group(None, 2900, events=1)],
         'stale': False,
         'method': 'fifo',
+        'report_readiness': _readiness(),
     }
 
 
@@ -211,20 +238,30 @@ def test_realized_pnl_is_stale_until_the_cost_basis_is_processed(
         'total_realized_pnl': '0',
         'total_taxfree_pnl': '0',
         'num_unpriced_events': 0,
+        'num_unruled_events': 0,
         'breakdown': [],
         'method': 'fifo',
     }
-    assert _query(rotkehlchen_api_server) == empty | {'stale': True}  # never processed
+    assert _query(rotkehlchen_api_server) == empty | {
+        'stale': True,
+        'report_readiness': _readiness(stale=True),
+    }  # never processed
 
     assert process_cost_basis(database, database.msg_aggregator) is True
-    assert _query(rotkehlchen_api_server) == empty | {'stale': False}
+    assert _query(rotkehlchen_api_server) == empty | {
+        'stale': False,
+        'report_readiness': _readiness(stale=False),
+    }
 
     with database.user_write() as write_cursor:
         write_cursor.execute(
             'INSERT INTO key_value_cache(name, value) VALUES (?, ?)',
             (DBCacheStatic.STALE_COST_BASIS_FROM_TS.value, '5'),
         )
-    assert _query(rotkehlchen_api_server) == empty | {'stale': True}
+    assert _query(rotkehlchen_api_server) == empty | {
+        'stale': True,
+        'report_readiness': _readiness(stale=True),
+    }
 
 
 @pytest.mark.usefixtures('materialized_pnl')
@@ -370,12 +407,18 @@ def test_unpriced_spend_returns_null_pnl_and_does_not_fail_summary(
         'total_realized_pnl': '1900',
         'total_taxfree_pnl': '0',
         'num_unpriced_events': 1,
+        'num_unruled_events': 2,
         'breakdown': [
             _group('BTC', 1900, events=1, unpriced_events=0),
             _group('ETH', 0, events=1, unpriced_events=1),
         ],
         'stale': False,
         'method': 'fifo',
+        'report_readiness': _readiness(
+            open_issues_by_kind={IssueKind.MISSING_PRICE.value: 1},
+            num_unpriced_events=1,
+            num_unruled_events=2,
+        ),
     }
 
     cost_basis = assert_proper_sync_response_with_result(requests.post(
@@ -503,6 +546,7 @@ def test_unpriced_taxable_receives_are_counted_as_unpriced(
         'total_realized_pnl': '2000',
         'total_taxfree_pnl': '0',
         'num_unpriced_events': 2,
+        'num_unruled_events': 0,
         'breakdown': [
             {
                 'group_key': 'BTC',
@@ -531,6 +575,10 @@ def test_unpriced_taxable_receives_are_counted_as_unpriced(
         ],
         'stale': False,
         'method': 'fifo',
+        'report_readiness': _readiness(
+            open_issues_by_kind={IssueKind.MISSING_PRICE.value: 3},
+            num_unpriced_events=2,
+        ),
     }
 
 
@@ -569,9 +617,99 @@ def test_realized_pnl_groups_year_boundary_week_together(
         'total_realized_pnl': '2800',
         'total_taxfree_pnl': '0',
         'num_unpriced_events': 0,
+        'num_unruled_events': 2,
         'breakdown': [_group('2025-W01', 2800, events=2)],
         'stale': False,
         'method': 'fifo',
+        'report_readiness': _readiness(num_unruled_events=2),
+    }
+
+
+@pytest.mark.usefixtures('materialized_pnl')
+def test_realized_pnl_report_readiness_window_and_manual_confirmation(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Open issues at or before to_timestamp (including pre-window ones) block readiness,
+    issues after to_timestamp do not, manual confirmations unblock readiness, and unruled
+    events are reported without blocking."""
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    manager = DataIssuesManager(database)
+
+    # Pre-window open issue (before JAN_12_2023)
+    pre_window_issue_id = manager.write_issue(
+        IssueKind.MISSING_COST_BASIS,
+        location=LOCATION_ETHEREUM,
+        location_label=TEST_ADDR1,
+        protocol=None,
+        asset='ETH',
+        payload={
+            'event_identifier': 500,
+            'group_identifier': 'pre-window-grp',
+            'requested_amount': '1',
+            'covered_amount': '0',
+            'uncovered_amount': '1',
+            'fallback_basis': '0',
+        },
+        ts_start=JAN_10_2023 * 1000,
+        ts_end=JAN_10_2023 * 1000,
+    )
+    # Post-window open issue (after JAN_12_2023, inside 2024)
+    manager.write_issue(
+        IssueKind.MISSING_PRICE,
+        location=LOCATION_OPTIMISM,
+        location_label=TEST_ADDR1,
+        protocol=None,
+        asset='ETH',
+        payload={
+            'event_identifier': 501,
+            'group_identifier': 'post-window-grp',
+            'to_asset': 'USD',
+            'amount': '1',
+            'direction': 'spend',
+        },
+        ts_start=FEB_20_2024 * 1000,
+        ts_end=FEB_20_2024 * 1000,
+    )
+
+    # Querying [JAN_12_2023, JAN_12_2023]: pre-window issue blocks, post-window does NOT
+    in_2023 = _query(
+        rotkehlchen_api_server,
+        from_timestamp=JAN_12_2023,
+        to_timestamp=JAN_12_2023,
+    )
+    assert in_2023['report_readiness'] == _readiness(
+        open_issues_by_kind={IssueKind.MISSING_COST_BASIS.value: 1},
+        num_unruled_events=0,
+        evaluated_through_ts=JAN_12_2023 * 1000,
+    )
+    assert in_2023['report_readiness']['ready'] is False
+
+    # Manually confirming the pre-window issue unblocks the 2023 window even with unruled events
+    assert_proper_sync_response_with_result(requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataissueresolvemanuallyresource',
+            issue_id=pre_window_issue_id,
+        ),
+        json={'disposition': 'confirm_zero_basis', 'note': 'accepted'},
+    ))
+    in_2023_after = _query(
+        rotkehlchen_api_server,
+        from_timestamp=JAN_10_2023 - 200,
+        to_timestamp=JAN_12_2023,
+    )
+    assert in_2023_after['num_unruled_events'] == 2
+    assert in_2023_after['report_readiness'] == _readiness(
+        num_unruled_events=2,
+        evaluated_through_ts=JAN_12_2023 * 1000,
+    )
+    assert in_2023_after['report_readiness']['ready'] is True
+
+    # Unbounded query still sees the post-window 2024 issue
+    unbounded = _query(rotkehlchen_api_server)
+    assert unbounded['report_readiness']['ready'] is False
+    assert unbounded['report_readiness']['open_issues_by_kind'] == {
+        IssueKind.MISSING_PRICE.value: 1,
     }
 
 

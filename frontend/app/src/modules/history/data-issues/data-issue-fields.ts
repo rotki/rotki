@@ -2,6 +2,7 @@ import type { AssetsWithId } from '@/modules/assets/types';
 import type { SharedFieldResolvers } from '@/modules/core/table/filters/shared/use-shared-field-resolvers';
 import type { FieldDef, ValueIcon } from '@/modules/core/table/pill/core/types';
 import type { DataIssueAccountOptions } from '@/modules/history/data-issues/use-data-issue-account-options';
+import { FilterValueTypes } from '@/modules/core/table/filtering';
 import { toAssetField } from '@/modules/core/table/filters/shared/asset-field';
 import { toPeriodField } from '@/modules/core/table/filters/shared/period-field';
 import { toMatchFieldDef } from '@/modules/core/table/pill/core/field-adapter';
@@ -77,5 +78,10 @@ export function toDataIssueFields(
       { lowerKey: DataIssuesFilterKeys.START, upperKey: DataIssuesFilterKeys.END },
       resolvers,
     ),
+    toMatchFieldDef({
+      key: DataIssuesFilterKeys.MANUAL_ONLY,
+      label: (): string => t('data_issues.filter.confirmed'),
+      valueType: FilterValueTypes.BOOLEAN,
+    }),
   ];
 }

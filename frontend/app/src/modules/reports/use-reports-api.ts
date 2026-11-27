@@ -6,6 +6,11 @@ import { downloadFileByUrl } from '@/modules/core/common/file/download';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 import {
+  RealizedPnlReadinessResponse,
+  type ReportReadiness,
+  type ReportReadinessQuery,
+} from '@/modules/reports/readiness-types';
+import {
   type ProfitLossEvent,
   ProfitLossEventsCollectionResponse,
   type ProfitLossEventsPayload,
@@ -25,6 +30,7 @@ interface UseReportsApi {
   exportReportData: (payload: ProfitLossReportDebugPayload) => Promise<PendingTask>;
   uploadReportData: (filepath: File) => Promise<PendingTask>;
   fetchActionableItems: () => Promise<ReportActionableItem>;
+  fetchReportReadiness: (query?: ReportReadinessQuery) => Promise<ReportReadiness>;
   fetchReports: () => Promise<Reports>;
   fetchReport: (reportId: number) => Promise<ProfitLossOverview>;
   fetchReportEvents: (payload: ProfitLossEventsPayload) => Promise<CollectionResponse<ProfitLossEvent>>;
@@ -98,6 +104,17 @@ export function useReportsApi(): UseReportsApi {
     return ReportActionableItem.parse(response);
   };
 
+  const fetchReportReadiness = async (query: ReportReadinessQuery = {}): Promise<ReportReadiness> => {
+    const body: Record<string, number> = {};
+    if (query.fromTimestamp !== undefined && query.fromTimestamp > 0)
+      body.fromTimestamp = query.fromTimestamp;
+    if (query.toTimestamp !== undefined && query.toTimestamp > 0)
+      body.toTimestamp = query.toTimestamp;
+
+    const response = await api.post<unknown>('/history/events/pnl', body);
+    return RealizedPnlReadinessResponse.parse(response).reportReadiness;
+  };
+
   const fetchReports = async (): Promise<Reports> => {
     const response = await api.get<Reports>('/reports');
     return Reports.parse(response);
@@ -129,6 +146,7 @@ export function useReportsApi(): UseReportsApi {
     fetchActionableItems,
     fetchReport,
     fetchReportEvents,
+    fetchReportReadiness,
     fetchReports,
     generateReport,
     importReportData,

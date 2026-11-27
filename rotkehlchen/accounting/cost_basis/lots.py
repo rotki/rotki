@@ -100,6 +100,7 @@ class SpendResult(NamedTuple):
     taxable_amount: FVal  # includes any amount for which no lot was found
     taxable_basis: FVal
     taxfree_basis: FVal
+    uncovered_amount: FVal = ZERO
 
     @property
     def basis_removed(self) -> FVal:
@@ -200,17 +201,67 @@ class BucketLots[K: Hashable]:
             timestamp_to_date=str,
             event=event,
         )
+        consumed = [ConsumedLot(
+            lot=matched.event,  # type: ignore[arg-type]  # only lots are added to the buckets
+            amount=matched.amount,
+            basis_per_unit=matched.event.rate if average_basis is None else average_basis,
+            taxable=matched.taxable,
+        ) for matched in info.matched_acquisitions if matched.amount > ZERO]
+        covered = sum((entry.amount for entry in consumed), start=ZERO)
         return SpendResult(
-            consumed=[ConsumedLot(
-                lot=matched.event,  # type: ignore[arg-type]  # only lots are added to the buckets
-                amount=matched.amount,
-                basis_per_unit=matched.event.rate if average_basis is None else average_basis,
-                taxable=matched.taxable,
-            ) for matched in info.matched_acquisitions if matched.amount > ZERO],
+            consumed=consumed,
             taxable_amount=info.taxable_amount,
             taxable_basis=info.taxable_bought_cost,
             taxfree_basis=info.taxfree_bought_cost,
+            uncovered_amount=max(ZERO, amount - covered),
         )
+
+    def extract(
+            self,
+            source: K,
+            asset: Asset,
+            amount: FVal,
+            event: HistoryBaseEntry | None = None,
+    ) -> list[ConsumedLot]:
+        """Remove lots for `amount` from `source` without depositing them yet.
+
+        Used when a transfer's spend and receive legs occur at different timestamps (such as
+        matched exchange transfers), so the extracted lots travel in transit until the
+        destination leg is reached and calls `deposit_lots`.
+        """
+        average_basis = self._average_basis(manager := self._get(source))
+        remaining, moved = amount, []
+        for lot in manager.processing_iterator():
+            if remaining <= ZERO:
+                break
+
+            moved.append(ConsumedLot(
+                lot=lot,  # type: ignore[arg-type]  # only lots are added to the buckets
+                amount=(used := min(remaining, lot.remaining_amount)),
+                basis_per_unit=lot.rate if average_basis is None else average_basis,
+                taxable=False,
+            ))
+            remaining -= used
+            manager.consume_result(used_amount=used, asset=asset, event=event)
+
+        return moved
+
+    def deposit_lots(
+            self,
+            destination: K,
+            moved: list[ConsumedLot],
+            ratio: FVal = ONE,
+    ) -> None:
+        """Deposit previously extracted lots into `destination`, preserving identity and basis."""
+        destination_manager = self._get(destination)
+        for entry in moved:
+            destination_manager.add_in_event(Lot(
+                amount=entry.amount * ratio,
+                timestamp=entry.lot.timestamp,
+                rate=Price(entry.basis_per_unit / ratio),
+                index=entry.lot.index,
+                lot_id=entry.lot.lot_id,
+            ), order=entry.lot.index)
 
     def transfer(
             self,
@@ -233,31 +284,8 @@ class BucketLots[K: Hashable]:
         total basis stays the same.
         """
         ratio = ONE if destination_amount is None else destination_amount / amount
-        average_basis = self._average_basis(manager := self._get(source))
-        remaining, moved = amount, []
-        for lot in manager.processing_iterator():
-            if remaining <= ZERO:
-                break
-
-            moved.append(ConsumedLot(
-                lot=lot,  # type: ignore[arg-type]  # only lots are added to the buckets
-                amount=(used := min(remaining, lot.remaining_amount)),
-                basis_per_unit=lot.rate if average_basis is None else average_basis,
-                taxable=False,
-            ))
-            remaining -= used
-            manager.consume_result(used_amount=used, asset=asset, event=event)
-
-        destination_manager = self._get(destination)
-        for entry in moved:
-            destination_manager.add_in_event(Lot(
-                amount=entry.amount * ratio,
-                timestamp=entry.lot.timestamp,
-                rate=Price(entry.basis_per_unit / ratio),
-                index=entry.lot.index,
-                lot_id=entry.lot.lot_id,
-            ), order=entry.lot.index)
-
+        moved = self.extract(source=source, asset=asset, amount=amount, event=event)
+        self.deposit_lots(destination=destination, moved=moved, ratio=ratio)
         return moved
 
     def basis_remaining(self, bucket: K) -> FVal:

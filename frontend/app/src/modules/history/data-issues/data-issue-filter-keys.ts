@@ -6,6 +6,7 @@ export const DataIssuesFilterKeys = {
   ASSET: 'asset',
   END: 'toTimestamp',
   KIND: 'kind',
+  MANUAL_ONLY: 'manualOnly',
   START: 'fromTimestamp',
   STATE: 'state',
 } as const;

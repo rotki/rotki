@@ -1,22 +1,17 @@
 <script setup lang="ts">
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
-import type { IssueDescription, RemediationTimelineItem } from '@/modules/history/data-issues/types';
-import { RuiButton, RuiIcon } from '@rotki/ui-library';
-import { get } from '@vueuse/shared';
+import type { RemediationTimelineItem } from '@/modules/history/data-issues/types';
+import type { RemediationRequest } from '@/modules/history/data-issues/use-data-issue-remediation-actions';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { type RouteLocationRaw, useRouter } from 'vue-router';
+import DataIssueAuditSection from '@/modules/history/data-issues/components/DataIssueAuditSection.vue';
 import DataIssueBalanceDivergence from '@/modules/history/data-issues/components/DataIssueBalanceDivergence.vue';
-import DataIssueBalanceMismatchSummary from '@/modules/history/data-issues/components/DataIssueBalanceMismatchSummary.vue';
-import DataIssueDescription from '@/modules/history/data-issues/components/DataIssueDescription.vue';
 import DataIssueDetailFooter from '@/modules/history/data-issues/components/DataIssueDetailFooter.vue';
 import DataIssueDetailHeader from '@/modules/history/data-issues/components/DataIssueDetailHeader.vue';
-import DataIssueNegativeBalanceSummary from '@/modules/history/data-issues/components/DataIssueNegativeBalanceSummary.vue';
+import DataIssueDetailSummary from '@/modules/history/data-issues/components/DataIssueDetailSummary.vue';
 import DataIssueRemediationTimeline from '@/modules/history/data-issues/components/DataIssueRemediationTimeline.vue';
-import { IssueKind } from '@/modules/history/data-issues/constants';
-import { describeIssue, type NegativeBalanceValues, negativeBalanceValues, relatedEventRoute, toTimelineItems } from '@/modules/history/data-issues/transforms';
+import { toTimelineItems } from '@/modules/history/data-issues/transforms';
 import { dataIssueDivergenceKey } from '@/modules/history/data-issues/use-data-issue-divergence-store';
-import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 /**
  * One issue's detail body, shared by both of its containers: the drawer on the data-issues page and
@@ -32,57 +27,16 @@ const { issue, busy = false, failure } = defineProps<{
 const emit = defineEmits<{
   close: [];
   dismiss: [id: number];
+  remediate: [request: RemediationRequest];
+  reopen: [id: number];
   retry: [id: number];
   resolve: [id: number];
   review: [item: RemediationTimelineItem];
 }>();
 
-type Amount = IssueDescription['amounts'][string];
-
 const { t } = useI18n({ useScope: 'global' });
-const router = useRouter();
-
-const description = computed<IssueDescription | undefined>(() => issue ? describeIssue(issue) : undefined);
-
-const negativeBalance = computed<NegativeBalanceValues | undefined>(() => issue ? negativeBalanceValues(issue) : undefined);
-
-/** Balance mismatches and negative balances show their amounts as values; every other kind keeps its sentence. */
-const mismatch = computed<{ derived: Amount; observed: Amount; delta: Amount } | undefined>(() => {
-  const amounts = get(description)?.amounts;
-  if (issue?.kind !== IssueKind.CURRENT_BALANCE_MISMATCH || !amounts?.derived || !amounts.observed || !amounts.delta)
-    return undefined;
-  return { delta: amounts.delta, derived: amounts.derived, observed: amounts.observed };
-});
-
-/** Deep-link to the offending history event (shared with the inbox panel). */
-const relatedEventLink = computed<RouteLocationRaw | undefined>(() =>
-  issue ? relatedEventRoute(issue.kind, get(description)?.eventIdentifier, issue.groupIdentifier, issue.asset) : undefined);
-
-/** An unmatched bridge's link opens the matching dialog, so it says what it will do. */
-const relatedEventLabel = computed<string>(() => {
-  if (issue?.kind === IssueKind.UNMATCHED_BRIDGE)
-    return t('data_issues.detail.match_in_history');
-  return t('data_issues.detail.open_event', { id: get(description)?.eventIdentifier ?? '' });
-});
-
-async function goToRelatedEvent(): Promise<void> {
-  const link = get(relatedEventLink);
-  if (!link)
-    return;
-  emit('close');
-  await router.push(link);
-}
 
 const timeline = computed<RemediationTimelineItem[]>(() => (issue ? toTimelineItems(issue) : []));
-
-const resolutionNote = computed<string | undefined>(() => {
-  const resolution = issue?.payload?.resolution;
-  if (resolution && typeof resolution === 'object' && 'note' in resolution) {
-    const note = resolution.note;
-    return typeof note === 'string' ? note : undefined;
-  }
-  return undefined;
-});
 </script>
 
 <template>
@@ -96,56 +50,12 @@ const resolutionNote = computed<string | undefined>(() => {
     />
 
     <div class="flex flex-col p-4 overflow-y-auto grow between:border-t between:border-rui-divider between:mt-4 between:pt-4">
-      <section class="flex flex-col gap-2">
-        <h3 class="text-xs font-medium text-rui-text-secondary">
-          {{ t('data_issues.detail.whats_wrong') }}
-        </h3>
-        <DataIssueBalanceMismatchSummary
-          v-if="mismatch"
-          v-bind="mismatch"
-          :asset="issue.asset ?? undefined"
-        />
-        <DataIssueNegativeBalanceSummary
-          v-else-if="negativeBalance"
-          v-bind="negativeBalance"
-          :asset="issue.asset ?? undefined"
-        />
-        <DataIssueDescription
-          v-else-if="description"
-          :description="description"
-          tag="p"
-          class="text-sm text-rui-text"
-        />
-        <div
-          v-if="description?.eventIdentifier !== undefined"
-          class="mt-1 flex flex-wrap items-center justify-between gap-x-2 text-xs text-rui-text-secondary"
-        >
-          <span data-testid="data-issue-event-date">
-            {{ t('data_issues.detail.event_date') }}
-            <DateDisplay
-              :timestamp="issue.tsEnd"
-              milliseconds
-            />
-          </span>
-          <RuiButton
-            v-if="relatedEventLink"
-            variant="text"
-            color="primary"
-            size="sm"
-            class="-mr-2"
-            data-testid="data-issue-related-event"
-            @click="goToRelatedEvent()"
-          >
-            {{ relatedEventLabel }}
-            <template #append>
-              <RuiIcon
-                name="lu-arrow-right"
-                size="14"
-              />
-            </template>
-          </RuiButton>
-        </div>
-      </section>
+      <DataIssueDetailSummary
+        :issue="issue"
+        :busy="busy"
+        @close="emit('close')"
+        @remediate="emit('remediate', $event)"
+      />
 
       <DataIssueBalanceDivergence
         :key="dataIssueDivergenceKey(issue)"
@@ -174,17 +84,7 @@ const resolutionNote = computed<string | undefined>(() => {
         />
       </section>
 
-      <section
-        v-if="resolutionNote"
-        class="flex flex-col gap-2"
-      >
-        <h3 class="text-xs font-medium text-rui-text-secondary">
-          {{ t('data_issues.detail.resolution_note') }}
-        </h3>
-        <p class="text-sm">
-          {{ resolutionNote }}
-        </p>
-      </section>
+      <DataIssueAuditSection :issue="issue" />
     </div>
 
     <DataIssueDetailFooter
@@ -192,6 +92,7 @@ const resolutionNote = computed<string | undefined>(() => {
       :busy="busy"
       :failure="failure"
       @dismiss="emit('dismiss', $event)"
+      @reopen="emit('reopen', $event)"
       @retry="emit('retry', $event)"
       @resolve="emit('resolve', $event)"
     />

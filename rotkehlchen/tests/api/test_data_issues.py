@@ -221,10 +221,12 @@ def test_data_issues_list_detail_and_pagination(rotkehlchen_api_server: APIServe
     result = assert_proper_sync_response_with_result(requests.get(
         api_url_for(rotkehlchen_api_server, 'dataissueresource', issue_id=first_id),
     ))
+    assert result['event_identifier'] == event_identifier
     assert result['payload']['event_identifier'] == event_identifier
     assert result['group_identifier'] == group_identifier
     assert result['protocol'] is None
     assert result['auto_remediation_attempts'] == []
+    assert result['suggested_actions'] == []
 
     assert_error_response(
         response=requests.get(api_url_for(
@@ -331,7 +333,11 @@ def test_data_issue_write_endpoints(rotkehlchen_api_server: APIServer) -> None:
             issue_id=rebasing_issue_id,
         )))
         assert result['state'] == 'auto_remediating'
-        retry_task.assert_called_once_with(issue_id=rebasing_issue_id, from_ts=TimestampMS(1000))
+        retry_task.assert_called_once_with(
+            issue_id=rebasing_issue_id,
+            from_ts=TimestampMS(1000),
+            kind=IssueKind.REBASING_TOKEN,
+        )
 
         result = assert_proper_sync_response_with_result(requests.post(api_url_for(
             rotkehlchen_api_server,
@@ -389,3 +395,200 @@ def test_data_issue_write_endpoints(rotkehlchen_api_server: APIServer) -> None:
         contained_in_msg='Data issue with id 999 not found',
         status_code=HTTPStatus.NOT_FOUND,
     )
+
+
+def test_pnl_data_issues_actions_confirm_filter_reopen_and_retry(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    manager = DataIssuesManager(database)
+
+    missing_price_id = manager.write_issue(
+        IssueKind.MISSING_PRICE,
+        location=LOCATION_ETHEREUM,
+        location_label='0x0000000000000000000000000000000000000001',
+        protocol=None,
+        asset='ETH',
+        payload={
+            'event_identifier': 11,
+            'group_identifier': 'grp-price',
+            'to_asset': 'USD',
+            'amount': '1',
+            'direction': 'spend',
+        },
+        ts_start=1_700_000_000_000,
+        ts_end=1_700_000_000_000,
+    )
+    missing_basis_id = manager.write_issue(
+        IssueKind.MISSING_COST_BASIS,
+        location=LOCATION_ETHEREUM,
+        location_label='0x0000000000000000000000000000000000000001',
+        protocol=None,
+        asset='ETH',
+        payload={
+            'event_identifier': 12,
+            'group_identifier': 'grp-basis',
+            'requested_amount': '2',
+            'covered_amount': '0.5',
+            'uncovered_amount': '1.5',
+            'fallback_basis': '0',
+        },
+        ts_start=1_700_001_000_000,
+        ts_end=1_700_001_000_000,
+    )
+    incomplete_swap_id = manager.write_issue(
+        IssueKind.INCOMPLETE_SWAP,
+        location=LOCATION_ETHEREUM,
+        location_label='0x0000000000000000000000000000000000000001',
+        protocol=None,
+        asset='ETH',
+        payload={
+            'event_identifier': 13,
+            'group_identifier': 'grp-swap',
+            'event_identifiers': [13, 14],
+            'present_legs': [{
+                'event_identifier': 13,
+                'subtype': 'spend',
+                'asset': 'ETH',
+                'amount': '1',
+            }],
+            'missing_or_excluded_reason': 'ignored_asset',
+            'excluded_assets': ['SPAM'],
+        },
+        ts_start=1_700_002_000_000,
+        ts_end=1_700_002_000_000,
+    )
+    unmatched_cex_id = manager.write_issue(
+        IssueKind.UNMATCHED_EXCHANGE_TRANSFER,
+        location=LOCATION_ETHEREUM,
+        location_label='kraken',
+        protocol=None,
+        asset='ETH',
+        payload={
+            'event_identifier': 15,
+            'group_identifier': 'grp-cex',
+            'subtype': 'spend',
+            'amount': '3',
+        },
+        ts_start=1_700_003_000_000,
+        ts_end=1_700_003_000_000,
+    )
+
+    # Top-level event_identifier, payload-fallback group_identifier, and suggested_actions
+    listed = assert_proper_sync_response_with_result(requests.get(
+        api_url_for(rotkehlchen_api_server, 'dataissuesresource'),
+    ))
+    by_id = {entry['id']: entry for entry in listed['entries']}
+    assert by_id[missing_price_id]['event_identifier'] == 11
+    assert by_id[missing_price_id]['group_identifier'] == 'grp-price'
+    assert [a['action'] for a in by_id[missing_price_id]['suggested_actions']] == [
+        'set_manual_price', 'ignore_asset', 'ignore_action',
+    ]
+    assert [a['action'] for a in by_id[missing_basis_id]['suggested_actions']] == [
+        'add_acquisition', 'match_transfer', 'confirm_zero_basis',
+    ]
+    basis_actions = {a['action']: a for a in by_id[missing_basis_id]['suggested_actions']}
+    assert basis_actions['add_acquisition']['params']['timestamp'] == 1_700_001_000_000
+    assert basis_actions['match_transfer']['params'] == {'external': False}
+    assert basis_actions['confirm_zero_basis']['params'] == {'disposition': 'confirm_zero_basis'}
+    assert [a['action'] for a in by_id[incomplete_swap_id]['suggested_actions']] == [
+        'ignore_group', 'unignore_asset', 'edit_event', 'dismiss_as_standalone',
+    ]
+    swap_actions = {a['action']: a for a in by_id[incomplete_swap_id]['suggested_actions']}
+    assert swap_actions['dismiss_as_standalone']['params'] == {
+        'disposition': 'dismiss_as_standalone',
+    }
+    assert [a['action'] for a in by_id[unmatched_cex_id]['suggested_actions']] == [
+        'auto_match_exchange_transfer', 'manual_match_event', 'resolve_as_external',
+    ]
+    cex_actions = {a['action']: a for a in by_id[unmatched_cex_id]['suggested_actions']}
+    assert cex_actions['auto_match_exchange_transfer']['params'] == {}
+    assert cex_actions['manual_match_event']['params'] == {
+        'asset_movement': 15,
+        'external': False,
+    }
+
+    # Resolve manually with disposition -> clears suggested_actions and matches manual_only filter
+    confirmed = assert_proper_sync_response_with_result(requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataissueresolvemanuallyresource',
+            issue_id=missing_basis_id,
+        ),
+        json={'note': 'mined', 'disposition': 'confirm_zero_basis'},
+    ))
+    assert confirmed['state'] == 'resolved'
+    assert confirmed['payload']['resolution'] == {
+        'manual': True,
+        'disposition': 'confirm_zero_basis',
+        'note': 'mined',
+    }
+    assert confirmed['suggested_actions'] == []
+
+    # Auto-resolved & dismissed issues must NOT appear in manual_only=true
+    manager.update_state(missing_price_id, IssueState.RESOLVED)
+    assert_proper_sync_response_with_result(requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        'dataissuedismissresource',
+        issue_id=incomplete_swap_id,
+    )))
+
+    manual_list = assert_proper_sync_response_with_result(requests.get(
+        api_url_for(rotkehlchen_api_server, 'dataissuesresource'),
+        params={'manual_only': 'true'},
+    ))
+    assert manual_list['entries_found'] == 1
+    assert [entry['id'] for entry in manual_list['entries']] == [missing_basis_id]
+
+    # Reopen confirmed issue -> back to open, resolution stripped, suggested_actions restored
+    reopened = assert_proper_sync_response_with_result(requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        'dataissuereopenresource',
+        issue_id=missing_basis_id,
+    )))
+    assert reopened['state'] == 'open'
+    assert reopened['resolved_at'] is None
+    assert 'resolution' not in reopened['payload']
+    assert [a['action'] for a in reopened['suggested_actions']] == [
+        'add_acquisition', 'match_transfer', 'confirm_zero_basis',
+    ]
+
+    # Reopen an already open issue -> 409; missing issue -> 404
+    assert_error_response(
+        response=requests.patch(api_url_for(
+            rotkehlchen_api_server,
+            'dataissuereopenresource',
+            issue_id=missing_basis_id,
+        )),
+        contained_in_msg='Cannot reopen',
+        status_code=HTTPStatus.CONFLICT,
+    )
+    assert_error_response(
+        response=requests.patch(api_url_for(
+            rotkehlchen_api_server,
+            'dataissuereopenresource',
+            issue_id=999,
+        )),
+        contained_in_msg='Data issue with id 999 not found',
+        status_code=HTTPStatus.NOT_FOUND,
+    )
+
+    # Retry auto-remediation works for UNMATCHED_EXCHANGE_TRANSFER and forwards kind
+    task_manager = rotkehlchen_api_server.rest_api.rotkehlchen.task_manager
+    assert task_manager is not None
+    with patch.object(
+        task_manager,
+        'retry_data_issue_auto_remediation',
+        return_value=True,
+    ) as retry_task:
+        retried = assert_proper_sync_response_with_result(requests.post(api_url_for(
+            rotkehlchen_api_server,
+            'dataissueretryautoremediationresource',
+            issue_id=unmatched_cex_id,
+        )))
+        assert retried['state'] == 'auto_remediating'
+        retry_task.assert_called_once_with(
+            issue_id=unmatched_cex_id,
+            from_ts=TimestampMS(1_700_003_000_000),
+            kind=IssueKind.UNMATCHED_EXCHANGE_TRANSFER,
+        )
