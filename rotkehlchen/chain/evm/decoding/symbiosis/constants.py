@@ -20,59 +20,29 @@ class SymbiosisDeployment(NamedTuple):
 
 # Symbiosis Portal event topics
 # keccak of SynthesizeRequest(bytes32,address,uint256,address,address,uint256,address)
-SYNTHESIZE_REQUEST_TOPIC: Final = (
-    b'12_\xe0\xa1\xa2\xe6\xa5\xb1\xe4\x15r\x15k\xa5\xb4'
-    b'\xe9O\x0f\xae~\x7fc\xec!\xe9\xb5\xce\x1eK>\xab'
-)
+SYNTHESIZE_REQUEST_TOPIC: Final = b'12_\xe0\xa1\xa2\xe6\xa5\xb1\xe4\x15r\x15k\xa5\xb4\xe9O\x0f\xae~\x7fc\xec!\xe9\xb5\xce\x1eK>\xab'  # noqa: E501
 # keccak of BurnCompleted(bytes32,bytes32,address,uint256,uint256,address)
-BURN_COMPLETED_TOPIC: Final = (
-    b'\xae\xefd\xb7h{\x98Ve\xb6b\x0c\x7f\xa2q\xb6'
-    b'\xf0Q\xa3\xfb\xe2\xbf\xc3f\xfb\x9c\x96F\x02\xebm&'
-)
+BURN_COMPLETED_TOPIC: Final = b'\xae\xefd\xb7h{\x98Ve\xb6b\x0c\x7f\xa2q\xb6\xf0Q\xa3\xfb\xe2\xbf\xc3f\xfb\x9c\x96F\x02\xebm&'  # noqa: E501
 # keccak of RevertSynthesizeCompleted(bytes32,address,uint256,uint256,address)
-REVERT_SYNTHESIZE_COMPLETED_TOPIC: Final = (
-    b'\xef\xcd\xf9\xeaNeW\x1d,\xe9\xc00\xc4iT\xe9'
-    b'Pf-\xf8\xa7\xd8\xbd\x03\x9f\xc4A~7\xb2\xf8\x8c'
-)
+REVERT_SYNTHESIZE_COMPLETED_TOPIC: Final = b'\xef\xcd\xf9\xeaNeW\x1d,\xe9\xc00\xc4iT\xe9Pf-\xf8\xa7\xd8\xbd\x03\x9f\xc4A~7\xb2\xf8\x8c'  # noqa: E501
 
 # Symbiosis Synthesis event topics
 # keccak of BurnRequest(bytes32,address,uint256,address,address,uint256,address)
-BURN_REQUEST_TOPIC: Final = (
-    b'_\x00\xe8\xf0\xd6\x1f\xf1\x19\t\x12\x87\x99I\x02l\x85'
-    b'\xa8\x1f?\x96\x03\x8c\x7fL\xd8h\xbd\xfe\x88.\x0e\xeb'
-)
+BURN_REQUEST_TOPIC: Final = b'_\x00\xe8\xf0\xd6\x1f\xf1\x19\t\x12\x87\x99I\x02l\x85\xa8\x1f?\x96\x03\x8c\x7fL\xd8h\xbd\xfe\x88.\x0e\xeb'  # noqa: E501
 # keccak of BurnRequestBTC(uint64,address,bytes,uint256,uint256,address)
-BURN_REQUEST_BTC_TOPIC: Final = (
-    b'v\xa6\xd9~\xe6D\xff\x15:\xa6\xe2*\x0c\t\n\x07'
-    b'\x01.al\x1c\x02Y\xce\x98PY;\x9a\xedS\x16'
-)
+BURN_REQUEST_BTC_TOPIC: Final = b'v\xa6\xd9~\xe6D\xff\x15:\xa6\xe2*\x0c\t\n\x07\x01.al\x1c\x02Y\xce\x98PY;\x9a\xedS\x16'  # noqa: E501
 # keccak of BurnRequestTON(bytes32,address,uint256,address,(int8,bytes32),uint256,address)
-BURN_REQUEST_TON_TOPIC: Final = (
-    b'\xb2/f\xd5\xcbM\x95\x8c\x8b\xee\xc9\x9fa\x91x$'
-    b'\xd4\x07\xa7ME\x14\xd8\xd4L\xc7rG\xe6zNZ'
-)
+BURN_REQUEST_TON_TOPIC: Final = b'\xb2/f\xd5\xcbM\x95\x8c\x8b\xee\xc9\x9fa\x91x$\xd4\x07\xa7ME\x14\xd8\xd4L\xc7rG\xe6zNZ'  # noqa: E501
 # keccak of SynthesizeCompleted(bytes32,address,bytes32,uint256,uint256,address)
-SYNTHESIZE_COMPLETED_TOPIC: Final = (
-    b'\x1f?\x0f<{-\xf4\x80u\\d\x86\xa12\xf2\x15'
-    b'\xe7\xb2\xb8\x9f\xcc\xa0\xbe\xec\xd9Z\x96\x96\xc7\x17\x89\xb6'
-)
+SYNTHESIZE_COMPLETED_TOPIC: Final = b'\x1f?\x0f<{-\xf4\x80u\\d\x86\xa12\xf2\x15\xe7\xb2\xb8\x9f\xcc\xa0\xbe\xec\xd9Z\x96\x96\xc7\x17\x89\xb6'  # noqa: E501
 # keccak of BTCSynthesizeCompleted(bytes32,address,uint256,uint64,uint256,address)
-BTC_SYNTHESIZE_COMPLETED_TOPIC: Final = (
-    b'\xb6\xaaD\xf5\xb2\xe6\xd2\x03\x06P\xd5QOj\xa3\xc8'
-    b'"\xcd\x88\xce#\xe5\x1f\xe2\x0fep\x83\x7f\x02\x04+'
-)
+BTC_SYNTHESIZE_COMPLETED_TOPIC: Final = b'\xb6\xaaD\xf5\xb2\xe6\xd2\x03\x06P\xd5QOj\xa3\xc8"\xcd\x88\xce#\xe5\x1f\xe2\x0fep\x83\x7f\x02\x04+'  # noqa: E501
 # keccak of RevertBurnCompleted(bytes32,address,uint256,uint256,address)
-REVERT_BURN_COMPLETED_TOPIC: Final = (
-    b'\xb6\xf5\xf7\xb9\x8c\xc7\x8a\x801\xc9g\xaf\x16:\x8c\x19'
-    b'\x7fG\n5\xdf\x1e2j\x908\x85\x96y\xe6\xa1\x84'
-)
+REVERT_BURN_COMPLETED_TOPIC: Final = b'\xb6\xf5\xf7\xb9\x8c\xc7\x8a\x801\xc9g\xaf\x16:\x8c\x19\x7fG\n5\xdf\x1e2j\x908\x85\x96y\xe6\xa1\x84'  # noqa: E501
 
 # Symbiosis BridgeV2 event topic & selectors used to inspect multi-hop sChain routing
 # keccak of OracleRequest(address,bytes,address,address,uint256)
-ORACLE_REQUEST_TOPIC: Final = (
-    b'S-\xbbm\x06\x1e\xee\x97\xabCp\x06\x0f`\xed\xe1'
-    b'\x0b=\xc3a\xcc\x12\x14\xc0z\xe5\xe3M\xd8nj\xaf'
-)
+ORACLE_REQUEST_TOPIC: Final = b'S-\xbbm\x06\x1e\xee\x97\xabCp\x06\x0f`\xed\xe1\x0b=\xc3a\xcc\x12\x14\xc0z\xe5\xe3M\xd8nj\xaf'  # noqa: E501
 # Selectors for metaMintSyntheticToken and nested finalCalldata calls
 META_MINT_SYNTHETIC_TOKEN_SELECTOR: Final = b'\xc2\x9a\x91\xbc'
 META_BURN_SYNTHETIC_TOKEN_SELECTOR: Final = b'\xe6k\xb5P'
