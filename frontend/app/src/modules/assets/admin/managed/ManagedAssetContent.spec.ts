@@ -43,7 +43,7 @@ vi.mock('@/modules/assets/admin/managed/use-managed-assets-table', async () => {
     useManagedAssetsTable: (): Record<string, unknown> => ({
       assets: ref({ data: [], found: 0, limit: -1, total: 0 }),
       deleteAsset: vi.fn(),
-      deleteConfirm: ref(),
+      deleteConfirm: vi.fn(() => ({ message: 'delete?', title: 'delete' })),
       deleteFailure: ref(),
       fields: ref([]),
       loading: ref<boolean>(false),
