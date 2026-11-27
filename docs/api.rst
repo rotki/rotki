@@ -17128,7 +17128,8 @@ Historical Balance Queries
 
     Gets historical balance series for one account and asset, grouped by matching
     location and protocol buckets. Each point is the bucket balance after the event at
-    that timestamp. The entries order is not guaranteed and clients should not rely on it.
+    that timestamp. A point where the bucket was emptied has a ``"0"`` value.
+    The entries order is not guaranteed and clients should not rely on it.
     The required selector is ``location_label`` and ``asset``. Optional ``location`` and
     ``protocol`` filters only narrow that selector; if omitted, matching locations and
     protocols are returned as separate series records.

@@ -196,7 +196,13 @@ class HistoricalBalancesManager:
             self,
             filter_query: HistoricalBalancesFilterQuery,
     ) -> tuple[bool, list[HistoricalBalanceSeriesEntry] | None]:
-        """Get historical balance series per location/account/protocol/asset bucket."""
+        """Get historical balance series per location/account/protocol/asset bucket.
+
+        Points where a bucket was emptied are kept with a zero value, so a series shows when
+        the asset left the bucket instead of holding its last positive balance. A bucket whose
+        only points in the range are zero is kept too: it was emptied there, and a client that
+        starts the series from the balance before the range needs that point to end the line.
+        """
         filter_str, filter_bindings = filter_query.prepare()
         query_bindings: list = [EventMetricKey.BALANCE.serialize(), *filter_bindings]
         entries: list[HistoricalBalanceSeriesEntry] = []
@@ -209,7 +215,6 @@ class HistoricalBalancesManager:
                 FROM event_metrics em
                 WHERE metric_key = ? {filter_str}
                 AND asset NOT IN (SELECT value FROM multisettings WHERE name='ignored_asset')
-                AND metric_value > 0
                 ORDER BY location, location_label, protocol, asset, timestamp, sort_key
                 """,
                 query_bindings,
