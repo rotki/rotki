@@ -254,10 +254,26 @@ satisfy lint. `pnpm run audit:comments` lists candidates for review.
   ```
 - **A passing spec prints nothing.** A `[Vue warn]`, MSW warning or stack trace in a passing run's
   stderr means the test setup is wrong, so the spec is not testing what it claims. Fix it in the
-  change that introduces it, or when you touch that spec, because nobody else will. "Lifecycle
-  injection APIs can only be used during execution of setup()" means a composable ran outside a
-  component and its hooks never fired: wrap it with `withSetup()` from `@test/utils/with-setup`. For an expected `console.error`, use `captureConsoleError()` and assert
-  on the spy; never silence output without asserting.
+  change that introduces it, or when you touch that spec, because nobody else will. For an
+  expected `console.error`, use `captureConsoleError()` and assert on the spy; never silence output
+  without asserting. The usual classes:
+  - `onBeforeMount is called when there is no active component instance`: a composable ran
+    outside a component and its hooks never fired. Wrap it with `withSetup()` from
+    `@test/utils/with-setup`.
+  - `Extraneous non-props attributes ... fragment or text or teleport root`: a local stub with a
+    fragment root and no props. Use the shared stub from `@test/stubs/` or set
+    `inheritAttrs: false`.
+  - `[MSW] ... without a matching request handler` / `No msw handler for GET ...`: the code under
+    test makes a request the spec did not plan for. Add a handler with `server.use()` or mock the
+    API composable.
+  - `Invalid prop: ... Expected Object, got Function`: a `createMock()` proxy (a `vi.fn`) passed
+    as a prop. Pass a real object.
+  - `Invalid prop: ... got Undefined`: a required prop is missing. Pass it in the spec, or fix
+    the component if the app can render it without one.
+  - `TypeError` from app code with a passing test: a mock returns the wrong shape and the code
+    swallows the failure. Give the mock the real response shape.
+  - `Avoid app logic that relies on enumerating keys on a component instance`: a matcher got
+    `wrapper.vm`. Compare an element or a value instead.
 - Use `createMock<T>()` from `@test/utils/create-mock` for large or branded types. Its proxy returns
   truthy stubs for omitted properties: set every boolean the code reads and use a real object for
   deep equality. `useI18n()` is already mocked with the `@test/i18n` echo translator.
