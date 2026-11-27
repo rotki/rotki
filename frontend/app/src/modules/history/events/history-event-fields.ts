@@ -42,6 +42,7 @@ export interface HistoryFieldResolvers extends SharedFieldResolvers {
  * nothing left to narrow there.
  */
 interface HistoryEventFieldGates {
+  readonly asset?: boolean;
   readonly protocols?: boolean;
   readonly locations?: boolean;
   readonly period?: boolean;
@@ -117,13 +118,17 @@ function boundsFields(resolvers: HistoryFieldResolvers, options: HistoryEventFie
         resolvers,
       )];
 
+  const asset = options.disabled.asset
+    ? []
+    : [toAssetField({
+        key: HistoryEventFilterKeys.ASSET,
+        label: (): string => t('transactions.filter_field_labels.asset'),
+        searchAsset: options.searchAsset,
+      }, resolvers)];
+
   return [
     ...period,
-    toAssetField({
-      key: HistoryEventFilterKeys.ASSET,
-      label: (): string => t('transactions.filter_field_labels.asset'),
-      searchAsset: options.searchAsset,
-    }, resolvers),
+    ...asset,
     // The backend matches a substring of the notes, so what the user writes is the value.
     toMatchFieldDef({
       freeText: true,

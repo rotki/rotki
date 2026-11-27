@@ -253,6 +253,25 @@ describe('useHistoryEventsFilters', () => {
     });
   });
 
+  describe('requestParams asset', () => {
+    it('should send the asset the view pins', () => {
+      const { options, restrictions, toggles } = createDefaultOptions();
+      set(restrictions, { asset: 'ETH' });
+
+      useHistoryEventsFilters(options, toggles);
+
+      expect(get(capturedRequestParams!).asset).toBe('ETH');
+    });
+
+    it('should send no asset when the view pins none', () => {
+      const { options, toggles } = createDefaultOptions();
+
+      useHistoryEventsFilters(options, toggles);
+
+      expect(get(capturedRequestParams!).asset).toBeUndefined();
+    });
+  });
+
   describe('highlight preservation', () => {
     it('should include highlight params in queryParamsOnly when route has highlights', async () => {
       const router = useRouter();

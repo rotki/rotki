@@ -119,6 +119,11 @@ describe('toHistoryEventFields', () => {
     expect(keysOf({ disabled: { period: true } })).not.toContain('period');
   });
 
+  it('should omit the asset only when the view already fixes it', () => {
+    expect(keysOf({ disabled: {} })).toContain('asset');
+    expect(keysOf({ disabled: { asset: true } })).not.toContain('asset');
+  });
+
   it('should omit the protocol, location and event fields when the view already fixes them', () => {
     const keys = keysOf({ disabled: { eventSubtypes: true, eventTypes: true, locations: true, protocols: true } });
 

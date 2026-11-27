@@ -90,6 +90,7 @@ export function useHistoryEventsFilters(
 ): UseHistoryEventsFiltersReturn {
   const { fields, filters: modelFilters, mainPage } = options;
   const {
+    asset,
     entryTypes,
     eventTypes,
     externalAccounts,
@@ -160,6 +161,7 @@ export function useHistoryEventsFilters(
 
   const sources = buildHistoryEventSources({
     action,
+    asset,
     duplicateHandlingStatusFromQuery,
     entryTypes,
     eventTypes,
