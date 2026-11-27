@@ -107,7 +107,7 @@ export function statusForId(
  */
 
 /** The subset of a record the progress projection needs. */
-export interface ProgressRecord {
+interface ProgressRecord {
   readonly status: ActivityStatus;
   readonly spec: { readonly parent?: ActivityId };
 }
@@ -118,7 +118,7 @@ export interface ProgressRecord {
  * Built in one pass over the records rather than looked up per parent, so projecting a whole
  * snapshot stays linear instead of rescanning the table once per umbrella.
  */
-export function childProgress(records: ReadonlyMap<ActivityId, ProgressRecord>): Map<ActivityId, ActivitySteps> {
+function childProgress(records: ReadonlyMap<ActivityId, ProgressRecord>): Map<ActivityId, ActivitySteps> {
   const byParent = new Map<ActivityId, ActivitySteps>();
 
   for (const record of records.values()) {
@@ -220,4 +220,10 @@ export function projectActivity(record: RenderableRecord, childSteps?: ActivityS
     title: spec.title,
     userStarted: spec.userStarted,
   };
+}
+
+/** Projects every record into its rendered {@link Activity}, with each umbrella's child progress attached. */
+export function projectAll(records: ReadonlyMap<ActivityId, RenderableRecord>): Activity[] {
+  const children = childProgress(records);
+  return Array.from(records.values(), record => projectActivity(record, children.get(record.spec.id)));
 }

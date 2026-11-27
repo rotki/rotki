@@ -74,6 +74,11 @@ export interface TaskOrchestrator {
    * is left alone. For work whose settled record nobody reads again, so it does not pile up.
    */
   readonly forget: (id: ActivityId) => void;
+  /**
+   * Update the reason text of a settled activity in place without restarting or re-surfacing it.
+   * No-op when the activity is absent, not terminal, or already carries the same reason.
+   */
+  readonly updateReason: (id: ActivityId, reason: string) => void;
   /** Session boundary: wipe live records, the queue and the completion ledger (logout). */
   readonly reset: () => void;
 }

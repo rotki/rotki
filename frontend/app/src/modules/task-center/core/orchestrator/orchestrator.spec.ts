@@ -1574,6 +1574,7 @@ describe('createTaskOrchestrator', () => {
     it.each([
       ['completes', ok(undefined)],
       ['is cancelled by the backend', err(BackendCancelled({ message: 'stopped' }))],
+      ['skips without asking for attention', err(Skipped({ message: 'nothing to do' }))],
     ] as const)('should forget a forgetUnlessFailed activity that %s', async (_case, outcome) => {
       const orchestrator = createTaskOrchestrator();
       const work = controllable('mirror', { forgetUnlessFailed: true });
@@ -1593,6 +1594,58 @@ describe('createTaskOrchestrator', () => {
       await flush();
 
       expect(byId(orchestrator, id)?.status).toBe(Status.FAILED);
+    });
+
+    it('should keep a forgetUnlessFailed activity that skips asking for attention, for the user to see', async () => {
+      const orchestrator = createTaskOrchestrator();
+      const work = controllable('mirror', { forgetUnlessFailed: true });
+      const id = orchestrator.submit(work.spec);
+      work.settle(err(Skipped({ attention: true, message: 'stalled' })));
+      await flush();
+
+      expect(byId(orchestrator, id)).toMatchObject({ attention: true, status: Status.SKIPPED });
+    });
+  });
+
+  describe('updateReason', () => {
+    it('should update the reason of a settled activity in place and notify listeners', async () => {
+      const orchestrator = createTaskOrchestrator();
+      const work = controllable('stalled', { forgetUnlessFailed: true });
+      const id = orchestrator.submit(work.spec);
+      work.settle(err(Skipped({ attention: true, message: 'rate limited' })));
+      await flush();
+
+      const listener = vi.fn();
+      orchestrator.onChange(listener);
+      orchestrator.updateReason(id, 'network unreachable');
+
+      expect(byId(orchestrator, id)).toMatchObject({
+        attention: true,
+        reason: 'network unreachable',
+        status: Status.SKIPPED,
+      });
+      expect(listener).toHaveBeenCalledOnce();
+    });
+
+    it('should ignore absent, live, and unchanged activities', async () => {
+      const orchestrator = createTaskOrchestrator();
+      const live = controllable('live');
+      const liveId = orchestrator.submit(live.spec);
+      const settled = controllable('settled');
+      const settledId = orchestrator.submit(settled.spec);
+      settled.settle(err(Skipped({ attention: true, message: 'rate limited' })));
+      await flush();
+
+      const listener = vi.fn();
+      orchestrator.onChange(listener);
+
+      orchestrator.updateReason(makeActivityId(Kind.OTHER, 'missing'), 'new');
+      orchestrator.updateReason(liveId, 'new');
+      orchestrator.updateReason(settledId, 'rate limited');
+
+      expect(byId(orchestrator, liveId)?.reason).toBeUndefined();
+      expect(byId(orchestrator, settledId)?.reason).toBe('rate limited');
+      expect(listener).not.toHaveBeenCalled();
     });
   });
 });

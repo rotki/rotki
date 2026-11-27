@@ -174,13 +174,13 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
     set(acknowledged, new Set([...get(acknowledged)].filter(id => !replaced.has(id))));
   }
 
-  /** The background failures already tracked, so a dismissed one is not tracked again. */
+  /** The background failures and attention-flagged rows already tracked, so a dismissed one is not tracked again. */
   const trackedBackgroundFailures = new Set<ActivityId>();
 
   /**
-   * Tracks a background task's failure even when it was never seen running: a failure the backend
-   * held while no client was connected arrives already settled. An entry is forgotten once its
-   * activity is gone, as on logout.
+   * Tracks a background task's failure or attention-flagged skip even when it was never seen
+   * running: a failure the backend held while no client was connected (or a persisted stall)
+   * arrives already settled. An entry is forgotten once its activity is gone, as on logout.
    */
   function trackBackgroundFailures(roots: Activity[]): void {
     const present = new Set<ActivityId>(roots.map(root => root.id));
@@ -189,7 +189,7 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
         trackedBackgroundFailures.delete(id);
     }
 
-    const fresh = roots.filter(root => isBackgroundTask(root) && isFailed(root) && !trackedBackgroundFailures.has(root.id)).map(root => root.id);
+    const fresh = roots.filter(root => isBackgroundTask(root) && needsAttention(root) && !trackedBackgroundFailures.has(root.id)).map(root => root.id);
     if (fresh.length === 0)
       return;
     for (const id of fresh)
@@ -202,15 +202,16 @@ export const useTaskDock = createSharedComposable((): UseTaskDockReturn => {
   }
 
   /**
-   * The background failures a later failure of the same row replaces. A task that keeps failing,
-   * as an indexer that stays down does on every scheduler run, then shows one failed row with its
-   * latest error rather than one per run, and the replaced records are forgotten rather than kept.
+   * The background rows (failures or attention-flagged skips) a later run of the same row
+   * replaces. A task that keeps failing, as an indexer that stays down does on every scheduler
+   * run, then shows one row with its latest outcome rather than one per run, and the replaced
+   * records are forgotten rather than kept.
    */
   function supersededFailures(roots: Activity[]): Set<ActivityId> {
     const latest = new Map<string, { id: ActivityId; run: number }>();
     const superseded = new Set<ActivityId>();
     for (const root of roots) {
-      if (!isBackgroundTask(root) || !isFailed(root))
+      if (!isBackgroundTask(root) || !needsAttention(root))
         continue;
       const { row, run } = backgroundTaskRun(root);
       const previous = latest.get(row);

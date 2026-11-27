@@ -134,6 +134,7 @@ from rotkehlchen.premium.premium import (
     premium_create_and_verify,
 )
 from rotkehlchen.premium.sync import PremiumSyncManager
+from rotkehlchen.tasks.cost_basis import get_cost_basis_stalled_info
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.tasks.supervisor import TaskSupervisor
 from rotkehlchen.types import (
@@ -1764,6 +1765,11 @@ class Rotkehlchen:
         result: dict[str, Any] = {}
         with self.data.db.conn.read_ctx() as cursor:
             result[DBCacheStatic.LAST_BALANCE_SAVE.value] = self.data.db.get_last_balance_save_time(cursor)  # noqa: E501
+            if (cost_basis_stalled := get_cost_basis_stalled_info(
+                cursor=cursor,
+                database=self.data.db,
+            )) is not None:
+                result['cost_basis_stalled'] = cost_basis_stalled
 
         connected_nodes: dict[str, list[str]] = {}
         failed_to_connect: dict[str, list[str]] = {}

@@ -563,6 +563,11 @@ describe('useTaskDock', () => {
       return { ...activity(ActivityKind.BACKGROUND_TASK, key, ActivityStatus.FAILED), subtitle };
     }
 
+    /** An attention-flagged skip of a background task, with the subtitle its row reads. */
+    function flaggedRun(key: string, subtitle: ActivityText): Activity {
+      return { ...activity(ActivityKind.BACKGROUND_TASK, key, ActivityStatus.SKIPPED), attention: true, subtitle };
+    }
+
     const receipts = (run: number, chain: string, count: number): Activity => failedRun(
       `evm_receipts:${run}:${chain}`,
       { key: msg.$t('task_center.activity.background_task.evm_receipts'), params: { chain, count }, plural: count },
@@ -602,6 +607,69 @@ describe('useTaskDock', () => {
       await transition([history(3, 'main'), history(4, 'savings')]);
 
       expect(get(failed)).toHaveLength(2);
+    });
+
+    it('should report an attention-flagged skip in flagged without opening the panel', async () => {
+      const stall = flaggedRun('cost_basis_stalled:1700000000', { key: msg.$t('task_center.activity.background_task.historical_balances') });
+      set(activities, [...refresh(ActivityStatus.RUNNING), stall]);
+      const { failed, flagged, modelExpanded, state } = dock();
+
+      await transition([...refresh(ActivityStatus.COMPLETE), stall]);
+      await endBatch();
+
+      expect(get(state)).toBe(DockState.ATTENTION);
+      expect(get(flagged).map(root => root.id)).toEqual([stall.id]);
+      expect(get(failed)).toEqual([]);
+      expect(get(modelExpanded)).toBe(false);
+    });
+
+    it('should supersede an older attention-flagged background row of the same row key', async () => {
+      const stall = (since: number): Activity => flaggedRun(
+        `cost_basis_stalled:${since}`,
+        { key: msg.$t('task_center.activity.background_task.historical_balances') },
+      );
+      const { flagged } = dock();
+
+      await transition([stall(1_700_000_000)]);
+      await transition([stall(1_700_000_000), stall(1_700_003_600)]);
+
+      expect(get(flagged).map(root => root.id)).toEqual([stall(1_700_003_600).id]);
+      expect(forgotten).toEqual([stall(1_700_000_000).id]);
+    });
+
+    it('should keep a cost_basis_stalled row apart from a failed historical_balances task', async () => {
+      const historicalBalances = failedRun(
+        'historical_balances:5',
+        { key: msg.$t('task_center.activity.background_task.historical_balances') },
+      );
+      const stall = flaggedRun(
+        'cost_basis_stalled:1700000000',
+        { key: msg.$t('task_center.activity.background_task.historical_balances') },
+      );
+      const { failed, flagged } = dock();
+
+      await transition([historicalBalances, stall]);
+
+      expect(get(failed).map(root => root.id)).toEqual([historicalBalances.id]);
+      expect(get(flagged).map(root => root.id)).toEqual([stall.id]);
+      expect(forgotten).toEqual([]);
+    });
+
+    it('should keep a dismissed cost_basis_stalled row dismissed when its reason updates in place', async () => {
+      const stall = (reason: string): Activity => ({
+        ...flaggedRun('cost_basis_stalled:1700000000', { key: msg.$t('task_center.activity.background_task.historical_balances') }),
+        reason,
+      });
+      const { acknowledge, dismissed, flagged, modelExpanded, state } = dock();
+
+      await transition([stall('rate limited')]);
+      acknowledge(stall('rate limited').id);
+      await transition([stall('network unreachable')]);
+
+      expect(get(flagged)).toEqual([]);
+      expect(get(dismissed)).toMatchObject([{ id: stall('network unreachable').id, reason: 'network unreachable' }]);
+      expect(get(state)).toBe(DockState.DISMISSED);
+      expect(get(modelExpanded)).toBe(false);
     });
 
     it('should not hold a user\'s batch open while it runs', async () => {

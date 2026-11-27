@@ -75,3 +75,19 @@ export const BackgroundTaskStatusData = BackgroundTask.extend({
 });
 
 export type BackgroundTaskStatusData = z.infer<typeof BackgroundTaskStatusData>;
+
+/**
+ * Persisted cost basis stall reported when processing paused after a transient price-oracle
+ * failure and is waiting for the next automatic retry.
+ *
+ * @remarks
+ * `reason` is a backend `FailureCause` string (`rate_limited` or `network`); `since` is the
+ * timestamp (unix seconds) when the current stall began, persisted once across retries so
+ * dismissing the row stays dismissed until recovery or a new stall.
+ */
+export const CostBasisStalled = z.object({
+  reason: z.string(),
+  since: z.number(),
+});
+
+export type CostBasisStalled = z.infer<typeof CostBasisStalled>;

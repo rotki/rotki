@@ -49,6 +49,19 @@ export const backgroundTaskActivity = defineActivity({
   kind: ActivityKind.BACKGROUND_TASK,
 });
 
+/**
+ * Persisted cost-basis stall row, keyed by when the current stall began.
+ *
+ * @remarks
+ * Uses its own kind (`cost_basis_stalled`) rather than `historical_balances` so
+ * {@link backgroundTaskRun} never groups it into the same `row` as a real
+ * `historical_balances` task failure.
+ */
+export const costBasisStalledActivity = defineActivity({
+  key: (since: number) => ['cost_basis_stalled', since],
+  kind: ActivityKind.BACKGROUND_TASK,
+});
+
 /** One run of a background task, read back from its activity. */
 export interface BackgroundTaskRun {
   /** What the run's row reads, apart from a count, so runs whose rows read the same share it. */

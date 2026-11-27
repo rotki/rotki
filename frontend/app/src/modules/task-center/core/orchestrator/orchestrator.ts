@@ -1,6 +1,6 @@
 import type { OrchestratorOptions, TaskOrchestrator } from './api';
 import { err, ok, type Result } from 'plainfp/result';
-import { isTerminalStatus } from '../status';
+import { isTerminalStatus, needsAttention } from '../status';
 import {
   type Activity,
   type ActivityId,
@@ -8,23 +8,21 @@ import {
   type ActivityKind,
   type ActivityStatus,
   type ActivitySteps,
-  type ActivityWaiting,
   type CompletionRecord,
   type GroupId,
   makeActivityId,
   ActivityStatus as Status,
-  WaitingReason,
   type WorkStatus,
 } from '../types';
 import { AlreadyTerminal, type ControlError, NotCancellable, NotFound, NotRerunnable } from './errors';
 import { dropCompletions, markStaleAfter, recordCompletion, recordSettlement } from './ledger';
 import { endedIncomplete, liveChildrenOf, runActivity, terminalAttention, terminalFailureCause, terminalReason, terminalStatus } from './lifecycle';
-import { aggregateStatus, childProgress, projectActivity, statusForId } from './projection';
+import { aggregateStatus, projectActivity, projectAll, statusForId } from './projection';
 import { abandonLive, type ActivityRecord, pendingRecord } from './record';
 import { DEFAULT_RULES } from './rules';
 import { createScheduler, type ScheduledJob } from './scheduler';
 import { type ActivitySpec, DEFAULT_LANE, DEFAULT_PRIORITY, type ReportProgress, type StaleAfterEdge } from './spec';
-import { holdOf } from './waiting';
+import { holdOf, waitingOf } from './waiting';
 
 /**
  * The execution spine of the Task Center. Owns the queue and lifecycle of every *native*
@@ -94,7 +92,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     if (status !== Status.COMPLETE)
       cancelDescendantsOf(record.spec.id);
 
-    if (record.spec.forgetUnlessFailed && status !== Status.FAILED)
+    if (record.spec.forgetUnlessFailed && !needsAttention(record))
       forget(record.spec.id);
   }
 
@@ -105,6 +103,14 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     records.delete(id);
     ledger.delete(id);
     dropDetail(id);
+    emit();
+  }
+
+  function updateReason(id: ActivityId, reason: string): void {
+    const record = records.get(id);
+    if (!record || !isTerminalStatus(record.status) || record.reason === reason)
+      return;
+    record.reason = reason;
     emit();
   }
 
@@ -155,29 +161,12 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     }
   }
 
-  const project = (record: ActivityRecord, children?: Map<ActivityId, ActivitySteps>): Activity =>
-    projectActivity(record, children?.get(record.spec.id));
-
-  function projectAll(): Activity[] {
-    const children = childProgress(records);
-    return Array.from(records.values(), record => project(record, children));
-  }
-
-  /** Why a pending record has not started: a hold first, then a full lane; `undefined` when it may start. */
-  function waitingOf(record: ActivityRecord, candidate: Activity, all: readonly Activity[]): ActivityWaiting | undefined {
-    if (record.status !== Status.PENDING || record.cancelRequested)
-      return undefined;
-
-    const lane = record.spec.lane ?? DEFAULT_LANE;
-    return holdOf(record, candidate, { all, records, rules }) ?? (scheduler.hasFreeSlot(lane) ? undefined : { reason: WaitingReason.SLOT });
-  }
-
   /** Every activity, each queued one carrying why it waits. */
   function snapshot(): Activity[] {
-    const all = projectAll();
+    const all = projectAll(records);
     const list = [...records.values()];
     return all.map((activity, index) => {
-      const waiting = waitingOf(list[index], activity, all);
+      const waiting = waitingOf(list[index], activity, { all, records, rules }, scheduler.hasFreeSlot);
       return waiting === undefined ? activity : { ...activity, waiting };
     });
   }
@@ -211,7 +200,7 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     if (record.status !== Status.PENDING || record.cancelRequested)
       return false;
 
-    return holdOf(record, project(record), { all: projectAll(), records, rules }) === undefined;
+    return holdOf(record, projectActivity(record), { all: projectAll(records), records, rules }) === undefined;
   }
 
   async function execute(record: ActivityRecord): Promise<void> {
@@ -394,5 +383,6 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     statusOf,
     statusOfPrefix,
     submit,
+    updateReason,
   };
 }

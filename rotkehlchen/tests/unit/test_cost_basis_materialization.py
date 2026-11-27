@@ -42,6 +42,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tasks.cost_basis import (
     _CostBasisPass,
     _Rules,
+    get_cost_basis_stalled_info,
     process_balances_and_cost_basis,
     process_cost_basis,
 )
@@ -2070,6 +2071,18 @@ def test_transient_oracle_failure_keeps_pass_stale_until_recovery(
             cursor=cursor,
             name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
         ) == str(_ts_ms(2))
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.COST_BASIS_STALLED_REASON,
+        ) == FailureCause.NETWORK.value
+        stalled_since = database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.COST_BASIS_STALLED_SINCE,
+        )
+        assert stalled_since is not None
+        assert stalled_since > 0
+        stalled = get_cost_basis_stalled_info(cursor=cursor, database=database)
+        assert stalled == {'reason': FailureCause.NETWORK.value, 'since': stalled_since}
 
     # After oracle recovery, the next pass materializes the real price instead of zero_cost.
     assert process_cost_basis(database, database.msg_aggregator) is True
@@ -2082,6 +2095,222 @@ def test_transient_oracle_failure_keeps_pass_stale_until_recovery(
             cursor=cursor,
             name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
         ) is None
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.COST_BASIS_STALLED_REASON,
+        ) is None
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.COST_BASIS_STALLED_SINCE,
+        ) is None
+        assert get_cost_basis_stalled_info(cursor=cursor, database=database) is None
+
+
+@pytest.mark.parametrize('rate_limit_error', ['no_price_rate_limited', 'remote_rate_limited'])
+@pytest.mark.usefixtures('queried_prices')
+def test_rate_limit_persists_stalled_info_and_clears_on_wipe(
+        database: DBHandler,
+        rate_limit_error: str,
+) -> None:
+    """Rate-limited oracle errors persist COST_BASIS_STALLED_REASON and COST_BASIS_STALLED_SINCE,
+    emit an empty completion WS payload, and clear both keys on cost-basis wipe."""
+    def fail_at_two(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        if timestamp == _ts(2):
+            if rate_limit_error == 'remote_rate_limited':
+                raise RemoteError('too many requests', cause=FailureCause.RATE_LIMITED, error_code=429)  # noqa: E501
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+                rate_limited=True,
+                remote_error=False,
+            )
+        return Price(FVal(1000))
+
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=[
+            _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+            _event(at=2, amount='1', event_type=HistoryEventType.RECEIVE),
+        ])
+        write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ?', ('stale_cost_%',))
+
+    with (
+        patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian,
+        patch.object(database.msg_aggregator, 'add_message') as add_message,
+    ):
+        historian.return_value.query_historical_price = fail_at_two
+        assert process_balances_and_cost_basis(
+            database=database,
+            msg_aggregator=database.msg_aggregator,
+            skip_balances=True,
+        ) is False
+
+        completed_calls = [
+            call for call in add_message.call_args_list
+            if call.kwargs.get('message_type') == WSMessageType.HISTORICAL_BALANCE_PROCESSING_COMPLETED  # noqa: E501
+        ]
+        assert len(completed_calls) == 1
+        assert completed_calls[0].kwargs['data'] == {}
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.COST_BASIS_STALLED_REASON,
+        ) == FailureCause.RATE_LIMITED.value
+        stalled_since = database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.COST_BASIS_STALLED_SINCE,
+        )
+        assert stalled_since is not None
+        assert stalled_since > 0
+        assert get_cost_basis_stalled_info(cursor=cursor, database=database) == {
+            'reason': FailureCause.RATE_LIMITED.value,
+            'since': stalled_since,
+        }
+
+    # Wiping cost basis clears both persisted stall keys.
+    with database.user_write() as write_cursor:
+        database._wipe_cost_basis(write_cursor)
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.COST_BASIS_STALLED_REASON,
+        ) is None
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.COST_BASIS_STALLED_SINCE,
+        ) is None
+        assert get_cost_basis_stalled_info(cursor=cursor, database=database) is None
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_cost_basis_stalled_since_preserved_across_retries_and_reset_on_recovery(
+        database: DBHandler,
+) -> None:
+    """Retrying a stalled pass keeps the original COST_BASIS_STALLED_SINCE instead of
+    overwriting it with LAST_COST_BASIS_PROCESSING_TS, while a recovery followed by a new
+    stall records the new start timestamp."""
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=[
+            _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+            _event(at=2, amount='1', event_type=HistoryEventType.RECEIVE),
+        ])
+        write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ?', ('stale_cost_%',))
+
+    def fail_at_two(cause: FailureCause) -> Any:
+        def _query(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+            if timestamp >= _ts(2):
+                raise RemoteError('transient', cause=cause)
+            return Price(FVal(1000))
+        return _query
+
+    first_stall_ts = Timestamp(1_700_000_000)
+    retry_stall_ts = Timestamp(1_700_000_300)
+    recovery_ts = Timestamp(1_700_000_600)
+    second_stall_ts = Timestamp(1_700_000_900)
+
+    with (
+        patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian,
+        patch('rotkehlchen.tasks.cost_basis.ts_now', return_value=first_stall_ts),
+    ):
+        historian.return_value.query_historical_price = fail_at_two(FailureCause.RATE_LIMITED)
+        assert process_cost_basis(database, database.msg_aggregator) is False
+
+    with database.conn.read_ctx() as cursor:
+        assert get_cost_basis_stalled_info(cursor=cursor, database=database) == {
+            'reason': FailureCause.RATE_LIMITED.value,
+            'since': first_stall_ts,
+        }
+
+    # A second stalled pass updates LAST_COST_BASIS_PROCESSING_TS and reason, but preserves since.
+    with (
+        patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian,
+        patch('rotkehlchen.tasks.cost_basis.ts_now', return_value=retry_stall_ts),
+    ):
+        historian.return_value.query_historical_price = fail_at_two(FailureCause.NETWORK)
+        assert process_cost_basis(database, database.msg_aggregator) is False
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.LAST_COST_BASIS_PROCESSING_TS,
+        ) == retry_stall_ts
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.COST_BASIS_STALLED_SINCE,
+        ) == first_stall_ts
+        assert get_cost_basis_stalled_info(cursor=cursor, database=database) == {
+            'reason': FailureCause.NETWORK.value,
+            'since': first_stall_ts,
+        }
+
+    # Recovery clears the stall state; a subsequent stall starts with a fresh since timestamp.
+    with patch('rotkehlchen.tasks.cost_basis.ts_now', return_value=recovery_ts):
+        assert process_cost_basis(database, database.msg_aggregator) is True
+
+    with database.conn.read_ctx() as cursor:
+        assert get_cost_basis_stalled_info(cursor=cursor, database=database) is None
+
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=[
+            _event(at=3, amount='1', event_type=HistoryEventType.RECEIVE),
+        ])
+
+    with (
+        patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian,
+        patch('rotkehlchen.tasks.cost_basis.ts_now', return_value=second_stall_ts),
+    ):
+        historian.return_value.query_historical_price = fail_at_two(FailureCause.RATE_LIMITED)
+        assert process_cost_basis(database, database.msg_aggregator) is False
+
+    with database.conn.read_ctx() as cursor:
+        assert get_cost_basis_stalled_info(cursor=cursor, database=database) == {
+            'reason': FailureCause.RATE_LIMITED.value,
+            'since': second_stall_ts,
+        }
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_cost_basis_stalled_cleared_on_hard_failure(database: DBHandler) -> None:
+    """A non-transient exception after a transient stall clears COST_BASIS_STALLED_REASON and
+    COST_BASIS_STALLED_SINCE so get_cost_basis_stalled_info() returns None."""
+    def fail_transiently(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        if timestamp == _ts(2):
+            raise RemoteError('rate limited', cause=FailureCause.RATE_LIMITED, error_code=429)
+        return Price(FVal(1000))
+
+    def fail_hard(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
+        raise RuntimeError('unexpected failure')
+
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=[
+            _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+            _event(at=2, amount='1', event_type=HistoryEventType.RECEIVE),
+        ])
+        write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ?', ('stale_cost_%',))
+
+    with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
+        historian.return_value.query_historical_price = fail_transiently
+        assert process_cost_basis(database, database.msg_aggregator) is False
+
+    with database.conn.read_ctx() as cursor:
+        assert get_cost_basis_stalled_info(cursor=cursor, database=database) is not None
+
+    with patch('rotkehlchen.tasks.cost_basis.PriceHistorian') as historian:
+        historian.return_value.query_historical_price = fail_hard
+        with pytest.raises(RuntimeError, match='unexpected failure'):
+            process_cost_basis(database, database.msg_aggregator)
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.COST_BASIS_STALLED_REASON,
+        ) is None
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.COST_BASIS_STALLED_SINCE,
+        ) is None
+        assert get_cost_basis_stalled_info(cursor=cursor, database=database) is None
 
 
 @pytest.mark.parametrize(('status', 'transient'), [(401, False), (404, False), (503, True)])
