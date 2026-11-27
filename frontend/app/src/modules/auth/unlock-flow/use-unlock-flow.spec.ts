@@ -142,6 +142,57 @@ describe('useUnlockFlow', () => {
     expect(applyUpdate).toHaveBeenLastCalledWith(7, { 'eip155:1/erc20:0xabc': 'remote' });
   });
 
+  it('should apply an update without asking when updates apply automatically', async () => {
+    const steps = makeSteps({
+      autoApplyUpdates: () => true,
+      checkUpdate: vi.fn(async () => ok(some({ changes: 2, local: 5, remote: 7, upToVersion: 7 }))),
+    });
+    const flow = useUnlockFlow(steps);
+    track(flow);
+
+    await flow.start(CREDENTIALS);
+
+    expect(phases).not.toContain(UnlockPhase.updatePrompt);
+    expect(phases).toContain(UnlockPhase.applyingUpdate);
+    expect(steps.applyUpdate).toHaveBeenCalledWith(7, undefined);
+    expect(flow.state.value.kind).toBe(UnlockPhase.ready);
+  });
+
+  it('should settle conflicts on the update\'s side once when applying automatically', async () => {
+    const conflicts = [{ identifier: 'eip155:1/erc20:0xabc', local: { identifier: 'a', isRebasing: false }, remote: { identifier: 'a', isRebasing: false } }];
+    const applyUpdate = vi.fn()
+      .mockResolvedValueOnce(ok({ conflicts, kind: UpdateOutcomeKind.conflicts }))
+      .mockResolvedValueOnce(ok({ kind: UpdateOutcomeKind.done }));
+    const steps = makeSteps({
+      applyUpdate,
+      autoApplyUpdates: () => true,
+      checkUpdate: vi.fn(async () => ok(some({ changes: 2, local: 5, remote: 7, upToVersion: 7 }))),
+    });
+    const flow = useUnlockFlow(steps);
+    track(flow);
+
+    await flow.start(CREDENTIALS);
+
+    expect(applyUpdate).toHaveBeenLastCalledWith(7, { 'eip155:1/erc20:0xabc': 'remote' });
+    expect(phases).not.toContain(UnlockPhase.conflicts);
+    expect(flow.state.value.kind).toBe(UnlockPhase.ready);
+  });
+
+  it('should ask after all when conflicts remain after settling them automatically', async () => {
+    const conflicts = [{ identifier: 'eip155:1/erc20:0xabc', local: { identifier: 'a', isRebasing: false }, remote: { identifier: 'a', isRebasing: false } }];
+    const steps = makeSteps({
+      applyUpdate: vi.fn(async () => ok({ conflicts, kind: UpdateOutcomeKind.conflicts })),
+      autoApplyUpdates: () => true,
+      checkUpdate: vi.fn(async () => ok(some({ changes: 2, local: 5, remote: 7, upToVersion: 7 }))),
+    });
+    const flow = useUnlockFlow(steps);
+
+    await flow.start(CREDENTIALS);
+
+    expect(steps.applyUpdate).toHaveBeenCalledTimes(2);
+    expect(flow.state.value.kind).toBe(UnlockPhase.conflicts);
+  });
+
   it('should skip straight to login when the user declines the update', async () => {
     const steps = makeSteps({
       checkUpdate: vi.fn(async () => ok(some({ changes: 1, local: 2, remote: 3, upToVersion: 3 }))),

@@ -101,6 +101,7 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
   const proxy: UnlockSteps = {
     applyUpdate: async (version, resolution) => active.applyUpdate(version, resolution),
     authenticate: async credentials => active.authenticate(credentials),
+    autoApplyUpdates: () => active.autoApplyUpdates?.() ?? false,
     checkUpdate: async () => active.checkUpdate(),
     connect: async () => active.connect(),
     disconnect: () => active.disconnect(),

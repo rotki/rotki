@@ -1,22 +1,26 @@
 <script setup lang="ts">
 import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution } from '@/modules/assets/types';
-import { RuiProgress } from '@rotki/ui-library';
+import { externalLinks } from '@shared/external-links';
+import { startPromise } from '@shared/utils';
 import { useLocalStorage } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import AssetConflictStage from '@/modules/auth/unlock-flow/AssetConflictStage.vue';
+import AssetUpdateProgress from '@/modules/auth/unlock-flow/AssetUpdateProgress.vue';
+import AssetUpdatePrompt from '@/modules/auth/unlock-flow/AssetUpdatePrompt.vue';
 import { isUpgradeCompleted, showsUpgrade } from '@/modules/auth/unlock-flow/upgrade-stage';
-import { UnlockPhase, type UnlockState } from '@/modules/auth/unlock-flow/use-unlock-flow';
+import { UnlockErrorKind, UnlockPhase, type UnlockState } from '@/modules/auth/unlock-flow/use-unlock-flow';
 import UpgradeProgressDisplay from '@/modules/auth/upgrade/UpgradeProgressDisplay.vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { SKIPPED_ASSET_VERSION_KEY } from '@/modules/shell/app/asset-update-keys';
-import AssetConflictDialog from '@/modules/shell/app/AssetConflictDialog.vue';
-import AssetUpdateMessage from '@/modules/shell/app/AssetUpdateMessage.vue';
-import AssetUpdateStatus from '@/modules/shell/app/AssetUpdateStatus.vue';
+import { AUTO_APPLY_ASSET_UPDATES_KEY, SKIPPED_ASSET_VERSION_KEY } from '@/modules/shell/app/asset-update-keys';
+import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
-const { state } = defineProps<{
+const { state, updateAccepted = false } = defineProps<{
   state: UnlockState;
+  /** Whether the user accepted an asset update in this unlock, which keeps its progress on screen to the end. */
+  updateAccepted?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -24,12 +28,15 @@ const emit = defineEmits<{
   'resolve': [resolution: ConflictResolution];
   'skip': [];
   'leave-upgrade': [];
+  'leave-update': [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 const { upgradeFailure, upgradeVisible } = storeToRefs(useSessionAuthStore());
+const interop = useInterop();
 
 const skipped = useLocalStorage<number>(SKIPPED_ASSET_VERSION_KEY, 0);
+const autoApply = useLocalStorage<boolean>(AUTO_APPLY_ASSET_UPDATES_KEY, false);
 
 const promptedVersions = ref<AssetVersionUpdate>({ changes: 0, local: 0, remote: 0, upToVersion: 0 });
 
@@ -41,84 +48,72 @@ const showUpgrade = computed<boolean>(() => showsUpgrade(get(phase), get(upgrade
 
 const conflicts = computed<AssetUpdateConflictResult[]>(() => (state.kind === UnlockPhase.conflicts ? state.conflicts : []));
 
-/** In-flight phases with no dedicated UI of their own, which fall back to the indeterminate spinner. */
-const busy = computed<boolean>(() => {
-  const kind = phase.value;
-  return kind === UnlockPhase.authenticating
-    || kind === UnlockPhase.connecting
-    || kind === UnlockPhase.restarting
-    || kind === UnlockPhase.unlocking
-    || kind === UnlockPhase.loadingSession
-    || kind === UnlockPhase.ready;
+const errorKind = computed<string | undefined>(() => (state.kind === UnlockPhase.error ? state.error.kind : undefined));
+
+/** What the flow said when it stopped, worded for the asset update progress. */
+const errorMessage = computed<string | undefined>(() => {
+  if (state.kind !== UnlockPhase.error)
+    return undefined;
+  const { error } = state;
+  if (error.kind === UnlockErrorKind.restartFailed)
+    return t('unlock_flow.errors.restart_failed');
+  if (error.kind === UnlockErrorKind.updateFailed || error.kind === UnlockErrorKind.unknown)
+    return error.message;
+  return undefined;
 });
 
-const busyMessage = computed<string>(() => {
-  if (phase.value === UnlockPhase.restarting)
-    return t('unlock_flow.status.restarting');
-  if (phase.value === UnlockPhase.unlocking)
-    return t('unlock_flow.status.unlocking');
-  return '';
-});
+function confirm({ always, upToVersion }: { upToVersion: number; always: boolean }): void {
+  if (always)
+    set(autoApply, true);
+  set(promptedVersions, { ...get(promptedVersions), upToVersion });
+  emit('confirm', upToVersion);
+}
 
-function dismiss(skip: boolean): void {
-  if (skip)
+function skip(remember: boolean): void {
+  if (remember)
     set(skipped, get(promptedVersions).remote);
   emit('skip');
 }
 
+/** Whether this run applies the update without having asked, which the progress screen says. */
+const automatic = ref<boolean>(false);
+
 watch(() => state, (current) => {
-  if (current.kind === UnlockPhase.updatePrompt)
+  if (current.kind === UnlockPhase.updatePrompt || current.kind === UnlockPhase.applyingUpdate)
     set(promptedVersions, { ...current.changes });
+  if (current.kind === UnlockPhase.applyingUpdate)
+    set(automatic, current.automatic);
 }, { immediate: true });
 </script>
 
 <template>
-  <AssetUpdateMessage
+  <AssetUpdatePrompt
     v-if="phase === UnlockPhase.updatePrompt"
-    v-model:versions="promptedVersions"
-    class="max-w-110 mx-auto"
-    headless
-    @confirm="emit('confirm', promptedVersions.upToVersion)"
-    @dismiss="dismiss($event)"
+    :versions="promptedVersions"
+    @confirm="confirm($event)"
+    @skip="skip($event)"
   />
-  <AssetConflictDialog
+  <AssetConflictStage
     v-else-if="phase === UnlockPhase.conflicts"
     :conflicts="conflicts"
-    @cancel="emit('skip')"
+    :version="promptedVersions.upToVersion"
     @resolve="emit('resolve', $event)"
-  />
-  <AssetUpdateStatus
-    v-else-if="phase === UnlockPhase.applyingUpdate"
-    class="max-w-128 mx-auto"
-    status="applying"
-    :remote-version="promptedVersions.upToVersion"
-  />
-  <AssetUpdateStatus
-    v-else-if="phase === UnlockPhase.checkingUpdate"
-    class="max-w-128 mx-auto"
-    status="checking"
-    :remote-version="0"
+    @skip="emit('skip')"
   />
   <UpgradeProgressDisplay
     v-else-if="showUpgrade"
     :completed="upgradeCompleted"
     @back="emit('leave-upgrade')"
   />
-  <div
-    v-else-if="busy"
-    class="max-w-110 mx-auto flex flex-col gap-4 justify-center items-center py-12"
-  >
-    <RuiProgress
-      color="primary"
-      variant="indeterminate"
-      circular
-      size="48"
-    />
-    <p
-      v-if="busyMessage"
-      class="mb-0 text-rui-text-secondary text-center"
-    >
-      {{ busyMessage }}
-    </p>
-  </div>
+  <AssetUpdateProgress
+    v-else-if="updateAccepted"
+    :phase="phase"
+    :from="promptedVersions.local"
+    :to="promptedVersions.upToVersion"
+    :automatic="automatic"
+    :error="errorMessage"
+    :error-kind="errorKind"
+    @back="emit('leave-update')"
+    @report="startPromise(interop.openUrl(externalLinks.githubNewBugReport))"
+  />
 </template>

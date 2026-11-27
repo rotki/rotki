@@ -1,29 +1,12 @@
 <script setup lang="ts">
 import type { UnderlyingToken } from '@rotki/common';
-import { computed } from 'vue';
-import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
-import HashLink from '@/modules/shell/components/HashLink.vue';
+import AssetConflictValue from '@/modules/shell/app/AssetConflictValue.vue';
 
-const { field, value } = defineProps<{
+defineProps<{
   field: string;
   value?: string | number | boolean | null | UnderlyingToken[];
   diff: boolean;
 }>();
-
-const isStarted = computed(() => field === 'started');
-const isAddress = computed(() => field === 'address');
-const started = computed(() => {
-  if (typeof value === 'number')
-    return value;
-
-  return undefined;
-});
-const address = computed(() => {
-  if (typeof value === 'string')
-    return value;
-
-  return undefined;
-});
 </script>
 
 <template>
@@ -35,24 +18,10 @@ const address = computed(() => {
       class="ml-4"
       :class="diff ? 'font-bold text-rui-error' : null"
     >
-      <span v-if="isStarted">
-        <DateDisplay
-          v-if="started"
-          :timestamp="started"
-        />
-        <span v-else>-</span>
-      </span>
-      <span v-else-if="isAddress">
-        <HashLink
-          v-if="address"
-          :text="address"
-          display-mode="copy"
-        />
-        <span v-else>-</span>
-      </span>
-      <span v-else>
-        {{ value }}
-      </span>
+      <AssetConflictValue
+        :field="field"
+        :value="value"
+      />
     </div>
   </div>
 </template>

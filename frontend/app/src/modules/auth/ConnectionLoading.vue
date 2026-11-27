@@ -3,16 +3,13 @@ import { RuiProgress } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-const { connected, loggingIn = false, restarting = false } = defineProps<{
+const { connected, loggingIn = false } = defineProps<{
   connected: boolean;
-  restarting?: boolean;
   loggingIn?: boolean;
 }>();
 const { t } = useI18n({ useScope: 'global' });
 
 const message = computed<string>(() => {
-  if (restarting)
-    return t('connection_loading.restarting');
   if (loggingIn)
     return t('connection_loading.logging_in');
   return t('connection_loading.message');

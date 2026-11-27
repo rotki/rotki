@@ -88,7 +88,7 @@ export type UnlockState =
   | { kind: typeof UnlockPhase.probing }
   | { kind: typeof UnlockPhase.checkingUpdate }
   | { kind: typeof UnlockPhase.updatePrompt; changes: UpdateChanges }
-  | { kind: typeof UnlockPhase.applyingUpdate }
+  | { kind: typeof UnlockPhase.applyingUpdate; changes: UpdateChanges; automatic: boolean }
   | { kind: typeof UnlockPhase.conflicts; conflicts: AssetConflict[] }
   | { kind: typeof UnlockPhase.restarting }
   | { kind: typeof UnlockPhase.unlocking }
@@ -113,6 +113,11 @@ export interface UnlockSteps {
   probeSession: (credentials: UnlockCredentials) => ResultAsync<boolean, UnlockError>;
   checkUpdate: () => ResultAsync<Option<UpdateChanges>, UnlockError>;
   applyUpdate: (upToVersion: number, resolution?: Resolution) => ResultAsync<ApplyOutcome, UnlockError>;
+  /**
+   * Whether the user chose to have asset updates applied without asking, taking the update's side
+   * of any conflict. Left out, every update asks.
+   */
+  autoApplyUpdates?: () => boolean;
   requestRestart: () => ResultAsync<void, UnlockError>;
   waitReady: () => ResultAsync<void, UnlockError>;
   resume: (credentials: UnlockCredentials) => ResultAsync<void, UnlockError>;
@@ -136,6 +141,9 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
   /** A background auto-unlock, whose failures return to the idle form instead of parking in `error`. */
   let startedInTheBackground = false;
   let pendingVersion = 0;
+  let pendingChanges: UpdateChanges = { changes: 0, local: 0, remote: 0, upToVersion: 0 };
+  /** Whether the pending update is being applied without asking, as the user chose. */
+  let automatic = false;
 
   const toPhase = (next: UnlockState): void => set(state, next);
   /**
@@ -249,12 +257,16 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
     if (!found.ok)
       return fail(found.error);
 
-    if (found.value.some) {
-      pendingVersion = found.value.value.upToVersion;
-      return toPhase({ kind: UnlockPhase.updatePrompt, changes: found.value.value });
-    }
+    if (!found.value.some)
+      return finishUnlock(false);
 
-    await finishUnlock(false);
+    pendingChanges = found.value.value;
+    pendingVersion = pendingChanges.upToVersion;
+    automatic = steps.autoApplyUpdates?.() ?? false;
+    if (automatic)
+      return applyUpdate();
+
+    toPhase({ kind: UnlockPhase.updatePrompt, changes: pendingChanges });
   }
 
   /**
@@ -264,19 +276,26 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
    * Conflict re-resolution calls this a second time with only a resolution, reusing the version
    * the first call recorded.
    *
+   * An update applied automatically settles its conflicts on the update's side without asking, once.
+   * Should the backend still report conflicts after that, the user is asked after all.
+   *
    * @param resolution - how to settle the conflicts a previous call reported
    * @param version - stops the update short at this version; omitted, the whole pending diff applies
    */
   async function applyUpdate(resolution?: Resolution, version?: number): Promise<void> {
     if (version !== undefined)
       pendingVersion = version;
-    toPhase({ kind: UnlockPhase.applyingUpdate });
+    toPhase({ kind: UnlockPhase.applyingUpdate, automatic, changes: { ...pendingChanges, upToVersion: pendingVersion } });
     const outcome = await steps.applyUpdate(pendingVersion, resolution);
     if (!outcome.ok)
       return fail(outcome.error);
 
-    if (outcome.value.kind === UpdateOutcomeKind.conflicts)
-      return toPhase({ kind: UnlockPhase.conflicts, conflicts: outcome.value.conflicts });
+    if (outcome.value.kind === UpdateOutcomeKind.conflicts) {
+      const { conflicts } = outcome.value;
+      if (automatic && !resolution)
+        return applyUpdate(Object.fromEntries(conflicts.map(({ identifier }) => [identifier, 'remote'])));
+      return toPhase({ kind: UnlockPhase.conflicts, conflicts });
+    }
 
     await restart();
   }

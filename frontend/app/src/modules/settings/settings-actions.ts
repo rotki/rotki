@@ -31,6 +31,12 @@ export const settingsActions = {
     tab: '/settings/accounting/',
     titleKey: msg.$t('accounting_settings.rule.title'),
   },
+  assetAutoUpdate: {
+    anchor: SettingsHighlightIds.ASSET_AUTO_UPDATE,
+    category: SettingsCategoryIds.ASSET_DATABASE,
+    keywords: [msg.$t('asset_update.auto.subtitle')],
+    titleKey: msg.$t('asset_update.auto.title'),
+  },
   assetUpdate: {
     anchor: SettingsHighlightIds.ASSET_UPDATE,
     category: SettingsCategoryIds.ASSET_DATABASE,

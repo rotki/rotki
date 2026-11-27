@@ -29,10 +29,10 @@ const { incompleteUpgradeConflict } = storeToRefs(useSessionAuthStore());
         {{ t('login.incomplete_upgrade_error.resume') }}
       </template>
 
-      <div>{{ incompleteUpgradeConflict.message }}</div>
-      <div class="mt-2">
-        {{ t('login.incomplete_upgrade_error.question') }}
-      </div>
+      <p class="break-words">
+        {{ incompleteUpgradeConflict.message }}
+      </p>
+      <p>{{ t('login.incomplete_upgrade_error.question') }}</p>
     </LoginActionAlert>
   </Transition>
 </template>

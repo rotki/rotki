@@ -49,7 +49,7 @@ onMounted(async () => {
 <template>
   <div
     v-if="activeItem"
-    class="flex flex-col items-start gap-4 w-full p-6 overflow-hidden rounded-lg bg-[rgba(78,91,166,0.04)]"
+    class="flex flex-col items-start gap-4 w-full p-6 overflow-hidden rounded-lg bg-rui-primary/5"
   >
     <FadeTransition tag="div">
       <div
@@ -60,7 +60,7 @@ onMounted(async () => {
       >
         <div
           v-if="activeItem.icon"
-          class="bg-white rounded-[0.625rem] p-3"
+          class="bg-white dark:bg-rui-grey-800 rounded-lg p-3"
         >
           <div
             class="object-contain text-rui-primary h-6 w-6 [&_svg_path]:fill-rui-primary!"

@@ -276,6 +276,7 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
       ...shared,
       applyUpdate: assetSteps.applyUpdate,
       authenticate,
+      autoApplyUpdates: assetSteps.autoApplyUpdates,
       checkUpdate: assetSteps.checkUpdate,
       login: loginUnlock,
       probeSession,

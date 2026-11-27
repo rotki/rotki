@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RuiChip, RuiIcon, type RuiIcons } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed } from 'vue';
@@ -13,16 +14,37 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { syncConflict } = storeToRefs(useSessionAuthStore());
 
-const lastModified = computed(() => {
+interface Copy {
+  key: 'local' | 'remote';
+  icon: RuiIcons;
+  label: string;
+  timestamp: number;
+  newer: boolean;
+}
+
+/** The two copies of the database side by side, with the newer one marked. */
+const copies = computed<Copy[]>(() => {
   const conflict = get(syncConflict);
-  if (!conflict || !conflict.payload)
-    return null;
+  if (!conflict?.payload)
+    return [];
 
   const { localLastModified, remoteLastModified } = conflict.payload;
-  return {
-    local: localLastModified,
-    remote: remoteLastModified,
-  };
+  return [
+    {
+      icon: 'lu-hard-drive',
+      key: 'local',
+      label: t('login.sync_error.local'),
+      newer: localLastModified > remoteLastModified,
+      timestamp: localLastModified,
+    },
+    {
+      icon: 'lu-cloud',
+      key: 'remote',
+      label: t('login.sync_error.remote'),
+      newer: remoteLastModified > localLastModified,
+      timestamp: remoteLastModified,
+    },
+  ];
 });
 </script>
 
@@ -37,34 +59,49 @@ const lastModified = computed(() => {
       <template #title>
         {{ t('login.sync_error.title') }}
       </template>
+      <template #confirm>
+        {{ t('login.sync_error.actions.use_remote') }}
+      </template>
+      <template #cancel>
+        {{ t('login.sync_error.actions.keep_local') }}
+      </template>
 
-      <div>{{ syncConflict.message }}</div>
-      <ul
-        v-if="lastModified"
-        class="mt-2 list-disc"
+      <p class="break-words">
+        {{ syncConflict.message }}
+      </p>
+      <dl
+        v-if="copies.length > 0"
+        class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 items-center py-1"
       >
-        <li>
-          <i18n-t
-            scope="global"
-            keypath="login.sync_error.local_modified"
-            class="font-medium"
+        <template
+          v-for="copy in copies"
+          :key="copy.key"
+        >
+          <dt class="flex items-center gap-2 font-medium">
+            <RuiIcon
+              :name="copy.icon"
+              size="16"
+              class="shrink-0"
+            />
+            {{ copy.label }}
+          </dt>
+          <dd
+            class="flex flex-wrap items-center gap-2 tabular-nums"
+            :data-testid="`sync-conflict-${copy.key}`"
           >
-            <DateDisplay :timestamp="lastModified.local" />
-          </i18n-t>
-        </li>
-        <li class="mt-2">
-          <i18n-t
-            scope="global"
-            keypath="login.sync_error.remote_modified"
-            class="font-medium"
-          >
-            <DateDisplay :timestamp="lastModified.remote" />
-          </i18n-t>
-        </li>
-      </ul>
-      <div class="mt-2">
-        {{ t('login.sync_error.question') }}
-      </div>
+            <DateDisplay :timestamp="copy.timestamp" />
+            <RuiChip
+              v-if="copy.newer"
+              size="sm"
+              color="primary"
+              variant="outlined"
+            >
+              {{ t('login.sync_error.newer') }}
+            </RuiChip>
+          </dd>
+        </template>
+      </dl>
+      <p>{{ t('login.sync_error.question') }}</p>
     </LoginActionAlert>
   </Transition>
 </template>

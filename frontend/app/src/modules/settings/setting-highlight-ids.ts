@@ -7,6 +7,7 @@ export const SettingsHighlightIds = {
   AMOUNT_FORMAT: 'setting-amount-format',
   ANIMATIONS: 'setting-animations',
   ASK_SIZE_DISCREPANCY: 'setting-ask-size-discrepancy',
+  ASSET_AUTO_UPDATE: 'setting-asset-auto-update',
   ASSET_COLLECTIONS: 'setting-asset-collections',
   ASSET_UPDATE: 'setting-asset-update',
   AUTO_CREATE_PROFIT_EVENTS: 'setting-auto-create-profit-events',
