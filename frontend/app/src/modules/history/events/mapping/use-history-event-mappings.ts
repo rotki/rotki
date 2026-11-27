@@ -262,6 +262,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     accountingEventsTypeData,
     eventCategoryGroupsData,
     eventTypeCombinationsByVerb,
+    findEventType,
     findEventTypeData,
     getAccountingEventTypeData,
     getEventType,

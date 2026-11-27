@@ -14,8 +14,9 @@ import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-hi
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const modelValue = defineModel<EventTypeCombination | undefined>({ required: true });
-const { entryType, disabled = false, label, errorMessages, required = false, hint } = defineProps<{
+const { entryType, location, disabled = false, label, errorMessages, required = false, hint } = defineProps<{
   entryType?: HistoryEventEntryType;
+  location?: string | null;
   disabled?: boolean;
   label?: string;
   errorMessages?: string | string[];
@@ -43,7 +44,7 @@ const {
   selectedCombinationKey,
   selectedRow,
   selectRow,
-} = useEventActionSelection(modelValue, () => entryType);
+} = useEventActionSelection(modelValue, () => entryType, () => location);
 const { recent, record } = useRecentActions(() => entryType);
 const { describe } = useEventActionDescriptions();
 const { eventCategoryGroupsData, getHistoryEventSubTypeName, getHistoryEventTypeName } = useHistoryEventMappings();

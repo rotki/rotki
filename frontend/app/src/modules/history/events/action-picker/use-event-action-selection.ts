@@ -31,8 +31,9 @@ export function combinationKey(combination: EventTypeCombination): string {
 export function useEventActionSelection(
   modelValue: Ref<EventTypeCombination | undefined>,
   entryType?: MaybeRefOrGetter<HistoryEventEntryType | undefined>,
+  location?: MaybeRefOrGetter<string | null | undefined>,
 ): UseEventActionSelectionReturn {
-  const { findRowByTypeSubtype, rows } = useEventActionPicker(entryType);
+  const { findRowByTypeSubtype, rows } = useEventActionPicker(entryType, location);
   const { getHistoryEventSubTypeName, getHistoryEventTypeName } = useHistoryEventMappings();
 
   const selectedRow = computed<EventActionRow | undefined>(() => {
