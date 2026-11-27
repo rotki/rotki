@@ -48,7 +48,7 @@ jobs:
 
       - name: SQLDiff action
         id: sql-diff
-        uses: rotki/action-sqldiff@6c2a045ab4902607a08d4fe9feb74de1b318bfd2  # v3.1.0
+        uses: rotki/action-sqldiff@d0074d0c195d528d5b99883aa1ffdb729d5d1d4e  # v3.1.1
         with:
           files: '*.db'
           mode: output
