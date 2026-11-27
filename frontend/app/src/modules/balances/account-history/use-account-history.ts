@@ -9,6 +9,7 @@ import {
 import {
   type BalancePoint,
   type BalanceSummary,
+  bucketLocations,
   type BucketSeries,
   type SeriesRange,
   summarize,
@@ -27,12 +28,15 @@ interface UseAccountHistoryReturn {
   premium: Ref<boolean>;
   modelAccount: WritableComputedRef<string | undefined>;
   modelAsset: WritableComputedRef<string | undefined>;
+  modelLocation: WritableComputedRef<string | undefined>;
   modelRange: WritableComputedRef<AccountHistoryRange>;
   assets: ComputedRef<string[]>;
   assetsLoading: DeepReadonly<Ref<boolean>>;
   /** The account's events are not all processed, so the asset list may be short. */
   assetsProcessingRequired: DeepReadonly<Ref<boolean>>;
-  /** One series per location and protocol the account held the asset in. */
+  /** The locations the account held the asset in, for the location pill. */
+  locations: ComputedRef<string[]>;
+  /** The buckets in the picked location, or in every location when none is picked. */
   buckets: ComputedRef<BucketSeries[]>;
   total: ComputedRef<BalancePoint[]>;
   summary: ComputedRef<BalanceSummary>;
@@ -54,10 +58,13 @@ interface UseAccountHistoryReturn {
  * Everything the account history page shows, derived from the selection in the route query.
  *
  * @remarks
- * Without premium nothing but the events is loaded, since the balance endpoints need it.
+ * The series is always loaded for every location, and the location pick filters it here: the
+ * pill's options come from the same load, so narrowing by location needs no second request and
+ * never offers a location with nothing to show. Without premium nothing but the events is loaded,
+ * since the balance endpoints need it.
  */
 export function useAccountHistory(): UseAccountHistoryReturn {
-  const { modelAccount, modelAsset, modelRange, selection } = useAccountHistorySelection();
+  const { modelAccount, modelAsset, modelLocation, modelRange, selection } = useAccountHistorySelection();
   const premium = usePremium();
 
   /** The account the balance endpoints are asked about: none without premium, so none are called. */
@@ -70,7 +77,7 @@ export function useAccountHistory(): UseAccountHistoryReturn {
     processingRequired: assetsProcessingRequired,
   } = useAccountAssets(balanceAccount);
   const {
-    buckets,
+    buckets: allBuckets,
     error: seriesError,
     loadedRange,
     loading,
@@ -94,6 +101,14 @@ export function useAccountHistory(): UseAccountHistoryReturn {
     return { from: rangeStart(range, to), to };
   });
 
+  const locations = computed<string[]>(() => bucketLocations(get(allBuckets)));
+
+  const buckets = computed<BucketSeries[]>(() => {
+    const location = get(selection).location;
+    const all = get(allBuckets);
+    return location ? all.filter(bucket => bucket.location === location) : all;
+  });
+
   const total = computed<BalancePoint[]>(() => totalSeries(get(buckets)));
 
   const summary = computed<BalanceSummary>(() => summarize(get(total), get(loadedRange)?.from ?? 0));
@@ -113,8 +128,10 @@ export function useAccountHistory(): UseAccountHistoryReturn {
     eventsRange,
     loadedRange,
     loading,
+    locations,
     modelAccount,
     modelAsset,
+    modelLocation,
     modelRange,
     picked,
     premium,

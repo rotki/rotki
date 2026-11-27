@@ -6,7 +6,7 @@ import AccountHistoryEvents from '@/modules/balances/account-history/components/
 function createWrapper(props: InstanceType<typeof AccountHistoryEvents>['$props']): VueWrapper<InstanceType<typeof AccountHistoryEvents>> {
   return mount(AccountHistoryEvents, {
     global: {
-      stubs: { HistoryEventsView: { name: 'HistoryEventsView', props: ['restrictions', 'sectionTitle'], template: '<div />' } },
+      stubs: { HistoryEventsView: { name: 'HistoryEventsView', props: ['restrictions', 'sectionTitle', 'emptyMessage'], template: '<div />' } },
     },
     props,
   });
@@ -17,19 +17,29 @@ function restrictionsOf(wrapper: VueWrapper<InstanceType<typeof AccountHistoryEv
 }
 
 describe('account history events', () => {
-  it('should pin the events list to the account, asset and range, in every location', () => {
-    const wrapper = createWrapper({ account: '0xA', asset: 'ETH', range: { from: 100, to: 200 } });
+  it('should pin the events list to the account, asset, location and range', () => {
+    const wrapper = createWrapper({ account: '0xA', asset: 'ETH', location: 'optimism', range: { from: 100, to: 200 } });
 
     expect(restrictionsOf(wrapper)).toEqual({
       asset: 'ETH',
-      externalAccounts: [{ address: '0xA', chain: '' }],
+      externalAccounts: [{ address: '0xA', chain: 'optimism' }],
+      location: 'optimism',
       period: { fromTimestamp: 100, toTimestamp: 200 },
     });
   });
 
-  it('should leave the period open for all time', () => {
+  it('should leave the location and period open for every location and all time', () => {
     const wrapper = createWrapper({ account: '0xA', asset: 'ETH', range: { from: 0, to: 200 } });
+    const restrictions = restrictionsOf(wrapper);
 
-    expect(restrictionsOf(wrapper).period).toBeUndefined();
+    expect(restrictions.location).toBeUndefined();
+    expect(restrictions.period).toBeUndefined();
+    expect(restrictions.externalAccounts?.map(({ address }) => address)).toEqual(['0xA']);
+  });
+
+  it('should say an empty list is empty for this pick, not that there is no history', () => {
+    const wrapper = createWrapper({ account: '0xA', asset: 'ETH' });
+
+    expect(wrapper.findComponent({ name: 'HistoryEventsView' }).props('emptyMessage')).toBe('account_history.events.empty');
   });
 });

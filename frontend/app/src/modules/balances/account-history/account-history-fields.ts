@@ -19,10 +19,13 @@ export interface AccountHistoryFieldOptions {
   readonly assets: (() => string[]) | undefined;
   /** The async search over every asset, used when `assets` is absent. */
   readonly searchAsset: (value: string) => Promise<AssetsWithId>;
+  /** The locations the account held the asset in; absent when the balances are not loaded, so no location pill is offered. */
+  readonly locations: (() => string[]) | undefined;
 }
 
 /**
- * The pill-bar fields for the account history page: the one account and the one asset it charts.
+ * The pill-bar fields for the account history page: the one account and the one asset it charts,
+ * and optionally one location to narrow them to.
  *
  * Both are single-valued and param-bound to the page's selection, which lives in the route query,
  * so a pill is exactly what the url says. The asset offers only what the account has held when
@@ -34,7 +37,21 @@ export function toAccountHistoryFields(
   t: Translate,
   options: AccountHistoryFieldOptions,
 ): FieldDef[] {
-  const { accounts, assets, searchAsset } = options;
+  const { accounts, assets, locations, searchAsset } = options;
+  const location = locations
+    ? [decorateSharedField(
+        toParamFieldDef({
+          key: AccountHistoryQueryKeys.LOCATION,
+          label: (): string => t('common.location'),
+          multiple: false,
+          paramKey: AccountHistoryQueryKeys.LOCATION,
+          suggest: locations,
+          to: 'both',
+        }),
+        SharedFieldKinds.LOCATION,
+        resolvers,
+      )]
+    : [];
   return [
     {
       ...toParamFieldDef({
@@ -65,16 +82,19 @@ export function toAccountHistoryFields(
       SharedFieldKinds.ASSET,
       resolvers,
     ),
+    ...location,
   ];
 }
 
-/** The page's account and asset as the bar's params bag. */
+/** The page's account, asset and location as the bar's params bag. */
 export function accountHistoryParams(
   account: Ref<string | undefined>,
   asset: Ref<string | undefined>,
+  location: Ref<string | undefined>,
 ): WritableComputedRef<PillParams> {
   return toPillParams({
     [AccountHistoryQueryKeys.ACCOUNT]: optionalStringParam(account),
     [AccountHistoryQueryKeys.ASSET]: optionalStringParam(asset),
+    [AccountHistoryQueryKeys.LOCATION]: optionalStringParam(location),
   });
 }

@@ -14,6 +14,7 @@ interface UseAccountHistorySelectionReturn {
   selection: ComputedRef<AccountHistorySelection>;
   modelAccount: WritableComputedRef<string | undefined>;
   modelAsset: WritableComputedRef<string | undefined>;
+  modelLocation: WritableComputedRef<string | undefined>;
   modelRange: WritableComputedRef<AccountHistoryRange>;
 }
 
@@ -23,9 +24,10 @@ const OWN_KEYS: ReadonlySet<string> = new Set<string>(Object.values(AccountHisto
  * The account history page's selection, read from and written to the route query.
  *
  * @remarks
- * Picking another account clears the asset: it belonged to the previous account and may not have
- * been held by the new one. A picker writing back the value it already holds changes nothing, so
- * it cannot clear the asset below it. Query keys the page does not own are left alone.
+ * Picking another account clears the asset and location, and picking another asset clears the
+ * location: what was picked below belonged to the previous choice and may not exist for the new
+ * one. A picker writing back the value it already holds changes nothing, so it cannot clear the
+ * picks below it. Query keys the page does not own are left alone.
  */
 export function useAccountHistorySelection(): UseAccountHistorySelectionReturn {
   const route = useRoute();
@@ -59,8 +61,9 @@ export function useAccountHistorySelection(): UseAccountHistorySelectionReturn {
   }
 
   return {
-    modelAccount: model('account', { asset: undefined }),
-    modelAsset: model('asset'),
+    modelAccount: model('account', { asset: undefined, location: undefined }),
+    modelAsset: model('asset', { location: undefined }),
+    modelLocation: model('location'),
     modelRange: model('range'),
     selection,
   };

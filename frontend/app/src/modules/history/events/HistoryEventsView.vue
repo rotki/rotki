@@ -41,10 +41,15 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 defineOptions({ inheritAttrs: false });
 
-const { mainPage = false, restrictions = {}, sectionTitle = '' } = defineProps<{
+const { emptyMessage, mainPage = false, restrictions = {}, sectionTitle = '' } = defineProps<{
   /** What this view fixes for the user. See HistoryEventsRestrictions. */
   restrictions?: HistoryEventsRestrictions;
   sectionTitle?: string;
+  /**
+   * Said when nothing matches, in place of the first-run "no events yet" hint. For a view whose
+   * restrictions narrow the list, where an empty list means nothing in that scope, not no history.
+   */
+  emptyMessage?: string;
   mainPage?: boolean;
 }>();
 
@@ -275,6 +280,7 @@ if (section)
                 :source="tableSource"
                 :highlight="tableHighlight"
                 :has-active-filters="hasActiveFilters"
+                :empty-message="emptyMessage"
                 :duplicate-handling-status="duplicateHandlingStatus"
                 @clear-filters="clearFilters()"
                 @show:dialog="dialogContainer?.show($event)"

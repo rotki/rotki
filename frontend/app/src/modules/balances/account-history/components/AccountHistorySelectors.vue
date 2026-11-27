@@ -12,14 +12,17 @@ import { useDataIssueAccountOptions } from '@/modules/history/data-issues/use-da
 
 const account = defineModel<string | undefined>('account', { required: true });
 const asset = defineModel<string | undefined>('asset', { required: true });
+const location = defineModel<string | undefined>('location', { required: true });
 
-const { assets, assetsProcessingRequired = false, restrictAssets = true } = defineProps<{
+const { assets, assetsProcessingRequired = false, locations, restrictAssets = true } = defineProps<{
   /** The assets the account has ever held; the asset pill offers only these. */
   assets: string[];
   /** Offer only `assets`. Off without premium, where the list cannot be loaded and any asset is searched. */
   restrictAssets?: boolean;
   /** The account's events are not all processed yet, so `assets` may be missing some. */
   assetsProcessingRequired?: boolean;
+  /** The locations the account held the asset in; offered as a pill only with the held list. */
+  locations: string[];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -34,11 +37,12 @@ const pillLabels = usePillBarLabels();
 const fields = computed<FieldDef[]>(() => toAccountHistoryFields(shared, t, {
   accounts,
   assets: restrictAssets ? (): string[] => assets : undefined,
+  locations: restrictAssets ? (): string[] => locations : undefined,
   searchAsset,
 }));
 
-/** Written through by the bar into the page's selection, which picks the asset clear with a new account. */
-const params = accountHistoryParams(account, asset);
+/** Written through by the bar into the page's selection, which clears the picks below a changed one. */
+const params = accountHistoryParams(account, asset, location);
 </script>
 
 <template>

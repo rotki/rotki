@@ -99,6 +99,11 @@ export function buildBucketSeries(
     .sort((a, b) => a.key.localeCompare(b.key));
 }
 
+/** The locations the buckets are held in, each once, in bucket order. */
+export function bucketLocations(buckets: readonly BucketSeries[]): string[] {
+  return [...new Set(buckets.map(bucket => bucket.location))];
+}
+
 /** Every bucket's value at each of a shared set of times. */
 export interface AlignedBuckets {
   /** unix seconds, ascending */

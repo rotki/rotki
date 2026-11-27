@@ -9,10 +9,11 @@ import {
 } from './account-history-selection';
 
 describe('parseSelection', () => {
-  it('should read the account, asset and range from the query, ignoring other keys', () => {
+  it('should read the account, asset, location and range from the query', () => {
     expect(parseSelection({ account: '0xA', asset: 'ETH', location: 'optimism', range: '3m' })).toEqual({
       account: '0xA',
       asset: 'ETH',
+      location: 'optimism',
       range: AccountHistoryRange.QUARTER,
     });
   });
@@ -21,6 +22,7 @@ describe('parseSelection', () => {
     expect(parseSelection({ account: '', range: '2y' })).toEqual({
       account: undefined,
       asset: undefined,
+      location: undefined,
       range: AccountHistoryRange.ALL,
     });
   });
@@ -32,22 +34,22 @@ describe('parseSelection', () => {
 
 describe('toSelectionQuery', () => {
   it('should leave out unset values and the default range', () => {
-    expect(toSelectionQuery({ account: '0xA', asset: undefined, range: AccountHistoryRange.ALL }))
+    expect(toSelectionQuery({ account: '0xA', asset: undefined, location: undefined, range: AccountHistoryRange.ALL }))
       .toEqual({ account: '0xA' });
   });
 
   it('should round-trip through parseSelection', () => {
-    const selection = { account: '0xA', asset: 'ETH', range: AccountHistoryRange.YEAR };
+    const selection = { account: '0xA', asset: 'ETH', location: 'ethereum', range: AccountHistoryRange.YEAR };
 
     expect(parseSelection(toSelectionQuery(selection))).toEqual(selection);
   });
 });
 
 describe('accountHistoryLink', () => {
-  it('should link to the page with the account and asset picked', () => {
-    expect(accountHistoryLink('0xA', 'ETH')).toEqual({
+  it('should link to the page with the account, asset and location picked', () => {
+    expect(accountHistoryLink('0xA', 'ETH', 'ethereum')).toEqual({
       name: '/balances/history/',
-      query: { account: '0xA', asset: 'ETH' },
+      query: { account: '0xA', asset: 'ETH', location: 'ethereum' },
     });
   });
 });

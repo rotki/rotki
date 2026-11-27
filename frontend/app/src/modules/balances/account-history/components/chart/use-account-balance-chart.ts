@@ -1,4 +1,4 @@
-import type { EChartsOption, LineSeriesOption } from 'echarts';
+import type { EChartsOption, LineSeriesOption, TooltipComponentFormatterCallbackParams } from 'echarts';
 import { get } from '@vueuse/shared';
 import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { alignBuckets, type BalancePoint, type BucketSeries } from '@/modules/balances/account-history/balance-series';
@@ -22,6 +22,10 @@ interface AccountBalanceChartOptions {
   bucketLabel: (bucket: BucketSeries) => string;
   /** False in privacy mode: the axis and tooltip then leave the amounts out. */
   showAmounts: MaybeRefOrGetter<boolean>;
+  /** The asset's symbol, written after each amount in the tooltip. */
+  unit: MaybeRefOrGetter<string>;
+  /** Formats a point's time, unix milliseconds, the way the user reads dates. */
+  formatTime: (milliseconds: number) => string;
 }
 
 interface UseAccountBalanceChartReturn {
@@ -34,6 +38,21 @@ function formatAmount(value: unknown): string {
   return Number(value).toLocaleString(undefined, { maximumFractionDigits: 8 });
 }
 
+function escapeHtml(text: string): string {
+  return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
+
+/** The point a tooltip row stands for: the series' marker and name, and its `[ms, amount]` value. */
+interface TooltipRow {
+  readonly marker?: unknown;
+  readonly seriesName?: string;
+  readonly value?: unknown;
+}
+
+function rowsOf(params: TooltipComponentFormatterCallbackParams): TooltipRow[] {
+  return Array.isArray(params) ? params : [params];
+}
+
 /**
  * The account balance chart's ECharts options.
  *
@@ -43,7 +62,7 @@ function formatAmount(value: unknown): string {
  * aligns the buckets first, since ECharts adds stacked values up by position.
  */
 export function useAccountBalanceChart(options: AccountBalanceChartOptions): UseAccountBalanceChartReturn {
-  const { bucketLabel, buckets, mode, showAmounts, total } = options;
+  const { bucketLabel, buckets, formatTime, mode, showAmounts, total, unit } = options;
   const { baseColor, gradient } = useGraph();
 
   const stackedSeries = computed<LineSeriesOption[]>(() => {
@@ -81,8 +100,20 @@ export function useAccountBalanceChart(options: AccountBalanceChartOptions): Use
       legend: { show: stacked && series.length > 1, top: 0, type: 'scroll' },
       series,
       tooltip: {
+        formatter: (params: TooltipComponentFormatterCallbackParams): string => {
+          const rows = rowsOf(params);
+          const first = rows[0]?.value;
+          const time = Array.isArray(first) ? Number(first[0]) : Number.NaN;
+          const symbol = escapeHtml(toValue(unit));
+          const lines = rows.map((row) => {
+            const amount = Array.isArray(row.value) ? row.value[1] : row.value;
+            const shown = amounts ? `${formatAmount(amount)} ${symbol}` : '***';
+            const name = row.seriesName ? `${escapeHtml(row.seriesName)} ` : '';
+            return `${String(row.marker ?? '')}${name}<b>${shown}</b>`;
+          });
+          return [Number.isNaN(time) ? '' : escapeHtml(formatTime(time)), ...lines].filter(Boolean).join('<br/>');
+        },
         trigger: 'axis',
-        valueFormatter: (value): string => (amounts ? formatAmount(value) : '***'),
       },
       xAxis: { axisLabel: TIME_AXIS_LABEL, type: 'time' },
       yAxis: {

@@ -106,7 +106,7 @@ const hidePagination = computed<boolean>(() => fitsEveryLimit(buckets.length));
         >
           <template #activator>
             <RouterLink
-              :to="accountHistoryLink(row.locationLabel, row.asset)"
+              :to="accountHistoryLink(row.locationLabel, row.asset, row.location)"
               :aria-label="t('account_history.view_history')"
               data-testid="historical-balances-bucket-history"
             >

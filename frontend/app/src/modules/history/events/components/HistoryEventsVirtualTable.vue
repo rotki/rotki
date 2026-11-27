@@ -27,6 +27,7 @@ const {
   tableHeightOffset,
   hideActions,
   duplicateHandlingStatus,
+  emptyMessage,
 } = defineProps<{
   /** What to render: the groups plus everything scoping the per-group event fetch. */
   source: HistoryEventsTableSource;
@@ -37,6 +38,8 @@ const {
   tableHeightOffset?: number;
   hideActions?: boolean;
   duplicateHandlingStatus?: DuplicateHandlingStatus;
+  /** Replaces the first-run "no events yet" state; see `HistoryEventsView`. */
+  emptyMessage?: string;
 }>();
 
 const emit = defineEmits<HistoryEventsTableEmits>();
@@ -208,6 +211,12 @@ provideHistoryEventsRowContext(rowContext);
           {{ t('transactions.empty_state.syncing_hint') }}
         </div>
       </div>
+      <RuiTableEmptyState
+        v-else-if="emptyMessage"
+        class="max-w-md"
+        :label="emptyMessage"
+        data-testid="history-events-empty-message"
+      />
       <RuiTableEmptyState
         v-else
         class="max-w-md"

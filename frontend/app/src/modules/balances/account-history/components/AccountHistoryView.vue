@@ -3,6 +3,7 @@ import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { AccountHistoryRange } from '@/modules/balances/account-history/account-history-selection';
 import AccountHistoryEvents from '@/modules/balances/account-history/components/AccountHistoryEvents.vue';
 import AccountHistoryRangeSelector from '@/modules/balances/account-history/components/AccountHistoryRangeSelector.vue';
@@ -10,10 +11,15 @@ import AccountHistorySelectors from '@/modules/balances/account-history/componen
 import AccountHistorySummary from '@/modules/balances/account-history/components/AccountHistorySummary.vue';
 import AccountBalanceChart from '@/modules/balances/account-history/components/chart/AccountBalanceChart.vue';
 import { useAccountHistory } from '@/modules/balances/account-history/use-account-history';
+import { provideHistoryEventsSection } from '@/modules/history/events/use-history-events-section';
 import GetPremiumPlaceholder from '@/modules/shell/components/GetPremiumPlaceholder.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { t } = useI18n({ useScope: 'global' });
+const { useAssetField } = useAssetInfoRetrieval();
+
+/** The events are a section of this page: they drop their own refresh and reload with the page's. */
+const eventsSection = provideHistoryEventsSection();
 
 const {
   assets,
@@ -23,8 +29,10 @@ const {
   error,
   eventsRange,
   loading,
+  locations,
   modelAccount,
   modelAsset,
+  modelLocation,
   modelRange,
   picked,
   premium,
@@ -34,6 +42,15 @@ const {
   summary,
   total,
 } = useAccountHistory();
+
+const assetSymbol = useAssetField(() => get(selection).asset, 'symbol');
+
+/** Reloads the balances, with premium, and the events together. */
+async function refreshAll(): Promise<void> {
+  eventsSection.reload();
+  if (get(premium))
+    await refresh();
+}
 
 /**
  * What the chart card shows instead of the chart. The card keeps its place and size for every one
@@ -62,9 +79,9 @@ const showEvents = computed<boolean>(() =>
         variant="outlined"
         color="primary"
         :loading="loading"
-        :disabled="!premium || !picked"
+        :disabled="!picked"
         data-testid="account-history-refresh"
-        @click="refresh()"
+        @click="refreshAll()"
       >
         <template #prepend>
           <RuiIcon name="lu-refresh-cw" />
@@ -77,9 +94,11 @@ const showEvents = computed<boolean>(() =>
       <AccountHistorySelectors
         v-model:account="modelAccount"
         v-model:asset="modelAsset"
+        v-model:location="modelLocation"
         :assets="assets"
         :assets-processing-required="assetsProcessingRequired"
         :restrict-assets="premium"
+        :locations="locations"
       />
 
       <AccountHistorySummary
@@ -87,12 +106,14 @@ const showEvents = computed<boolean>(() =>
         :asset="picked && !error ? selection.asset : undefined"
         :summary="summary"
         :processing-required="processingRequired"
+        :show-change="selection.range !== AccountHistoryRange.ALL"
       />
 
       <AccountBalanceChart
         :buckets="buckets"
         :total="total"
         :loading="loading"
+        :unit="assetSymbol"
       >
         <template #actions>
           <AccountHistoryRangeSelector v-model="modelRange" />
@@ -103,7 +124,7 @@ const showEvents = computed<boolean>(() =>
         >
           <GetPremiumPlaceholder
             v-if="placeholder === 'premium'"
-            :title="t('account_history.chart.title')"
+            :title="t('account_history.premium_title')"
             :description="t('account_history.premium_description')"
             data-testid="account-history-premium"
           />
@@ -135,6 +156,7 @@ const showEvents = computed<boolean>(() =>
         v-if="showEvents && selection.account && selection.asset"
         :account="selection.account"
         :asset="selection.asset"
+        :location="selection.location"
         :range="eventsRange"
       />
     </div>

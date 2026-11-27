@@ -12,16 +12,16 @@ const searchAsset = vi.fn();
 
 describe('toAccountHistoryFields', () => {
   it('should offer one account and one asset, each a single value', () => {
-    const fields = toAccountHistoryFields(resolvers, key => key, { accounts, assets: (): string[] => ['ETH'], searchAsset });
+    const fields = toAccountHistoryFields(resolvers, key => key, { accounts, assets: (): string[] => ['ETH'], locations: (): string[] => ['ethereum'], searchAsset });
 
-    expect(fields.map(({ key }) => key)).toEqual(['account', 'asset']);
+    expect(fields.map(({ key }) => key)).toEqual(['account', 'asset', 'location']);
     expect(fields.every(field => !field.multiple)).toBe(true);
     expect(fields[0]?.suggest?.()).toEqual(['0xA', 'Kraken main']);
   });
 
   it('should offer only the held assets when they are known, and search every asset otherwise', () => {
-    const held = toAccountHistoryFields(resolvers, key => key, { accounts, assets: (): string[] => ['ETH'], searchAsset })[1];
-    const any = toAccountHistoryFields(resolvers, key => key, { accounts, assets: undefined, searchAsset })[1];
+    const held = toAccountHistoryFields(resolvers, key => key, { accounts, assets: (): string[] => ['ETH'], locations: undefined, searchAsset })[1];
+    const any = toAccountHistoryFields(resolvers, key => key, { accounts, assets: undefined, locations: undefined, searchAsset })[1];
 
     expect(held?.suggest?.()).toEqual(['ETH']);
     expect(held?.searchAsset).toBeUndefined();
@@ -36,13 +36,15 @@ describe('accountHistoryParams', () => {
   it('should write the bar into the selection and show a pill only for what is picked', () => {
     const account = ref<string>();
     const asset = ref<string>();
-    const params = accountHistoryParams(account, asset);
+    const location = ref<string>();
+    const params = accountHistoryParams(account, asset, location);
     expect(get(params)).toEqual({});
 
-    set(params, { account: '0xA', asset: 'ETH' });
+    set(params, { account: '0xA', asset: 'ETH', location: 'ethereum' });
 
     expect(get(account)).toBe('0xA');
     expect(get(asset)).toBe('ETH');
-    expect(get(params)).toEqual({ account: '0xA', asset: 'ETH' });
+    expect(get(location)).toBe('ethereum');
+    expect(get(params)).toEqual({ account: '0xA', asset: 'ETH', location: 'ethereum' });
   });
 });
