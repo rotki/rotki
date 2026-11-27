@@ -34,7 +34,7 @@ interface UseNetValueChartConfigReturn {
  * carries its month and an overlapping label is dropped, so whichever survives still dates itself.
  * The first and last data points are not labelled: their exact time ("10:00") read as noise.
  */
-const TIME_AXIS_LABEL = {
+export const TIME_AXIS_LABEL = {
   formatter: {
     day: '{MMM} {d}',
     hour: '{HH}:{mm}',

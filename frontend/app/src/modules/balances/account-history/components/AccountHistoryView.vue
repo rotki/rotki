@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RuiAlert, RuiButton, RuiIcon } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
+import { AccountHistoryRange } from '@/modules/balances/account-history/account-history-selection';
 import AccountHistoryEvents from '@/modules/balances/account-history/components/AccountHistoryEvents.vue';
 import AccountHistorySelectors from '@/modules/balances/account-history/components/AccountHistorySelectors.vue';
 import AccountHistorySummary from '@/modules/balances/account-history/components/AccountHistorySummary.vue';
@@ -99,7 +100,9 @@ const {
           :total="total"
         />
 
+        <!-- A bounded range waits for its loaded window, so the list does not first fetch all time. -->
         <AccountHistoryEvents
+          v-if="selection.range === AccountHistoryRange.ALL || loadedRange"
           :account="selection.account"
           :asset="selection.asset"
           :location="selection.location"

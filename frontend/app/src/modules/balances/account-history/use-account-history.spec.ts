@@ -95,7 +95,7 @@ describe('useAccountHistory', () => {
     expect(get(empty)).toBe(true);
   });
 
-  it('should not read as empty while nothing is picked, loading or failed', () => {
+  it('should not read as empty while nothing is loaded, loading or failed', () => {
     set(state.buckets, []);
     const { empty } = create();
 
@@ -107,7 +107,7 @@ describe('useAccountHistory', () => {
     expect(get(empty)).toBe(false);
 
     set(state.seriesError, undefined);
-    set(state.selection, { ...get(state.selection), asset: undefined });
+    set(state.loadedRange, undefined);
     expect(get(empty)).toBe(false);
   });
 });

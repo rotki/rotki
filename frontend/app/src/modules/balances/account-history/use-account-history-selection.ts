@@ -41,37 +41,30 @@ export function useAccountHistorySelection(): UseAccountHistorySelectionReturn {
     startPromise(router.replace({ query }));
   }
 
-  const modelAccount = computed<string | undefined>({
-    get: () => get(selection).account,
-    set: (account) => {
-      if (account !== get(selection).account)
-        update({ account, asset: undefined, location: undefined });
-    },
-  });
+  /**
+   * A model of one selection key.
+   *
+   * @param key - the key the model reads and writes
+   * @param resets - the picks below `key`, cleared when it changes
+   */
+  function model<K extends keyof AccountHistorySelection>(
+    key: K,
+    resets: Partial<AccountHistorySelection> = {},
+  ): WritableComputedRef<AccountHistorySelection[K]> {
+    return computed<AccountHistorySelection[K]>({
+      get: () => get(selection)[key],
+      set: (value) => {
+        if (value !== get(selection)[key])
+          update({ ...resets, [key]: value });
+      },
+    });
+  }
 
-  const modelAsset = computed<string | undefined>({
-    get: () => get(selection).asset,
-    set: (asset) => {
-      if (asset !== get(selection).asset)
-        update({ asset, location: undefined });
-    },
-  });
-
-  const modelLocation = computed<string | undefined>({
-    get: () => get(selection).location,
-    set: (location) => {
-      if (location !== get(selection).location)
-        update({ location });
-    },
-  });
-
-  const modelRange = computed<AccountHistoryRange>({
-    get: () => get(selection).range,
-    set: (range) => {
-      if (range !== get(selection).range)
-        update({ range });
-    },
-  });
-
-  return { modelAccount, modelAsset, modelLocation, modelRange, selection };
+  return {
+    modelAccount: model('account', { asset: undefined, location: undefined }),
+    modelAsset: model('asset', { location: undefined }),
+    modelLocation: model('location'),
+    modelRange: model('range'),
+    selection,
+  };
 }

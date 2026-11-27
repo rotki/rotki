@@ -3,7 +3,7 @@ import { RuiButton, RuiButtonGroup } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, type Ref, type WritableComputedRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { AccountHistoryRange } from '@/modules/balances/account-history/account-history-selection';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
@@ -32,13 +32,17 @@ const { t } = useI18n({ useScope: 'global' });
 const { locationLabels } = storeToRefs(useHistoryStore());
 const { fetchLocationLabels } = useHistoryDataFetching();
 
-/** The account picker writes `''` when nothing is picked; the selection keeps that as unset. */
-const accountValue = computed<string>({
-  get: () => get(account) ?? '',
-  set: (value: string) => {
-    set(account, value || undefined);
-  },
-});
+/** The pickers write `''` when nothing is picked; the selection keeps that as unset. */
+function emptyAsUnset(model: Ref<string | undefined>): WritableComputedRef<string> {
+  return computed<string>({
+    get: () => get(model) ?? '',
+    set: (value: string) => {
+      set(model, value || undefined);
+    },
+  });
+}
+
+const accountValue = emptyAsUnset(account);
 
 /**
  * The asset the picker shows, held back until the account's asset list is in.
@@ -58,12 +62,7 @@ const assetValue = computed<string | undefined>({
   },
 });
 
-const locationValue = computed<string>({
-  get: () => get(location) ?? '',
-  set: (value: string) => {
-    set(location, value || undefined);
-  },
-});
+const locationValue = emptyAsUnset(location);
 
 const ranges = computed<{ value: AccountHistoryRange; label: string }[]>(() => [
   { label: t('account_history.range.month'), value: AccountHistoryRange.MONTH },

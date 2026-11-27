@@ -126,6 +126,17 @@ describe('useAccountBalanceSeries', () => {
     expect(fetchBalanceSeries).toHaveBeenCalledOnce();
   });
 
+  it('should forget the loaded range once the asset is unset', async () => {
+    const { asset, loadedRange } = create();
+    await flushPromises();
+    expect(get(loadedRange)).toBeDefined();
+
+    set(asset, undefined);
+    await flushPromises();
+
+    expect(get(loadedRange)).toBeUndefined();
+  });
+
   it('should clear the shown series when another asset is picked', async () => {
     const { asset, buckets } = create();
     await flushPromises();
@@ -183,5 +194,24 @@ describe('useAccountBalanceSeries', () => {
     await flushPromises();
 
     expect(fetchBalanceSeries).toHaveBeenCalledTimes(3);
+  });
+
+  it('should not reload or clear when the selection re-reads equal values', async () => {
+    const query = ref<{ account: string; asset: string; location?: string }>({ account: '0xA', asset: 'ETH' });
+    const state = scope.run(() => useAccountBalanceSeries({
+      account: () => get(query).account,
+      asset: () => get(query).asset,
+      range: AccountHistoryRange.ALL,
+    }));
+    assert(state);
+    await flushPromises();
+    expect(fetchBalanceSeries).toHaveBeenCalledOnce();
+
+    set(query, { account: '0xA', asset: 'ETH', location: 'ethereum' });
+    await nextTick();
+    await flushPromises();
+
+    expect(fetchBalanceSeries).toHaveBeenCalledOnce();
+    expect(get(state.buckets)).toHaveLength(1);
   });
 });
