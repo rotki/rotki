@@ -92,6 +92,7 @@ const samples = new Map<string, readonly unknown[]>([
   ['chainBalancesActivity', [{ chain: 'eth' }, { addresses: [address], chain: 'eth' }, { chain: 'eth', detect: true }, { chain: 'eth', detect: true, detectAddresses: [address] }]],
   ['chainSyncActivity', [{ chain: 'eth' }]],
   ['conflictResolutionActivity', [undefined]],
+  ['costBasisStalledActivity', [1_700_000_000]],
   ['csvImportActivity', [{ source: 'cointracking' }]],
   ['currentBalanceDetectionActivity', [undefined]],
   ['dailyPricesActivity', [{ asset: 'ETH', fromTimestamp: 1700000000, interval: 86400, toTimestamp: 1700864000 }]],

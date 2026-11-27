@@ -1590,4 +1590,46 @@ describe('createTaskOrchestrator', () => {
       expect(byId(orchestrator, id)).toMatchObject({ attention: true, status: Status.SKIPPED });
     });
   });
+
+  describe('updateReason', () => {
+    it('should update the reason of a settled activity in place and notify listeners', async () => {
+      const orchestrator = createTaskOrchestrator();
+      const work = controllable('stalled', { forgetUnlessFailed: true });
+      const id = orchestrator.submit(work.spec);
+      work.settle(err(Skipped({ attention: true, message: 'rate limited' })));
+      await flush();
+
+      const listener = vi.fn();
+      orchestrator.onChange(listener);
+      orchestrator.updateReason(id, 'network unreachable');
+
+      expect(byId(orchestrator, id)).toMatchObject({
+        attention: true,
+        reason: 'network unreachable',
+        status: Status.SKIPPED,
+      });
+      expect(listener).toHaveBeenCalledOnce();
+    });
+
+    it('should ignore absent, live, and unchanged activities', async () => {
+      const orchestrator = createTaskOrchestrator();
+      const live = controllable('live');
+      const liveId = orchestrator.submit(live.spec);
+      const settled = controllable('settled');
+      const settledId = orchestrator.submit(settled.spec);
+      settled.settle(err(Skipped({ attention: true, message: 'rate limited' })));
+      await flush();
+
+      const listener = vi.fn();
+      orchestrator.onChange(listener);
+
+      orchestrator.updateReason(makeActivityId(Kind.OTHER, 'missing'), 'new');
+      orchestrator.updateReason(liveId, 'new');
+      orchestrator.updateReason(settledId, 'rate limited');
+
+      expect(byId(orchestrator, liveId)?.reason).toBeUndefined();
+      expect(byId(orchestrator, settledId)?.reason).toBe('rate limited');
+      expect(listener).not.toHaveBeenCalled();
+    });
+  });
 });

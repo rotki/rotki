@@ -1,12 +1,18 @@
-import type { ActivitySpec } from './spec';
 import { isTerminalStatus } from '../status';
 import { type Activity, type ActivityId, type ActivityStatus, type ActivityWaiting, ActivityStatus as Status, WaitingReason } from '../types';
 import { type EligibilityRule, firstRuleHold } from './rules';
+import { type ActivitySpec, DEFAULT_LANE, type Lane } from './spec';
 
 /** The part of an orchestrator record the hold checks read; the orchestrator's records satisfy it structurally. */
 export interface HeldRecord {
   readonly spec: Pick<ActivitySpec, 'deps' | 'parent'>;
   readonly status: ActivityStatus;
+}
+
+/** The part of a record {@link waitingOf} reads to determine both rule holds and lane-slot availability. */
+export interface WaitingRecord extends HeldRecord {
+  readonly cancelRequested: boolean;
+  readonly spec: Pick<ActivitySpec, 'deps' | 'lane' | 'parent'>;
 }
 
 /** What the hold checks read besides the record itself. */
@@ -48,4 +54,18 @@ export function holdOf(record: HeldRecord, candidate: Activity, context: HoldCon
     return { on: dependency, reason: WaitingReason.DEPENDENCY };
 
   return firstRuleHold(context.rules, candidate, context.all);
+}
+
+/** Why a pending record has not started: a hold first, then a full lane; `undefined` when it may start. */
+export function waitingOf(
+  record: WaitingRecord,
+  candidate: Activity,
+  context: HoldContext,
+  hasFreeSlot: (lane: Lane) => boolean,
+): ActivityWaiting | undefined {
+  if (record.status !== Status.PENDING || record.cancelRequested)
+    return undefined;
+
+  const lane = record.spec.lane ?? DEFAULT_LANE;
+  return holdOf(record, candidate, context) ?? (hasFreeSlot(lane) ? undefined : { reason: WaitingReason.SLOT });
 }

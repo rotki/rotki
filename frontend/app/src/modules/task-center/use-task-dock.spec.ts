@@ -655,6 +655,23 @@ describe('useTaskDock', () => {
       expect(forgotten).toEqual([]);
     });
 
+    it('should keep a dismissed cost_basis_stalled row dismissed when its reason updates in place', async () => {
+      const stall = (reason: string): Activity => ({
+        ...flaggedRun('cost_basis_stalled:1700000000', { key: msg.$t('task_center.activity.background_task.historical_balances') }),
+        reason,
+      });
+      const { acknowledge, dismissed, flagged, modelExpanded, state } = dock();
+
+      await transition([stall('rate limited')]);
+      acknowledge(stall('rate limited').id);
+      await transition([stall('network unreachable')]);
+
+      expect(get(flagged)).toEqual([]);
+      expect(get(dismissed)).toMatchObject([{ id: stall('network unreachable').id, reason: 'network unreachable' }]);
+      expect(get(state)).toBe(DockState.DISMISSED);
+      expect(get(modelExpanded)).toBe(false);
+    });
+
     it('should not hold a user\'s batch open while it runs', async () => {
       set(activities, refresh(ActivityStatus.RUNNING));
       const { finished } = dock();

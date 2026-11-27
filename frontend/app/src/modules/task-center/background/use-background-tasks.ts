@@ -51,8 +51,10 @@ interface UseBackgroundTasksReturn {
    * processing catches up.
    *
    * @remarks
-   * Keyed on `(since, reason)` so repeated periodic polls neither duplicate nor re-open a row the
-   * user already dismissed, while a new stall (`since`) supersedes the earlier row.
+   * Keyed on `since` alone so repeated periodic polls neither duplicate nor re-open a row the
+   * user already dismissed; when the cause flips between retries during the same stall, the
+   * reason text is updated in place without re-surfacing, while a new stall (`since`) supersedes
+   * the earlier row.
    */
   syncCostBasisStalled: (stalled: CostBasisStalled | undefined) => void;
 }
@@ -79,7 +81,7 @@ export const useBackgroundTasks = createSharedComposable((): UseBackgroundTasksR
   const { t } = useI18n({ useScope: 'global' });
   const { getChainName } = useSupportedChains();
   const { submitTask } = useNativeTask();
-  const { forget } = useTaskOrchestrator();
+  const { forget, updateReason } = useTaskOrchestrator();
 
   const mirrors = new Map<number, Mirror>();
   let lastStalled: CostBasisStalled | undefined;
@@ -176,6 +178,11 @@ export const useBackgroundTasks = createSharedComposable((): UseBackgroundTasksR
     }
   }
 
+  function stalledMessage(reason: string): string {
+    const cause = parseFailureCause(reason);
+    return t(STALLED_REASON_KEYS[cause] ?? msg.$t('task_center.cost_basis_stalled.unknown'));
+  }
+
   function syncCostBasisStalled(stalled: CostBasisStalled | undefined): void {
     if (stalled === undefined) {
       if (lastStalled !== undefined) {
@@ -185,14 +192,19 @@ export const useBackgroundTasks = createSharedComposable((): UseBackgroundTasksR
       return;
     }
 
-    if (lastStalled?.since === stalled.since && lastStalled.reason === stalled.reason)
+    const id = costBasisStalledActivity.id(stalled.since);
+    const message = stalledMessage(stalled.reason);
+
+    if (lastStalled?.since === stalled.since) {
+      if (lastStalled.reason === stalled.reason)
+        return;
+      lastStalled = stalled;
+      updateReason(id, message);
       return;
+    }
 
     lastStalled = stalled;
-    const id = costBasisStalledActivity.id(stalled.since);
-    const cause = parseFailureCause(stalled.reason);
-    const message = t(STALLED_REASON_KEYS[cause] ?? msg.$t('task_center.cost_basis_stalled.unknown'));
-
+    const submittedReason = stalled.reason;
     startPromise((async (): Promise<void> => {
       await submitTask({
         forgetUnlessFailed: true,
@@ -207,6 +219,8 @@ export const useBackgroundTasks = createSharedComposable((): UseBackgroundTasksR
       });
       if (lastStalled === undefined || costBasisStalledActivity.id(lastStalled.since) !== id)
         forget(id);
+      else if (lastStalled.reason !== submittedReason)
+        updateReason(id, stalledMessage(lastStalled.reason));
     })());
   }
 
