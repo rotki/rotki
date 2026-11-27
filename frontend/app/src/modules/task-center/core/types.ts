@@ -221,6 +221,8 @@ export interface Activity {
   readonly rerunnable: boolean;
   readonly source: ActivitySource;
   readonly startedAt?: number;
+  /** When the activity reached a terminal status; absent while it is live. */
+  readonly settledAt?: number;
   /**
    * Excluded from the task-center render model (see {@link ActivitySpec.ephemeral}). The
    * orchestrator still tracks it internally; only the reactive projection drops it, so pre-login

@@ -237,10 +237,27 @@ describe('dockActivityRow', () => {
       expect(createWrapper({ activity: activity({ startedAt: NOW - 14_000 }) }).text()).toContain('14s');
     });
 
-    it('should not render elapsed time once the work settled', () => {
-      const text = createWrapper({ activity: activity({ startedAt: NOW - 14_000, status: ActivityStatus.COMPLETE }) }).text();
+    it('should freeze elapsed time at the final duration once the work settled', () => {
+      const text = createWrapper({
+        activity: activity({ settledAt: NOW - 4000, startedAt: NOW - 14_000, status: ActivityStatus.COMPLETE }),
+      }).text();
 
+      expect(text).toContain('10s');
       expect(text).not.toContain('14s');
+    });
+
+    it('should leave out the duration of settled work that took under a second', () => {
+      const text = createWrapper({
+        activity: activity({ settledAt: NOW - 13_500, startedAt: NOW - 14_000, status: ActivityStatus.COMPLETE }),
+      }).text();
+
+      expect(text).not.toContain('0s');
+    });
+
+    it('should leave out the duration of work that settled without starting', () => {
+      const text = createWrapper({ activity: activity({ settledAt: NOW, status: ActivityStatus.CANCELLED }) }).text();
+
+      expect(text).not.toMatch(/\d+s/);
     });
 
     it('should show a bar with the subtree tally beside it once there is a percentage', () => {
@@ -507,6 +524,20 @@ describe('dockActivityRow', () => {
     it('should keep the toggle\'s space on a row with buttons but no toggle, so its buttons line up', () => {
       expect(createWrapper().find('[data-testid=activity-toggle-slot]').exists()).toBe(true);
       expect(createWrapper({ activity: activity({ cancellable: false }) }).find('[data-testid=activity-toggle-slot]').exists()).toBe(false);
+    });
+
+    it('should keep the stop button\'s place on a settled row showing its duration, so the time lines up', () => {
+      const settledFor = (startedAt: number): VueWrapper => createWrapper({
+        activity: activity({ settledAt: NOW, startedAt, status: ActivityStatus.COMPLETE }),
+      });
+
+      const timed = settledFor(NOW - 3000);
+      expect(timed.find('[data-testid=activity-button-slot]').exists()).toBe(true);
+      expect(timed.find('[data-testid=activity-toggle-slot]').exists()).toBe(true);
+
+      const quick = settledFor(NOW - 200);
+      expect(quick.find('[data-testid=activity-button-slot]').exists()).toBe(false);
+      expect(quick.find('[data-testid=activity-toggle-slot]').exists()).toBe(false);
     });
 
     it('should offer no dismiss control unless the caller asks for one', () => {

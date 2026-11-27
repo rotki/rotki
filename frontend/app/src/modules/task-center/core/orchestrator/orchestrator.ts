@@ -75,11 +75,13 @@ export function createTaskOrchestrator(options: OrchestratorOptions = {}): TaskO
     if (records.get(record.spec.id) !== record)
       return;
 
+    const settledAt = now();
     record.status = status;
     record.reason = reason;
     record.attention = attention;
+    record.settledAt = settledAt;
     if (!record.spec.container)
-      recordSettlement(record.spec.id, record.spec.kind, status, now(), ledger);
+      recordSettlement(record.spec.id, record.spec.kind, status, settledAt, ledger);
     if (!record.cleanedUp) {
       record.cleanedUp = true;
       record.spec.cleanup?.();

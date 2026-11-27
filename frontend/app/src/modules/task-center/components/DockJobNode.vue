@@ -44,6 +44,23 @@ const { t } = useI18n({ useScope: 'global' });
 const NESTED_LIMIT = 5;
 
 /**
+ * The colour of the elbow that hooks a nested row onto its parent's rail.
+ *
+ * @remarks
+ * Only work in flight and failures are drawn at full strength. A finished row's elbow is a faded
+ * green, so a refresh of twenty chains reads as done without its connectors outshouting the one
+ * still running. Waiting, skipped and cancelled rows keep the rail's own grey.
+ */
+const CONNECTOR_COLOR: Record<ActivityStatus, string> = {
+  [ActivityStatus.CANCELLED]: 'border-default',
+  [ActivityStatus.COMPLETE]: 'border-rui-success/50',
+  [ActivityStatus.FAILED]: 'border-rui-error',
+  [ActivityStatus.PENDING]: 'border-default',
+  [ActivityStatus.RUNNING]: 'border-rui-primary',
+  [ActivityStatus.SKIPPED]: 'border-default',
+};
+
+/**
  * Whether this node's children are shown. Every parent starts closed, at every depth.
  *
  * @remarks
@@ -205,6 +222,18 @@ watch(() => isTerminalStatus(activity.status), () => set(toggled, false));
       @dismiss="emit('dismiss', $event)"
       @retry="emit('retry', $event)"
     >
+      <template
+        v-if="parent"
+        #connector="{ compact, status }"
+      >
+        <!-- Overlays the rail the parent draws (the border-l below) and bends into this row's mark. -->
+        <span
+          aria-hidden="true"
+          class="absolute -left-[9px] top-0 w-[11px] border-l border-b rounded-bl-md pointer-events-none"
+          :class="[compact ? 'h-3' : 'h-4', CONNECTOR_COLOR[status]]"
+          data-testid="dock-connector"
+        />
+      </template>
       <template
         v-if="isParent"
         #toggle
