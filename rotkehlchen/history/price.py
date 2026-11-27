@@ -8,10 +8,10 @@ from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessage
 from rotkehlchen.assets.asset import Asset, EvmToken, FiatAsset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
-from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import get_uniswap_v3_position_price
+from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import query_uniswap_v3_position_price
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
-from rotkehlchen.chain.evm.decoding.velodrome.utils import get_slipstream_position_price
-from rotkehlchen.chain.evm.utils import lp_price_from_uniswaplike_pool_contract
+from rotkehlchen.chain.evm.decoding.velodrome.utils import query_slipstream_position_price
+from rotkehlchen.chain.evm.utils import query_lp_price_from_uniswaplike_pool_contract
 from rotkehlchen.constants import DAY_IN_SECONDS, HOUR_IN_SECONDS, ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_ETH,
@@ -23,7 +23,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
-from rotkehlchen.errors.cause import TRANSIENT_FAILURE_CAUSES
+from rotkehlchen.errors.cause import TRANSIENT_FAILURE_CAUSES, FailureCause
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
@@ -61,6 +61,57 @@ log = RotkehlchenLogsAdapter(logger)
 # Don't cache historical price misses for timestamps newer than this age, so newly traded
 # or not-yet-indexed tokens can be re-queried once indexers catch up.
 PRICE_MISS_MIN_AGE_SECONDS: Final = DAY_IN_SECONDS
+
+
+def _outage_flags(error: RemoteError) -> tuple[bool, bool]:
+    """The rate_limited and remote_error flags for a price query that failed with `error`.
+
+    They are raised only if a later retry may get past the failure. A rejection such as a
+    401 for history beyond the plan or a 404 for a delisted id is final. A rate limit is
+    known by its cause, since only some sources have a status code to report.
+    """
+    return (
+        error.cause == FailureCause.RATE_LIMITED or
+        error.error_code == HTTPStatus.TOO_MANY_REQUESTS
+    ), error.cause in TRANSIENT_FAILURE_CAUSES
+
+
+def _raise_on_outage(
+        error: RemoteError | NoPriceForGivenTimestamp,
+        from_asset: Asset,
+        to_asset: Asset,
+        timestamp: Timestamp,
+) -> None:
+    """Raise NoPriceForGivenTimestamp for `from_asset` if `error` says that a later retry
+    may find its price, so that an outage is not taken for a missing price."""
+    if isinstance(error, NoPriceForGivenTimestamp):
+        rate_limited, remote_error = error.rate_limited, error.remote_error
+    else:
+        rate_limited, remote_error = _outage_flags(error)
+
+    if rate_limited or remote_error:
+        raise NoPriceForGivenTimestamp(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            time=timestamp,
+            rate_limited=rate_limited,
+            remote_error=remote_error,
+        ) from error
+
+
+def _price_or_miss(
+        price: Price | None,
+        from_asset: Asset,
+        to_asset: Asset,
+        timestamp: Timestamp,
+) -> Price:
+    """Return the price of a pool or position read from the chain. One that can't be read
+    has no price, and the oracles don't price pool tokens or positions either, so it is a
+    miss without asking them on every query."""
+    if price is None:
+        raise NoPriceForGivenTimestamp(from_asset=from_asset, to_asset=to_asset, time=timestamp)
+
+    return price
 
 
 def query_price_or_use_default(
@@ -281,15 +332,18 @@ class PriceHistorian:
                 return cached_price_entry.price if cached_price_entry is not None else None
             else:
                 try:
-                    return PriceHistorian.query_uniswap_position_price(
+                    position_price = PriceHistorian.query_uniswap_position_price(
                         pool_token=pool_token,
                         pool_token_amount=ONE,
                         to_asset=to_asset,
                         timestamp=timestamp,
                     )
-                except (RemoteError, NoPriceForGivenTimestamp):
+                except (RemoteError, NoPriceForGivenTimestamp) as e:
+                    _raise_on_outage(e, from_asset=from_asset, to_asset=to_asset, timestamp=timestamp)  # noqa: E501
                     log.error(f'Could not query uniswap position price for {from_asset.identifier} and time {timestamp}.')  # noqa: E501
                     return None
+
+                return _price_or_miss(position_price, from_asset, to_asset, timestamp)
 
         if (
             from_asset.is_evm_token() and
@@ -307,19 +361,22 @@ class PriceHistorian:
 
             try:
                 evm_inquirer = Inquirer.get_evm_manager(chain_id=position_token.chain_id).node_inquirer  # noqa: E501
-                return get_slipstream_position_price(
+                position_price = query_slipstream_position_price(
                     token=position_token,
                     evm_inquirer=evm_inquirer,
                     block_identifier=evm_inquirer.get_blocknumber_by_time(timestamp),
                     price_func=lambda asset: PriceHistorian.query_historical_price(asset, to_asset, timestamp),  # noqa: E501
                 )
-            except (RemoteError, NoPriceForGivenTimestamp):
+            except (RemoteError, NoPriceForGivenTimestamp) as e:
+                _raise_on_outage(e, from_asset=from_asset, to_asset=to_asset, timestamp=timestamp)
                 log.error(
                     'Could not query Slipstream position price',
                     asset=from_asset.identifier,
                     timestamp=timestamp,
                 )
                 return None
+
+            return _price_or_miss(position_price, from_asset, to_asset, timestamp)
 
         if from_asset.is_evm_token() and len((evm_token := from_asset.resolve_to_evm_token()).underlying_tokens) != 0:  # noqa: E501
             aggregated_price = ZERO
@@ -344,6 +401,8 @@ class PriceHistorian:
         # Prefer the collection's main asset so members with differing oracle mappings
         # still get the same price. If it has no price at this timestamp (for example,
         # before POL existed), fall through to the member's own cache and oracles.
+        # If its sources were unreachable, the member's own price may be the wrong one
+        # this redirect avoids, so raise and let a later retry ask the main asset again.
         # Mirrors Inquirer._maybe_replace_asset when the main asset can be priced.
         if (
             (main_asset_id := AssetResolver.get_collection_main_asset(from_asset.identifier)) is not None and  # noqa: E501
@@ -357,7 +416,7 @@ class PriceHistorian:
                     max_seconds_distance=max_seconds_distance,
                 )
             except NoPriceForGivenTimestamp as e:
-                if e.rate_limited:
+                if e.rate_limited or e.remote_error:
                     raise
 
         return None
@@ -402,16 +461,22 @@ class PriceHistorian:
 
         # Querying historical forex data is attempted first via the external apis
         # and then via any price oracle that has fiat to fiat.
+        rate_limited = False
+        remote_error = False
         with suppress(UnknownAsset, WrongAssetType):
             from_asset = from_asset.resolve_to_fiat_asset()
             to_asset = to_asset.resolve_to_fiat_asset()
-            price = Inquirer().query_historical_fiat_exchange_rates(
-                from_fiat_currency=from_asset,
-                to_fiat_currency=to_asset,
-                timestamp=timestamp,
-            )
-            if price is not None:
-                return price
+            try:
+                price = Inquirer().query_historical_fiat_exchange_rates(
+                    from_fiat_currency=from_asset,
+                    to_fiat_currency=to_asset,
+                    timestamp=timestamp,
+                )
+            except RemoteError as e:  # an oracle may still have the rate
+                rate_limited, remote_error = _outage_flags(e)
+            else:
+                if price is not None:
+                    return price
 
         instance = PriceHistorian()
         # Read the state once: a concurrent set_oracles_order swaps it atomically, while
@@ -461,8 +526,6 @@ class PriceHistorian:
         today_daystart_ts = timestamp_to_daystart_timestamp(now)
         candidate_misses: list[tuple[HistoricalPriceOracle, Timestamp]] = []
         # else cryptocompare also has historical fiat to fiat data
-        rate_limited = False
-        remote_error = False
         for oracle, oracle_instance in zip(oracles, oracle_instances, strict=True):
             is_daily = oracle in DAILY_GRANULARITY_ORACLES
             miss_ts = daystart_ts if is_daily else timestamp
@@ -520,10 +583,9 @@ class PriceHistorian:
             ):
                 continue
             except RemoteError as e:
-                # Raise the flags only if a later retry may get past the failure. A rejection
-                # such as a 401 for history beyond the plan or a 404 for a delisted id is final.
-                rate_limited = rate_limited or e.error_code == HTTPStatus.TOO_MANY_REQUESTS
-                remote_error = remote_error or e.cause in TRANSIENT_FAILURE_CAUSES
+                error_rate_limited, error_remote_error = _outage_flags(e)
+                rate_limited = rate_limited or error_rate_limited
+                remote_error = remote_error or error_remote_error
                 continue
 
             log.debug(
@@ -644,19 +706,23 @@ class PriceHistorian:
             pool_token_amount: FVal,
             to_asset: Asset,
             timestamp: Timestamp,
-    ) -> Price:
+    ) -> Price | None:
         """Return the uniswap position value at the given timestamp. Works both with V2 and V3.
 
         Note: This function should only be called for a Uniswap liquidity token.
 
+        Returns None if the pool or position can't be read, and ZERO_PRICE for a V3
+        position that reverts, such as a burned one.
+
         May raise:
-            RemoteError: If an unexpected response is returned on get_blocknumber_by_time function
+            RemoteError: If get_blocknumber_by_time or a contract call failed, with the
+            cause it failed for
             NoPriceForGivenTimestamp if we can't find a price for the asset in the given timestamp
         """
         evm_inquirer = Inquirer.get_evm_manager(chain_id=pool_token.chain_id).node_inquirer
         block_number = evm_inquirer.get_blocknumber_by_time(timestamp)
         if pool_token.protocol == CPT_UNISWAP_V2:
-            if (pool_price := lp_price_from_uniswaplike_pool_contract(
+            if (pool_price := query_lp_price_from_uniswaplike_pool_contract(
                 evm_inquirer=evm_inquirer,
                 token=pool_token,
                 price_func=lambda asset: PriceHistorian.query_historical_price(asset, to_asset, timestamp),  # noqa: E501
@@ -664,9 +730,9 @@ class PriceHistorian:
             )) is not None:
                 return Price(pool_token_amount * pool_price)
 
-            return ZERO_PRICE
+            return None
 
-        return get_uniswap_v3_position_price(
+        return query_uniswap_v3_position_price(
             token=pool_token,
             evm_inquirer=evm_inquirer,
             block_identifier=block_number,

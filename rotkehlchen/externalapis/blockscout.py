@@ -17,9 +17,11 @@ from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     BlockscoutIncompleteResponse,
     ChainNotSupported,
+    ContractReverted,
     IndexerRangeNotCovered,
     RecoverableRemoteError,
     RemoteError,
+    is_json_rpc_revert,
     remote_error_for_status,
 )
 from rotkehlchen.errors.serialization import DeserializationError
@@ -684,6 +686,9 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             },
             http_method='post',
         )):
+            if method == 'eth_call' and is_json_rpc_revert(response.get('error')):
+                raise ContractReverted(f'Blockscout eth_call reverted: {response["error"]}')
+
             raise RemoteError(
                 f'Blockscout eth-rpc response contains no result: {response}',
                 cause=FailureCause.BAD_DATA,

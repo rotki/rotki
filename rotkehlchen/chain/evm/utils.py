@@ -56,6 +56,31 @@ def lp_price_from_uniswaplike_pool_contract(
         price_func: Callable[[Asset], Price],
         block_identifier: BlockIdentifier,
 ) -> Price | None:
+    """Like query_lp_price_from_uniswaplike_pool_contract, but a pool that can't be read
+    for any reason, including a failed query, has no price."""
+    try:
+        return query_lp_price_from_uniswaplike_pool_contract(
+            evm_inquirer=evm_inquirer,
+            token=token,
+            price_func=price_func,
+            block_identifier=block_identifier,
+        )
+    except RemoteError as e:
+        log.error(
+            'Failed to query the properties of a uniswap-like pool',
+            chain=evm_inquirer.chain_name,
+            token=token.evm_address,
+            error=str(e),
+        )
+        return None
+
+
+def query_lp_price_from_uniswaplike_pool_contract(
+        evm_inquirer: EvmNodeInquirer,
+        token: EvmToken,
+        price_func: Callable[[Asset], Price],
+        block_identifier: BlockIdentifier,
+) -> Price | None:
     """
     This works for any uniswap like LP token. It calculates the price for an LP token the contract
     of which is also the contract of the pool it represents. For example velodrome or uniswap lp
@@ -71,6 +96,12 @@ def lp_price_from_uniswaplike_pool_contract(
     token is the Uniswap V2 pair token and price_func a function to query
     the price of the assets since this logic can use both current and historical
     prices.
+
+    Returns None if the pool can't be read, such as for a protocol with no known abi or
+    an answer that can't be decoded.
+
+    May raise:
+    - RemoteError if the multicall querying the pool failed, with the cause it failed for
     """
     if token.protocol is None:
         return None
@@ -106,7 +137,7 @@ def lp_price_from_uniswaplike_pool_contract(
             calls=[(token.evm_address, contract.encode(method_name=method)) for method in methods],
             block_identifier=block_identifier,
         )
-    except (RemoteError, BlockchainQueryError) as e:
+    except BlockchainQueryError as e:
         log.error(
             f'Remote error calling {evm_inquirer.chain_name} multicall contract for {abi_name} '
             f'token {token.evm_address} properties: {e!s}',

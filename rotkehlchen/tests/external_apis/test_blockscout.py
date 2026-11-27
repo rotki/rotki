@@ -17,8 +17,10 @@ from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.filtering import EthWithdrawalFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.cause import FailureCause
 from rotkehlchen.errors.misc import (
     BlockscoutIncompleteResponse,
+    ContractReverted,
     IndexerRangeNotCovered,
     RemoteError,
 )
@@ -976,3 +978,35 @@ def test_api_key_is_redacted_from_logs_and_errors(
     assert '<redacted>' in str(exc_info.value)
     assert 'Querying blockscout API' in caplog.text
     assert api_key not in caplog.text
+
+
+@pytest.mark.parametrize(('error', 'expected'), [
+    # how blockscout answers a burned uniswap v3 position: HTTP 200 with the node's error
+    ({'code': 3, 'message': 'execution reverted: Invalid token ID', 'data': '0x08c379a0'}, ContractReverted),  # noqa: E501
+    ({'code': -32000, 'message': 'execution reverted'}, ContractReverted),
+    # a smaller call may get past a gas limit, and dict data comes with provider errors
+    ({'code': 3, 'message': 'execution reverted: out of gas', 'data': '0x'}, RemoteError),
+    ({'code': -32005, 'message': 'execution reverted', 'data': {'backoff_seconds': 30}}, RemoteError),  # noqa: E501
+    ({'code': -32000, 'message': 'header not found'}, RemoteError),
+])
+def test_eth_call_revert_is_a_contract_revert(
+        blockscout: Blockscout,
+        error: dict[str, Any],
+        expected: type[RemoteError],
+) -> None:
+    """An eth_call that reverted on-chain is a ContractReverted, as from a web3 node, so
+    callers can tell it from a response they could not read."""
+    with (
+        patch.object(blockscout, '_query_and_process', return_value={'jsonrpc': '2.0', 'id': 0, 'error': error}),  # noqa: E501
+        pytest.raises(RemoteError) as exc_info,
+    ):
+        blockscout.eth_call(
+            chain_id=ChainID.ETHEREUM,
+            to_address=make_evm_address(),
+            input_data='0x99fbab88',
+            block_identifier=20_000_000,
+        )
+
+    assert type(exc_info.value) is expected
+    if expected is RemoteError:
+        assert exc_info.value.cause == FailureCause.BAD_DATA

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.errors.cause import FailureCause
 
@@ -306,6 +306,24 @@ class ContractReverted(RemoteError):
 
     def __init__(self, message: str) -> None:
         super().__init__(message, cause=FailureCause.REMOTE_REJECTED)
+
+
+# Errors that nodes word as a revert but that a smaller call may get past
+GAS_LIMIT_ERROR_PATTERNS: Final = ('out of gas', 'exceeds block gas limit')
+
+
+def is_json_rpc_revert(error: Any) -> bool:
+    """Whether the error object of a JSON-RPC response is an on-chain revert, as nodes
+    report one: code 3 or an 'execution reverted' message. Dict data comes with provider
+    errors such as rate limits, and a gas limit error worded as a revert is not one."""
+    if not isinstance(error, dict) or isinstance(error.get('data'), dict):
+        return False
+
+    message = str(error.get('message', '')).lower()
+    return (
+        (error.get('code') == 3 or message.startswith('execution reverted')) and
+        not any(x in message for x in GAS_LIMIT_ERROR_PATTERNS)
+    )
 
 
 class BlockchainQueryError(Exception):
