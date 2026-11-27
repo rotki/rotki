@@ -53,6 +53,9 @@ class CurveBalances(ProtocolWithGauges):
         )
 
     def get_gauge_address(self, event: EvmEvent) -> ChecksumEvmAddress | None:
+        if event.extra_data is not None and 'controller_address' in event.extra_data:
+            return None  # crvUSD / Curve Lend leveraged deposit, not a gauge
+
         return event.address
 
     def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:

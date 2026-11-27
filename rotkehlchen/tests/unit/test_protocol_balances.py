@@ -242,6 +242,103 @@ def test_gauge_queries_are_scoped_per_address(
     ] == [{gauge1: token1}, {gauge2: token2}]
 
 
+def test_curve_balances_skips_crvusd_leveraged_deposits(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
+    """Regression test: CurveBalances must ignore crvUSD leveraged collateral deposits
+    (including native ETH) instead of treating them as gauge deposits."""
+    user_only_crvusd, user_with_gauge, crvusd_controller, amm_address, gauge_address = (
+        make_evm_address() for _ in range(5)
+    )
+    gauge_token = A_CRV.resolve_to_evm_token()
+    events_db = DBHistoryEvents(ethereum_inquirer.database)
+    controller_extra_data = {'controller_address': crvusd_controller}
+    with ethereum_inquirer.database.conn.write_ctx() as write_cursor:
+        for idx, (user, asset, address, extra_data) in enumerate([
+            (user_only_crvusd, A_ETH, crvusd_controller, controller_extra_data),
+            (user_with_gauge, A_ETH, crvusd_controller, controller_extra_data),
+            (user_with_gauge, A_WBTC, amm_address, controller_extra_data),
+            (user_with_gauge, gauge_token, gauge_address, None),
+        ]):
+            events_db.add_history_event(
+                write_cursor=write_cursor,
+                event=EvmEvent(
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=idx + 1,
+                    timestamp=TimestampMS(1760138579000),
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.DEPOSIT,
+                    event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                    asset=asset,
+                    amount=FVal('1.25'),
+                    location_label=user,
+                    counterparty=CPT_CURVE,
+                    address=address,
+                    extra_data=extra_data,
+                ),
+            )
+
+    curve_balances = CurveBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=ethereum_transaction_decoder,
+    )
+    with (
+        patch.object(curve_balances, '_query_gauges_balances', return_value={}) as query_mock,
+        patch(
+            'rotkehlchen.chain.ethereum.interfaces.balances.get_rpc_first_chunk_size_call_order',
+            return_value=(100, []),
+        ),
+    ):
+        balances = curve_balances.query_balances(addresses=[user_only_crvusd, user_with_gauge])
+
+    assert balances == {}
+    assert len(query_mock.call_args_list) == 1
+    assert query_mock.call_args.kwargs['user_address'] == user_with_gauge
+    assert query_mock.call_args.kwargs['gauges_to_token'] == {gauge_address: gauge_token}
+
+
+def test_protocol_with_gauges_skips_non_evm_token_events(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
+    """ProtocolWithGauges must skip gauge events whose asset is not an EvmToken."""
+    curve_balances = CurveBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=ethereum_transaction_decoder,
+    )
+    user1, user2, non_token_addr, unknown_addr, gauge1, non_token_addr2 = (
+        make_evm_address() for _ in range(6)
+    )
+    token1 = A_CRV.resolve_to_evm_token()
+    with (
+        patch.object(curve_balances, 'addresses_with_gauge_deposits', return_value={
+            user1: [
+                MagicMock(address=non_token_addr, asset=A_ETH, extra_data=None),
+                MagicMock(
+                    address=unknown_addr,
+                    asset=Asset('UNKNOWN_NON_EXISTENT_ASSET'),
+                    extra_data=None,
+                ),
+                MagicMock(address=gauge1, asset=token1, extra_data=None),
+            ],
+            user2: [
+                MagicMock(address=non_token_addr2, asset=A_ETH, extra_data=None),
+            ],
+        }),
+        patch.object(curve_balances, '_query_gauges_balances', return_value={}) as query_mock,
+        patch(
+            'rotkehlchen.chain.ethereum.interfaces.balances.get_rpc_first_chunk_size_call_order',
+            return_value=(100, []),
+        ),
+    ):
+        ProtocolWithGauges.query_balances(curve_balances, addresses=[user1, user2])
+
+    assert query_mock.call_count == 1
+    assert query_mock.call_args.kwargs['user_address'] == user1
+    assert query_mock.call_args.kwargs['gauges_to_token'] == {gauge1: token1}
+
+
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x21Ab0875611da0235BC5b6405b8A08268D859700']])
 def test_curve_locked_crv_balances(

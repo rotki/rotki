@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
@@ -320,7 +321,19 @@ class ProtocolWithGauges(ProtocolWithBalance):
                 ):
                     continue
 
-                gauges_to_token[gauge_address] = event.asset.resolve_to_evm_token()
+                try:
+                    gauges_to_token[gauge_address] = event.asset.resolve_to_evm_token()
+                except (WrongAssetType, UnknownAsset):
+                    log.debug(
+                        'Skipping gauge %s on %s because asset %s is not a known EVM token',
+                        gauge_address,
+                        self.evm_inquirer.chain_name,
+                        event.asset.identifier,
+                    )
+                    continue
+
+            if len(gauges_to_token) == 0:
+                continue
 
             entries.extend((address, lp_token, amount) for lp_token, amount in self._query_gauges_balances(  # noqa: E501
                 user_address=address,
