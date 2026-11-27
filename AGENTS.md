@@ -253,10 +253,10 @@ satisfy lint. `pnpm run audit:comments` lists candidates for review.
   // ❌ const { ref } = require('vue'); // with an eslint-disable for no-require-imports
   ```
 - **A passing spec prints nothing.** A `[Vue warn]`, MSW warning or stack trace in a passing run's
-  stderr is a defect. Fix it in the change that introduces it, or when you touch that spec, because
-  nobody else will. "Lifecycle injection APIs can only be used during execution of setup()" means a
-  composable ran outside a component and its hooks never fired: wrap it with `withSetup()` from
-  `@test/utils/with-setup`. For an expected `console.error`, use `captureConsoleError()` and assert
+  stderr means the test setup is wrong, so the spec is not testing what it claims. Fix it in the
+  change that introduces it, or when you touch that spec, because nobody else will. "Lifecycle
+  injection APIs can only be used during execution of setup()" means a composable ran outside a
+  component and its hooks never fired: wrap it with `withSetup()` from `@test/utils/with-setup`. For an expected `console.error`, use `captureConsoleError()` and assert
   on the spy; never silence output without asserting.
 - Use `createMock<T>()` from `@test/utils/create-mock` for large or branded types. Its proxy returns
   truthy stubs for omitted properties: set every boolean the code reads and use a real object for
