@@ -21,7 +21,13 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.utils.misc import bytes_to_address
 
-from .constants import CPT_UNISWAP_V4_LP, MODIFY_LIQUIDITY, POSITION_MANAGER_ABI, V4_SWAP_TOPIC
+from .constants import (
+    CPT_UNISWAP_V4_LP,
+    MODIFY_LIQUIDITY,
+    POSITION_MANAGER_ABI,
+    V4_HOOK_SWAP_TOPIC,
+    V4_SWAP_TOPIC,
+)
 from .utils import decode_uniswap_v4_like_swaps
 
 if TYPE_CHECKING:
@@ -47,7 +53,7 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
             msg_aggregator: MessagesAggregator,
             pool_manager: ChecksumEvmAddress,
             position_manager: ChecksumEvmAddress,
-            universal_router: ChecksumEvmAddress,
+            universal_routers: set[ChecksumEvmAddress],
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -56,7 +62,7 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
         )
         self.pool_manager = pool_manager
         self.position_manager = position_manager
-        self.universal_router = universal_router
+        self.universal_routers = universal_routers
 
     def _decode_modify_liquidity(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != MODIFY_LIQUIDITY:
@@ -158,15 +164,15 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
             decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
     ) -> list[EvmEvent]:
-        """Decode swaps routed through the Uniswap V4 universal router."""
+        """Decode swaps routed through the Uniswap V4 universal routers."""
         return decode_uniswap_v4_like_swaps(
             transaction=transaction,
             decoded_events=decoded_events,
             all_logs=all_logs,
             base_tools=self.base,
-            swap_topics=(V4_SWAP_TOPIC, V3_SWAP_TOPIC),
+            swap_topics=(V4_SWAP_TOPIC, V4_HOOK_SWAP_TOPIC, V3_SWAP_TOPIC),
             counterparty=CPT_UNISWAP_V4,
-            router_address=self.universal_router,
+            router_addresses=self.universal_routers,
         )
 
     def _lp_post_decoding(
@@ -199,7 +205,7 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
         }
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
-        return {self.universal_router: CPT_UNISWAP_V4}
+        return dict.fromkeys(self.universal_routers, CPT_UNISWAP_V4)
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

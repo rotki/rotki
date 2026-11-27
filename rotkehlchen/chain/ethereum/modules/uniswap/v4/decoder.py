@@ -23,5 +23,8 @@ class Uniswapv4Decoder(Uniswapv4CommonDecoder):
             msg_aggregator=msg_aggregator,
             pool_manager=string_to_evm_address('0x000000000004444c5dc75cB358380D2e3dE08A90'),
             position_manager=string_to_evm_address('0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e'),
-            universal_router=string_to_evm_address('0x66a9893cC07D91D95644AEDD05D03f95e1dBA8Af'),
+            universal_routers={
+                string_to_evm_address('0x66a9893cC07D91D95644AEDD05D03f95e1dBA8Af'),  # v2.0
+                string_to_evm_address('0x23617e59A5925b2A4Bf75d73ff6711cD0b29De85'),  # v2.1.2
+            },
         )

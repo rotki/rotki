@@ -13,6 +13,7 @@ from rotkehlchen.constants.assets import (
     A_OP,
     A_POL,
     A_USDC,
+    A_USDT,
     A_WETH_POLYGON,
 )
 from rotkehlchen.constants.misc import ONE
@@ -768,4 +769,52 @@ def test_swap_via_erc4337_bundled_tx_on_base(
         notes=f'Receive {receive_amount} HawaiianVibes after a swap in Uniswap V4',
         counterparty=CPT_UNISWAP_V4,
         address=universal_router,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x14Da149C4F78C62dD18F892F395c9A297d42c8aa']])
+def test_swap_universal_router_v2_1_2_with_aggregator_hook(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Test decoding of a swap via Universal Router v2.1.2 routed through a V4 aggregator hook."""
+    tx_hash = deserialize_evm_tx_hash('0xfaddfd6a17e925ae8ef563e5c7db0a1f72e9839edcf49d03505f09daa43f516b')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1794933923000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00015570852'),
+        location_label=(user_address := ethereum_accounts[0]),
+        counterparty=CPT_GAS,
+        notes=f'Burn {gas_amount} ETH for gas',
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDT,
+        amount=FVal(spend_amount := '0.00465'),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} USDT in Uniswap V4',
+        counterparty=CPT_UNISWAP_V4,
+        address=(pool_manager := string_to_evm_address('0x000000000004444c5dc75cB358380D2e3dE08A90')),  # noqa: E501
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDC,
+        amount=FVal(receive_amount := '0.00475'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} USDC after a swap in Uniswap V4',
+        counterparty=CPT_UNISWAP_V4,
+        address=pool_manager,
     )]
