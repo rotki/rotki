@@ -6,6 +6,7 @@ import { computed, type ComputedRef, type DeepReadonly, type MaybeRefOrGetter, r
 import { type AccountHistoryRange, rangeStart } from '@/modules/balances/account-history/account-history-selection';
 import { type BucketSeries, buildBucketSeries, type SeriesRange } from '@/modules/balances/account-history/balance-series';
 import { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-completed';
@@ -89,7 +90,7 @@ export function useAccountBalanceSeries(options: AccountBalanceSeriesOptions): U
         return;
       logger.error(error_);
       clear();
-      set(error, error_ instanceof Error ? error_.message : String(error_));
+      set(error, getErrorMessage(error_));
     }
     finally {
       if (request === latestRequest)
@@ -97,8 +98,12 @@ export function useAccountBalanceSeries(options: AccountBalanceSeriesOptions): U
     }
   }
 
-  watch(() => [toValue(account), toValue(asset)], clear);
-  watchImmediate(() => [toValue(account), toValue(asset), toValue(range)], refresh);
+  /** Separate sources, so an unrelated query change that yields equal values triggers nothing. */
+  const accountSource = (): string | undefined => toValue(account);
+  const assetSource = (): string | undefined => toValue(asset);
+  const rangeSource = (): AccountHistoryRange => toValue(range);
+  watch([accountSource, assetSource], clear);
+  watchImmediate([accountSource, assetSource, rangeSource], refresh);
   watch(syncCompleted, refresh);
   watch(historicalBalanceProcessingCompleted, refresh);
 

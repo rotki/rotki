@@ -34,7 +34,7 @@ interface UseAccountHistoryReturn {
   loading: DeepReadonly<Ref<boolean>>;
   error: ComputedRef<string | undefined>;
   processingRequired: DeepReadonly<Ref<boolean>>;
-  /** An account and asset are picked, the series loaded, and nothing was held in the range. */
+  /** The series loaded for a picked account and asset, and nothing was held in the range. */
   empty: ComputedRef<boolean>;
   refresh: () => Promise<void>;
 }
@@ -83,10 +83,8 @@ export function useAccountHistory(): UseAccountHistoryReturn {
 
   const error = computed<string | undefined>(() => get(seriesError) ?? get(assetsError));
 
-  const empty = computed<boolean>(() => {
-    const { account, asset } = get(selection);
-    return !!account && !!asset && !get(loading) && !get(error) && !!get(loadedRange) && get(buckets).length === 0;
-  });
+  // A loaded range implies a picked account and asset: the series clears it when either is unset.
+  const empty = computed<boolean>(() => !get(loading) && !get(error) && !!get(loadedRange) && get(buckets).length === 0);
 
   return {
     assets,

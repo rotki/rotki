@@ -7,11 +7,12 @@ import { nextTick } from 'vue';
 import AccountHistoryView from '@/modules/balances/account-history/components/AccountHistoryView.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 
-const { empty, error, processingRequired, refresh, selection } = await vi.hoisted(async () => {
+const { empty, error, loadedRange, processingRequired, refresh, selection } = await vi.hoisted(async () => {
   const { ref } = await import('vue');
   return {
     empty: ref<boolean>(false),
     error: ref<string>(),
+    loadedRange: ref<{ from: number; to: number }>(),
     processingRequired: ref<boolean>(false),
     refresh: vi.fn<() => Promise<void>>(),
     selection: ref<AccountHistorySelection>({ account: undefined, asset: undefined, location: undefined, range: 'all' }),
@@ -29,7 +30,7 @@ vi.mock('@/modules/balances/account-history/use-account-history', async () => {
       buckets: computed(() => []),
       empty,
       error,
-      loadedRange: ref({ from: 100, to: 200 }),
+      loadedRange,
       loading: ref(false),
       locations: computed(() => ['ethereum']),
       modelAccount: ref(),
@@ -64,6 +65,7 @@ describe('account history view', () => {
     setActivePinia(createPinia());
     set(empty, false);
     set(error, undefined);
+    set(loadedRange, { from: 100, to: 200 });
     set(processingRequired, false);
     set(selection, { account: '0xA', asset: 'ETH', location: 'ethereum', range: 'all' });
     refresh.mockReset().mockResolvedValue();
@@ -89,6 +91,25 @@ describe('account history view', () => {
       location: 'ethereum',
       range: { from: 100, to: 200 },
     });
+  });
+
+  it('should hold the events back for a bounded range until its window is loaded', async () => {
+    set(loadedRange, undefined);
+    set(selection, { account: '0xA', asset: 'ETH', location: undefined, range: '1m' });
+    const wrapper = createWrapper();
+    expect(wrapper.find('[data-testid=events-stub]').exists()).toBe(false);
+
+    set(loadedRange, { from: 100, to: 200 });
+    await nextTick();
+
+    expect(wrapper.find('[data-testid=events-stub]').exists()).toBe(true);
+  });
+
+  it('should show the events at once for all time', () => {
+    set(loadedRange, undefined);
+    const wrapper = createWrapper();
+
+    expect(wrapper.find('[data-testid=events-stub]').exists()).toBe(true);
   });
 
   it('should pass pending processing to the summary rather than raising an error', () => {

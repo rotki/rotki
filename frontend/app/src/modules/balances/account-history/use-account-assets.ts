@@ -3,6 +3,7 @@ import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, type ComputedRef, type DeepReadonly, type MaybeRefOrGetter, readonly, type Ref, shallowRef, toValue, watch } from 'vue';
 import { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-completed';
@@ -61,7 +62,7 @@ export function useAccountAssets(account: MaybeRefOrGetter<string | undefined>):
       logger.error(error_);
       set(loaded, []);
       set(processingRequired, false);
-      set(error, error_ instanceof Error ? error_.message : String(error_));
+      set(error, getErrorMessage(error_));
     }
     finally {
       if (request === latestRequest)

@@ -1,5 +1,7 @@
-import type { LocationQuery, LocationQueryValue, RouteLocationRaw } from 'vue-router';
+import type { LocationQuery, RouteLocationRaw } from 'vue-router';
 import dayjs from 'dayjs';
+import { isOfEnum } from '@/modules/core/common/helpers/is-of-enum';
+import { firstQueryValue } from '@/modules/core/table/route';
 
 export const AccountHistoryRange = {
   ALL: 'all',
@@ -10,8 +12,6 @@ export const AccountHistoryRange = {
 } as const;
 
 export type AccountHistoryRange = typeof AccountHistoryRange[keyof typeof AccountHistoryRange];
-
-const RANGES: ReadonlySet<string> = new Set<string>(Object.values(AccountHistoryRange));
 
 const RANGE_MONTHS = {
   [AccountHistoryRange.YEAR]: 12,
@@ -37,14 +37,11 @@ export interface AccountHistorySelection {
   readonly range: AccountHistoryRange;
 }
 
-function isRange(value: string): value is AccountHistoryRange {
-  return RANGES.has(value);
-}
+const isRange = isOfEnum(AccountHistoryRange);
 
 /** A query value as one non-empty string; a repeated key keeps its first value. */
-function single(value: LocationQueryValue | LocationQueryValue[] | undefined): string | undefined {
-  const first = Array.isArray(value) ? value[0] : value;
-  return first === null || first === undefined || first === '' ? undefined : first;
+function single(value: LocationQuery[string] | undefined): string | undefined {
+  return firstQueryValue(value) || undefined;
 }
 
 export function parseSelection(query: LocationQuery): AccountHistorySelection {
@@ -53,7 +50,7 @@ export function parseSelection(query: LocationQuery): AccountHistorySelection {
     account: single(query[AccountHistoryQueryKeys.ACCOUNT]),
     asset: single(query[AccountHistoryQueryKeys.ASSET]),
     location: single(query[AccountHistoryQueryKeys.LOCATION]),
-    range: range && isRange(range) ? range : AccountHistoryRange.ALL,
+    range: isRange(range) ? range : AccountHistoryRange.ALL,
   };
 }
 

@@ -2,6 +2,7 @@ import type { EChartsOption, LineSeriesOption } from 'echarts';
 import { get } from '@vueuse/shared';
 import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { alignBuckets, type BalancePoint, type BucketSeries } from '@/modules/balances/account-history/balance-series';
+import { TIME_AXIS_LABEL } from '@/modules/dashboard/graph/use-net-value-chart-config';
 import { useGraph } from '@/modules/statistics/use-graph';
 
 export const BalanceChartMode = {
@@ -83,7 +84,7 @@ export function useAccountBalanceChart(options: AccountBalanceChartOptions): Use
         trigger: 'axis',
         valueFormatter: (value): string => (amounts ? formatAmount(value) : '***'),
       },
-      xAxis: { type: 'time' },
+      xAxis: { axisLabel: TIME_AXIS_LABEL, type: 'time' },
       yAxis: {
         axisLabel: { formatter: (value: number): string => (amounts ? formatAmount(value) : '') },
         type: 'value',
