@@ -204,7 +204,7 @@ describe('historicPriceForm', () => {
   });
 
   it('should still gate the locked fields while editing, so a row seeded without one cannot save', async () => {
-    wrapper = createWrapper(withoutTimestamp(), { editMode: true });
+    wrapper = createWrapper({ ...baseModel(), fromAsset: '' }, { editMode: true });
     await vi.advanceTimersToNextTimerAsync();
 
     expect(await wrapper.vm.validate()).toBe(false);

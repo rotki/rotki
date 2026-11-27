@@ -18,6 +18,8 @@ const mockSeedFromHistoric = vi.fn();
 const mockFetchTags = vi.fn();
 const mockFetchAllLocations = vi.fn();
 const mockRefreshLocationTree = vi.fn();
+const mockGetSupportedExchanges = vi.fn();
+const mockExchangeConnectors = ref<unknown[]>([]);
 const mockArmAccountLoad = vi.fn();
 const mockReleaseAccountLoad = vi.fn();
 const mockShouldFetchData = ref<boolean>(true);
@@ -90,9 +92,16 @@ vi.mock('@/modules/locations/use-location-tree', () => ({
   })),
 }));
 
+vi.mock('@/modules/balances/api/use-exchange-api', () => ({
+  useExchangeApi: vi.fn(() => ({
+    getSupportedExchanges: mockGetSupportedExchanges,
+  })),
+}));
+
 vi.mock('@/modules/core/common/use-location-store', () => ({
   useLocationStore: vi.fn(() => ({
     allLocations: ref({}),
+    exchangeConnectors: mockExchangeConnectors,
   })),
 }));
 
@@ -125,6 +134,8 @@ describe('composables::session::load', () => {
     mockFetchTags.mockResolvedValue(undefined);
     mockFetchAllLocations.mockResolvedValue({ locations: {} });
     mockRefreshLocationTree.mockResolvedValue(undefined);
+    mockGetSupportedExchanges.mockResolvedValue([]);
+    set(mockExchangeConnectors, []);
   });
 
   afterEach(() => {
@@ -133,12 +144,16 @@ describe('composables::session::load', () => {
   });
 
   describe('load', () => {
-    it('should load the location tree and the location details', async () => {
+    it('should load the location tree, the location details and the exchange connectors', async () => {
+      const connectors = [{ location: 'kraken', name: 'Kraken' }];
+      mockGetSupportedExchanges.mockResolvedValue(connectors);
+
       useDataLoader().load();
       await flushPromises();
 
       expect(mockRefreshLocationTree).toHaveBeenCalledOnce();
       expect(mockFetchAllLocations).toHaveBeenCalledOnce();
+      expect(get(mockExchangeConnectors)).toEqual(connectors);
     });
 
     it('should call onBalancesLoaded after refreshData completes', async () => {

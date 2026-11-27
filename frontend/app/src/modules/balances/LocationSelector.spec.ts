@@ -131,14 +131,14 @@ describe('locationSelector', () => {
         global: { plugins: [pinia], stubs: { LocationIcon: true, RuiAutoComplete: AutoCompleteStub } },
         props: { modelValue: '' },
       });
-      const before = wrapper.findComponent(AutoCompleteStub).vm;
+      const before = wrapper.findComponent(AutoCompleteStub).element;
 
       useLocationTreeStore().setNodes([node('total', null, 'Total'), node('exchanges', 'total', 'Exchanges'), node('kraken', 'exchanges', 'Kraken')]);
       await nextTick();
 
       const after = wrapper.findComponent(AutoCompleteStub);
       expect(after.props('itemHeight')).toBe(64);
-      expect(after.vm).not.toBe(before);
+      expect(after.element).not.toBe(before);
     });
   });
 

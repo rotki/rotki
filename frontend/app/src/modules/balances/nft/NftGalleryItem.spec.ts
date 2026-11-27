@@ -1,5 +1,5 @@
 import type { GalleryNft } from '@/modules/assets/nfts';
-import { createMock } from '@test/utils/create-mock';
+import { bigNumberify } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent } from 'vue';
@@ -55,13 +55,19 @@ function createWrapper(): VueWrapper {
       },
     },
     props: {
-      item: createMock<GalleryNft>({
+      item: {
+        address: '0x0000000000000000000000000000000000000001',
         backgroundColor: null,
         collection: null,
+        externalLink: undefined,
         imageUrl: 'https://cdn.example.com/nft/1.png',
         name: 'Punk',
         permalink: null,
-      }),
+        price: bigNumberify(1500),
+        priceAsset: 'ETH',
+        priceInAsset: bigNumberify(0.5),
+        tokenIdentifier: '_nft_0x0000000000000000000000000000000000000002_1',
+      } satisfies GalleryNft,
     },
   });
 }
