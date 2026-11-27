@@ -21,8 +21,6 @@ jobs:
     timeout-minutes: 15  # observed max 24s
     permissions:
       contents: write  # create the draft release
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -41,75 +39,92 @@ jobs:
           echo 'EOF' >> "$GITHUB_OUTPUT"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
-      - name: Create Release
-        id: create_release
-        uses: rotki/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
+      - name: Write release notes
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-        with:
-          tag_name: ${{ env.RELEASE_VERSION }}
-          name: Rotki ${{ env.RELEASE_VERSION }} -
-          body: |
-            # Description
+          CHANGES: ${{ steps.change_log.outputs.changes }}
+          VERSION: ${{ steps.change_log.outputs.version }}
+        run: |
+          # The changelog goes through env and a file, never into the script text.
+          cat > "$RUNNER_TEMP/notes.md" <<EOF
+          # Description
 
-            For more information check the detailed changelog below :point_down:
+          For more information check the detailed changelog below :point_down:
 
-            # Downloads
+          # Downloads
 
-            Upgrade is highly recommended. Download the binary for your OS from below:
+          Upgrade is highly recommended. Download the binary for your OS from below:
 
-            - **Linux**
-              - [AppImage](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage)
-              - [Tar with executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x64-${{ env.RELEASE_VERSION }}.tar.xz)
-              - [deb package](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_amd64-${{ env.RELEASE_VERSION }}.deb)
-              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-linux.zip)
-            - **OSX**
-              - arm64
-                - [DMG](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_arm64-${{ env.RELEASE_VERSION }}.dmg)
-                - [ZIP](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_arm64-${{ env.RELEASE_VERSION }}.zip)
-              - x86_64
-                - [DMG](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.dmg)
-                - [ZIP](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.zip)
-              - Standalone Backend
-                - [arm64](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-macos-arm64.zip)
-                - [x86_64](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-macos-x64.zip)
-            - **Windows**
-              - [Windows executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32_x64-${{ env.RELEASE_VERSION }}.exe)
-              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-windows.zip)
-            
-            Optionally, you can also [verify the integrity](https://docs.rotki.com/requirement-and-installation/packaged-binaries.html#verifying-integrity) of the aforementioned binaries using the following checksums:
-            
-            - **Linux**
-              - [AppImage checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage.sha512)
-              - [Tar with executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x64-${{ env.RELEASE_VERSION }}.tar.xz.sha512)
-              - [deb package checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_amd64-${{ env.RELEASE_VERSION }}.deb.sha512)
-              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-linux.zip.sha512)
-            - **OSX**
-              - arm64
-                - [DMG checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_arm64-${{ env.RELEASE_VERSION }}.dmg.sha512)
-                - [ZIP checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_arm64-${{ env.RELEASE_VERSION }}.zip.sha512)
-              - x86_64
-                - [DMG checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.dmg.sha512)
-                - [ZIP checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_x64-${{ env.RELEASE_VERSION }}.zip.sha512)
-              - Standalone Backend
-                - [arm64 checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-macos-arm64.zip.sha512)
-                - [x86_64 checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-macos-x64.zip.sha512)
-            - **Windows**
-              - [Windows executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32_x64-${{ env.RELEASE_VERSION }}.exe.sha512)
-              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-windows.zip.sha512)
+          - **Linux**
+            - [AppImage](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-linux_x86_64-${RELEASE_VERSION}.AppImage)
+            - [Tar with executable](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-linux_x64-${RELEASE_VERSION}.tar.xz)
+            - [deb package](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-linux_amd64-${RELEASE_VERSION}.deb)
+            - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-core-${VERSION}-linux.zip)
+          - **OSX**
+            - arm64
+              - [DMG](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-darwin_arm64-${RELEASE_VERSION}.dmg)
+              - [ZIP](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-darwin_arm64-${RELEASE_VERSION}.zip)
+            - x86_64
+              - [DMG](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-darwin_x64-${RELEASE_VERSION}.dmg)
+              - [ZIP](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-darwin_x64-${RELEASE_VERSION}.zip)
+            - Standalone Backend
+              - [arm64](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-core-${VERSION}-macos-arm64.zip)
+              - [x86_64](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-core-${VERSION}-macos-x64.zip)
+          - **Windows**
+            - [Windows executable](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-win32_x64-${RELEASE_VERSION}.exe)
+            - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-core-${VERSION}-windows.zip)
 
-            # Release Highlights
-            ----
+          Optionally, you can also [verify the integrity](https://docs.rotki.com/requirement-and-installation/packaged-binaries.html#verifying-integrity) of the aforementioned binaries using the following checksums:
 
-            These were the highlights. Check below for the full changelog :point_down:
+          - **Linux**
+            - [AppImage checksum](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-linux_x86_64-${RELEASE_VERSION}.AppImage.sha512)
+            - [Tar with executable checksum](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-linux_x64-${RELEASE_VERSION}.tar.xz.sha512)
+            - [deb package checksum](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-linux_amd64-${RELEASE_VERSION}.deb.sha512)
+            - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-core-${VERSION}-linux.zip.sha512)
+          - **OSX**
+            - arm64
+              - [DMG checksum](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-darwin_arm64-${RELEASE_VERSION}.dmg.sha512)
+              - [ZIP checksum](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-darwin_arm64-${RELEASE_VERSION}.zip.sha512)
+            - x86_64
+              - [DMG checksum](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-darwin_x64-${RELEASE_VERSION}.dmg.sha512)
+              - [ZIP checksum](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-darwin_x64-${RELEASE_VERSION}.zip.sha512)
+            - Standalone Backend
+              - [arm64 checksum](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-core-${VERSION}-macos-arm64.zip.sha512)
+              - [x86_64 checksum](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-core-${VERSION}-macos-x64.zip.sha512)
+          - **Windows**
+            - [Windows executable checksum](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-win32_x64-${RELEASE_VERSION}.exe.sha512)
+            - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${RELEASE_VERSION}/rotki-core-${VERSION}-windows.zip.sha512)
 
-            ${{ steps.change_log.outputs.changes }}
+          # Release Highlights
+          ----
 
-            # Newly supported assets
+          These were the highlights. Check below for the full changelog :point_down:
 
-            Added support for the following assets:
+          ${CHANGES}
 
-          draft: true
+          # Newly supported assets
+
+          Added support for the following assets:
+
+          EOF
+
+      # Edit instead of create on a retag: a draft-only `gh release create` skips
+      # its duplicate check and would leave two drafts for the same tag.
+      - name: Create or update the draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if lookup=$(gh release view "$RELEASE_VERSION" --json id 2>&1); then
+            # --tag is resent on purpose: a draft edited without tag_name can lose its tag.
+            gh release edit "$RELEASE_VERSION" --tag "$RELEASE_VERSION" \
+              --title "Rotki $RELEASE_VERSION -" --notes-file "$RUNNER_TEMP/notes.md"
+          elif [[ $lookup == *"release not found"* ]]; then
+            gh release create "$RELEASE_VERSION" --draft --verify-tag \
+              --title "Rotki $RELEASE_VERSION -" --notes-file "$RUNNER_TEMP/notes.md"
+          else
+            echo "$lookup" >&2
+            exit 1
+          fi
 
   linux:
     name: 'Build linux binary'
@@ -176,14 +191,11 @@ jobs:
           uv run --no-sync ./package.py --build full
 
       - name: Upload to release
-        uses: rotki/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
-        with:
-          tag_name: ${{ env.RELEASE_VERSION }}
-          name: Rotki ${{ env.RELEASE_VERSION }} -
-          draft: true
-          files: |
-            dist/*.sha512
-            dist/rotki-core-*-linux.zip
+        env:
+          GH_REPO: ${{ github.repository }}
+        run: |
+          shopt -s failglob
+          gh release upload "$GITHUB_REF_NAME" --clobber dist/*.sha512 dist/rotki-core-*-linux.zip
 
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8  # v4.2.2
         with:
@@ -307,14 +319,11 @@ jobs:
           path: dist/latest-mac-*.yml
 
       - name: Upload to release
-        uses: rotki/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
-        with:
-          tag_name: ${{ env.RELEASE_VERSION }}
-          name: Rotki ${{ env.RELEASE_VERSION }} -
-          draft: true
-          files: |
-            dist/*.sha512
-            dist/rotki-core-*-macos-*.zip
+        env:
+          GH_REPO: ${{ github.repository }}
+        run: |
+          shopt -s failglob
+          gh release upload "$GITHUB_REF_NAME" --clobber dist/*.sha512 dist/rotki-core-*-macos-*.zip
 
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8  # v4.2.2
         with:
@@ -360,12 +369,10 @@ jobs:
           node ./.github/scripts/merge-latest.mjs latest-mac/latest-mac-x86_64.yml latest-mac/latest-mac-arm64.yml latest-mac.yml
 
       - name: Upload to release
-        uses: rotki/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
-        with:
-          tag_name: ${{ env.RELEASE_VERSION }}
-          name: Rotki ${{ env.RELEASE_VERSION }} -
-          draft: true
-          files: latest-mac.yml
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "$GITHUB_REF_NAME" --clobber latest-mac.yml
 
   windows:
     name: 'Build windows binary'
@@ -433,20 +440,67 @@ jobs:
         shell: powershell
 
       - name: Upload to release
-        uses: rotki/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
-        with:
-          tag_name: ${{ env.RELEASE_VERSION }}
-          name: Rotki ${{ env.RELEASE_VERSION }} -
-          draft: true
-          files: |
-            dist/*.sha512
-            dist/rotki-core-*-windows.zip
+        shell: bash
+        env:
+          GH_REPO: ${{ github.repository }}
+        run: |
+          shopt -s failglob
+          gh release upload "$GITHUB_REF_NAME" --clobber dist/*.sha512 dist/rotki-core-*-windows.zip
 
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8  # v4.2.2
         with:
           subject-path: |
             dist/*.exe
             dist/rotki-core-*-windows.zip
+
+  verify_assets:
+    name: Verify release assets
+    needs: [linux, macos, macos_updater, windows]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write  # draft releases are only visible to tokens with push access
+    steps:
+      - name: Check that every expected asset is on the draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          tag="$GITHUB_REF_NAME"
+          version="${tag#v}"
+          expected=(
+            latest.yml
+            latest-linux.yml
+            latest-mac.yml
+            "rotki-linux_x86_64-${tag}.AppImage" "rotki-linux_x86_64-${tag}.AppImage.sha512"
+            "rotki-linux_x64-${tag}.tar.xz" "rotki-linux_x64-${tag}.tar.xz.sha512"
+            "rotki-linux_amd64-${tag}.deb" "rotki-linux_amd64-${tag}.deb.sha512"
+            "rotki-win32_x64-${tag}.exe" "rotki-win32_x64-${tag}.exe.sha512" "rotki-win32_x64-${tag}.exe.blockmap"
+          )
+          for arch in arm64 x64; do
+            for ext in dmg zip; do
+              base="rotki-darwin_${arch}-${tag}.${ext}"
+              expected+=("$base" "$base.sha512" "$base.blockmap")
+            done
+          done
+          for platform in linux macos-arm64 macos-x64 windows; do
+            expected+=("rotki-core-${version}-${platform}.zip" "rotki-core-${version}-${platform}.zip.sha512")
+          done
+
+          assets=$(gh release view "$tag" --json assets --jq '.assets[] | "\(.name) \(.state) \(.size)"')
+          failed=0
+          for name in "${expected[@]}"; do
+            found=$(awk -v n="$name" '$1 == n' <<< "$assets")
+            if [[ -z $found ]]; then
+              echo "::error::missing asset: $name"
+              failed=1
+            elif [[ $found != "$name uploaded "* || $found == "$name uploaded 0" ]]; then
+              echo "::error::incomplete asset: $found"
+              failed=1
+            fi
+          done
+          echo "checked ${#expected[@]} expected assets against $(wc -l <<< "$assets") on the draft"
+          exit "$failed"
 
   docker:
     name: 'Build docker images'
