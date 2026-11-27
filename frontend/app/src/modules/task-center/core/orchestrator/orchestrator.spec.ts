@@ -55,6 +55,22 @@ describe('createTaskOrchestrator', () => {
     expect(byId(orchestrator, id)?.status).toBe(Status.RUNNING);
   });
 
+  it('should stamp when a run settled, and leave it off while the run is live', async () => {
+    let clock = 1000;
+    const orchestrator = createTaskOrchestrator({ now: () => clock });
+    const work = controllable('timed');
+    const id = orchestrator.submit(work.spec);
+
+    expect(byId(orchestrator, id)?.startedAt).toBe(1000);
+    expect(byId(orchestrator, id)?.settledAt).toBeUndefined();
+
+    clock = 4500;
+    work.settle({ ok: true, value: 1 });
+    await flush();
+
+    expect(byId(orchestrator, id)?.settledAt).toBe(4500);
+  });
+
   it('should complete on ok and fail on a TaskFailed error', async () => {
     const orchestrator = createTaskOrchestrator();
     const okWork = controllable('ok');

@@ -66,6 +66,40 @@ describe('dockJobNode', () => {
     setActivePinia(createPinia());
   });
 
+  describe('its connectors', () => {
+    async function expandAll(wrapper: VueWrapper): Promise<void> {
+      for (let open = 0; open < 2; open++) {
+        const closed = wrapper.findAll('[data-testid=dock-job-toggle]').find(toggle => toggle.attributes('aria-expanded') === 'false');
+        assert(closed);
+        await closed.trigger('click');
+      }
+    }
+
+    /** The elbow classes of the first nested row reporting `status`; the job reports its subtree's failure too, but has no elbow. */
+    function connectorOf(wrapper: VueWrapper, status: ActivityStatus): string[] {
+      const row = wrapper.findAll('[data-testid=dock-activity-row]')
+        .find(each => each.attributes('data-status') === status && each.find('[data-testid=dock-connector]').exists());
+      assert(row);
+      return row.get('[data-testid=dock-connector]').classes();
+    }
+
+    it('should hook every nested row onto the rail, and leave the job itself unhooked', async () => {
+      const wrapper = mountTree(running());
+      await expandAll(wrapper);
+
+      expect(wrapper.findAll('[data-testid=dock-activity-row]')).toHaveLength(4);
+      expect(wrapper.findAll('[data-testid=dock-connector]')).toHaveLength(3);
+    });
+
+    it('should colour each elbow by the status its row reports', async () => {
+      const wrapper = mountTree(settled(ActivityStatus.COMPLETE));
+      await expandAll(wrapper);
+
+      expect(connectorOf(wrapper, ActivityStatus.COMPLETE)).toContain('border-rui-success/50');
+      expect(connectorOf(wrapper, ActivityStatus.FAILED)).toContain('border-rui-error');
+    });
+  });
+
   describe('while running', () => {
     /**
      * Collapsed at every level, the job's own fan-out included. The rolled-up row already says what

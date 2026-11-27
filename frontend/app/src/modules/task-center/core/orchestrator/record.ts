@@ -16,6 +16,8 @@ export interface ActivityRecord {
   status: ActivityStatus;
   steps?: ActivitySteps;
   startedAt?: number;
+  /** When this run reached a terminal status, so a settled row can say how long it took. */
+  settledAt?: number;
   /**
    * Why this activity failed or was skipped, in the producer's words. See `terminalReason` for
    * which outcomes get one.

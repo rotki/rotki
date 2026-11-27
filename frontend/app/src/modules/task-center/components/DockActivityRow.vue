@@ -54,12 +54,23 @@ defineSlots<{
    * the row's end. A row without one keeps the space when it has other buttons, so theirs line up.
    */
   toggle?: () => unknown;
+  /**
+   * Drawn first inside the row, which is positioned, so a parent can hook the row onto the rail it
+   * draws. Gets the status the row reports and whether the row is compact, which moves its mark.
+   */
+  connector?: (props: { compact: boolean; status: ActivityStatus }) => unknown;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const { labelOf, subtitleOf } = useActivityLabel();
 const { waitingLabel } = useWaitingLabel();
+
+/**
+ * A settled row says how long it took only past this, so the quick leaves of a job do not each
+ * carry a `0s`.
+ */
+const MIN_SHOWN_DURATION = 1000;
 
 /** Tailwind only sees class names written out in full, so each outcome colour is spelled here. */
 const TEXT_COLOR: Record<ActivityOutcome['color'], string> = {
@@ -132,11 +143,22 @@ const outcomeText = computed<string>(() => {
   return reason ? t('pending_task.status.with_reason', { reason, status: word }) : word;
 });
 
+/**
+ * How long the work has been going, ticking while it runs and frozen at its final duration once it
+ * settles, so a finished job still shows which of its parts was slow.
+ */
 const elapsed = computed<string | undefined>(() => {
-  if (!get(isRunning) || activity.startedAt === undefined)
+  const { settledAt, startedAt, status: own } = activity;
+  if (startedAt === undefined)
     return undefined;
 
-  return formatElapsed(now - activity.startedAt);
+  if (get(isRunning))
+    return formatElapsed(now - startedAt);
+
+  if (!isTerminalStatus(own) || settledAt === undefined || settledAt - startedAt < MIN_SHOWN_DURATION)
+    return undefined;
+
+  return formatElapsed(settledAt - startedAt);
 });
 
 /** The mark turns into a progress ring only with a real number to fill it; indeterminate work keeps its icon. */
@@ -186,6 +208,12 @@ const cancellable = computed<boolean>(() => activity.cancellable && !isTerminalS
 
 const hasButtons = computed<boolean>(() => get(cancellable) || get(retryable) || !!get(fixRoute) || dismissible);
 
+/**
+ * A settled row that shows its duration and has no button keeps the stop button's place empty, so its
+ * time sits in the same column as the running rows beside it rather than at the row's far edge.
+ */
+const holdsButtonPlace = computed<boolean>(() => !!get(elapsed) && !get(hasButtons));
+
 /** A settled child with nothing but its name is one line, so it takes less room than a row that has more to say. */
 const compact = computed<boolean>(() => get(nested) && isTerminalStatus(activity.status) && !get(reasonLine) && !get(rowSteps));
 
@@ -202,11 +230,16 @@ watch(cancellable, (canCancel) => {
 
 <template>
   <div
-    class="flex items-start gap-2.5 px-1 rounded-sm"
+    class="relative flex items-start gap-2.5 px-1 rounded-sm"
     :class="[compact ? 'py-0.5' : 'py-1.5', { 'bg-rui-error/5': isFailed && !steps && !hideReason }]"
     :data-status="status"
     data-testid="dock-activity-row"
   >
+    <slot
+      name="connector"
+      :compact="compact"
+      :status="status"
+    />
     <RuiProgress
       v-if="showRing"
       class="shrink-0 mt-0.5"
@@ -450,9 +483,14 @@ watch(cancellable, (canCancel) => {
         </template>
         {{ t('pending_task.dismiss') }}
       </RuiTooltip>
+      <div
+        v-if="holdsButtonPlace"
+        class="size-6 shrink-0"
+        data-testid="activity-button-slot"
+      />
       <slot name="toggle">
         <div
-          v-if="hasButtons"
+          v-if="hasButtons || holdsButtonPlace"
           class="size-6 shrink-0"
           data-testid="activity-toggle-slot"
         />

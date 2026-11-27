@@ -17,7 +17,7 @@
  * reading it. Progress belongs in `steps` through `reportProgress`, and terminal state in the
  * record's own status.
  */
-type ReservedDetailKey = 'percentage' | 'reason' | 'startedAt' | 'status' | 'steps';
+type ReservedDetailKey = 'percentage' | 'reason' | 'settledAt' | 'startedAt' | 'status' | 'steps';
 
 /**
  * The detail a descriptor ends up carrying: the declared type when it names none of
