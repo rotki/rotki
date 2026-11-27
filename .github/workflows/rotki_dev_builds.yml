@@ -441,6 +441,98 @@ jobs:
         run: |
           docker buildx imagetools inspect "${REPOSITORY}:${VERSION}"
 
+      - name: Delete the per-arch manifest lists
+        if: ${{ github.repository == 'rotki/rotki' }}
+        # Not continue-on-error: every housekeeping failure below warns and
+        # exits 0, and the one hard failure is a broken published image,
+        # which has to turn the nightly red and notify.
+        working-directory: ${{ runner.temp }}/digests
+        env:
+          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          # Each build job pushes its own untagged manifest list (one platform
+          # image plus its attestation), and the index created above copies
+          # their children. Nothing uses those lists afterwards, but they keep
+          # the children alive: Docker Hub refcounts manifests, so a registry
+          # DELETE only cascades to children no other manifest references (a
+          # direct DELETE of a child we believe was still referenced was
+          # refused with 403 in practice).
+          # Left behind, the lists make the prune's later index delete reclaim
+          # nothing but the index. Deleting a list here is safe because the new
+          # index references every child it holds, which is checked first.
+          # Image manifest types too, so a build that pushed a plain image
+          # instead of a list is recognised below rather than answered 404.
+          accept='application/vnd.oci.image.index.v1+json,application/vnd.docker.distribution.manifest.list.v2+json,application/vnd.oci.image.manifest.v1+json,application/vnd.docker.distribution.manifest.v2+json'
+          registry="https://registry-1.docker.io/v2/${REPOSITORY}/manifests"
+
+          kept="$(docker buildx imagetools inspect --raw "${REPOSITORY}:${VERSION}" \
+            | jq -r '[.manifests[].digest] | join(" ")')" || kept=''
+          if [ -z "$kept" ]; then
+            echo '::warning title=Per-arch lists kept::Could not read the new index, so the per-arch lists were left in place and the prune will not reclaim this image later.'
+            exit 0
+          fi
+
+          token="$(curl -fsSL \
+            --config <(printf 'user = "%s:%s"\n' "$DOCKERHUB_USER" "$DOCKERHUB_TOKEN") \
+            "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${REPOSITORY}:pull,delete" \
+            | jq -r '.token')" || true
+          if [ -z "$token" ] || [ "$token" = 'null' ]; then
+            echo '::warning title=Per-arch lists kept::Could not mint a registry token, so the per-arch lists were left in place and the prune will not reclaim this image later.'
+            exit 0
+          fi
+          echo "::add-mask::${token}"
+
+          # The artifact files are named after the per-arch list digests.
+          for f in *; do
+            list="sha256:${f}"
+            if ! body="$(curl -fsS \
+              --config <(printf 'header = "Authorization: Bearer %s"\n' "$token") \
+              -H "Accept: ${accept}" "${registry}/${list}")"; then
+              echo "::warning title=Per-arch list kept::Could not read ${list}, left in place."
+              continue
+            fi
+            # Without attestations a build pushes a plain image manifest, not a
+            # list. That digest IS the platform image, so it must stay.
+            if ! children="$(jq -er '.manifests | map(.digest) | join(" ")' <<< "$body" 2>/dev/null)"; then
+              echo "::notice title=Per-arch list kept::${list} is a plain image manifest, not a list (are build attestations off?), so it is the platform image itself and was left in place."
+              continue
+            fi
+            stray=''
+            for c in $children; do
+              case " ${kept} " in *" ${c} "*) ;; *) stray="${stray} ${c}" ;; esac
+            done
+            if [ -n "$stray" ]; then
+              echo "::warning title=Per-arch list kept::${list} holds manifests the new index does not (${stray# }); deleting it could take them with it, so it was left in place."
+              continue
+            fi
+            code="$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE \
+              --config <(printf 'header = "Authorization: Bearer %s"\n' "$token") \
+              "${registry}/${list}" || true)"
+            case "$code" in
+              202|404) echo "deleted per-arch list ${list}" ;;
+              *) echo "::warning title=Per-arch list kept::DELETE ${list} returned HTTP ${code}, left in place; the prune will not reclaim this image later." ;;
+            esac
+          done
+
+          # The new index must still resolve in full. If it does not, the
+          # refcount rule above was wrong and the published image is broken.
+          for c in $kept; do
+            code="$(curl -sS -o /dev/null -w '%{http_code}' -I \
+              --config <(printf 'header = "Authorization: Bearer %s"\n' "$token") \
+              -H 'Accept: application/vnd.oci.image.manifest.v1+json,application/vnd.docker.distribution.manifest.v2+json' \
+              "${registry}/${c}" || true)"
+            if [ "$code" != 200 ]; then
+              echo "::error title=Published image broken::${REPOSITORY}:${VERSION} references ${c}, which now returns HTTP ${code} after the per-arch lists were deleted. Rebuild the image, and stop deleting the lists until the cause is understood."
+              exit 1
+            fi
+          done
+          echo "all $(wc -w <<< "$kept") manifests of ${REPOSITORY}:${VERSION} still resolve"
+
       - name: Prune old dated dev-build images
         if: ${{ github.repository == 'rotki/rotki' }}
         # Backstop for anything the script does not anticipate. Every failure it
@@ -462,9 +554,10 @@ jobs:
           # untagged leftovers (Docker Hub does not garbage-collect them, and its
           # image-management API is unreachable with a token on this account).
           # The OCI registry manifest DELETE, however, works: deleting an index
-          # digest removes the index, every child manifest it references, and the
-          # tag pointing at it. So we list tags via the Hub API but reclaim via
-          # the registry.
+          # digest removes the index, the tag pointing at it, and every child
+          # manifest no other manifest references (the step above deletes the
+          # per-arch lists that used to hold them). So we list tags via the Hub
+          # API but reclaim via the registry.
           #
           # Token hygiene throughout: secrets are read from the environment (never
           # on an argv), derived tokens are masked in the log, and every auth
