@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { RuiProgress } from '@rotki/ui-library';
-import { logicAnd, logicNot } from '@vueuse/math';
+import { logicAnd, logicNot, logicOr } from '@vueuse/math';
 import { storeToRefs } from 'pinia';
-import { useI18n } from 'vue-i18n';
 import ConnectionFailureMessage from '@/modules/auth/ConnectionFailureMessage.vue';
 import ConnectionLoading from '@/modules/auth/ConnectionLoading.vue';
 import DockerWarning from '@/modules/auth/DockerWarning.vue';
 import { useAutoLogin } from '@/modules/auth/use-auto-login';
 import { useRestartingStatus } from '@/modules/auth/use-restarting-status';
+import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 
 defineSlots<{
@@ -18,9 +17,9 @@ defineSlots<{
   default: () => any;
 }>();
 
-const { t } = useI18n({ useScope: 'global' });
 const { autolog } = useAutoLogin();
 const { restarting } = useRestartingStatus();
+const { upgradeVisible } = storeToRefs(useSessionAuthStore());
 
 const { connected, connectionFailure, sessionAuthEnabled, unauthenticatedApiAccepted } = storeToRefs(useMainStore());
 
@@ -33,10 +32,17 @@ const isDocker = import.meta.env.VITE_DOCKER === 'true';
 const showDockerWarning = logicAnd(isDocker, logicNot(sessionAuthEnabled), logicNot(unauthenticatedApiAccepted));
 
 /**
- * Held back during an auto-unlock as well as a restart, so the empty login form never shows behind
- * the ConnectionLoading card, which is the single loading state for the whole attempt.
+ * Whether the page's unlock stage is reporting progress the connection screen would hide: the
+ * backend restart after an asset update, when the connection drops on purpose, and a DB upgrade
+ * during an auto-unlock, which would otherwise run behind the "signing in" loader.
  */
-const displayRouter = logicAnd(connected, logicNot(autolog), logicNot(showDockerWarning), logicNot(restarting));
+const stageOwnsScreen = logicAnd(logicNot(connectionFailure), logicOr(restarting, logicAnd(autolog, upgradeVisible)));
+
+/**
+ * Held back during an auto-unlock, so the empty login form never shows behind the ConnectionLoading
+ * card, which is the single loading state for the whole attempt.
+ */
+const displayRouter = logicOr(stageOwnsScreen, logicAnd(connected, logicNot(autolog), logicNot(showDockerWarning)));
 </script>
 
 <template>
@@ -44,13 +50,14 @@ const displayRouter = logicAnd(connected, logicNot(autolog), logicNot(showDocker
     class="grow flex flex-col pt-14 lg:pt-[calc(12vh+3.5rem)]"
     data-testid="user-host"
   >
-    <ConnectionLoading
-      v-if="!connectionFailure"
-      :connected="connected && !autolog"
-      :logging-in="autolog"
-      :restarting="restarting"
-    />
-    <ConnectionFailureMessage v-else />
+    <template v-if="!stageOwnsScreen">
+      <ConnectionLoading
+        v-if="!connectionFailure"
+        :connected="connected && !autolog"
+        :logging-in="autolog"
+      />
+      <ConnectionFailureMessage v-else />
+    </template>
 
     <div
       v-if="displayRouter"
@@ -61,22 +68,5 @@ const displayRouter = logicAnd(connected, logicNot(autolog), logicNot(showDocker
     </div>
 
     <DockerWarning v-else-if="showDockerWarning" />
-    <div
-      v-else-if="connected && !autolog"
-      class="grow w-full max-w-110 mx-auto flex flex-col gap-4 justify-center items-center py-12"
-    >
-      <RuiProgress
-        color="primary"
-        variant="indeterminate"
-        circular
-        size="48"
-      />
-      <p
-        v-if="restarting"
-        class="mb-0 text-rui-text-secondary text-center"
-      >
-        {{ t('connection_loading.restarting') }}
-      </p>
-    </div>
   </div>
 </template>

@@ -4,6 +4,8 @@ import { startPromise } from '@shared/utils';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { StageStepStatus } from '@/modules/auth/stage/stage-step';
+import StageStepIcon from '@/modules/auth/stage/StageStepIcon.vue';
 import {
   parseUpgradeFailure,
   UpgradeKind,
@@ -103,6 +105,12 @@ function rowLabel(row: UpgradeVersionRow): string {
     : t('login.db_upgrade.rows.version', { version: row.version });
 }
 
+function stepStatus(row: UpgradeVersionRow): StageStepStatus {
+  if (row.status === UpgradeRowStatus.CURRENT && get(failed))
+    return StageStepStatus.FAILED;
+  return row.status;
+}
+
 /** A done row shows how long it took, the current row its steps while it runs. */
 function rowMeta(row: UpgradeVersionRow): string | undefined {
   const { currentStep, stepsKnown, totalSteps } = get(progress);
@@ -125,7 +133,7 @@ function copyError(): void {
 
 <template>
   <section
-    class="w-full max-w-120 mx-auto flex flex-col gap-6"
+    class="w-full max-w-120 mx-auto flex flex-col gap-6 text-pretty"
     :data-outcome="outcome"
     data-testid="db-upgrade"
   >
@@ -238,33 +246,10 @@ function copyError(): void {
             :data-status="row.status"
             data-testid="db-upgrade-version"
           >
-            <span class="size-4 shrink-0 flex items-center justify-center">
-              <RuiIcon
-                v-if="row.status === UpgradeRowStatus.DONE"
-                name="lu-check"
-                size="16"
-                class="text-rui-success"
-              />
-              <RuiIcon
-                v-else-if="row.status === UpgradeRowStatus.CURRENT && failed"
-                name="lu-circle-x"
-                size="16"
-                class="text-rui-error"
-              />
-              <RuiProgress
-                v-else-if="row.status === UpgradeRowStatus.CURRENT"
-                circular
-                color="primary"
-                size="16"
-                thickness="2"
-                :variant="progress.stepPercentage === undefined ? 'indeterminate' : 'determinate'"
-                :value="progress.stepPercentage ?? 0"
-              />
-              <span
-                v-else
-                class="size-3 rounded-full border-2 border-rui-grey-400 dark:border-rui-grey-600"
-              />
-            </span>
+            <StageStepIcon
+              :status="stepStatus(row)"
+              :progress="progress.stepPercentage"
+            />
             <span
               class="flex-1 min-w-0 truncate"
               :class="{

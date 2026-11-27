@@ -1508,6 +1508,11 @@
   },
   "asset_update": {
     "advanced": "Advanced options",
+    "auto": {
+      "label": "Apply automatically",
+      "subtitle": "Install new asset database versions at login without asking. Where you edited an asset the update also changes, the update's version is kept.",
+      "title": "Apply asset updates automatically"
+    },
     "description": "Version {remote} of the asset database is available. Would you like to update from version {local}?",
     "hide_advanced": "Hide advanced options",
     "manual": {
@@ -5549,10 +5554,10 @@
       "learn_more": "How profiles work"
     },
     "incomplete_upgrade_error": {
-      "abort": "Abort",
-      "question": "Do you want to resume from latest backup?",
-      "resume": "Resume",
-      "title": "User action required to continue login"
+      "abort": "Cancel",
+      "question": "rotki can restore the latest backup of this profile's database and continue the login from it.",
+      "resume": "Restore backup and continue",
+      "title": "The last database upgrade did not finish"
     },
     "label_password": "Password",
     "label_username": "Profile name",
@@ -5563,10 +5568,15 @@
     "remember_password_tooltip": "The password will be saved on password management tool on your local machine (e.g. Keychain in MacOS)",
     "remember_username": "Remember profile name",
     "sync_error": {
-      "local_modified": "Local last modified: {0}",
-      "question": "Do you want to replace your local database?",
-      "remote_modified": "Remote last modified: {0}",
-      "title": "User action required for DB sync"
+      "actions": {
+        "keep_local": "Keep local database",
+        "use_remote": "Use server backup"
+      },
+      "local": "This device",
+      "newer": "Newer",
+      "question": "Using the server backup replaces the database on this device.",
+      "remote": "Server backup",
+      "title": "Your local database and the server backup differ"
     },
     "title": "Unlock profile",
     "validation": {
@@ -8226,12 +8236,74 @@
     }
   },
   "unlock_flow": {
+    "asset_update": {
+      "conflicts": {
+        "actions": {
+          "apply": "Apply and continue",
+          "skip": "Skip this update"
+        },
+        "choice": {
+          "local": "Keep my edits",
+          "local_hint": "These assets stay as you edited them and miss this update. You may need to update them by hand later.",
+          "manual": "Choose for each asset",
+          "manual_hint": "Compare your version of each asset with the update and pick one.",
+          "remote": "Use the updated assets",
+          "remote_hint": "Your edits to these assets are replaced by the update. Nothing else needs doing."
+        },
+        "review": {
+          "field": "Field",
+          "keep_local": "Keep mine",
+          "local": "Your version",
+          "remote": "Update",
+          "summary": "Keeping your version of {local}, using the update for {remote}",
+          "use_remote": "Use update"
+        },
+        "subtitle": "You edited {count} asset that v{version} also changes. | You edited {count} assets that v{version} also changes.",
+        "title": "Some edits conflict with the update"
+      },
+      "progress": {
+        "actions": {
+          "back": "Back to login",
+          "copied": "Copied",
+          "copy": "Copy error",
+          "report": "Report a bug"
+        },
+        "automatic": "Asset updates apply automatically on this device, using the update's version of any asset you edited. You can turn this off in Settings, under Database.",
+        "keep_open": "Keep rotki open until this finishes. The backend restarts to load the new assets, then rotki signs you in.",
+        "next_steps": "Log in again to retry the update or skip it. If it fails the same way, report it with the error and the logs so it can be fixed.",
+        "steps": {
+          "apply": "Apply asset changes up to v{version}",
+          "label": "Steps in this update",
+          "restart": "Restart the backend",
+          "sign_in": "Sign in"
+        },
+        "title": {
+          "done": "Asset database updated to v{version}",
+          "failed": "The asset update did not finish",
+          "running": "Updating the asset database"
+        }
+      },
+      "prompt": {
+        "actions": {
+          "skip": "Skip for now",
+          "skip_version": "Skip this version",
+          "update": "Update"
+        },
+        "always": "Apply future updates automatically",
+        "always_hint": "Updates install at login without asking and replace your edits to any asset they change. Turn this off in Settings, under Database.",
+        "changes": "{count} asset change | {count} asset changes",
+        "options": "Update options",
+        "partial": "Stop at an earlier version",
+        "remember": "Don't ask again until a version after v{version}",
+        "restart_note": "After the update, rotki restarts its backend and signs you in.",
+        "subtitle": "Version {remote} is available. You have version {local}.",
+        "title": "Asset database update",
+        "up_to": "Update up to version"
+      },
+      "range": "v{from} to v{to}"
+    },
     "errors": {
       "restart_failed": "Restarting the backend after the asset update failed. Please restart rotki and try again."
-    },
-    "status": {
-      "restarting": "Restarting the backend to apply the update…",
-      "unlocking": "Unlocking your account…"
     }
   },
   "update_indicator": {
@@ -8296,9 +8368,9 @@
   },
   "welcome": {
     "update": {
-      "learn_more": "Learn More",
-      "text": "You have just updated rotki to v{version}. To learn more about the features and improvements included in this release press the button below.",
-      "title": "rotki has been updated"
+      "learn_more": "Read the release notes",
+      "text": "See what is new and what was fixed in this release.",
+      "title": "rotki updated to v{version}"
     }
   },
   "win_unsupported": {

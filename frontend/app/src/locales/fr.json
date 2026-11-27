@@ -1795,9 +1795,7 @@
     "remember_password_tooltip": "Le mot de passe sera enregistré sur le gestionnaire de mots de passe de votre machine locale (par exemple, Keychain sur MacOS).",
     "remember_username": "Se souvenir du nom de profil",
     "sync_error": {
-      "local_modified": "Dernière modification locale : {0}",
       "question": "Voulez-vous remplacer votre base de données locale ?",
-      "remote_modified": "Dernière modification distante : {0}",
       "title": "Action utilisateur requise pour la synchronisation de la base de données"
     },
     "title": "Déverrouiller le compte",

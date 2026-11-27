@@ -4430,9 +4430,7 @@
     "remember_password_tooltip": "Parola, yerel makinenizdeki parola yönetim aracına kaydedilir (ör. macOS'ta Anahtar Zinciri)",
     "remember_username": "Profil adını hatırla",
     "sync_error": {
-      "local_modified": "Yerelde son değişiklik: {0}",
       "question": "Yerel veritabanınızı değiştirmek istiyor musunuz?",
-      "remote_modified": "Uzak sunucuda son değişiklik: {0}",
       "title": "Veritabanı senkronizasyonu için kullanıcı müdahalesi gerekli"
     },
     "title": "Hesap kilidini aç",
@@ -6809,10 +6807,6 @@
   "unlock_flow": {
     "errors": {
       "restart_failed": "Varlık güncellemesinden sonra backend yeniden başlatılamadı. Lütfen rotki'yi yeniden başlatıp tekrar deneyin."
-    },
-    "status": {
-      "restarting": "Güncellemeyi uygulamak için backend yeniden başlatılıyor…",
-      "unlocking": "Hesabınızın kilidi açılıyor…"
     }
   },
   "update_indicator": {

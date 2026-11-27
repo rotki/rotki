@@ -25,7 +25,7 @@ definePage({
 const { navigateToUserCreation } = useAppNavigation();
 const { backendChanged } = useBackendManagement();
 const { clearErrors, errors, loading, userLogin } = useAccountManagement();
-const { onConfirmUpdate, onResolveConflicts, onSkipUpdate, reset, showStage, state } = useLoginStage();
+const { onConfirmUpdate, onResolveConflicts, onSkipUpdate, reset, showStage, state, updateAccepted } = useLoginStage();
 const { performInitialChecks } = useLoginInitialChecks();
 const { fetchMessages } = useDynamicMessages();
 
@@ -78,10 +78,12 @@ onMounted(startLoginScreen);
             <LoginUnlockStage
               v-else
               :state="state"
+              :update-accepted="updateAccepted"
               @confirm="onConfirmUpdate($event)"
               @resolve="onResolveConflicts($event)"
               @skip="onSkipUpdate()"
               @leave-upgrade="reset()"
+              @leave-update="reset()"
             />
           </UserHost>
         </div>

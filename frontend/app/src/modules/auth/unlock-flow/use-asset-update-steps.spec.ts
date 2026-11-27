@@ -65,6 +65,18 @@ describe('useAssetUpdateSteps', () => {
       expect(result).toEqual({ ok: true, value: { some: false } });
     });
 
+    it('should offer a skipped version anyway once updates apply automatically', async () => {
+      localStorage.setItem('rotki_skip_asset_db_version', '42');
+      localStorage.setItem('rotki.asset_update.auto_apply', 'true');
+      checkForUpdate.mockResolvedValue(ok({ updateAvailable: true, versions: { local: 5, newChanges: 3, remote: 42 } }));
+
+      const steps = useAssetUpdateSteps();
+      const result = await steps.checkUpdate();
+
+      expect(steps.autoApplyUpdates()).toBe(true);
+      expect(result).toEqual({ ok: true, value: { some: true, value: { changes: 3, local: 5, remote: 42, upToVersion: 42 } } });
+    });
+
     it('should report no update when none is available', async () => {
       checkForUpdate.mockResolvedValue(ok({ updateAvailable: false, versions: undefined }));
 

@@ -4,7 +4,7 @@ import { err, none, ok, type OptionType as Option, type ResultType as Result, so
 import { isErr } from 'plainfp/result';
 import { ApplyUpdateKind } from '@/modules/assets/types';
 import { useAssets } from '@/modules/assets/use-assets';
-import { SKIPPED_ASSET_VERSION_KEY } from '@/modules/shell/app/asset-update-keys';
+import { AUTO_APPLY_ASSET_UPDATES_KEY, SKIPPED_ASSET_VERSION_KEY } from '@/modules/shell/app/asset-update-keys';
 import { BackendRestartStatus, useBackendManagement } from '@/modules/shell/app/use-backend-management';
 import { useAssetUpdateThrottle } from './use-asset-update-throttle';
 import {
@@ -17,6 +17,7 @@ import {
 } from './use-unlock-flow';
 
 export interface AssetUpdateSteps {
+  autoApplyUpdates: () => boolean;
   checkUpdate: () => Promise<Result<Option<UpdateChanges>, UnlockError>>;
   applyUpdate: (upToVersion: number, resolution?: Resolution) => Promise<Result<ApplyOutcome, UnlockError>>;
   requestRestart: () => Promise<Result<void, UnlockError>>;
@@ -33,6 +34,7 @@ export function useAssetUpdateSteps(): AssetUpdateSteps {
   const { restartBackend } = useBackendManagement();
   const updateThrottle = useAssetUpdateThrottle();
   const skipped = useLocalStorage<number>(SKIPPED_ASSET_VERSION_KEY, 0);
+  const autoApply = useLocalStorage<boolean>(AUTO_APPLY_ASSET_UPDATES_KEY, false);
 
   return {
     applyUpdate: async (upToVersion, resolution): Promise<Result<ApplyOutcome, UnlockError>> => {
@@ -44,6 +46,7 @@ export function useAssetUpdateSteps(): AssetUpdateSteps {
         return ok({ conflicts: result.conflicts, kind: UpdateOutcomeKind.conflicts });
       return ok({ kind: UpdateOutcomeKind.done });
     },
+    autoApplyUpdates: (): boolean => get(autoApply) === true,
     checkUpdate: async (): Promise<Result<Option<UpdateChanges>, UnlockError>> => {
       if (sessionStorage.getItem('skip_update'))
         return ok(none);
@@ -54,7 +57,8 @@ export function useAssetUpdateSteps(): AssetUpdateSteps {
         return ok(none);
       updateThrottle.recordCheck();
       const { updateAvailable, versions } = outcome.value;
-      if (!updateAvailable || !versions || get(skipped) === versions.remote)
+      // A skipped version stays skipped only while updates ask first; applying them automatically supersedes it.
+      if (!updateAvailable || !versions || (!get(autoApply) && get(skipped) === versions.remote))
         return ok(none);
       return ok(some({
         changes: versions.newChanges,
