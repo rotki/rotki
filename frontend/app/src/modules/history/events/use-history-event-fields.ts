@@ -39,6 +39,7 @@ export interface HistoryEventFieldsOptions {
 export function useHistoryEventFields(options: HistoryEventFieldsOptions): ComputedRef<FieldDef[]> {
   const { modelFilters: filters } = options;
   const {
+    asset: pinnedAsset,
     entryTypes,
     eventTypes,
     externalAccounts,
@@ -50,6 +51,7 @@ export function useHistoryEventFields(options: HistoryEventFieldsOptions): Compu
 
   // What the view fixes, and so the bar does not offer.
   const disabled = computed(() => ({
+    asset: !!pinnedAsset(),
     eventTypes: eventTypes().length > 0,
     locations: !!pinnedLocation(),
     period: !!period(),

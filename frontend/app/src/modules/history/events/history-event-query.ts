@@ -13,6 +13,7 @@ import { isValidHistoryEventState } from '@/modules/history/events/mapping/use-h
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 
 interface HistoryEventSourceDeps {
+  asset: MaybeRefOrGetter<string | undefined>;
   duplicateHandlingStatusFromQuery: ComputedRef<DuplicateHandlingStatus | undefined>;
   entryTypes: MaybeRefOrGetter<HistoryEventEntryType[] | undefined>;
   eventTypes: MaybeRefOrGetter<string[]>;
@@ -49,6 +50,7 @@ interface HistoryEventSourceDeps {
  */
 export function buildHistoryEventSources({
   action,
+  asset,
   duplicateHandlingStatusFromQuery,
   entryTypes,
   eventTypes,
@@ -131,6 +133,10 @@ export function buildHistoryEventSources({
         }
 
         const accountsValue = get(usedLocationLabels);
+
+        const assetVal = toValue(asset);
+        if (assetVal !== undefined)
+          params.asset = assetVal;
 
         const locationVal = toValue(location);
         if (locationVal !== undefined)

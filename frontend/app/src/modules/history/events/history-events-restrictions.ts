@@ -16,6 +16,8 @@ type HistoryEventsPeriod =
  * not expressible. `externalAccounts` is the one exception, for the reason given on it.
  */
 export interface HistoryEventsRestrictions {
+  /** The one asset the view shows events for, replacing the bar's asset pill. */
+  asset?: string;
   entryTypes?: HistoryEventEntryType[];
   eventTypes?: string[];
   /**
@@ -35,6 +37,7 @@ export interface HistoryEventsRestrictions {
 }
 
 interface RestrictionGetters {
+  asset: () => string | undefined;
   entryTypes: () => HistoryEventEntryType[] | undefined;
   eventTypes: () => string[];
   externalAccounts: () => Account[] | undefined;
@@ -51,13 +54,14 @@ interface RestrictionGetters {
  * The list-valued axes default to `[]` here, in one place, because the consumers test them with
  * `.length` and treat absent and empty alike. The nullable ones stay nullable: `entryTypes`
  * distinguishes "every type" from a chosen set, `validators`/`location` gate a pill on presence
- * rather than on emptiness, and `externalAccounts` must not be defaulted at all: `[]` is a
- * meaningful value there and `undefined` is the off state.
+ * rather than on emptiness, `asset` names a single asset, and `externalAccounts` must not be
+ * defaulted at all: `[]` is a meaningful value there and `undefined` is the off state.
  */
 export function toRestrictionGetters(
   restrictions: MaybeRefOrGetter<HistoryEventsRestrictions>,
 ): RestrictionGetters {
   return {
+    asset: (): string | undefined => toValue(restrictions).asset,
     entryTypes: (): HistoryEventEntryType[] | undefined => toValue(restrictions).entryTypes,
     eventTypes: (): string[] => toValue(restrictions).eventTypes ?? [],
     externalAccounts: (): Account[] | undefined => toValue(restrictions).externalAccounts,
