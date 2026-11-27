@@ -576,6 +576,20 @@ def serialize_db_setting(
     return value
 
 
+def parse_frontend_settings(raw: str) -> dict[str, Any]:
+    """Read the frontend settings blob, or an empty object if it is not a JSON object"""
+    if raw == '':
+        return {}
+
+    try:
+        settings = json.loads(raw)
+    except json.JSONDecodeError as e:
+        log.error('Stored frontend settings are not valid JSON: %s', e)
+        return {}
+
+    return settings if isinstance(settings, dict) else {}
+
+
 class CachedSettings:
     """
     Singleton class that manages the cached settings.

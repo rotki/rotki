@@ -311,6 +311,20 @@ def query_settings() -> dict[str, Any]:
     return result
 
 
+def query_frontend_settings() -> dict[str, Any]:
+    """Return the frontend settings object, which holds the Sigil client id."""
+    backend_config = get_backend_config()
+    payload = request_api(
+        base_url=backend_config.base_url,
+        endpoint='settings/frontend',
+        timeout=backend_config.timeout,
+    )
+    if not isinstance(result := payload['result'], dict):
+        raise BackendQueryError('rotki backend returned an unexpected frontend settings response')
+
+    return result
+
+
 def query_logged_in_user() -> str | None:
     """The name of the user whose database is unlocked, None if none is."""
     backend_config = get_backend_config()

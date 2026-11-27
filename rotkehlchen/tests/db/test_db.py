@@ -103,6 +103,7 @@ from rotkehlchen.db.settings import (
     CachedSettings,
     DBSettings,
     ModifiableDBSettings,
+    parse_frontend_settings,
 )
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
 from rotkehlchen.errors.api import AuthenticationError
@@ -2560,3 +2561,13 @@ def test_address_book_primary_key(database: DBHandler):
             cursor=write_cursor,
             filter_query=AddressbookFilterQuery.make(),
         )[0] == [entries[1]]
+
+
+@pytest.mark.parametrize(('raw', 'expected'), [
+    ('{"client_id": "abc"}', {'client_id': 'abc'}),
+    ('', {}),
+    ('{not json', {}),
+    ('["client_id"]', {}),
+])
+def test_parse_frontend_settings(raw: str, expected: dict) -> None:
+    assert parse_frontend_settings(raw) == expected

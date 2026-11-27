@@ -16,6 +16,7 @@ from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.sigil import (
     SIGIL_USER_AGENT,
+    client_id_from_frontend_settings,
     create_sigil_events_batch,
     create_sigil_user_agent,
     submit_sigil_batch,
@@ -75,6 +76,34 @@ def test_indexer_usage_aggregates_periodic_and_final_windows(monkeypatch) -> Non
     }
     assert windows[1]['by_indexer'] == {'etherscan': {'1': {'account.txlist': 1}}}
     assert windows[0]['session_id'] == windows[1]['session_id']
+
+
+@pytest.mark.parametrize('db_settings', [{'submit_usage_analytics': True}])
+def test_indexer_usage_stamps_the_frontend_client_id(monkeypatch, rotkehlchen_instance) -> None:
+    """The id is read when a window is queued, so one the frontend saves mid-session counts."""
+    stats = rotkehlchen_instance.indexer_stats
+    stats._is_production = True
+    submit = MagicMock(return_value=True)
+    monkeypatch.setattr(indexer_stats, 'submit_sigil_batch', submit)
+
+    def flush_window() -> dict:
+        stats.record('etherscan', ChainID.ETHEREUM, 'account.txlist')
+        stats._window_start -= indexer_stats.INDEXER_ANALYTICS_INTERVAL
+        stats.maybe_flush()
+        assert (worker := stats._worker) is not None
+        worker.join(timeout=2)
+        return _events(submit.call_args.kwargs['batch'])[0]
+
+    assert 'id' not in flush_window()
+
+    with rotkehlchen_instance.data.db.user_write() as write_cursor:
+        rotkehlchen_instance.data.db.patch_frontend_settings(
+            write_cursor=write_cursor,
+            patch={'client_id': (client_id := 'a7c1e0f2-5b3d-4c8e-9f10-2d4b6a8c0e12')},
+            remove=[],
+        )
+
+    assert flush_window()['id'] == client_id
 
 
 @pytest.mark.parametrize('db_settings', [{'submit_usage_analytics': False}])
@@ -496,6 +525,27 @@ def test_sigil_batch_submission_checks_http_result(monkeypatch) -> None:
 
     post_mock.side_effect = requests.ConnectionError()
     assert submit_sigil_batch(batch, timeout=5) is False
+
+
+def test_sigil_batch_sets_distinct_id_only_when_given() -> None:
+    events = [('example', '/test', {'requests': 1})]
+    assert 'id' not in create_sigil_events_batch(events)[0]['payload']
+    assert create_sigil_events_batch(events, distinct_id='abc')[0]['payload']['id'] == 'abc'
+    assert 'id' not in create_sigil_events_batch(events, distinct_id='x' * 51)[0]['payload']
+
+
+@pytest.mark.parametrize(('frontend_settings', 'expected'), [
+    ({'client_id': 'abc', 'other': 1}, 'abc'),
+    ({}, None),
+    ({'clientId': 'abc'}, None),
+    ({'client_id': ''}, None),
+    ({'client_id': 5}, None),
+])
+def test_client_id_from_frontend_settings(
+        frontend_settings: dict[str, object],
+        expected: str | None,
+) -> None:
+    assert client_id_from_frontend_settings(frontend_settings) == expected
 
 
 @pytest.mark.parametrize(('system', 'machine', 'expected_comment'), [

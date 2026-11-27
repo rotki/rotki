@@ -1,7 +1,7 @@
 """Small backend sender for Sigil custom events."""
 
 import platform
-from typing import Any, Final, Literal, TypedDict
+from typing import Any, Final, Literal, NotRequired, TypedDict
 
 import requests
 
@@ -10,6 +10,7 @@ from rotkehlchen.utils.misc import ROTKI_USER_AGENT, is_production
 SIGIL_BATCH_ENDPOINT: Final = 'https://sigil.rotki.com/api/batch'
 SIGIL_DEVELOPMENT_WEBSITE_ID: Final = 'a3d69a71-060f-4397-afc5-e2ea1b6d389e'
 SIGIL_PRODUCTION_WEBSITE_ID: Final = '4c195fc3-2beb-4492-a4f5-4c0f860bfbee'
+SIGIL_DISTINCT_ID_MAX_LENGTH: Final = 50
 
 
 def create_sigil_user_agent(system: str, machine: str) -> str:
@@ -47,6 +48,7 @@ class SigilEventPayload(TypedDict):
     referrer: str
     name: str
     data: dict[str, Any]
+    id: NotRequired[str]
 
 
 class SigilBatchEntry(TypedDict):
@@ -54,16 +56,31 @@ class SigilBatchEntry(TypedDict):
     payload: SigilEventPayload
 
 
+def client_id_from_frontend_settings(frontend_settings: dict[str, Any]) -> str | None:
+    """Read the Sigil distinct id the frontend stores as its ``clientId`` setting"""
+    if isinstance(client_id := frontend_settings.get('client_id'), str) and client_id:
+        return client_id
+
+    return None
+
+
 def create_sigil_events_batch(
         events: list[tuple[str, str, dict[str, Any]]],
         website_id: str | None = None,
+        distinct_id: str | None = None,
 ) -> list[SigilBatchEntry]:
+    """Build Sigil event entries.
+
+    ``distinct_id`` is the frontend's client id. Passing it attributes these events to the
+    same user as the app's own events, which a backend user agent alone cannot do. A value
+    longer than Sigil accepts is left out rather than sent.
+    """
     website = website_id or (
         SIGIL_PRODUCTION_WEBSITE_ID if is_production() else SIGIL_DEVELOPMENT_WEBSITE_ID
     )
-    return [{
-        'type': 'event',
-        'payload': {
+    batch: list[SigilBatchEntry] = []
+    for name, url, data in events:
+        payload: SigilEventPayload = {
             'website': website,
             'hostname': '',
             'screen': '',
@@ -73,8 +90,13 @@ def create_sigil_events_batch(
             'referrer': '',
             'name': name,
             'data': data,
-        },
-    } for name, url, data in events]
+        }
+        if distinct_id is not None and len(distinct_id) <= SIGIL_DISTINCT_ID_MAX_LENGTH:
+            payload['id'] = distinct_id
+
+        batch.append({'type': 'event', 'payload': payload})
+
+    return batch
 
 
 def submit_sigil_batch(batch: list[SigilBatchEntry], timeout: float) -> bool:
