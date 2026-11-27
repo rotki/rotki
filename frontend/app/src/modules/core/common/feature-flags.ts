@@ -22,6 +22,7 @@ export function isAccountingUpdateEnabled(): boolean {
  * direct hit into a redirect when the flag is off.
  */
 export const ACCOUNTING_UPDATE_ROUTES: ReadonlySet<string> = new Set<RouteName>([
+  '/balances/history/',
   '/history/data-issues/[[tab]]',
   '/statistics/historical-balances/',
 ]);

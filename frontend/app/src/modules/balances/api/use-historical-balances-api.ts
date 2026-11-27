@@ -5,19 +5,29 @@ import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types'
 import { useTaskApi } from '@/modules/core/tasks/use-task-api';
 import {
   CurrentHistoricalBalancesResponse,
+  type HistoricalBalanceAssetsPayload,
+  HistoricalBalanceAssetsResponse,
   type HistoricalBalanceDivergencePayload,
+  type HistoricalBalanceFilters,
   HistoricalBalancesAtEventsResponse,
   type HistoricalBalanceSeriesPayload,
+  HistoricalBalanceSeriesResponse,
   HistoricalBalancesResponse,
 } from '@/modules/history/balances/types';
 
 interface UseHistoricalBalancesApiReturn {
+  fetchBalanceSeries: (payload: HistoricalBalanceSeriesPayload) => Promise<HistoricalBalanceSeriesResponse>;
   fetchCurrentHistoricalBalances: () => Promise<CurrentHistoricalBalancesResponse>;
-  fetchHistoricalBalances: (timestamp: number) => Promise<HistoricalBalancesResponse>;
+  fetchHistoricalBalanceAssets: (payload: HistoricalBalanceAssetsPayload) => Promise<HistoricalBalanceAssetsResponse>;
+  fetchHistoricalBalances: (timestamp: number, filters?: HistoricalBalanceFilters) => Promise<HistoricalBalancesResponse>;
   fetchHistoricalBalancesAtEvents: (eventIdentifiers: number[]) => Promise<HistoricalBalancesAtEventsResponse>;
   findHistoricalBalanceDivergence: (payload: HistoricalBalanceDivergencePayload) => Promise<PendingTask>;
   fetchHistoricalBalanceSeries: (payload: HistoricalBalanceSeriesPayload) => Promise<PendingTask>;
   processHistoricalBalances: () => Promise<PendingTask>;
+}
+
+function isNotFound(error: unknown): boolean {
+  return error instanceof FetchError && error.status === HTTPStatus.NOT_FOUND;
 }
 
 export function useHistoricalBalancesApi(): UseHistoricalBalancesApiReturn {
@@ -37,7 +47,7 @@ export function useHistoricalBalancesApi(): UseHistoricalBalancesApiReturn {
       return CurrentHistoricalBalancesResponse.parse(await api.post('/balances/historical/current', {}));
     }
     catch (error: unknown) {
-      if (error instanceof FetchError && error.status === HTTPStatus.NOT_FOUND)
+      if (isNotFound(error))
         return { entries: [], processingRequired: false, stale: false };
       throw error;
     }
@@ -52,16 +62,39 @@ export function useHistoricalBalancesApi(): UseHistoricalBalancesApiReturn {
    * task with nothing but its message.
    *
    * @param timestamp - unix seconds
+   * @param filters - narrows the buckets; none returns every account's
    */
-  async function fetchHistoricalBalances(timestamp: number): Promise<HistoricalBalancesResponse> {
+  async function fetchHistoricalBalances(timestamp: number, filters: HistoricalBalanceFilters = {}): Promise<HistoricalBalancesResponse> {
     try {
-      return HistoricalBalancesResponse.parse(await api.post('/balances/historical', { groupByAccount: true, timestamp }));
+      return HistoricalBalancesResponse.parse(await api.post('/balances/historical', { groupByAccount: true, timestamp, ...filters }));
     }
     catch (error: unknown) {
-      if (error instanceof FetchError && error.status === HTTPStatus.NOT_FOUND)
+      if (isNotFound(error))
         return { entries: [], processingRequired: false };
       throw error;
     }
+  }
+
+  /**
+   * One account's balance series of one asset, one series per location and protocol bucket.
+   *
+   * @remarks
+   * Synchronous, unlike `fetchHistoricalBalanceSeries`, for the same reason as
+   * `fetchHistoricalBalances`: a 404 means the account never held the asset in the range.
+   */
+  async function fetchBalanceSeries(payload: HistoricalBalanceSeriesPayload): Promise<HistoricalBalanceSeriesResponse> {
+    try {
+      return HistoricalBalanceSeriesResponse.parse(await api.post('/balances/historical/asset/series', payload));
+    }
+    catch (error: unknown) {
+      if (isNotFound(error))
+        return { entries: [], processingRequired: false };
+      throw error;
+    }
+  }
+
+  async function fetchHistoricalBalanceAssets(payload: HistoricalBalanceAssetsPayload): Promise<HistoricalBalanceAssetsResponse> {
+    return HistoricalBalanceAssetsResponse.parse(await api.post('/balances/historical/assets', payload));
   }
 
   async function fetchHistoricalBalancesAtEvents(eventIdentifiers: number[]): Promise<HistoricalBalancesAtEventsResponse> {
@@ -88,7 +121,9 @@ export function useHistoricalBalancesApi(): UseHistoricalBalancesApiReturn {
     triggerTask('historical_balance_processing');
 
   return {
+    fetchBalanceSeries,
     fetchCurrentHistoricalBalances,
+    fetchHistoricalBalanceAssets,
     fetchHistoricalBalances,
     fetchHistoricalBalancesAtEvents,
     findHistoricalBalanceDivergence,

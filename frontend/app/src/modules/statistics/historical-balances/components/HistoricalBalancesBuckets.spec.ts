@@ -1,6 +1,6 @@
 import type { HistoricalBucketRow } from '@/modules/statistics/historical-balances/historical-balances-view';
 import { bigNumberify } from '@rotki/common';
-import { mount, type VueWrapper } from '@vue/test-utils';
+import { mount, RouterLinkStub, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
@@ -23,6 +23,7 @@ function createWrapper(buckets: HistoricalBucketRow[], showAsset = false): VueWr
         FiatDisplay: true,
         HistoryEventAccount: true,
         LocationDisplay: true,
+        RouterLink: RouterLinkStub,
         ValueDisplay: true,
       },
     },
@@ -46,5 +47,14 @@ describe('historical balances buckets', () => {
 
     expect(createWrapper(buckets).findAllComponents(AssetDetails)).toHaveLength(0);
     expect(createWrapper(buckets, true).findAllComponents(AssetDetails).map(details => details.props('asset'))).toEqual(['USDC-mainnet', 'USDC-arbitrum']);
+  });
+
+  it('should link each account\'s bucket to its balance history, and offer no link without an account', () => {
+    const wrapper = createWrapper([bucket('USDC', 'ethereum', '0xA'), bucket('USDC', 'kraken', null)]);
+    const links = wrapper.findAllComponents(RouterLinkStub);
+
+    expect(links.map(link => link.props('to'))).toEqual([
+      { name: '/balances/history/', query: { account: '0xA', asset: 'USDC', location: 'ethereum' } },
+    ]);
   });
 });
