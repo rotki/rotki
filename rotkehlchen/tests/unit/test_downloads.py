@@ -8,7 +8,11 @@ import psutil
 import pytest
 from flask import Flask
 
-from rotkehlchen.api.rest_helpers.downloads import make_download_response
+from rotkehlchen.api.rest_helpers.downloads import (
+    current_download_session,
+    make_download_response,
+    register_pending_download,
+)
 
 
 def unlink_closed_file(path: Path) -> None:
@@ -28,6 +32,7 @@ def test_export_cleanup_after_stream_close(consume: bool, method: str) -> None:
         filepath = export_dir / 'history.csv'
         contents = b'x' * (3 * 8192)
         filepath.write_bytes(contents)
+        register_pending_download(filepath, session=current_download_session())
         app = Flask(__name__)
         app.add_url_rule('/export', endpoint='export', view_func=partial(
             make_download_response, file_path=str(filepath), mimetype='text/csv',

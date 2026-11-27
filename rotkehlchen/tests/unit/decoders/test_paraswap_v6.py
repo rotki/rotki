@@ -52,6 +52,90 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x034E8229ffb73b828F710500e0B761FF1C09e9c7']])
+def test_swap_from_delegated_account_via_executor(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """A delegated account calls Augustus, which pulls DAI directly into its executor."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf5feace520b81e2a50d27b2c4d01bf2bdef3033aeb762ab455c0425d28ba8f2f')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1795619375000)),
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.00105116860966226'),
+        location_label=(user_address := ethereum_accounts[0]),
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.TRANSACTION_TO_SELF,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ZERO,
+        location_label=user_address,
+        notes='Transaction to self of 0 ETH',
+        address=user_address,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=411,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=A_DAI,
+        amount=FVal(spend_amount := '3000'),
+        location_label=user_address,
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=412,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_DAI,
+        amount=FVal(spend_amount),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} DAI in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=413,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDT,
+        amount=FVal(receive_amount := '3004.079938'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} USDT as the result of a swap in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=414,
+        timestamp=timestamp,
+        location=LOCATION_ETHEREUM,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USDT,
+        amount=FVal(fee_amount := '0.030023'),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} USDT as a paraswap fee',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_swap_amount_in(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x04df701a75c3dc3f1283c6a26e668bec4bd92cf7f02e9963c3c887f5376c590e')  # noqa: E501

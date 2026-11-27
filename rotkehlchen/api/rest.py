@@ -33,6 +33,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, Bal
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.api.rest_helpers.downloads import (
     close_stream_before_last_chunk,
+    discard_pending_downloads,
     register_post_download_cleanup,
 )
 from rotkehlchen.api.rest_helpers.wrap import calculate_wrap_score
@@ -1377,6 +1378,9 @@ class RestAPI:
                 self._cancel_api_tasks(reason='Cancelled due to session takeover')
                 with self.task_lock:
                     self.task_results = {}
+                # the previous session's exports go with its tasks and results, and
+                # an abandoned export task that finishes later can't register its file
+                discard_pending_downloads()
             token = self.session_store.login(name)
             if taking_over_unlocked_user:
                 with self.task_lock:

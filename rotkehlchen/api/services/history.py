@@ -17,7 +17,9 @@ from rotkehlchen.accounting.export.csv import CSVWriteError, dict_to_csv_file
 from rotkehlchen.accounting.export.report import export_pnl_report_csv_from_db
 from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.api.rest_helpers.downloads import (
+    current_download_session,
     make_download_response,
+    register_pending_download,
     register_post_download_cleanup,
 )
 from rotkehlchen.api.result import ApiResult, FailResult, OkResult
@@ -531,6 +533,7 @@ class HistoryService:
             directory_path: Path | None,
             match_exact_events: bool,
     ) -> ApiResult:
+        download_session = current_download_session()
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         entries_limit, _ = get_user_limit(
             premium=self.rotkehlchen.premium,
@@ -610,6 +613,7 @@ class HistoryService:
                     csv_delimiter=settings.csv_export_delimiter,
                     headers=headers.keys(),
                 )
+                register_pending_download(file_path, session=download_session)
                 return OkResult({'file_path': str(file_path)})
 
             directory_path.mkdir(parents=True, exist_ok=True)

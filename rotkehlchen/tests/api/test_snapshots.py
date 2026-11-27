@@ -11,6 +11,7 @@ import pytest
 import requests
 from freezegun import freeze_time
 
+from rotkehlchen.api.server import cors_origin_patterns
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_AVAX, A_BTC, A_ETH, A_EUR, A_USD
@@ -954,3 +955,42 @@ def test_edit_snapshot(rotkehlchen_api_server: APIServer) -> None:
         ),
     )
     assert assert_proper_sync_response_with_result(response) == snapshot_payload
+
+
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+@pytest.mark.parametrize(('headers', 'expected_status'), [
+    # an <img> or no-cors fetch from another site: no Origin is sent
+    ({'Sec-Fetch-Site': 'cross-site', 'Sec-Fetch-Mode': 'no-cors'}, HTTPStatus.FORBIDDEN),
+    ({'Sec-Fetch-Site': 'cross-site', 'Origin': 'https://evil.example'}, HTTPStatus.FORBIDDEN),
+    ({'Sec-Fetch-Site': 'same-site', 'Origin': 'http://localhost.evil.com'}, HTTPStatus.FORBIDDEN),
+    # the packaged app's fetch from app://localhost
+    ({'Sec-Fetch-Site': 'cross-site', 'Origin': 'app://localhost'}, HTTPStatus.OK),
+    ({'Sec-Fetch-Site': 'same-origin'}, HTTPStatus.OK),
+    ({}, HTTPStatus.OK),  # non-browser clients send no fetch metadata
+])
+def test_export_snapshot_cross_site(
+        rotkehlchen_api_server: APIServer,
+        tmp_path: Path,
+        headers: dict[str, str],
+        expected_status: HTTPStatus,
+) -> None:
+    """A cross-site page can't make the snapshot export write into a directory."""
+    rotkehlchen_api_server.cors_origins = cors_origin_patterns(['app://localhost', 'http://localhost:*'])
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    ts = ts_now()
+    with db.user_write() as cursor:
+        _populate_db_with_balances(cursor, db, ts)
+        _populate_db_with_location_data(cursor, db, ts)
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+            path=str(tmp_path),
+            action='export',
+        ),
+        headers=headers,
+    )
+    assert response.status_code == expected_status
+    assert (tmp_path / BALANCES_FILENAME).exists() is (expected_status == HTTPStatus.OK)

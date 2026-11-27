@@ -126,6 +126,7 @@ function viewAccountingRule(ask: () => void): void {
     <HistoryEventActionPicker
       v-model="pickerValue"
       :entry-type="entryType"
+      :location="location"
       :disabled="disabled"
       required
       :hint="t('transactions.events.form.action.hint')"

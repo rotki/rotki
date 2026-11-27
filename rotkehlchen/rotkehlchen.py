@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
+from rotkehlchen.api.rest_helpers.downloads import discard_pending_downloads
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.api.websockets.typedefs import (
     BackgroundTaskKind,
@@ -825,6 +826,9 @@ class Rotkehlchen:
         self.msg_aggregator.clear()
         PriceHistorian._PriceHistorian__instance = None  # type: ignore  #  has no attribute "_PriceHistorian__instance" but is the name used by python
         Inquirer.clear()
+        # Exports of this user that were never downloaded. Runs on both logout and
+        # shutdown, and refuses exports that api tasks abandoned at cancellation finish later.
+        discard_pending_downloads()
 
         self.user_is_logged_in = False
         log.info('User successfully logged out', user=user)

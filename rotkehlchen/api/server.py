@@ -638,6 +638,17 @@ class APIServer:
         (f'{_api_prefix}/users/<string:name>/authenticate', 'POST'),
     })
 
+    # Views whose GET writes to disk. The origin check below covers non-GET verbs only,
+    # and a cross-site page can send a GET or HEAD without CORS (an <img>, a no-cors
+    # fetch). The frontend calls these with fetch, which sends an Origin, so a cross-site
+    # browser request for them is refused unless that Origin is allowed. Non-browser
+    # clients send no Sec-Fetch-Site and are unaffected. Matched on the view class, not
+    # the URL rule, so every route that mounts the view is covered.
+    _cross_site_guarded_views: Final = frozenset({
+        DBSnapshotsResource,
+        AccountingReportExportResource,
+    })
+
     def __init__(
             self,
             rest_api: RestAPI,
@@ -701,6 +712,22 @@ class APIServer:
                 request.method not in ('GET', 'HEAD', 'OPTIONS') and
                 (origin := request.headers.get('Origin')) is not None and
                 not self._is_allowed_origin(origin)
+        ):
+            return api_response(FailResult(
+                'Cross-origin requests are not allowed',
+                HTTPStatus.FORBIDDEN,
+                FailureCause.FORBIDDEN,
+            ))
+
+        if (
+                request.method in ('GET', 'HEAD') and
+                request.endpoint is not None and
+                getattr(
+                    self.flask_app.view_functions.get(request.endpoint),
+                    'view_class',
+                    None,
+                ) in self._cross_site_guarded_views and
+                not self._is_allowed_browser_get()
         ):
             return api_response(FailResult(
                 'Cross-origin requests are not allowed',
@@ -777,6 +804,20 @@ class APIServer:
             json_data=request.json if request.is_json else None,
         )
         return None
+
+    def _is_allowed_browser_get(self) -> bool:
+        """Return whether a GET or HEAD may reach a view that has side effects.
+
+        Same-origin requests and requests without fetch metadata (non-browser clients)
+        pass. A cross-site or same-site browser request passes only with an allowed
+        Origin, which a plain navigation or an <img> load never sends.
+        """
+        if request.headers.get('Sec-Fetch-Site') in (None, 'same-origin', 'none'):
+            return True
+        return (
+            (origin := request.headers.get('Origin')) is not None and
+            self._is_allowed_origin(origin)
+        )
 
     def _is_allowed_origin(self, origin: str) -> bool:
         """Return whether a request's origin can access this API.

@@ -18,7 +18,11 @@ from rotkehlchen.accounting.constants import (
     EVENT_CATEGORY_MAPPINGS,
 )
 from rotkehlchen.accounting.entry_type_mappings import ENTRY_TYPE_MAPPINGS
-from rotkehlchen.api.rest_helpers.downloads import make_download_response
+from rotkehlchen.api.rest_helpers.downloads import (
+    current_download_session,
+    make_download_response,
+    register_pending_download,
+)
 from rotkehlchen.api.result import ApiResult, FailResult, OkResult
 from rotkehlchen.assets.asset import (
     Asset,
@@ -372,11 +376,20 @@ class AssetsService:
         return OkResult(custom_asset_types)
 
     def export_user_assets(self, path: Path | None) -> ApiResult:
+        download_session = current_download_session()
         try:
-            zip_path = export_assets_from_file(
-                dirpath=path,
-                db_handler=self.rotkehlchen.data.db,
-            )
+            if path is None:  # a temp file for a later download. Keep it apart from the
+                # user's directory branch, so only the server's own path is registered.
+                zip_path = export_assets_from_file(
+                    dirpath=None,
+                    db_handler=self.rotkehlchen.data.db,
+                )
+                register_pending_download(zip_path, session=download_session)
+            else:
+                zip_path = export_assets_from_file(
+                    dirpath=path,
+                    db_handler=self.rotkehlchen.data.db,
+                )
         except PermissionError as e:
             return FailResult(
                 f'Failed to create asset export file. {e!s}',

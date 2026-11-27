@@ -119,6 +119,13 @@ Changelog
 * :feature:`12914` Beets pool joins and exits on Sonic are now decoded, and gauge balances for Beets v2 and v3 pools are queried.
 * :feature:`9110` Sonic is now a fully supported EVM chain. Transactions and balances can be tracked on it.
 * :feature:`13089` Venice.ai is now supported. VVV, sVVV and DIEM balances will be queried and events involving VVV and DIEM are now decoded.
+* :bug:`-` When editing a history event, deposits and withdrawals are now offered as CEX deposit or CEX withdrawal for exchange locations and as account deposit or withdrawal elsewhere, matching how the event is shown. Before, picking CEX deposit or CEX withdrawal was ignored.
+* :bug:`13758` When editing a history event, you can now pick the exact type and subtype of actions that cover several, such as a receive versus a wrapped-token receive. The stored type and subtype are shown in the edit dialog. Picking Receive now stores a plain receive instead of a wrapped-token receive.
+* :bug:`-` Velora (ParaSwap) swaps from delegated wallets are now decoded when the wallet sends the input token directly to the swap executor.
+* :bug:`-` NFT balances no longer spend half a minute retrying and then fail when no OpenSea API key is set. OpenSea now needs your own key, which can be added in the API keys settings.
+* :bug:`-` The ETH staking page no longer takes minutes to load while querying block productions.
+* :bug:`-` In the desktop app, a website open in your browser can no longer make rotki delete files from the system temp directory, or write a balance snapshot or PnL report export into a folder of its choosing.
+* :bug:`-` Polkadot and Kusama balances no longer come out wrong or fail to load when both chains are queried at the same time.
 * :bug:`-` Curve CryptoSwap v1 (Tricrypto) pool deposits, withdrawals (including via zap contracts), and swaps, as well as 3-asset and Stableswap-NG imbalanced withdrawals, are now properly decoded.
 * :bug:`-` Historical prices of asset collection members, such as MATIC, now use the member's own price when the collection's main asset has no price at that time, instead of treating the member as unpriced.
 * :bug:`13691` Re-importing a rotki generic events CSV no longer duplicates events, and identical rows in one generic CSV are no longer merged.

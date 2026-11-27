@@ -14,6 +14,17 @@ export interface EventActionRow {
   readonly combinations: readonly EventTypeCombination[];
 }
 
+const PLAIN_SUBTYPE = 'none';
+
+/**
+ * The backend lists a verb's pairs in mapping order, which can put a variant
+ * such as receive/receive wrapped ahead of the plain receive/none. The first
+ * pair is what picking the verb stores, so the plain pair goes first.
+ */
+function plainFirst(combinations: readonly EventTypeCombination[]): EventTypeCombination[] {
+  return [...combinations].sort((a, b) => Number(b.eventSubtype === PLAIN_SUBTYPE) - Number(a.eventSubtype === PLAIN_SUBTYPE));
+}
+
 interface UseEventActionPickerReturn {
   readonly rows: ComputedRef<readonly EventActionRow[]>;
   readonly findRowByTypeSubtype: (eventType: string, eventSubtype: string) => EventActionRow | undefined;
@@ -28,12 +39,20 @@ interface UseEventActionPickerReturn {
  *
  * When `entryType` is supplied, rows are restricted to combinations the entry
  * type actually accepts (currently only meaningful for ETH_WITHDRAWAL_EVENT).
+ *
+ * A pair can belong to two verbs, e.g. deposit/deposit asset is an account
+ * deposit on-chain and a CEX deposit on an exchange. An event shows the verb its
+ * location resolves to, so when `entryType` is supplied each pair is kept only
+ * under that verb. Without an entry type (accounting rules apply to the pair at
+ * any location) the pair stays under both.
  */
 export function useEventActionPicker(
   entryType?: MaybeRefOrGetter<HistoryEventEntryType | undefined>,
+  location?: MaybeRefOrGetter<string | null | undefined>,
 ): UseEventActionPickerReturn {
   const {
     eventTypeCombinationsByVerb,
+    findEventType,
     historyEventTypeData,
     transactionEventTypesData,
   } = useHistoryEventMappings();
@@ -53,6 +72,13 @@ export function useEventActionPicker(
     };
   });
 
+  function belongsToVerb(combination: EventTypeCombination, verbKey: string): boolean {
+    if (!toValue(entryType))
+      return true;
+
+    return findEventType({ ...combination, location: toValue(location) }) === verbKey;
+  }
+
   const rows = computed<readonly EventActionRow[]>(() => {
     const combinationsByVerb = get(eventTypeCombinationsByVerb);
     const details = get(transactionEventTypesData);
@@ -67,7 +93,9 @@ export function useEventActionPicker(
         continue;
 
       const rawCombinations = combinationsByVerb[verbKey] ?? [];
-      const combinations = filter ? rawCombinations.filter(filter) : rawCombinations;
+      const combinations = plainFirst(rawCombinations.filter(combination =>
+        (!filter || filter(combination)) && belongsToVerb(combination, verbKey),
+      ));
       if (combinations.length === 0)
         continue;
 

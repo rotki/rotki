@@ -1,17 +1,24 @@
+from threading import Event
 from typing import Any, NamedTuple
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from rotkehlchen.chain.substrate.manager import SubstrateManager
+from rotkehlchen.chain.substrate.manager import (
+    SUBSTRATE_CODEC_LOCK,
+    SubstrateChainProperties,
+    SubstrateManager,
+)
 from rotkehlchen.chain.substrate.types import (
     BlockNumber,
     KusamaNodeName,
     NodeNameAttributes,
     PolkadotNodeName,
+    SubstrateAddress,
 )
+from rotkehlchen.concurrency import result_of, spawn
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_KSM
+from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.messages import consume_warnings
@@ -100,6 +107,138 @@ def test_get_account_balance_calculation(kusama_manager):
         node_interface=mock_node_interface,
     )
     assert balance == FVal(111.004701754251)  # (free + reserved)/10**12
+
+
+def test_concurrent_account_queries_are_serialized(polkadot_manager: SubstrateManager) -> None:
+    """Polkadot and Kusama managers must not decode metadata concurrently."""
+    first_started, release_first = Event(), Event()
+    second_attempting, second_started = Event(), Event()
+    first_node_interface, second_node_interface = MagicMock(), MagicMock()
+    account_info = AccountInfo(value={'data': {'free': 1, 'reserved': 0}})
+    kusama_manager = SubstrateManager(
+        chain=SupportedBlockchain.KUSAMA,
+        task_supervisor=polkadot_manager.task_supervisor,
+        msg_aggregator=polkadot_manager.msg_aggregator,
+        connect_at_start=(),
+        connect_on_startup=False,
+        own_rpc_endpoint='',
+    )
+    polkadot_manager.chain_properties = SubstrateChainProperties(
+        ss58_format=0,
+        token=A_DOT.resolve_to_crypto_asset(),
+        token_decimals=10,
+    )
+    kusama_manager.chain_properties = SubstrateChainProperties(
+        ss58_format=2,
+        token=A_KSM.resolve_to_crypto_asset(),
+        token_decimals=12,
+    )
+
+    def query_first(**kwargs: Any) -> AccountInfo:  # pylint: disable=unused-argument
+        first_started.set()
+        assert release_first.wait(timeout=5)
+        return account_info
+
+    def query_second(**kwargs: Any) -> AccountInfo:  # pylint: disable=unused-argument
+        second_started.set()
+        return account_info
+
+    def get_second_balance() -> FVal:
+        second_attempting.set()
+        return kusama_manager._get_account_balance(
+            account=SubstrateAddress(SUBSTRATE_ACC1_KSM_ADDR),
+            node_interface=second_node_interface,
+        )
+
+    first_node_interface.query.side_effect = query_first
+    second_node_interface.query.side_effect = query_second
+    first_task = spawn(
+        polkadot_manager._get_account_balance,
+        account=SubstrateAddress(SUBSTRATE_ACC1_KSM_ADDR),
+        node_interface=first_node_interface,
+    )
+    assert first_started.wait(timeout=5)
+    second_task = spawn(get_second_balance)
+    try:
+        assert second_attempting.wait(timeout=5)
+        assert second_started.wait(timeout=0.5) is False
+    finally:
+        release_first.set()
+
+    assert result_of(first_task) == FVal(10 ** -10)
+    assert result_of(second_task) == FVal(10 ** -12)
+    assert second_started.is_set()
+
+
+def test_codec_lock_wait_times_out(polkadot_manager: SubstrateManager) -> None:
+    """A request waiting on a stuck codec lock holder fails with RemoteError instead of hanging,
+    so the request can fall back to the next node."""
+    polkadot_manager.chain_properties = SubstrateChainProperties(
+        ss58_format=0,
+        token=A_DOT.resolve_to_crypto_asset(),
+        token_decimals=10,
+    )
+    assert SUBSTRATE_CODEC_LOCK.acquire(timeout=5)
+    try:
+        with (
+            patch('rotkehlchen.chain.substrate.manager.SUBSTRATE_CODEC_LOCK_TIMEOUT', 0.1),
+            patch('rotkehlchen.chain.substrate.manager.SubstrateInterface') as interface_mock,
+        ):
+            with pytest.raises(RemoteError, match=r'timed out .* waiting for another substrate'):
+                polkadot_manager._get_account_balance(
+                    account=SubstrateAddress(SUBSTRATE_ACC1_KSM_ADDR),
+                    node_interface=(node_interface := MagicMock()),
+                )
+            with pytest.raises(RemoteError, match=r'timed out .* waiting for another substrate'):
+                polkadot_manager._get_node_interface(endpoint='https://example.com')
+    finally:
+        SUBSTRATE_CODEC_LOCK.release()
+
+    assert node_interface.query.call_count == 0
+    assert interface_mock.call_count == 0
+
+
+def test_node_initialization_waits_for_account_query(polkadot_manager: SubstrateManager) -> None:
+    """Type registry initialization must not overlap metadata decoding."""
+    query_started, release_query, initialization_started = Event(), Event(), Event()
+    querying_node_interface, initialized_node_interface = MagicMock(), MagicMock()
+    polkadot_manager.chain_properties = SubstrateChainProperties(
+        ss58_format=0,
+        token=A_DOT.resolve_to_crypto_asset(),
+        token_decimals=10,
+    )
+
+    def query(**kwargs: Any) -> AccountInfo:  # pylint: disable=unused-argument
+        query_started.set()
+        assert release_query.wait(timeout=5)
+        return AccountInfo(value={'data': {'free': 1, 'reserved': 0}})
+
+    def initialize(**kwargs: Any) -> MagicMock:  # pylint: disable=unused-argument
+        initialization_started.set()
+        return initialized_node_interface
+
+    querying_node_interface.query.side_effect = query
+    with patch(
+        'rotkehlchen.chain.substrate.manager.SubstrateInterface',
+        side_effect=initialize,
+    ):
+        query_task = spawn(
+            polkadot_manager._get_account_balance,
+            account=SubstrateAddress(SUBSTRATE_ACC1_KSM_ADDR),
+            node_interface=querying_node_interface,
+        )
+        assert query_started.wait(timeout=5)
+        initialization_task = spawn(
+            polkadot_manager._get_node_interface,
+            endpoint='https://example.com',
+        )
+        try:
+            assert initialization_started.wait(timeout=0.5) is False
+        finally:
+            release_query.set()
+
+        assert result_of(query_task) == FVal(10 ** -10)
+        assert result_of(initialization_task) is initialized_node_interface
 
 
 def test_set_available_nodes_call_order(kusama_manager):

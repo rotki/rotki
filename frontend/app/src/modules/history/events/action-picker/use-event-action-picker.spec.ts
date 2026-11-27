@@ -9,9 +9,25 @@ const transactionEventTypesData = ref<HistoryEventCategoryMapping>({});
 const entryTypeMappings = ref<Record<string, Record<string, Record<string, string>>>>({});
 const eventCategoryGroups = ref<Record<string, EventCategoryGroupDetail>>({});
 
+type VerbResolver = (event: EventTypeCombination & { location?: string | null }) => string | undefined;
+
+/**
+ * Mirrors the real lookup closely enough for these tests: a pair resolves to the
+ * first verb that lists it, unless a test swaps in a location-aware resolver.
+ */
+function firstListedVerb(event: EventTypeCombination): string | undefined {
+  const combinations = eventTypeCombinationsByVerb.value;
+  return Object.keys(combinations).find(verb =>
+    combinations[verb].some(c => c.eventType === event.eventType && c.eventSubtype === event.eventSubtype),
+  );
+}
+
+let resolveVerb: VerbResolver = firstListedVerb;
+
 vi.mock('@/modules/history/events/mapping/use-history-event-mappings', () => ({
   useHistoryEventMappings: (): unknown => ({
     eventTypeCombinationsByVerb: computed(() => eventTypeCombinationsByVerb.value),
+    findEventType: (event: EventTypeCombination & { location?: string | null }): string | undefined => resolveVerb(event),
     historyEventTypeData: computed(() => ({
       entryTypeMappings: entryTypeMappings.value,
       eventCategoryGroups: eventCategoryGroups.value,
@@ -48,6 +64,7 @@ function buildDetails(verbs: Record<string, { label: string; direction?: 'in' | 
 describe('useEventActionPicker', () => {
   beforeEach(() => {
     setMappings({ combinations: {}, details: {} });
+    resolveVerb = firstListedVerb;
   });
 
   it('should produce one row per verb joined with its combinations', () => {
@@ -149,5 +166,96 @@ describe('useEventActionPicker', () => {
     const { findRowByTypeSubtype } = useEventActionPicker();
     expect(findRowByTypeSubtype('trade', 'spend')?.verbKey).toBe('swap out');
     expect(findRowByTypeSubtype('trade', 'receive')).toBeUndefined();
+  });
+
+  it('should put the plain none pair first so picking the verb stores it', () => {
+    setMappings({
+      combinations: {
+        receive: [
+          { eventSubtype: 'receive wrapped', eventType: 'receive' },
+          { eventSubtype: 'return wrapped', eventType: 'receive' },
+          { eventSubtype: 'none', eventType: 'receive' },
+          { eventSubtype: 'receive', eventType: 'adjustment' },
+        ],
+      },
+      details: buildDetails({ receive: { label: 'Receive' } }),
+    });
+
+    const { rows } = useEventActionPicker();
+    expect(rows.value[0].combinations).toEqual([
+      { eventSubtype: 'none', eventType: 'receive' },
+      { eventSubtype: 'receive wrapped', eventType: 'receive' },
+      { eventSubtype: 'return wrapped', eventType: 'receive' },
+      { eventSubtype: 'receive', eventType: 'adjustment' },
+    ]);
+  });
+
+  it('should keep the backend order when a verb has no plain pair', () => {
+    const fees = [
+      { eventSubtype: 'fee', eventType: 'spend' },
+      { eventSubtype: 'fee', eventType: 'trade' },
+    ];
+    setMappings({
+      combinations: { fee: fees },
+      details: buildDetails({ fee: { label: 'Fee' } }),
+    });
+
+    const { rows } = useEventActionPicker();
+    expect(rows.value[0].combinations).toEqual(fees);
+  });
+
+  describe('pairs shared by an on-chain and an exchange verb', () => {
+    const depositAsset = { eventSubtype: 'deposit asset', eventType: 'deposit' };
+
+    beforeEach(() => {
+      setMappings({
+        combinations: {
+          'account deposit': [depositAsset],
+          'cex deposit': [depositAsset],
+        },
+        details: buildDetails({
+          'account deposit': { label: 'Account deposit' },
+          'cex deposit': { label: 'CEX deposit' },
+        }),
+      });
+      resolveVerb = ({ location }): string => (location === 'kraken' ? 'cex deposit' : 'account deposit');
+    });
+
+    it('should keep the pair only under the on-chain verb for a non-exchange location', () => {
+      const { findRowByTypeSubtype, rows } = useEventActionPicker(() => HistoryEventEntryType.HISTORY_EVENT, () => 'external');
+
+      expect(rows.value.map(r => r.verbKey)).toEqual(['account deposit']);
+      expect(findRowByTypeSubtype('deposit', 'deposit asset')?.verbKey).toBe('account deposit');
+    });
+
+    it('should keep the pair only under the exchange verb for an exchange location', () => {
+      const { findRowByTypeSubtype, rows } = useEventActionPicker(() => HistoryEventEntryType.HISTORY_EVENT, () => 'kraken');
+
+      expect(rows.value.map(r => r.verbKey)).toEqual(['cex deposit']);
+      expect(findRowByTypeSubtype('deposit', 'deposit asset')?.verbKey).toBe('cex deposit');
+    });
+
+    it('should treat a missing location as on-chain', () => {
+      const { rows } = useEventActionPicker(() => HistoryEventEntryType.EVM_EVENT);
+
+      expect(rows.value.map(r => r.verbKey)).toEqual(['account deposit']);
+    });
+
+    it('should regroup the pair when the location changes', () => {
+      const location = ref<string>('external');
+      const { rows } = useEventActionPicker(() => HistoryEventEntryType.HISTORY_EVENT, location);
+
+      expect(rows.value.map(r => r.verbKey)).toEqual(['account deposit']);
+
+      location.value = 'kraken';
+
+      expect(rows.value.map(r => r.verbKey)).toEqual(['cex deposit']);
+    });
+
+    it('should keep the pair under both verbs without an entry type', () => {
+      const { rows } = useEventActionPicker();
+
+      expect(rows.value.map(r => r.verbKey)).toEqual(['account deposit', 'cex deposit']);
+    });
   });
 });

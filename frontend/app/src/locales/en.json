@@ -4872,6 +4872,11 @@
       "out": "Out"
     },
     "picker": {
+      "combination": {
+        "hint": "The exact event type and subtype stored for this action. Accounting rules use it.",
+        "label": "Type and subtype",
+        "stored": "Stored as {combination}"
+      },
       "description": {
         "account_deposit": "Move assets into an exchange or account. Not taxable on its own.",
         "account_withdrawal": "Move assets out of an exchange or account. Not taxable on its own.",
