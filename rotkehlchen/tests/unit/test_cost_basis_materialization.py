@@ -4538,3 +4538,453 @@ def test_in_session_backup_restore_invalidates_outdated_cost_basis(
 
     database.invalidate_outdated_cost_basis()  # the version is current now
     assert _rows(database) == expected_rows
+
+
+@pytest.mark.parametrize('checkpoint_interval', [1, 10_000])
+@pytest.mark.usefixtures('queried_prices')
+def test_reverse_match_intersecting_deferrals_keep_chronological_order(
+        database: DBHandler,
+        checkpoint_interval: int,
+) -> None:
+    """Resolving the first of two intersecting reverse-timestamp matches must not re-defer an
+    earlier ETH receive behind a later ETH->DAI swap that still waits on the second match."""
+    dbevents = DBHistoryEvents(database)
+    _add_rule(database, HistoryEventType.SPEND)
+    _add_rule(
+        database=database,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        accounting_treatment=TxAccountingTreatment.SWAP,
+    )
+    with database.user_write() as write_cursor:
+        database.set_settings(
+            write_cursor,
+            ModifiableDBSettings(
+                cost_basis_method=CostBasisMethod.FIFO,
+                include_crypto2crypto=True,
+            ),
+        )
+        kraken_buy_id = _add_kraken_event(
+            write_cursor=write_cursor,
+            dbevents=dbevents,
+            group_identifier='kraken-buy-intersect',
+            at=1,
+            event_type=HistoryEventType.RECEIVE,
+        )
+        coinbase_dai_buy_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                group_identifier='coinbase-dai-buy-intersect',
+                sequence_index=0,
+                timestamp=_ts_ms(1),
+                location=LOCATION_COINBASE,
+                location_label='coinbase',
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_DAI,
+                amount=FVal('100'),
+            ),
+        )
+        assert coinbase_dai_buy_id is not None
+
+        # t=2: reverse-timestamp ETH receipt waiting on Kraken withdrawal at t=6 (M1)
+        eth_receive = _event(at=2, amount='1', event_type=HistoryEventType.RECEIVE)
+        eth_receive.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=eth_receive,
+        )
+        # t=3: reverse-timestamp DAI receipt waiting on Coinbase withdrawal at t=8 (M3)
+        dai_receive = _event(at=3, amount='100', event_type=HistoryEventType.RECEIVE, asset=A_DAI)
+        dai_receive.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=dai_receive,
+        )
+        # t=4: plain ETH receive @ 4000 (initially deferred behind M1 only)
+        plain_recv_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(at=4, amount='1', event_type=HistoryEventType.RECEIVE),
+        )
+        assert plain_recv_id is not None
+
+        # t=5: swap 2 ETH -> 10,000 DAI merges {M1, M3} onto (TEST_ADDR1, ETH)
+        swap_tx = make_evm_tx_hash()
+        swap_out_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(
+                at=5,
+                amount='2',
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.SPEND,
+                tx_ref=swap_tx,
+                sequence_index=0,
+            ),
+        )
+        swap_in_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(
+                at=5,
+                amount='10000',
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                asset=A_DAI,
+                tx_ref=swap_tx,
+                sequence_index=1,
+            ),
+        )
+        assert swap_out_id is not None and swap_in_id is not None
+
+        # t=6: Kraken withdrawal resolves M1
+        kraken_wd = AssetMovement(
+            timestamp=_ts_ms(6),
+            location=LOCATION_KRAKEN,
+            location_label='kraken',
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('1'),
+            group_identifier='kraken-wd-intersect',
+        )
+        kraken_wd.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=kraken_wd,
+        )
+        # t=7: ETH spend verifies no phantom ETH lot remained after the t=5 swap
+        later_eth_spend_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(at=7, amount='1', event_type=HistoryEventType.SPEND),
+        )
+        assert later_eth_spend_id is not None
+
+        # t=8: Coinbase withdrawal resolves M3
+        coinbase_wd = AssetMovement(
+            timestamp=_ts_ms(8),
+            location=LOCATION_COINBASE,
+            location_label='coinbase',
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_DAI,
+            amount=FVal('100'),
+            group_identifier='coinbase-wd-intersect',
+        )
+        coinbase_wd.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=coinbase_wd,
+        )
+        later_dai_spend_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(
+                at=8,
+                amount='150',
+                event_type=HistoryEventType.SPEND,
+                asset=A_DAI,
+                sequence_index=1,
+            ),
+        )
+        assert later_dai_spend_id is not None
+
+    update_asset_movement_matched_event(
+        events_db=dbevents,
+        asset_movement=kraken_wd,
+        fee_event=None,
+        matched_event=eth_receive,
+        is_deposit=False,
+    )
+    update_asset_movement_matched_event(
+        events_db=dbevents,
+        asset_movement=coinbase_wd,
+        fee_event=None,
+        matched_event=dai_receive,
+        is_deposit=False,
+    )
+
+    with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', checkpoint_interval):
+        assert process_cost_basis(database, database.msg_aggregator) is True
+
+    # t=5 swap consumes both 1 ETH @ 1000 (M1) and 1 ETH @ 4000 (t=4 receive): 10000 - 5000 = 5000
+    assert _spend_row(database, str(swap_out_id)) == (
+        [(str(kraken_buy_id), FVal(1)), (str(plain_recv_id), FVal(1))],
+        FVal(5000),
+        FVal(5000),
+        FVal(0),
+    )
+    # No phantom 1 ETH @ 4000 lot remains in TEST_ADDR1 after the swap
+    assert _spend_row(database, str(later_eth_spend_id)) == (
+        [],
+        FVal(1500),
+        FVal(0),
+        FVal(0),
+    )
+    # DAI inventory keeps t=3 carried lot ahead of t=5 swap proceeds
+    assert _spend_row(database, str(later_dai_spend_id)) == (
+        [(str(coinbase_dai_buy_id), FVal(100)), (str(swap_in_id), FVal(50))],
+        FVal(0),
+        FVal(150),
+        FVal(9950),
+    )
+
+    expected_rows = _rows(database)
+    with database.user_write() as write_cursor:
+        mark_stale_from_ts(write_cursor=write_cursor, from_ts=_ts_ms(4), include_balances=False)
+    with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', checkpoint_interval):
+        assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _rows(database) == expected_rows
+    assert expected_rows == _full_rebuild_rows(database)
+
+
+@pytest.mark.parametrize('checkpoint_interval', [1, 10_000])
+@pytest.mark.usefixtures('queried_prices')
+def test_reverse_match_nested_chained_resumes_preserve_tail_order(
+        database: DBHandler,
+        checkpoint_interval: int,
+) -> None:
+    """When replaying deferred events for M1 applies the OUT leg of a second reverse match M2,
+    the nested resume of M2 completes cleanly without dropping or reordering later events."""
+    dbevents = DBHistoryEvents(database)
+    _add_rule(database, HistoryEventType.SPEND)
+    with database.user_write() as write_cursor:
+        database.set_settings(
+            write_cursor,
+            ModifiableDBSettings(cost_basis_method=CostBasisMethod.FIFO),
+        )
+        kraken_buy_id = _add_kraken_event(
+            write_cursor=write_cursor,
+            dbevents=dbevents,
+            group_identifier='kraken-buy-nested',
+            at=1,
+            event_type=HistoryEventType.RECEIVE,
+        )
+        # t=2: TEST_ADDR1 receives 1 ETH (reverse IN of M1, waiting on Kraken withdrawal at t=7)
+        addr1_receive = _event(at=2, amount='1', event_type=HistoryEventType.RECEIVE)
+        addr1_receive.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=addr1_receive,
+        )
+        # t=3: Coinbase receives 1 ETH (reverse IN of M2, waiting on TEST_ADDR1 spend at t=5)
+        coinbase_deposit = AssetMovement(
+            timestamp=_ts_ms(3),
+            location=LOCATION_COINBASE,
+            location_label='coinbase',
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            amount=FVal('1'),
+            group_identifier='coinbase-dep-nested',
+        )
+        coinbase_deposit.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=coinbase_deposit,
+        )
+        # t=4: Coinbase buys 1 ETH @ 4000 (deferred behind M2, ahead of out_M2 in deferred list)
+        coinbase_buy_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                group_identifier='coinbase-buy-nested',
+                sequence_index=0,
+                timestamp=_ts_ms(4),
+                location=LOCATION_COINBASE,
+                location_label='coinbase',
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('1'),
+            ),
+        )
+        assert coinbase_buy_id is not None
+
+        # t=5: TEST_ADDR1 sends 1 ETH (OUT of M2, deferred behind M1)
+        addr1_out_m2 = _event(at=5, amount='1', event_type=HistoryEventType.SPEND)
+        addr1_out_m2.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=addr1_out_m2,
+        )
+        # t=6: tail events after out_M2 in deferred list on both TEST_ADDR1 and Coinbase
+        addr1_later_recv_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(at=6, amount='1', event_type=HistoryEventType.RECEIVE),
+        )
+        assert addr1_later_recv_id is not None
+        coinbase_sell_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                group_identifier='coinbase-sell-nested',
+                sequence_index=1,
+                timestamp=_ts_ms(6),
+                location=LOCATION_COINBASE,
+                location_label='coinbase',
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('1.5'),
+            ),
+        )
+        assert coinbase_sell_id is not None
+
+        # t=7: Kraken withdraws 1 ETH (OUT of M1 -> resumes M1 -> nested resume of M2)
+        kraken_wd = AssetMovement(
+            timestamp=_ts_ms(7),
+            location=LOCATION_KRAKEN,
+            location_label='kraken',
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('1'),
+            group_identifier='kraken-wd-nested',
+        )
+        kraken_wd.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=kraken_wd,
+        )
+        # t=8: TEST_ADDR1 sells 1 ETH @ 1700, proving t=6 receive was preserved in order
+        addr1_sell_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(at=8, amount='1', event_type=HistoryEventType.SPEND),
+        )
+        assert addr1_sell_id is not None
+
+    update_asset_movement_matched_event(
+        events_db=dbevents,
+        asset_movement=kraken_wd,
+        fee_event=None,
+        matched_event=addr1_receive,
+        is_deposit=False,
+    )
+    update_asset_movement_matched_event(
+        events_db=dbevents,
+        asset_movement=coinbase_deposit,
+        fee_event=None,
+        matched_event=addr1_out_m2,
+        is_deposit=True,
+    )
+
+    with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', checkpoint_interval):
+        assert process_cost_basis(database, database.msg_aggregator) is True
+
+    # Coinbase sells 1.5 ETH @ 1200 (=1800): carried M1->M2 (1 @ 1000) + t=4 buy (0.5 @ 4000)
+    assert _spend_row(database, str(coinbase_sell_id)) == (
+        [(str(kraken_buy_id), FVal(1)), (str(coinbase_buy_id), FVal('0.5'))],
+        FVal(-1200),
+        FVal(3000),
+        FVal(2000),
+    )
+    # TEST_ADDR1 sells 1 ETH @ 1700 from t=6 receive (1 @ 1200)
+    assert _spend_row(database, str(addr1_sell_id)) == (
+        [(str(addr1_later_recv_id), FVal(1))],
+        FVal(500),
+        FVal(1200),
+        FVal(0),
+    )
+
+    expected_rows = _rows(database)
+    with database.user_write() as write_cursor:
+        mark_stale_from_ts(write_cursor=write_cursor, from_ts=_ts_ms(4), include_balances=False)
+    with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', checkpoint_interval):
+        assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _rows(database) == expected_rows
+    assert expected_rows == _full_rebuild_rows(database)
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_reverse_match_nested_one_to_many_completes_earlier_in_before_later_in(
+        database: DBHandler,
+) -> None:
+    """When a deferred OUT leg unlocks a 1-to-many reverse match whose second IN leg is also
+    in the same deferred list, the waiting earlier IN leg pulls from transit before the later
+    IN leg runs and drops the transit bucket."""
+    dbevents = DBHistoryEvents(database)
+    _add_rule(database, HistoryEventType.SPEND)
+    with database.user_write() as write_cursor:
+        database.set_settings(
+            write_cursor,
+            ModifiableDBSettings(cost_basis_method=CostBasisMethod.FIFO),
+        )
+        kraken_buy_id = _add_kraken_event(
+            write_cursor=write_cursor,
+            dbevents=dbevents,
+            group_identifier='kraken-buy-nested-1tm',
+            at=1,
+            event_type=HistoryEventType.RECEIVE,
+        )
+        addr1_receive = _event(at=2, amount='1', event_type=HistoryEventType.RECEIVE)
+        addr1_receive.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=addr1_receive,
+        )
+        # M2 (1-to-many): in_1 at t=3 (TEST_ADDR2, 0.5 ETH), out at t=4 (TEST_ADDR1, 1 ETH),
+        # in_2 at t=5 (TEST_ADDR1, 0.5 ETH, deferred behind M1 after out_M2)
+        m2_in1_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(
+                at=3,
+                amount='0.5',
+                event_type=HistoryEventType.RECEIVE,
+                location_label=TEST_ADDR2,
+            ),
+        )
+        m2_out_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(at=4, amount='1', event_type=HistoryEventType.SPEND),
+        )
+        m2_in2_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(at=5, amount='0.5', event_type=HistoryEventType.RECEIVE),
+        )
+        assert m2_in1_id is not None and m2_out_id is not None and m2_in2_id is not None
+        for in_id in (m2_in1_id, m2_in2_id):
+            write_cursor.execute(
+                'INSERT INTO history_event_links(left_event_id, right_event_id, link_type) '
+                'VALUES (?, ?, ?)',
+                (
+                    m2_out_id,
+                    in_id,
+                    HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),
+                ),
+            )
+
+        kraken_wd = AssetMovement(
+            timestamp=_ts_ms(6),
+            location=LOCATION_KRAKEN,
+            location_label='kraken',
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('1'),
+            group_identifier='kraken-wd-nested-1tm',
+        )
+        kraken_wd.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=kraken_wd,
+        )
+        addr2_sell_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(
+                at=7,
+                amount='0.5',
+                event_type=HistoryEventType.SPEND,
+                location_label=TEST_ADDR2,
+            ),
+        )
+        addr1_sell_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(at=7, amount='0.5', event_type=HistoryEventType.SPEND),
+        )
+        assert addr2_sell_id is not None and addr1_sell_id is not None
+
+    update_asset_movement_matched_event(
+        events_db=dbevents,
+        asset_movement=kraken_wd,
+        fee_event=None,
+        matched_event=addr1_receive,
+        is_deposit=False,
+    )
+
+    assert process_cost_basis(database, database.msg_aggregator) is True
+
+    # Both halves carry kraken_buy_id @ 1000 (basis 500 each -> 0.5 * 1500 - 500 = 250)
+    assert _spend_row(database, str(addr2_sell_id)) == (
+        [(str(kraken_buy_id), FVal('0.5'))],
+        FVal(250),
+        FVal(500),
+        FVal(0),
+    )
+    assert _spend_row(database, str(addr1_sell_id)) == (
+        [(str(kraken_buy_id), FVal('0.5'))],
+        FVal(250),
+        FVal(500),
+        FVal(0),
+    )
+    assert _rows(database) == _full_rebuild_rows(database)

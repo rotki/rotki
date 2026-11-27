@@ -188,7 +188,6 @@ class _DeferredEvent(NamedTuple):
     event: HistoryBaseEntry
     next_event: HistoryBaseEntry | None
     swap_fee_events: tuple[HistoryBaseEntry, ...]
-    blocking_match_keys: set[str]
 
 
 def _load_asset_movement_matches(
@@ -481,6 +480,8 @@ class _CostBasisPass:
         self._deferred_group_ids: dict[int, set[str]] = {}
         self._visited_match_out_ids: set[int] = set()
         self._match_waits_on: defaultdict[str, set[str]] = defaultdict(set)
+        self._pending_resumes: deque[_AssetMovementMatch] = deque()
+        self._is_replaying_deferred = False
         self._replaying_deferred_min_ts: TimestampMS | None = None
         self.eth2 = Eth2StakingCostBasis(host=self, validator_types=validator_types)
 
@@ -1379,9 +1380,17 @@ class _CostBasisPass:
             event=event,
             next_event=next_event,
             swap_fee_events=tuple(swap_fee_events),
-            blocking_match_keys=blocking_keys,
         ))
         return True
+
+    def _rebuild_deferred_state(self) -> None:
+        """Rebuild deferral tracking from only the still-pending reverse-timestamp matches."""
+        self._deferred_buckets.clear()
+        self._deferred_group_ids.clear()
+        self._match_waits_on.clear()
+        for match_key, deferred_ins in self._deferred_match_ins.items():
+            for deferred in deferred_ins:
+                self._deferred_buckets[deferred.destination].add(match_key)
 
     def _resume_deferred_match_ins(
             self,
@@ -1390,67 +1399,71 @@ class _CostBasisPass:
     ) -> None:
         """Complete the IN legs of the match that waited, once none of its OUT legs is pending.
 
-        After the IN legs move lots into their destination buckets, any intervening events that
-        depended on those buckets and are no longer blocked by another match are replayed in
-        their original order. An OUT leg visited without reaching `_apply_matched_out` moved
-        nothing into transit, so the caller blocks transit and the waiting legs fall back to
-        standalone receives.
+        After the IN legs move lots into their destination buckets, deferral tracking is rebuilt
+        from only the still-pending matches and all saved deferred events are replayed in their
+        original order so earlier events that became unblocked are not re-deferred behind later
+        still-blocked ones. Nested resumes triggered during replay are queued and preserve the
+        unprocessed tail of the replay list in chronological order. An OUT leg visited without
+        reaching `_apply_matched_out` moved nothing into transit, so the caller blocks transit
+        and the waiting legs fall back to standalone receives.
         """
         if match.match_key not in self._deferred_match_ins or any(
             out_id in self._pending_match_out_ids for out_id in match.out_ids
         ):
             return
 
-        deferred_ins = self._deferred_match_ins.pop(match.match_key)
+        self._pending_resumes.append(match)
+        if self._is_replaying_deferred:
+            return
+
+        self._is_replaying_deferred = True
         prev_replaying_min_ts = self._replaying_deferred_min_ts
-        batch_min_ts = min(deferred.event.timestamp for deferred in deferred_ins)
-        self._replaying_deferred_min_ts = (
-            batch_min_ts if prev_replaying_min_ts is None
-            else min(prev_replaying_min_ts, batch_min_ts)
-        )
-        for deferred in deferred_ins:
-            self._complete_matched_in(
-                event=deferred.event,
-                destination=deferred.destination,
-                match=match,
-                timestamp=deferred.timestamp,
-                is_stale=deferred.is_stale,
-                rule=deferred.rule,
-            )
+        try:
+            while len(self._pending_resumes) != 0:
+                resumed_match = self._pending_resumes.popleft()
+                if resumed_match.match_key not in self._deferred_match_ins or any(
+                    out_id in self._pending_match_out_ids for out_id in resumed_match.out_ids
+                ):
+                    continue
 
-        self._match_waits_on.pop(match.match_key, None)
-        for waits in self._match_waits_on.values():
-            waits.discard(match.match_key)
+                deferred_ins = self._deferred_match_ins.pop(resumed_match.match_key)
+                batch_min_ts = min(
+                    chain(
+                        (deferred.event.timestamp for deferred in deferred_ins),
+                        (deferred_ev.event.timestamp for deferred_ev in self._deferred_events),
+                    ),
+                )
+                self._replaying_deferred_min_ts = (
+                    batch_min_ts if self._replaying_deferred_min_ts is None
+                    else min(self._replaying_deferred_min_ts, batch_min_ts)
+                )
+                for deferred in deferred_ins:
+                    self._complete_matched_in(
+                        event=deferred.event,
+                        destination=deferred.destination,
+                        match=resumed_match,
+                        timestamp=deferred.timestamp,
+                        is_stale=deferred.is_stale,
+                        rule=deferred.rule,
+                    )
 
-        for bucket in list(self._deferred_buckets):
-            keys = self._deferred_buckets[bucket]
-            keys.discard(match.match_key)
-            if len(keys) == 0:
-                del self._deferred_buckets[bucket]
+                self._rebuild_deferred_state()
+                pending_events = self._deferred_events
+                self._deferred_events = []
+                for idx, deferred_ev in enumerate(pending_events):
+                    self.apply(
+                        event=deferred_ev.event,
+                        next_event=deferred_ev.next_event,
+                        treat_eth2_as_eth=treat_eth2_as_eth,
+                        swap_fee_events=deferred_ev.swap_fee_events,
+                    )
+                    if len(self._pending_resumes) != 0:
+                        self._deferred_events.extend(pending_events[idx + 1:])
+                        break
+        finally:
+            self._pending_resumes.clear()
+            self._is_replaying_deferred = False
 
-        for ev_id in list(self._deferred_group_ids):
-            keys = self._deferred_group_ids[ev_id]
-            keys.discard(match.match_key)
-            if len(keys) == 0:
-                del self._deferred_group_ids[ev_id]
-
-        ready: list[_DeferredEvent] = []
-        still_waiting: list[_DeferredEvent] = []
-        for deferred_ev in self._deferred_events:
-            deferred_ev.blocking_match_keys.discard(match.match_key)
-            if len(deferred_ev.blocking_match_keys) == 0:
-                ready.append(deferred_ev)
-            else:
-                still_waiting.append(deferred_ev)
-        self._deferred_events = still_waiting
-
-        for deferred_ev in ready:
-            self.apply(
-                event=deferred_ev.event,
-                next_event=deferred_ev.next_event,
-                treat_eth2_as_eth=treat_eth2_as_eth,
-                swap_fee_events=deferred_ev.swap_fee_events,
-            )
         # Only restored on clean completion so an interrupting price error keeps `batch_min_ts`
         # visible in `earliest_deferred_ts`.
         self._replaying_deferred_min_ts = prev_replaying_min_ts
