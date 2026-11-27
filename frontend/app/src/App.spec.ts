@@ -61,11 +61,11 @@ describe('app', () => {
     const { SessionHost } = await import('@/modules/shell/app/session-host');
     const { beginSession } = await import('@/modules/core/session/session-lifecycle');
     const wrapper = mount(App, { shallow: true });
-    const first = wrapper.findComponent(SessionHost).vm;
+    const first = wrapper.findComponent(SessionHost).element;
 
     beginSession();
     await nextTick();
 
-    expect(wrapper.findComponent(SessionHost).vm).not.toBe(first);
+    expect(wrapper.findComponent(SessionHost).element).not.toBe(first);
   });
 });
