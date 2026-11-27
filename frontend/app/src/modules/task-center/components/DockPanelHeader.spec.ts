@@ -16,6 +16,15 @@ function createWrapper(statuses: ActivityStatus[], summary = true): VueWrapper {
 }
 
 describe('dockPanelHeader', () => {
+  it('should name how a settled run ended, each bar colour included, instead of counting it as finished', () => {
+    const wrapper = createWrapper([ActivityStatus.COMPLETE, ActivityStatus.COMPLETE, ActivityStatus.SKIPPED, ActivityStatus.FAILED]);
+
+    expect(wrapper.find('[data-testid=dock-panel-settled]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid=dock-outcome-done]').text()).toBe('task_dock.panel.outcome.done::2');
+    expect(wrapper.find('[data-testid=dock-outcome-skipped]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=dock-outcome-failed]').exists()).toBe(true);
+  });
+
   it('should show its title', () => {
     expect(createWrapper([ActivityStatus.COMPLETE]).text()).toContain('Finished with problems');
   });

@@ -13,7 +13,7 @@ import {
   makeActivityId,
 } from '@/modules/task-center/core/types';
 import { DockState } from './dock-state';
-import { useDockPanel } from './use-dock-panel';
+import { FINISHED_SECTION_KEY, useDockPanel } from './use-dock-panel';
 import { usePendingJobs } from './use-pending-jobs';
 import { useTaskDock } from './use-task-dock';
 
@@ -355,5 +355,63 @@ describe('useDockPanel', () => {
       expect(get(sections)[0]?.title).toBeDefined();
       expect(get(sections)[1]?.title).toBeUndefined();
     });
+  });
+
+  describe('section folding', () => {
+    const long = Date.now() - 60_000;
+
+    /** Exchange jobs named by `statuses`' keys, started a second apart in that order, so they list in it. */
+    function exchanges(statuses: Record<string, ActivityStatus>): Activity[] {
+      return Object.entries(statuses).map(([name, status], index) =>
+        activity(ActivityKind.EXCHANGE_BALANCES, name, status, undefined, { startedAt: long + index * 1000 }));
+    }
+
+    /** Lists every job while running first, since the panel only reports jobs it has shown. */
+    async function settle(statuses: Record<string, ActivityStatus>): Promise<ReturnType<typeof useDockPanel>> {
+      set(activities, exchanges(Object.fromEntries(Object.keys(statuses).map(name => [name, RUNNING]))));
+      const dock = panel();
+      await nextTick();
+      await transition(exchanges(statuses));
+      return dock;
+    }
+
+    it('should fold the finished jobs leading the list into one row while work runs', async () => {
+      const { sections } = await settle({ binance: COMPLETE, kraken: COMPLETE, okx: RUNNING });
+
+      expect(get(sections).map(section => section.key)).toEqual([FINISHED_SECTION_KEY, makeActivityId(ActivityKind.EXCHANGE_BALANCES, 'okx')]);
+      expect(get(sections)[0]).toMatchObject({ folded: true, title: expect.stringContaining('task_dock.panel.finished_group') });
+      expect(get(sections)[0]?.roots).toHaveLength(2);
+    });
+
+    it('should leave a single finished job, or one between running jobs, where it is', async () => {
+      const single = await settle({ binance: COMPLETE, kraken: RUNNING });
+      expect(get(single.sections).some(section => section.folded)).toBe(false);
+      scope?.stop();
+
+      const between = await settle({ binance: RUNNING, kraken: COMPLETE, okx: COMPLETE, gemini: RUNNING });
+      expect(get(between.sections).some(section => section.folded)).toBe(false);
+    });
+
+    it('should stop the fold at a job that failed, so its failure stays in view', async () => {
+      const { sections } = await settle({ binance: COMPLETE, kraken: COMPLETE, okx: FAILED, gemini: RUNNING });
+
+      expect(get(sections).map(section => section.roots.length)).toEqual([2, 1, 1]);
+      expect(get(sections)[1]?.folded).toBeFalsy();
+    });
+
+    it('should fold a settled kind to its heading once it has enough jobs to crowd the panel', async () => {
+      const three = await settle({ a: COMPLETE, b: COMPLETE, c: COMPLETE });
+      expect(get(three.sections)[0]).toMatchObject({ folded: false, kindHeading: true });
+      scope?.stop();
+
+      const four = await settle({ a: COMPLETE, b: COMPLETE, c: COMPLETE, d: COMPLETE });
+      expect(get(four.sections)[0]).toMatchObject({ folded: true, kindHeading: true });
+    });
+  });
+
+  it('should count the skips that asked for attention apart from the routine ones', () => {
+    set(activities, balances(RUNNING, COMPLETE, SKIPPED, SKIPPED).map(item => (item.subtitle === 'gnosis' ? { ...item, attention: true } : item)));
+
+    expect(get(panel().attention)).toBe(1);
   });
 });

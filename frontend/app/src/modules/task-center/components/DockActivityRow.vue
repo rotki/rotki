@@ -2,7 +2,7 @@
 import type { RouteLocationRaw } from 'vue-router';
 import { RuiButton, RuiIcon, RuiProgress, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
-import { computed, ref, watch } from 'vue';
+import { computed, inject, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
@@ -13,7 +13,8 @@ import { type ActivitySubject, activitySubject } from '@/modules/task-center/act
 import DockActivityDetail from '@/modules/task-center/components/DockActivityDetail.vue';
 import { formatElapsed } from '@/modules/task-center/core/elapsed';
 import { isTerminalStatus, offersRetry } from '@/modules/task-center/core/status';
-import { type Activity, ActivityKind, ActivityStatus, type ActivitySteps } from '@/modules/task-center/core/types';
+import { type Activity, ActivityKind, ActivityStatus, type ActivitySteps, type ActivityText } from '@/modules/task-center/core/types';
+import { DockKindHeadingKey } from '@/modules/task-center/dock-section';
 import { useActivityLabel } from '@/modules/task-center/use-activity-label';
 import { useWaitingLabel } from '@/modules/task-center/use-waiting-label';
 
@@ -83,9 +84,7 @@ const TEXT_COLOR: Record<ActivityOutcome['color'], string> = {
 
 const nested = computed<boolean>(() => parent !== undefined);
 
-const label = computed<string>(() => labelOf(activity, get(nested), parent));
-
-const secondary = computed<string | undefined>(() => (get(nested) ? undefined : subtitleOf(activity)));
+const underKindHeading = inject(DockKindHeadingKey, () => false);
 
 const subject = computed<ActivitySubject | undefined>(() => activitySubject(activity));
 
@@ -95,12 +94,32 @@ const subject = computed<ActivitySubject | undefined>(() => activitySubject(acti
  * subtitle stays text: the message would lose the params a link slot cannot carry.
  */
 const addressSubtitle = computed<string | undefined>(() => {
-  const { subtitle } = activity;
-  if (get(nested) || subtitle === undefined || typeof subtitle === 'string' || subtitle.plural !== undefined)
+  const address = get(subject)?.address;
+  // Without an address of its own, a lone `{ protocol }` param would match `undefined === undefined`.
+  return get(nested) || address === undefined ? undefined : addressKeyOf(activity.subtitle, address);
+});
+
+/** The key of a translated subtitle whose only param is `address`, or undefined for any other subtitle. */
+function addressKeyOf(subtitle: ActivityText | undefined, address: string): string | undefined {
+  if (subtitle === undefined || typeof subtitle === 'string' || subtitle.plural !== undefined)
     return undefined;
   const params = Object.keys(subtitle.params ?? {});
-  return params.length === 1 && subtitle.params?.address === get(subject)?.address ? subtitle.key : undefined;
-});
+  return params.length === 1 && subtitle.params?.address === address ? subtitle.key : undefined;
+}
+
+/**
+ * Whether a job is named by its subtitle: the section heading above already names its kind, so
+ * eighteen rows titled "Prices" under "Prices" become "Updating 268 assets" and the like. A subtitle
+ * that carries a linked address keeps its own line, since the label cannot draw the link.
+ */
+const namedBySubtitle = computed<boolean>(() => !get(nested)
+  && underKindHeading()
+  && get(addressSubtitle) === undefined
+  && subtitleOf(activity) !== undefined);
+
+const label = computed<string>(() => (get(namedBySubtitle) ? subtitleOf(activity) : undefined) ?? labelOf(activity, get(nested), parent));
+
+const secondary = computed<string | undefined>(() => (get(nested) || get(namedBySubtitle) ? undefined : subtitleOf(activity)));
 
 /** The chain or location icon is left off when the parent's row already shows the same one. */
 const repeatsParentIcon = computed<boolean>(() => {

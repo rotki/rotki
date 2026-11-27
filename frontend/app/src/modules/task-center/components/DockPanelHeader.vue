@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type { StatusTally } from '@/modules/task-center/core/status';
 import { RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
+import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import DockOutcomeSummary from '@/modules/task-center/components/DockOutcomeSummary.vue';
 import { ActivityStatus } from '@/modules/task-center/core/types';
 
-const { summary = false, tally, title, total } = defineProps<{
+const { attention = 0, summary = false, tally, title, total } = defineProps<{
   title: string;
   /** Leaves by status, across every job the panel lists. */
   tally: StatusTally;
@@ -16,6 +18,8 @@ const { summary = false, tally, title, total } = defineProps<{
    * panel only summarises when it lists more than one.
    */
   summary?: boolean;
+  /** Skipped leaves that asked for attention, which the settled line names apart from routine skips. */
+  attention?: number;
 }>();
 
 const emit = defineEmits<{
@@ -26,6 +30,16 @@ const { t } = useI18n({ useScope: 'global' });
 
 const settled = computed<number>(() => tally[ActivityStatus.COMPLETE] + tally[ActivityStatus.FAILED]
   + tally[ActivityStatus.SKIPPED] + tally[ActivityStatus.CANCELLED]);
+
+/**
+ * Whether everything has settled, when the line says how it ended rather than how far along it is.
+ *
+ * @remarks
+ * "47 of 47 finished" told the reader nothing the bar did not, while the bar's amber and red went
+ * unnamed, and it sat over a pill counting jobs ("25 jobs finished") in a different unit under the
+ * same word. The outcome parts name each colour instead, in words that do not compete with the pill.
+ */
+const allSettled = computed<boolean>(() => total > 0 && get(settled) === total);
 
 /** What still needs saying beside the count: failures once there are any, otherwise what is running. */
 const detail = computed<{ text: string; failed: boolean } | undefined>(() => {
@@ -106,7 +120,15 @@ const segments = computed<{ key: string; className: string; width: string }[]>((
           :data-testid="`dock-panel-bar-${segment.key}`"
         />
       </div>
-      <div class="flex items-center justify-between gap-2 text-xs leading-4 tabular-nums">
+      <DockOutcomeSummary
+        v-if="allSettled"
+        :tally="tally"
+        :attention="attention"
+      />
+      <div
+        v-else
+        class="flex items-center justify-between gap-2 text-xs leading-4 tabular-nums"
+      >
         <span
           class="text-rui-text-secondary"
           data-testid="dock-panel-settled"
