@@ -1,15 +1,45 @@
 import type { DataMigrationStatusData, DbUpgradeStatusData } from '@/modules/core/messaging/types';
+import { externalLinks } from '@shared/external-links';
 import { I18nTStub } from '@test/stubs/I18nT';
 import { createCustomPinia } from '@test/utils/create-pinia';
-import { mount, type VueWrapper } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { set } from '@vueuse/shared';
 import { type Pinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
+import { type MaybeRefOrGetter, nextTick, toValue } from 'vue';
 import { UpgradeRowStatus } from '@/modules/auth/upgrade/upgrade-progress';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import UpgradeProgressDisplay from './UpgradeProgressDisplay.vue';
+
+const interop = vi.hoisted(() => ({
+  appSession: false,
+  config: vi.fn(),
+  openPath: vi.fn(),
+  openUrl: vi.fn(),
+}));
+
+vi.mock('@/modules/shell/app/use-electron-interop', () => ({
+  useInterop: (): unknown => interop,
+}));
+
+interface ClipboardMock {
+  copy: ReturnType<typeof vi.fn>;
+  /** What the component asked `useCopy` to copy. */
+  source?: MaybeRefOrGetter<string>;
+}
+
+const clipboard = vi.hoisted((): ClipboardMock => ({ copy: vi.fn() }));
+
+vi.mock('@/modules/core/common/use-clipboard', async () => {
+  const { ref } = await import('vue');
+  return {
+    useCopy: (source: MaybeRefOrGetter<string>): unknown => {
+      clipboard.source = source;
+      return { copied: ref<boolean>(false), copy: clipboard.copy };
+    },
+  };
+});
 
 const START = new Date('2026-11-27T12:00:00Z');
 
@@ -45,6 +75,11 @@ describe('modules/auth/upgrade/UpgradeProgressDisplay', () => {
   }
 
   beforeEach(() => {
+    vi.clearAllMocks();
+    interop.appSession = false;
+    interop.openPath.mockResolvedValue(undefined);
+    interop.openUrl.mockResolvedValue(undefined);
+    clipboard.copy.mockResolvedValue(undefined);
     vi.useFakeTimers();
     vi.setSystemTime(START);
     pinia = createCustomPinia();
@@ -168,6 +203,67 @@ describe('modules/auth/upgrade/UpgradeProgressDisplay', () => {
     expect(wrapper.find('[data-testid=db-upgrade-open-logs]').exists()).toBe(false);
     expect(wrapper.find('[data-testid=db-upgrade-open-backups]').exists()).toBe(false);
     expect(wrapper.text()).toContain('login.db_upgrade.failed.logs_web');
+  });
+
+  describe('failure actions', () => {
+    function mountFailed(): VueWrapper<InstanceType<typeof UpgradeProgressDisplay>> {
+      const store = useSessionAuthStore();
+      store.updateDbUpgradeStatus(upgrade({ toVersion: 54 }));
+      store.failUpgrade('Failed at database upgrade from version 53 to 54: boom');
+      return mountDisplay();
+    }
+
+    it('should copy the error with the run and the backup folder', async () => {
+      const wrapper = mountFailed();
+
+      await wrapper.find('[data-testid=db-upgrade-copy]').trigger('click');
+
+      expect(clipboard.copy).toHaveBeenCalledOnce();
+      expect(clipboard.source && toValue(clipboard.source))
+        .toBe('Failed at database upgrade from version 53 to 54: boom\nlogin.db_upgrade.range.version::51, 54\n/data/users/alice');
+    });
+
+    it('should open the bug report form', async () => {
+      const wrapper = mountFailed();
+
+      await wrapper.find('[data-testid=db-upgrade-report]').trigger('click');
+
+      expect(interop.openUrl).toHaveBeenCalledWith(externalLinks.githubNewBugReport);
+    });
+
+    it('should open the configured logs folder in the desktop app', async () => {
+      interop.appSession = true;
+      interop.config.mockResolvedValue({ logDirectory: '/custom/logs' });
+      const wrapper = mountFailed();
+
+      expect(wrapper.text()).not.toContain('login.db_upgrade.failed.logs_web');
+      await wrapper.find('[data-testid=db-upgrade-open-logs]').trigger('click');
+      await flushPromises();
+
+      expect(interop.config).toHaveBeenCalledWith(false);
+      expect(interop.openPath).toHaveBeenCalledWith('/custom/logs');
+    });
+
+    it('should fall back to the default logs folder when none is configured', async () => {
+      interop.appSession = true;
+      interop.config.mockImplementation(async (defaults: boolean) => (defaults ? { logDirectory: '/default/logs' } : {}));
+      const wrapper = mountFailed();
+
+      await wrapper.find('[data-testid=db-upgrade-open-logs]').trigger('click');
+      await flushPromises();
+
+      expect(interop.openPath).toHaveBeenCalledWith('/default/logs');
+    });
+
+    it('should open the profile folder holding the backups in the desktop app', async () => {
+      interop.appSession = true;
+      const wrapper = mountFailed();
+
+      await wrapper.find('[data-testid=db-upgrade-open-backups]').trigger('click');
+      await flushPromises();
+
+      expect(interop.openPath).toHaveBeenCalledWith('/data/users/alice');
+    });
   });
 
   it('should show a running data migration in its own words', () => {
