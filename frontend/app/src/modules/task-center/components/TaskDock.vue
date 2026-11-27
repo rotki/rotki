@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RuiButton, RuiCard } from '@rotki/ui-library';
-import { syncRefs, useElementSize, useIntervalFn, useTimestamp } from '@vueuse/core';
+import { syncRefs, useElementSize, useIntervalFn, useScroll, useTimestamp } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -34,6 +34,17 @@ const { cancel, rerun } = useTaskController();
 const now = useTimestamp({ scheduler: tick => useIntervalFn(tick, 1000) });
 
 const { height: pillHeight } = useElementSize(pill, undefined, { box: 'border-box' });
+
+const sectionsList = useTemplateRef<HTMLDivElement>('sectionsList');
+
+const { arrivedState } = useScroll(sectionsList);
+
+/**
+ * Whether the list is scrolled away from its top, which draws a rule under the header. Without it,
+ * rows sliding under the header's count read as text cut in half.
+ */
+const scrolledDown = computed<boolean>(() => !arrivedState.top);
+
 /** The panel needs a row to list; queued-only work keeps the pill but has nothing to expand into. */
 const showPanel = computed<boolean>(() => get(modelExpanded) && get(roots).length > 0);
 
@@ -97,7 +108,10 @@ syncRefs(pillHeight, barHeight);
         @collapse="modelExpanded = false"
       />
       <div
-        class="flex flex-col max-h-[50vh] overflow-y-auto -mx-1 px-1 divide-y divide-rui-grey-200 dark:divide-rui-grey-800"
+        ref="sectionsList"
+        class="flex flex-col max-h-[50vh] overflow-y-auto -mx-1 px-1 border-t divide-y divide-rui-grey-200 dark:divide-rui-grey-800"
+        :class="scrolledDown ? 'border-default' : 'border-transparent'"
+        :data-scrolled="scrolledDown"
         data-testid="dock-sections"
       >
         <DockSection
