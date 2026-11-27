@@ -1,22 +1,19 @@
 <script setup lang="ts">
 import type { HistoryEventEntryType } from '@rotki/common';
+import type { EventActionRow } from '@/modules/history/events/action-picker/use-event-action-picker';
+import type { EventTypeCombination } from '@/modules/history/events/event-type';
 import { externalLinks } from '@shared/external-links';
 import { checkIfDevelopment } from '@shared/utils';
 import { kebabCase } from 'es-toolkit';
 import { type HighlightSegment, splitHighlight } from '@/modules/history/events/action-picker/highlight-match';
 import HistoryEventActionDirectionBadge from '@/modules/history/events/action-picker/HistoryEventActionDirectionBadge.vue';
 import { useEventActionDescriptions } from '@/modules/history/events/action-picker/use-event-action-descriptions';
-import { type EventActionRow, useEventActionPicker } from '@/modules/history/events/action-picker/use-event-action-picker';
+import { combinationKey, useEventActionSelection } from '@/modules/history/events/action-picker/use-event-action-selection';
 import { useRecentActions } from '@/modules/history/events/action-picker/use-recent-actions';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
-interface ModelValue {
-  eventType: string;
-  eventSubtype: string;
-}
-
-const modelValue = defineModel<ModelValue | undefined>({ required: true });
+const modelValue = defineModel<EventTypeCombination | undefined>({ required: true });
 const { entryType, disabled = false, label, errorMessages, required = false, hint } = defineProps<{
   entryType?: HistoryEventEntryType;
   disabled?: boolean;
@@ -39,25 +36,19 @@ const isDevelopment = checkIfDevelopment();
 
 const search = ref<string>('');
 
-const { findRowByTypeSubtype, rows } = useEventActionPicker(() => entryType);
+const {
+  combinationLabel,
+  combinationOptions,
+  rows,
+  selectedCombinationKey,
+  selectedRow,
+  selectRow,
+} = useEventActionSelection(modelValue, () => entryType);
 const { recent, record } = useRecentActions(() => entryType);
 const { describe } = useEventActionDescriptions();
 const { eventCategoryGroupsData, getHistoryEventSubTypeName, getHistoryEventTypeName } = useHistoryEventMappings();
 
-const selectedVerbKey = computed<string | undefined>(() => {
-  const value = get(modelValue);
-  if (!value)
-    return undefined;
-
-  return findRowByTypeSubtype(value.eventType, value.eventSubtype)?.verbKey;
-});
-
-watch([selectedVerbKey, rows], ([verbKey, currentRows]) => {
-  if (!get(modelValue) || verbKey || currentRows.length === 0)
-    return;
-
-  set(modelValue, undefined);
-});
+const selectedVerbKey = computed<string | undefined>(() => get(selectedRow)?.verbKey);
 
 const triggerLabel = computed<string>(() => label ?? t('history_event_action.picker.label'));
 
@@ -144,7 +135,7 @@ function categoryConfig(category: string): GroupHeaderConfig {
 }
 
 function rowEventTypes(row: EventActionRow): string {
-  return row.combinations.map(c => `${c.eventType}:${c.eventSubtype}`).join(' ');
+  return row.combinations.map(combinationKey).join(' ');
 }
 
 function subtitleFor(row: EventActionRow): string {
@@ -177,9 +168,9 @@ function subtitleFor(row: EventActionRow): string {
 function onUpdate(verbKey: string | undefined): void {
   // The picker is required and has no clear affordance, so we only react to
   // genuine row selections. RuiCategoryPicker never emits implicit clears, so
-  // the old Backspace/resync guard is no longer needed. The defensive watcher
-  // above still clears the model when the current value is no longer mappable
-  // to a row (e.g. after an entry-type switch).
+  // the old Backspace/resync guard is no longer needed. useEventActionSelection
+  // still clears the model when the current value is no longer mappable to a
+  // row (e.g. after an entry-type switch).
   if (!verbKey)
     return;
 
@@ -191,18 +182,12 @@ function onUpdate(verbKey: string | undefined): void {
   if (!row)
     return;
 
-  const first = row.combinations[0];
-  if (!first)
+  if (row.combinations.length === 0)
     return;
 
   // Record even when re-picking the current value so it bubbles back to the top.
   record(realKey);
-
-  const current = get(modelValue);
-  if (current && row.combinations.some(c => c.eventType === current.eventType && c.eventSubtype === current.eventSubtype))
-    return;
-
-  set(modelValue, { eventSubtype: first.eventSubtype, eventType: first.eventType });
+  selectRow(row);
 }
 </script>
 
@@ -349,4 +334,24 @@ function onUpdate(verbKey: string | undefined): void {
       </div>
     </template>
   </RuiCategoryPicker>
+  <RuiMenuSelect
+    v-if="combinationOptions.length > 1"
+    v-model="selectedCombinationKey"
+    :options="combinationOptions"
+    key-attr="key"
+    text-attr="label"
+    variant="outlined"
+    class="mt-4"
+    :disabled="disabled"
+    :label="t('history_event_action.picker.combination.label')"
+    :hint="t('history_event_action.picker.combination.hint')"
+    data-testid="event-action-picker-combination"
+  />
+  <div
+    v-else-if="modelValue"
+    class="text-xs text-rui-text-secondary px-3 pt-1 pb-3"
+    data-testid="event-action-picker-stored-combination"
+  >
+    {{ t('history_event_action.picker.combination.stored', { combination: combinationLabel(modelValue) }) }}
+  </div>
 </template>
