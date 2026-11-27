@@ -68,6 +68,7 @@ from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.constants import (
     BINANCE_HISTORY_START_TS_KEY,
     BINANCE_MARKETS_KEY,
+    COST_BASIS_CALCULATION_VERSION,
     COST_BASIS_SETTINGS,
     EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
     EVM_ACCOUNTS_DETAILS_TOKENS,
@@ -81,6 +82,7 @@ from rotkehlchen.db.constants import (
     OKX_LOCATION_KEY,
     SQL_VARIABLE_CHUNK_SIZE,
     USER_CREDENTIAL_MAPPING_KEYS,
+    HistoryEventLinkType,
     HistoryMappingState,
 )
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType, DBCursor
@@ -800,6 +802,7 @@ class DBHandler:
                 f'Permission error when reopening the DB. {e!s}. Should never happen here',
             ) from e
         self._run_actions_after_first_connection()
+        self.invalidate_outdated_cost_basis()
         # all went okay, remove the original temp backup
         (self.user_data_dir / 'rotkehlchen_temp_backup.db').unlink()
 
@@ -839,14 +842,45 @@ class DBHandler:
         write_cursor.execute('DELETE FROM event_cost_basis')
         write_cursor.execute('DELETE FROM cost_basis_checkpoints')
         write_cursor.execute(
-            'DELETE FROM key_value_cache WHERE name IN (?, ?, ?)',
+            'DELETE FROM key_value_cache WHERE name IN (?, ?, ?, ?)',
             (
                 DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS.value,
                 DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS.value,
                 DBCacheStatic.LAST_COST_BASIS_FAILURE_TS.value,
+                DBCacheStatic.COST_BASIS_MATCH_SNAPSHOT.value,
             ),
         )
         mark_stale_from_ts(write_cursor=write_cursor, from_ts=0, include_balances=False)
+
+    def invalidate_outdated_cost_basis(self) -> None:
+        """Drop cost basis materialized by an older `COST_BASIS_CALCULATION_VERSION`.
+
+        Runs at login and after restoring a backup via `import_unencrypted`, since a pass only
+        runs once something is stale and would otherwise keep the rows an older calculation got
+        wrong. Without the accounting update nothing is materialized, and the version is left
+        unrecorded so the first login or restore with it checks. Uses `write_ctx` directly so
+        restoring a backup does not bump `last_write_ts`.
+        """
+        if is_accounting_update_enabled() is False:
+            return
+
+        with self.conn.write_ctx() as write_cursor:
+            if self.get_static_cache(
+                cursor=write_cursor,
+                name=DBCacheStatic.COST_BASIS_CALCULATION_VERSION,
+            ) == str(COST_BASIS_CALCULATION_VERSION):
+                return
+
+            if write_cursor.execute(
+                'SELECT EXISTS(SELECT 1 FROM event_cost_basis) OR '
+                'EXISTS(SELECT 1 FROM cost_basis_checkpoints)',
+            ).fetchone()[0] == 1:
+                self._wipe_cost_basis(write_cursor)
+            self.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.COST_BASIS_CALCULATION_VERSION,
+                value=str(COST_BASIS_CALCULATION_VERSION),
+            )
 
     def set_settings(self, write_cursor: DBCursor, settings: ModifiableDBSettings) -> None:
         # Compared to the stored value, not CachedSettings, which may not describe this DB yet,
@@ -957,6 +991,8 @@ class DBHandler:
             DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
             DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS,
             DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS,
+            DBCacheStatic.COST_BASIS_MATCH_SNAPSHOT,
+            DBCacheStatic.COST_BASIS_CALCULATION_VERSION,
             DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
             DBCacheStatic.CURRENT_BALANCE_DETECTION_CURSOR,
         ):
@@ -981,6 +1017,8 @@ class DBHandler:
                 DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
                 DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS,
                 DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS,
+                DBCacheStatic.COST_BASIS_MATCH_SNAPSHOT,
+                DBCacheStatic.COST_BASIS_CALCULATION_VERSION,
             ],
     ) -> str | None:
         ...
@@ -1939,19 +1977,49 @@ class DBHandler:
             write_cursor: DBCursor,
             group_identifiers: Sequence[str],
     ) -> None:
-        """Mark materialized cost basis stale from the earliest event in the given groups."""
+        """Mark materialized cost basis stale from the earliest event in the given groups,
+        and from the earliest leg of any connected ``ASSET_MOVEMENT_MATCH`` components they
+        belong to.
+        """
         if is_accounting_update_enabled() is False or len(group_identifiers) == 0:
             return
 
-        timestamps = [
-            row[0] for chunk, placeholders in get_query_chunks(data=group_identifiers)
+        min_ts: int | None = None
+        matched_event_ids: set[int] = set()
+        link_type = HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()
+        for chunk, placeholders in get_query_chunks(
+            data=group_identifiers,
+            chunk_size=SQL_VARIABLE_CHUNK_SIZE - 1,  # reserve 1 binding for link_type
+        ):
             if (row := write_cursor.execute(
                 f'SELECT MIN(timestamp) FROM history_events WHERE group_identifier IN ({placeholders})',  # noqa: E501
                 chunk,
-            ).fetchone()) is not None
-        ]
-        if (min_ts := min((ts for ts in timestamps if ts is not None), default=None)) is not None:
+            ).fetchone()) is not None and row[0] is not None and (
+                min_ts is None or row[0] < min_ts
+            ):
+                min_ts = row[0]
+
+            matched_event_ids.update(
+                matched_row[0] for matched_row in write_cursor.execute(
+                    f'SELECT he.identifier FROM history_events he '
+                    f'WHERE he.group_identifier IN ({placeholders}) '
+                    'AND EXISTS ('
+                    'SELECT 1 FROM history_event_links hel '
+                    'WHERE hel.link_type = ? '
+                    'AND (hel.left_event_id = he.identifier OR hel.right_event_id = he.identifier)'
+                    ')',
+                    (*chunk, link_type),
+                )
+            )
+
+        if min_ts is not None:
             mark_stale_from_ts(write_cursor=write_cursor, from_ts=min_ts, include_balances=False)
+
+        if len(matched_event_ids) != 0:
+            DBHistoryEvents.mark_cost_basis_stale_for_matched_components(
+                write_cursor=write_cursor,
+                event_ids=matched_event_ids,
+            )
 
     @staticmethod
     def _mark_cost_basis_stale_for_eth_accounts(

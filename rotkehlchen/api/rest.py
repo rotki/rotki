@@ -116,7 +116,10 @@ from rotkehlchen.constants.misc import (
     GLOBALDIR_NAME,
     HTTP_STATUS_INTERNAL_DB_ERROR,
 )
-from rotkehlchen.db.cache import IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX, DBCacheStatic
+from rotkehlchen.db.cache import (
+    IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX,
+    DBCacheStatic,
+)
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     LINKABLE_ACCOUNTING_PROPERTIES,
@@ -5497,7 +5500,17 @@ class RestAPI:
                 )
                 return api_response(OkResult(True))
 
+        events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
         with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+            all_unlinked_ids = {
+                event_id
+                for asset_movement_identifier, matched_event_identifiers in linked_ids.items()
+                for event_id in (asset_movement_identifier, *matched_event_identifiers)
+            }
+            DBHistoryEvents.mark_cost_basis_stale_for_matched_components(
+                write_cursor=write_cursor,
+                event_ids=all_unlinked_ids,
+            )
             for asset_movement_identifier, matched_event_identifiers in linked_ids.items():
                 write_cursor.execute(
                     'DELETE FROM history_event_links WHERE left_event_id=? AND link_type=?',
@@ -5513,19 +5526,24 @@ class RestAPI:
                     ) for matched_event_identifier in matched_event_identifiers],
                 )
                 # Remove any adjustment event that was added during matching
-                write_cursor.executemany(
-                    'DELETE FROM history_events WHERE type=? AND group_identifier IN '
-                    '(SELECT group_identifier FROM history_events WHERE identifier IN (?, ?))'
-                    'AND identifier IN (SELECT parent_identifier FROM history_events_mappings '
-                    'WHERE name=? AND value=?)',
-                    [(
-                        HistoryEventType.EXCHANGE_ADJUSTMENT.serialize(),
-                        asset_movement_identifier,
-                        matched_event_identifier,
-                        HISTORY_MAPPING_KEY_STATE,
-                        HistoryMappingState.MATCHED.serialize_for_db(),
-                    ) for matched_event_identifier in matched_event_identifiers],
-                )
+                for matched_event_identifier in matched_event_identifiers:
+                    events_db.delete_events_and_track(
+                        write_cursor=write_cursor,
+                        where_clause=(
+                            'WHERE type=? AND group_identifier IN '
+                            '(SELECT group_identifier FROM history_events '
+                            'WHERE identifier IN (?, ?)) '
+                            'AND identifier IN (SELECT parent_identifier '
+                            'FROM history_events_mappings WHERE name=? AND value=?)'
+                        ),
+                        where_bindings=(
+                            HistoryEventType.EXCHANGE_ADJUSTMENT.serialize(),
+                            asset_movement_identifier,
+                            matched_event_identifier,
+                            HISTORY_MAPPING_KEY_STATE,
+                            HistoryMappingState.MATCHED.serialize_for_db(),
+                        ),
+                    )
                 # Restore events from the backup created before matching
                 DBHistoryEvents.maybe_restore_history_events_from_backup(
                     write_cursor=write_cursor,
