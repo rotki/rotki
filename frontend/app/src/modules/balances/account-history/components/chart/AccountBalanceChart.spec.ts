@@ -70,13 +70,13 @@ describe('account balance chart', () => {
     expect(seriesOf(wrapper)).toHaveLength(1);
   });
 
-  it('should show the placeholder at the chart\'s size in place of the chart, and lock the mode switch', () => {
+  it('should show the placeholder at the chart\'s size in place of the chart, without the mode switch', () => {
     const wrapper = createWrapper({ placeholder: '<span data-testid="message">nothing</span>' });
 
     expect(wrapper.find('[data-testid=account-balance-chart-placeholder]').classes()).toContain('h-72');
     expect(wrapper.find('[data-testid=message]').exists()).toBe(true);
     expect(wrapper.findComponent({ name: 'VChart' }).exists()).toBe(false);
-    expect(wrapper.find('[data-testid=account-balance-chart-mode-total]').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[data-testid=account-balance-chart-mode]').exists()).toBe(false);
   });
 
   it('should keep the header actions usable over a placeholder', () => {
@@ -86,5 +86,15 @@ describe('account balance chart', () => {
     });
 
     expect(wrapper.find('[data-testid=action]').attributes('disabled')).toBeUndefined();
+  });
+
+  it('should offer the mode switch only for more than one bucket', () => {
+    const one = mount(AccountBalanceChart, {
+      global: { plugins: [createPinia(), createRuiPlugin({})] },
+      props: { buckets: [bucket('ethereum', undefined)], total: [{ time: 100, value: bigNumberify(1) }] },
+    });
+
+    expect(one.find('[data-testid=account-balance-chart-mode]').exists()).toBe(false);
+    expect(createWrapper().find('[data-testid=account-balance-chart-mode]').exists()).toBe(true);
   });
 });

@@ -15,7 +15,7 @@ const state = await vi.hoisted(async () => {
     premium: ref<boolean>(true),
     seriesAccount: { read: (): string | undefined => undefined },
     assetsAccount: { read: (): string | undefined => undefined },
-    selection: ref<AccountHistorySelection>({ account: undefined, asset: undefined, range: 'all' }),
+    selection: ref<AccountHistorySelection>({ account: undefined, asset: undefined, location: undefined, range: 'all' }),
     seriesError: ref<string | undefined>(),
   };
 });
@@ -72,7 +72,7 @@ function create(): ReturnType<typeof useAccountHistory> {
 describe('useAccountHistory', () => {
   beforeEach(() => {
     scope = effectScope();
-    set(state.selection, { account: '0xA', asset: 'ETH', range: AccountHistoryRange.ALL });
+    set(state.selection, { account: '0xA', asset: 'ETH', location: undefined, range: AccountHistoryRange.ALL });
     set(state.buckets, [
       bucket('ethereum', undefined, [[100, 2], [300, 2]]),
       bucket('optimism', undefined, [[200, 3], [300, 3]]),
@@ -85,11 +85,20 @@ describe('useAccountHistory', () => {
 
   afterEach(() => scope.stop());
 
-  it('should chart every location the asset is held in and total them all', () => {
-    const { buckets, summary } = create();
+  it('should offer every location the asset is held in and total them all', () => {
+    const { locations, summary } = create();
 
-    expect(get(buckets).map(({ location }) => location)).toEqual(['ethereum', 'optimism']);
+    expect(get(locations)).toEqual(['ethereum', 'optimism']);
     expect(get(summary).current.toString()).toBe('5');
+  });
+
+  it('should narrow the chart and total to the picked location', () => {
+    set(state.selection, { ...get(state.selection), location: 'optimism' });
+    const { buckets, locations, summary } = create();
+
+    expect(get(buckets).map(({ location }) => location)).toEqual(['optimism']);
+    expect(get(summary).current.toString()).toBe('3');
+    expect(get(locations)).toEqual(['ethereum', 'optimism']);
   });
 
   it('should be empty once a loaded pick held nothing', () => {

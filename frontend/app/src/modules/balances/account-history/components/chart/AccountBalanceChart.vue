@@ -8,13 +8,17 @@ import VChart from 'vue-echarts';
 import { useI18n } from 'vue-i18n';
 import { useAmountDisplaySettings } from '@/modules/assets/amount-display';
 import { BalanceChartMode, useAccountBalanceChart } from '@/modules/balances/account-history/components/chart/use-account-balance-chart';
+import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
+import { useSetting } from '@/modules/settings/use-setting';
 
-const { buckets, loading = false, total } = defineProps<{
+const { buckets, loading = false, total, unit = '' } = defineProps<{
   buckets: BucketSeries[];
   total: BalancePoint[];
   loading?: boolean;
+  /** The asset's symbol, written after each amount in the tooltip. */
+  unit?: string;
 }>();
 
 /**
@@ -34,6 +38,16 @@ const mode = ref<BalanceChartMode>(BalanceChartMode.STACKED);
 const { getLocationData } = useLocations();
 const { getCounterpartyData } = useHistoryEventCounterpartyMappings();
 const { shouldShowAmount } = useAmountDisplaySettings();
+const dateDisplayFormat = useSetting('dateDisplayFormat');
+
+/** The user's date format without its timezone, as dates read across the app. */
+function formatTime(milliseconds: number): string {
+  const format = get(dateDisplayFormat).replace('%z', '').replace('%Z', '').trim();
+  return displayDateFormatter.format(new Date(milliseconds), format);
+}
+
+/** Stacked and total draw the same line for a single bucket, so the switch is only offered for several. */
+const showModes = computed<boolean>(() => buckets.length > 1);
 
 /** A bucket outside any protocol is the account's own wallet balance in that location. */
 function bucketLabel(bucket: BucketSeries): string {
@@ -45,9 +59,11 @@ function bucketLabel(bucket: BucketSeries): string {
 const { option } = useAccountBalanceChart({
   bucketLabel,
   buckets: () => buckets,
+  formatTime,
   mode,
   showAmounts: shouldShowAmount,
   total: () => total,
+  unit: () => unit,
 });
 
 const modes = computed<{ value: BalanceChartMode; label: string }[]>(() => [
@@ -60,10 +76,13 @@ const modes = computed<{ value: BalanceChartMode; label: string }[]>(() => [
   <RuiCard data-testid="account-balance-chart">
     <template #custom-header>
       <div class="flex flex-wrap items-center justify-between gap-2 p-4 pb-0">
-        <span class="text-h6">{{ t('account_history.chart.title') }}</span>
+        <h3 class="text-base font-semibold text-rui-text m-0">
+          {{ t('account_history.chart.title') }}
+        </h3>
         <div class="flex flex-wrap items-center gap-2">
           <slot name="actions" />
           <RuiButtonGroup
+            v-if="showModes && !$slots.placeholder"
             v-model="mode"
             variant="segmented"
             required
@@ -74,7 +93,6 @@ const modes = computed<{ value: BalanceChartMode; label: string }[]>(() => [
               v-for="item in modes"
               :key="item.value"
               :model-value="item.value"
-              :disabled="!!$slots.placeholder"
               :data-testid="`account-balance-chart-mode-${item.value}`"
             >
               {{ item.label }}

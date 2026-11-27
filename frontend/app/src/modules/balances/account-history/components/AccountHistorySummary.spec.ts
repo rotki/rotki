@@ -48,4 +48,13 @@ describe('account history summary', () => {
     expect(wrapper.find('[data-testid=account-history-current]').text()).toContain('-');
     expect(wrapper.find('[data-testid=account-history-change]').text()).not.toContain('2');
   });
+
+  it('should leave the change out when told to', () => {
+    const wrapper = mount(AccountHistorySummary, {
+      global: { plugins: [createRuiPlugin({})], stubs: { AssetAmountDisplay: true } },
+      props: { asset: 'ETH', showChange: false, summary: { change: bigNumberify(1), current: bigNumberify(1), start: bigNumberify(0) } },
+    });
+
+    expect(wrapper.find('[data-testid=account-history-change]').exists()).toBe(false);
+  });
 });

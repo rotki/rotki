@@ -12,6 +12,8 @@ interface Props {
   assets?: string[];
   restrictAssets?: boolean;
   assetsProcessingRequired?: boolean;
+  location?: string;
+  locations?: string[];
 }
 
 function createWrapper(props: Props = {}): VueWrapper<InstanceType<typeof AccountHistorySelectors>> {
@@ -27,14 +29,16 @@ function createWrapper(props: Props = {}): VueWrapper<InstanceType<typeof Accoun
       asset: props.asset,
       assets: props.assets ?? ['ETH', 'DAI'],
       assetsProcessingRequired: props.assetsProcessingRequired,
+      location: props.location,
+      locations: props.locations ?? ['ethereum', 'optimism'],
       restrictAssets: props.restrictAssets,
     },
   });
 }
 
-function assetField(wrapper: VueWrapper<InstanceType<typeof AccountHistorySelectors>>): FieldDef | undefined {
+function fieldOf(wrapper: VueWrapper<InstanceType<typeof AccountHistorySelectors>>, key: string): FieldDef | undefined {
   const fields: FieldDef[] = wrapper.findComponent({ name: 'PillFilterBar' }).props('fields');
-  return fields.find(({ key }) => key === 'asset');
+  return fields.find(field => field.key === key);
 }
 
 describe('account history selectors', () => {
@@ -51,21 +55,27 @@ describe('account history selectors', () => {
   it('should write a pill change back as the account and asset', async () => {
     const wrapper = createWrapper({ account: '0xA', asset: 'ETH' });
 
-    wrapper.findComponent({ name: 'PillFilterBar' }).vm.$emit('update:params', { account: '0xB' });
+    wrapper.findComponent({ name: 'PillFilterBar' }).vm.$emit('update:params', { account: '0xB', location: 'optimism' });
     await nextTick();
 
     expect(wrapper.emitted('update:account')).toEqual([['0xB']]);
     expect(wrapper.emitted('update:asset')).toEqual([[undefined]]);
+    expect(wrapper.emitted('update:location')).toEqual([['optimism']]);
   });
 
   it('should offer the held assets with the list, and search every asset without it', () => {
-    expect(assetField(createWrapper())?.suggest?.()).toEqual(['ETH', 'DAI']);
-    expect(assetField(createWrapper({ restrictAssets: false }))?.searchAsset).toBeDefined();
+    expect(fieldOf(createWrapper(), 'asset')?.suggest?.()).toEqual(['ETH', 'DAI']);
+    expect(fieldOf(createWrapper({ restrictAssets: false }), 'asset')?.searchAsset).toBeDefined();
   });
 
   it('should say assets may be missing while events are unprocessed, only for the held list', () => {
     expect(createWrapper({ assetsProcessingRequired: true }).find('[data-testid=account-history-assets-processing]').exists()).toBe(true);
     expect(createWrapper({ assetsProcessingRequired: false }).find('[data-testid=account-history-assets-processing]').exists()).toBe(false);
     expect(createWrapper({ assetsProcessingRequired: true, restrictAssets: false }).find('[data-testid=account-history-assets-processing]').exists()).toBe(false);
+  });
+
+  it('should offer a location pill with the held locations, and none without the held list', () => {
+    expect(fieldOf(createWrapper(), 'location')?.suggest?.()).toEqual(['ethereum', 'optimism']);
+    expect(fieldOf(createWrapper({ restrictAssets: false }), 'location')).toBeUndefined();
   });
 });

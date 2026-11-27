@@ -183,10 +183,12 @@
     "empty_processing": "Nothing to show yet. Some events are still being processed into balances.",
     "error": "Could not load the balance history: {message}",
     "events": {
+      "empty": "This account has no events for this asset in the selected range.",
       "title": "Events"
     },
     "pick": "Pick an account and an asset to see how the balance changed over time.",
     "premium_description": "See how an account's balance of an asset changed over time, alongside the events that changed it.",
+    "premium_title": "Balance history is a premium feature",
     "processing": "Some events are still being processed",
     "range": {
       "all": "All",

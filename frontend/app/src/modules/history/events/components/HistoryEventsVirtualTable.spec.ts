@@ -62,7 +62,7 @@ const source: HistoryEventsTableSource = {
 };
 
 /** Mounts the table under a view that provides `error`, the way `useServerTable` does. */
-function mountUnder(error: Ref<unknown>, props: { hasActiveFilters?: boolean } = {}): VueWrapper {
+function mountUnder(error: Ref<unknown>, props: { hasActiveFilters?: boolean; emptyMessage?: string } = {}): VueWrapper {
   const host: Component = defineComponent({
     setup() {
       provideTableFetchError(error);
@@ -160,5 +160,12 @@ describe('historyEventsVirtualTable', () => {
 
     expect(wrapper.find('[data-testid=history-events-fetch-error]').exists()).toBe(false);
     expect(wrapper.text()).toContain('transactions.empty_state.no_events');
+  });
+
+  it('should say what its owner asks when the fetch succeeded empty, instead of the first-run hint', () => {
+    const wrapper = mountUnder(ref<unknown>(), { emptyMessage: 'Nothing for this pick' });
+
+    expect(wrapper.find('[data-testid=history-events-empty-message]').text()).toContain('Nothing for this pick');
+    expect(wrapper.text()).not.toContain('transactions.empty_state.no_events_hint');
   });
 });

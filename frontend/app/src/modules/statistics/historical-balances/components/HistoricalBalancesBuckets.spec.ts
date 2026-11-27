@@ -54,7 +54,7 @@ describe('historical balances buckets', () => {
     const links = wrapper.findAllComponents(RouterLinkStub);
 
     expect(links.map(link => link.props('to'))).toEqual([
-      { name: '/balances/history/', query: { account: '0xA', asset: 'USDC' } },
+      { name: '/balances/history/', query: { account: '0xA', asset: 'USDC', location: 'ethereum' } },
     ]);
   });
 });

@@ -1,6 +1,7 @@
-import type { LineSeriesOption } from 'echarts';
+import type { LineSeriesOption, TooltipComponentFormatterCallbackParams } from 'echarts';
 import type { BalancePoint, BucketSeries } from '@/modules/balances/account-history/balance-series';
 import { bigNumberify } from '@rotki/common';
+import { createMock } from '@test/utils/create-mock';
 import { get } from '@vueuse/shared';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type EffectScope, effectScope, ref } from 'vue';
@@ -39,14 +40,24 @@ function seriesOf(mode: BalanceChartMode, showAmounts = true): { series: LineSer
   const result = scope.run(() => useAccountBalanceChart({
     bucketLabel: ({ protocol }) => protocol ?? 'wallet',
     buckets,
+    formatTime: (milliseconds: number): string => `day ${milliseconds}`,
     mode: ref<BalanceChartMode>(mode),
     showAmounts,
     total,
+    unit: 'ETH',
   }));
   assert(result);
   const { series } = get(result.option);
   assert(Array.isArray(series));
   return { option: result.option, series: series.filter((item): item is LineSeriesOption => item.type === 'line') };
+}
+
+function tooltipFor(showAmounts: boolean): string {
+  const { option } = seriesOf(BalanceChartMode.STACKED, showAmounts);
+  const { tooltip } = get(option);
+  assert(tooltip && !Array.isArray(tooltip) && typeof tooltip.formatter === 'function');
+  const row = { marker: '<i></i>', seriesName: 'wallet', value: [100_000, 12.5] };
+  return String(tooltip.formatter(createMock<TooltipComponentFormatterCallbackParams>(row), ''));
 }
 
 describe('useAccountBalanceChart', () => {
@@ -80,11 +91,11 @@ describe('useAccountBalanceChart', () => {
     expect(get(seriesOf(BalanceChartMode.TOTAL).option).legend).toMatchObject({ show: false });
   });
 
-  it('should leave amounts out of the tooltip in privacy mode', () => {
-    const { option } = seriesOf(BalanceChartMode.TOTAL, false);
-    const { tooltip } = get(option);
-    assert(tooltip && !Array.isArray(tooltip) && typeof tooltip.valueFormatter === 'function');
+  it('should date the tooltip the user\'s way and name the asset after each amount', () => {
+    expect(tooltipFor(true)).toBe('day 100000<br/><i></i>wallet <b>12.5 ETH</b>');
+  });
 
-    expect(tooltip.valueFormatter(12.5, 0)).toBe('***');
+  it('should leave amounts out of the tooltip in privacy mode', () => {
+    expect(tooltipFor(false)).toBe('day 100000<br/><i></i>wallet <b>***</b>');
   });
 });
