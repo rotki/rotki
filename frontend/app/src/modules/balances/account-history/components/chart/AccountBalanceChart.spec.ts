@@ -33,9 +33,10 @@ function bucket(location: string, protocol: string | undefined): BucketSeries {
   };
 }
 
-function createWrapper(): VueWrapper<InstanceType<typeof AccountBalanceChart>> {
+function createWrapper(slots: Record<string, string> = {}): VueWrapper<InstanceType<typeof AccountBalanceChart>> {
   return mount(AccountBalanceChart, {
     global: { plugins: [createPinia(), createRuiPlugin({})] },
+    slots,
     props: {
       buckets: [bucket('ethereum', undefined), bucket('ethereum', 'aave'), bucket('base', undefined)],
       total: [{ time: 100, value: bigNumberify(3) }],
@@ -67,5 +68,14 @@ describe('account balance chart', () => {
     await wrapper.find('[data-testid=account-balance-chart-mode-total]').trigger('click');
 
     expect(seriesOf(wrapper)).toHaveLength(1);
+  });
+
+  it('should show the placeholder at the chart\'s size in place of the chart, and lock the mode switch', () => {
+    const wrapper = createWrapper({ placeholder: '<span data-testid="message">nothing</span>' });
+
+    expect(wrapper.find('[data-testid=account-balance-chart-placeholder]').classes()).toContain('h-72');
+    expect(wrapper.find('[data-testid=message]').exists()).toBe(true);
+    expect(wrapper.findComponent({ name: 'VChart' }).exists()).toBe(false);
+    expect(wrapper.find('[data-testid=account-balance-chart-mode-total]').attributes('disabled')).toBeDefined();
   });
 });

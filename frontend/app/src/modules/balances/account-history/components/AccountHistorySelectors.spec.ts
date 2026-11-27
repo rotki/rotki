@@ -35,6 +35,7 @@ const stubs = {
 };
 
 interface Models {
+  restrictAssets?: boolean;
   account?: string;
   asset?: string;
   assets?: string[];
@@ -52,6 +53,7 @@ function createWrapper(models: Models = {}): VueWrapper<InstanceType<typeof Acco
       location: models.location,
       locations: models.locations ?? ['ethereum'],
       range: AccountHistoryRange.ALL,
+      restrictAssets: models.restrictAssets,
     },
   });
 }
@@ -142,5 +144,14 @@ describe('account history selectors', () => {
     await wrapper.find(`[data-testid=account-history-range-${AccountHistoryRange.MONTH}]`).trigger('click');
 
     expect(wrapper.emitted('update:range')).toEqual([[AccountHistoryRange.MONTH]]);
+  });
+
+  it('should offer any asset, at once and without the held-assets hint, when the list is not restricted', () => {
+    const assetSelect = createWrapper({ account: '0xA', asset: 'ETH', assets: [], restrictAssets: false })
+      .findComponent({ name: 'AssetSelect' });
+
+    expect(assetSelect.props('modelValue')).toBe('ETH');
+    expect(assetSelect.props('source')).not.toHaveProperty('items');
+    expect(assetSelect.props('hint')).toBeUndefined();
   });
 });

@@ -6,7 +6,8 @@ import { useI18n } from 'vue-i18n';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 
 const { asset, processingRequired = false, summary } = defineProps<{
-  asset: string;
+  /** Absent while there is no balance to show; the amounts then read as dashes, keeping the row's place. */
+  asset?: string;
   summary: BalanceSummary;
   /** The backend has events in the range it has not replayed yet, so these balances may be behind. */
   processingRequired?: boolean;
@@ -31,21 +32,35 @@ const changeColor = computed<string>(() => {
           {{ t('account_history.summary.current') }}
         </div>
         <AssetAmountDisplay
+          v-if="asset"
           class="text-h5 font-medium"
           :amount="summary.current"
           :asset="asset"
         />
+        <div
+          v-else
+          class="text-h5 font-medium text-rui-text-secondary"
+        >
+          -
+        </div>
       </div>
       <div data-testid="account-history-change">
         <div class="text-sm text-rui-text-secondary">
           {{ t('account_history.summary.change') }}
         </div>
         <AssetAmountDisplay
+          v-if="asset"
           class="text-h5 font-medium"
           :class="changeColor"
           :amount="summary.change"
           :asset="asset"
         />
+        <div
+          v-else
+          class="text-h5 font-medium text-rui-text-secondary"
+        >
+          -
+        </div>
       </div>
     </div>
     <RuiChip

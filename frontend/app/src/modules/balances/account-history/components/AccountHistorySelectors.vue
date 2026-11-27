@@ -17,9 +17,11 @@ const asset = defineModel<string | undefined>('asset', { required: true });
 const location = defineModel<string | undefined>('location', { required: true });
 const range = defineModel<AccountHistoryRange>('range', { required: true });
 
-const { assets, assetsLoading = false, assetsProcessingRequired = false, locations } = defineProps<{
+const { assets, assetsLoading = false, assetsProcessingRequired = false, locations, restrictAssets = true } = defineProps<{
   /** The assets the account has ever held; the asset picker offers only these. */
   assets: string[];
+  /** Offer only `assets`. Off without premium, where the list cannot be loaded and any asset is offered. */
+  restrictAssets?: boolean;
   assetsLoading?: boolean;
   /** The account's events are not all processed yet, so `assets` may be missing some. */
   assetsProcessingRequired?: boolean;
@@ -54,12 +56,20 @@ const accountValue = emptyAsUnset(account);
  * While it is held back the picker writes back the empty value it was given, which is not a pick
  * and is ignored; an empty value written later is a clear.
  */
+const assetsReady = computed<boolean>(() => !restrictAssets || assets.length > 0);
+
 const assetValue = computed<string | undefined>({
-  get: () => (assets.length > 0 ? get(asset) : undefined),
+  get: () => (get(assetsReady) ? get(asset) : undefined),
   set: (value: string | undefined) => {
-    if (assets.length > 0)
+    if (get(assetsReady))
       set(asset, value || undefined);
   },
+});
+
+const assetHint = computed<string | undefined>(() => {
+  if (!restrictAssets)
+    return undefined;
+  return assetsProcessingRequired ? t('account_history.selectors.asset_hint_processing') : t('account_history.selectors.asset_hint');
 });
 
 const locationValue = emptyAsUnset(location);
@@ -92,8 +102,8 @@ onMounted(() => {
         v-model="assetValue"
         clearable
         :label="t('account_history.selectors.asset')"
-        :hint="assetsProcessingRequired ? t('account_history.selectors.asset_hint_processing') : t('account_history.selectors.asset_hint')"
-        :source="{ items: assets, showIgnored: true }"
+        :hint="assetHint"
+        :source="restrictAssets ? { items: assets, showIgnored: true } : { showIgnored: true }"
         :disabled="!account || assetsLoading"
         data-testid="account-history-asset"
       />

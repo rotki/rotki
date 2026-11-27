@@ -12,6 +12,9 @@ const state = await vi.hoisted(async () => {
     buckets: ref<BucketSeries[]>([]),
     loadedRange: ref<SeriesRange | undefined>(),
     loading: ref<boolean>(false),
+    premium: ref<boolean>(true),
+    seriesAccount: { read: (): string | undefined => undefined },
+    assetsAccount: { read: (): string | undefined => undefined },
     selection: ref<AccountHistorySelection>({ account: undefined, asset: undefined, location: undefined, range: 'all' }),
     seriesError: ref<string | undefined>(),
   };
@@ -26,18 +29,27 @@ vi.mock('./use-account-history-selection', () => ({
     selection: computed(() => state.selection.value),
   }),
 }));
+vi.mock('@/modules/premium/use-premium', () => ({
+  usePremium: (): typeof state.premium => state.premium,
+}));
 vi.mock('./use-account-assets', () => ({
-  useAccountAssets: (): Record<string, unknown> => ({ assets: computed(() => []), error: ref(), loading: ref(false), processingRequired: ref(false) }),
+  useAccountAssets: (account: () => string | undefined): Record<string, unknown> => {
+    state.assetsAccount.read = account;
+    return { assets: computed(() => []), error: ref(), loading: ref(false), processingRequired: ref(false) };
+  },
 }));
 vi.mock('./use-account-balance-series', () => ({
-  useAccountBalanceSeries: (): Record<string, unknown> => ({
-    buckets: computed(() => state.buckets.value),
-    error: state.seriesError,
-    loadedRange: state.loadedRange,
-    loading: state.loading,
-    processingRequired: ref(false),
-    refresh: vi.fn(),
-  }),
+  useAccountBalanceSeries: (options: { account: () => string | undefined }): Record<string, unknown> => {
+    state.seriesAccount.read = options.account;
+    return {
+      buckets: computed(() => state.buckets.value),
+      error: state.seriesError,
+      loadedRange: state.loadedRange,
+      loading: state.loading,
+      processingRequired: ref(false),
+      refresh: vi.fn(),
+    };
+  },
 }));
 
 function bucket(location: string, protocol: string | undefined, values: [number, number][]): BucketSeries {
@@ -68,6 +80,7 @@ describe('useAccountHistory', () => {
     set(state.loadedRange, { from: 0, to: 300 });
     set(state.loading, false);
     set(state.seriesError, undefined);
+    set(state.premium, true);
   });
 
   afterEach(() => scope.stop());
@@ -109,5 +122,32 @@ describe('useAccountHistory', () => {
     set(state.seriesError, undefined);
     set(state.loadedRange, undefined);
     expect(get(empty)).toBe(false);
+  });
+
+  it('should ask the balance endpoints about the account only with premium', () => {
+    create();
+    expect(state.seriesAccount.read()).toBe('0xA');
+    expect(state.assetsAccount.read()).toBe('0xA');
+
+    set(state.premium, false);
+
+    expect(state.seriesAccount.read()).toBeUndefined();
+    expect(state.assetsAccount.read()).toBeUndefined();
+  });
+
+  it('should give the events the loaded range with premium, and the picked range from now without it', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-27T00:00:00Z'));
+    set(state.selection, { ...get(state.selection), range: AccountHistoryRange.MONTH });
+    const { eventsRange } = create();
+    expect(get(eventsRange)).toEqual({ from: 0, to: 300 });
+
+    set(state.premium, false);
+
+    expect(get(eventsRange)).toEqual({
+      from: new Date('2026-10-27T00:00:00Z').getTime() / 1000,
+      to: new Date('2026-11-27T00:00:00Z').getTime() / 1000,
+    });
+    vi.useRealTimers();
   });
 });

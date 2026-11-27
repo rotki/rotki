@@ -4,14 +4,14 @@ import { describe, expect, it } from 'vitest';
 import AccountHistorySummary from '@/modules/balances/account-history/components/AccountHistorySummary.vue';
 import { createRuiPlugin } from '@/plugins/rui';
 
-function createWrapper(change: number, processingRequired = false): VueWrapper<InstanceType<typeof AccountHistorySummary>> {
+function createWrapper(change: number, processingRequired = false, shown: { asset?: string } = { asset: 'ETH' }): VueWrapper<InstanceType<typeof AccountHistorySummary>> {
   return mount(AccountHistorySummary, {
     global: {
       plugins: [createRuiPlugin({})],
       stubs: { AssetAmountDisplay: { props: ['amount', 'asset'], template: '<span>{{ amount.toString() }}</span>' } },
     },
     props: {
-      asset: 'ETH',
+      asset: shown.asset,
       processingRequired,
       summary: { change: bigNumberify(change), current: bigNumberify(5), start: bigNumberify(5 - change) },
     },
@@ -40,5 +40,12 @@ describe('account history summary', () => {
   it('should show the processing indicator only while events are pending', () => {
     expect(createWrapper(0).find('[data-testid=account-history-processing]').exists()).toBe(false);
     expect(createWrapper(0, true).find('[data-testid=account-history-processing]').exists()).toBe(true);
+  });
+
+  it('should keep its place with dashes while there is no balance to show', () => {
+    const wrapper = createWrapper(2, false, {});
+
+    expect(wrapper.find('[data-testid=account-history-current]').text()).toContain('-');
+    expect(wrapper.find('[data-testid=account-history-change]').text()).not.toContain('2');
   });
 });
