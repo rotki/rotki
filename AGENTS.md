@@ -45,22 +45,30 @@ rules resolve paths relative to the workspace. Add a workspace script if one is 
 | Run the full unit suite | `pnpm run test:unit` | 10 min |
 | Run full lint checks | `pnpm run lint` (ESLint) or `pnpm run lint:all` (also checks styles and linked i18n keys) | 10 min |
 | Build / typecheck | `pnpm run build` (includes typecheck) / `pnpm run typecheck` | 10 min |
+| Lint, build and unit tests in one go | `pnpm run check` | 20 min |
 | Run Playwright | `pnpm run test:e2e:shards` or `pnpm run test:e2e` | Background |
 | Recover a broken frontend build | `pnpm run clean:modules`, then `pnpm install --frozen-lockfile` | 10 min |
 
-- Set explicit timeouts. Run long-lived commands, E2E suites, Electron packaging builds, and Docker
-  builds in the background. A timed-out check is incomplete; rerun it with a larger budget or in
-  the background before reporting a result.
-- Prefer targeted, report-only lint during iteration. In particular, locale autofixes can delete
-  keys. `lint-staged` works on the index and also checks staged Vue/SCSS styles under `app/src/`.
-  Full ESLint chooses workers based on available memory; use `--concurrency=<n>` or `off` only when
-  you need to override it.
-- On a clean checkout, run `pnpm run build` or run `pnpm run build:app` before standalone typecheck.
-  The build generates the Rui component declarations needed by `vue-tsc`. **After changing any
-  `.spec.ts`, run the full `pnpm run typecheck`** even if Vitest and lint pass.
-- Run `pnpm run lint:style` and `pnpm run check:linked-keys` for relevant changes if you did not
-  run `lint:all`. Run `pnpm run knip` before pushing; lint does not run it. For dev-proxy changes,
-  use `pnpm run test:proxy` (the app typecheck does not cover the proxy).
+- Set explicit timeouts and run long commands (E2E, packaging, Docker) in the background. A
+  timed-out check is incomplete, not passed.
+- Prefer report-only lint while iterating; locale autofixes can delete keys.
+- **After changing any `.spec.ts`, run the full `pnpm run typecheck`**: Vitest does not typecheck.
+- Run `pnpm run lint:style` and `pnpm run check:linked-keys` if you did not run `lint:all`. Run
+  `pnpm run knip` before pushing; lint does not run it. Dev-proxy changes need
+  `pnpm run test:proxy`.
+- **Changed-file checks miss cross-file effects.** `lint-staged` lints only what is staged, so
+  unstaged edits go unchecked; use `lint:file:check` on the changed files. A check that ends in a
+  second or reports "no files found" did not run. Removing an export, locale key or dependency
+  needs the full `pnpm run lint`, `knip` and `test:unit`.
+- Removing a dependency: also update `app/scripts/chunk-groups.ts`, which no gate checks. Don't
+  remove one just because knip flags it; some are resolved by name at runtime (the i18n lint rule
+  loads `@typescript-eslint/parser` this way and silently finds zero keys without it).
+- The slop rules inspect only what changed since `HEAD~1`, so older slop is never reported. Fix
+  what they report; an `eslint-disable` for them turns into an unused-directive error once the line
+  ages out. To sweep older slop, set `slop: { inspection: { mode: 'full' } }` in
+  `frontend/eslint.config.js` temporarily and lint; don't commit that change.
+- A "JavaScript heap out of memory" under a memory-limited cgroup usually means the limit, not the
+  code: Node sizes its heap from it, and typecheck needs more than 2 GB.
 
 ### Before handoff
 
@@ -76,12 +84,10 @@ rules resolve paths relative to the workspace. Add a workspace script if one is 
 
 ### Electron debugging and E2E
 
-- To enable local CDP, set `DEBUGGER_PORT=9222` in the ignored `frontend/app/.env.development.local`,
-  not the tracked `.env`. Run `pnpm dev` and attach at `http://127.0.0.1:9222`. This does not apply to
-  web mode. Use a separate free port for each instance; the dev instance allocator does not assign
-  it for you. Keep it below the instance port block (which starts at 13000, see
-  `frontend/scripts/dev-instance/port-registry.ts`) and away from 9229 (node `--inspect`). Keep any MCP client configuration outside the repo. The flag is wired through
-  `frontend/scripts/dev/prerequisites.ts`, `frontend/scripts/dev/services.ts`, and `frontend/app/scripts/serve.ts`.
+- To enable local CDP for Electron, set `DEBUGGER_PORT=9222` in the ignored
+  `frontend/app/.env.development.local` (not the tracked `.env`), run `pnpm dev`, and attach at
+  `http://127.0.0.1:9222`. Pick a free port per instance, below the instance block at 13000 and away
+  from 9229. Keep MCP client configuration outside the repo.
 - The backend is single-user, so unsharded E2E uses one Playwright worker. The sharded runner starts
   isolated stacks and defaults to four shards. Use `pnpm run test:e2e:shards -n 2 <spec-path>` for a
   subset; use `-- --grep <pattern>` to forward Playwright flags. Logs are in
@@ -89,6 +95,27 @@ rules resolve paths relative to the workspace. Add a workspace script if one is 
 - If changing the E2E runner, keep shard data directories and ports isolated, start from a pristine
   packaged DB, and anchor preview proxy rules (`/api/`, `/ws/`, `/colibri/`) so they do not catch
   hashed frontend chunks such as `/api-<hash>.js`.
+
+### Checking frontend work in the running app
+
+Unit tests and gates do not prove a UI change. Check behavior, layout and failure paths in the app.
+
+- Start with `pnpm run dev:web --instance <name> --no-seed` and read the ports from its log.
+  Without `--instance` it uses the shared default data dir, which holds real profiles. Tear down
+  with `pnpm run dev:web --clean <name> --yes`. Dev startup runs `uv sync --locked`, which drops the
+  `lint` group; restore it with `uv sync --python 3.14t --group lint`.
+- After creating a test user, log in through the app, not only on the backend port, or Colibri has
+  no user DB and asset lookups fail. Accounting-update features need `ROTKI_ACCOUNTING_UPDATE=True`
+  in the environment: it gates the backend endpoints, the Vite flag, and the backend tests
+  (skipped without it).
+- Fake responses by patching `window.fetch` in the page, never by writing Pinia stores: that skips
+  login, task polling, schema parsing and the failure path. An async query needs three fakes: the
+  call returns `{task_id}`, `GET /tasks` lists it, and `GET /tasks/<id>` returns the outcome.
+- Before blaming the code: dev builds persist Pinia stores to `sessionStorage` (clear
+  `pinia.store.<id>`), only one tab can be active, and Vite can serve a stale module after rapid
+  edits (fetch the module URL to check).
+- Changes to accounts, balances or the task orchestrator are accepted only after a log out and log
+  in. Measure layout at desktop width with `getBoundingClientRect`; happy-dom cannot.
 
 ## Frontend development
 
@@ -107,10 +134,41 @@ rules resolve paths relative to the workspace. Add a workspace script if one is 
   Split a file at the limit rather than trimming documentation to fit. For `.vue` files, start
   looking for seams around 200 lines and have a reason not to split around 300. Extract behavior
   into a local composable first; extract template regions with a responsibility of their own, not
-  wrappers that just forward props.
+  wrappers that just forward props. For a risky split, first commit specs that pin the current
+  behavior (each checked with a negative control), then split without editing them. Keep global
+  side effects (key handlers, route guards, `provide`) where they are.
 - Fix lint warnings in the code you touch. Use Tailwind for styling; reserve scoped CSS modules for
   `TransitionGroup` animations and avoid scoped SCSS with BEM names. Keep locale keys alphabetized
   and avoid dynamic translation keys.
+
+### Behavior rules
+
+- A watcher, listener or poller that reacts to shared state belongs in a shared composable or at
+  app init. In a composable many components call, it registers once per caller (one setting change
+  once sent 32 identical requests).
+- Failures must reach the user; silence is a decision, not a default. Use `isRequestCancellation`
+  for the user's own cancels. A test of an error path asserts the message content, not only that a
+  notify call happened.
+- Keep the request queue's `maxConcurrent` at 6 (the browser's per-host limit). Advisory per-render
+  lookups (ENS, address names) go at low priority with a timeout. `dedupe` merges only concurrent
+  duplicates; cache repeats in the composable.
+- Forms use `useForm`/`useModelForm` from `modules/core/form/` over zod; don't add a form library.
+  Backend messages go through `setServerErrors`, never a schema rule. In the history event forms, a
+  field the form only carries uses `carriedThrough()` (`event-field-schemas.ts`). Form specs
+  assert through the exposed `validate()`.
+- Show feedback inline where the action happened. Use a modal only when there is nowhere else to
+  render it. Keep defensive disables in the UI even when the internals are correct.
+- **A `@rotki/ui-library` problem is fixed in the library, not worked around here.** Fix it in
+  [rotki/ui-library](https://github.com/rotki/ui-library), check it in this app against a local
+  build, publish a release, and bump it here. No class overrides, `!` utilities, wrapper components
+  or local patches to compensate. The package is in `minimumReleaseAgeExclude`, so a same-day bump
+  works. If you cannot publish, open the library PR and stop until a maintainer releases it.
+- Keep the visible focus ring (it is the outline, so no `outline-0` or `outline-hidden`). A button
+  with a hidden label needs an `aria-label`. Put tables in `modules/core/table/TableFrame.vue`, not
+  a `RuiCard`. Fonts and assets are self-hosted because the app must work offline.
+- The premium bundle lives in another repo and uses app components (for example `AssetSelect`) and
+  `en.json` keys, and no typecheck covers that boundary. When renaming a prop it uses, let the old
+  attribute fall through `$attrs`. A new key the bundle reads needs an `i18n.te()` fallback.
 
 ### Vue and TypeScript conventions
 
@@ -148,19 +206,19 @@ rules resolve paths relative to the workspace. Add a workspace script if one is 
 
 ### Comments and TSDoc
 
-Prefer enforcing an invariant with a type, lint rule, or test, or expressing it with a name or a
-helper. If prose is needed, document the invariant and the trap on the declaration; don't narrate
-the implementation or the PR history. Move repeated call-site notes to the shared helper. Name the
-actual fact rather than re-deriving it from an unrelated value.
+Enforce an invariant with a type, lint rule, test, name or helper first. If prose is still needed,
+document the invariant and the trap on the declaration, never the implementation or PR history.
+Move repeated call-site notes to the shared helper. Name the actual fact rather than re-deriving it
+from an unrelated value.
 
-Use a summary, optional `@remarks`, and `@param`/`@returns` only where useful. Explain units,
-sentinels, or absent values rather than repeating types. If using `@param` tags, document **all**
-parameters; put a note in `@remarks` if only one needs explanation. Don't document a `void` return.
+TSDoc: a summary, optional `@remarks`, and `@param`/`@returns` only where they explain units,
+sentinels or absent values. Document all parameters or none (use `@remarks` for one). No tags that
+repeat the name and type (`@param chain - the chain` is worse than no tag), and no `void` return
+docs.
 
-A `//` that explains code is a defect in the code and a last resort, so it should be rare. A
-comment stranded mid-function (especially in a watcher) means the block wants extracting into a
-named, documented function. Never shorten a comment just to satisfy lint, and don't add tags that
-repeat the name and type: `@param chain - the chain` is worse than no tag.
+A `//` explaining code is a last resort. One stranded mid-function (especially in a watcher) means
+the block wants extracting into a named, documented function. Never shorten a comment just to
+satisfy lint. `pnpm run audit:comments` lists candidates for review.
 
 ### Frontend tests
 
@@ -197,13 +255,10 @@ repeat the name and type: `@param chain - the chain` is worse than no tag.
 - Use `createMock<T>()` from `@test/utils/create-mock` for large or branded types. Its proxy returns
   truthy stubs for omitted properties: set every boolean the code reads and use a real object for
   deep equality. `useI18n()` is already mocked with the `@test/i18n` echo translator.
-- **Verify new or changed behavior tests with a negative control.** Temporarily revert the
-  specific fix or invert its guard, confirm the intended assertion fails, then restore and rerun.
-  Break the specific line, not the whole feature, and check that the *right* tests failed and only
-  those. A negative control that still passes is a finding: the test cannot fail, usually because
-  its assertion agrees with both the correct and the broken behavior, so re-aim it. A negative
-  control validates only the test it turns red; prioritize “not called” and “nothing emitted”
-  checks, since an exception thrown mid-handler produces exactly that.
+- **Verify new or changed behavior tests with a negative control.** Break the specific line (revert
+  the fix or invert its guard), confirm the intended tests and only those fail, then restore. A
+  control that still passes means the test cannot fail; re-aim it. Be wary of "not called" and
+  "nothing emitted" checks: an exception thrown mid-handler also satisfies them.
 
 ### Settings and navigation
 
@@ -249,6 +304,18 @@ deriver), `use-settings-highlight.ts` (scroll/highlight), `controls/SettingsItem
 `SettingCategory.vue`, `frontend/app/src/message-key.ts` (`msg.$t`); for navigation,
 `modules/shell/layout/use-navigation-menu.ts`, `use-route-search.ts`, `use-nav-tabs.ts`, and
 `modules/shell/components/GlobalSearch.vue`.
+
+### Frontend dependency upgrades
+
+- pnpm enforces a 7-day `minimumReleaseAge`. A `--config` override does not survive the next
+  install; the only same-day route is a `minimumReleaseAgeExclude` entry. The Renovate dashboard
+  can lag the registry by a week, so check npm for the newest eligible version.
+- Keep the root `preinstall` script dependency-free: pnpm runs it before installing anything.
+- Held versions are `allowedVersions` rules in [`.github/renovate.json5`](.github/renovate.json5),
+  each with the symptom that caused it. Add one when you hold a version back, and reproduce the
+  symptom before lifting it. A Node OOM or hang right after a bump is often the new version.
+- The app targets the Vite default browser baseline, so avoid ES2025 APIs (iterator helpers such
+  as `.take()`) in `app/src/`.
 
 ## Backend development
 
@@ -372,6 +439,8 @@ Event changes invalidate balances via `rotkehlchen/db/history_events.py`. Start 
 
 ## Commits and PRs
 
+- Put related changes in one PR as separate focused commits. Split out only a change that stands
+  on its own, such as an independent bug fix.
 - Keep commits focused and titles at most 50 characters. For non-trivial bugfixes, features, or
   performance changes, add a body after a blank line describing what changed and why, including the
   root cause for fixes. When closing a known issue, end the body with `Fix #<issue-number>` on its own

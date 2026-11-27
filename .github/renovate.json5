@@ -41,13 +41,33 @@
       "groupName": "Node.js",
       "matchPackageNames": ["@types/node", "node"]
     },
+    // The backend requires Python 3.14 (`requires-python` in pyproject.toml); a minor bump is a
+    // migration, not a dependency update.
     {
-      "allowedVersions": "<=3",
-      "matchPackageNames": ["tailwindcss"]
-    },
-    {
-      "allowedVersions": "/^3\\.11\\./",
+      "allowedVersions": "/^3\\.14\\./",
       "matchPackageNames": ["python"]
+    },
+    // Held versions. Each rule names the symptom; reproduce it on the new version before
+    // lifting the hold.
+    // vue-tsc 3.3.14 runs `pnpm run typecheck` out of the default 4 GB Node heap. 3.3.13
+    // finishes in about 90 s.
+    {
+      "allowedVersions": "<=3.3.13",
+      "matchPackageNames": ["vue-tsc"]
+    },
+    // pytest 9.2.0 takes about 11 GB per process during collection: it unwraps module-level
+    // names, `unittest.mock.call` yields an endless `__wrapped__` chain, and py_ecc raises the
+    // recursion limit, so `-n 4` can exhaust the machine.
+    {
+      "allowedVersions": "<9.2.0",
+      "matchPackageNames": ["pytest"]
+    },
+    // pyunormalize 18 (transitive, via web3 ENS) breaks ENS normalization with
+    // "'list' object has no attribute 'isascii'". A full `uv lock --upgrade` pulls it in; keep it
+    // with `uv lock --upgrade-package pyunormalize==16.0.0`.
+    {
+      "allowedVersions": "<17",
+      "matchPackageNames": ["pyunormalize"]
     }
   ]
 }
