@@ -19,6 +19,26 @@ interface UseSpamAssessmentsReturn {
   status: Readonly<Ref<SpamAssessmentStatus>>;
 }
 
+const EVM_NAMESPACE_PREFIX = 'eip155:';
+const ERC20_TOKEN_SEGMENT = '/erc20:';
+
+/**
+ * Whether an asset identifier is an EVM ERC-20 token that the spam model can assess.
+ *
+ * @remarks
+ * Colibri's spam prediction endpoint only scores ERC-20 tokens (`eip155:<chain>/erc20:<address>`).
+ * Filtering by identifier lets callers that do not hold full `SupportedAsset` metadata skip native
+ * coins, NFTs, and non-EVM assets instead of requesting unsupported lookups.
+ */
+export function isErc20TokenIdentifier(identifier?: string | null): identifier is string {
+  if (typeof identifier !== 'string' || !identifier.startsWith(EVM_NAMESPACE_PREFIX))
+    return false;
+
+  const segmentIndex = identifier.indexOf(ERC20_TOKEN_SEGMENT);
+  return segmentIndex > EVM_NAMESPACE_PREFIX.length
+    && segmentIndex + ERC20_TOKEN_SEGMENT.length < identifier.length;
+}
+
 function splitBatches(tokens: SpamPredictionToken[]): SpamPredictionToken[][] {
   const batches: SpamPredictionToken[][] = [];
   for (let index = 0; index < tokens.length; index += SPAM_PREDICTION_BATCH_SIZE)

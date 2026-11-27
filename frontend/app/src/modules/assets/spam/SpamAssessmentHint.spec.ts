@@ -17,7 +17,7 @@ const prediction: SpamPrediction = {
   threshold: 0.5,
 };
 
-function mountHint(assessment?: SpamAssessment): VueWrapper<InstanceType<typeof SpamAssessmentHint>> {
+function mountHint(assessment?: SpamAssessment, standalone = false): VueWrapper<InstanceType<typeof SpamAssessmentHint>> {
   return mount(SpamAssessmentHint, {
     global: {
       stubs: {
@@ -26,7 +26,7 @@ function mountHint(assessment?: SpamAssessment): VueWrapper<InstanceType<typeof 
         RuiTooltip: { template: '<div><slot name="activator" /><div data-testid="tooltip"><slot /></div></div>' },
       },
     },
-    props: { assessment },
+    props: { assessment, standalone },
   });
 }
 
@@ -91,6 +91,14 @@ describe('spamAssessmentHint', () => {
     expect(wrapper.get('[data-testid=spam-state]').text()).toBe(mockT(label));
     expect(wrapper.get('[data-testid=spam-chip]').attributes('data-color')).toBe(color);
     expect(wrapper.find('[data-testid=spam-score]').exists()).toBe(false);
+  });
+
+  it('should name potential spam on the chip when standalone is enabled', () => {
+    const wrapper = mountHint(ready({ spamProbability: 0.92, threshold: 0.5 }), true);
+
+    expect(wrapper.get('[data-testid=spam-state]').text()).toBe(mockT('spam_estimate.potential_spam'));
+    expect(wrapper.get('[data-testid=spam-chip]').attributes('data-color')).toBe('warning');
+    expect(wrapper.get('[data-testid=spam-score]').text()).toBe(mockT('spam_estimate.score', { percentage: 92 }));
   });
 
   it('should render nothing for an asset without an assessment', () => {

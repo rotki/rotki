@@ -7,12 +7,16 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSpamSignal } from './use-spam-signal';
 
-const { assessment } = defineProps<{
+const { assessment, standalone = false } = defineProps<{
   /**
    * The model's state for this token; nothing is rendered without one. The component never infers
    * a score from the token itself.
    */
   assessment?: SpamAssessment;
+  /**
+   * Names spam directly on the chip when rendered outside a "Spam estimate" table column.
+   */
+  standalone?: boolean;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -27,7 +31,7 @@ const chip = computed<{ color: ContextColorsType; label: string } | undefined>((
   switch (assessment?.status) {
     case 'ready':
       return get(flagged)
-        ? { color: 'warning', label: t('spam_estimate.high') }
+        ? { color: 'warning', label: standalone ? t('spam_estimate.potential_spam') : t('spam_estimate.high') }
         : { color: 'secondary', label: t('spam_estimate.low') };
     case 'unavailable':
       return { color: 'error', label: t('spam_estimate.unavailable') };

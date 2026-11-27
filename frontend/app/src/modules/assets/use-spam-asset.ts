@@ -1,4 +1,5 @@
 import type { ActionStatus } from '@/modules/core/common/action';
+import { startPromise } from '@shared/utils';
 import { get } from '@vueuse/shared';
 import { useI18n } from 'vue-i18n';
 import { useAssetSpamApi } from '@/modules/assets/api/use-asset-spam-api';
@@ -8,6 +9,8 @@ import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
+import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 
 interface MarkAssetsAsSpamOptions {
   /** Skip the error notification, for a caller that shows the failure itself. */
@@ -33,6 +36,8 @@ export function useSpamAsset(): UseSpamAssetReturn {
 
   const { getAssetField } = useAssetInfoRetrieval();
   const { manualBalancesAssets } = useManualBalanceData();
+  const dataIssuesInboxStore = useDataIssuesInboxStore();
+  const { refreshSummary: refreshDataIssuesSummary } = useDataIssuesSummary();
   const markAssetsAsSpam = async (tokens: string[], { silent = false }: MarkAssetsAsSpamOptions = {}): Promise<ActionStatus> => {
     try {
       const includedInManualBalances: string[] = [];
@@ -60,6 +65,8 @@ export function useSpamAsset(): UseSpamAssetReturn {
         await markAssetAsSpamCaller(notIncludedInManualBalances);
         await fetchWhitelistedAssets();
         await fetchIgnoredAssets();
+        dataIssuesInboxStore.notifyIssuesChanged(notIncludedInManualBalances);
+        startPromise(refreshDataIssuesSummary());
       }
 
       return { success: true };

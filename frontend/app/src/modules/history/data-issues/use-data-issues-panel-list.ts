@@ -1,4 +1,5 @@
 import type { RouteLocationRaw } from 'vue-router';
+import type { SpamAssessment } from '@/modules/assets/spam/use-spam-assessments';
 import type { Filters } from '@/modules/history/data-issues/data-issue-filter-keys';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { IssueDescription } from '@/modules/history/data-issues/types';
@@ -9,6 +10,7 @@ import { IssueState } from '@/modules/history/data-issues/constants';
 import { buildPanelPayload, PANEL_PAGE_SIZE } from '@/modules/history/data-issues/data-issues-panel-utils';
 import { describeIssue, relatedEventRoute } from '@/modules/history/data-issues/transforms';
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
+import { useDataIssuesSpamAssessments } from '@/modules/history/data-issues/use-data-issues-spam-assessments';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 
 /** One rendered card: the issue plus everything derived from it for display. */
@@ -16,6 +18,7 @@ export interface PanelRow {
   issue: DataIssue;
   description: IssueDescription;
   eventRoute: RouteLocationRaw | undefined;
+  spamAssessment?: SpamAssessment;
 }
 
 interface UseDataIssuesPanelListReturn {
@@ -53,12 +56,15 @@ export function useDataIssuesPanelList(filters: MaybeRefOrGetter<Filters>): UseD
   const hasRemediatingRows = computed<boolean>(() =>
     get(issues).some(issue => issue.state === IssueState.AUTO_REMEDIATING));
 
+  const { getSpamAssessment } = useDataIssuesSpamAssessments(issues);
+
   const rows = computed<PanelRow[]>(() => get(issues).map((issue) => {
     const description = describeIssue(issue);
     return {
       description,
       eventRoute: relatedEventRoute(issue.kind, description.eventIdentifier, issue.groupIdentifier, issue.asset),
       issue,
+      spamAssessment: getSpamAssessment(issue.asset),
     };
   }));
 

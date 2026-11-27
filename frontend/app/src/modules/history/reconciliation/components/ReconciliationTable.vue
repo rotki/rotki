@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { SpamPredictionToken } from '@/modules/assets/api/use-asset-spam-prediction-api';
 import type { InspectedBucket, ReconciliationAccount, ReconciliationBucket } from '@/modules/history/reconciliation/schemas';
 import type { AccountDetailState } from '@/modules/history/reconciliation/use-bucket-reconciliation-store';
 import { toHumanReadable } from '@rotki/common';
@@ -7,6 +8,8 @@ import { get, set } from '@vueuse/shared';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import SpamAssessmentHint from '@/modules/assets/spam/SpamAssessmentHint.vue';
+import { isErc20TokenIdentifier, useSpamAssessments } from '@/modules/assets/spam/use-spam-assessments';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
 import { MAX_ACCOUNT_BUCKETS } from '@/modules/history/reconciliation/api/use-bucket-reconciliation-api';
 import ReconciliationAccountRow from '@/modules/history/reconciliation/components/ReconciliationAccountRow.vue';
@@ -81,6 +84,20 @@ const accountByKey = computed<Record<string, ReconciliationAccount>>(() =>
 
 const rows = computed<Row[]>(() => accounts.flatMap(rowsForAccount));
 
+const spamTokens = computed<SpamPredictionToken[]>(() => {
+  const seen = new Set<string>();
+  const tokens: SpamPredictionToken[] = [];
+  for (const row of get(rows)) {
+    if (row.kind !== 'bucket' || !isErc20TokenIdentifier(row.bucket.asset) || seen.has(row.bucket.asset))
+      continue;
+    seen.add(row.bucket.asset);
+    tokens.push({ identifier: row.bucket.asset });
+  }
+  return tokens;
+});
+
+const { assessments: spamAssessments } = useSpamAssessments(spamTokens);
+
 /** Single page covering every rendered row so RuiDataTable does not clip past 10 rows. */
 const wholeTable = computed<TablePaginationData>(() => ({
   limit: Math.max(get(rows).length, 1),
@@ -101,10 +118,11 @@ const collapsedRows = computed<Row[]>(() =>
 
 const cols = computed<DataTableColumn<Row>[]>(() => [
   { class: 'min-w-40 w-[22%]', key: 'asset', label: t('common.asset') },
+  { class: 'whitespace-nowrap w-[10%]', key: 'spam', label: t('spam_estimate.label') },
   { align: 'end', class: 'text-no-wrap w-[11%]', key: 'fromHistory', label: t('data_issues.reconciliation.table.from_history') },
   { align: 'end', class: 'text-no-wrap w-[11%]', key: 'onChain', label: t('data_issues.reconciliation.table.on_chain') },
   { align: 'end', class: 'text-no-wrap w-[10%]', key: 'difference', label: t('data_issues.reconciliation.table.difference') },
-  { class: 'min-w-80 w-[46%]', key: 'status', label: t('data_issues.reconciliation.table.status') },
+  { class: 'min-w-80 w-[36%]', key: 'status', label: t('data_issues.reconciliation.table.status') },
 ]);
 
 const emptyDescription = computed<string>(() => (view === 'attention'
@@ -303,6 +321,13 @@ watch(
               : t('data_issues.reconciliation.table.empty_placeholder') }}
         </span>
       </div>
+    </template>
+
+    <template #item.spam="{ row }">
+      <SpamAssessmentHint
+        v-if="row.kind === 'bucket'"
+        :assessment="spamAssessments[row.bucket.asset]"
+      />
     </template>
 
     <template #item.fromHistory="{ row }">

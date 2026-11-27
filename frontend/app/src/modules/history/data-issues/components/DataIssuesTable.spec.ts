@@ -1,8 +1,10 @@
+import type { SpamAssessment } from '@/modules/assets/spam/use-spam-assessments';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { defineComponent } from 'vue';
+import SpamAssessmentHint from '@/modules/assets/spam/SpamAssessmentHint.vue';
 import DataIssuesTable from '@/modules/history/data-issues/components/DataIssuesTable.vue';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
@@ -39,7 +41,10 @@ const RuiMenu = defineComponent({
   </div>`,
 });
 
-function createWrapper(rows: DataIssue[]): VueWrapper<InstanceType<typeof DataIssuesTable>> {
+function createWrapper(
+  rows: DataIssue[],
+  spamAssessments?: Record<string, SpamAssessment>,
+): VueWrapper<InstanceType<typeof DataIssuesTable>> {
   return mount(DataIssuesTable, {
     global: {
       plugins: [createPinia(), createRuiPlugin({})],
@@ -52,12 +57,14 @@ function createWrapper(rows: DataIssue[]): VueWrapper<InstanceType<typeof DataIs
         HistoryEventAccount: true,
         LocationDisplay: true,
         RuiMenu,
+        SpamAssessmentHint: true,
       },
     },
     props: {
       emptyDescription: 'empty',
       pagination: { limit: 10, page: 1, total: rows.length },
       rows,
+      spamAssessments,
     },
   });
 }
@@ -109,6 +116,37 @@ describe('data-issues table', () => {
     await wrapper.find('[data-testid="inline-confirm-accept"]').trigger('click');
 
     expect(wrapper.emitted('dismiss')?.[0]?.[0]).toStrictEqual(issue);
+  });
+
+  it('should render the spam estimate column between asset and account', () => {
+    const headers = createWrapper([]).findAll('thead th').map(th => th.text());
+    const asset = headers.indexOf('common.asset');
+    const spam = headers.indexOf('spam_estimate.label');
+    const account = headers.indexOf('common.account');
+
+    expect(spam).toBeGreaterThan(asset);
+    expect(account).toBeGreaterThan(spam);
+  });
+
+  it('should pass each row its asset spam assessment and leave unassessed rows empty', () => {
+    const token = 'eip155:1/erc20:0x1111111111111111111111111111111111111111';
+    const flagged: SpamAssessment = {
+      prediction: {
+        flagged: true,
+        modelReasons: [],
+        observedSignals: [],
+        spamProbability: 0.9,
+        threshold: 0.5,
+      },
+      status: 'ready',
+    };
+    const wrapper = createWrapper(
+      [createIssue({ asset: token, id: 1 }), createIssue({ asset: 'ETH', id: 2 }), createIssue({ asset: null, id: 3 })],
+      { [token]: flagged },
+    );
+
+    const hints = wrapper.findAllComponents(SpamAssessmentHint);
+    expect(hints.map(hint => hint.props('assessment'))).toStrictEqual([flagged, undefined, undefined]);
   });
 
   it('should emit open when the row action button is clicked', async () => {

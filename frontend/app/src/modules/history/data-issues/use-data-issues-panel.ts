@@ -7,7 +7,7 @@ import type { NamedFailure } from '@/modules/shell/components/named-failure';
 import { startPromise } from '@shared/utils';
 import { useScroll, useVirtualList, type UseVirtualListReturn } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
-import { type ComputedRef, type MaybeRefOrGetter, type Ref, watch } from 'vue';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, watch } from 'vue';
 import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-data-issue-detail-actions';
 import { type PanelRow, useDataIssuesPanelList } from '@/modules/history/data-issues/use-data-issues-panel-list';
 import { useDataIssuesPanelPolling } from '@/modules/history/data-issues/use-data-issues-panel-polling';
@@ -45,6 +45,7 @@ interface UseDataIssuesPanelReturn {
   resolveFailure: Readonly<Ref<DataIssueError | undefined>>;
   /** The action failure when it is the selected issue's own. */
   selectedIssueFailure: ComputedRef<NamedFailure | undefined>;
+  selectedSpamAssessment: ComputedRef<PanelRow['spamAssessment']>;
   clearSelection: () => Promise<void>;
   goToEvent: (target: RouteLocationRaw) => Promise<void>;
   hasActiveSelection: ComputedRef<boolean>;
@@ -94,6 +95,10 @@ export function useDataIssuesPanel(panelFilters: MaybeRefOrGetter<Filters>): Use
     () => get(rows).map(({ issue }) => issue),
   );
 
+  const selectedSpamAssessment = computed<PanelRow['spamAssessment']>(() => {
+    const selected = get(modelSelectedIssue);
+    return selected ? get(rows).find(row => row.issue.id === selected.id)?.spamAssessment : undefined;
+  });
   const { clearSelection, goToEvent, hasActiveSelection, isActiveRow } = useDataIssuesPanelSelection();
 
   useDataIssuesPanelPolling(hasRemediatingRows, reloadAll);
@@ -157,6 +162,7 @@ export function useDataIssuesPanel(panelFilters: MaybeRefOrGetter<Filters>): Use
     reloadAll,
     resolveFailure,
     selectedIssueFailure,
+    selectedSpamAssessment,
     visibleRows,
     wrapperProps,
   };

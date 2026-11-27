@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
+import type { SpamAssessment } from '@/modules/assets/spam/use-spam-assessments';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { type DataTableColumn, RuiButton, RuiDataTable, RuiIcon, RuiTooltip, type TablePaginationData } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import SpamAssessmentHint from '@/modules/assets/spam/SpamAssessmentHint.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import DataIssueCardActions from '@/modules/history/data-issues/components/DataIssueCardActions.vue';
@@ -18,11 +20,18 @@ import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vu
 
 const pagination = defineModel<TablePaginationData>('pagination', { required: true });
 
-const { emptyDescription, loading = false, rows, showClearFilters = false } = defineProps<{
+const {
+  emptyDescription,
+  loading = false,
+  rows,
+  showClearFilters = false,
+  spamAssessments,
+} = defineProps<{
   rows: DataIssue[];
   loading?: boolean;
   emptyDescription: string;
   showClearFilters?: boolean;
+  spamAssessments?: Readonly<Record<string, SpamAssessment>>;
 }>();
 
 const emit = defineEmits<{
@@ -51,6 +60,7 @@ function eventRouteFor(issue: DataIssue): RouteLocationRaw | undefined {
 const headers = computed<DataTableColumn<DataIssue>[]>(() => [
   { key: 'kind', label: t('data_issues.headers.kind') },
   { key: 'asset', label: t('common.asset') },
+  { cellClass: 'whitespace-nowrap', key: 'spam', label: t('spam_estimate.label') },
   { key: 'account', label: t('common.account') },
   { key: 'protocol', label: t('data_issues.headers.protocol') },
   { key: 'state', label: t('data_issues.headers.state') },
@@ -91,6 +101,9 @@ const headers = computed<DataTableColumn<DataIssue>[]>(() => [
         >
           -
         </span>
+      </template>
+      <template #item.spam="{ row }">
+        <SpamAssessmentHint :assessment="row.asset ? spamAssessments?.[row.asset] : undefined" />
       </template>
       <template #item.account="{ row }">
         <HistoryEventAccount

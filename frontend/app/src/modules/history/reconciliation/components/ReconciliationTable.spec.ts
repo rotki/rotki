@@ -1,3 +1,4 @@
+import type { SpamPrediction, SpamPredictionResponse, SpamPredictionToken } from '@/modules/assets/api/use-asset-spam-prediction-api';
 import type { useLocations } from '@/modules/core/common/use-locations';
 import type { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import type { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
@@ -5,13 +6,24 @@ import type { ReconciliationAccount, ReconciliationBucket, StatusCounts } from '
 import type { AccountDetailState } from '@/modules/history/reconciliation/use-bucket-reconciliation-store';
 import { bigNumberify, Blockchain } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, defineComponent } from 'vue';
+import SpamAssessmentHint from '@/modules/assets/spam/SpamAssessmentHint.vue';
+import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
 import ReconciliationTable from '@/modules/history/reconciliation/components/ReconciliationTable.vue';
 import { accountKeyOf } from '@/modules/history/reconciliation/use-reconciliation-rows';
 import { createRuiPlugin } from '@/plugins/rui';
+
+const { predictSpam } = vi.hoisted(() => ({
+  predictSpam: vi.fn<(tokens: SpamPredictionToken[]) => Promise<SpamPredictionResponse>>(),
+}));
+
+vi.mock(import('@/modules/assets/api/use-asset-spam-prediction-api'), async importOriginal => ({
+  ...await importOriginal(),
+  useAssetSpamPredictionApi: (): { predictSpam: typeof predictSpam } => ({ predictSpam }),
+}));
 
 vi.mock('@/modules/history/events/mapping/use-history-event-counterparty-mappings', () => ({
   useHistoryEventCounterpartyMappings: (): ReturnType<typeof useHistoryEventCounterpartyMappings> =>
@@ -81,6 +93,12 @@ function makeBucket(asset: string): ReconciliationBucket {
 describe('reconciliationTable', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    predictSpam.mockReset();
+    predictSpam.mockResolvedValue({});
+  });
+
+  afterEach(() => {
+    endSession();
   });
 
   it('should render more than 10 account groups without silently clipping rows', () => {
@@ -203,5 +221,54 @@ describe('reconciliationTable', () => {
 
     expect(wrapper.emitted('expand')).toHaveLength(2);
     expect(wrapper.emitted('expand')?.[1]).toStrictEqual([account]);
+  });
+
+  it('should assess expanded ERC-20 buckets and leave native assets without a spam estimate', async () => {
+    beginSession();
+    const token = 'eip155:1/erc20:0x6df1';
+    const prediction: SpamPrediction = {
+      flagged: true,
+      modelReasons: [],
+      observedSignals: [],
+      spamProbability: 0.89,
+      threshold: 0.5,
+    };
+    predictSpam.mockResolvedValueOnce({ [token]: prediction });
+
+    const account = makeAccount(1);
+    const detail: AccountDetailState = {
+      buckets: [makeBucket(token), makeBucket('ETH')],
+      loaded: true,
+      loading: false,
+      pagination: { limit: 50, offset: 0, total: 2 },
+      statusKey: 'all',
+    };
+
+    const wrapper = mount(ReconciliationTable, {
+      global: {
+        plugins: [createPinia(), createRuiPlugin({})],
+        stubs: {
+          AssetDetails: true,
+          CounterpartyDisplay: true,
+          HashLink: true,
+          ReconciliationAmount: true,
+          RouterLink: RouterLinkStub,
+          SpamAssessmentHint: true,
+          TimeAgoDisplay: true,
+        },
+      },
+      props: {
+        accounts: [account],
+        autoExpand: true,
+        details: { [accountKeyOf(account)]: detail },
+        view: 'all',
+      },
+    });
+    await flushPromises();
+
+    expect(predictSpam).toHaveBeenCalledExactlyOnceWith([{ identifier: token }]);
+    const assessments = wrapper.findAllComponents(SpamAssessmentHint).map(hint => hint.props('assessment'));
+    expect(assessments).toContainEqual({ prediction, status: 'ready' });
+    expect(assessments).toContain(undefined);
   });
 });

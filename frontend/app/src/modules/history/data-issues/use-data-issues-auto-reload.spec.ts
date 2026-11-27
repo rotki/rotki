@@ -6,6 +6,7 @@ import { defineComponent, h, nextTick, ref } from 'vue';
 import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 import { useDataIssueRemediationStore } from '@/modules/history/data-issues/use-data-issue-remediation-store';
 import { useDataIssuesAutoReload } from '@/modules/history/data-issues/use-data-issues-auto-reload';
+import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
 
 const syncCompleted = ref<boolean>(false);
 
@@ -63,6 +64,16 @@ describe('useDataIssuesAutoReload', () => {
     mountView(reload);
 
     useDataIssueRemediationStore().notifyRemediationCompleted();
+    await nextTick();
+
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it('should reload when issues are invalidated externally', async () => {
+    const reload = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    mountView(reload);
+
+    useDataIssuesInboxStore().notifyIssuesChanged(['eip155:1/erc20:0x1111']);
     await nextTick();
 
     expect(reload).toHaveBeenCalledOnce();

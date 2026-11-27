@@ -28,6 +28,10 @@ export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', 
   const baselineTotal = ref<number>(0);
   /** The last summary refresh failed, so the counts are the previous ones and a 0 is not all clear. */
   const summaryFailed = ref<boolean>(false);
+  /** Counter bumped whenever issues change outside the inbox (e.g. marking tokens as spam). */
+  const issuesInvalidated = ref<number>(0);
+  /** Assets whose issues were removed in the latest invalidation, so open drawers can close. */
+  const lastRemovedAssets = ref<readonly string[]>([]);
 
   /** Issues awaiting the user: open + needs-attention. Auto-remediating issues
    * are in progress and need no action, so they are intentionally excluded. */
@@ -44,6 +48,17 @@ export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', 
     set(summaryFailed, true);
   }
 
+  /**
+   * Signals mounted data-issues views that persisted issues changed outside their own actions.
+   *
+   * @param removedAssets - Assets whose issues were deleted (e.g. marked as spam), so any open
+   * detail surface showing one of them can close cleanly.
+   */
+  function notifyIssuesChanged(removedAssets: readonly string[] = []): void {
+    set(lastRemovedAssets, [...removedAssets]);
+    set(issuesInvalidated, get(issuesInvalidated) + 1);
+  }
+
   /** Removes the pinned-rail copy of the inbox. Called when the dedicated
    * data-issues page is shown, so the same list is not displayed twice.
    * Only the data-issues tab is removed; unrelated pinned panels are left alone. */
@@ -56,7 +71,10 @@ export const useDataIssuesInboxStore = defineStore('history/data-issues-inbox', 
     baselineTotal,
     counts,
     dismissInlinePanels,
+    issuesInvalidated,
+    lastRemovedAssets,
     markSummaryFailed,
+    notifyIssuesChanged,
     setSummary,
     summaryFailed,
   };

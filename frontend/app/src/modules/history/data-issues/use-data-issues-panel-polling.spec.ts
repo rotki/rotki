@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, KeepAlive, type Ref, ref, shallowRef } from 'vue';
 import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
+import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
 import { useDataIssuesPanelPolling } from '@/modules/history/data-issues/use-data-issues-panel-polling';
 
 const syncCompleted = ref<boolean>(false);
@@ -225,6 +226,26 @@ describe('useDataIssuesPanelPolling', () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(reload).not.toHaveBeenCalled();
+    panel.unmount();
+  });
+
+  it('should reload when issues are invalidated while visible and catch up when hidden', async () => {
+    const reload = vi.fn().mockResolvedValue(undefined);
+    const panel = mountPanel(ref(false), reload);
+
+    useDataIssuesInboxStore().notifyIssuesChanged(['eip155:1/erc20:0x1111']);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(reload).toHaveBeenCalledOnce();
+
+    reload.mockClear();
+    await panel.show(false);
+    useDataIssuesInboxStore().notifyIssuesChanged(['eip155:1/erc20:0x2222']);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(reload).not.toHaveBeenCalled();
+
+    await panel.show(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(reload).toHaveBeenCalledOnce();
     panel.unmount();
   });
 });

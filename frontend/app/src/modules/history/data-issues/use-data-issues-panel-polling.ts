@@ -5,6 +5,7 @@ import { storeToRefs } from 'pinia';
 import { type MaybeRefOrGetter, onActivated, onDeactivated, shallowRef, toValue, watch } from 'vue';
 import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 import { useDataIssueRemediationStore } from '@/modules/history/data-issues/use-data-issue-remediation-store';
+import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
 import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-completed';
 
 /** How often the panel re-reads the list while auto-remediation is running. */
@@ -30,6 +31,7 @@ export function useDataIssuesPanelPolling(
   const { syncCompleted } = useSyncCompleted();
   const { currentBalanceDetectionCompleted, historicalBalanceProcessingCompleted } = storeToRefs(useHistoricalBalanceProcessingStore());
   const { remediationCompleted } = storeToRefs(useDataIssueRemediationStore());
+  const { issuesInvalidated } = storeToRefs(useDataIssuesInboxStore());
   const { pause, resume } = useIntervalFn(() => {
     startPromise(reload());
   }, POLL_INTERVAL, { immediate: false });
@@ -53,7 +55,7 @@ export function useDataIssuesPanelPolling(
       set(pendingRefresh, true);
   });
 
-  watch([historicalBalanceProcessingCompleted, currentBalanceDetectionCompleted, remediationCompleted], () => {
+  watch([historicalBalanceProcessingCompleted, currentBalanceDetectionCompleted, remediationCompleted, issuesInvalidated], () => {
     if (get(active))
       startPromise(reload());
     else

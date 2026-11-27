@@ -4,7 +4,7 @@ import { get, set } from '@vueuse/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type EffectScope, effectScope, type Ref, ref } from 'vue';
 import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
-import { useSpamAssessments } from './use-spam-assessments';
+import { isErc20TokenIdentifier, useSpamAssessments } from './use-spam-assessments';
 
 const { predictSpam } = vi.hoisted(() => ({
   predictSpam: vi.fn<(tokens: SpamPredictionToken[]) => Promise<SpamPredictionResponse>>(),
@@ -169,5 +169,29 @@ describe('useSpamAssessments', () => {
     expect(predictSpam).not.toHaveBeenCalled();
     expect(get(assessments)).toStrictEqual({});
     expect(get(status)).toBe('idle');
+  });
+});
+
+describe('isErc20TokenIdentifier', () => {
+  it.each([
+    'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',
+    'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  ])('should accept ERC-20 identifier %s', (identifier) => {
+    expect(isErc20TokenIdentifier(identifier)).toBe(true);
+  });
+
+  it.each([
+    null,
+    undefined,
+    '',
+    'ETH',
+    'BTC',
+    'eip155:1/erc20:',
+    'eip155:/erc20:0x123',
+    'eip155:1/erc721:0x123',
+    'eip155:1/erc1155:0x123',
+    'solana/token:So11111111111111111111111111111111111111112',
+  ])('should reject non-ERC-20 identifier %s', (identifier) => {
+    expect(isErc20TokenIdentifier(identifier)).toBe(false);
   });
 });

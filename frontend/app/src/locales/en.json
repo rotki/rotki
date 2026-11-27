@@ -6951,6 +6951,7 @@
     "low_hint": "This token is less likely to be spam, but you should still check it before interacting.",
     "no_signals": "No additional details are available for this estimate.",
     "observed_signals": "What we noticed",
+    "potential_spam": "Potential spam",
     "score": "{percentage}%",
     "traits": {
       "common_symbol": "Uses a common token symbol. This does not confirm it is the real token.",

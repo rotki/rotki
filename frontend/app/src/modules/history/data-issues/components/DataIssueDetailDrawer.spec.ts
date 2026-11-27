@@ -1,8 +1,10 @@
+import type { SpamAssessment } from '@/modules/assets/spam/use-spam-assessments';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { createDecodingComparison } from '@test/fixtures/decoding-comparison';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, nextTick, type VNode } from 'vue';
+import SpamAssessmentHint from '@/modules/assets/spam/SpamAssessmentHint.vue';
 import DataIssueDetailDrawer from '@/modules/history/data-issues/components/DataIssueDetailDrawer.vue';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 import { createRuiPlugin } from '@/plugins/rui';
@@ -45,7 +47,10 @@ function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
   };
 }
 
-function createWrapper(issue?: DataIssue): VueWrapper<InstanceType<typeof DataIssueDetailDrawer>> {
+function createWrapper(
+  issue?: DataIssue,
+  spamAssessment?: SpamAssessment,
+): VueWrapper<InstanceType<typeof DataIssueDetailDrawer>> {
   return mount(DataIssueDetailDrawer, {
     global: {
       plugins: [createRuiPlugin({})],
@@ -64,11 +69,13 @@ function createWrapper(issue?: DataIssue): VueWrapper<InstanceType<typeof DataIs
         HistoryEventAccount: true,
         LocationDisplay: true,
         RuiNavigationDrawer: DrawerStub,
+        SpamAssessmentHint: true,
       },
     },
     props: {
       issue,
       modelValue: true,
+      spamAssessment,
     },
   });
 }
@@ -306,5 +313,28 @@ describe('dataIssueDetailDrawer', () => {
 
     expect(retry.exists()).toBe(true);
     expect(retry.attributes('disabled')).toBeDefined();
+  });
+
+  it('should show the spam estimate in the subject bar when an assessment is provided', () => {
+    const assessment: SpamAssessment = {
+      prediction: {
+        flagged: true,
+        modelReasons: [],
+        observedSignals: [],
+        spamProbability: 0.88,
+        threshold: 0.5,
+      },
+      status: 'ready',
+    };
+    const wrapper = createWrapper(createIssue({ asset: 'eip155:1/erc20:0x1111' }), assessment);
+
+    expect(wrapper.find('[data-testid="data-issue-spam-estimate"]').text()).toContain('spam_estimate.label');
+    expect(wrapper.findComponent(SpamAssessmentHint).props('assessment')).toStrictEqual(assessment);
+  });
+
+  it('should omit the spam estimate in the subject bar when no assessment is provided', () => {
+    const wrapper = createWrapper(createIssue({ asset: 'ETH' }));
+
+    expect(wrapper.find('[data-testid="data-issue-spam-estimate"]').exists()).toBe(false);
   });
 });

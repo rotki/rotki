@@ -88,6 +88,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import set_token_spam_protocol
+from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.icons import check_if_image_is_cached, maybe_create_image_response
@@ -1087,6 +1088,9 @@ class AssetsService:
                     )
 
         self.rotkehlchen.data.add_ignored_assets(assets=tokens)
+        DataIssuesManager(self.rotkehlchen.data.db).delete_issues_for_assets(
+            assets=[token.identifier for token in tokens],
+        )
         return OkResult(True)
 
     def remove_token_from_spam(self, token: EvmToken | SolanaToken) -> ApiResult:

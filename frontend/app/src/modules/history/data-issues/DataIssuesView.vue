@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { RuiAlert, RuiButton, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { get, set } from '@vueuse/shared';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -16,6 +15,7 @@ import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-dat
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
 import { useDataIssuesDetection } from '@/modules/history/data-issues/use-data-issues-detection';
 import { useDataIssuesPageList } from '@/modules/history/data-issues/use-data-issues-page-list';
+import { useDataIssuesSpamAssessments } from '@/modules/history/data-issues/use-data-issues-spam-assessments';
 import FailureStrip from '@/modules/shell/components/FailureStrip.vue';
 import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
@@ -134,6 +134,19 @@ watch(modelDrawerOpen, async (open) => {
     await clearIssueQuery();
 });
 
+type ListedDataIssue = Parameters<typeof openDetail>[0];
+
+/** Includes a deep-linked issue outside the current page without changing the array reference for page rows. */
+const assessedIssues = computed<ListedDataIssue[]>(() => {
+  const rows = get(state).data;
+  const selected = get(modelSelectedIssue);
+  if (!selected || rows.some(row => row.id === selected.id))
+    return rows;
+  return [...rows, selected];
+});
+
+const { assessments: spamAssessments, getSpamAssessment } = useDataIssuesSpamAssessments(assessedIssues);
+
 const emptyDescription = computed<string>(() =>
   get(hasActiveFilters)
     ? t('data_issues.empty.filtered')
@@ -147,7 +160,7 @@ const emptyDescription = computed<string>(() =>
  * A single resolve dialog serves every row and acts on whichever issue is selected, so the
  * selection has to be set before it opens.
  */
-function onResolveFromRow(issue: DataIssue): void {
+function onResolveFromRow(issue: ListedDataIssue): void {
   set(modelSelectedIssue, issue);
   onResolveRequest();
 }
@@ -269,6 +282,7 @@ onMounted(async () => {
       <DataIssuesTable
         v-model:pagination="pagination"
         :rows="state.data"
+        :spam-assessments="spamAssessments"
         :loading="showLoading"
         :empty-description="emptyDescription"
         :show-clear-filters="isEmpty && hasActiveFilters"
@@ -293,6 +307,7 @@ onMounted(async () => {
     <DataIssueDetailDrawer
       v-model="modelDrawerOpen"
       :issue="modelSelectedIssue"
+      :spam-assessment="getSpamAssessment(modelSelectedIssue?.asset)"
       :busy="modelActionBusy"
       :failure="selectedIssueFailure"
       @dismiss="onDismiss($event)"

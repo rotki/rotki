@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import type { SpamAssessment } from '@/modules/assets/spam/use-spam-assessments';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { RuiButton, RuiIcon } from '@rotki/ui-library';
 import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import SpamAssessmentHint from '@/modules/assets/spam/SpamAssessmentHint.vue';
 import DataIssueKindChip from '@/modules/history/data-issues/components/DataIssueKindChip.vue';
 import DataIssueStateChip from '@/modules/history/data-issues/components/DataIssueStateChip.vue';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
@@ -11,8 +13,9 @@ import CounterpartyDisplay from '@/modules/shell/components/display/Counterparty
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 
 /** The detail's heading: title and close button, the issue's kind, state and age, and what it is about. */
-const { issue } = defineProps<{
+const { issue, spamAssessment } = defineProps<{
   issue: DataIssue;
+  spamAssessment?: SpamAssessment;
 }>();
 
 const emit = defineEmits<{
@@ -82,6 +85,14 @@ const { t } = useI18n({ useScope: 'global' });
           :asset="issue.asset"
           :display="{ dense: true, inline: true, size: '20px' }"
         />
+      </span>
+      <span
+        v-if="issue.asset && spamAssessment"
+        class="inline-flex items-center gap-1.5 text-xs text-rui-text-secondary"
+        data-testid="data-issue-spam-estimate"
+      >
+        <span>{{ t('spam_estimate.label') }}</span>
+        <SpamAssessmentHint :assessment="spamAssessment" />
       </span>
       <span
         v-if="issue.protocol"

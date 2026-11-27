@@ -66,6 +66,7 @@ from rotkehlchen.globaldb.cache import (
     globaldb_general_cache_exists,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
@@ -150,6 +151,10 @@ def _add_spam_asset(
     user_db.ignore_multiple_assets(
         write_cursor=user_db_cursor,
         assets=detected_spam_assets,
+    )
+    DataIssuesManager(user_db).delete_issues_for_assets(
+        assets=detected_spam_assets,
+        write_cursor=user_db_cursor,
     )
 
 

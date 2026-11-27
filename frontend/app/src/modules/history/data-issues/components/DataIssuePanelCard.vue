@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
+import type { SpamAssessment } from '@/modules/assets/spam/use-spam-assessments';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { IssueDescription } from '@/modules/history/data-issues/types';
 import { toHumanReadable } from '@rotki/common';
 import { RuiCard, RuiIcon, RuiTooltip } from '@rotki/ui-library';
 import { useMutationObserver, useResizeObserver } from '@vueuse/core';
 import { get, set } from '@vueuse/shared';
-import { nextTick, onMounted, ref, useTemplateRef } from 'vue';
+import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue';
+import SpamAssessmentHint from '@/modules/assets/spam/SpamAssessmentHint.vue';
 import DataIssueCardActions from '@/modules/history/data-issues/components/DataIssueCardActions.vue';
 import DataIssueDescription from '@/modules/history/data-issues/components/DataIssueDescription.vue';
 import DataIssueKindChip from '@/modules/history/data-issues/components/DataIssueKindChip.vue';
@@ -17,11 +19,12 @@ import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vue';
 
-const { issue, eventRoute, active = false } = defineProps<{
+const { issue, eventRoute, active = false, spamAssessment } = defineProps<{
   issue: DataIssue;
   description: IssueDescription;
   eventRoute?: RouteLocationRaw;
   active?: boolean;
+  spamAssessment?: SpamAssessment;
 }>();
 
 const emit = defineEmits<{
@@ -34,6 +37,9 @@ const emit = defineEmits<{
 
 const descriptionRef = useTemplateRef<HTMLElement>('descriptionRef');
 const descriptionTruncated = ref<boolean>(false);
+
+/** Compact cards only call out tokens the model flags as potential spam, leaving low scores to the detail sheet. */
+const potentialSpam = computed<boolean>(() => spamAssessment?.status === 'ready' && spamAssessment.prediction.flagged);
 
 function checkTruncation(): void {
   const el = get(descriptionRef);
@@ -66,6 +72,11 @@ useMutationObserver(descriptionRef, checkTruncation, { characterData: true, chil
         <div class="flex items-center gap-2">
           <DataIssueKindChip :kind="issue.kind" />
           <DataIssueStateChip :state="issue.state" />
+          <SpamAssessmentHint
+            v-if="potentialSpam"
+            :assessment="spamAssessment"
+            standalone
+          />
           <TimeAgoDisplay
             class="ml-auto shrink-0 text-caption text-rui-text-secondary"
             :timestamp="issue.createdAt"
