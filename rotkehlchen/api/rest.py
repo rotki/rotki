@@ -119,7 +119,6 @@ from rotkehlchen.constants.misc import (
 from rotkehlchen.db.cache import (
     IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX,
     DBCacheStatic,
-    mark_stale_from_ts,
 )
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
@@ -5503,10 +5502,16 @@ class RestAPI:
 
         events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
         with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
-            all_unlinked_ids: set[int] = set()
+            all_unlinked_ids = {
+                event_id
+                for asset_movement_identifier, matched_event_identifiers in linked_ids.items()
+                for event_id in (asset_movement_identifier, *matched_event_identifiers)
+            }
+            DBHistoryEvents.mark_cost_basis_stale_for_matched_components(
+                write_cursor=write_cursor,
+                event_ids=all_unlinked_ids,
+            )
             for asset_movement_identifier, matched_event_identifiers in linked_ids.items():
-                all_unlinked_ids.add(asset_movement_identifier)
-                all_unlinked_ids.update(matched_event_identifiers)
                 write_cursor.execute(
                     'DELETE FROM history_event_links WHERE left_event_id=? AND link_type=?',
                     (asset_movement_identifier, HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()),  # noqa: E501
@@ -5556,19 +5561,6 @@ class RestAPI:
                         HistoryMappingState.MATCHED.serialize_for_db(),
                     ),
                 )
-
-            if len(all_unlinked_ids) != 0 and is_accounting_update_enabled():
-                placeholders = ','.join(['?'] * len(all_unlinked_ids))
-                if (min_ts_row := write_cursor.execute(
-                    f'SELECT MIN(timestamp) FROM history_events '
-                    f'WHERE identifier IN ({placeholders})',
-                    tuple(all_unlinked_ids),
-                ).fetchone()) is not None and min_ts_row[0] is not None:
-                    mark_stale_from_ts(
-                        write_cursor=write_cursor,
-                        from_ts=min_ts_row[0],
-                        include_balances=False,
-                    )
 
         return api_response(OkResult(True))
 

@@ -4988,3 +4988,201 @@ def test_reverse_match_nested_one_to_many_completes_earlier_in_before_later_in(
         FVal(0),
     )
     assert _rows(database) == _full_rebuild_rows(database)
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_unlink_one_to_many_reverse_match_by_later_receipt_marks_earlier_receipt_stale(
+        database: DBHandler,
+) -> None:
+    """Unlinking a 1-to-2 reverse-timestamp match by the later receipt marks cost basis stale
+    from the earlier sibling receipt immediately, before `process_cost_basis` runs."""
+    dbevents = DBHistoryEvents(database)
+    _add_rule(database, HistoryEventType.SPEND)
+    with database.user_write() as write_cursor:
+        database.set_settings(
+            write_cursor,
+            ModifiableDBSettings(cost_basis_method=CostBasisMethod.FIFO),
+        )
+        _add_kraken_event(
+            write_cursor=write_cursor,
+            dbevents=dbevents,
+            group_identifier='kraken-buy-unlink-rev-1to2',
+            at=1,
+            event_type=HistoryEventType.RECEIVE,
+        )
+        receipt1 = _event(
+            at=2,
+            amount='0.5',
+            event_type=HistoryEventType.RECEIVE,
+            location_label=TEST_ADDR1,
+        )
+        receipt1.identifier = dbevents.add_history_event(write_cursor=write_cursor, event=receipt1)
+        receipt2 = _event(
+            at=3,
+            amount='0.5',
+            event_type=HistoryEventType.RECEIVE,
+            location_label=TEST_ADDR2,
+        )
+        receipt2.identifier = dbevents.add_history_event(write_cursor=write_cursor, event=receipt2)
+        withdrawal = AssetMovement(
+            timestamp=_ts_ms(4),
+            location=LOCATION_KRAKEN,
+            location_label='kraken',
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('1'),
+            group_identifier='kraken-wd-unlink-rev-1to2',
+        )
+        withdrawal.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=withdrawal,
+        )
+        addr1_sell_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(
+                at=5,
+                amount='0.5',
+                event_type=HistoryEventType.SPEND,
+                location_label=TEST_ADDR1,
+            ),
+        )
+
+    assert receipt1.identifier is not None
+    assert receipt2.identifier is not None
+    for receipt in (receipt1, receipt2):
+        update_asset_movement_matched_event(
+            events_db=dbevents,
+            asset_movement=withdrawal,
+            fee_event=None,
+            matched_event=receipt,
+            is_deposit=False,
+        )
+
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    before = query_events_cost_basis(database, [receipt1.identifier])
+    assert before['stale'] == []
+    assert before['entries'][str(receipt1.identifier)][0]['basis_source'] == 'transfer_in'
+    assert _spend_row(database, str(addr1_sell_id))[1] == FVal(2000)
+
+    # Unlink via the later receipt R2; the earlier sibling R1 must be stale immediately
+    fake_rest = MagicMock()
+    fake_rest.rotkehlchen.data.db = database
+    with patch('rotkehlchen.api.rest.api_response') as mock_api_response:
+        RestAPI.unlink_matched_asset_movements(fake_rest, identifier=receipt2.identifier)
+    mock_api_response.assert_called_once()
+    assert mock_api_response.call_args.args[0].result is True
+
+    with database.conn.read_ctx() as cursor:
+        unprocessed = get_unprocessed_from_ts(cursor=cursor, database=database)
+        assert unprocessed is not None and unprocessed <= receipt1.timestamp
+
+    stale_query = query_events_cost_basis(database, [receipt1.identifier])
+    assert receipt1.identifier in stale_query['stale']
+
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    after = query_events_cost_basis(database, [receipt1.identifier])
+    assert after['stale'] == []
+    assert after['entries'][str(receipt1.identifier)][0]['basis_source'] == 'price_oracle'
+    assert _spend_row(database, str(addr1_sell_id))[1] == FVal(1000)
+    assert _rows(database) == _full_rebuild_rows(database)
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_purge_later_receipt_in_one_to_many_reverse_match_marks_earlier_receipt_stale(
+        database: DBHandler,
+) -> None:
+    """Purging the later receipt in a 1-to-2 reverse-timestamp match marks cost basis stale
+    from the earlier sibling receipt immediately, before `process_cost_basis` runs."""
+    dbevents = DBHistoryEvents(database)
+    _add_rule(database, HistoryEventType.SPEND)
+    with database.user_write() as write_cursor:
+        database.set_settings(
+            write_cursor,
+            ModifiableDBSettings(cost_basis_method=CostBasisMethod.FIFO),
+        )
+        _add_kraken_event(
+            write_cursor=write_cursor,
+            dbevents=dbevents,
+            group_identifier='kraken-buy-purge-rev-1to2',
+            at=1,
+            event_type=HistoryEventType.RECEIVE,
+        )
+        receipt1 = _event(
+            at=2,
+            amount='0.5',
+            event_type=HistoryEventType.RECEIVE,
+            location_label=TEST_ADDR1,
+        )
+        receipt1.identifier = dbevents.add_history_event(write_cursor=write_cursor, event=receipt1)
+        receipt2 = _event(
+            at=3,
+            amount='0.5',
+            event_type=HistoryEventType.RECEIVE,
+            location_label=TEST_ADDR2,
+        )
+        receipt2.identifier = dbevents.add_history_event(write_cursor=write_cursor, event=receipt2)
+        withdrawal = AssetMovement(
+            timestamp=_ts_ms(4),
+            location=LOCATION_KRAKEN,
+            location_label='kraken',
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('1'),
+            group_identifier='kraken-wd-purge-rev-1to2',
+        )
+        withdrawal.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=withdrawal,
+        )
+        dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(
+                at=5,
+                amount='0.5',
+                event_type=HistoryEventType.SPEND,
+                location_label=TEST_ADDR1,
+            ),
+        )
+
+    assert receipt1.identifier is not None
+    assert receipt2.identifier is not None
+    for receipt in (receipt1, receipt2):
+        update_asset_movement_matched_event(
+            events_db=dbevents,
+            asset_movement=withdrawal,
+            fee_event=None,
+            matched_event=receipt,
+            is_deposit=False,
+        )
+
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    matched_rows = _rows(database)
+    before = query_events_cost_basis(database, [receipt1.identifier])
+    assert before['stale'] == []
+    assert before['entries'][str(receipt1.identifier)][0]['basis_source'] == 'transfer_in'
+
+    # Purge the later receipt R2 through the purge path; R1 must be marked stale immediately
+    with database.user_write() as write_cursor:
+        dbevents.restore_matched_events_before_purge(
+            write_cursor=write_cursor,
+            identifiers={receipt2.identifier},
+        )
+        dbevents.delete_events_and_track(
+            write_cursor=write_cursor,
+            where_clause='WHERE identifier=?',
+            where_bindings=(receipt2.identifier,),
+        )
+
+    with database.conn.read_ctx() as cursor:
+        unprocessed = get_unprocessed_from_ts(cursor=cursor, database=database)
+        assert unprocessed is not None and unprocessed <= receipt1.timestamp
+
+    stale_query = query_events_cost_basis(database, [receipt1.identifier])
+    assert receipt1.identifier in stale_query['stale']
+
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    after = query_events_cost_basis(database, [receipt1.identifier])
+    assert after['stale'] == []
+    incremental_rows = _rows(database)
+    assert incremental_rows != matched_rows
+    assert incremental_rows == _full_rebuild_rows(database)

@@ -119,7 +119,7 @@ from rotkehlchen.user_messages import LocalDbProblem, UnknownAssetSeen
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Collection, Mapping, Sequence
 
     from rotkehlchen.chain.solana.rpc import Signature
     from rotkehlchen.db.dbhandler import DBHandler
@@ -928,6 +928,59 @@ class DBHistoryEvents:
         if min_restored_ts is not None and is_accounting_update_enabled():
             mark_stale_from_ts(write_cursor=write_cursor, from_ts=min_restored_ts)
 
+    @staticmethod
+    def mark_cost_basis_stale_for_matched_components(
+            write_cursor: DBCursor,
+            event_ids: Collection[int],
+            fallback_ts: TimestampMS | None = None,
+    ) -> None:
+        """Mark materialized cost basis stale from the earliest timestamp across the full
+        connected ``ASSET_MOVEMENT_MATCH`` component(s) of ``event_ids``.
+
+        Callers that delete or unlink match edges must invoke this before removing rows from
+        ``history_event_links`` so the traversal still reaches every event in the affected
+        component(s).
+        """
+        if is_accounting_update_enabled() is False:
+            return
+
+        min_ts: TimestampMS | None = None
+        if len(event_ids) != 0:
+            unique_ids = list(set(event_ids))
+            link_type = HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()
+            for chunk, placeholders in get_query_chunks(
+                data=unique_ids,
+                chunk_size=SQL_VARIABLE_CHUNK_SIZE - 1,  # reserve 1 binding for link_type
+            ):
+                if (row := write_cursor.execute(
+                    'WITH RECURSIVE comp(event_id) AS ('
+                    f'SELECT identifier FROM history_events WHERE identifier IN ({placeholders}) '
+                    'UNION '
+                    'SELECT CASE WHEN hel.left_event_id = comp.event_id '
+                    'THEN hel.right_event_id ELSE hel.left_event_id END '
+                    'FROM history_event_links hel '
+                    'JOIN comp ON hel.left_event_id = comp.event_id '
+                    'OR hel.right_event_id = comp.event_id '
+                    'WHERE hel.link_type = ?'
+                    ') '
+                    'SELECT MIN(timestamp) FROM history_events '
+                    'WHERE identifier IN (SELECT event_id FROM comp)',
+                    (*chunk, link_type),
+                ).fetchone()) is not None and row[0] is not None and (
+                    min_ts is None or row[0] < min_ts
+                ):
+                    min_ts = TimestampMS(row[0])
+
+        if min_ts is None:
+            min_ts = fallback_ts
+
+        if min_ts is not None:
+            mark_stale_from_ts(
+                write_cursor=write_cursor,
+                from_ts=min_ts,
+                include_balances=False,
+            )
+
     def restore_matched_events_before_purge(
             self,
             write_cursor: DBCursor,
@@ -962,22 +1015,10 @@ class DBHistoryEvents:
         if len(linked_events) == 0:
             return
 
-        if is_accounting_update_enabled():
-            min_linked_ts: int | None = None
-            for chunk, placeholders in get_query_chunks(list(linked_events)):
-                if (row := write_cursor.execute(
-                    f'SELECT MIN(timestamp) FROM history_events WHERE identifier IN ({placeholders})',  # noqa: E501
-                    chunk,
-                ).fetchone()) is not None and row[0] is not None and (
-                    min_linked_ts is None or row[0] < min_linked_ts
-                ):
-                    min_linked_ts = row[0]
-            if min_linked_ts is not None:
-                mark_stale_from_ts(
-                    write_cursor=write_cursor,
-                    from_ts=min_linked_ts,
-                    include_balances=False,
-                )
+        self.mark_cost_basis_stale_for_matched_components(
+            write_cursor=write_cursor,
+            event_ids=linked_events,
+        )
 
         # clean up any adjustment events auto-created during matching on either side of the
         # match. They are not necessarily part of the purge selection (a CSV purge only
