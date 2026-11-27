@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` When editing a history event, deposits and withdrawals are now offered as CEX deposit or CEX withdrawal for exchange locations and as account deposit or withdrawal elsewhere, matching how the event is shown. Before, picking CEX deposit or CEX withdrawal was ignored.
 * :bug:`13758` When editing a history event, you can now pick the exact type and subtype of actions that cover several, such as a receive versus a wrapped-token receive. The stored type and subtype are shown in the edit dialog. Picking Receive now stores a plain receive instead of a wrapped-token receive.
 * :bug:`-` Velora (ParaSwap) swaps from delegated wallets are now decoded when the wallet sends the input token directly to the swap executor.
 * :bug:`-` NFT balances no longer spend half a minute retrying and then fail when no OpenSea API key is set. OpenSea now needs your own key, which can be added in the API keys settings.
