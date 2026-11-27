@@ -36,7 +36,7 @@ from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, YEAR_IN_SECONDS
 from rotkehlchen.errors.cause import FailureCause
-from rotkehlchen.errors.misc import ContractReverted, RemoteError
+from rotkehlchen.errors.misc import ContractReverted, RemoteError, is_json_rpc_revert
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.externalapis.alchemy import Alchemy
 from rotkehlchen.externalapis.birdeye import Birdeye
@@ -879,6 +879,39 @@ def test_uniswap_v3_position_price_query(price_historian: PriceHistorian):
 
     assert price is not None
     assert price.is_close('91.901195')
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey', 'api_key'])
+@pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [
+    (INFURA_ETH_NODE,),  # an archive node, whose revert Blockscout confirms
+    (),  # no archive node, so only Blockscout can execute the call at a past block
+])
+def test_uniswap_v3_burned_position_price_query(price_historian: PriceHistorian) -> None:
+    """The NFT manager reverts with "Invalid token ID" on a burned position. The revert,
+    as a node or Blockscout reports it, must be read as one, so the position is worth zero
+    instead of being retried or left unpriced."""
+    blockscout_reverts: list[bool] = []
+
+    def record_revert_check(error: Any) -> bool:
+        blockscout_reverts.append(result := is_json_rpc_revert(error))
+        return result
+
+    with patch('rotkehlchen.externalapis.blockscout.is_json_rpc_revert', side_effect=record_revert_check):  # noqa: E501
+        assert price_historian.query_uniswap_position_price(
+            pool_token=EvmToken.initialize(
+                address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+                chain_id=ChainID.ETHEREUM,
+                token_kind=TokenKind.ERC721,
+                protocol=CPT_UNISWAP_V3,
+                collectible_id='400035',  # burned before this timestamp
+            ),
+            pool_token_amount=ONE,
+            to_asset=A_USD,
+            timestamp=Timestamp(1742829743),
+        ) == ZERO_PRICE
+
+    assert blockscout_reverts == [True]
 
 
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
