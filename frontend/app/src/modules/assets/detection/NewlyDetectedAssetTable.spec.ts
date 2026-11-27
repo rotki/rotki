@@ -1,3 +1,4 @@
+import type { SpamPredictionResponse, SpamPredictionToken } from '@/modules/assets/api/use-asset-spam-prediction-api';
 import type { Collection } from '@/modules/core/common/collection';
 import { type BigNumber, bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
@@ -20,6 +21,7 @@ const { held, spies } = vi.hoisted(() => {
     spies: {
       getAssetPrice: vi.fn<(asset: string) => BigNumber | undefined>(),
       markAsSpam: vi.fn<(identifiers?: string | string[]) => Promise<void>>(),
+      predictSpam: vi.fn<(tokens: SpamPredictionToken[]) => Promise<SpamPredictionResponse>>(async () => Promise.resolve({})),
       refetch: vi.fn<() => Promise<void>>(),
       removeTokens: vi.fn<(identifiers?: string | string[]) => Promise<void>>(),
       toggleSelection: vi.fn<() => Promise<void>>(),
@@ -58,6 +60,11 @@ vi.mock('@/modules/assets/detection/use-newly-detected-selection', () => ({
     removeTokens: spies.removeTokens,
     toggleSelection: spies.toggleSelection,
   }),
+}));
+
+vi.mock(import('@/modules/assets/api/use-asset-spam-prediction-api'), async importOriginal => ({
+  ...await importOriginal(),
+  useAssetSpamPredictionApi: (): { predictSpam: typeof spies.predictSpam } => ({ predictSpam: spies.predictSpam }),
 }));
 
 vi.mock('@/modules/assets/prices/use-price-utils', () => ({
