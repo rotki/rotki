@@ -13,10 +13,12 @@ from rotkehlchen.constants.assets import A_CRV
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.globaldb.cache import compute_cache_key
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Location
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, Location
 
 if TYPE_CHECKING:
     from eth_typing import ABI
@@ -53,10 +55,65 @@ class CurveBalances(ProtocolWithGauges):
         )
 
     def get_gauge_address(self, event: EvmEvent) -> ChecksumEvmAddress | None:
-        if event.extra_data is not None and 'controller_address' in event.extra_data:
-            return None  # crvUSD / Curve Lend leveraged deposit, not a gauge
+        if (
+            (event.extra_data is not None and 'controller_address' in event.extra_data) or
+            (isinstance(event.notes, str) and event.notes.endswith(' as collateral on Curve'))
+        ):
+            return None  # crvUSD / Curve Lend collateral deposit, not a gauge
 
         return event.address
+
+    def _get_cached_loan_amm_addresses(self) -> set[ChecksumEvmAddress]:
+        """Return cached crvUSD / Curve Lend AMM addresses from GlobalDB."""
+        key_prefix = f'{compute_cache_key((CacheType.CURVE_CRVUSD_AMM,))}%'
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            return {
+                string_to_evm_address(row[0])
+                for row in cursor.execute(
+                    'SELECT value FROM unique_cache WHERE key LIKE ?',
+                    (key_prefix,),
+                )
+            }
+
+    def addresses_with_gauge_deposits(
+            self,
+            location_labels: list[ChecksumEvmAddress],
+    ) -> dict[ChecksumEvmAddress, list[EvmEvent]]:
+        """Filter out crvUSD / Curve Lend collateral deposits without controller metadata."""
+        deposits_by_address = super().addresses_with_gauge_deposits(
+            location_labels=location_labels,
+        )
+        if len(deposits_by_address) == 0:
+            return deposits_by_address
+
+        debt_events_by_address = self.addresses_with_activity(
+            event_types={(HistoryEventType.WITHDRAWAL, HistoryEventSubType.GENERATE_DEBT)},
+            location_labels=list(deposits_by_address.keys()),
+        )
+        borrow_tx_refs = {
+            event.tx_ref
+            for events in debt_events_by_address.values()
+            for event in events
+        }
+        non_gauge_addresses = self._get_cached_loan_amm_addresses()
+        for events in deposits_by_address.values():
+            for event in events:
+                if event.tx_ref in borrow_tx_refs and event.address is not None:
+                    non_gauge_addresses.add(event.address)
+
+        filtered: dict[ChecksumEvmAddress, list[EvmEvent]] = {}
+        for address, events in deposits_by_address.items():
+            if len(gauge_events := [
+                event for event in events
+                if (
+                    event.tx_ref not in borrow_tx_refs and
+                    event.address not in non_gauge_addresses and
+                    self.get_gauge_address(event) is not None
+                )
+            ]) != 0:
+                filtered[address] = gauge_events
+
+        return filtered
 
     def query_balances(self, addresses: list[ChecksumEvmAddress]) -> BalancesSheetType:
         """Query gauge balances and CRV deposited in the veCRV contract"""

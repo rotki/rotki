@@ -129,6 +129,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_last_queried_ts_by_key,
     globaldb_set_general_cache_values,
+    globaldb_set_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -295,6 +296,163 @@ def test_curve_balances_skips_crvusd_leveraged_deposits(
     assert balances == {}
     assert len(query_mock.call_args_list) == 1
     assert query_mock.call_args.kwargs['user_address'] == user_with_gauge
+    assert query_mock.call_args.kwargs['gauges_to_token'] == {gauge_address: gauge_token}
+
+
+def test_curve_balances_skips_ordinary_loan_collateral_deposits(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
+    """Regression test: CurveBalances must skip ordinary crvUSD and Curve Lend collateral
+    deposits, including deposits already stored without controller_address metadata."""
+    (
+        borrower_paired_tx,
+        borrower_cached_amm,
+        borrower_legacy_note,
+        borrower_with_metadata_and_gauge,
+        amm1,
+        amm2,
+        amm3,
+        amm4,
+        controller1,
+        controller2,
+        controller4,
+        gauge_address,
+    ) = (make_evm_address() for _ in range(12))
+    gauge_token = A_CRV.resolve_to_evm_token()
+    crvusd = EvmToken('eip155:1/erc20:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E')
+    borrow_tx_hash = make_evm_tx_hash()
+
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        globaldb_set_unique_cache_value(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.CURVE_CRVUSD_AMM, controller2),
+            value=amm2,
+        )
+
+    events_db = DBHistoryEvents(ethereum_inquirer.database)
+    with ethereum_inquirer.database.conn.write_ctx() as write_cursor:
+        for idx, (
+            tx_ref,
+            user,
+            event_type,
+            event_subtype,
+            asset,
+            address,
+            notes,
+            extra_data,
+        ) in enumerate([
+            (
+                borrow_tx_hash,
+                borrower_paired_tx,
+                HistoryEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                A_WBTC,
+                amm1,
+                'User edited note',
+                None,
+            ),
+            (
+                borrow_tx_hash,
+                borrower_paired_tx,
+                HistoryEventType.WITHDRAWAL,
+                HistoryEventSubType.GENERATE_DEBT,
+                crvusd,
+                controller1,
+                'Borrow 100 crvUSD from Curve',
+                {'controller_address': controller1},
+            ),
+            (
+                make_evm_tx_hash(),
+                borrower_paired_tx,
+                HistoryEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                A_WBTC,
+                amm1,
+                'Edited add collateral',
+                None,
+            ),
+            (
+                make_evm_tx_hash(),
+                borrower_cached_amm,
+                HistoryEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                A_WBTC,
+                amm2,
+                'Edited note',
+                None,
+            ),
+            (
+                make_evm_tx_hash(),
+                borrower_legacy_note,
+                HistoryEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                A_WBTC,
+                amm3,
+                'Deposit 1 WBTC as collateral on Curve',
+                None,
+            ),
+            (
+                make_evm_tx_hash(),
+                borrower_with_metadata_and_gauge,
+                HistoryEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                A_WBTC,
+                amm4,
+                'User edited note',
+                {'controller_address': controller4},
+            ),
+            (
+                make_evm_tx_hash(),
+                borrower_with_metadata_and_gauge,
+                HistoryEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                gauge_token,
+                gauge_address,
+                f'Deposit 1.25 CRV into {gauge_address} curve gauge',
+                None,
+            ),
+        ]):
+            events_db.add_history_event(
+                write_cursor=write_cursor,
+                event=EvmEvent(
+                    tx_ref=tx_ref,
+                    sequence_index=idx + 1,
+                    timestamp=TimestampMS(1760138579000),
+                    location=Location.ETHEREUM,
+                    event_type=event_type,
+                    event_subtype=event_subtype,
+                    asset=asset,
+                    amount=FVal('1.25'),
+                    location_label=user,
+                    notes=notes,
+                    counterparty=CPT_CURVE,
+                    address=address,
+                    extra_data=extra_data,
+                ),
+            )
+
+    curve_balances = CurveBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=ethereum_transaction_decoder,
+    )
+    with (
+        patch.object(curve_balances, '_query_gauges_balances', return_value={}) as query_mock,
+        patch(
+            'rotkehlchen.chain.ethereum.interfaces.balances.get_rpc_first_chunk_size_call_order',
+            return_value=(100, []),
+        ),
+    ):
+        balances = curve_balances.query_balances(addresses=[
+            borrower_paired_tx,
+            borrower_cached_amm,
+            borrower_legacy_note,
+            borrower_with_metadata_and_gauge,
+        ])
+
+    assert balances == {}
+    assert len(query_mock.call_args_list) == 1
+    assert query_mock.call_args.kwargs['user_address'] == borrower_with_metadata_and_gauge
     assert query_mock.call_args.kwargs['gauges_to_token'] == {gauge_address: gauge_token}
 
 
