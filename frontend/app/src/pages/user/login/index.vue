@@ -25,7 +25,7 @@ definePage({
 const { navigateToUserCreation } = useAppNavigation();
 const { backendChanged } = useBackendManagement();
 const { clearErrors, errors, loading, userLogin } = useAccountManagement();
-const { onConfirmUpdate, onLeaveFailedUpgrade, onResolveConflicts, onSkipUpdate, reset, showStage, state } = useLoginStage();
+const { onConfirmUpdate, onResolveConflicts, onSkipUpdate, reset, showStage, state } = useLoginStage();
 const { performInitialChecks } = useLoginInitialChecks();
 const { fetchMessages } = useDynamicMessages();
 
@@ -81,7 +81,7 @@ onMounted(startLoginScreen);
               @confirm="onConfirmUpdate($event)"
               @resolve="onResolveConflicts($event)"
               @skip="onSkipUpdate()"
-              @leave-upgrade="onLeaveFailedUpgrade()"
+              @leave-upgrade="reset()"
             />
           </UserHost>
         </div>

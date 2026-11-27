@@ -68,7 +68,8 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { createSteps, loginSteps } = useUnlockSteps();
   const { handleSessionReady } = useSessionReady();
-  const { logged, upgradeVisible, username } = storeToRefs(useSessionAuthStore());
+  const authStore = useSessionAuthStore();
+  const { logged, upgradeVisible, username } = storeToRefs(authStore);
 
   /**
    * Ends the session the moment the backend rejects it, then logs the app out.
@@ -178,9 +179,11 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
     const resumed = state.kind === UnlockPhase.ready && state.resumed;
     const sameSession = captureSession();
 
-    await padUpgradeHandoff(current, resumed);
-    if (!resumed && current !== 'create')
-      await updateFrontendSetting({ lastPasswordConfirmed: dayjs().unix() });
+    // The handoff hold is a fixed wait, so the settings write runs alongside it rather than after.
+    await Promise.all([
+      padUpgradeHandoff(current, resumed),
+      !resumed && current !== 'create' ? updateFrontendSetting({ lastPasswordConfirmed: dayjs().unix() }) : undefined,
+    ]);
     if (!sameSession())
       return;
     if (current === 'create')
@@ -195,6 +198,16 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
     else
       await disconnectWalletIfActive();
   }
+
+  /*
+   * The upgrade screen's state belongs to one unlock: a new run starts without the last one's
+   * progress, and a return to the form drops it. An error keeps it, as the failure screen. Synchronous,
+   * so a phase passed through within one tick (create's no-op authenticate) is still seen.
+   */
+  watch(() => get(flow.state).kind, (kind) => {
+    if (kind === UnlockPhase.authenticating || kind === UnlockPhase.idle)
+      authStore.clearUpgradeMessages();
+  }, { flush: 'sync' });
 
   watch(flow.state, (current) => {
     set(restarting, current.kind === UnlockPhase.restarting);

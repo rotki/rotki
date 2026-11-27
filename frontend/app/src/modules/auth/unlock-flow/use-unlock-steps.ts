@@ -63,12 +63,11 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
   }
 
   /**
-   * Maps a failure to a typed error and settles the upgrade screen: a failure while an upgrade was
-   * running keeps its progress on screen as the failure state, any other drops it.
+   * Maps a failure to a typed error. A failure while an upgrade was running keeps its progress on
+   * screen as the failure state; the controller clears it when the flow next starts or resets.
    */
   function failWith(error: unknown): UnlockError {
-    if (!authStore.failUpgrade(getErrorMessage(error)))
-      authStore.clearUpgradeMessages();
+    authStore.failUpgrade(getErrorMessage(error));
     return toUnlockError(error);
   }
 
@@ -205,8 +204,6 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
   const loginUnlock = async (credentials: UnlockCredentials): Promise<Result<void, UnlockError>> =>
     guarded(async () => {
       const name = credentials.username || get<string>(lastLogin);
-      // A previous attempt's progress must not show as this one's.
-      authStore.clearUpgradeMessages();
       authStore.setUnlockingProfile(name);
       const account = await freshLogin(credentials, name);
       if (!account.ok)
@@ -224,7 +221,6 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
    */
   const createUnlock = (payload: CreateAccountPayload) => async (): Promise<Result<void, UnlockError>> =>
     guarded(async () => {
-      authStore.clearUpgradeMessages();
       authStore.setUnlockingProfile(payload.credentials.username);
       const outcome = await submitTask<UserAccount>({
         ephemeral: true,

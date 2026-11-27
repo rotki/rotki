@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { RuiAlert, RuiButton, RuiCard, RuiIcon, RuiProgress } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
-import { useClipboard } from '@vueuse/core';
 import { get } from '@vueuse/shared';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -16,6 +15,7 @@ import {
   type UpgradeVersionWindow,
   windowVersions,
 } from '@/modules/auth/upgrade/upgrade-progress';
+import { useCopy } from '@/modules/core/common/use-clipboard';
 import { formatElapsed } from '@/modules/task-center/core/elapsed';
 
 const {
@@ -42,7 +42,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { copied, copy } = useClipboard({ copiedDuring: 2000, legacy: true });
 
 const progress = computed<UpgradeRunProgress>(() => run.progress);
 const outcome = computed<UpgradeOutcome>(() => run.outcome);
@@ -115,9 +114,12 @@ function rowMeta(row: UpgradeVersionRow): string | undefined {
   return duration === undefined ? undefined : formatElapsed(duration);
 }
 
+/** What Copy error puts on the clipboard: the error, the run it broke, and where the backups are. */
+const errorReport = computed<string>(() => [error, get(range), backupDirectory].filter(Boolean).join('\n'));
+const { copied, copy } = useCopy(errorReport);
+
 function copyError(): void {
-  const lines = [error, get(range), backupDirectory].filter(Boolean);
-  startPromise(copy(lines.join('\n')));
+  startPromise(copy());
 }
 </script>
 

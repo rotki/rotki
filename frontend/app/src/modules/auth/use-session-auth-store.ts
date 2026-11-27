@@ -23,10 +23,13 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
    * has loaded. The upgrade screen names it while that profile's database is migrated.
    */
   const unlockingProfile = ref<string>('');
-  /** When the first upgrade or migration message of this unlock arrived. */
-  const upgradeStartedAt = ref<number | null>(null);
   const dbUpgradeVersionTimes = ref<VersionTimes>({});
   const dataMigrationVersionTimes = ref<VersionTimes>({});
+  /** When the first upgrade or migration message of this unlock arrived: the earliest version start. */
+  const upgradeStartedAt = computed<number | null>(() => {
+    const starts = [...Object.values(get(dbUpgradeVersionTimes)), ...Object.values(get(dataMigrationVersionTimes))];
+    return starts.length > 0 ? Math.min(...starts) : null;
+  });
   /** The error an unlock failed with while an upgrade or migration was running, kept for the failure screen. */
   const upgradeFailure = ref<string | null>(null);
 
@@ -41,12 +44,9 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
   };
 
   function markStarted(times: VersionTimes, version: number): VersionTimes {
-    const now = Date.now();
-    if (get(upgradeStartedAt) === null)
-      set(upgradeStartedAt, now);
     if (times[version] !== undefined)
       return times;
-    return { ...times, [version]: now };
+    return { ...times, [version]: Date.now() };
   }
 
   const updateDbUpgradeStatus = (status: DbUpgradeStatusData): void => {
@@ -79,7 +79,6 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
   const clearUpgradeMessages = (): void => {
     set(dataMigrationStatus, null);
     set(dbUpgradeStatus, null);
-    set(upgradeStartedAt, null);
     set(dbUpgradeVersionTimes, {});
     set(dataMigrationVersionTimes, {});
     set(upgradeFailure, null);
