@@ -37,7 +37,7 @@ from rotkehlchen.api.websockets.typedefs import (
     WSMessageType,
 )
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
-from rotkehlchen.chain.ethereum.modules.eth2.constants import UNKNOWN_VALIDATOR_INDEX
+from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorType
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.concurrency import TaskCancelledError, checkpoint
@@ -270,10 +270,22 @@ def _load_asset_movement_matches(
                 break
 
             direction = endpoint.maybe_get_direction(for_balance_tracking=True)
+            if direction not in (EventDirection.OUT, EventDirection.IN):
+                valid = False
+                break
+
+            bucket_directions = Bucket.from_event(
+                event=endpoint,
+                treat_eth2_as_eth=treat_eth2_as_eth,
+            )
+            if len(bucket_directions) != 1 or bucket_directions[0][1] != direction:
+                valid = False
+                break
+
             if direction == EventDirection.OUT:
                 out_ids.append(ev_id)
                 total_out_amount += endpoint.amount
-            elif direction == EventDirection.IN:
+            else:
                 in_entries.append((
                     (
                         int(endpoint.timestamp),
@@ -285,17 +297,8 @@ def _load_asset_movement_matches(
                     endpoint.amount,
                 ))
                 total_in_amount += endpoint.amount
-            else:
-                valid = False
-                break
 
-            ev_buckets = tuple(
-                bucket for bucket, _dir in Bucket.from_event(
-                    event=endpoint,
-                    treat_eth2_as_eth=treat_eth2_as_eth,
-                )
-            )
-            endpoint_buckets.append((ev_id, ev_buckets))
+            endpoint_buckets.append((ev_id, (bucket_directions[0][0],)))
             min_ts = endpoint.timestamp if min_ts is None or endpoint.timestamp < min_ts else min_ts  # noqa: E501
             max_ts = endpoint.timestamp if max_ts is None or endpoint.timestamp > max_ts else max_ts  # noqa: E501
 
@@ -1171,9 +1174,11 @@ class _CostBasisPass:
         """Move lots out of `source` into the match's transit bucket without realizing PnL.
 
         If `source` is blocked, the leg is skipped and transit is marked blocked so healthy IN
-        legs fall back to standalone receives. If `source` is healthy but transit or a matched IN
-        bucket is blocked, transit carryover is skipped and `source` still spends its lots via
-        `_spend` so withdrawn lots do not remain in the healthy bucket.
+        legs fall back to standalone receives. If `source` is healthy but transit, an IN leg's
+        bucket, or the bucket of a sibling OUT leg not applied yet is blocked, transit carryover
+        is skipped and `source` still spends its lots via `_spend` so withdrawn lots do not
+        remain in the healthy bucket. A sibling OUT leg that was already applied has moved its
+        lots into transit, so its bucket getting blocked afterwards does not affect this leg.
         """
         assert event.identifier is not None
         self._visited_match_out_ids.add(event.identifier)
@@ -1185,6 +1190,14 @@ class _CostBasisPass:
 
         if (
             transit in self.blocked_buckets or
+            self._has_blocked_match_endpoint(
+                event_ids=[
+                    out_id for out_id in match.out_ids
+                    if out_id not in self._visited_match_out_ids
+                ],
+                expected_direction=EventDirection.OUT,
+                treat_eth2_as_eth=treat_eth2_as_eth,
+            ) or
             self._has_blocked_match_endpoint(
                 event_ids=match.in_ids,
                 expected_direction=EventDirection.IN,
@@ -1308,6 +1321,18 @@ class _CostBasisPass:
             event.validator_index != UNKNOWN_VALIDATOR_INDEX
         ):
             touched_buckets.add(validator_eth2_bucket(event.validator_index))
+        elif (
+            isinstance(event, OnchainEvent) and
+            event.counterparty == CPT_ETH2 and
+            event.event_type == HistoryEventType.INFORMATIONAL and
+            event.event_subtype == HistoryEventSubType.CONSOLIDATE and
+            event.extra_data is not None and
+            isinstance(source_validator := event.extra_data.get('source_validator_index'), int) and
+            isinstance(target_validator := event.extra_data.get('target_validator_index'), int) and
+            source_validator != target_validator
+        ):
+            touched_buckets.add(validator_eth2_bucket(source_validator))
+            touched_buckets.add(validator_eth2_bucket(target_validator))
 
         event_match = self.asset_movement_matches.get(event.identifier)
         if (
@@ -2282,13 +2307,14 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                 from_ts = min(from_ts, start_ts)
                 cost_basis_pass.from_ts = from_ts
 
-            # Pull `from_ts` back if any match spans `from_ts` and we are already replaying from
-            # `start_ts <= match.min_ts`, since its legs are applied together.
+            # Pull `from_ts` back if any match spans `from_ts`, clamping at `start_ts` when an
+            # earlier leg was already checkpointed into transit, so every replayed leg and
+            # deferred destination event affected by legs at `>= from_ts` is rewritten.
             all_match_spans = [(match.min_ts, match.max_ts) for match in unique_matches]
             while (spanning_min_ts := min(
                 (
-                    span_min_ts for span_min_ts, span_max_ts in all_match_spans
-                    if start_ts <= span_min_ts < from_ts <= span_max_ts
+                    effective_min_ts for span_min_ts, span_max_ts in all_match_spans
+                    if (effective_min_ts := max(start_ts, span_min_ts)) < from_ts <= span_max_ts
                 ),
                 default=None,
             )) is not None:

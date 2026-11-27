@@ -82,6 +82,7 @@ from rotkehlchen.db.constants import (
     OKX_LOCATION_KEY,
     SQL_VARIABLE_CHUNK_SIZE,
     USER_CREDENTIAL_MAPPING_KEYS,
+    HistoryEventLinkType,
     HistoryMappingState,
 )
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType, DBCursor
@@ -1976,19 +1977,49 @@ class DBHandler:
             write_cursor: DBCursor,
             group_identifiers: Sequence[str],
     ) -> None:
-        """Mark materialized cost basis stale from the earliest event in the given groups."""
+        """Mark materialized cost basis stale from the earliest event in the given groups,
+        and from the earliest leg of any connected ``ASSET_MOVEMENT_MATCH`` components they
+        belong to.
+        """
         if is_accounting_update_enabled() is False or len(group_identifiers) == 0:
             return
 
-        timestamps = [
-            row[0] for chunk, placeholders in get_query_chunks(data=group_identifiers)
+        min_ts: int | None = None
+        matched_event_ids: set[int] = set()
+        link_type = HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()
+        for chunk, placeholders in get_query_chunks(
+            data=group_identifiers,
+            chunk_size=SQL_VARIABLE_CHUNK_SIZE - 1,  # reserve 1 binding for link_type
+        ):
             if (row := write_cursor.execute(
                 f'SELECT MIN(timestamp) FROM history_events WHERE group_identifier IN ({placeholders})',  # noqa: E501
                 chunk,
-            ).fetchone()) is not None
-        ]
-        if (min_ts := min((ts for ts in timestamps if ts is not None), default=None)) is not None:
+            ).fetchone()) is not None and row[0] is not None and (
+                min_ts is None or row[0] < min_ts
+            ):
+                min_ts = row[0]
+
+            matched_event_ids.update(
+                matched_row[0] for matched_row in write_cursor.execute(
+                    f'SELECT he.identifier FROM history_events he '
+                    f'WHERE he.group_identifier IN ({placeholders}) '
+                    'AND EXISTS ('
+                    'SELECT 1 FROM history_event_links hel '
+                    'WHERE hel.link_type = ? '
+                    'AND (hel.left_event_id = he.identifier OR hel.right_event_id = he.identifier)'
+                    ')',
+                    (*chunk, link_type),
+                )
+            )
+
+        if min_ts is not None:
             mark_stale_from_ts(write_cursor=write_cursor, from_ts=min_ts, include_balances=False)
+
+        if len(matched_event_ids) != 0:
+            DBHistoryEvents.mark_cost_basis_stale_for_matched_components(
+                write_cursor=write_cursor,
+                event_ids=matched_event_ids,
+            )
 
     @staticmethod
     def _mark_cost_basis_stale_for_eth_accounts(

@@ -576,6 +576,31 @@ class DBHistoryEvents:
 
         Returns the number of rows deleted.
         """
+        if is_accounting_update_enabled():
+            # Mark connected ASSET_MOVEMENT_MATCH components stale before DELETE cascades away
+            # their history_event_links rows. Wrap where_clause in a CTE so OR predicates inside
+            # it cannot alter precedence.
+            link_type = HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()
+            matched_ids = [
+                row[0] for row in write_cursor.execute(
+                    f'WITH target_ids(identifier) AS ('
+                    f'SELECT identifier FROM history_events {where_clause}'
+                    ') '
+                    'SELECT t.identifier FROM target_ids t '
+                    'WHERE EXISTS ('
+                    'SELECT 1 FROM history_event_links hel '
+                    'WHERE hel.link_type = ? '
+                    'AND (hel.left_event_id = t.identifier OR hel.right_event_id = t.identifier)'
+                    ')',
+                    (*where_bindings, link_type),
+                )
+            ]
+            if len(matched_ids) != 0:
+                self.mark_cost_basis_stale_for_matched_components(
+                    write_cursor=write_cursor,
+                    event_ids=matched_ids,
+                )
+
         deleted_ids, timestamps, group_ids, accounts = [], [], set(), set()
         if len(rows := write_cursor.execute(
             f'DELETE FROM history_events {where_clause} RETURNING timestamp, identifier, group_identifier, location, location_label',  # noqa: E501
@@ -1254,6 +1279,17 @@ class DBHistoryEvents:
 
         min_ts = min(old_data[0], event.timestamp)
         self._mark_events_modified(write_cursor=write_cursor, timestamp=min_ts)
+        if is_accounting_update_enabled():
+            link_type = HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()
+            if write_cursor.execute(
+                'SELECT 1 FROM history_event_links '
+                'WHERE link_type = ? AND (left_event_id = ? OR right_event_id = ?) LIMIT 1',
+                (link_type, event.identifier, event.identifier),
+            ).fetchone() is not None:
+                self.mark_cost_basis_stale_for_matched_components(
+                    write_cursor=write_cursor,
+                    event_ids=(event.identifier,),
+                )
 
     @staticmethod
     def set_event_mapping_state(
