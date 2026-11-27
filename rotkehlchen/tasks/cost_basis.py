@@ -17,7 +17,7 @@ import json
 import logging
 import time
 from collections import defaultdict, deque
-from itertools import starmap
+from itertools import chain, starmap
 from operator import itemgetter
 from typing import TYPE_CHECKING, Final, NamedTuple
 
@@ -159,6 +159,24 @@ class _AssetMovementMatch(NamedTuple):
                 return amount
         return self.total_out_amount
 
+    @property
+    def signature(self) -> str:
+        """Everything the rows of the legs depend on: membership, split, and time span."""
+        in_amounts = ','.join(f'{ev_id}:{amount}' for ev_id, amount in self.in_move_amounts)
+        return (
+            f'{self.match_key}|{self.total_out_amount}|{self.total_in_amount}|{in_amounts}|'
+            f'{self.min_ts}-{self.max_ts}'
+        )
+
+
+class _DeferredMatchIn(NamedTuple):
+    """An IN leg of a match recorded before an OUT leg, waiting for that OUT to be applied."""
+    event: HistoryBaseEntry
+    destination: Bucket
+    timestamp: Timestamp
+    is_stale: bool
+    rule: BaseEventSettings | None
+
 
 def _load_asset_movement_matches(
         cursor: DBCursor,
@@ -219,8 +237,8 @@ def _load_asset_movement_matches(
         out_ids: list[int] = []
         in_entries: list[tuple[tuple[int, str, int, int], int, FVal]] = []
         total_out_amount, total_in_amount = ZERO, ZERO
-        min_ts: TimestampMS | None = None
-        max_ts: TimestampMS | None = None
+        min_ts = TimestampMS(min(int(endpoints[ev_id][0]) for ev_id in component))
+        max_ts = TimestampMS(max(int(endpoints[ev_id][0]) for ev_id in component))
         valid = True
         for ev_id in sorted(component):
             (
@@ -255,11 +273,7 @@ def _load_asset_movement_matches(
                 valid = False
                 break
 
-            ts_val = TimestampMS(int(ev_ts))
-            min_ts = ts_val if min_ts is None or ts_val < min_ts else min_ts
-            max_ts = ts_val if max_ts is None or ts_val > max_ts else max_ts
-
-        if not valid or len(out_ids) == 0 or len(in_entries) == 0 or min_ts is None or max_ts is None:  # noqa: E501
+        if not valid or len(out_ids) == 0 or len(in_entries) == 0:
             continue
 
         # Order IN legs identically to the event query so cumulative telescoping shares sum
@@ -398,8 +412,9 @@ class _CostBasisPass:
         self._basis_transfer_receives: set[int] = set()
         # Surviving legs of a swap or basis-transfer group skipped due to an ignored asset.
         self._skipped_event_ids: set[int] = set()
-        # Outgoing legs of reverse-ordered matched asset movements already applied with their IN.
-        self._skipped_match_out_ids: set[int] = set()
+        # OUT legs that an IN leg recorded before them waits for, see `_apply_matched_in`.
+        self._pending_match_out_ids: dict[int, _AssetMovementMatch] = {}
+        self._deferred_match_ins: dict[str, list[_DeferredMatchIn]] = {}
         self.eth2 = Eth2StakingCostBasis(host=self, validator_types=validator_types)
 
     def get_price(self, asset: Asset, timestamp: Timestamp) -> Price | None:
@@ -973,14 +988,14 @@ class _CostBasisPass:
         """Whether the last applied event left state for an event after it.
 
         That state is what pairs the two sides of a swap, a basis transfer, an ignored
-        swap/basis-transfer group, or a reverse-ordered asset movement match.
+        swap/basis-transfer group, or an IN leg of a match waiting for its OUT leg.
         """
         return (
             len(self._swap_basis) != 0 or
             len(self._swap_proceeds) != 0 or
             len(self._basis_transfer_receives) != 0 or
             len(self._skipped_event_ids) != 0 or
-            len(self._skipped_match_out_ids) != 0
+            len(self._pending_match_out_ids) != 0
         )
 
     def _should_skip_ignored_group(
@@ -1066,13 +1081,26 @@ class _CostBasisPass:
             event: HistoryBaseEntry,
             source: Bucket,
             match: _AssetMovementMatch,
+            timestamp: Timestamp,
             is_stale: bool,
+            rule: BaseEventSettings | None,
             treat_eth2_as_eth: bool,
     ) -> None:
-        """Move lots out of `source` into the match's transit bucket without realizing PnL."""
+        """Move lots out of `source` into the match's transit bucket without realizing PnL.
+
+        If `source` is blocked, the leg is skipped and transit is marked blocked so healthy IN
+        legs fall back to standalone receives. If `source` is healthy but transit or a matched IN
+        bucket is blocked, transit carryover is skipped and `source` still spends its lots via
+        `_spend` so withdrawn lots do not remain in the healthy bucket.
+        """
+        assert event.identifier is not None
+        self._pending_match_out_ids.pop(event.identifier, None)
         transit = match.transit_bucket
+        if source in self.blocked_buckets:
+            self.blocked_buckets.add(transit)
+            return
+
         if (
-            source in self.blocked_buckets or
             transit in self.blocked_buckets or
             self._has_blocked_match_endpoint(
                 event_ids=match.in_ids,
@@ -1081,6 +1109,7 @@ class _CostBasisPass:
             )
         ):
             self.blocked_buckets.add(transit)
+            self._spend(event, source, timestamp, is_stale, rule)
             return
 
         moved = self.lots.transfer(
@@ -1109,61 +1138,92 @@ class _CostBasisPass:
             event: HistoryBaseEntry,
             destination: Bucket,
             match: _AssetMovementMatch,
+            timestamp: Timestamp,
             is_stale: bool,
-            treat_eth2_as_eth: bool,
+            rule: BaseEventSettings | None,
     ) -> None:
-        """Pull lots from the match's transit bucket into `destination`, keeping basis and age."""
+        """Pull lots from the match's transit bucket into `destination`, keeping basis and age.
+
+        A leg recorded before an OUT leg of its match waits until that OUT is applied at its own
+        position, so the source bucket gives the lots it holds at the withdrawal and its events in
+        between consume theirs in order. The trade-off is that a spend from `destination` in
+        between does not find the lots yet.
+        """
+        assert event.identifier is not None
+        if (in_pos := self.match_event_positions.get(event.identifier)) is not None and len(
+            pending_out_ids := [
+                out_id for out_id in match.out_ids
+                if (
+                    (out_pos := self.match_event_positions.get(out_id)) is not None and
+                    out_pos > in_pos
+                )
+            ],
+        ) != 0:
+            self._pending_match_out_ids.update(dict.fromkeys(pending_out_ids, match))
+            self._deferred_match_ins.setdefault(match.match_key, []).append(_DeferredMatchIn(
+                event=event,
+                destination=destination,
+                timestamp=timestamp,
+                is_stale=is_stale,
+                rule=rule,
+            ))
+            return
+
+        self._complete_matched_in(
+            event=event,
+            destination=destination,
+            match=match,
+            timestamp=timestamp,
+            is_stale=is_stale,
+            rule=rule,
+        )
+
+    def _resume_deferred_match_ins(self, match: _AssetMovementMatch) -> None:
+        """Complete the IN legs of the match that waited, once none of its OUT legs is pending.
+
+        An OUT leg visited without reaching `_apply_matched_out` moved nothing into transit, so
+        the caller blocks transit and the waiting legs fall back to standalone receives.
+        """
+        if match.match_key not in self._deferred_match_ins or any(
+            out_id in self._pending_match_out_ids for out_id in match.out_ids
+        ):
+            return
+
+        for deferred in self._deferred_match_ins.pop(match.match_key):
+            self._complete_matched_in(
+                event=deferred.event,
+                destination=deferred.destination,
+                match=match,
+                timestamp=deferred.timestamp,
+                is_stale=deferred.is_stale,
+                rule=deferred.rule,
+            )
+
+    def _complete_matched_in(
+            self,
+            event: HistoryBaseEntry,
+            destination: Bucket,
+            match: _AssetMovementMatch,
+            timestamp: Timestamp,
+            is_stale: bool,
+            rule: BaseEventSettings | None,
+    ) -> None:
+        """Move the share of the transit lots of the IN leg into `destination`.
+
+        When transit or `destination` is blocked the carryover is skipped: a blocked destination
+        stays skipped, while a healthy one falls back to a standalone `receive`.
+        """
         assert event.identifier is not None
         transit = match.transit_bucket
         is_last_in = event.identifier == match.last_in_id
-        in_pos = self.match_event_positions.get(event.identifier)
-        future_out_ids = [
-            out_id for out_id in match.out_ids
-            if (
-                in_pos is not None and
-                out_id not in self._skipped_match_out_ids and
-                (out_pos := self.match_event_positions.get(out_id)) is not None and
-                out_pos > in_pos
-            )
-        ]
-        if (
-            destination in self.blocked_buckets or
-            transit in self.blocked_buckets or
-            self._has_blocked_match_endpoint(
-                event_ids=future_out_ids,
-                expected_direction=EventDirection.OUT,
-                treat_eth2_as_eth=treat_eth2_as_eth,
-            )
-        ):
-            self._skipped_match_out_ids.update(future_out_ids)
+        if destination in self.blocked_buckets or transit in self.blocked_buckets:
             if is_last_in:
                 self.lots.drop_bucket(transit)
                 self.blocked_buckets.discard(transit)
             else:
                 self.blocked_buckets.add(transit)
-            return
-
-        for out_id in future_out_ids:
-            if (out_event := self.match_events.get(out_id)) is not None:
-                out_buckets = Bucket.from_event(
-                    event=out_event,
-                    treat_eth2_as_eth=treat_eth2_as_eth,
-                )
-                if len(out_buckets) == 1 and out_buckets[0][1] == EventDirection.OUT:
-                    out_is_stale = self.from_ts is None or out_event.timestamp >= self.from_ts
-                    self._apply_matched_out(
-                        event=out_event,
-                        source=out_buckets[0][0],
-                        match=match,
-                        is_stale=out_is_stale,
-                        treat_eth2_as_eth=treat_eth2_as_eth,
-                    )
-            self._skipped_match_out_ids.add(out_id)
-
-        if transit in self.blocked_buckets:
-            if is_last_in:
-                self.lots.drop_bucket(transit)
-                self.blocked_buckets.discard(transit)
+            if destination not in self.blocked_buckets:
+                self.receive(event, destination, timestamp, is_stale, rule)
             return
 
         move_amount = match.move_amount_for_in(event.identifier)
@@ -1234,9 +1294,10 @@ class _CostBasisPass:
     ) -> None:
         """Apply the event to the lots of the buckets it affects.
 
-        Afterwards only the next event (and swap fee events) can have pairing state left, see
-        `has_pending_pair`. May raise NoPriceForGivenTimestamp or RemoteError if the price oracles
-        are rate limited or fail transiently.
+        Afterwards only the next event (and swap fee events), or the OUT legs a matched IN leg
+        waits for, can have pairing state left, see `has_pending_pair`. May raise
+        NoPriceForGivenTimestamp or RemoteError if the price oracles are rate limited or fail
+        transiently.
         """
         self._apply(
             event=event,
@@ -1244,9 +1305,14 @@ class _CostBasisPass:
             treat_eth2_as_eth=treat_eth2_as_eth,
             swap_fee_events=swap_fee_events,
         )
-        if event.identifier is not None:  # a side that is not applied leaves its pairing state
-            self._swap_basis.pop(event.identifier, None)
-            self._swap_proceeds.pop(event.identifier, None)
+        if event.identifier is None:
+            return
+
+        self._swap_basis.pop(event.identifier, None)  # left by a side that was not applied
+        self._swap_proceeds.pop(event.identifier, None)
+        if (match := self._pending_match_out_ids.pop(event.identifier, None)) is not None:
+            self.blocked_buckets.add(match.transit_bucket)  # it moved nothing into transit
+            self._resume_deferred_match_ins(match)
 
     def _apply(
             self,
@@ -1260,10 +1326,6 @@ class _CostBasisPass:
 
         if event.identifier in self._skipped_event_ids:
             self._skipped_event_ids.remove(event.identifier)
-            return
-
-        if event.identifier in self._skipped_match_out_ids:
-            self._skipped_match_out_ids.remove(event.identifier)
             return
 
         if (
@@ -1382,16 +1444,20 @@ class _CostBasisPass:
                         event=event,
                         source=bucket,
                         match=match,
+                        timestamp=timestamp,
                         is_stale=is_stale,
+                        rule=rule,
                         treat_eth2_as_eth=treat_eth2_as_eth,
                     )
+                    self._resume_deferred_match_ins(match)
                 else:
                     self._apply_matched_in(
                         event=event,
                         destination=bucket,
                         match=match,
+                        timestamp=timestamp,
                         is_stale=is_stale,
-                        treat_eth2_as_eth=treat_eth2_as_eth,
+                        rule=rule,
                     )
                 return
 
@@ -1461,12 +1527,15 @@ def _write_rows(
         rows: list[CostBasisRow],
         from_ts: TimestampMS | None,
         first_batch_written: bool,
+        match_snapshot: str,
 ) -> None:
     """Write a batch of rows, dropping the rows that are being replaced on the first write.
 
     The delete is what keeps a pass idempotent. The unique constraint of the table can not,
     since SQLite treats the NULL location labels and protocols of two rows as distinct. The
     checkpoints after `from_ts` hold lots that the stale events may change, and go with them.
+    The asset movement matches the rewritten rows are computed with replace the stored ones
+    along with them, see `DBCacheStatic.COST_BASIS_MATCH_SNAPSHOT`.
     """
     if not first_batch_written:
         if from_ts is None:
@@ -1482,6 +1551,10 @@ def _write_rows(
                 'DELETE FROM cost_basis_checkpoints WHERE timestamp > ?',
                 (from_ts,),
             )
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES (?, ?)',
+            (DBCacheStatic.COST_BASIS_MATCH_SNAPSHOT.value, match_snapshot),
+        )
 
     write_cursor.executemany(
         'INSERT OR REPLACE INTO event_cost_basis(event_identifier, location, location_label, '
@@ -1493,14 +1566,44 @@ def _write_rows(
     )
 
 
+def _pair_candidate_idx(
+        events: Sequence[HistoryBaseEntry],
+        idx: int,
+        ignored_asset_ids: set[str],
+        treat_eth2_as_eth: bool,
+) -> int:
+    """Index of the event that the event at `idx` may pair with as a swap or basis transfer.
+
+    Events of ignored assets in the same group that can not be the receiving side (such as an
+    approval) are skipped, so they do not split the two sides apart. Ignored receiving sides are
+    kept, so that `_should_skip_ignored_group` skips the whole group.
+    """
+    group_identifier = events[idx].group_identifier
+    pair_idx = idx + 1
+    while (
+        pair_idx < len(events) and
+        (candidate := events[pair_idx]).asset.identifier in ignored_asset_ids and
+        candidate.group_identifier == group_identifier and
+        _swap_leg_direction(
+            candidate,
+            [] if candidate.asset.is_fiat() else Bucket.from_event(
+                event=candidate,
+                treat_eth2_as_eth=treat_eth2_as_eth,
+            ),
+        ) != EventDirection.IN
+    ):
+        pair_idx += 1
+    return pair_idx
+
+
 def _collect_swap_fee_events(
         events: Sequence[HistoryBaseEntry],
         out_idx: int,
+        fee_idx: int,
 ) -> list[HistoryBaseEntry]:
-    """Collect fee events immediately following the (out, in) pair of a swap group."""
+    """Collect fee events from `fee_idx` on, right after the (out, in) pair of a swap group."""
     out_event = events[out_idx]
     fee_events: list[HistoryBaseEntry] = []
-    fee_idx = out_idx + 2
     while fee_idx < len(events):
         candidate = events[fee_idx]
         if (
@@ -1735,6 +1838,9 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             cursor=cursor,
             ignored_asset_ids=ignored_asset_ids,
         )
+        unique_matches = tuple(dict.fromkeys(asset_movement_matches.values()))
+        match_snapshot = {match.signature: int(match.min_ts) for match in unique_matches}
+        serialized_match_snapshot = json.dumps(match_snapshot, separators=(',', ':'))
         validator_types: dict[int, ValidatorType] = {
             validator_index: ValidatorType.deserialize_from_db(validator_type)
             for validator_index, validator_type in cursor.execute(
@@ -1752,6 +1858,26 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
             ).fetchone() is None
         ):
             from_ts = unprocessed_from_ts
+            stored_snapshot: dict[str, int] = json.loads(raw_snapshot) if (
+                raw_snapshot := database.get_static_cache(
+                    cursor=cursor,
+                    name=DBCacheStatic.COST_BASIS_MATCH_SNAPSHOT,
+                )
+            ) is not None else {}
+            # A match added, removed, or changed since the rows were computed (a link, an
+            # ignore, a deleted or edited leg) changes the rows of all its legs, also those
+            # before the stale marker that the change set.
+            if (changed_min_ts := min(
+                (
+                    min_ts for signature, min_ts in chain(
+                        stored_snapshot.items(),
+                        match_snapshot.items(),
+                    )
+                    if (signature in stored_snapshot) != (signature in match_snapshot)
+                ),
+                default=None,
+            )) is not None and changed_min_ts < from_ts:
+                from_ts = TimestampMS(changed_min_ts)
 
         cost_basis_pass = _CostBasisPass(
             settings=settings,
@@ -1767,7 +1893,6 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
         restored_terminal_ts: TimestampMS | None = None
         events_since_interval = 0
         if from_ts is not None:
-            unique_matches = tuple(dict.fromkeys(asset_movement_matches.values()))
             checkpoint_limit = from_ts
             stepped_back_for_orphan = False
             while (checkpoint_row := cursor.execute(
@@ -1838,11 +1963,12 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                 cost_basis_pass.from_ts = from_ts
 
             # Pull `from_ts` back if any match spans `from_ts` and we are already replaying from
-            # `start_ts <= match.min_ts` (e.g. retroactive match without a checkpoint in between).
+            # `start_ts <= match.min_ts`, since its legs are applied together.
+            all_match_spans = [(match.min_ts, match.max_ts) for match in unique_matches]
             while (spanning_min_ts := min(
                 (
-                    match.min_ts for match in unique_matches
-                    if start_ts <= match.min_ts < from_ts <= match.max_ts
+                    span_min_ts for span_min_ts, span_max_ts in all_match_spans
+                    if start_ts <= span_min_ts < from_ts <= span_max_ts
                 ),
                 default=None,
             )) is not None:
@@ -1912,20 +2038,30 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                     lookahead += 1
 
             next_event = events[idx + 1] if idx + 1 < total_events else None
+            pair_idx = (
+                idx + 1 if len(ignored_asset_ids) == 0
+                else _pair_candidate_idx(
+                    events=events,
+                    idx=idx,
+                    ignored_asset_ids=ignored_asset_ids,
+                    treat_eth2_as_eth=treat_eth2_as_eth,
+                )
+            )
+            pair_event = events[pair_idx] if pair_idx < total_events else None
             swap_fee_events: Sequence[HistoryBaseEntry] = (
-                _collect_swap_fee_events(events, idx)
+                _collect_swap_fee_events(events, out_idx=idx, fee_idx=pair_idx + 1)
                 if (
-                    idx + 2 < total_events and
-                    events[idx + 2].group_identifier == event.group_identifier and
-                    events[idx + 2].event_type == event.event_type and
-                    events[idx + 2].event_subtype == HistoryEventSubType.FEE
+                    pair_idx + 1 < total_events and
+                    events[pair_idx + 1].group_identifier == event.group_identifier and
+                    events[pair_idx + 1].event_type == event.event_type and
+                    events[pair_idx + 1].event_subtype == HistoryEventSubType.FEE
                 )
                 else ()
             )
             try:
                 cost_basis_pass.apply(
                     event=event,
-                    next_event=next_event,
+                    next_event=pair_event,
                     treat_eth2_as_eth=treat_eth2_as_eth,
                     swap_fee_events=swap_fee_events,
                 )
@@ -1959,7 +2095,13 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                 len(cost_basis_pass.rows) >= COST_BASIS_BATCH_SIZE
             ):
                 with database.user_write() as write_cursor:
-                    _write_rows(write_cursor, cost_basis_pass.rows, from_ts, first_batch_written)
+                    _write_rows(
+                        write_cursor=write_cursor,
+                        rows=cost_basis_pass.rows,
+                        from_ts=from_ts,
+                        first_batch_written=first_batch_written,
+                        match_snapshot=serialized_match_snapshot,
+                    )
                     if checkpoint_ts is not None:
                         _write_checkpoint(
                             write_cursor=write_cursor,
@@ -1971,10 +2113,10 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                         restored_terminal_ts = None
                         events_since_interval = 0
                     next_idx = (
-                        idx + 2
+                        pair_idx + 1
                         if (
-                            next_event is not None and
-                            next_event.identifier in cost_basis_pass._basis_transfer_receives
+                            pair_event is not None and
+                            pair_event.identifier in cost_basis_pass._basis_transfer_receives
                         )
                         else idx + 1
                     )
@@ -1991,7 +2133,13 @@ def process_cost_basis(database: DBHandler, msg_aggregator: MessagesAggregator) 
                 time.sleep(0)
 
         with database.user_write() as write_cursor:  # also when empty, to drop the replaced rows
-            _write_rows(write_cursor, cost_basis_pass.rows, from_ts, first_batch_written)
+            _write_rows(
+                write_cursor=write_cursor,
+                rows=cost_basis_pass.rows,
+                from_ts=from_ts,
+                first_batch_written=first_batch_written,
+                match_snapshot=serialized_match_snapshot,
+            )
             if interrupted_at is None and total_events != 0:
                 _write_checkpoint(
                     write_cursor=write_cursor,

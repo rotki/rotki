@@ -868,7 +868,20 @@ class DBHistoryEvents:
         """Restore multiple history events to their original backed-up state in bulk.
         Events without a backup are silently skipped.
         """
+        min_restored_ts: int | None = None
         for chunk, placeholders in get_query_chunks(identifiers):
+            for current_ts, backup_ts in write_cursor.execute(
+                'SELECT h.timestamp, b.timestamp FROM history_events_backup b '
+                'LEFT JOIN history_events h ON h.identifier = b.identifier '
+                f'WHERE b.identifier IN ({placeholders})',
+                chunk,
+            ):
+                for ts_val in (current_ts, backup_ts):
+                    if ts_val is not None and (
+                        min_restored_ts is None or ts_val < min_restored_ts
+                    ):
+                        min_restored_ts = ts_val
+
             # Replacing an event deletes its row first, which cascades all its mappings away.
             # Keep them so that state such as the CSV import marker survives the restore.
             # Callers drop the mappings the restore is meant to undo (e.g. MATCHED).
@@ -912,6 +925,9 @@ class DBHistoryEvents:
                     decoded_addresses=None,  # re-derived from the restored notes
                 )
 
+        if min_restored_ts is not None and is_accounting_update_enabled():
+            mark_stale_from_ts(write_cursor=write_cursor, from_ts=min_restored_ts)
+
     def restore_matched_events_before_purge(
             self,
             write_cursor: DBCursor,
@@ -945,6 +961,23 @@ class DBHistoryEvents:
 
         if len(linked_events) == 0:
             return
+
+        if is_accounting_update_enabled():
+            min_linked_ts: int | None = None
+            for chunk, placeholders in get_query_chunks(list(linked_events)):
+                if (row := write_cursor.execute(
+                    f'SELECT MIN(timestamp) FROM history_events WHERE identifier IN ({placeholders})',  # noqa: E501
+                    chunk,
+                ).fetchone()) is not None and row[0] is not None and (
+                    min_linked_ts is None or row[0] < min_linked_ts
+                ):
+                    min_linked_ts = row[0]
+            if min_linked_ts is not None:
+                mark_stale_from_ts(
+                    write_cursor=write_cursor,
+                    from_ts=min_linked_ts,
+                    include_balances=False,
+                )
 
         # clean up any adjustment events auto-created during matching on either side of the
         # match. They are not necessarily part of the purge selection (a CSV purge only

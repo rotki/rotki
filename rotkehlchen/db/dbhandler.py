@@ -68,6 +68,7 @@ from rotkehlchen.db.connections import DBConnections
 from rotkehlchen.db.constants import (
     BINANCE_HISTORY_START_TS_KEY,
     BINANCE_MARKETS_KEY,
+    COST_BASIS_CALCULATION_VERSION,
     COST_BASIS_SETTINGS,
     EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
     EVM_ACCOUNTS_DETAILS_TOKENS,
@@ -839,14 +840,43 @@ class DBHandler:
         write_cursor.execute('DELETE FROM event_cost_basis')
         write_cursor.execute('DELETE FROM cost_basis_checkpoints')
         write_cursor.execute(
-            'DELETE FROM key_value_cache WHERE name IN (?, ?, ?)',
+            'DELETE FROM key_value_cache WHERE name IN (?, ?, ?, ?)',
             (
                 DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS.value,
                 DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS.value,
                 DBCacheStatic.LAST_COST_BASIS_FAILURE_TS.value,
+                DBCacheStatic.COST_BASIS_MATCH_SNAPSHOT.value,
             ),
         )
         mark_stale_from_ts(write_cursor=write_cursor, from_ts=0, include_balances=False)
+
+    def invalidate_outdated_cost_basis(self) -> None:
+        """Drop cost basis materialized by an older `COST_BASIS_CALCULATION_VERSION`.
+
+        Runs at login, since a pass only runs once something is stale and would otherwise keep
+        the rows an older calculation got wrong. Without the accounting update nothing is
+        materialized, and the version is left unrecorded so the first login with it checks.
+        """
+        if is_accounting_update_enabled() is False:
+            return
+
+        with self.user_write() as write_cursor:
+            if self.get_static_cache(
+                cursor=write_cursor,
+                name=DBCacheStatic.COST_BASIS_CALCULATION_VERSION,
+            ) == str(COST_BASIS_CALCULATION_VERSION):
+                return
+
+            if write_cursor.execute(
+                'SELECT EXISTS(SELECT 1 FROM event_cost_basis) OR '
+                'EXISTS(SELECT 1 FROM cost_basis_checkpoints)',
+            ).fetchone()[0] == 1:
+                self._wipe_cost_basis(write_cursor)
+            self.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.COST_BASIS_CALCULATION_VERSION,
+                value=str(COST_BASIS_CALCULATION_VERSION),
+            )
 
     def set_settings(self, write_cursor: DBCursor, settings: ModifiableDBSettings) -> None:
         # Compared to the stored value, not CachedSettings, which may not describe this DB yet,
@@ -957,6 +987,8 @@ class DBHandler:
             DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
             DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS,
             DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS,
+            DBCacheStatic.COST_BASIS_MATCH_SNAPSHOT,
+            DBCacheStatic.COST_BASIS_CALCULATION_VERSION,
             DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
             DBCacheStatic.CURRENT_BALANCE_DETECTION_CURSOR,
         ):
@@ -981,6 +1013,8 @@ class DBHandler:
                 DBCacheStatic.STALE_COST_BASIS_MODIFICATION_TS,
                 DBCacheStatic.COST_BASIS_PASS_PROCESSED_TS,
                 DBCacheStatic.COST_BASIS_PASS_MODIFICATION_TS,
+                DBCacheStatic.COST_BASIS_MATCH_SNAPSHOT,
+                DBCacheStatic.COST_BASIS_CALCULATION_VERSION,
             ],
     ) -> str | None:
         ...

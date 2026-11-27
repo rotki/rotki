@@ -78,6 +78,9 @@ COST_BASIS_SETTINGS: Final = (
     'main_currency',
     'treat_eth2_as_eth',
 )
+# Bumped whenever a change to the cost basis pass makes rows it materialized before wrong, so
+# that profiles holding such rows compute all of them again, see `invalidate_outdated_cost_basis`.
+COST_BASIS_CALCULATION_VERSION: Final = 1
 LINKABLE_ACCOUNTING_PROPERTIES = Literal[
     'taxable',
     'count_entire_amount_spend',

@@ -116,7 +116,11 @@ from rotkehlchen.constants.misc import (
     GLOBALDIR_NAME,
     HTTP_STATUS_INTERNAL_DB_ERROR,
 )
-from rotkehlchen.db.cache import IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX, DBCacheStatic
+from rotkehlchen.db.cache import (
+    IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX,
+    DBCacheStatic,
+    mark_stale_from_ts,
+)
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     LINKABLE_ACCOUNTING_PROPERTIES,
@@ -5497,8 +5501,12 @@ class RestAPI:
                 )
                 return api_response(OkResult(True))
 
+        events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
         with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+            all_unlinked_ids: set[int] = set()
             for asset_movement_identifier, matched_event_identifiers in linked_ids.items():
+                all_unlinked_ids.add(asset_movement_identifier)
+                all_unlinked_ids.update(matched_event_identifiers)
                 write_cursor.execute(
                     'DELETE FROM history_event_links WHERE left_event_id=? AND link_type=?',
                     (asset_movement_identifier, HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()),  # noqa: E501
@@ -5513,19 +5521,24 @@ class RestAPI:
                     ) for matched_event_identifier in matched_event_identifiers],
                 )
                 # Remove any adjustment event that was added during matching
-                write_cursor.executemany(
-                    'DELETE FROM history_events WHERE type=? AND group_identifier IN '
-                    '(SELECT group_identifier FROM history_events WHERE identifier IN (?, ?))'
-                    'AND identifier IN (SELECT parent_identifier FROM history_events_mappings '
-                    'WHERE name=? AND value=?)',
-                    [(
-                        HistoryEventType.EXCHANGE_ADJUSTMENT.serialize(),
-                        asset_movement_identifier,
-                        matched_event_identifier,
-                        HISTORY_MAPPING_KEY_STATE,
-                        HistoryMappingState.MATCHED.serialize_for_db(),
-                    ) for matched_event_identifier in matched_event_identifiers],
-                )
+                for matched_event_identifier in matched_event_identifiers:
+                    events_db.delete_events_and_track(
+                        write_cursor=write_cursor,
+                        where_clause=(
+                            'WHERE type=? AND group_identifier IN '
+                            '(SELECT group_identifier FROM history_events '
+                            'WHERE identifier IN (?, ?)) '
+                            'AND identifier IN (SELECT parent_identifier '
+                            'FROM history_events_mappings WHERE name=? AND value=?)'
+                        ),
+                        where_bindings=(
+                            HistoryEventType.EXCHANGE_ADJUSTMENT.serialize(),
+                            asset_movement_identifier,
+                            matched_event_identifier,
+                            HISTORY_MAPPING_KEY_STATE,
+                            HistoryMappingState.MATCHED.serialize_for_db(),
+                        ),
+                    )
                 # Restore events from the backup created before matching
                 DBHistoryEvents.maybe_restore_history_events_from_backup(
                     write_cursor=write_cursor,
@@ -5543,6 +5556,19 @@ class RestAPI:
                         HistoryMappingState.MATCHED.serialize_for_db(),
                     ),
                 )
+
+            if len(all_unlinked_ids) != 0 and is_accounting_update_enabled():
+                placeholders = ','.join(['?'] * len(all_unlinked_ids))
+                if (min_ts_row := write_cursor.execute(
+                    f'SELECT MIN(timestamp) FROM history_events '
+                    f'WHERE identifier IN ({placeholders})',
+                    tuple(all_unlinked_ids),
+                ).fetchone()) is not None and min_ts_row[0] is not None:
+                    mark_stale_from_ts(
+                        write_cursor=write_cursor,
+                        from_ts=min_ts_row[0],
+                        include_balances=False,
+                    )
 
         return api_response(OkResult(True))
 

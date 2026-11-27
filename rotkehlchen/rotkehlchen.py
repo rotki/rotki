@@ -452,6 +452,7 @@ class Rotkehlchen:
 
         DataIssuesManager(self.data.db).reset_orphaned_remediations()
         DBHistoryEvents(self.data.db).apply_manual_price_changes()
+        self.data.db.invalidate_outdated_cost_basis()
         with self.data.db.conn.read_ctx() as cursor:
             settings = self.get_settings(cursor)
             CachedSettings().initialize(settings)  # initialize with saved DB settings

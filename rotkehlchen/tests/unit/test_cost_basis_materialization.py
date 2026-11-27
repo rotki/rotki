@@ -7,6 +7,7 @@ import pytest
 
 from rotkehlchen.accounting.cost_basis.lots import BucketLots
 from rotkehlchen.accounting.cost_basis.pnl import get_unprocessed_from_ts
+from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
@@ -2805,12 +2806,18 @@ def test_asset_movement_retroactive_match_without_intervening_checkpoint(
     )
 
 
+@pytest.mark.parametrize(
+    'checkpoint_interval',
+    [1, 10_000],
+    ids=['with_checkpoint', 'no_checkpoint'],
+)
 @pytest.mark.usefixtures('queried_prices')
 def test_asset_movement_retroactive_unmatch_drops_orphaned_transit_checkpoint(
         database: DBHandler,
+        checkpoint_interval: int,
 ) -> None:
-    """Deleting a match link after a checkpoint held its transit bucket steps back to a clean
-    checkpoint so no orphaned transit bucket leaks into subsequent checkpoints."""
+    """Unlinking via `RestAPI.unlink_matched_asset_movements` marks cost basis stale from the
+    earliest unlinked leg so rows reprocess and no orphaned transit bucket leaks."""
     dbevents = DBHistoryEvents(database)
     _add_rule(database, HistoryEventType.SPEND)
     with database.user_write() as write_cursor:
@@ -2818,7 +2825,7 @@ def test_asset_movement_retroactive_unmatch_drops_orphaned_transit_checkpoint(
             write_cursor,
             ModifiableDBSettings(cost_basis_method=CostBasisMethod.FIFO),
         )
-        dbevents.add_history_event(
+        buy_id = dbevents.add_history_event(
             write_cursor=write_cursor,
             event=HistoryEvent(
                 group_identifier='kraken-buy',
@@ -2862,22 +2869,31 @@ def test_asset_movement_retroactive_unmatch_drops_orphaned_transit_checkpoint(
         matched_event=wallet_receive,
         is_deposit=False,
     )
-    with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', 1):
+    with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', checkpoint_interval):
         assert process_cost_basis(database, database.msg_aggregator) is True
 
-    # Delete the match link and mark only the later leg (t=4) stale
-    with database.user_write() as write_cursor:
-        write_cursor.execute(
-            'DELETE FROM history_event_links WHERE link_type = ?',
-            (HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),),
-        )
-        mark_stale_from_ts(
-            write_cursor=write_cursor,
-            from_ts=_ts_ms(4),
-            include_balances=False,
-        )
+    # While matched, wallet spend consumes the carried-over Kraken lot (5000 - 1000 = 4000)
+    assert _spend_row(database, str(wallet_spend_id)) == (
+        [(str(buy_id), FVal(1))],
+        FVal(4000),
+        FVal(1000),
+        FVal(0),
+    )
 
-    with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', 1):
+    # Unlink through the real REST handler without manually calling mark_stale_from_ts
+    assert withdrawal.identifier is not None
+    fake_rest = MagicMock()
+    fake_rest.rotkehlchen.data.db = database
+    with patch('rotkehlchen.api.rest.api_response') as mock_api_response:
+        RestAPI.unlink_matched_asset_movements(
+            fake_rest,
+            identifier=withdrawal.identifier,
+        )
+    mock_api_response.assert_called_once()
+    assert mock_api_response.call_args.args[0].result is True
+    assert _stale_cost_basis_from_ts(database) == str(_ts_ms(2))
+
+    with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', checkpoint_interval):
         assert process_cost_basis(database, database.msg_aggregator) is True
 
     # Wallet receive is now unmatched (oracle basis 4000 -> spend at 5000 = +1000)
@@ -2895,13 +2911,17 @@ def test_asset_movement_retroactive_unmatch_drops_orphaned_transit_checkpoint(
             assert all(bucket[0] != 'asset_movement_match' for bucket in state['blocked_buckets'])
 
 
-@pytest.mark.parametrize('blocked_side', ['source', 'destination_before', 'destination_between'])
+@pytest.mark.parametrize(
+    'blocked_side',
+    ['source', 'destination_before', 'destination_between', 'destination_reverse'],
+)
 @pytest.mark.usefixtures('queried_prices')
-def test_asset_movement_match_blocked_bucket_skips_cleanly_without_transit_leak(
+def test_asset_movement_match_blocked_bucket_falls_back_on_healthy_side(
         database: DBHandler,
         blocked_side: str,
 ) -> None:
-    """Blocked source or destination buckets skip transfer consistently and never leak transit."""
+    """A blocked endpoint skips only transit carryover: the blocked bucket stays frozen, the
+    healthy side still applies normally (receive or spend), and no transit bucket leaks."""
     dbevents = DBHistoryEvents(database)
     _add_rule(database, HistoryEventType.SPEND)
     with database.user_write() as write_cursor:
@@ -2912,9 +2932,23 @@ def test_asset_movement_match_blocked_bucket_skips_cleanly_without_transit_leak(
         dbevents.add_history_event(
             write_cursor=write_cursor,
             event=HistoryEvent(
-                group_identifier='kraken-buy',
+                group_identifier='kraken-buy-1',
                 sequence_index=0,
                 timestamp=_ts_ms(1),
+                location=LOCATION_KRAKEN,
+                location_label='kraken',
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('1'),
+            ),
+        )
+        kraken_buy2_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                group_identifier='kraken-buy-2',
+                sequence_index=1,
+                timestamp=_ts_ms(2),
                 location=LOCATION_KRAKEN,
                 location_label='kraken',
                 event_type=HistoryEventType.RECEIVE,
@@ -2938,14 +2972,16 @@ def test_asset_movement_match_blocked_bucket_skips_cleanly_without_transit_leak(
                     amount=FVal('-1'),
                 ),
             )
-        elif blocked_side == 'destination_before':
+        elif blocked_side in ('destination_before', 'destination_reverse'):
             dbevents.add_history_event(
                 write_cursor=write_cursor,
                 event=_event(at=1, amount='-1', event_type=HistoryEventType.SPEND),
             )
 
+        wd_at = 4 if blocked_side == 'destination_reverse' else 2
+        recv_at = 3 if blocked_side == 'destination_reverse' else 4
         withdrawal = AssetMovement(
-            timestamp=_ts_ms(2),
+            timestamp=_ts_ms(wd_at),
             location=LOCATION_KRAKEN,
             location_label='kraken',
             event_subtype=HistoryEventSubType.SPEND,
@@ -2962,10 +2998,28 @@ def test_asset_movement_match_blocked_bucket_skips_cleanly_without_transit_leak(
                 write_cursor=write_cursor,
                 event=_event(at=3, amount='-1', event_type=HistoryEventType.SPEND),
             )
-        wallet_receive = _event(at=4, amount='1', event_type=HistoryEventType.RECEIVE)
+        wallet_receive = _event(at=recv_at, amount='1', event_type=HistoryEventType.RECEIVE)
         wallet_receive.identifier = dbevents.add_history_event(
             write_cursor=write_cursor,
             event=wallet_receive,
+        )
+        wallet_spend_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(at=5, amount='1', event_type=HistoryEventType.SPEND),
+        )
+        kraken_spend_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                group_identifier='kraken-sell-after',
+                sequence_index=0,
+                timestamp=_ts_ms(5),
+                location=LOCATION_KRAKEN,
+                location_label='kraken',
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('1'),
+            ),
         )
 
     update_asset_movement_matched_event(
@@ -2978,9 +3032,27 @@ def test_asset_movement_match_blocked_bucket_skips_cleanly_without_transit_leak(
     assert process_cost_basis(database, database.msg_aggregator) is True
 
     row_ids = {row[0] for row in _rows(database, 'event_identifier')}
-    assert wallet_receive.identifier not in row_ids
-    if blocked_side in ('source', 'destination_before'):
+    if blocked_side == 'source':
+        # Source is frozen, but healthy wallet falls back to oracle receive (4000 -> PnL 1000).
         assert withdrawal.identifier not in row_ids
+        assert wallet_receive.identifier in row_ids
+        assert _spend_row(database, str(wallet_spend_id)) == (
+            [(str(wallet_receive.identifier), FVal(1))],
+            FVal(1000),  # 5000 - 4000
+            FVal(4000),
+            FVal(0),
+        )
+    else:
+        # Destination is frozen, but healthy exchange still removes the withdrawn t=1 lot,
+        # so the later exchange spend consumes kraken_buy2 (3000 -> PnL 2000, not 4000).
+        assert wallet_receive.identifier not in row_ids
+        assert withdrawal.identifier in row_ids
+        assert _spend_row(database, str(kraken_spend_id)) == (
+            [(str(kraken_buy2_id), FVal(1))],
+            FVal(2000),  # 5000 - 3000
+            FVal(3000),
+            FVal(0),
+        )
 
     with database.conn.read_ctx() as cursor:
         (terminal_state_json,) = cursor.execute(
@@ -3312,11 +3384,12 @@ def test_asset_movement_match_adding_or_removing_leg_invalidates_spanning_checkp
 
 
 @pytest.mark.usefixtures('queried_prices')
-def test_asset_movement_match_reverse_one_to_many_blocked_sibling_does_not_fabricate_lot(
+def test_asset_movement_match_reverse_one_to_many_blocked_sibling_falls_back_cleanly(
         database: DBHandler,
 ) -> None:
     """In a reverse-ordered 1-to-many match where a sibling IN bucket is already blocked,
-    the unblocked IN leg aborts cleanly when `_apply_matched_out` blocks transit."""
+    the healthy IN leg falls back to oracle receive, the blocked IN stays frozen, and the
+    healthy future OUT still spends its withdrawn lots without leaking transit."""
     dbevents = DBHistoryEvents(database)
     _add_rule(database, HistoryEventType.SPEND)
     with database.user_write() as write_cursor:
@@ -3324,12 +3397,26 @@ def test_asset_movement_match_reverse_one_to_many_blocked_sibling_does_not_fabri
             write_cursor,
             ModifiableDBSettings(cost_basis_method=CostBasisMethod.FIFO),
         )
-        buy_id = dbevents.add_history_event(
+        dbevents.add_history_event(
             write_cursor=write_cursor,
             event=HistoryEvent(
-                group_identifier='kraken-buy-rev-blk',
+                group_identifier='kraken-buy-rev-blk-1',
                 sequence_index=0,
                 timestamp=_ts_ms(1),
+                location=LOCATION_KRAKEN,
+                location_label='kraken',
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('1'),
+            ),
+        )
+        buy2_id = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                group_identifier='kraken-buy-rev-blk-2',
+                sequence_index=1,
+                timestamp=_ts_ms(2),
                 location=LOCATION_KRAKEN,
                 location_label='kraken',
                 event_type=HistoryEventType.RECEIVE,
@@ -3410,14 +3497,18 @@ def test_asset_movement_match_reverse_one_to_many_blocked_sibling_does_not_fabri
 
     assert process_cost_basis(database, database.msg_aggregator) is True
 
-    row_ids = {row[0] for row in _rows(database, 'event_identifier')}
-    assert in1_id not in row_ids
-    assert in2_id not in row_ids
-    assert withdrawal.identifier not in row_ids
+    rows_by_id = {
+        row[0]: row[1:]
+        for row in _rows(database, 'event_identifier, basis_per_unit, basis_source')
+    }
+    assert rows_by_id[in1_id] == ('3000', 'price_oracle')
+    assert in2_id not in rows_by_id
+    assert withdrawal.identifier in rows_by_id
+    # Healthy Kraken withdrawal removed the t=1 lot, so the t=4 sell consumes buy2 (3000 -> +1000)
     assert _spend_row(database, str(kraken_spend_id)) == (
-        [(str(buy_id), FVal(1))],
-        FVal(3000),  # 4000 - 1000; source lot was not removed
-        FVal(1000),
+        [(str(buy2_id), FVal(1))],
+        FVal(1000),  # 4000 - 3000
+        FVal(3000),
         FVal(0),
     )
 
@@ -3428,3 +3519,365 @@ def test_asset_movement_match_reverse_one_to_many_blocked_sibling_does_not_fabri
     terminal_state = json.loads(terminal_state_json)
     assert all(bucket[0] != 'asset_movement_match' for bucket, _ in terminal_state['buckets'])
     assert all(bucket[0] != 'asset_movement_match' for bucket in terminal_state['blocked_buckets'])
+
+
+def _full_rebuild_rows(database: DBHandler) -> list[tuple[Any, ...]]:
+    """The rows a pass computes from scratch, to compare an incremental pass against."""
+    with database.user_write() as write_cursor:
+        write_cursor.execute('DELETE FROM event_cost_basis')
+        write_cursor.execute('DELETE FROM cost_basis_checkpoints')
+        mark_stale_from_ts(write_cursor=write_cursor, from_ts=0, include_balances=False)
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    return _rows(database)
+
+
+def _add_kraken_event(
+        write_cursor: DBCursor,
+        dbevents: DBHistoryEvents,
+        group_identifier: str,
+        at: int,
+        event_type: HistoryEventType,
+) -> int:
+    """Add a kraken event of 1 ETH, returning its identifier."""
+    identifier = dbevents.add_history_event(
+        write_cursor=write_cursor,
+        event=HistoryEvent(
+            group_identifier=group_identifier,
+            sequence_index=0,
+            timestamp=_ts_ms(at),
+            location=LOCATION_KRAKEN,
+            location_label='kraken',
+            event_type=event_type,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal('1'),
+        ),
+    )
+    assert identifier is not None
+    return identifier
+
+
+@pytest.mark.parametrize('change', ['ignore', 'delete', 'unlink'])
+@pytest.mark.parametrize('order', ['forward', 'reverse'])
+@pytest.mark.usefixtures('queried_prices')
+def test_asset_movement_match_retroactive_change_of_later_leg_rewrites_earlier_row(
+        database: DBHandler,
+        order: str,
+        change: str,
+) -> None:
+    """Ignoring or deleting the later leg, or unlinking the match, after a matched pass
+    (without an intervening checkpoint) rewrites the earlier leg's row as a full rebuild does."""
+    dbevents = DBHistoryEvents(database)
+    _add_rule(database, HistoryEventType.SPEND)
+    with database.user_write() as write_cursor:
+        database.set_settings(
+            write_cursor,
+            ModifiableDBSettings(cost_basis_method=CostBasisMethod.FIFO),
+        )
+        _add_kraken_event(
+            write_cursor=write_cursor,
+            dbevents=dbevents,
+            group_identifier='kraken-buy-retro-change',
+            at=1,
+            event_type=HistoryEventType.RECEIVE,
+        )
+        wd_at, recv_at = (2, 3) if order == 'forward' else (3, 2)
+        withdrawal = AssetMovement(
+            timestamp=_ts_ms(wd_at),
+            location=LOCATION_KRAKEN,
+            location_label='kraken',
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('1'),
+            group_identifier='kraken-wd-retro-change',
+        )
+        withdrawal.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=withdrawal,
+        )
+        wallet_receive = _event(at=recv_at, amount='1', event_type=HistoryEventType.RECEIVE)
+        wallet_receive.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=wallet_receive,
+        )
+        dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=_event(at=5, amount='1', event_type=HistoryEventType.SPEND),
+        )
+
+    update_asset_movement_matched_event(
+        events_db=dbevents,
+        asset_movement=withdrawal,
+        fee_event=None,
+        matched_event=wallet_receive,
+        is_deposit=False,
+    )
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    matched_rows = _rows(database)
+
+    later_leg = wallet_receive if order == 'forward' else withdrawal
+    assert later_leg.identifier is not None
+    if change == 'ignore':
+        with database.user_write() as write_cursor:
+            database.add_to_ignored_action_ids(
+                write_cursor=write_cursor,
+                identifiers=[later_leg.group_identifier],
+            )
+    elif change == 'delete':
+        assert dbevents.delete_history_events_by_identifier(
+            identifiers=[later_leg.identifier],
+            force_delete=True,
+        ) is None
+    else:
+        assert withdrawal.identifier is not None
+        fake_rest = MagicMock()
+        fake_rest.rotkehlchen.data.db = database
+        with patch('rotkehlchen.api.rest.api_response'):
+            RestAPI.unlink_matched_asset_movements(fake_rest, identifier=withdrawal.identifier)
+
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    incremental_rows = _rows(database)
+    assert incremental_rows != matched_rows
+    assert incremental_rows == _full_rebuild_rows(database)
+
+
+@pytest.mark.parametrize('checkpoint_interval', [1, 10_000])
+@pytest.mark.usefixtures('queried_prices')
+def test_asset_movement_match_reverse_timestamp_keeps_source_order(
+        database: DBHandler,
+        checkpoint_interval: int,
+) -> None:
+    """A wallet receipt recorded before its matched exchange withdrawal takes the lots the
+    exchange holds at the withdrawal, so an exchange sale in between consumes its own lots."""
+    dbevents = DBHistoryEvents(database)
+    _add_rule(database, HistoryEventType.SPEND)
+    with database.user_write() as write_cursor:
+        database.set_settings(
+            write_cursor,
+            ModifiableDBSettings(cost_basis_method=CostBasisMethod.FIFO),
+        )
+        first_buy_id = _add_kraken_event(
+            write_cursor=write_cursor,
+            dbevents=dbevents,
+            group_identifier='kraken-buy-1',
+            at=1,
+            event_type=HistoryEventType.RECEIVE,
+        )
+        wallet_receive = _event(at=2, amount='1', event_type=HistoryEventType.RECEIVE)
+        wallet_receive.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=wallet_receive,
+        )
+        kraken_sell_id = _add_kraken_event(
+            write_cursor=write_cursor,
+            dbevents=dbevents,
+            group_identifier='kraken-sell',
+            at=3,
+            event_type=HistoryEventType.SPEND,
+        )
+        second_buy_id = _add_kraken_event(
+            write_cursor=write_cursor,
+            dbevents=dbevents,
+            group_identifier='kraken-buy-2',
+            at=4,
+            event_type=HistoryEventType.RECEIVE,
+        )
+        withdrawal = AssetMovement(
+            timestamp=_ts_ms(5),
+            location=LOCATION_KRAKEN,
+            location_label='kraken',
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('1'),
+            group_identifier='kraken-wd-late',
+        )
+        withdrawal.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=withdrawal,
+        )
+
+    update_asset_movement_matched_event(
+        events_db=dbevents,
+        asset_movement=withdrawal,
+        fee_event=None,
+        matched_event=wallet_receive,
+        is_deposit=False,
+    )
+    with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', checkpoint_interval):
+        assert process_cost_basis(database, database.msg_aggregator) is True
+
+    assert _spend_row(database, str(kraken_sell_id)) == (
+        [(str(first_buy_id), FVal(1))],
+        FVal(1000),  # sold at 2000 with the basis of the first buy
+        FVal(1000),
+        FVal(0),
+    )
+    rows_by_id = {
+        row[0]: row[1:]
+        for row in _rows(
+            database,
+            'event_identifier, lot_created_id, basis_per_unit, basis_source',
+        )
+    }
+    assert rows_by_id[wallet_receive.identifier] == (str(second_buy_id), '4000', 'transfer_in')
+
+    expected_rows = _rows(database)
+    with database.user_write() as write_cursor:  # replay from between the two legs
+        mark_stale_from_ts(write_cursor=write_cursor, from_ts=_ts_ms(3), include_balances=False)
+    with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', checkpoint_interval):
+        assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _rows(database) == expected_rows
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_asset_movement_match_amount_edit_resplits_across_checkpoint(
+        database: DBHandler,
+) -> None:
+    """Editing the amount of one receipt of a 1-to-many match changes the share of every
+    receipt, also of those before a checkpoint taken in between."""
+    dbevents = DBHistoryEvents(database)
+    _add_rule(database, HistoryEventType.SPEND)
+    with database.user_write() as write_cursor:
+        database.set_settings(
+            write_cursor,
+            ModifiableDBSettings(cost_basis_method=CostBasisMethod.FIFO),
+        )
+        _add_kraken_event(
+            write_cursor=write_cursor,
+            dbevents=dbevents,
+            group_identifier='kraken-buy-split',
+            at=1,
+            event_type=HistoryEventType.RECEIVE,
+        )
+        withdrawal = AssetMovement(
+            timestamp=_ts_ms(2),
+            location=LOCATION_KRAKEN,
+            location_label='kraken',
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('1'),
+            group_identifier='kraken-wd-split',
+        )
+        withdrawal.identifier = dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=withdrawal,
+        )
+        receipts = []
+        for at, location_label in ((3, TEST_ADDR1), (4, TEST_ADDR2)):
+            receipt = _event(
+                at=at,
+                amount='0.5',
+                event_type=HistoryEventType.RECEIVE,
+                location_label=location_label,
+            )
+            receipt.identifier = dbevents.add_history_event(
+                write_cursor=write_cursor,
+                event=receipt,
+            )
+            write_cursor.execute(
+                'INSERT INTO history_event_links(left_event_id, right_event_id, link_type) '
+                'VALUES (?, ?, ?)',
+                (
+                    withdrawal.identifier,
+                    receipt.identifier,
+                    HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),
+                ),
+            )
+            receipts.append(receipt)
+
+    with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', 1):
+        assert process_cost_basis(database, database.msg_aggregator) is True
+        with database.conn.read_ctx() as cursor:  # the edit is replayed from this checkpoint
+            assert cursor.execute(
+                'SELECT 1 FROM cost_basis_checkpoints WHERE timestamp = ?',
+                (_ts_ms(4),),
+            ).fetchone() is not None
+
+        receipts[1].amount = FVal('1')
+        with database.user_write() as write_cursor:
+            dbevents.edit_history_event(
+                write_cursor=write_cursor,
+                event=receipts[1],
+                mapping_state=None,
+            )
+        assert process_cost_basis(database, database.msg_aggregator) is True
+
+    incremental_rows = _rows(database)
+    # The 1000 basis is split 0.5 : 1 now, so the first receipt no longer holds half of it
+    basis_per_unit = dict(_rows(database, 'event_identifier, basis_per_unit'))
+    assert FVal(basis_per_unit[receipts[0].identifier]) < FVal(1000)
+    with patch('rotkehlchen.tasks.cost_basis.COST_BASIS_CHECKPOINT_INTERVAL', 1):
+        assert incremental_rows == _full_rebuild_rows(database)
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_swap_pairs_across_ignored_event_between_its_sides(
+        database: DBHandler,
+) -> None:
+    """An event of an ignored asset between the two sides of a swap, such as an approval, does
+    not stop them from pairing."""
+    with database.user_write() as write_cursor:
+        database.add_to_ignored_assets(write_cursor, A_BTC)
+
+    tx_ref = make_evm_tx_hash()
+    acquired, spent, _approval, received = _process(
+        database=database,
+        method=CostBasisMethod.FIFO,
+        events=[
+            _event(at=1, amount='1', event_type=HistoryEventType.RECEIVE),
+            _event(
+                at=7,
+                amount='1',
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.SPEND,
+                tx_ref=tx_ref,
+            ), _event(
+                at=7,
+                amount='5',
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.APPROVE,
+                asset=A_BTC,
+                tx_ref=tx_ref,
+                sequence_index=1,
+            ), _event(
+                at=7,
+                amount='2000',
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                asset=A_DAI,
+                tx_ref=tx_ref,
+                sequence_index=2,
+            ),
+        ],
+    )
+    assert _spend_row(database, spent) == ([(acquired, FVal(1))], FVal(500), FVal(1000), FVal(0))
+    # Paired, the received DAI is valued at the 1500 of the spent ETH instead of its own price
+    assert _rows(database, 'event_identifier, direction, basis_per_unit, basis_source')[2:] == [
+        (int(received), 'receive', '0.75', 'price_oracle'),
+    ]
+
+
+@pytest.mark.usefixtures('queried_prices')
+def test_outdated_calculation_version_wipes_cost_basis(
+        database: DBHandler,
+) -> None:
+    """Rows that an older calculation version materialized are dropped at login and computed
+    again, while rows of the current version are kept."""
+    _process(database=database, method=CostBasisMethod.FIFO, events=_three_lots_and_a_spend())
+    expected_rows = _rows(database)
+    assert len(expected_rows) != 0
+
+    database.invalidate_outdated_cost_basis()  # no version recorded: materialized by older code
+    assert _rows(database) == []
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM cost_basis_checkpoints').fetchone()[0] == 0
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.STALE_COST_BASIS_FROM_TS,
+        ) == '0'
+
+    assert process_cost_basis(database, database.msg_aggregator) is True
+    assert _rows(database) == expected_rows
+
+    database.invalidate_outdated_cost_basis()  # the version is current now
+    assert _rows(database) == expected_rows

@@ -65,6 +65,12 @@ class DBCacheStatic(Enum):
     # one the pass started with, which is stored along with it.
     COST_BASIS_PASS_PROCESSED_TS: Final = 'cost_basis_pass_processed_ts'
     COST_BASIS_PASS_MODIFICATION_TS: Final = 'cost_basis_pass_modification_ts'
+    # JSON of the signature of each asset movement match the materialized cost basis was computed
+    # with, mapped to the timestamp of its earliest leg. A pass compares it with the current
+    # matches to replay from the first one that was added, removed, or changed in any way.
+    COST_BASIS_MATCH_SNAPSHOT: Final = 'cost_basis_match_snapshot'
+    # The `COST_BASIS_CALCULATION_VERSION` that the materialized cost basis was computed with
+    COST_BASIS_CALCULATION_VERSION: Final = 'cost_basis_calculation_version'
     # The id of the last manual historical price change, recorded in the global DB, that
     # this profile's cost basis was invalidated for
     LAST_MANUAL_PRICE_CHANGE_ID: Final = 'last_manual_price_change_id'
