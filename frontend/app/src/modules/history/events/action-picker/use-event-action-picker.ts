@@ -13,6 +13,15 @@ export interface EventActionRow {
   readonly combinations: readonly EventTypeCombination[];
 }
 
+// The backend lists a verb's pairs in mapping order, which can put a variant
+// such as receive/receive wrapped ahead of the plain receive/none. The first
+// pair is what picking the verb stores, so the plain pair goes first.
+const PLAIN_SUBTYPE = 'none';
+
+function plainFirst(combinations: readonly EventTypeCombination[]): EventTypeCombination[] {
+  return [...combinations].sort((a, b) => Number(b.eventSubtype === PLAIN_SUBTYPE) - Number(a.eventSubtype === PLAIN_SUBTYPE));
+}
+
 interface UseEventActionPickerReturn {
   readonly rows: ComputedRef<readonly EventActionRow[]>;
   readonly findRowByTypeSubtype: (eventType: string, eventSubtype: string) => EventActionRow | undefined;
@@ -66,7 +75,7 @@ export function useEventActionPicker(
         continue;
 
       const rawCombinations = combinationsByVerb[verbKey] ?? [];
-      const combinations = filter ? rawCombinations.filter(filter) : rawCombinations;
+      const combinations = plainFirst(filter ? rawCombinations.filter(filter) : rawCombinations);
       if (combinations.length === 0)
         continue;
 

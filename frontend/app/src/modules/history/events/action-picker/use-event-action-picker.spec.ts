@@ -150,4 +150,40 @@ describe('useEventActionPicker', () => {
     expect(findRowByTypeSubtype('trade', 'spend')?.verbKey).toBe('swap out');
     expect(findRowByTypeSubtype('trade', 'receive')).toBeUndefined();
   });
+
+  it('should put the plain none pair first so picking the verb stores it', () => {
+    setMappings({
+      combinations: {
+        receive: [
+          { eventSubtype: 'receive wrapped', eventType: 'receive' },
+          { eventSubtype: 'return wrapped', eventType: 'receive' },
+          { eventSubtype: 'none', eventType: 'receive' },
+          { eventSubtype: 'receive', eventType: 'adjustment' },
+        ],
+      },
+      details: buildDetails({ receive: { label: 'Receive' } }),
+    });
+
+    const { rows } = useEventActionPicker();
+    expect(rows.value[0].combinations).toEqual([
+      { eventSubtype: 'none', eventType: 'receive' },
+      { eventSubtype: 'receive wrapped', eventType: 'receive' },
+      { eventSubtype: 'return wrapped', eventType: 'receive' },
+      { eventSubtype: 'receive', eventType: 'adjustment' },
+    ]);
+  });
+
+  it('should keep the backend order when a verb has no plain pair', () => {
+    const fees = [
+      { eventSubtype: 'fee', eventType: 'spend' },
+      { eventSubtype: 'fee', eventType: 'trade' },
+    ];
+    setMappings({
+      combinations: { fee: fees },
+      details: buildDetails({ fee: { label: 'Fee' } }),
+    });
+
+    const { rows } = useEventActionPicker();
+    expect(rows.value[0].combinations).toEqual(fees);
+  });
 });

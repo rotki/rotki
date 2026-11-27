@@ -18,8 +18,22 @@ function buildRow(): EventActionRow {
 }
 
 const row = buildRow();
+
+const receiveRow: EventActionRow = {
+  combinations: [
+    { eventSubtype: 'none', eventType: 'receive' },
+    { eventSubtype: 'receive wrapped', eventType: 'receive' },
+    { eventSubtype: 'return wrapped', eventType: 'receive' },
+  ],
+  direction: 'in',
+  groupId: 'trade',
+  icon: 'lu-arrow-down',
+  label: 'Receive',
+  verbKey: 'receive',
+};
+
 const findRowByTypeSubtype = vi.fn<(t: string, s: string) => EventActionRow | undefined>();
-const rowsRef = computed<readonly EventActionRow[]>(() => [row]);
+const rowsRef = shallowRef<readonly EventActionRow[]>([row]);
 
 vi.mock('@/modules/history/events/action-picker/use-event-action-picker', () => ({
   useEventActionPicker: (): unknown => ({
@@ -101,16 +115,33 @@ const RuiCategoryPickerStub = defineComponent((props: {
   props: ['categoryOf', 'items', 'label', 'modelValue', 'search'],
 });
 
+const RuiMenuSelectStub = defineComponent((props: {
+  modelValue?: string;
+  options: { key: string; label: string }[];
+}, { emit }) => (): VNode => h('div', { 'data-value': props.modelValue }, props.options.map(option => h(
+  'button',
+  {
+    'data-key': option.key,
+    'data-testid': 'combination-option',
+    'onClick': (): void => emit('update:modelValue', option.key),
+  },
+  [option.label],
+))), {
+  emits: ['update:modelValue'],
+  props: ['modelValue', 'options'],
+});
+
 describe('historyEventActionPicker', () => {
   beforeEach(() => {
     set(recentRef, []);
+    set(rowsRef, [row]);
     record.mockClear();
   });
 
   function mountPicker(modelValue: { eventType: string; eventSubtype: string } | undefined = undefined): ReturnType<typeof mount<typeof HistoryEventActionPicker>> {
     return mount(HistoryEventActionPicker, {
       global: {
-        stubs: { RuiCategoryPicker: RuiCategoryPickerStub, RuiIcon: true },
+        stubs: { RuiCategoryPicker: RuiCategoryPickerStub, RuiIcon: true, RuiMenuSelect: RuiMenuSelectStub },
       },
       props: { 'modelValue': modelValue, 'onUpdate:modelValue': vi.fn() },
     });
@@ -291,5 +322,57 @@ describe('historyEventActionPicker', () => {
     expect(record).toHaveBeenCalledWith('swap out');
     const updates = wrapper.emitted('update:modelValue') ?? [];
     expect(updates[0][0]).toEqual({ eventSubtype: 'spend', eventType: 'trade' });
+  });
+
+  it('should show the stored type and subtype when the action has a single pair', async () => {
+    findRowByTypeSubtype.mockReturnValue(row);
+    const wrapper = mountPicker({ eventSubtype: 'spend', eventType: 'trade' });
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="event-action-picker-combination"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="event-action-picker-stored-combination"]').text()).toContain('trade · spend');
+  });
+
+  it('should list every pair of the selected action and select the current one', async () => {
+    set(rowsRef, [row, receiveRow]);
+    findRowByTypeSubtype.mockReturnValue(receiveRow);
+    const wrapper = mountPicker({ eventSubtype: 'none', eventType: 'receive' });
+    await flushPromises();
+
+    const select = wrapper.find('[data-testid="event-action-picker-combination"]');
+    expect(select.exists()).toBe(true);
+    expect(select.attributes('data-value')).toBe('receive:none');
+    expect(select.findAll('[data-testid="combination-option"]').map(option => option.text())).toEqual([
+      'receive · none',
+      'receive · receive wrapped',
+      'receive · return wrapped',
+    ]);
+    expect(wrapper.find('[data-testid="event-action-picker-stored-combination"]').exists()).toBe(false);
+  });
+
+  it('should change the subtype within the same action', async () => {
+    set(rowsRef, [row, receiveRow]);
+    findRowByTypeSubtype.mockReturnValue(receiveRow);
+    const wrapper = mountPicker({ eventSubtype: 'none', eventType: 'receive' });
+    await flushPromises();
+
+    await wrapper.find('[data-testid="combination-option"][data-key="receive:receive wrapped"]').trigger('click');
+    await flushPromises();
+
+    const updates = wrapper.emitted('update:modelValue') ?? [];
+    expect(updates).toHaveLength(1);
+    expect(updates[0][0]).toEqual({ eventSubtype: 'receive wrapped', eventType: 'receive' });
+  });
+
+  it('should keep the current pair when its action is picked again', async () => {
+    set(rowsRef, [row, receiveRow]);
+    findRowByTypeSubtype.mockReturnValue(receiveRow);
+    const wrapper = mountPicker({ eventSubtype: 'return wrapped', eventType: 'receive' });
+    await flushPromises();
+
+    await wrapper.find('[data-testid=option][data-key="receive"]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
   });
 });
