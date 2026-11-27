@@ -11,10 +11,17 @@ import { BalanceChartMode, useAccountBalanceChart } from '@/modules/balances/acc
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
 
-const { buckets, total } = defineProps<{
+const { buckets, loading = false, total } = defineProps<{
   buckets: BucketSeries[];
   total: BalancePoint[];
+  loading?: boolean;
 }>();
+
+/**
+ * Shown in place of the chart, at the chart's size, so swapping between a message and the chart
+ * does not move the page.
+ */
+defineSlots<{ placeholder?: () => unknown }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -61,6 +68,7 @@ const modes = computed<{ value: BalanceChartMode; label: string }[]>(() => [
             v-for="item in modes"
             :key="item.value"
             :model-value="item.value"
+            :disabled="!!$slots.placeholder"
             :data-testid="`account-balance-chart-mode-${item.value}`"
           >
             {{ item.label }}
@@ -68,10 +76,19 @@ const modes = computed<{ value: BalanceChartMode; label: string }[]>(() => [
         </RuiButtonGroup>
       </div>
     </template>
+    <div
+      v-if="$slots.placeholder"
+      class="h-72 flex items-center justify-center text-center px-4"
+      data-testid="account-balance-chart-placeholder"
+    >
+      <slot name="placeholder" />
+    </div>
     <VChart
+      v-else
       class="w-full h-72!"
       :option="option"
       :update-options="{ notMerge: true }"
+      :loading="loading"
       autoresize
     />
   </RuiCard>

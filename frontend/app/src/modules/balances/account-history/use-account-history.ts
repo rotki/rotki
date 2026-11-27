@@ -1,6 +1,11 @@
-import type { AccountHistoryRange, AccountHistorySelection } from '@/modules/balances/account-history/account-history-selection';
 import { get } from '@vueuse/shared';
+import dayjs from 'dayjs';
 import { computed, type ComputedRef, type DeepReadonly, type Ref, type WritableComputedRef } from 'vue';
+import {
+  AccountHistoryRange,
+  type AccountHistorySelection,
+  rangeStart,
+} from '@/modules/balances/account-history/account-history-selection';
 import {
   type BalancePoint,
   type BalanceSummary,
@@ -13,9 +18,14 @@ import {
 import { useAccountAssets } from '@/modules/balances/account-history/use-account-assets';
 import { useAccountBalanceSeries } from '@/modules/balances/account-history/use-account-balance-series';
 import { useAccountHistorySelection } from '@/modules/balances/account-history/use-account-history-selection';
+import { usePremium } from '@/modules/premium/use-premium';
 
 interface UseAccountHistoryReturn {
   selection: ComputedRef<AccountHistorySelection>;
+  /** Both an account and an asset are picked. */
+  picked: ComputedRef<boolean>;
+  /** The balance data needs premium; without it only the events are loaded. */
+  premium: Ref<boolean>;
   modelAccount: WritableComputedRef<string | undefined>;
   modelAsset: WritableComputedRef<string | undefined>;
   modelLocation: WritableComputedRef<string | undefined>;
@@ -31,6 +41,11 @@ interface UseAccountHistoryReturn {
   total: ComputedRef<BalancePoint[]>;
   summary: ComputedRef<BalanceSummary>;
   loadedRange: DeepReadonly<Ref<SeriesRange | undefined>>;
+  /**
+   * The window the events list shows: the loaded range with premium, so the list matches the chart,
+   * and the picked range measured from now without it. Absent for all time.
+   */
+  eventsRange: ComputedRef<SeriesRange | undefined>;
   loading: DeepReadonly<Ref<boolean>>;
   error: ComputedRef<string | undefined>;
   processingRequired: DeepReadonly<Ref<boolean>>;
@@ -45,17 +60,22 @@ interface UseAccountHistoryReturn {
  * @remarks
  * The series is always loaded for every location, and the location pick filters it here: the
  * picker's options come from the same load, so narrowing by location needs no second request and
- * never offers a location with nothing to show.
+ * never offers a location with nothing to show. Without premium nothing but the events is loaded,
+ * since the balance endpoints need it.
  */
 export function useAccountHistory(): UseAccountHistoryReturn {
   const { modelAccount, modelAsset, modelLocation, modelRange, selection } = useAccountHistorySelection();
+  const premium = usePremium();
+
+  /** The account the balance endpoints are asked about: none without premium, so none are called. */
+  const balanceAccount = (): string | undefined => (get(premium) ? get(selection).account : undefined);
 
   const {
     assets,
     error: assetsError,
     loading: assetsLoading,
     processingRequired: assetsProcessingRequired,
-  } = useAccountAssets(() => get(selection).account);
+  } = useAccountAssets(balanceAccount);
   const {
     buckets: allBuckets,
     error: seriesError,
@@ -64,9 +84,21 @@ export function useAccountHistory(): UseAccountHistoryReturn {
     processingRequired,
     refresh,
   } = useAccountBalanceSeries({
-    account: () => get(selection).account,
+    account: balanceAccount,
     asset: () => get(selection).asset,
     range: () => get(selection).range,
+  });
+
+  const picked = computed<boolean>(() => !!get(selection).account && !!get(selection).asset);
+
+  const eventsRange = computed<SeriesRange | undefined>(() => {
+    if (get(premium))
+      return get(loadedRange);
+    const { range } = get(selection);
+    if (range === AccountHistoryRange.ALL)
+      return undefined;
+    const to = dayjs().unix();
+    return { from: rangeStart(range, to), to };
   });
 
   const locations = computed<string[]>(() => bucketLocations(get(allBuckets)));
@@ -93,6 +125,7 @@ export function useAccountHistory(): UseAccountHistoryReturn {
     buckets,
     empty,
     error,
+    eventsRange,
     loadedRange,
     loading,
     locations,
@@ -100,6 +133,8 @@ export function useAccountHistory(): UseAccountHistoryReturn {
     modelAsset,
     modelLocation,
     modelRange,
+    picked,
+    premium,
     processingRequired,
     refresh,
     selection,
