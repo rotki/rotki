@@ -5,12 +5,17 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Final, Literal
 from weakref import WeakKeyDictionary, WeakSet
 
-from rotkehlchen.mcp.backend import BackendQueryError, get_backend_config, query_settings
+from rotkehlchen.mcp.backend import (
+    BackendQueryError,
+    get_backend_config,
+    query_frontend_settings,
+    query_settings,
+)
 from rotkehlchen.mcp.premium import get_current_tier
 from rotkehlchen.sigil import (
     SIGIL_DEVELOPMENT_WEBSITE_ID,
     SIGIL_PRODUCTION_WEBSITE_ID,
-    SigilBatchEntry,
+    client_id_from_frontend_settings,
     create_sigil_events_batch,
     submit_sigil_batch,
 )
@@ -59,7 +64,7 @@ def create_mcp_usage_analytics(
         client_params: InitializeRequestParams,
         request_meta: RequestParams.Meta | None,
 ) -> dict[str, str]:
-    """Create the non-identifying MCP client details sent to Sigil.
+    """Create the MCP client details sent to Sigil.
 
     MCP does not define a model field. Clients that want to expose it can add one to
     request ``_meta``, initialize ``_meta``, ``clientInfo``, or the initialize params.
@@ -79,24 +84,16 @@ def create_mcp_usage_analytics(
     return data
 
 
-def create_sigil_batch(
-        data: dict[str, str],
-        website_id: str,
-        event_name: McpAnalyticsEvent = 'mcp_usage',
-) -> list[SigilBatchEntry]:
-    """Create the same batch-entry schema used by the frontend Sigil queue."""
-    return create_sigil_events_batch(
-        events=[(event_name, '/mcp', data)],
-        website_id=website_id,
-    )
-
-
 def maybe_submit_mcp_analytics(
         events: list[tuple[McpAnalyticsEvent, dict[str, Any]]],
         client_params: InitializeRequestParams,
         request_meta: RequestParams.Meta | None,
 ) -> None:
-    """Submit MCP events with non-identifying client details when analytics are enabled."""
+    """Submit MCP events when analytics are enabled.
+
+    The events carry the frontend's client id, when the frontend has stored one, so Sigil
+    attributes them to the same user as the app's own events.
+    """
     try:
         if query_settings().get('submit_usage_analytics') is not True:
             return
@@ -107,10 +104,15 @@ def maybe_submit_mcp_analytics(
         client_params=client_params,
         request_meta=request_meta,
     )
+    distinct_id = None
+    with suppress(BackendQueryError):
+        distinct_id = client_id_from_frontend_settings(query_frontend_settings())
+
     batch = create_sigil_events_batch(
         events=[(name, '/mcp', {**client_data, **data}) for name, data in events],
         website_id=SIGIL_PRODUCTION_WEBSITE_ID
         if is_production() else SIGIL_DEVELOPMENT_WEBSITE_ID,
+        distinct_id=distinct_id,
     )
     submit_sigil_batch(batch=batch, timeout=get_backend_config().timeout)
 

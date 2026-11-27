@@ -2,6 +2,7 @@ import asyncio
 from typing import TYPE_CHECKING, cast
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 import requests
 from mcp.types import InitializeRequestParams, RequestParams
 
@@ -15,6 +16,11 @@ if TYPE_CHECKING:
 
 class MockSession:
     pass
+
+
+@pytest.fixture(autouse=True)
+def fixture_no_frontend_client_id(monkeypatch) -> None:
+    monkeypatch.setattr(usage_analytics, 'query_frontend_settings', dict)
 
 
 def test_create_mcp_usage_analytics(monkeypatch) -> None:
@@ -62,28 +68,6 @@ def test_create_mcp_usage_analytics_omits_plan_on_backend_failure(monkeypatch) -
     )
 
     assert 'plan' not in data
-
-
-def test_create_sigil_batch_matches_frontend_schema() -> None:
-    data = {'clientName': 'codex-mcp-client', 'model': 'gpt-5.6'}
-
-    assert usage_analytics.create_sigil_batch(
-        data=data,
-        website_id=usage_analytics.SIGIL_PRODUCTION_WEBSITE_ID,
-    ) == [{
-        'type': 'event',
-        'payload': {
-            'website': usage_analytics.SIGIL_PRODUCTION_WEBSITE_ID,
-            'hostname': '',
-            'screen': '',
-            'language': '',
-            'title': '',
-            'url': '/mcp',
-            'referrer': '',
-            'name': 'mcp_usage',
-            'data': data,
-        },
-    }]
 
 
 async def _track_models(
@@ -193,6 +177,11 @@ def test_submit_mcp_usage_analytics(monkeypatch) -> None:
         post_mock := MagicMock(return_value=MagicMock(ok=True, status_code=200)),
     )
     monkeypatch.setattr(usage_analytics, 'get_current_tier', lambda: 'Basic')
+    monkeypatch.setattr(
+        usage_analytics,
+        'query_frontend_settings',
+        lambda: {'client_id': 'a7c1e0f2-5b3d-4c8e-9f10-2d4b6a8c0e12'},
+    )
     client_params = InitializeRequestParams.model_validate({
         'protocolVersion': '2025-06-18',
         'capabilities': {},
@@ -216,6 +205,7 @@ def test_submit_mcp_usage_analytics(monkeypatch) -> None:
         usage_analytics.SIGIL_PRODUCTION_WEBSITE_ID
     )
     assert kwargs['json'][0]['payload']['name'] == 'mcp_usage'
+    assert kwargs['json'][0]['payload']['id'] == 'a7c1e0f2-5b3d-4c8e-9f10-2d4b6a8c0e12'
     assert kwargs['json'][0]['payload']['data'] == {
         'clientName': 'codex-mcp-client',
         'clientTitle': 'Codex',
@@ -240,6 +230,11 @@ def test_submit_mcp_usage_analytics_uses_development_website(monkeypatch) -> Non
     )
 
     monkeypatch.setattr(usage_analytics, 'get_current_tier', lambda: 'Free')
+    monkeypatch.setattr(
+        usage_analytics,
+        'query_frontend_settings',
+        MagicMock(side_effect=BackendQueryError('backend unavailable')),
+    )
     usage_analytics.maybe_submit_mcp_analytics(
         events=[('mcp_usage', {})],
         client_params=InitializeRequestParams.model_validate({
@@ -253,6 +248,7 @@ def test_submit_mcp_usage_analytics_uses_development_website(monkeypatch) -> Non
     assert post_mock.call_args.kwargs['json'][0]['payload']['website'] == (
         usage_analytics.SIGIL_DEVELOPMENT_WEBSITE_ID
     )
+    assert 'id' not in post_mock.call_args.kwargs['json'][0]['payload']
 
 
 def test_submit_mcp_usage_analytics_respects_opt_out(monkeypatch) -> None:

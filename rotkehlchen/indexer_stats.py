@@ -1,4 +1,4 @@
-"""Anonymous, per-unlock summaries of outbound EVM indexer requests."""
+"""Per-unlock summaries of outbound EVM indexer requests, linked to the frontend client id."""
 
 import logging
 import threading
@@ -9,9 +9,13 @@ from typing import TYPE_CHECKING, Final
 from uuid import uuid4
 
 from rotkehlchen.concurrency import Task
-from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.db.settings import CachedSettings, parse_frontend_settings
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.sigil import create_sigil_events_batch, submit_sigil_batch
+from rotkehlchen.sigil import (
+    client_id_from_frontend_settings,
+    create_sigil_events_batch,
+    submit_sigil_batch,
+)
 from rotkehlchen.utils.misc import is_production
 
 if TYPE_CHECKING:
@@ -121,7 +125,9 @@ class IndexerStats:
                 'final': final,
                 'by_indexer': by_indexer,
             },
-        )]))
+        )], distinct_id=client_id_from_frontend_settings(parse_frontend_settings(
+            CachedSettings().get_settings().frontend_settings,
+        ))))
         self._counts.clear()
         self._window_start = now
 

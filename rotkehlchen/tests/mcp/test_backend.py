@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 import requests
@@ -12,6 +13,7 @@ from rotkehlchen.mcp.backend import (
     balances_timeout,
     configure_backend,
     get_backend_config,
+    query_frontend_settings,
     query_historical_prices,
     query_history_events_page,
     query_settings,
@@ -162,6 +164,28 @@ def test_query_settings_should_reject_non_dict_result(monkeypatch) -> None:
 
     with pytest.raises(BackendQueryError, match='unexpected settings response'):
         query_settings()
+
+
+def test_query_frontend_settings_should_return_the_blob(monkeypatch) -> None:
+    monkeypatch.setattr(requests, 'get', get_mock := MagicMock(return_value=MockResponse(
+        {'result': {'client_id': 'abc'}, 'message': ''},
+    )))
+    configure_backend(base_url='http://backend/api/1', timeout=5)
+
+    assert query_frontend_settings() == {'client_id': 'abc'}
+    assert get_mock.call_args.kwargs['url'] == 'http://backend/api/1/settings/frontend'
+
+
+def test_query_frontend_settings_should_reject_non_dict_result(monkeypatch) -> None:
+    monkeypatch.setattr(
+        requests,
+        'get',
+        lambda url, **kwargs: MockResponse({'result': True, 'message': ''}),
+    )
+    configure_backend(base_url='http://backend/api/1', timeout=5)
+
+    with pytest.raises(BackendQueryError, match='unexpected frontend settings response'):
+        query_frontend_settings()
 
 
 def test_historical_prices_should_always_send_only_cache_period(monkeypatch) -> None:
