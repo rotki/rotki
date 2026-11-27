@@ -1,10 +1,12 @@
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { shallowMount, type VueWrapper } from '@vue/test-utils';
-import { set } from '@vueuse/shared';
-import { type Pinia, setActivePinia } from 'pinia';
+import { get, set } from '@vueuse/shared';
+import { type Pinia, setActivePinia, storeToRefs } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import CreateAccountWizard from '@/modules/auth/create-account/CreateAccountWizard.vue';
+import UpgradeProgressDisplay from '@/modules/auth/upgrade/UpgradeProgressDisplay.vue';
+import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import CreateAccountPage from './index.vue';
 
 const { clearErrors, createNewAccount, errorRef, loadingRef, navigateToUserLogin } = await vi.hoisted(async () => {
@@ -79,6 +81,20 @@ describe('pages/user/create', () => {
     wrapper.findComponent(CreateAccountWizard).vm.$emit('confirm', payload);
     await nextTick();
     expect(createNewAccount).toHaveBeenCalledWith(payload);
+  });
+
+  it('should return to the wizard when a failed upgrade screen is left', async () => {
+    const store = useSessionAuthStore();
+    store.updateDbUpgradeStatus({ currentUpgrade: { currentStep: 1, description: '', totalSteps: 2, toVersion: 2 }, startVersion: 1, targetVersion: 2 });
+    store.failUpgrade('Failed at database upgrade from version 1 to 2: boom');
+    wrapper = mountPage(pinia);
+    expect(wrapper.findComponent(CreateAccountWizard).exists()).toBe(false);
+
+    wrapper.findComponent(UpgradeProgressDisplay).vm.$emit('back');
+    await nextTick();
+
+    expect(get(storeToRefs(store).upgradeVisible)).toBe(false);
+    expect(wrapper.findComponent(CreateAccountWizard).exists()).toBe(true);
   });
 
   it('should navigate back to the login page on cancel', async () => {

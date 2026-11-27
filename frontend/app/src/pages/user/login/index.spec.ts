@@ -148,4 +148,16 @@ describe('pages/user/login', () => {
     expect(applyUpdate).toHaveBeenCalledWith({ 'eip155:1/erc20:0xabc': 'remote' });
     expect(skipUpdate).toHaveBeenCalled();
   });
+
+  it('should reset the flow when the failed upgrade screen is left', async () => {
+    const wrapper = mountPage(pinia);
+    set(stateRef, { changes: { changes: 1, local: 1, remote: 2, upToVersion: 2 }, kind: UnlockPhase.updatePrompt });
+    await nextTick();
+    reset.mockClear();
+
+    wrapper.findComponent(LoginUnlockStage).vm.$emit('leave-upgrade');
+    await nextTick();
+
+    expect(reset).toHaveBeenCalledOnce();
+  });
 });

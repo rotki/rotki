@@ -148,13 +148,12 @@ describe('useUnlockFlowController', () => {
     expect(h.checkIfPasswordConfirmationNeeded).not.toHaveBeenCalled();
   });
 
-  /** A fast account creation that ran a database upgrade, so `onReady` pads before loading. */
-  function padCreate(): void {
+  /** An unlock that runs a database upgrade under fake timers, so `onReady` holds before loading. */
+  function upgradeDuringUnlock(): void {
     vi.useFakeTimers();
     onTestFinished(() => {
       vi.useRealTimers();
     });
-    setUsernameOnLoad('bob');
     // Progress arrives during the unlock, as from the backend; a run clears any from before it starts.
     const stop = watch(() => get(controller.state).kind, (kind) => {
       if (kind === UnlockPhase.unlocking)
@@ -162,6 +161,52 @@ describe('useUnlockFlowController', () => {
     }, { flush: 'sync' });
     onTestFinished(stop);
   }
+
+  /** A fast account creation that ran a database upgrade, so `onReady` pads before loading. */
+  function padCreate(): void {
+    setUsernameOnLoad('bob');
+    upgradeDuringUnlock();
+  }
+
+  it('should hold a login that upgraded the database before opening the app', async () => {
+    upgradeDuringUnlock();
+
+    await controller.startLogin({ password: 'p', username: 'alice' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(get(controller.state).kind).toBe(UnlockPhase.ready);
+    expect(h.handleSessionReady).not.toHaveBeenCalled();
+    // The settings write runs alongside the hold, not after it.
+    expect(h.updateFrontendSetting).toHaveBeenCalledOnce();
+
+    await vi.advanceTimersByTimeAsync(1499);
+    expect(h.handleSessionReady).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(h.handleSessionReady).toHaveBeenCalledOnce();
+  });
+
+  it('should open a resumed session without the upgrade hold', async () => {
+    h.probeSession.mockResolvedValue(ok(true));
+    upgradeDuringUnlock();
+
+    await controller.startLogin({ password: 'p', username: 'alice' });
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(h.resume).toHaveBeenCalled();
+    expect(h.handleSessionReady).toHaveBeenCalledOnce();
+  });
+
+  it('should open a login that ran no upgrade without a hold', async () => {
+    vi.useFakeTimers();
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+
+    await controller.startLogin({ password: 'p', username: 'alice' });
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(h.handleSessionReady).toHaveBeenCalledOnce();
+  });
 
   it('should drop a previous attempt\'s upgrade progress when a new run starts', async () => {
     const store = useSessionAuthStore();
