@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 import {
   alignBuckets,
   type BalancePoint,
-  bucketLocations,
   type BucketSeries,
   buildBucketSeries,
   summarize,
@@ -79,7 +78,6 @@ describe('buildBucketSeries', () => {
     ], { from: 0, to: 100 });
 
     expect(buckets.map(({ key }) => key)).toEqual(['ethereum:', 'ethereum:aave', 'optimism:']);
-    expect(bucketLocations(buckets)).toEqual(['ethereum', 'optimism']);
   });
 });
 

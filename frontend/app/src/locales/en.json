@@ -198,10 +198,7 @@
     "selectors": {
       "account": "Account",
       "asset": "Asset",
-      "asset_hint": "Assets this account has held",
-      "asset_hint_processing": "Some events are still being processed, so assets may be missing",
-      "location": "Location",
-      "location_hint": "All locations when empty"
+      "asset_hint_processing": "Some events are still being processed, so assets may be missing"
     },
     "summary": {
       "change": "Change in range",

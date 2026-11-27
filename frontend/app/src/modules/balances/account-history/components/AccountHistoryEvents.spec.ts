@@ -17,23 +17,19 @@ function restrictionsOf(wrapper: VueWrapper<InstanceType<typeof AccountHistoryEv
 }
 
 describe('account history events', () => {
-  it('should pin the events list to the account, asset, location and range', () => {
-    const wrapper = createWrapper({ account: '0xA', asset: 'ETH', location: 'optimism', range: { from: 100, to: 200 } });
+  it('should pin the events list to the account, asset and range, in every location', () => {
+    const wrapper = createWrapper({ account: '0xA', asset: 'ETH', range: { from: 100, to: 200 } });
 
     expect(restrictionsOf(wrapper)).toEqual({
       asset: 'ETH',
-      externalAccounts: [{ address: '0xA', chain: 'optimism' }],
-      location: 'optimism',
+      externalAccounts: [{ address: '0xA', chain: '' }],
       period: { fromTimestamp: 100, toTimestamp: 200 },
     });
   });
 
-  it('should leave the location and period open for every location and all time', () => {
+  it('should leave the period open for all time', () => {
     const wrapper = createWrapper({ account: '0xA', asset: 'ETH', range: { from: 0, to: 200 } });
-    const restrictions = restrictionsOf(wrapper);
 
-    expect(restrictions.location).toBeUndefined();
-    expect(restrictions.period).toBeUndefined();
-    expect(restrictions.externalAccounts?.map(({ address }) => address)).toEqual(['0xA']);
+    expect(restrictionsOf(wrapper).period).toBeUndefined();
   });
 });
