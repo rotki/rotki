@@ -42,6 +42,8 @@ from rotkehlchen.utils.misc import bytes_to_solana_address
 from .constants import (
     NATIVE_TRANSFER_DISCRIMINATOR,
     SPL_TOKEN_BURN_DISCRIMINATOR,
+    SPL_TOKEN_INITIALIZE_ACCOUNT2_DISCRIMINATOR,
+    SPL_TOKEN_INITIALIZE_ACCOUNT3_DISCRIMINATOR,
     SPL_TOKEN_INITIALIZE_ACCOUNT_DISCRIMINATOR,
     SPL_TOKEN_MINT_TO_DISCRIMINATOR,
     SPL_TOKEN_PROGRAM,
@@ -441,27 +443,50 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             transaction: SolanaTransaction,
             instruction: SolanaInstruction,
     ) -> tuple[SolanaAddress, SolanaAddress, SolanaAddress] | None:
-        """Decode an SPL associated token account (ATA) initialization instruction.
-        Returns a tuple containing the ATA address, the owner address, and the mint address.
+        """Decode an SPL token account initialization instruction (`InitializeAccount`,
+        `InitializeAccount2`, or `InitializeAccount3`).
+        Returns a tuple containing the token account address, the owner address, and the mint.
         """
-        if (
-            instruction.program_id != SPL_TOKEN_PROGRAM or
-            instruction.data[:1] != SPL_TOKEN_INITIALIZE_ACCOUNT_DISCRIMINATOR
-        ):
+        if instruction.program_id not in (SPL_TOKEN_PROGRAM, TOKEN_2022_PROGRAM):
             return None
 
-        if (account_len := len(instruction.accounts)) < 2:
-            log.error(
-                f'Encountered an SPL token account initialization instruction in {transaction} '
-                f'with {account_len} accounts. Expected 2. Skipping.',
+        if (discriminator := instruction.data[:1]) == SPL_TOKEN_INITIALIZE_ACCOUNT_DISCRIMINATOR:
+            if (account_len := len(instruction.accounts)) < 3:
+                log.error(
+                    'Encountered an SPL token account init instruction in %s '
+                    'with %s accounts. Expected 3. Skipping.',
+                    transaction,
+                    account_len,
+                )
+                return None
+
+            return (
+                instruction.accounts[0],  # token account address
+                instruction.accounts[2],  # account owner address
+                instruction.accounts[1],  # token mint address
             )
-            return None
 
-        return (
-            instruction.accounts[0],  # ATA address
-            bytes_to_solana_address(instruction.data[1:33]),  # account owner address
-            instruction.accounts[1],  # token mint address
-        )
+        if discriminator in (
+            SPL_TOKEN_INITIALIZE_ACCOUNT2_DISCRIMINATOR,
+            SPL_TOKEN_INITIALIZE_ACCOUNT3_DISCRIMINATOR,
+        ):
+            if (account_len := len(instruction.accounts)) < 2 or len(instruction.data) < 33:
+                log.error(
+                    'Encountered an SPL token account init instruction in %s '
+                    'with %s accounts and %s bytes. Skipping.',
+                    transaction,
+                    account_len,
+                    len(instruction.data),
+                )
+                return None
+
+            return (
+                instruction.accounts[0],  # token account address
+                bytes_to_solana_address(instruction.data[1:33]),  # account owner address
+                instruction.accounts[1],  # token mint address
+            )
+
+        return None
 
     def _compose_transfer_event(
             self,

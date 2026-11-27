@@ -1,0 +1,29 @@
+from typing import Final
+
+from rotkehlchen.types import SolanaAddress
+
+CPT_OKX: Final = 'okx'
+
+OKX_DEX_ROUTER_V2_PROGRAM: Final = SolanaAddress('proVF4pMXVaYqmy4NjniPh4pqKNfMmsihgd4wdkCX3u')
+OKX_DEX_ROUTER_V1_PROGRAM: Final = SolanaAddress('6m2CDdhRgxpH4WjvdzxAYbGxwdGUz5MziiL5jek2kBma')
+
+# Summary Anchor CPI event discriminators emitted at the end of OKX DEX Router swap instructions
+SWAP_CPI_EVENT2_DISCRIMINATOR: Final = b'\x15^\xe05\xdc\xe8\xc1^'
+SWAP_WITH_FEES_CPI_EVENT2_DISCRIMINATOR: Final = b'\x0c\x86&]\xa7\x97*E'
+SWAP_WITH_FEES_CPI_EVENT_ENHANCED2_DISCRIMINATOR: Final = b'TO\xdb\xf7\xda\x9c\xdb\xb1'
+SWAP_TOB_V2_CPI_EVENT2_DISCRIMINATOR: Final = b'\xf4i\xb8Z<\xa5$!'
+SWAP_TOC_V2_CPI_EVENT2_DISCRIMINATOR: Final = b'f\x10\xb5>\xc9G\xd4)'
+SWAP_V3_CPI_EVENT_DISCRIMINATOR: Final = b'-5\xa7\x13\xb4\xc4`\x96'
+SWAP_WITH_FEES_CPI_EVENT_DISCRIMINATOR: Final = b'\xbdaC\x0c%\xd1\xf7\x1d'
+
+SUMMARY_SWAP_CPI_EVENT_DISCRIMINATORS: Final = frozenset({
+    SWAP_CPI_EVENT2_DISCRIMINATOR,
+    SWAP_WITH_FEES_CPI_EVENT2_DISCRIMINATOR,
+    SWAP_WITH_FEES_CPI_EVENT_ENHANCED2_DISCRIMINATOR,
+    SWAP_TOB_V2_CPI_EVENT2_DISCRIMINATOR,
+    SWAP_TOC_V2_CPI_EVENT2_DISCRIMINATOR,
+    SWAP_V3_CPI_EVENT_DISCRIMINATOR,
+    SWAP_WITH_FEES_CPI_EVENT_DISCRIMINATOR,
+})
+
+COMMON_SWAP_CPI_EVENT_HEADER_LEN: Final = 160
