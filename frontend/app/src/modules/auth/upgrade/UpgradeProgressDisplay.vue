@@ -2,9 +2,9 @@
 import { externalLinks } from '@shared/external-links';
 import { startPromise } from '@shared/utils';
 import { useIntervalFn, useTimestamp } from '@vueuse/core';
-import { get, set } from '@vueuse/shared';
+import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import { useNewlyDetectedTokens } from '@/modules/assets/detection/use-newly-detected-tokens';
 import DbActivityProgress from '@/modules/auth/upgrade/DbActivityProgress.vue';
 import {
@@ -13,7 +13,6 @@ import {
   UpgradeKind,
   UpgradeOutcome,
   type UpgradeRunInput,
-  type UpgradeRunProgress,
   type UpgradeRunView,
   versionDurations,
 } from '@/modules/auth/upgrade/upgrade-progress';
@@ -31,11 +30,12 @@ const emit = defineEmits<{
   back: [];
 }>();
 
-interface UpgradeView {
+/** The parts of the run on screen that differ between a DB upgrade and a data migration. */
+interface RunSource {
   kind: UpgradeKind;
   input: UpgradeRunInput;
   fromVersion: number;
-  description: string;
+  description: string | null;
   times: Readonly<Record<number, number>>;
 }
 
@@ -59,79 +59,65 @@ const outcome = computed<UpgradeOutcome>(() => {
 });
 
 /**
- * The run on screen. Data migrations follow the DB upgrade in the same unlock and take over while
- * they run; a finished unlock that upgraded the DB reports the upgrade, which is the news.
+ * Picks the run on screen. Data migrations follow the DB upgrade in the same unlock and take over
+ * while they run; a finished unlock that upgraded the DB reports the upgrade, which is the news.
  */
-const view = computed<UpgradeView | undefined>(() => {
+function runSource(): RunSource | undefined {
   const upgrade = get(dbUpgradeStatus);
   const migration = get(dataMigrationStatus);
 
   if (migration && !(upgrade && get(outcome) === UpgradeOutcome.DONE)) {
     const { currentStep, description, totalSteps, version } = migration.currentMigration;
+    const { startVersion, targetVersion } = migration;
     return {
-      description: description ?? '',
-      fromVersion: migration.startVersion,
-      input: { currentStep, currentVersion: version, startVersion: migration.startVersion, targetVersion: migration.targetVersion, totalSteps },
+      description,
+      fromVersion: startVersion,
+      input: { currentStep, currentVersion: version, startVersion, targetVersion, totalSteps },
       kind: UpgradeKind.DATA_MIGRATION,
       times: get(dataMigrationVersionTimes),
     };
   }
+  if (!upgrade)
+    return undefined;
 
-  if (upgrade) {
-    const { currentStep, description, toVersion, totalSteps } = upgrade.currentUpgrade;
-    return {
-      description: description ?? '',
-      fromVersion: upgrade.startVersion - 1,
-      input: { currentStep, currentVersion: toVersion, startVersion: upgrade.startVersion, targetVersion: upgrade.targetVersion, totalSteps },
-      kind: UpgradeKind.DB_UPGRADE,
-      times: get(dbUpgradeVersionTimes),
-    };
-  }
-  return undefined;
-});
+  const { currentStep, description, toVersion, totalSteps } = upgrade.currentUpgrade;
+  const { startVersion, targetVersion } = upgrade;
+  return {
+    description,
+    fromVersion: startVersion - 1,
+    input: { currentStep, currentVersion: toVersion, startVersion, targetVersion, totalSteps },
+    kind: UpgradeKind.DB_UPGRADE,
+    times: get(dbUpgradeVersionTimes),
+  };
+}
 
-const progress = computed<UpgradeRunProgress | undefined>(() => {
-  const current = get(view);
-  return current ? computeUpgradeProgress(current.input, get(outcome)) : undefined;
-});
-
-const now = useTimestamp({ scheduler: tick => useIntervalFn(tick, 1000) });
-/** When the run settled, which freezes the elapsed time and the last version's duration. */
-const settledAt = ref<number>();
+/** Ticks while the run is going and stops once it settles, which freezes the elapsed time. */
+const { pause, resume, timestamp: now } = useTimestamp({ controls: true, scheduler: tick => useIntervalFn(tick, 1000) });
 
 watch(outcome, (current) => {
-  set(settledAt, current === UpgradeOutcome.RUNNING ? undefined : Date.now());
+  if (current === UpgradeOutcome.RUNNING)
+    resume();
+  else
+    pause();
 }, { immediate: true });
 
-const clock = computed<number>(() => get(settledAt) ?? get(now));
-
-const elapsed = computed<number | undefined>(() => {
-  const startedAt = get(upgradeStartedAt);
-  return startedAt === null ? undefined : Math.max(0, get(clock) - startedAt);
-});
-
-const durations = computed<Record<number, number>>(() => {
-  const current = get(view);
-  const run = get(progress);
-  if (!current || !run)
-    return {};
-  return versionDurations(run.versions, current.times, get(clock));
-});
-
 const run = computed<UpgradeRunView | undefined>(() => {
-  const current = get(view);
-  const runProgress = get(progress);
-  if (!current || !runProgress)
+  const source = runSource();
+  if (!source)
     return undefined;
+  const result = get(outcome);
+  const progress = computeUpgradeProgress(source.input, result);
+  const clock = get(now);
+  const startedAt = get(upgradeStartedAt);
   return {
-    description: current.description,
-    durations: get(durations),
-    elapsed: get(elapsed),
-    fromVersion: current.fromVersion,
-    kind: current.kind,
-    outcome: get(outcome),
-    progress: runProgress,
-    toVersion: current.input.targetVersion,
+    description: source.description ?? '',
+    durations: versionDurations(progress.versions, source.times, clock),
+    elapsed: startedAt === null ? undefined : Math.max(0, clock - startedAt),
+    fromVersion: source.fromVersion,
+    kind: source.kind,
+    outcome: result,
+    progress,
+    toVersion: source.input.targetVersion,
   };
 });
 

@@ -6,6 +6,7 @@ import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { isUpgradeCompleted, showsUpgrade } from '@/modules/auth/unlock-flow/upgrade-stage';
 import { UnlockPhase, type UnlockState } from '@/modules/auth/unlock-flow/use-unlock-flow';
 import UpgradeProgressDisplay from '@/modules/auth/upgrade/UpgradeProgressDisplay.vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
@@ -34,24 +35,9 @@ const promptedVersions = ref<AssetVersionUpdate>({ changes: 0, local: 0, remote:
 
 const phase = computed<string>(() => state.kind);
 
-/** The unlock got past the upgrade, so the upgrade screen reports it finished. */
-const upgradeCompleted = computed<boolean>(() => {
-  const kind = get(phase);
-  return kind === UnlockPhase.loadingSession || kind === UnlockPhase.ready;
-});
+const upgradeCompleted = computed<boolean>(() => isUpgradeCompleted(get(phase)));
 
-/**
- * Whether the DB upgrade screen is up: while the upgrade runs, through the session load that
- * follows it as the "upgraded" handoff, and after a failure it caused.
- */
-const showUpgrade = computed<boolean>(() => {
-  if (!get(upgradeVisible))
-    return false;
-  const kind = get(phase);
-  if (kind === UnlockPhase.error)
-    return get(upgradeFailure) !== null;
-  return kind === UnlockPhase.unlocking || get(upgradeCompleted);
-});
+const showUpgrade = computed<boolean>(() => showsUpgrade(get(phase), get(upgradeVisible), get(upgradeFailure) !== null));
 
 const conflicts = computed<AssetUpdateConflictResult[]>(() => (state.kind === UnlockPhase.conflicts ? state.conflicts : []));
 

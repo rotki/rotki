@@ -5,7 +5,7 @@ import { get, set } from '@vueuse/shared';
 import { createPinia, setActivePinia, storeToRefs } from 'pinia';
 import { none, ok, some } from 'plainfp';
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
-import { type EffectScope, effectScope, ref } from 'vue';
+import { type EffectScope, effectScope, ref, watch } from 'vue';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { logger } from '@/modules/core/common/logging/logging';
 import { beginSession, endSession, hasLiveSession } from '@/modules/core/session/session-lifecycle';
@@ -155,8 +155,25 @@ describe('useUnlockFlowController', () => {
       vi.useRealTimers();
     });
     setUsernameOnLoad('bob');
-    set(storeToRefs(useSessionAuthStore()).dbUpgradeStatus, { currentUpgrade: { currentStep: 1, description: '', totalSteps: 2, toVersion: 2 }, startVersion: 1, targetVersion: 2 });
+    // Progress arrives during the unlock, as from the backend; a run clears any from before it starts.
+    const stop = watch(() => get(controller.state).kind, (kind) => {
+      if (kind === UnlockPhase.unlocking)
+        set(storeToRefs(useSessionAuthStore()).dbUpgradeStatus, { currentUpgrade: { currentStep: 1, description: '', totalSteps: 2, toVersion: 2 }, startVersion: 1, targetVersion: 2 });
+    }, { flush: 'sync' });
+    onTestFinished(stop);
   }
+
+  it('should drop a previous attempt\'s upgrade progress when a new run starts', async () => {
+    const store = useSessionAuthStore();
+    store.updateDbUpgradeStatus({ currentUpgrade: { currentStep: 1, description: '', totalSteps: 2, toVersion: 2 }, startVersion: 1, targetVersion: 2 });
+    store.failUpgrade('boom');
+
+    await controller.startLogin({ password: 'p', username: 'alice' });
+    await flushPromises();
+
+    expect(get(storeToRefs(store).dbUpgradeStatus)).toBeNull();
+    expect(get(storeToRefs(store).upgradeFailure)).toBeNull();
+  });
 
   it('should not load the next session when a logout and a login land inside the create padding', async () => {
     padCreate();

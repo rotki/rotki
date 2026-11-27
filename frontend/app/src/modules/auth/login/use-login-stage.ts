@@ -3,6 +3,7 @@ import { startPromise } from '@shared/utils';
 import { get } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { computed, type ComputedRef, type Ref } from 'vue';
+import { showsUpgrade } from '@/modules/auth/unlock-flow/upgrade-stage';
 import { UnlockPhase, type UnlockState } from '@/modules/auth/unlock-flow/use-unlock-flow';
 import { useUnlockFlowController } from '@/modules/auth/unlock-flow/use-unlock-flow-controller';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
@@ -20,16 +21,7 @@ interface UseLoginStageReturn {
   onResolveConflicts: (resolution: ConflictResolution) => void;
   /** Skips the asset update. */
   onSkipUpdate: () => void;
-  /** Leaves a failed upgrade's screen for the login form. */
-  onLeaveFailedUpgrade: () => void;
 }
-
-/** The phases a DB upgrade is shown through: while it runs, and while the session it unlocked loads. */
-const UPGRADE_PHASES: ReadonlySet<string> = new Set([
-  UnlockPhase.unlocking,
-  UnlockPhase.loadingSession,
-  UnlockPhase.ready,
-]);
 
 /**
  * Drives the login page's unlock stage from the shared unlock flow controller: which phase shows
@@ -37,8 +29,7 @@ const UPGRADE_PHASES: ReadonlySet<string> = new Set([
  */
 export function useLoginStage(): UseLoginStageReturn {
   const { applyUpdate, reset, skipUpdate, state, upgradeVisible } = useUnlockFlowController();
-  const authStore = useSessionAuthStore();
-  const { upgradeFailure } = storeToRefs(authStore);
+  const { upgradeFailure } = storeToRefs(useSessionAuthStore());
 
   /**
    * Whether the stage takes over from the login form.
@@ -58,8 +49,7 @@ export function useLoginStage(): UseLoginStageReturn {
       || kind === UnlockPhase.conflicts
       || kind === UnlockPhase.applyingUpdate
       || kind === UnlockPhase.restarting
-      || (UPGRADE_PHASES.has(kind) && get(upgradeVisible))
-      || (kind === UnlockPhase.error && get(upgradeFailure) !== null);
+      || showsUpgrade(kind, get(upgradeVisible), get(upgradeFailure) !== null);
   });
 
   function onConfirmUpdate(upToVersion: number): void {
@@ -74,18 +64,11 @@ export function useLoginStage(): UseLoginStageReturn {
     startPromise(skipUpdate());
   }
 
-  /** Returns the flow to the idle form, dropping a failed upgrade's screen with it. */
-  function resetStage(): void {
-    authStore.clearUpgradeMessages();
-    reset();
-  }
-
   return {
     onConfirmUpdate,
-    onLeaveFailedUpgrade: resetStage,
     onResolveConflicts,
     onSkipUpdate,
-    reset: resetStage,
+    reset,
     showStage,
     state,
   };
