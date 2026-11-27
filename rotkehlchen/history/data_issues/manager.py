@@ -26,7 +26,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
 
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
@@ -487,6 +487,41 @@ class DataIssuesManager:
                     *sources,
                 ) for location, location_label, protocol, asset, event_identifier in issues],
             )
+
+    def delete_issues_for_assets(
+            self,
+            assets: Sequence[str],
+            write_cursor: DBCursor | None = None,
+    ) -> int:
+        """Delete all persisted data issues for the given asset identifiers.
+
+        All persisted rows for the asset—including dismissed and resolved rows—are
+        intentionally deleted when an asset is ignored or marked as spam so ignored/spam
+        tokens do not linger in filtered views or keep ``baselineTotal`` non-zero
+        (preventing the all-clear state). Un-ignoring the asset later re-evaluates it
+        cleanly from scratch.
+
+        Returns the number of deleted rows.
+        """
+        asset_ids = list(dict.fromkeys(asset for asset in assets if asset))
+        if len(asset_ids) == 0:
+            return 0
+
+        def _delete(cursor: DBCursor) -> int:
+            deleted = 0
+            for chunk, placeholders in get_query_chunks(data=asset_ids):
+                cursor.execute(
+                    f'DELETE FROM data_issues WHERE asset IN ({placeholders})',
+                    chunk,
+                )
+                deleted += cursor.rowcount
+            return deleted
+
+        if write_cursor is not None:
+            return _delete(write_cursor)
+
+        with self.db.user_write() as cursor:
+            return _delete(cursor)
 
     def list_issues(
             self,

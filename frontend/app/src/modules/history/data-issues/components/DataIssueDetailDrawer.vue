@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { SpamAssessment } from '@/modules/assets/spam/use-spam-assessments';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { RemediationTimelineItem } from '@/modules/history/data-issues/types';
 import type { NamedFailure } from '@/modules/shell/components/named-failure';
@@ -16,11 +17,13 @@ import DataIssueDetailContent from '@/modules/history/data-issues/components/Dat
  */
 const open = defineModel<boolean>({ required: true });
 
-const { issue, busy = false, failure } = defineProps<{
+const { issue, busy = false, failure, spamAssessment } = defineProps<{
   issue?: DataIssue;
   busy?: boolean;
   /** The last failed dismiss or retry on this issue, named in its detail. */
   failure?: NamedFailure;
+  /** Local spam model estimate for the issue's ERC-20 asset. */
+  spamAssessment?: SpamAssessment;
 }>();
 
 const emit = defineEmits<{
@@ -47,6 +50,7 @@ const review = ref<RemediationTimelineItem>();
       :issue="issue"
       :busy="busy"
       :failure="failure"
+      :spam-assessment="spamAssessment"
       @close="open = false"
       @dismiss="emit('dismiss', $event)"
       @retry="emit('retry', $event)"

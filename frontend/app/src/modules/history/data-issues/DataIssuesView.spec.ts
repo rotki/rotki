@@ -1,3 +1,4 @@
+import type { SpamPrediction, SpamPredictionResponse, SpamPredictionToken } from '@/modules/assets/api/use-asset-spam-prediction-api';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { DetectionResult } from '@/modules/history/data-issues/use-data-issues-detection';
 import type { NamedFailure } from '@/modules/shell/components/named-failure';
@@ -7,6 +8,7 @@ import { err } from 'plainfp/result';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { nextTick, type Ref, ref, shallowRef } from 'vue';
 import { RequestFailed, type RequestFailure } from '@/modules/core/api/request-result';
+import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
 import DataIssueDetailDrawer from '@/modules/history/data-issues/components/DataIssueDetailDrawer.vue';
 import DataIssuesTable from '@/modules/history/data-issues/components/DataIssuesTable.vue';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
@@ -95,6 +97,12 @@ vi.mock('@/modules/history/use-history-data-fetching', () => ({
 const spies = vi.hoisted(() => ({
   detect: vi.fn<() => Promise<DetectionResult>>(),
   dismiss: vi.fn<(id: number) => Promise<unknown>>(),
+  predictSpam: vi.fn<(tokens: SpamPredictionToken[]) => Promise<SpamPredictionResponse>>(),
+}));
+
+vi.mock(import('@/modules/assets/api/use-asset-spam-prediction-api'), async importOriginal => ({
+  ...await importOriginal(),
+  useAssetSpamPredictionApi: (): { predictSpam: typeof spies.predictSpam } => ({ predictSpam: spies.predictSpam }),
 }));
 
 vi.mock('@/modules/history/data-issues/use-data-issues', () => ({
@@ -176,6 +184,7 @@ describe('data-issues view empty states', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    spies.predictSpam.mockResolvedValue({});
     state.baselineTotal = 0;
     state.detectFailure = undefined;
     state.error = undefined;
@@ -304,6 +313,7 @@ describe('data-issues view loading and polling', () => {
     setActivePinia(createPinia());
     // `flushPromises` waits on `setImmediate`, so only the timers the view schedules are faked.
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+    spies.predictSpam.mockResolvedValue({});
     state.baselineTotal = 4;
     state.detectFailure = undefined;
     state.error = undefined;
@@ -372,5 +382,72 @@ describe('data-issues view loading and polling', () => {
     await createWrapper(false);
 
     expect(mounted(table.dismissInlinePanels)).not.toHaveBeenCalled();
+  });
+});
+
+describe('data-issues view spam estimates', () => {
+  const token = 'eip155:1/erc20:0x1111111111111111111111111111111111111111';
+  const prediction: SpamPrediction = {
+    flagged: true,
+    modelReasons: [],
+    observedSignals: [],
+    spamProbability: 0.93,
+    threshold: 0.5,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setActivePinia(createPinia());
+    beginSession();
+    state.baselineTotal = 1;
+    state.detectFailure = undefined;
+    state.error = undefined;
+    state.filters = {};
+    state.isLoading = false;
+    state.summaryFailed = false;
+    state.rows = [{
+      asset: token,
+      autoRemediationAttempts: [],
+      createdAt: 1710000100,
+      groupIdentifier: null,
+      id: 10,
+      kind: IssueKind.NEGATIVE_BALANCE,
+      location: 'ethereum',
+      locationLabel: '0x0000000000000000000000000000000000000001',
+      payload: {},
+      protocol: null,
+      resolvedAt: null,
+      severity: IssueSeverity.WARNING,
+      state: IssueState.OPEN,
+      tsEnd: 1710000000,
+      tsStart: 1710000000,
+    }];
+    spies.predictSpam.mockResolvedValue({ [token]: prediction });
+  });
+
+  afterEach(() => {
+    endSession();
+  });
+
+  it('should pass page spam assessments to the table and selected drawer without re-fetching on row open', async () => {
+    const wrapper = await createWrapper();
+    const expected = { prediction, status: 'ready' };
+
+    expect(spies.predictSpam).toHaveBeenCalledExactlyOnceWith([{ identifier: token }]);
+    expect(wrapper.findComponent(DataIssuesTable).props('spamAssessments')).toStrictEqual({ [token]: expected });
+
+    wrapper.findComponent(DataIssuesTable).vm.$emit('open', state.rows[0]);
+    await flushPromises();
+
+    expect(spies.predictSpam).toHaveBeenCalledOnce();
+    expect(wrapper.findComponent(DataIssueDetailDrawer).props('spamAssessment')).toStrictEqual(expected);
+    expect(wrapper.findComponent(DataIssuesTable).props('spamUnavailable')).toBe(false);
+  });
+
+  it('should mark spam predictions unavailable on the table when prediction fails', async () => {
+    spies.predictSpam.mockRejectedValueOnce(new Error('colibri unavailable'));
+    const wrapper = await createWrapper();
+
+    expect(wrapper.findComponent(DataIssuesTable).props('spamUnavailable')).toBe(true);
   });
 });

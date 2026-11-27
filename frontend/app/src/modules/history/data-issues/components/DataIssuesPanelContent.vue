@@ -64,6 +64,7 @@ const {
   reloadAll,
   resolveFailure,
   selectedIssueFailure,
+  selectedSpamAssessment,
   visibleRows,
   wrapperProps,
 } = useDataIssuesPanel(panelFilters);
@@ -227,6 +228,7 @@ onMounted(() => {
             :issue="row.issue"
             :description="row.description"
             :event-route="row.eventRoute"
+            :spam-assessment="row.spamAssessment"
             :active="isActiveRow(row)"
             @open="openDetail(row.issue)"
             @goto="goToEvent($event)"
@@ -275,6 +277,7 @@ onMounted(() => {
     >
       <DataIssueDetailContent
         :issue="modelSelectedIssue"
+        :spam-assessment="selectedSpamAssessment"
         :busy="modelActionBusy"
         :failure="selectedIssueFailure"
         @close="modelDrawerOpen = false"

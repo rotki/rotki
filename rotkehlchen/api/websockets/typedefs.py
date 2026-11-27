@@ -45,6 +45,7 @@ class WSMessageType(StrEnum):
     ORACLE_PENALIZED = auto()
     # Sent when a task manager task starts or finishes
     BACKGROUND_TASK_STATUS = auto()
+    DATA_ISSUES_REMOVED = auto()
 
 
 class BackgroundTaskKind(StrEnum):
@@ -309,7 +310,11 @@ def delivery_of(message_type: WSMessageType, data: dict[str, Any] | list[Any]) -
                 data.get('subtype') == ProgressUpdateSubType.CSV_IMPORT_RESULT
             )
             return EVENT if is_import_result else LIVE
-        case WSMessageType.NEW_TOKEN_DETECTED | WSMessageType.EVMLIKE_ACCOUNTS_DETECTION:
+        case (
+            WSMessageType.NEW_TOKEN_DETECTED |
+            WSMessageType.EVMLIKE_ACCOUNTS_DETECTION |
+            WSMessageType.DATA_ISSUES_REMOVED
+        ):
             return EVENT
         case (
             WSMessageType.PREMIUM_STATUS_UPDATE |

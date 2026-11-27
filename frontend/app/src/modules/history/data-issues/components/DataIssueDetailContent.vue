@@ -22,11 +22,13 @@ import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
  * One issue's detail body, shared by both of its containers: the drawer on the data-issues page and
  * the bottom sheet in the pinned rail. Owns no open state, emitting `close` for each to interpret.
  */
-const { issue, busy = false, failure } = defineProps<{
+const { issue, busy = false, failure, spamAssessment } = defineProps<{
   issue?: DataIssue;
   busy?: boolean;
   /** The last failed dismiss or retry on the issue shown, passed on to the footer that names it. */
   failure?: InstanceType<typeof DataIssueDetailFooter>['$props']['failure'];
+  /** Local spam model estimate for the issue's ERC-20 asset, forwarded to the header subject bar. */
+  spamAssessment?: InstanceType<typeof DataIssueDetailHeader>['$props']['spamAssessment'];
 }>();
 
 const emit = defineEmits<{
@@ -92,6 +94,7 @@ const resolutionNote = computed<string | undefined>(() => {
   >
     <DataIssueDetailHeader
       :issue="issue"
+      :spam-assessment="spamAssessment"
       @close="emit('close')"
     />
 

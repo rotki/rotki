@@ -83,6 +83,7 @@ export const SocketMessageType = {
   BINANCE_PAIRS_MISSING: 'binance_pairs_missing',
   CALENDAR_REMINDER: 'calendar_reminder',
   CURRENT_BALANCE_DETECTION_COMPLETED: 'current_balance_detection_completed',
+  DATA_ISSUES_REMOVED: 'data_issues_removed',
   DATA_MIGRATION_STATUS: 'data_migration_status',
   DATABASE_UPLOAD_PROGRESS: 'database_upload_progress',
   DB_UPGRADE_STATUS: 'db_upgrade_status',

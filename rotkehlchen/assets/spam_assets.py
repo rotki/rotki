@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
@@ -179,9 +180,15 @@ def check_token_impersonates_dangerous_tokens(
             )
 
         with database.user_write() as write_cursor:
-            database.add_to_ignored_assets(
+            deleted_issues = database.add_to_ignored_assets(
                 write_cursor=write_cursor,
                 asset=token,
+            )
+
+        if deleted_issues > 0:
+            database.msg_aggregator.add_message(
+                message_type=WSMessageType.DATA_ISSUES_REMOVED,
+                data={'assets': [token.identifier]},
             )
 
         log.debug(f'Flagged {token} as spam trying to impersonate {impersonated_symbol}')

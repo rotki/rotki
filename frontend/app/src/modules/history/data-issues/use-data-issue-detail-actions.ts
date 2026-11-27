@@ -2,9 +2,11 @@ import type { ResultAsync } from 'plainfp/result-async';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import type { DataIssueError } from '@/modules/history/data-issues/types';
 import { get, set } from '@vueuse/shared';
+import { storeToRefs } from 'pinia';
 import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, ref, shallowReadonly, shallowRef, toValue, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useDataIssues } from '@/modules/history/data-issues/use-data-issues';
+import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
 import { type NamedFailure, useFailureSlot } from '@/modules/shell/components/named-failure';
 
 interface UseDataIssueDetailActionsReturn {
@@ -42,6 +44,7 @@ export function useDataIssueDetailActions(
 ): UseDataIssueDetailActionsReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { dismiss, resolveManually, retry } = useDataIssues();
+  const { issuesInvalidated, lastRemovedAssets } = storeToRefs(useDataIssuesInboxStore());
 
   const modelSelectedIssue = ref<DataIssue>();
   const modelDrawerOpen = shallowRef<boolean>(false);
@@ -134,6 +137,16 @@ export function useDataIssueDetailActions(
       set(modelActionBusy, false);
     }
   }
+
+  watch(issuesInvalidated, () => {
+    const selectedAsset = get(modelSelectedIssue)?.asset;
+    if (!selectedAsset || !get(lastRemovedAssets).includes(selectedAsset))
+      return;
+
+    set(modelResolveOpen, false);
+    set(modelDrawerOpen, false);
+    set(modelSelectedIssue, undefined);
+  });
 
   watch(() => toValue(issues), (updatedIssues) => {
     const selected = get(modelSelectedIssue);

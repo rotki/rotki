@@ -1,11 +1,12 @@
 import { mount } from '@vue/test-utils';
-import { set } from '@vueuse/core';
+import { get, set } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, nextTick, ref } from 'vue';
 import { useHistoricalBalanceProcessingStore } from '@/modules/history/balances/use-historical-balance-processing-store';
 import { useDataIssueRemediationStore } from '@/modules/history/data-issues/use-data-issue-remediation-store';
 import { useDataIssuesAutoReload } from '@/modules/history/data-issues/use-data-issues-auto-reload';
+import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
 
 const syncCompleted = ref<boolean>(false);
 
@@ -13,8 +14,8 @@ vi.mock('@/modules/shell/sync-progress/use-sync-completed', () => ({
   useSyncCompleted: (): Record<string, unknown> => ({ syncCompleted }),
 }));
 
-function mountView(reload: () => Promise<void>): void {
-  mount(defineComponent({
+function mountView(reload: () => Promise<void>): ReturnType<typeof mount> {
+  return mount(defineComponent({
     setup() {
       useDataIssuesAutoReload(reload);
       return (): unknown => h('div');
@@ -66,5 +67,26 @@ describe('useDataIssuesAutoReload', () => {
     await nextTick();
 
     expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it('should reload when issues are invalidated externally', async () => {
+    const reload = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    mountView(reload);
+
+    useDataIssuesInboxStore().notifyIssuesChanged(['eip155:1/erc20:0x1111']);
+    await nextTick();
+
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it('should register as an active reload listener while mounted and unregister on unmount', () => {
+    const store = useDataIssuesInboxStore();
+    expect(get(store.hasActiveReloadListeners)).toBe(false);
+
+    const wrapper = mountView(vi.fn<() => Promise<void>>().mockResolvedValue(undefined));
+    expect(get(store.hasActiveReloadListeners)).toBe(true);
+
+    wrapper.unmount();
+    expect(get(store.hasActiveReloadListeners)).toBe(false);
   });
 });

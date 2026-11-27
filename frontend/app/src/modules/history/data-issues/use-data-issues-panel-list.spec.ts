@@ -1,17 +1,27 @@
+import type { SpamPrediction, SpamPredictionResponse, SpamPredictionToken } from '@/modules/assets/api/use-asset-spam-prediction-api';
 import type { Collection } from '@/modules/core/common/collection';
 import type { Filters } from '@/modules/history/data-issues/data-issue-filter-keys';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import { flushPromises } from '@vue/test-utils';
 import { get, set } from '@vueuse/core';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok, type Result } from 'plainfp/result';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { RequestCancelled, type RequestError, RequestFailed } from '@/modules/core/api/request-result';
+import { beginSession, endSession } from '@/modules/core/session/session-lifecycle';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 import { PANEL_PAGE_SIZE } from '@/modules/history/data-issues/data-issues-panel-utils';
 import { useDataIssuesPanelList } from '@/modules/history/data-issues/use-data-issues-panel-list';
 
 const fetchData = vi.fn();
 const refreshSummary = vi.fn();
+const predictSpam = vi.fn<(tokens: SpamPredictionToken[]) => Promise<SpamPredictionResponse>>();
+
+vi.mock(import('@/modules/assets/api/use-asset-spam-prediction-api'), async importOriginal => ({
+  ...await importOriginal(),
+  useAssetSpamPredictionApi: (): { predictSpam: typeof predictSpam } => ({ predictSpam }),
+}));
 
 vi.mock('@/modules/history/data-issues/use-data-issues', () => ({
   useDataIssues: (): Record<string, unknown> => ({ fetchData }),
@@ -59,8 +69,14 @@ function page(count: number, found: number, startId = 1): Result<Collection<Data
 
 describe('useDataIssuesPanelList', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
+    predictSpam.mockResolvedValue({});
     refreshSummary.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    endSession();
   });
 
   it('should start empty before anything is loaded', () => {
@@ -251,5 +267,30 @@ describe('useDataIssuesPanelList', () => {
 
     expect(fetchData).toHaveBeenCalledOnce();
     expect(refreshSummary).toHaveBeenCalledOnce();
+  });
+
+  it('should attach spam assessments to ERC-20 rows and omit them for non-ERC-20 rows', async () => {
+    beginSession();
+    const token = 'eip155:1/erc20:0x1111111111111111111111111111111111111111';
+    const prediction: SpamPrediction = {
+      flagged: true,
+      modelReasons: [],
+      observedSignals: [],
+      spamProbability: 0.92,
+      threshold: 0.5,
+    };
+    predictSpam.mockResolvedValueOnce({ [token]: prediction });
+    fetchData.mockResolvedValueOnce(ok({
+      ...collectionPage(2, 2),
+      data: [createIssue({ asset: token, id: 1 }), createIssue({ asset: 'ETH', id: 2 })],
+    }));
+
+    const { refreshList, rows } = useDataIssuesPanelList(ref<Filters>({}));
+    await refreshList();
+    await flushPromises();
+
+    expect(predictSpam).toHaveBeenCalledExactlyOnceWith([{ identifier: token }]);
+    expect(get(rows)[0].spamAssessment).toStrictEqual({ prediction, status: 'ready' });
+    expect(get(rows)[1].spamAssessment).toBeUndefined();
   });
 });

@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors.misc import InputError, NotFoundError
 from rotkehlchen.history.data_issues.constants import (
     IssueKind,
@@ -19,6 +20,7 @@ from rotkehlchen.history.data_issues.types import DataIssueFilters
 from rotkehlchen.locations.constants import (
     LOCATION_ETHEREUM,
 )
+from rotkehlchen.types import TimestampMS
 
 pytestmark = pytest.mark.accounting_update
 
@@ -580,3 +582,103 @@ def test_resolve_unmatched_bridge_issues_except_keeps_unmatched_and_dismissed(
     assert manager.get_issue(ids[1]).state == IssueState.OPEN
     assert manager.get_issue(ids[2]).state == IssueState.RESOLVED
     assert manager.get_issue(ids[3]).state == IssueState.DISMISSED
+
+
+def test_delete_issues_for_assets(database: DBHandler) -> None:
+    """Deleting issues by asset removes every state/scope for those assets and leaves others."""
+    manager = DataIssuesManager(database)
+    spam_asset = 'eip155:1/erc20:0x1111111111111111111111111111111111111111'
+    kept_asset = 'ETH'
+
+    open_id = manager.write_issue(
+        kind=IssueKind.NEGATIVE_BALANCE,
+        location=LOCATION_ETHEREUM,
+        location_label='0x1',
+        protocol=None,
+        asset=spam_asset,
+        ts_start=TimestampMS(1_000),
+        ts_end=TimestampMS(1_000),
+        payload={
+            'derived_balance_before_event': '1',
+            'event_identifier': 10,
+            'in_memory_negative_amount': '-1',
+        },
+    )
+    dismissed_id = manager.write_issue(
+        kind=IssueKind.CURRENT_BALANCE_MISMATCH,
+        location=LOCATION_ETHEREUM,
+        location_label='0x1',
+        protocol=None,
+        asset=spam_asset,
+        ts_start=TimestampMS(2_000),
+        ts_end=TimestampMS(2_000),
+        payload={
+            'delta': '1',
+            'derived_balance': '0',
+            'latest_event_identifier': None,
+            'observed_balance': '1',
+            'queried_at_ts': 2,
+        },
+    )
+    manager.dismiss(dismissed_id)
+    kept_id = manager.write_issue(
+        kind=IssueKind.NEGATIVE_BALANCE,
+        location=LOCATION_ETHEREUM,
+        location_label='0x1',
+        protocol=None,
+        asset=kept_asset,
+        ts_start=TimestampMS(3_000),
+        ts_end=TimestampMS(3_000),
+        payload={
+            'derived_balance_before_event': '1',
+            'event_identifier': 11,
+            'in_memory_negative_amount': '-1',
+        },
+    )
+
+    assert manager.delete_issues_for_assets([]) == 0
+    assert manager.delete_issues_for_assets([spam_asset, spam_asset]) == 2
+    remaining = manager.list_issues()
+    assert [issue.id for issue in remaining] == [kept_id]
+    assert open_id not in {issue.id for issue in remaining}
+
+    with database.user_write() as write_cursor:
+        deleted = manager.delete_issues_for_assets([kept_asset], write_cursor=write_cursor)
+    assert deleted == 1
+    assert manager.list_issues() == []
+
+
+def test_add_to_ignored_assets_deletes_data_issues(database: DBHandler) -> None:
+    """Plainly ignoring an asset deletes its persisted data issues while keeping others."""
+    manager = DataIssuesManager(database)
+    ignored_asset = 'eip155:1/erc20:0x1111111111111111111111111111111111111111'
+    kept_asset = 'ETH'
+
+    _write_negative_balance_issue(
+        manager=manager,
+        event_identifier=10,
+        asset=ignored_asset,
+        ts=1_000,
+    )
+    dismissed_id = _write_current_balance_mismatch_issue(
+        manager=manager,
+        asset=ignored_asset,
+    )
+    manager.dismiss(dismissed_id)
+    kept_id = _write_negative_balance_issue(
+        manager=manager,
+        event_identifier=11,
+        asset=kept_asset,
+        ts=3_000,
+    )
+
+    with database.user_write() as write_cursor:
+        deleted = database.add_to_ignored_assets(
+            write_cursor=write_cursor,
+            asset=Asset(ignored_asset),
+        )
+
+    assert deleted == 2
+    assert [issue.id for issue in manager.list_issues()] == [kept_id]
+    with database.conn.read_ctx() as cursor:
+        assert ignored_asset in database.get_ignored_asset_ids(cursor)

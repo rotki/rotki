@@ -1,10 +1,12 @@
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { get, set } from '@vueuse/core';
+import { createPinia, setActivePinia } from 'pinia';
 import { err, ok } from 'plainfp/result';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick, ref } from 'vue';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 import { useDataIssueDetailActions } from '@/modules/history/data-issues/use-data-issue-detail-actions';
+import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
 
 const dismiss = vi.fn();
 const retry = vi.fn();
@@ -46,6 +48,7 @@ function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
 
 describe('useDataIssueDetailActions', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
   });
 
@@ -218,5 +221,33 @@ describe('useDataIssueDetailActions', () => {
     onResolveRequest();
 
     expect(get(resolveFailure)).toBeUndefined();
+  });
+
+  it('should close the drawer and resolve dialog when the open issue asset is removed as spam', async () => {
+    const token = 'eip155:1/erc20:0x1111111111111111111111111111111111111111';
+    const { modelDrawerOpen, modelResolveOpen, modelSelectedIssue, onResolveRequest, openDetail } = useDataIssueDetailActions(vi.fn());
+    openDetail(createIssue({ asset: token, id: 12 }));
+    onResolveRequest();
+
+    useDataIssuesInboxStore().notifyIssuesChanged([token]);
+    await nextTick();
+
+    expect(get(modelDrawerOpen)).toBe(false);
+    expect(get(modelResolveOpen)).toBe(false);
+    expect(get(modelSelectedIssue)).toBeUndefined();
+  });
+
+  it('should keep the drawer open when another asset is removed as spam', async () => {
+    const openToken = 'eip155:1/erc20:0x1111111111111111111111111111111111111111';
+    const otherToken = 'eip155:1/erc20:0x2222222222222222222222222222222222222222';
+    const { modelDrawerOpen, modelSelectedIssue, openDetail } = useDataIssueDetailActions(vi.fn());
+    const issue = createIssue({ asset: openToken, id: 12 });
+    openDetail(issue);
+
+    useDataIssuesInboxStore().notifyIssuesChanged([otherToken]);
+    await nextTick();
+
+    expect(get(modelDrawerOpen)).toBe(true);
+    expect(get(modelSelectedIssue)).toStrictEqual(issue);
   });
 });

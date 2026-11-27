@@ -11,6 +11,7 @@ import rsqlite
 from eth_utils import is_checksum_address
 
 from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets import asset as asset_module
 from rotkehlchen.assets.asset import (
     Asset,
@@ -43,6 +44,9 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.constants import IssueKind
+from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.locations.constants import LOCATION_ETHEREUM
 from rotkehlchen.tasks.assets import autodetect_spam_assets_in_db
 from rotkehlchen.tasks.manager import should_run_periodic_task
 from rotkehlchen.tests.utils.factories import make_evm_address
@@ -52,6 +56,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     SolanaAddress,
+    TimestampMS,
     TokenKind,
 )
 
@@ -840,6 +845,100 @@ def test_spam_detection_respects_whitelist(globaldb: GlobalDBHandler, database: 
         key_name=DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY,
         refresh_period=SPAM_ASSETS_DETECTION_REFRESH,
     ) is False
+
+
+def test_autodetect_spam_assets_deletes_data_issues_and_notifies(
+        globaldb: GlobalDBHandler,
+        database: DBHandler,
+) -> None:
+    """Autodetected spam tokens delete persisted data issues and notify only when rows drop."""
+    # Flush pre-existing globaldb spam candidates so the assertion only observes test tokens.
+    autodetect_spam_assets_in_db(database)
+
+    spam_token = EvmToken.initialize(
+        address=make_evm_address(),
+        name='Visit claim-airdrop.com',
+        symbol='CLAIM',
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+    )
+    globaldb.add_asset(spam_token)
+
+    issues_manager = DataIssuesManager(database)
+    issues_manager.write_issue(
+        kind=IssueKind.CURRENT_BALANCE_MISMATCH,
+        location=LOCATION_ETHEREUM,
+        location_label=make_evm_address(),
+        protocol=None,
+        asset=spam_token.identifier,
+        ts_start=TimestampMS(1_000),
+        ts_end=TimestampMS(1_000),
+        payload={
+            'delta': '10',
+            'derived_balance': '0',
+            'latest_event_identifier': None,
+            'observed_balance': '10',
+            'queried_at_ts': 1,
+        },
+    )
+    kept_issue_id = issues_manager.write_issue(
+        kind=IssueKind.CURRENT_BALANCE_MISMATCH,
+        location=LOCATION_ETHEREUM,
+        location_label=make_evm_address(),
+        protocol=None,
+        asset=A_DAI.identifier,
+        ts_start=TimestampMS(2_000),
+        ts_end=TimestampMS(2_000),
+        payload={
+            'delta': '5',
+            'derived_balance': '0',
+            'latest_event_identifier': None,
+            'observed_balance': '5',
+            'queried_at_ts': 2,
+        },
+    )
+
+    with patch.object(
+        database.msg_aggregator,
+        'add_message',
+        wraps=database.msg_aggregator.add_message,
+    ) as add_message:
+        autodetect_spam_assets_in_db(database)
+
+    assert Asset(spam_token.identifier).resolve_to_evm_token().protocol == SPAM_PROTOCOL
+    with database.conn.read_ctx() as cursor:
+        assert spam_token.identifier in database.get_ignored_asset_ids(cursor)
+    assert [issue.id for issue in issues_manager.list_issues()] == [kept_issue_id]
+
+    removed_calls = [
+        call for call in add_message.call_args_list
+        if call.kwargs.get('message_type') == WSMessageType.DATA_ISSUES_REMOVED
+    ]
+    assert len(removed_calls) == 1
+    assert removed_calls[0].kwargs['data'] == {'assets': [spam_token.identifier]}
+
+    # Detecting another spam token with no persisted issues must not emit DATA_ISSUES_REMOVED.
+    spam_token_without_issues = EvmToken.initialize(
+        address=make_evm_address(),
+        name='Claim reward at airdrop.org',
+        symbol='REWARD',
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+    )
+    globaldb.add_asset(spam_token_without_issues)
+
+    with patch.object(
+        database.msg_aggregator,
+        'add_message',
+        wraps=database.msg_aggregator.add_message,
+    ) as add_message:
+        autodetect_spam_assets_in_db(database)
+
+    assert Asset(spam_token_without_issues.identifier).resolve_to_evm_token().protocol == SPAM_PROTOCOL  # noqa: E501
+    assert not any(
+        call.kwargs.get('message_type') == WSMessageType.DATA_ISSUES_REMOVED
+        for call in add_message.call_args_list
+    )
 
 
 def test_all_assets_pagination(globaldb: GlobalDBHandler, database: DBHandler):

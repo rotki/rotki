@@ -30,6 +30,8 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import set_token_spam_protocol
+from rotkehlchen.history.data_issues.constants import IssueKind
+from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.locations.constants import (
@@ -1543,6 +1545,39 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
         )
 
     eth_address = make_evm_address()
+    issues_manager = DataIssuesManager(db)
+    issues_manager.write_issue(
+        kind=IssueKind.CURRENT_BALANCE_MISMATCH,
+        location=LOCATION_ETHEREUM,
+        location_label=eth_address,
+        protocol=None,
+        asset=A_DAI.identifier,
+        ts_start=TimestampMS(1_000),
+        ts_end=TimestampMS(1_000),
+        payload={
+            'delta': '30',
+            'derived_balance': '0',
+            'latest_event_identifier': None,
+            'observed_balance': '30',
+            'queried_at_ts': 1,
+        },
+    )
+    kept_issue_id = issues_manager.write_issue(
+        kind=IssueKind.CURRENT_BALANCE_MISMATCH,
+        location=LOCATION_ETHEREUM,
+        location_label=eth_address,
+        protocol=None,
+        asset=A_USDC.identifier,
+        ts_start=TimestampMS(1_000),
+        ts_end=TimestampMS(1_000),
+        payload={
+            'delta': '5',
+            'derived_balance': '0',
+            'latest_event_identifier': None,
+            'observed_balance': '5',
+            'queried_at_ts': 1,
+        },
+    )
     with rotki.chains_aggregator.balances_lock:
         rotki.chains_aggregator.balances.eth[eth_address].assets[A_DAI][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal(30))  # noqa: E501
         rotki.chains_aggregator.totals = rotki.chains_aggregator.balances.recalculate_totals()
@@ -1557,6 +1592,7 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
     assert A_OP.resolve_to_evm_token().protocol == SPAM_PROTOCOL
     with db.conn.read_ctx() as cursor:
         assert {A_DAI, A_OP}.issubset(rotki.data.db.get_ignored_asset_ids(cursor))
+    assert [issue.id for issue in issues_manager.list_issues()] == [kept_issue_id]
 
     # check that we removed the asset from the balances
     assert len(rotki.chains_aggregator.balances.eth[eth_address].assets) == 0
@@ -1568,6 +1604,34 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
             cursor=cursor,
             key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
         )
+
+    # Marking an already-ignored token as spam still deletes any leftover data issues for it.
+    with db.user_write() as write_cursor:
+        db.add_to_ignored_assets(write_cursor=write_cursor, asset=A_GNO)
+    issues_manager.write_issue(
+        kind=IssueKind.CURRENT_BALANCE_MISMATCH,
+        location=LOCATION_ETHEREUM,
+        location_label=eth_address,
+        protocol=None,
+        asset=A_GNO.identifier,
+        ts_start=TimestampMS(2_000),
+        ts_end=TimestampMS(2_000),
+        payload={
+            'delta': '2',
+            'derived_balance': '0',
+            'latest_event_identifier': None,
+            'observed_balance': '2',
+            'queried_at_ts': 2,
+        },
+    )
+    assert_proper_response(requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'spamtokenresource',
+        ), json={'tokens': [A_GNO.identifier]},
+    ))
+    assert A_GNO.resolve_to_evm_token().protocol == SPAM_PROTOCOL
+    assert [issue.id for issue in issues_manager.list_issues()] == [kept_issue_id]
 
     # check that it fails if we try to add any other asset type
     response = requests.post(

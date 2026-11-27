@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
+import type { SpamAssessment } from '@/modules/assets/spam/use-spam-assessments';
 import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { type DataTableColumn, RuiButton, RuiDataTable, RuiIcon, RuiTooltip, type TablePaginationData } from '@rotki/ui-library';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import SpamAssessmentHint from '@/modules/assets/spam/SpamAssessmentHint.vue';
 import TableFrame from '@/modules/core/table/TableFrame.vue';
 import { useTableEmptyState } from '@/modules/core/table/use-table-empty-state';
 import DataIssueCardActions from '@/modules/history/data-issues/components/DataIssueCardActions.vue';
@@ -18,11 +20,20 @@ import TimeAgoDisplay from '@/modules/shell/components/display/TimeAgoDisplay.vu
 
 const pagination = defineModel<TablePaginationData>('pagination', { required: true });
 
-const { emptyDescription, loading = false, rows, showClearFilters = false } = defineProps<{
+const {
+  emptyDescription,
+  loading = false,
+  rows,
+  showClearFilters = false,
+  spamAssessments,
+  spamUnavailable = false,
+} = defineProps<{
   rows: DataIssue[];
   loading?: boolean;
   emptyDescription: string;
   showClearFilters?: boolean;
+  spamAssessments?: Readonly<Record<string, SpamAssessment>>;
+  spamUnavailable?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -48,6 +59,11 @@ function eventRouteFor(issue: DataIssue): RouteLocationRaw | undefined {
   return relatedEventRoute(issue.kind, describeIssue(issue).eventIdentifier, issue.groupIdentifier, issue.asset);
 }
 
+function isPotentialSpam(asset?: string | null): boolean {
+  const assessment = asset ? spamAssessments?.[asset] : undefined;
+  return assessment?.status === 'ready' && assessment.prediction.flagged;
+}
+
 const headers = computed<DataTableColumn<DataIssue>[]>(() => [
   { key: 'kind', label: t('data_issues.headers.kind') },
   { key: 'asset', label: t('common.asset') },
@@ -67,6 +83,13 @@ const headers = computed<DataTableColumn<DataIssue>[]>(() => [
     >
       <slot name="toolbar" />
     </template>
+    <div
+      v-if="spamUnavailable"
+      class="px-4 pt-2 text-caption text-rui-text-secondary"
+      data-testid="data-issues-spam-unavailable"
+    >
+      {{ t('spam_estimate.unavailable_notice') }}
+    </div>
     <RuiDataTable
       v-model:pagination.external="pagination"
       dense
@@ -81,10 +104,18 @@ const headers = computed<DataTableColumn<DataIssue>[]>(() => [
         <DataIssueKindChip :kind="row.kind" />
       </template>
       <template #item.asset="{ row }">
-        <AssetDetails
+        <div
           v-if="row.asset"
-          :asset="row.asset"
-        />
+          class="flex flex-wrap items-center gap-1.5"
+        >
+          <AssetDetails :asset="row.asset" />
+          <SpamAssessmentHint
+            v-if="isPotentialSpam(row.asset)"
+            :assessment="spamAssessments?.[row.asset]"
+            standalone
+            quiet
+          />
+        </div>
         <span
           v-else
           class="text-rui-text-secondary"

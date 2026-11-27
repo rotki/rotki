@@ -1,4 +1,5 @@
 import type { ActionStatus } from '@/modules/core/common/action';
+import { startPromise } from '@shared/utils';
 import { get, set } from '@vueuse/shared';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
@@ -10,6 +11,8 @@ import { arrayify } from '@/modules/core/common/data/array';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
+import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 
 interface UseIgnoredAssetOperationsReturn {
   fetchIgnoredAssets: () => Promise<void>;
@@ -24,6 +27,8 @@ export function useIgnoredAssetOperations(): UseIgnoredAssetOperationsReturn {
   const { getAssetField } = useAssetInfoRetrieval();
   const { manualBalancesAssets } = useManualBalanceData();
   const { ignoredAssets } = storeToRefs(useAssetsStore());
+  const dataIssuesInboxStore = useDataIssuesInboxStore();
+  const { refreshSummary: refreshDataIssuesSummary } = useDataIssuesSummary();
 
   async function fetchIgnoredAssets(): Promise<void> {
     try {
@@ -66,6 +71,11 @@ export function useIgnoredAssetOperations(): UseIgnoredAssetOperationsReturn {
       if (notIncludedInManualBalances.length > 0) {
         const { noAction, successful } = await addIgnoredAssets(notIncludedInManualBalances);
         set(ignoredAssets, [...get(ignoredAssets), ...successful, ...noAction].filter(uniqueStrings));
+        if (successful.length > 0) {
+          dataIssuesInboxStore.notifyIssuesChanged(successful);
+          if (!dataIssuesInboxStore.hasActiveReloadListeners)
+            startPromise(refreshDataIssuesSummary());
+        }
       }
       return { success: true };
     }
