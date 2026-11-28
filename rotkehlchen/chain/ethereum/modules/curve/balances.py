@@ -13,7 +13,7 @@ from rotkehlchen.constants.assets import A_CRV
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.globaldb.cache import compute_cache_key
+from rotkehlchen.globaldb.cache import globaldb_get_unique_cache_value
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -63,17 +63,33 @@ class CurveBalances(ProtocolWithGauges):
 
         return event.address
 
-    def _get_cached_loan_amm_addresses(self) -> set[ChecksumEvmAddress]:
-        """Return cached crvUSD / Curve Lend AMM addresses from GlobalDB."""
-        key_prefix = f'{compute_cache_key((CacheType.CURVE_CRVUSD_AMM,))}%'
+    def _get_loan_non_gauge_addresses(
+            self,
+            debt_events_by_address: dict[ChecksumEvmAddress, list[EvmEvent]],
+    ) -> set[ChecksumEvmAddress]:
+        """Return crvUSD / Curve Lend controller and AMM addresses for decoded debt events."""
+        controllers = {
+            string_to_evm_address(controller)
+            for events in debt_events_by_address.values()
+            for event in events
+            if (
+                event.extra_data is not None and
+                isinstance(controller := event.extra_data.get('controller_address'), str)
+            )
+        }
+        if len(controllers) == 0:
+            return set()
+
+        non_gauge_addresses = set(controllers)
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            return {
-                string_to_evm_address(row[0])
-                for row in cursor.execute(
-                    'SELECT value FROM unique_cache WHERE key LIKE ?',
-                    (key_prefix,),
-                )
-            }
+            for controller in controllers:
+                if (amm := globaldb_get_unique_cache_value(
+                    cursor=cursor,
+                    key_parts=(CacheType.CURVE_CRVUSD_AMM, controller),
+                )) is not None:
+                    non_gauge_addresses.add(string_to_evm_address(amm))
+
+        return non_gauge_addresses
 
     def addresses_with_gauge_deposits(
             self,
@@ -90,23 +106,13 @@ class CurveBalances(ProtocolWithGauges):
             event_types={(HistoryEventType.WITHDRAWAL, HistoryEventSubType.GENERATE_DEBT)},
             location_labels=list(deposits_by_address.keys()),
         )
-        borrow_tx_refs = {
-            event.tx_ref
-            for events in debt_events_by_address.values()
-            for event in events
-        }
-        non_gauge_addresses = self._get_cached_loan_amm_addresses()
-        for events in deposits_by_address.values():
-            for event in events:
-                if event.tx_ref in borrow_tx_refs and event.address is not None:
-                    non_gauge_addresses.add(event.address)
+        non_gauge_addresses = self._get_loan_non_gauge_addresses(debt_events_by_address)
 
         filtered: dict[ChecksumEvmAddress, list[EvmEvent]] = {}
         for address, events in deposits_by_address.items():
             if len(gauge_events := [
                 event for event in events
                 if (
-                    event.tx_ref not in borrow_tx_refs and
                     event.address not in non_gauge_addresses and
                     self.get_gauge_address(event) is not None
                 )

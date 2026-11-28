@@ -306,19 +306,16 @@ def test_curve_balances_skips_ordinary_loan_collateral_deposits(
     """Regression test: CurveBalances must skip ordinary crvUSD and Curve Lend collateral
     deposits, including deposits already stored without controller_address metadata."""
     (
-        borrower_paired_tx,
-        borrower_cached_amm,
+        borrower_debt_resolved,
         borrower_legacy_note,
         borrower_with_metadata_and_gauge,
         amm1,
         amm2,
         amm3,
-        amm4,
         controller1,
-        controller2,
-        controller4,
+        controller3,
         gauge_address,
-    ) = (make_evm_address() for _ in range(12))
+    ) = (make_evm_address() for _ in range(9))
     gauge_token = A_CRV.resolve_to_evm_token()
     crvusd = EvmToken('eip155:1/erc20:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E')
     borrow_tx_hash = make_evm_tx_hash()
@@ -326,8 +323,8 @@ def test_curve_balances_skips_ordinary_loan_collateral_deposits(
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         globaldb_set_unique_cache_value(
             write_cursor=write_cursor,
-            key_parts=(CacheType.CURVE_CRVUSD_AMM, controller2),
-            value=amm2,
+            key_parts=(CacheType.CURVE_CRVUSD_AMM, controller1),
+            value=amm1,
         )
 
     events_db = DBHistoryEvents(ethereum_inquirer.database)
@@ -344,7 +341,7 @@ def test_curve_balances_skips_ordinary_loan_collateral_deposits(
         ) in enumerate([
             (
                 borrow_tx_hash,
-                borrower_paired_tx,
+                borrower_debt_resolved,
                 HistoryEventType.DEPOSIT,
                 HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
                 A_WBTC,
@@ -354,7 +351,7 @@ def test_curve_balances_skips_ordinary_loan_collateral_deposits(
             ),
             (
                 borrow_tx_hash,
-                borrower_paired_tx,
+                borrower_debt_resolved,
                 HistoryEventType.WITHDRAWAL,
                 HistoryEventSubType.GENERATE_DEBT,
                 crvusd,
@@ -364,7 +361,7 @@ def test_curve_balances_skips_ordinary_loan_collateral_deposits(
             ),
             (
                 make_evm_tx_hash(),
-                borrower_paired_tx,
+                borrower_debt_resolved,
                 HistoryEventType.DEPOSIT,
                 HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
                 A_WBTC,
@@ -374,12 +371,12 @@ def test_curve_balances_skips_ordinary_loan_collateral_deposits(
             ),
             (
                 make_evm_tx_hash(),
-                borrower_cached_amm,
+                borrower_debt_resolved,
                 HistoryEventType.DEPOSIT,
                 HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
-                A_WBTC,
-                amm2,
-                'Edited note',
+                A_ETH,
+                controller1,
+                'Edited controller deposit',
                 None,
             ),
             (
@@ -388,7 +385,7 @@ def test_curve_balances_skips_ordinary_loan_collateral_deposits(
                 HistoryEventType.DEPOSIT,
                 HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
                 A_WBTC,
-                amm3,
+                amm2,
                 'Deposit 1 WBTC as collateral on Curve',
                 None,
             ),
@@ -398,9 +395,9 @@ def test_curve_balances_skips_ordinary_loan_collateral_deposits(
                 HistoryEventType.DEPOSIT,
                 HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
                 A_WBTC,
-                amm4,
+                amm3,
                 'User edited note',
-                {'controller_address': controller4},
+                {'controller_address': controller3},
             ),
             (
                 make_evm_tx_hash(),
@@ -444,8 +441,7 @@ def test_curve_balances_skips_ordinary_loan_collateral_deposits(
         ),
     ):
         balances = curve_balances.query_balances(addresses=[
-            borrower_paired_tx,
-            borrower_cached_amm,
+            borrower_debt_resolved,
             borrower_legacy_note,
             borrower_with_metadata_and_gauge,
         ])
@@ -454,6 +450,116 @@ def test_curve_balances_skips_ordinary_loan_collateral_deposits(
     assert len(query_mock.call_args_list) == 1
     assert query_mock.call_args.kwargs['user_address'] == borrower_with_metadata_and_gauge
     assert query_mock.call_args.kwargs['gauges_to_token'] == {gauge_address: gauge_token}
+
+
+def test_curve_balances_queries_gauge_deposit_in_same_tx_as_borrow(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+) -> None:
+    """Regression test: a real gauge deposit in the same transaction as a Curve borrow
+    must still be queried for both that account and other tracked accounts."""
+    batch_user, other_user, controller, amm, gauge_address = (
+        make_evm_address() for _ in range(5)
+    )
+    gauge_token = A_CRV.resolve_to_evm_token()
+    crvusd = EvmToken('eip155:1/erc20:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E')
+    batch_tx_hash = make_evm_tx_hash()
+
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        globaldb_set_unique_cache_value(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.CURVE_CRVUSD_AMM, controller),
+            value=amm,
+        )
+
+    events_db = DBHistoryEvents(ethereum_inquirer.database)
+    with ethereum_inquirer.database.conn.write_ctx() as write_cursor:
+        for idx, (
+            tx_ref,
+            user,
+            event_type,
+            event_subtype,
+            asset,
+            address,
+            extra_data,
+        ) in enumerate([
+            (
+                batch_tx_hash,
+                batch_user,
+                HistoryEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                A_WBTC,
+                amm,
+                None,
+            ),
+            (
+                batch_tx_hash,
+                batch_user,
+                HistoryEventType.WITHDRAWAL,
+                HistoryEventSubType.GENERATE_DEBT,
+                crvusd,
+                controller,
+                {'controller_address': controller},
+            ),
+            (
+                batch_tx_hash,
+                batch_user,
+                HistoryEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                gauge_token,
+                gauge_address,
+                None,
+            ),
+            (
+                make_evm_tx_hash(),
+                other_user,
+                HistoryEventType.DEPOSIT,
+                HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                gauge_token,
+                gauge_address,
+                None,
+            ),
+        ]):
+            events_db.add_history_event(
+                write_cursor=write_cursor,
+                event=EvmEvent(
+                    tx_ref=tx_ref,
+                    sequence_index=idx + 1,
+                    timestamp=TimestampMS(1760138579000),
+                    location=Location.ETHEREUM,
+                    event_type=event_type,
+                    event_subtype=event_subtype,
+                    asset=asset,
+                    amount=FVal('1.25'),
+                    location_label=user,
+                    notes='Edited note',
+                    counterparty=CPT_CURVE,
+                    address=address,
+                    extra_data=extra_data,
+                ),
+            )
+
+    curve_balances = CurveBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=ethereum_transaction_decoder,
+    )
+    with (
+        patch.object(curve_balances, '_query_gauges_balances', return_value={}) as query_mock,
+        patch(
+            'rotkehlchen.chain.ethereum.interfaces.balances.get_rpc_first_chunk_size_call_order',
+            return_value=(100, []),
+        ),
+    ):
+        balances = curve_balances.query_balances(addresses=[batch_user, other_user])
+
+    assert balances == {}
+    assert {
+        call_args.kwargs['user_address']: call_args.kwargs['gauges_to_token']
+        for call_args in query_mock.call_args_list
+    } == {
+        batch_user: {gauge_address: gauge_token},
+        other_user: {gauge_address: gauge_token},
+    }
 
 
 def test_protocol_with_gauges_skips_non_evm_token_events(
