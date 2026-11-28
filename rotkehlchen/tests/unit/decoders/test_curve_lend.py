@@ -309,6 +309,7 @@ def test_create_loan(
             notes=f'Deposit {deposit_amount} WBTC as collateral on Curve',
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x8eeDE294459EFaFf55d580bc95C98306Ab03F0C8'),
+            extra_data={'controller_address': '0xcaD85b7fe52B1939DCEebEe9bCf0b2a5Aa0cE617'},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
@@ -364,6 +365,7 @@ def test_borrow_more(
             notes=f'Deposit {deposit_amount} WBTC as collateral on Curve',
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x8eeDE294459EFaFf55d580bc95C98306Ab03F0C8'),
+            extra_data={'controller_address': '0xcaD85b7fe52B1939DCEebEe9bCf0b2a5Aa0cE617'},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=221,
@@ -725,6 +727,7 @@ def test_add_collateral(
             notes=f'Deposit {deposit_amount} WETH as collateral on Curve',
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x57126764Dec272132244a10894Ef9bF7B4EE282f'),
+            extra_data={'controller_address': '0xB5c6082d3307088C98dA8D79991501E113e6365d'},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=6,

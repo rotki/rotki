@@ -185,6 +185,7 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
                 event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 event.notes = f'Deposit {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as collateral on Curve'  # noqa: E501
                 event.counterparty = CPT_CURVE
+                event.extra_data = {'controller_address': context.tx_log.address}
                 out_event = event
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
@@ -218,6 +219,7 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
                 to_event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
                 to_notes=f'Deposit {collateral_amount} {collateral_token.symbol} as collateral on Curve',  # noqa: E501
                 to_counterparty=CPT_CURVE,
+                extra_data={'controller_address': context.tx_log.address},
             ), ActionItem(
                 action='transform',
                 from_event_type=HistoryEventType.RECEIVE,

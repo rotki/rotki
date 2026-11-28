@@ -93,6 +93,7 @@ def test_create_loan(
             notes=f'Deposit {deposit_amount} wstETH as collateral on Curve',
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x37417B2238AA52D0DD2D6252d989E728e8f706e4'),
+            extra_data={'controller_address': crvusd_controller},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=180,
